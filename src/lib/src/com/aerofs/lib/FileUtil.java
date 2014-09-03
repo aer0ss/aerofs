@@ -113,7 +113,7 @@ public abstract class FileUtil
                 {
                     deleteFiles();
                 }
-            }, "file-deleter"));
+            }, "del-file"));
         }
         _filesToDelete.add(file);
     }

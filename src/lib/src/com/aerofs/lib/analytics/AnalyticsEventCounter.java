@@ -26,10 +26,10 @@ public abstract class AnalyticsEventCounter
     private final DelayedRunner _runner;
     private final AtomicInteger _counter = new AtomicInteger(0);
 
-    public AnalyticsEventCounter(String name, Analytics analytics)
+    public AnalyticsEventCounter(Analytics analytics)
     {
         _analytics = analytics;
-        _runner = new DelayedRunner(name, AGGREGATE_INTERVAL, new Runnable() {
+        _runner = new DelayedRunner("tix-evt", AGGREGATE_INTERVAL, new Runnable() {
             @Override
             public void run()
             {

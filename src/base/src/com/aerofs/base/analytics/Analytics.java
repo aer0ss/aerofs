@@ -61,7 +61,7 @@ public class Analytics
 
         _executor = MoreExecutors.listeningDecorator(
                 Executors.newSingleThreadExecutor(r -> {
-                    Thread t = new Thread(r);
+                    Thread t = new Thread(r, "analytix");
                     t.setPriority(Thread.MIN_PRIORITY);
                     return t;
                 }));

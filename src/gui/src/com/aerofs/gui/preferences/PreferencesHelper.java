@@ -285,7 +285,7 @@ public class PreferencesHelper
 
         _compSpin.start();
 
-        ThreadUtil.startDaemonThread("update-names", new Runnable()
+        ThreadUtil.startDaemonThread("gui-pref", new Runnable()
         {
             @Override
             public void run()

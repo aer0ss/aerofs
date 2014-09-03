@@ -121,7 +121,7 @@ class MightCreateOperations
         _sched = sched;
         _sid2sidx = sid2sidx;
         _hq = hq;
-        _saveCounter = new AnalyticsEventCounter("analytics-save-file", analytics)
+        _saveCounter = new AnalyticsEventCounter(analytics)
         {
             @Override
             public IAnalyticsEvent createEvent(int count)

@@ -386,7 +386,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         if (_firstStart) {
             // start the monitor thread
-            ThreadUtil.startDaemonThread("daemon-monitor", new Runnable() {
+            ThreadUtil.startDaemonThread("dm", new Runnable() {
                 @Override
                 public void run()
                 {
@@ -431,7 +431,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         l.error("daemon died {}: {}", exitCode, getMessage(exitCode));
 
-        ThreadUtil.startDaemonThread("onDaemonDeath", new Runnable() {
+        ThreadUtil.startDaemonThread("dm-death", new Runnable() {
             @Override
             public void run()
             {

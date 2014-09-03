@@ -258,7 +258,7 @@ public abstract class Updater
      */
     public void start()
     {
-        ThreadUtil.startDaemonThread("autoupdate-worker", new Runnable()
+        ThreadUtil.startDaemonThread("updater", new Runnable()
         {
             @Override
             public void run()
@@ -522,7 +522,7 @@ public abstract class Updater
                 {
                     checkForUpdateImpl();
                 }
-            }).start();
+            }, "update").start();
         }
     }
 

@@ -198,7 +198,7 @@ public class CompActivityLog extends Composite
         _compSpin.start();
         _lblStatus.setText("");
 
-        ThreadUtil.startDaemonThread("userlist-async-load", new Runnable()
+        ThreadUtil.startDaemonThread("gui-actv", new Runnable()
         {
             @Override
             public void run()

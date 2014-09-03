@@ -37,19 +37,9 @@ public class DelayedRunner {
                         ThreadUtil.sleepUninterruptable(delay);
                         runner.execute();
                     }
-                }, "delayed_runner." + name).start();
+                }, name).start();
             }
         };
-    }
-
-    /**
-     * @param executor if specified, execute() shall wait for a certain delay
-     *        and then call DelayedRunner.execute(). However, it must not block.
-     */
-    public DelayedRunner(Runnable activity, IExecutor executor)
-    {
-        _activity = activity;
-        _executor = executor;
     }
 
     public void schedule()

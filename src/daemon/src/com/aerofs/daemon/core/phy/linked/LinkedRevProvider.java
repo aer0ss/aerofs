@@ -444,7 +444,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         public synchronized void start()
         {
             if (_thread != null) return;
-            _thread = ThreadUtil.startDaemonThread("rev-cleaner", new Runnable()
+            _thread = ThreadUtil.startDaemonThread("rev-cl", new Runnable()
             {
                 @Override
                 public void run()

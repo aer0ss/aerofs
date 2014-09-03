@@ -29,7 +29,7 @@ public class UIScheduler implements IScheduler
             @Override
             public Thread newThread(Runnable runnable)
             {
-                return new Thread(runnable, "gui-scheduler");
+                return new Thread(runnable, "ui-exec");
             }
         });
     }

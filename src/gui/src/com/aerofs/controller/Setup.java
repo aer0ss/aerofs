@@ -330,7 +330,7 @@ public class Setup
      */
     private static void addToFavorite(final String rootAnchorPath)
     {
-        ThreadUtil.startDaemonThread("add-to-fav", new Runnable()
+        ThreadUtil.startDaemonThread("gui-fav", new Runnable()
         {
             @Override
             public void run()

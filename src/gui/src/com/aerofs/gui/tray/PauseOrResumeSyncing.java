@@ -43,13 +43,13 @@ public class PauseOrResumeSyncing
         _paused = true;
         final int seq = ++_pauseSeq;
 
-        ThreadUtil.startDaemonThread("resume-syncing", new Runnable()
+        ThreadUtil.startDaemonThread("gui-res", new Runnable()
         {
             @Override
             public void run()
             {
                 ThreadUtil.sleepUninterruptable(timeout);
-                Util.exponentialRetry("resume-syncing", new Callable<Void>()
+                Util.exponentialRetry("gui-res", new Callable<Void>()
                 {
                     @Override
                     public Void call()

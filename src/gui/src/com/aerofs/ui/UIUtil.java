@@ -243,7 +243,7 @@ public class UIUtil
             final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        ThreadUtil.startDaemonThread("launcher-worker", new Runnable() {
+        ThreadUtil.startDaemonThread("launch", new Runnable() {
             @Override
             public void run()
             {

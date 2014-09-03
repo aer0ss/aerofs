@@ -175,7 +175,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     }
                 });
             }
-        }).start();
+        }, "gui-invt").start();
     }
 
     private Composite createRoleComposite(Composite parent)

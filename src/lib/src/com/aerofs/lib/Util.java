@@ -613,21 +613,6 @@ public abstract class Util
     }
 
     /**
-     * runs a retryable Callable in a new thread
-     */
-    public static void exponentialRetryNewThread(final String name, final Callable<Void> call, final Class<?> ... excludes)
-    {
-        ThreadUtil.startDaemonThread("expo.retry." + name, new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                exponentialRetry(name, call, excludes);
-            }
-        });
-    }
-
-    /**
      * runs a retryable Callable in a new thread (allows you to specify all parameters)
      */
     public static void exponentialRetryNewThread(
@@ -637,7 +622,7 @@ public abstract class Util
             final Callable<Void> call,
             final Class<?> ... excludes)
     {
-        ThreadUtil.startDaemonThread("xpo-" + name, new Runnable()
+        ThreadUtil.startDaemonThread(name, new Runnable()
         {
             @Override
             public void run()

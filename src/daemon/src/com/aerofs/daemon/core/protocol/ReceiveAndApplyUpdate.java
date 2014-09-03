@@ -138,7 +138,7 @@ public class ReceiveAndApplyUpdate
         _bd = bd;
         _tm = tm;
         _a2t = alias2target;
-        _conflictCounter = new AnalyticsEventCounter("analytics-file-conflict", analytics)
+        _conflictCounter = new AnalyticsEventCounter(analytics)
         {
             @Override
             public IAnalyticsEvent createEvent(int count)

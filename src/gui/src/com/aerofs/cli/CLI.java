@@ -444,7 +444,7 @@ public class CLI implements IUI {
     {
         if (_timedExecThreadStarted.compareAndSet(false, true)) return;
 
-        ThreadUtil.startDaemonThread("cli-timed-exec", new Runnable()
+        ThreadUtil.startDaemonThread("cli-exec", new Runnable()
         {
             @Override
             public void run()

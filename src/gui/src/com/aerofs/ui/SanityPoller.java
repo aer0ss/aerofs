@@ -63,7 +63,7 @@ public class SanityPoller
         // gain. So long as our polling interval is short enough that the change
         // to the root anchor location is fresh in the users mind, this will work
         // fine.
-        _t = ThreadUtil.startDaemonThread("root-anchor-watch-worker", new Runnable()
+        _t = ThreadUtil.startDaemonThread("sanity", new Runnable()
         {
             @Override
             public void run()

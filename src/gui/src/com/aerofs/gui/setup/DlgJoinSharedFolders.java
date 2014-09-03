@@ -215,7 +215,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
 
                     // Join the folders in a separate thread
                     final List<PBFolderInvitation> invitations = invs;
-                    ThreadUtil.startDaemonThread("join-shared-folders", new Runnable()
+                    ThreadUtil.startDaemonThread("gui-sf", new Runnable()
                     {
                         @Override
                         public void run()
