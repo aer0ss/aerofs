@@ -75,11 +75,11 @@
 
 <%def name="instruction(step, index)">
     <div class="row page-block">
-        <div class="col-sm-6 instruction">
-            <img src="${request.static_path('web:static/img/download/{}{}.png'
+        <div class="col-md-6 instruction">
+            <img class="img-responsive" src="${request.static_path('web:static/img/download/{}{}.png'
             .format(data['id'], index))}">
         </div>
-        <div class="col-sm-6">
+        <div class="col-md-6">
             <h4>${index + 1}. ${data['steps'][index][0]}</h4>
             <p>${data['steps'][index][1] | n}</p>
         </div>
