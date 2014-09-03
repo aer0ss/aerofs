@@ -54,15 +54,21 @@ public class DryadClient
         return this;
     }
 
-    // N.B. if files.length == 0, the PUT request will still be made.
-    // the caller is responsible for deciding whether the call should be made if files.length == 0
-    public void uploadFiles(String resourceURL, File[] files)
+    public void uploadFiles(String resourceURL, File... files)
             throws GeneralSecurityException, IOException
     {
-        HttpURLConnection conn = openConnection(_serverUrl + resourceURL, _ssl);
+        if (files == null || files.length == 0) {
+            return;
+        } else if (files.length == 1) {
+            l.info("uploading {} to {}", files[0].getName(), resourceURL);
+        } else {
+            l.info("uploading {} files to {}", files.length, resourceURL);
+        }
 
+        HttpURLConnection conn = openConnection(_serverUrl + resourceURL, _ssl);
         uploadFiles(conn, files);
         handleResponse(conn);
+        l.info("upload succeeded.");
     }
 
     private HttpURLConnection openConnection(String url, SSLContext ssl)
@@ -76,6 +82,11 @@ public class DryadClient
         conn.setRequestMethod("PUT");
         conn.setRequestProperty(CONTENT_TYPE, OCTET_STREAM.toString());
         conn.setChunkedStreamingMode(CHUNK_SIZE);
+        // set timeout to be generously long to deal with high latency and flaky network
+        // in case of priority defect, it may take some time for the GUI to notify the user that
+        // reporting a problem has failed. I think this is acceptable.
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(10000);
         conn.connect();
 
         return conn;
@@ -93,6 +104,8 @@ public class DryadClient
                     if (_listener != null) {
                         _listener.onFileUpload(file);
                     }
+
+                    l.info("uploading {}", file.getName());
 
                     os.putNextEntry(new ZipEntry(file.getName()));
 
@@ -152,7 +165,7 @@ public class DryadClient
         }
 
         @Override
-        public void uploadFiles(String resourceUrl, File[] files)
+        public void uploadFiles(String resourceUrl, File... files)
         {
             // noop
         }
