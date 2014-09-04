@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.aerofs.base.Loggers;
@@ -37,7 +38,6 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.id.KIndex;
@@ -55,9 +55,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -188,8 +186,8 @@ class BlockStorage implements IPhysicalStorage
         final BlockPrefix from = (BlockPrefix)prefix;
         final BlockFile to = (BlockFile)file;
 
-        Preconditions.checkArgument(from._sockid.sokid().equals(to._sokid),
-                "tried to move prefix " + from + " to storage loc for " + to);
+        checkArgument(from._sockid.sokid().equals(to._sokid),
+                "tried to move prefix %s to storage loc for %s", from, to);
         assert from._hash != null;
         long length = prefix.getLength_();
 
@@ -203,7 +201,7 @@ class BlockStorage implements IPhysicalStorage
 
         // no need to explicitly specify version, DB auto-increments it
         updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
-        if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
+        l.debug("inserted {}", from._hash);
 
         // If transaction succeeds, delete the prefix file
         t.addListener_(new AbstractTransListener() {
@@ -336,8 +334,7 @@ class BlockStorage implements IPhysicalStorage
                 if (historyPath.isEmpty()) {
                     removeFile_(id, t);
                 } else {
-                    FileInfo info = FileInfo.newDeletedFileInfo(id, new Date().getTime());
-                    updateFileInfo_(historyPath, info, t);
+                    delete_(id, historyPath, t);
                 }
             }
         } finally {
@@ -405,7 +402,7 @@ class BlockStorage implements IPhysicalStorage
                 try {
                     removeDeadBlocks_();
                 } catch (Exception e) {
-                    l.warn("Failed to cleanup dead blocks: " + Util.e(e));
+                    l.warn("Failed to cleanup dead blocks", e);
                 }
             }
         }, 0);
@@ -462,9 +459,9 @@ class BlockStorage implements IPhysicalStorage
     {
         ContentBlockHash h;
         try {
-            l.debug(">>> preparing prefix for " + prefix._sockid);
+            l.debug(">>> preparing prefix for {}", prefix._sockid);
             h = new Chunker(prefix._f, tk, _bsb).splitAndStore();
-            l.debug("<<< done preparing prefix for " + prefix._sockid);
+            l.debug("<<< done preparing prefix for {}", prefix._sockid);
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -585,7 +582,12 @@ class BlockStorage implements IPhysicalStorage
 
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
     {
-        FileInfo oldInfo = getFileInfoNullable_(file._sokid);
+        delete_(_bsdb.getFileIndex_(makeFileName(file._sokid)), file._path, t);
+    }
+
+    void delete_(long id, Path historyPath, Trans t) throws SQLException
+    {
+        FileInfo oldInfo = _bsdb.getFileInfo_(id);
         if (!FileInfo.exists(oldInfo)) {
             // It's possible that we never got content for that file, which would explain
             // why we can't find it.
@@ -598,23 +600,20 @@ class BlockStorage implements IPhysicalStorage
             return;
         }
 
-        FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
-        updateFileInfo_(file._path, info, t);
+        FileInfo info = FileInfo.newDeletedFileInfo(id, new Date().getTime());
+        updateFileInfo_(historyPath, info, t);
     }
 
-    void move_(BlockFile from, ResolvedPath to, KIndex kidx, Trans t)
+    void move_(BlockFile from, ResolvedPath toPath, KIndex kidx, Trans t)
             throws IOException, SQLException
     {
         SOKID fromObjId = from._sokid;
         Path fromPath = from._path;
 
-        SOKID toObjId = new SOKID(to.soid(), kidx);
-        Path toPath = to;
+        SOKID toObjId = new SOKID(toPath.soid(), kidx);
 
-        if (l.isDebugEnabled()) {
-            if (!fromObjId.equals(toObjId)) l.debug(fromObjId + " -> " + toObjId);
-            if (!fromPath.equals(toPath)) l.debug(fromPath + " -> " + toPath);
-        }
+        if (!fromObjId.equals(toObjId)) l.debug("{} -> {}",fromObjId, toObjId);
+        if (!fromPath.equals(toPath)) l.debug("{} -> {}",fromPath, toPath);
 
         FileInfo fromInfo = getFileInfoNullable_(fromObjId);
         if (!FileInfo.exists(fromInfo)) throw new FileNotFoundException(toString());
@@ -625,7 +624,7 @@ class BlockStorage implements IPhysicalStorage
         } else {
             toId = getOrCreateFileId_(toObjId, t);
             if (FileInfo.exists(_bsdb.getFileInfo_(toId))) {
-                throw new FileAlreadyExistsException(to.toString());
+                throw new FileAlreadyExistsException(toPath.toString());
             }
         }
 
@@ -656,7 +655,7 @@ class BlockStorage implements IPhysicalStorage
                 if (dirId == DIR_ID_NOT_FOUND) return Collections.emptyList();
                 return _bsdb.getHistDirChildren_(dirId);
             } catch (SQLException e) {
-                l.warn("list rev children fail: " + Util.e(e));
+                l.warn("list rev children fail", e);
                 throw e;
             }
         }
@@ -671,7 +670,7 @@ class BlockStorage implements IPhysicalStorage
                 if (dirId == DIR_ID_NOT_FOUND) return Collections.emptyList();
                 return _bsdb.getHistFileRevisions_(dirId, path.last());
             } catch (SQLException e) {
-                l.warn("list rev hist fail: " + Util.e(e));
+                l.warn("list rev hist fail", e);
                 throw e;
             }
         }
@@ -685,7 +684,7 @@ class BlockStorage implements IPhysicalStorage
                 if (info == null) throw new ExInvalidRevisionIndex();
                 return new RevInputStream(readChunks(info._chunks), info._length, info._mtime);
             } catch (SQLException e) {
-                l.warn("get rev stream fail: " + Util.e(e));
+                l.warn("get rev stream fail", e);
                 throw e;
             }
         }
@@ -709,7 +708,7 @@ class BlockStorage implements IPhysicalStorage
                 // TODO: schedule instead?
                 removeDeadBlocks_();
             } catch (SQLException e) {
-                l.warn("del rev fail: " + Util.e(e));
+                l.warn("del rev fail", e);
                 throw e;
             }
         }
@@ -732,7 +731,7 @@ class BlockStorage implements IPhysicalStorage
                 // TODO: schedule instead?
                 removeDeadBlocks_();
             } catch (SQLException e) {
-                l.warn("del all rev fail: " + Util.e(e));
+                l.warn("del all rev fail", e);
                 throw e;
             }
         }

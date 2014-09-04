@@ -1,0 +1,8 @@
+<root>
+    <item
+        name='com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo boolean exists(com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;null -&gt; false&quot;" />
+        </annotation>
+    </item>
+</root>
