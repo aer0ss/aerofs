@@ -108,7 +108,7 @@ public class PriorityDefect
             sendSync();
             UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
         } catch (Exception e) {
-            l.warn("Failed to send priority defect: {}", e.toString());
+            l.warn("Failed to send priority defect:", e);
             UI.get()
                     .notify(MessageType.ERROR,
                             "Failed to report the problem. " + "Please try again later.");

@@ -124,7 +124,7 @@ public class AutoDefect extends Defect
             l.info("repeating last defect: {}: {}", _message, _exception.toString());
             return;
         } else {
-            l.error("sending defect: {}: {}", _message, _exception.toString());
+            l.info("sending defect: {}: {}", _message, _exception.toString());
         }
 
         if (_cfg.inited()) {
