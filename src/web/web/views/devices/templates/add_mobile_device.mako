@@ -15,7 +15,7 @@
 %if not is_private_deployment(request.registry.settings):
     <li class="page-block">
         <h4>Turn on API access</h4>
-        <p>For the mobile app to work, at least one of your computers running AeroFS will need to have API access enabled. <a href="https://support.aerofs.com/hc/en-us/articles/201438954">Learn how to turn on API access.</a></p>
+        <p>For the mobile app to work, at least one of your computers running AeroFS will need to have API access enabled. <a href="https://support.aerofs.com/hc/en-us/articles/202492734">Learn how to turn on API access.</a></p>
     </li>
 %endif
 
