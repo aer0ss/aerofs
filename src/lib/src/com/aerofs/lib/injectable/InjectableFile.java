@@ -12,7 +12,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.nio.file.Files;
 
 import javax.annotation.Nullable;
 
@@ -285,6 +289,11 @@ public class InjectableFile
     public String getPath()
     {
         return _f.getPath();
+    }
+
+    public boolean isSymbolicLink() {
+        Path fp = Paths.get(getAbsolutePath());
+        return Files.isSymbolicLink(fp);
     }
 
     public void delete() throws IOException

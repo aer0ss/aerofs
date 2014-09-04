@@ -218,18 +218,9 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
 
     private boolean moveToRevIgnoreErrorRecursively_(InjectableFile f, Path p)
     {
-        if (f.isFile()) {
-            try {
-                if (_il.isIgnored(f.getName())) {
-                    return f.deleteIgnoreError();
-                } else {
-                    _revProvider.newLocalRevFile(p, f.getAbsolutePath(), KIndex.MASTER).save_();
-                }
-                return true;
-            } catch (IOException e) {
-                l.warn("could not move to rev {} {}", f, p, BaseLogUtil.suppress(e));
-                return false;
-            }
+        if (!f.exists()) {
+            // file doesn't exist, nothing we need to delete
+            return true;
         } else if (f.isDirectory()) {
             String[] children = f.list();
             if (children != null) {
@@ -243,6 +234,19 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                 }
             }
             return f.deleteIgnoreError();
+        } else if (f.isFile() || f.isSymbolicLink()) {
+            // second condition is for dangling symlinks
+            try {
+                if (_il.isIgnored(f.getName())) {
+                    return f.deleteIgnoreError();
+                } else {
+                    _revProvider.newLocalRevFile(p, f.getAbsolutePath(), KIndex.MASTER).save_();
+                }
+                return true;
+            } catch (IOException e) {
+                l.warn("could not move to rev {} {}", f, p, BaseLogUtil.suppress(e));
+                return false;
+            }
         }
         l.warn("could not move to rev {} {}", f, p);
         return false;

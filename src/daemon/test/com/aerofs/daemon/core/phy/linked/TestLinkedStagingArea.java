@@ -59,6 +59,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 public class TestLinkedStagingArea extends AbstractTest
 {
@@ -273,6 +274,26 @@ public class TestLinkedStagingArea extends AbstractTest
         verify(rf, times(4)).save_();
         verify(bar, times(2)).deleteIgnoreError();
         verify(staged, times(2)).deleteIgnoreError();
+        assertStagingDatabaseEmpty();
+    }
+
+    @Test
+    public void danglingSymlinksShouldActLikeFiles() throws Exception
+    {
+        InjectableFile staged = staged(Path.fromString(rootSID, "foo"));
+        InjectableFile baz = factFile.create(staged, "baz");
+        when(baz.deleteIgnoreError()).thenAnswer(DELETE);
+        when(staged.deleteIgnoreError()).thenAnswer(DELETE);
+
+        // baz looks like a symlink
+        when(baz.isSymbolicLink()).thenReturn(true);
+        when(baz.isFile()).thenReturn(false);
+
+        lsa.start_();
+
+        verify(rf, times(2)).save_();
+        verify(staged).deleteIgnoreError();
+        verify(baz, never()).deleteIgnoreError();
         assertStagingDatabaseEmpty();
     }
 }
