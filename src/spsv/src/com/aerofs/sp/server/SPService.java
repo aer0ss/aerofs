@@ -1788,10 +1788,10 @@ public class SPService implements ISPService
                     description, link);
         } else {
             // hybrid cloud e-mail content
-            body = format("\nCustomer ID: %s\n" +
-                    "Customer Name: %s\n" +
+            body = format("\nDefect ID: %s\n" +
                     "Contact Email: %s\n\n" +
-                    "%s", _license.customerID(), _license.customerName(), contactEmail, description);
+                    "%s",
+                    defectID, contactEmail, description);
         }
 
         Email email = new Email();

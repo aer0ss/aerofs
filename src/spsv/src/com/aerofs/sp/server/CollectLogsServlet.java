@@ -224,11 +224,14 @@ public class CollectLogsServlet extends HttpServlet
         String to = "support@aerofs.com";
         String replyTo = contactEmail;
         String subject = format("%s Problem #%s", L.brand(), defectID);
-        String body = format("Customer ID: %s\n" +
+        String body = format(
+                "Defect ID: %s\n" +
+                "Customer ID: %s\n" +
                 "Customer Name: %s\n" +
                 "Contact Email: %s\n" +
                 "Users:\n%s\n" +
-                "%s", customerID, customerName, contactEmail, formatUsersList(users), desc);
+                "%s",
+                defectID, customerID, customerName, contactEmail, formatUsersList(users), desc);
 
         // text-only is good enough since we are e-mailing ZenDesk
         _email.sendPublicEmailFromSupport(fromName, to, replyTo, subject, body, null);
