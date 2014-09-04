@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
@@ -134,7 +136,7 @@ public class PriorityDefect
             logThreads();
         }
 
-        getFactory().newAutoDefect("defect.priority")
+        Defect defect = getFactory().newAutoDefect("defect.priority")
                 .setDefectID(defectID)
                 .setPriority(Priority.User)
                 .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS |
@@ -144,12 +146,30 @@ public class PriorityDefect
                 .addData("daemon_status", getDaemonStatus())
                 // for reason unknown, the ElasticSearch's indexer is expecting the field
                 // "expected" to be a long. Hence we use the "is_expected" for the field's key.
-                .addData("is_expected", _expected)
-                .sendSync();
+                .addData("is_expected", _expected);
+
+        // dump the defect content into the log
+        dumpDefectData(defect);
+        defect.sendSync();
 
         newMutualAuthClientFactory().create()
                 .signInRemote()
                 .sendPriorityDefectEmail(defectID, _contactEmail, _message);
+    }
+
+    private void dumpDefectData(Defect defect)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Map<String, Object> data = defect.getData();
+        for (Entry<String, Object> entry : data.entrySet()) {
+            sb.append(entry.getKey())
+                    .append(": ")
+                    .append(entry.getValue())
+                    .append("\n");
+        }
+
+        l.info("Priority defect content:\n{}", sb.toString());
     }
 
     private void saveContactEmail(@Nonnull String contactEmail)
