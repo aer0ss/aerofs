@@ -110,7 +110,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.defects.DaemonPriorityDefect.newDaemonPriorityDefect;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
  * For simplicity, the RPC plugin generates only a future-based interface. Users of the RPC plugin
@@ -687,7 +688,8 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> testLogSendDefect() throws Exception
     {
-        newDefectWithLogs("ritual.test_defects")
+        // same thread executor is fine because we are blocking anyway
+        newDaemonPriorityDefect(this, sameThreadExecutor())
                 .setMessage("testing defect reporting")
                 .sendSync();
         return createVoidReply();

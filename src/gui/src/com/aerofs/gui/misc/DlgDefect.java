@@ -1,7 +1,7 @@
 package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.defects.PriorityDefect.Factory;
+import com.aerofs.defects.UIPriorityDefect.Factory;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;

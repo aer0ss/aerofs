@@ -5,7 +5,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.defects.PriorityDefect.Factory;
+import com.aerofs.defects.UIPriorityDefect.Factory;
 import com.aerofs.labeling.L;
 import com.aerofs.ritual.RitualClientProvider;
 import org.apache.commons.cli.CommandLine;
