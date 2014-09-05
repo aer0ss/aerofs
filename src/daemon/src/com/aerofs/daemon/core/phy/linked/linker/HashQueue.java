@@ -7,6 +7,10 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
+import com.aerofs.base.analytics.IAnalyticsEvent;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -15,11 +19,21 @@ import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -27,8 +41,8 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -36,35 +50,44 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.defects.Defects.newMetric;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
- * When a file sees its timestamp change but not its length it is possible that the actual content
- * of the file is unchanged. In particular, this has been to plague some users at BB, resulting in
- * spurious updates, wasted network bandwidth, serious user confusion and the occasional nasty
- * interaction with Photoshop.
+ * Hash all the things!
  *
- * To avoid that, instead of unconditionally bumping ticks in that situation we rely on content
- * hashing to avoid spurious updates. This is only possible if there is a content hash for the file
- * in the DB already. Recent changes ensure that content hashes are computed and stored whenever
- * a file is transfered to/from a peer. This ensures that, if the content hash is not present then
- * the file must have been modified locally unambiguously and not propagated yet, therefore any
- * timestamp change can safely cause a version bump.
+ * In the before time files were only hashed as a last resort to detect false content conflicts.
+ *
+ * Later, opportunistic hashing during transfers was added to prevent mtime-only changes from
+ * causing spurious updates. This required the introduction of this HashQueue to defer CA update
+ * until *after* file contents were re-hashed and an accurate decision could be made.
+ *
+ * Finally, with the mighty Polaris descended upon us and, to the greatest delight of an ardent
+ * preacher who need not be named, it became necessary to hash (allthethings) *before* they could
+ * be advertised to the rest of the world.
+ *
+ * Every time {@link com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations} detects a
+ * potential file change, it place a hash request in this queue. The request includes the length
+ * and mtime of the file at the time the request is issued. This allows deduplication of identical
+ * requests and detection of file changes while hashing is in progress.
+ *
+ * Once the file is hashed, the CA is updated as needed to reflect the new state of the file and
+ * the version vector is bumped if the content hash actually changed so that the new content may
+ * propagate to remote devices.
  *
  * To avoid blocking core threads on potentially long disk I/O and hash computation, up to two
- * auxiliary threads are used. Tasks are queued for processing by these threads along with enough
- * information such that:
- *   1. identical subsequent requests are merged
- *   2. any change in the physical filesystem will abort the operation
- *
- * If the queue overflows, hashing will be done synchronously to automatically throttle incoming
- * hash requests.
+ * auxiliary threads are used. If the queue overflows, hashing will be done synchronously in the
+ * calling thread to throttle incoming hash requests.
  */
 public class HashQueue implements IVersionControlListener
 {
@@ -74,25 +97,49 @@ public class HashQueue implements IVersionControlListener
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
     private final TransManager _tm;
+    private final IPhysicalStorage _ps;
+    private final LinkerRootMap _lrm;
+    private final TokenManager _tokenManager;
+    private final InjectableFile.Factory _factFile;
+    private final AnalyticsEventCounter _saveCounter;
+
+    enum State
+    {
+        PENDING,
+        HASHED,
+        COMMITTED
+    }
 
     private class HashRequest implements Runnable
     {
+
         final SOID soid;
-        final InjectableFile f;
         final long length;
         final long mtime;
-        final ContentHash h;
 
-        // only ever written from a core thread
+        // synchronized(this)
+        InjectableFile f;
+
+        // only ever written from a core thread holding the core lock
         volatile boolean aborted;
 
-        HashRequest(SOID soid, InjectableFile f, long length, long mtime, ContentHash h)
+        // only ever written from hasher thread
+        // NB: might be a core thread NOT holding the core lock
+        volatile State state;
+
+        HashRequest(SOID soid, InjectableFile f, long length, long mtime)
         {
             this.soid = soid;
             this.f = f;
             this.length = length;
             this.mtime = mtime;
-            this.h = h;
+            this.state = State.PENDING;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "{" + Joiner.on(',').join(soid, length, mtime, f, aborted, state) + "}";
         }
 
         @Override
@@ -104,8 +151,11 @@ public class HashQueue implements IVersionControlListener
                 return;
             }
 
-            final ContentHash h = hash();
-            if (h == null) {
+            final ContentHash newHash = hash();
+            checkState(state == State.PENDING);
+            state = State.HASHED;
+            if (newHash == null) {
+                // TODO: exp retry if the file exists?
                 removeSelf();
                 return;
             }
@@ -114,7 +164,7 @@ public class HashQueue implements IVersionControlListener
                 @Override
                 public void handle_()
                 {
-                    commit(h);
+                    commit_(newHash);
                     removeSelf();
                 }
             }, 0);
@@ -125,33 +175,34 @@ public class HashQueue implements IVersionControlListener
             _requests.remove(soid, this);
         }
 
+        private synchronized InputStream inputStream() throws IOException
+        {
+            return f.newInputStream();
+        }
+
         private ContentHash hash()
         {
             MessageDigest md = BaseSecUtil.newMessageDigest();
-            try {
-                InputStream is = f.newInputStream();
-                try {
-                    int n;
-                    long total = 0;
-                    byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
-                    while ((n = is.read(bs)) >= 0) {
-                        total += n;
-                        if (total > length) {
-                            l.debug("file larger than expected {}", soid);
-                            return null;
-                        }
-                        md.update(bs, 0, n);
-                        if (aborted) {
-                            l.debug("hash computation aborted {}", soid);
-                            return null;
-                        }
-                    }
-                    if (total != length) {
-                        l.debug("file smaller than expected {}", soid);
+            // TODO: pipeline I/O and CPU?
+            try (InputStream is = inputStream()) {
+                int n;
+                long total = 0;
+                byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
+                while ((n = is.read(bs)) >= 0) {
+                    total += n;
+                    if (total > length) {
+                        l.debug("file larger than expected {}", soid);
                         return null;
                     }
-                } finally {
-                    is.close();
+                    md.update(bs, 0, n);
+                    if (aborted) {
+                        l.debug("hash computation aborted {}", soid);
+                        return null;
+                    }
+                }
+                if (total != length) {
+                    l.debug("file smaller than expected {}", soid);
+                    return null;
                 }
             } catch (IOException e) {
                 l.debug("hash computation failed {}", soid, e);
@@ -160,16 +211,23 @@ public class HashQueue implements IVersionControlListener
             return new ContentHash(md.digest());
         }
 
-        private void commit(ContentHash newHash)
+        private void commit_(ContentHash newHash)
         {
             if (aborted) {
                 l.debug("hash computation aborted {}", soid);
                 return;
             }
             try {
+                // last chance for race-condition check with the physical filesystem
+                if (f.wasModifiedSince(mtime, length)) {
+                    l.info("phy diff, abort hash update {} ({}, {}) != ({}, {})",
+                            soid, length, mtime, f.getLength(), f.lastModified());
+                    return;
+                }
+
                 Trans t = _tm.begin_();
                 try {
-                    updateCAHash(newHash, t);
+                    updateCAHash_(newHash, t);
                     t.commit_();
                 } finally {
                     t.end_();
@@ -179,31 +237,18 @@ public class HashQueue implements IVersionControlListener
             }
         }
 
-        private void updateCAHash(ContentHash newHash, Trans t)
+        private void updateCAHash_(ContentHash newHash, Trans t)
                 throws IOException, SQLException, ExNotFound
         {
             SOKID sokid = new SOKID(soid, KIndex.MASTER);
 
-            // make sure the CA lenght and hash correspond to the values given in the hash request
-            // if they changed under our feet then we cannot safely take any action based on the
-            // value of the computed hash
+            // OA and MASTER CA MUST exist when we get here
             OA oa = _ds.getOAThrows_(soid);
             CA ca = oa.caMasterThrows();
+
             ContentHash oldHash = _ds.getCAHash_(sokid);
-            if (ca.length() != length || !oldHash.equals(h)) {
-                l.warn("log diff, abort hash update {} ({}, {}) != ({}, {})",
-                        soid, length, h, ca.length(), oldHash);
-                return;
-            }
-
-            // last chance for race-condition check with the physical filesystem
-            if (f.getLength() != length || f.lastModified() != mtime) {
-                l.info("phy diff, abort hash update {} ({}, {}) != ({}, {})",
-                        soid, length, mtime, f.getLength(), f.lastModified());
-                return;
-            }
-
-            final boolean same = newHash.equals(h);
+            final boolean same = oldHash != null && newHash.equals(oldHash)
+                    && ca.length() == length;
 
             // send rocklog defects to gather information about frequency of linker-induced
             // hashing, size distribution of affected file and benefit (or lack thereof) of
@@ -211,40 +256,84 @@ public class HashQueue implements IVersionControlListener
             newMetric("mcn.hash." + (same ? "same" : "change"))
                     .addData("soid", soid.toString())
                     .addData("length", length)
-                    .addData("db_mtime", ca.mtime())
-                    .addData("fs_mtime", mtime)
                     .sendAsync();
 
-            // update CA as originally planned, leveraging content hash to hopefully avoid
-            // spurious updates (as experience by some users at BB)
+            // only bump version if the content hash changes
+            // hopefully avoid spurious updates as experienced by some users at BB
             if (same) {
-                l.info("mtime-only change {} {} {}", soid, ca.mtime(), mtime);
+                l.info("change {} mtime {} {}", soid, ca.mtime(), mtime);
                 _ds.setCA_(sokid, length, mtime, newHash, t);
             } else {
-                l.info("content hash change {} {} {}", soid, h, newHash);
+                l.info("change {} content {} {}", soid, oldHash, newHash);
                 _ds.setCA_(sokid, length, mtime, newHash, t);
+                state = State.COMMITTED;
                 _vu.update_(new SOCKID(sokid, CID.CONTENT), t);
+                _saveCounter.inc();
             }
         }
     }
 
     private final ConcurrentMap<SOID, HashRequest> _requests = Maps.newConcurrentMap();
 
+    /**
+     * When the bounded hash queue is full the hashing task will be executed in the calling
+     * thread. To avoid starvation when large files are hashed, the core lock is first released.
+     *
+     * NB: this is possible because calls to {@link java.util.concurrent.Executor#execute} are
+     * deferred to {@link com.aerofs.daemon.lib.db.ITransListener#committed_} instead of being
+     * made immediately on reception of the hash request.
+     */
+    private final class CoreLockReleaseRunPolicy implements RejectedExecutionHandler
+    {
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor)
+        {
+            if (executor.isShutdown()) return;
+            try {
+                Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "blocking-hash");
+                try {
+                    TCB tcb = tk.pseudoPause_("blocking-hash");
+                    try {
+                        r.run();
+                    } finally {
+                        tcb.pseudoResumed_();
+                    }
+                } finally {
+                    tk.reclaim_();
+                }
+            } catch (ExNoResource|ExAborted e) {
+                l.warn("blocking hashing failed", e);
+            }
+        }
+    }
+
     private final Executor _e = new ThreadPoolExecutor(
             0, 2,                                           // at most 2 threads
             1, TimeUnit.MINUTES,                            // idle thread TTL
-            Queues.<Runnable>newLinkedBlockingQueue(100),          // bounded event queue
-            new CallerRunsPolicy());                        // blocking submit on queue overflow
+            new LinkedBlockingQueue<>(10000),               // bounded event queue
+            new CoreLockReleaseRunPolicy());                // blocking submit on queue overflow
 
     @Inject
     public HashQueue(CoreScheduler sched, DirectoryService ds, NativeVersionControl nvc,
-            VersionUpdater vu, TransManager tm)
+            VersionUpdater vu, IPhysicalStorage ps, LinkerRootMap lrm, TransManager tm,
+            TokenManager tokenManager, InjectableFile.Factory factFile, Analytics analytics)
     {
         _sched = sched;
         _ds = ds;
         _vu = vu;
         _tm = tm;
+        _ps = ps;
+        _lrm = lrm;
+        _tokenManager = tokenManager;
+        _factFile = factFile;
         nvc.addListener_(this);
+        _saveCounter = new AnalyticsEventCounter(analytics) {
+            @Override
+            public IAnalyticsEvent createEvent(int count)
+            {
+                return new FileSavedEvent(count);
+            }
+        };
     }
 
     /**
@@ -256,13 +345,14 @@ public class HashQueue implements IVersionControlListener
      *
      * NB: to avoid unbounded memory usage, a fixed length queue is used and if it overflows,
      * extra requests will be executed synchronously
+     *
+     * @return true if a new request was enqueued, false if there was a matching one already
      */
-    public boolean requestHash_(final SOID soid, InjectableFile f, long length, long mtime,
-            ContentHash h, Trans t)
+    public boolean requestHash_(final SOID soid, InjectableFile f, long length, long mtime, Trans t)
     {
         HashRequest r = _requests.get(soid);
         if (r != null && !r.aborted) {
-            if (r.length == length && r.mtime == mtime && r.h.equals(h)
+            if (r.length == length && r.mtime == mtime
                     && f.getAbsolutePath().equals(r.f.getAbsolutePath())) {
                 // duplicate hash request with no intervening changes
                 // can happen if, e.g. the file being hashed is requested by a remote
@@ -270,32 +360,60 @@ public class HashQueue implements IVersionControlListener
                 // inconsistency between db and fs
                 return false;
             }
-            // if any change occured, abort ongoing hash op and restart from scratch
+            // if any change occurred, abort ongoing hash op and restart from scratch
             l.warn("phy diff, restart hash {}", soid);
             r.aborted = true;
         }
 
-        final HashRequest rr = new HashRequest(soid, f, length, mtime, h);
-        t.addListener_(new AbstractTransListener() {
-            @Override
-            public void aborted_()
-            {
-                rr.aborted = true;
-                rr.removeSelf();
-            }
-        });
-        _requests.put(soid, rr);
-        _e.execute(rr);
+        _tlReq.get(t).put(soid, new HashRequest(soid, f, length, mtime));
         return true;
     }
 
+    private final TransLocal<Map<SOID, HashRequest>> _tlReq
+            = new TransLocal<Map<SOID, HashRequest>>() {
+        @Override
+        protected Map<SOID, HashRequest> initialValue(Trans t)
+        {
+            final Map<SOID, HashRequest> m = Maps.newHashMap();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    for (Entry<SOID, HashRequest> e : m.entrySet()) {
+                        _requests.put(e.getKey(), e.getValue());
+                        _e.execute(e.getValue());
+                    }
+                }
+            });
+            return m;
+        }
+    };
+
+    // TODO: Phoenix equivalent
     @Override
     public void localVersionAdded_(SOCKID sockid, Version v, Trans t) throws SQLException
     {
-        if (!sockid.cid().isContent()) return;
-        if (!sockid.kidx().isMaster()) return;
+        if (sockid.cid().isContent() && !sockid.kidx().isMaster()) return;
+
         HashRequest r = _requests.get(sockid.soid());
-        if (r != null && !r.aborted) {
+        if (r == null || r.aborted) {
+            return;
+        }
+
+        if (sockid.cid().isMeta()) {
+            if (r.state != State.PENDING) return;
+
+            // update path on META change
+            ResolvedPath p = _ds.resolve_(sockid.soid());
+            String absPath = _ps.newFile_(p, KIndex.MASTER).getAbsPath_();
+            LinkerRoot lr = _lrm.get_(p.sid());
+            l.info("meta change during hashing {} {} -> {}", r.soid, r.f, absPath);
+            if (lr.isPhysicallyEquivalent(absPath, r.f.getAbsolutePath())) return;
+
+            synchronized (r) {
+                r.f = _factFile.create(absPath);
+            }
+        } else if (r.state != State.COMMITTED) {
             l.warn("log diff, abort hash {}", sockid.socid());
             r.aborted = true;
             r.removeSelf();

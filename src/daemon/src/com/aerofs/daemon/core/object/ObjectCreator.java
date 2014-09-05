@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.object;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -49,33 +48,8 @@ public class ObjectCreator
     public SOID create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
             throws Exception
     {
-        return create_(type, new OID(UniqueID.generate()), soidParent, name, op, t);
-    }
-
-    /**
-     * Create metadata for a new object.
-     *
-     * May create an empty folder but will NOT create empty files
-     */
-    public SOID createMeta_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
-            throws Exception
-    {
-        SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
-        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
-        return soid;
-    }
-
-    /**
-     * Create a new object. Create an empty physical file if it's a file and it's not
-     * linker-initiated.
-     */
-    public SOID create_(Type type, OID oid, SOID soidParent, String name, PhysicalOp op, Trans t)
-            throws Exception
-    {
-        SOID soid = new SOID(soidParent.sidx(), oid);
-        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
-
-        if (type == OA.Type.FILE) {
+        SOID soid = createMeta_(type, soidParent, name, op, t);
+        if (type == Type.FILE) {
             final KIndex kidx = KIndex.MASTER;
 
             _ds.createCA_(soid, kidx, t);
@@ -87,6 +61,33 @@ public class ObjectCreator
                     pf.getLastModificationOrCurrentTime_(), null, t);
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
+        }
+        return soid;
+    }
+
+    /**
+     * Create metadata for a new object.
+     *
+     * May create an empty folder but will NOT create empty files
+     */
+    public SOID createMeta_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
+            throws Exception
+    {
+        SOID soid = new SOID(soidParent.sidx(), OID.generate());
+        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
+        return soid;
+    }
+
+    /**
+     * Create metadata for a new object detected by the linker/scanner.
+     */
+    public SOID createMetaForLinker_(Type type, OID oid, SOID soidParent, String name, Trans t)
+            throws Exception
+    {
+        SOID soid = new SOID(soidParent.sidx(), oid);
+        createMeta_(type, soid, soidParent.oid(), name, PhysicalOp.MAP, false, true, t);
+        if (type == Type.FILE) {
+            _ps.newFile_(_ds.resolve_(soid), KIndex.MASTER).create_(PhysicalOp.MAP, t);
         }
         return soid;
     }

@@ -19,6 +19,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.CID;
@@ -34,15 +35,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
@@ -60,8 +59,15 @@ public class TestHashQueue extends AbstractTest
     @Mock VersionUpdater vu;
     @Mock NativeVersionControl nvc;
     @Mock TransManager tm;
-    @Mock Trans t;
     @InjectMocks HashQueue hq;
+
+    class TestableTrans extends Trans
+    {
+        private TestableTrans(TransManager tm)
+        {
+            super(new Trans.Factory(mock(IDBCW.class)), tm);
+        }
+    }
 
     final static ContentHash EMPTY_HASH = new ContentHash(SecUtil.hash(new byte [0]));
     final static byte[] EMPTY_CONTENT = new byte[0];
@@ -77,7 +83,7 @@ public class TestHashQueue extends AbstractTest
 
         mds.root().file(soid, "foo", 1);
 
-        when(tm.begin_()).thenReturn(t);
+        when(tm.begin_()).thenAnswer(invocation -> new TestableTrans(tm));
     }
 
     private InjectableFile mockContent(final byte[] c, long mtime) throws Exception
@@ -87,29 +93,50 @@ public class TestHashQueue extends AbstractTest
         when(f.lastModified()).thenReturn(mtime);
         when(f.getLength()).thenReturn((long)c.length);
         when(f.getLengthOrZeroIfNotFile()).thenReturn((long)c.length);
-        when(f.newInputStream()).thenAnswer(new Answer<InputStream>() {
-            @Override
-            public InputStream answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return new ByteArrayInputStream(c);
-            }
-        });
+        when(f.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(c));
         return f;
     }
 
     Future<AbstractEBSelfHandling> whenHashed()
     {
         final SettableFuture<AbstractEBSelfHandling> ev = SettableFuture.create();
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                ev.set((AbstractEBSelfHandling)invocation.getArguments()[0]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            ev.set((AbstractEBSelfHandling)invocation.getArguments()[0]);
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
         return ev;
+    }
+
+    @FunctionalInterface
+    private static interface Op
+    {
+        void exec(Trans t) throws Exception;
+    }
+
+    void trans(Op r) throws Exception
+    {
+        Trans t = tm.begin_();
+        try {
+            r.exec(t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
+    @Test
+    public void shouldNotHashWhenTransactionAborted() throws Exception
+    {
+        InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
+        try {
+            trans(t -> {
+                hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t);
+                throw new Exception();
+            });
+            fail();
+        } catch (Exception e) {
+            verifyZeroInteractions(ds, vu, sched);
+        }
     }
 
     @Test
@@ -120,12 +147,12 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), EMPTY_HASH, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
 
         ev.get().handle_();
 
         verify(_defect).sendAsync();
-        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
+        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
         verifyZeroInteractions(vu);
     }
 
@@ -138,13 +165,13 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
 
         ev.get().handle_();
 
         verify(_defect).sendAsync();
-        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
-        verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
+        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
+        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -157,15 +184,15 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("");
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
-        assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
-        assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
 
         ev.get().handle_();
 
         verify(_defect).sendAsync();
-        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
-        verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
+        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
+        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -178,25 +205,25 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("foo");
         Future<AbstractEBSelfHandling> evAborted = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
-        f = mockContent(EMPTY_CONTENT, 42L);
-        when(f.getAbsolutePath()).thenReturn("bar");
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        InjectableFile g = mockContent(EMPTY_CONTENT, 42L);
+        when(g.getAbsolutePath()).thenReturn("bar");
+        trans(t -> assertTrue(hq.requestHash_(soid, g, g.getLength(), g.lastModified(), t)));
 
         evAborted.get().handle_();
 
         verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
+        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
         verify(_defect).sendAsync();
-        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), eq(t));
-        verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
+        verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
+        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -209,59 +236,41 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("");
         Future<AbstractEBSelfHandling> evAborted = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
-        f = mockContent(EMPTY_CONTENT, 43L);
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), oldHash, t));
+        InjectableFile g = mockContent(EMPTY_CONTENT, 43L);
+        trans(t -> assertTrue(hq.requestHash_(soid, g, g.getLength(), g.lastModified(), t)));
 
         evAborted.get().handle_();
 
         verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
+        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
         verify(_defect).sendAsync();
-        verify(ds).setCA_(eq(sokid), eq(0L), eq(43L), eq(EMPTY_HASH), eq(t));
-        verify(vu).update_(new SOCKID(sokid, CID.CONTENT), t);
+        verify(ds).setCA_(eq(sokid), eq(0L), eq(43L), eq(EMPTY_HASH), any(Trans.class));
+        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
-    public void shouldAbortOnLengthMismatch() throws Exception
+    public void shouldAbortOnPhysicalChange() throws Exception
     {
         when(ds.getCAHash_(sokid)).thenReturn(EMPTY_HASH);
 
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), EMPTY_HASH, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
         ev.get();
-        when(f.getLength()).thenReturn(0xdeadL);
+        when(f.wasModifiedSince(42L, 0L)).thenReturn(true);
         ev.get().handle_();
 
         verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
-        verifyZeroInteractions(vu);
-    }
-
-    @Test
-    public void shouldAbortOnTimestampMismatch() throws Exception
-    {
-        when(ds.getCAHash_(sokid)).thenReturn(EMPTY_HASH);
-
-        InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
-        Future<AbstractEBSelfHandling> ev = whenHashed();
-
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), EMPTY_HASH, t));
-        ev.get();
-        when(f.lastModified()).thenReturn(43L);
-        ev.get().handle_();
-
-        verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
+        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
     }
 
@@ -273,14 +282,14 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), EMPTY_HASH, t));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
         ev.get();
-        hq.localVersionAdded_(new SOCKID(sokid, CID.CONTENT),
-                Version.of(DID.generate(), new Tick(1L)), t);
+        trans(t -> hq.localVersionAdded_(new SOCKID(sokid, CID.CONTENT),
+                Version.of(DID.generate(), new Tick(1L)), t));
         ev.get().handle_();
 
         verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), eq(t));
+        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
     }
 }

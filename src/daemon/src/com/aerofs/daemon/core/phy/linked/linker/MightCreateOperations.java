@@ -5,14 +5,9 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.IAnalyticsEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -25,22 +20,17 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -59,6 +49,7 @@ import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.obfuscatePath;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -72,10 +63,8 @@ class MightCreateOperations
     private final DirectoryService _ds;
     private final ObjectCreator _oc;
     private final ObjectMover _om;
-    private final VersionUpdater _vu;
     private final InjectableFile.Factory _factFile;
     private final SharedFolderTagFileAndIcon _sfti;
-    private final AnalyticsEventCounter _saveCounter;
     private final CoreScheduler _sched;
     private final IMapSID2SIndex _sid2sidx;
     private final ImmigrantCreator _imc;
@@ -107,28 +96,18 @@ class MightCreateOperations
 
     @Inject
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
-            VersionUpdater vu, InjectableFile.Factory factFile,
-            SharedFolderTagFileAndIcon sfti, Analytics analytics, CoreScheduler sched,
+            InjectableFile.Factory factFile, SharedFolderTagFileAndIcon sfti, CoreScheduler sched,
             IMapSID2SIndex sid2sidx, ImmigrantCreator imc, HashQueue hq)
     {
         _ds = ds;
         _oc = oc;
         _om = om;
-        _vu = vu;
         _imc = imc;
         _factFile = factFile;
         _sfti = sfti;
         _sched = sched;
         _sid2sidx = sid2sidx;
         _hq = hq;
-        _saveCounter = new AnalyticsEventCounter(analytics)
-        {
-            @Override
-            public IAnalyticsEvent createEvent(int count)
-            {
-                return new FileSavedEvent(count);
-            }
-        };
     }
 
     /**
@@ -155,17 +134,16 @@ class MightCreateOperations
 
         switch (Operation.core(ops)) {
         case CREATE:
-            createLogicalObject_(pc, fnt._dir, og, t);
-            return true;
+            return createLogicalObject_(pc, fnt._dir, og, t);
         case UPDATE:
-            Preconditions.checkNotNull(sourceSOID);
+            checkNotNull(sourceSOID);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
             if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID, pc);
             delBuffer.remove_(sourceSOID);
             return false;
         case REPLACE:
-            Preconditions.checkNotNull(targetSOID);
+            checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
             scheduleTagFileFixIfNeeded(targetSOID, pc);
             return true;
@@ -304,9 +282,12 @@ class MightCreateOperations
         OID oid = dir ? _sfti.getOIDForAnchor_(soidParent.sidx(), pc, t) : null;
         Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
         if (oid == null) oid = og.generate_(dir, pc._path);
-        _oc.create_(type, oid, soidParent, pc._path.last(), MAP, t);
-        _saveCounter.inc();
-        l.info("created {} {}", new SOID(soidParent.sidx(), oid), pc);
+        SOID soid = _oc.createMetaForLinker_(type, oid, soidParent, pc._path.last(), t);
+        l.info("created {} {}", soid, pc);
+        if (!dir) {
+            _ds.createCA_(soid, KIndex.MASTER, t);
+            applyModification_(soid, _factFile.create(pc._absPath), t);
+        }
         return true;
     }
 
@@ -361,7 +342,7 @@ class MightCreateOperations
      * @param pc target path
      * @param fnt FID and type of the physical object at the target path
      * @param sourceSOID object that was previously mapped to the physical object (via FID), if any
-     * @param targetSOID object that was previosuly mapped to the target path
+     * @param targetSOID object that was previously mapped to the target path
      */
     private void replaceObject_(PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer,
             @Nullable SOID sourceSOID, @Nonnull SOID targetSOID, Trans t) throws Exception
@@ -428,42 +409,37 @@ class MightCreateOperations
             throws IOException, SQLException
     {
         OA oa = _ds.getOA_(soid);
-        assert oa.isFile() : oa;
+        checkState(oa.isFile(), "%s", oa);
         CA ca = oa.caMasterNullable();
         InjectableFile f = _factFile.create(absPath);
 
         l.debug("detect {}, {} {}", absPath, ca, f);
 
         if (!(force || ca == null || f.wasModifiedSince(ca.mtime(), ca.length()))) {
-            l.debug("ignored {} {}", ca, f);
-            return;
-        }
-
-        final long length = f.getLength();
-        final long mtime = f.lastModified();
-        final SOKID sokid = new SOKID(soid, KIndex.MASTER);
-        if (ca == null) {
-            // The master CA is absent. This may happen when a file's metadata has been downloaded
-            // but the content hasn't been so. Create the master CA in this case.
-            l.warn("create master CA for {}", soid);
-            _ds.createCA_(soid, KIndex.MASTER, t);
-        } else if (!force && ca.length() == length) {
-            ContentHash h;
-            try {
-                h = _ds.getCAHash_(sokid);
-            } catch (ExNotFound e) {
-                throw new AssertionError(soid.toString());
-            }
-            if (h != null) {
-                l.info("recomputing hash {} {} {}", soid, ca.mtime(), mtime);
-                _hq.requestHash_(soid, f, length, mtime, h, t);
+            if (_ds.getCAHash_(new SOKID(soid, KIndex.MASTER)) != null) {
+                l.debug("ignored {} {}", ca, f);
                 return;
             }
         }
+        if (ca == null) {
+            _ds.createCA_(soid, KIndex.MASTER, t);
+        }
+        applyModification_(soid, f, t);
+    }
 
-        l.info("modify {} ({},{}) != {}", soid, length, mtime, ca);
-        _ds.setCA_(sokid, length, mtime, null, t);
-        _vu.update_(new SOCKID(soid, CID.CONTENT), t);
-        _saveCounter.inc();
+    /**
+     * @pre MASTER CA exists
+     */
+    private void applyModification_(SOID soid, InjectableFile f, Trans t)
+            throws IOException, SQLException
+    {
+        final long length = f.getLength();
+        final long mtime = f.lastModified();
+
+        if (_hq.requestHash_(soid, f, length, mtime, t)) {
+            l.info("hashing {} {} {}", soid, mtime, length);
+        } else {
+            l.debug("redundant hash req {} {} {}", soid, length, mtime);
+        }
     }
 }

@@ -518,10 +518,8 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
      * class. Instead, we fetch hashes only when needed.
      */
     @Override
-    public ContentHash getCAHash_(SOKID sokid) throws SQLException, ExNotFound
+    public ContentHash getCAHash_(SOKID sokid) throws SQLException
     {
-        OA oa = getOAThrows_(sokid.soid());
-        oa.caThrows(sokid.kidx());
         return _mdb.getCAHash_(sokid.soid(), sokid.kidx());
     }
 

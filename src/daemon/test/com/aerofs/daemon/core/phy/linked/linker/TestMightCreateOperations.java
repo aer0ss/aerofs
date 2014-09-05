@@ -8,7 +8,6 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
@@ -18,15 +17,14 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
@@ -35,8 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -65,13 +61,13 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     @Mock ObjectMover om;
     @Mock ImmigrantCreator imc;
     @Mock ObjectCreator oc;
-    @Mock VersionUpdater vu;
     @Mock InjectableFile.Factory factFile;
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock Analytics analytics;
     @Mock IDeletionBuffer delBuffer;
     @Mock SIDMap sm;
     @Mock CoreScheduler sched;
+    @Mock HashQueue hq;
 
     @InjectMocks MightCreateOperations mcop;
 
@@ -94,29 +90,20 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         // need to react to object moves
         when(imc.move_(any(SOID.class), any(SOID.class), anyString(), eq(MAP), eq(t)))
-                .thenAnswer( new Answer<SOID>() {
-                    @Override
-                    public SOID answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        Object[] args = invocation.getArguments();
-                        Path from = ds.resolve_((SOID)args[0]);
-                        Path toParent = ds.resolve_((SOID)args[1]);
-                        String name = (String)args[2];
-                        mds.move(from.toStringRelative(), toParent.append(name).toStringRelative(), t);
-                        return (SOID)args[0];
-                    }
-                }
-        );
+                .thenAnswer(invocation -> {
+                    Object[] args = invocation.getArguments();
+                    Path from = ds.resolve_((SOID)args[0]);
+                    Path toParent = ds.resolve_((SOID)args[1]);
+                    String name = (String)args[2];
+                    mds.move(from.toStringRelative(), toParent.append(name).toStringRelative(), t);
+                    return (SOID)args[0];
+                });
 
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                AbstractEBSelfHandling e = (AbstractEBSelfHandling)args[0];
-                e.handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            AbstractEBSelfHandling e = (AbstractEBSelfHandling)args[0];
+            e.handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
     }
 
@@ -182,10 +169,16 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     public void shouldCreateNewFile() throws Exception
     {
         FIDAndType fnt = generateFileFnt();
+
+        InjectableFile parent = mockPhyDir(absRootAnchor, "baz");
+        mockPhyFile(parent, "new");
+
         op("baz/new", fnt, CREATE);
 
-        verify(oc).create_(eq(FILE), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
-        verifyZeroInteractions(vu, om, delBuffer, sfti);
+        verify(oc).createMetaForLinker_(eq(FILE), any(OID.class), soidAt("baz"), eq("new"), eq(t));
+        verify(hq).requestHash_(any(SOID.class), any(InjectableFile.class), anyLong(), anyLong(),
+                eq(t));
+        verifyZeroInteractions(hq, om, delBuffer, sfti);
     }
 
     @Test
@@ -194,9 +187,9 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         FIDAndType fnt = generateDirFnt();
         op("baz/new", fnt, CREATE);
 
-        verify(oc).create_(eq(DIR), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
+        verify(oc).createMetaForLinker_(eq(DIR), any(OID.class), soidAt("baz"), eq("new"), eq(t));
         verify(sfti).getOIDForAnchor_(any(SIndex.class), any(PathCombo.class), eq(t));
-        verifyZeroInteractions(vu, om, delBuffer);
+        verifyZeroInteractions(hq, om, delBuffer);
     }
 
     @Test
@@ -210,7 +203,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         op("foo/bar/hello", fnt, UPDATE);
 
-        verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
+        verify(hq).requestHash_(eq(soid), any(InjectableFile.class), anyLong(), anyLong(), eq(t));
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, om, sfti);
     }
@@ -225,7 +218,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("foo/bar", fnt, UPDATE);
 
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om, vu, sfti);
+        verifyZeroInteractions(oc, om, hq, sfti);
     }
 
     @Test
@@ -235,13 +228,17 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateFileFnt(soid);
 
+        // hash computed when missing, even if size and mtime match
+        when(ds.getCAHash_(new SOKID(soid, KIndex.MASTER)))
+                .thenReturn(new ContentHash(new byte[ContentHash.LENGTH]));
+
         fileModified(path, "foo/hello2", false);
 
         op("foo/hello2", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, vu, sfti);
+        verifyZeroInteractions(oc, hq, sfti);
     }
 
     @Test
@@ -256,7 +253,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("foo/hello2", fnt, UPDATE);
 
         verify(imc).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
-        verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
+        verify(hq).requestHash_(eq(soid), any(InjectableFile.class), anyLong(), anyLong(), eq(t));
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, sfti);
     }
@@ -272,7 +269,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(imc).move_(eq(soid), soidAt(""), eq("qux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, vu, sfti);
+        verifyZeroInteractions(oc, hq, sfti);
     }
 
     @Test
@@ -287,7 +284,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("foo/bar/hello", fnt, REPLACE);
 
         verify(ds).setFID_(soid, fnt._fid, t);
-        verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
+        verify(hq).requestHash_(eq(soid), any(InjectableFile.class), anyLong(), anyLong(), eq(t));
         verify(delBuffer).remove_(soid);
         verifyZeroInteractions(oc, om, sfti);
     }
@@ -303,7 +300,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om, vu, sfti);
+        verifyZeroInteractions(oc, om, hq, sfti);
     }
 
     @Test
@@ -320,8 +317,10 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (3)"), eq(MAP),
                 eq(true), eq(t));
-        verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, vu, sfti);
+        verify(oc).createMetaForLinker_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(t));
+        verify(hq).requestHash_(any(SOID.class), any(InjectableFile.class), anyLong(), anyLong(),
+                eq(t));
+        verifyZeroInteractions(delBuffer, hq, sfti);
     }
 
     @Test
@@ -340,8 +339,10 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (2)"), eq(MAP),
                 eq(true), eq(t));
-        verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, vu, sfti);
+        verify(oc).createMetaForLinker_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(t));
+        verify(hq).requestHash_(any(SOID.class), any(InjectableFile.class), anyLong(), anyLong(),
+                eq(t));
+        verifyZeroInteractions(delBuffer, hq, sfti);
     }
 
     @Test
@@ -351,11 +352,16 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(path);
         FIDAndType fnt = generateFileFnt(soid);
 
+        InjectableFile parent = mockPhyDir(absRootAnchor);
+        mockPhyFile(parent, "new");
+
         op("new", fnt, CREATE, RANDOMIZE_SOURCE_FID);
 
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
-        verify(oc).create_(eq(FILE), any(OID.class), soidAt(""), eq("new"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, om, vu, sfti);
+        verify(oc).createMetaForLinker_(eq(FILE), any(OID.class), soidAt(""), eq("new"), eq(t));
+        verify(hq).requestHash_(any(SOID.class), any(InjectableFile.class), anyLong(), anyLong(),
+                eq(t));
+        verifyZeroInteractions(delBuffer, om, hq, sfti);
     }
 
     @Test
@@ -371,7 +377,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
         verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
-        verifyZeroInteractions(vu, om, oc, sfti);
+        verifyZeroInteractions(hq, om, oc, sfti);
     }
 
     @Test
@@ -389,8 +395,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
         verify(ds).setCA_(new SOKID(source, KIndex.MASTER), -1L, 0L, null, t);
         verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
-        verify(vu).update_(new SOCKID(target, CID.CONTENT), t);
-        verifyZeroInteractions(vu, om, oc, sfti);
+        verify(hq).requestHash_(eq(target), any(InjectableFile.class), anyLong(), anyLong(), eq(t));
+        verifyZeroInteractions(hq, om, oc, sfti);
     }
 
     @Test
@@ -411,7 +417,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(sched).schedule(any(IEvent.class), anyLong());
         verify(sfti).isSharedFolderRoot(sid, absPath);
         verify(sfti).fixTagFileIfNeeded_(sid, absPath);
-        verifyZeroInteractions(oc, om, vu);
+        verifyZeroInteractions(oc, om, hq);
     }
 
     @Test
@@ -433,7 +439,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(sched).schedule(any(IEvent.class), anyLong());
         verify(sfti).isSharedFolderRoot(sid, absPath);
         verify(sfti).fixTagFileIfNeeded_(sid, absPath);
-        verifyZeroInteractions(oc, om, vu);
+        verifyZeroInteractions(oc, om, hq);
     }
 
     @Test
@@ -455,6 +461,6 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(sched).schedule(any(IEvent.class), anyLong());
         verify(sfti).isSharedFolderRoot(sid, absPath);
         verify(sfti).fixTagFileIfNeeded_(sid, absPath);
-        verifyZeroInteractions(oc, om, vu);
+        verifyZeroInteractions(oc, om, hq);
     }
 }

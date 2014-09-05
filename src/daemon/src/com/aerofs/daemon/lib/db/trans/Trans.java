@@ -13,6 +13,8 @@ import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Transactions. Client should not create Transaction objects directly. Use TransManager instead.
  */
@@ -36,7 +38,12 @@ public class Trans
         @Inject
         public Factory(CoreDBCW dbcw)
         {
-            _dbcw = dbcw.get();
+            this(dbcw.get());
+        }
+
+        public Factory(IDBCW dbcw)
+        {
+            _dbcw = dbcw;
         }
 
         Trans create_(TransManager tm)
@@ -45,7 +52,7 @@ public class Trans
         }
     }
 
-    private Trans(Factory fact, TransManager tm)
+    protected Trans(Factory fact, TransManager tm)
     {
         _f = fact;
         _tm = tm;
@@ -58,7 +65,7 @@ public class Trans
      */
     public void addListener_(ITransListener l)
     {
-        assert !_ended;
+        checkState(!_ended);
         _listeners.add(l);
     }
 
@@ -68,7 +75,7 @@ public class Trans
      */
     public void end_() throws SQLException
     {
-        assert !_ended;
+        checkState(!_ended);
 
         // set _ended *before* calling methods that may throw, so that
         // TransManager#assertNoOngoingTransaction_() will not complain later if end_() throws.
@@ -133,8 +140,8 @@ public class Trans
 
     public void commit_()
     {
-        assert !_ended;
-        assert !_commit;
+        checkState(!_ended);
+        checkState(!_commit);
         _commit = true;
     }
 
