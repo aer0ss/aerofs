@@ -29,7 +29,7 @@ typeset -i days=5
 typeset -i idx=0
 typeset -i Verbose=0
 typeset -i GuiLog=0
-typeset Server=sv.aerofs.com
+typeset Server=dryad.aerofs.com
 typeset LocalPath=.
 
 DoArgs()
@@ -82,10 +82,10 @@ function DoWork
         # I hope you have GNU date! osx does...
         typeset ndate=$(date -j -v -${idx}d +20%y%m%d)
 
-        scp $Server:/data/var/svlogs_prod/archived/$uid/$did.daemon.log.$ndate.gz "$LocalPath"
+        scp $Server:/data/archived/$uid/${did}_daemon.log.$ndate.gz "$LocalPath"
         if [ $GuiLog -ne 0 ]
         then
-            scp $Server:/data/var/svlogs_prod/archived/$uid/$did.gui.log.$ndate.gz "$LocalPath"
+            scp $Server:/data/archived/$uid/${did}_gui.log.$ndate.gz "$LocalPath"
         fi
 
         let idx=$(($idx+1))
