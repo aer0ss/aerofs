@@ -197,6 +197,7 @@ import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static org.apache.commons.lang.StringUtils.defaultIfEmpty;
 
 public class SPService implements ISPService
 {
@@ -1762,7 +1763,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> sendPriorityDefectEmail(String defectID,
-            String contactEmail, String description)
+            String contactEmail, String description, @Nullable String version)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1789,9 +1790,10 @@ public class SPService implements ISPService
         } else {
             // hybrid cloud e-mail content
             body = format("\nDefect ID: %s\n" +
-                    "Contact Email: %s\n\n" +
-                    "%s",
-                    defectID, contactEmail, description);
+                            "Contact Email: %s\n" +
+                            "Version: %s\n\n" +
+                            "%s",
+                    defectID, contactEmail, defaultIfEmpty(version, "unknown"), description);
         }
 
         Email email = new Email();

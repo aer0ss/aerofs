@@ -6,6 +6,7 @@ package com.aerofs.defects;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -27,10 +28,10 @@ public class UIPriorityDefect extends PriorityDefect
 
     private final IRitualClientProvider _ritualProvider;
 
-    private UIPriorityDefect(InjectableSPBlockingClientFactory spFactory, Executor executor,
-            IRitualClientProvider ritualProvider)
+    private UIPriorityDefect(InjectableCfg cfg, InjectableSPBlockingClientFactory spFactory,
+            Executor executor, IRitualClientProvider ritualProvider)
     {
-        super(spFactory, executor);
+        super(cfg, spFactory, executor);
 
         _ritualProvider = ritualProvider;
     }
@@ -88,7 +89,8 @@ public class UIPriorityDefect extends PriorityDefect
 
         public PriorityDefect newPriorityDefect()
         {
-            return new UIPriorityDefect(newMutualAuthClientFactory(), _executor, _ritualProvider);
+            return new UIPriorityDefect(new InjectableCfg(), newMutualAuthClientFactory(),
+                    _executor, _ritualProvider);
         }
     }
 }

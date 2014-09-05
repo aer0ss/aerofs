@@ -10,8 +10,8 @@ import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -38,11 +38,14 @@ public abstract class PriorityDefect
     protected boolean   _sampleCPU;
     protected boolean _sendFilenames;
 
+    private final InjectableCfg _cfg;
     private final InjectableSPBlockingClientFactory _spFactory;
     private final Executor _executor;
 
-    protected PriorityDefect(InjectableSPBlockingClientFactory spFactory, Executor executor)
+    protected PriorityDefect(InjectableCfg cfg, InjectableSPBlockingClientFactory spFactory,
+            Executor executor)
     {
+        _cfg = cfg;
         _spFactory = spFactory;
         _executor = executor;
     }
@@ -83,7 +86,7 @@ public abstract class PriorityDefect
         _executor.execute(this::sendSyncIgnoreErrors);
     }
 
-    // overriden in UIPriorityDefect to send out notifications
+    // overridden in UIPriorityDefect to send out notifications
     public void sendSyncIgnoreErrors()
     {
         try {
@@ -101,7 +104,7 @@ public abstract class PriorityDefect
         l.info("Submitting priority defect: {}", defectID);
 
         if (_contactEmail == null) {
-            _contactEmail = Cfg.db().get(Key.CONTACT_EMAIL);
+            _contactEmail = _cfg.db().get(Key.CONTACT_EMAIL);
         } else {
             saveContactEmail(_contactEmail);
         }
@@ -128,13 +131,13 @@ public abstract class PriorityDefect
 
         _spFactory.create()
                 .signInRemote()
-                .sendPriorityDefectEmail(defectID, _contactEmail, _message);
+                .sendPriorityDefectEmail(defectID, _contactEmail, _message, _cfg.ver());
     }
 
     private void saveContactEmail(@Nonnull String contactEmail)
     {
         try {
-            Cfg.db().set(Key.CONTACT_EMAIL, contactEmail);
+            _cfg.db().set(Key.CONTACT_EMAIL, contactEmail);
         } catch (SQLException e) {
             l.warn("Failed to set contact email, ignored: " + Util.e(e));
         }

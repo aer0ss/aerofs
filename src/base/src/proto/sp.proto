@@ -1561,6 +1561,8 @@ message SendPriorityDefectEmailCall {
     required string defect_id = 1;
     required string contact_email = 2;
     required string description = 3;
+    // this is optional because backwards-compatibility
+    optional string version = 4;
 }
 
 message SetupTwoFactorCall {

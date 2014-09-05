@@ -79,7 +79,8 @@ private void setupOnSiteProperties()
     public void shouldQueueSendEmailRequestWithDefault()
             throws Exception
     {
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+                null);
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
@@ -91,12 +92,38 @@ private void setupOnSiteProperties()
     }
 
     @Test
+    public void shouldSendEmailWithVersions()
+            throws Exception
+    {
+        String[][] testCases = {
+                { "0.8.65", "Version: 0.8.65" },
+                { "", "Version: unknown" },
+                { null, "Version: unknown" }
+        };
+
+        for (String[] testCase : testCases) {
+            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+                    testCase[0]);
+
+            verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    contains(testCase[1]));
+            reset(asyncEmailSender);
+        }
+    }
+
+    @Test
     public void shouldQueueSendEmailRequestWithOnsite()
             throws Exception
     {
         setupOnSiteProperties();
 
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+                null);
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
@@ -117,13 +144,15 @@ private void setupOnSiteProperties()
         //   it must be thrown from sendDryadEmail.
         session.deauthorize();
 
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!");
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+                null);
     }
 
     @Test(expected = ExInvalidEmailAddress.class)
     public void shouldThrowOnInvalidContactEmailAddress()
             throws Exception
     {
-        service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "My plops will go on");
+        service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "My plops will go on",
+                null);
     }
 }
