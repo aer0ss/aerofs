@@ -106,7 +106,7 @@ enabled and cannot be configured.
 
 <p>AeroFS can be configured to allow mobile application setup only via a trusted Mobile Device
 Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed devices.
-<a href=https://support.aerofs.com/hc/en-us/articles/202951950 target="_blank"
+<a href="https://support.aerofs.com/hc/en-us/articles/203160690" target="_blank"
 >Read more.
 </a></p>
 
