@@ -2,9 +2,11 @@ package com.aerofs.polaris;
 
 import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
+import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIInstances;
 import com.aerofs.baseline.db.DataSources;
 import com.aerofs.baseline.db.DatabaseConfiguration;
+import com.aerofs.baseline.mappers.DBIExceptionMapper;
 import com.aerofs.polaris.dao.ObjectTypeArgument;
 import com.aerofs.polaris.dao.TransformTypeArgument;
 import com.aerofs.polaris.resources.ObjectsResource;
@@ -38,9 +40,13 @@ public final class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
-        // setup providers and resources
+        // setup providers (these are singletons)
+        addProvider(new DBIBinder(dbi));
+        addProvider(new DBIExceptionMapper());
         addProvider(new PolarisExceptionMapper());
         addProvider(new IllegalArgumentExceptionMapper());
-        // addResource(new ObjectsResource(dbi));
+
+        // setup root resources (these are managed by the container)
+        addResource(ObjectsResource.class);
     }
 }

@@ -8,8 +8,6 @@ import com.aerofs.polaris.resources.ObjectAlreadyExistsException;
 import com.aerofs.polaris.resources.ObjectNotFoundException;
 import com.aerofs.polaris.resources.ObjectUpdateFailedException;
 import com.aerofs.polaris.resources.ObjectVersionMismatchException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
@@ -17,10 +15,8 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisException> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisExceptionMapper.class);
-
     public PolarisExceptionMapper() {
-        super(false);
+        super(ErrorResponseEntity.NO_STACK_IN_RESPONSE, StackLogging.DISABLE_LOGGING);
     }
 
     protected Response.Status getResponseStatus(Throwable throwable) {
@@ -41,10 +37,5 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
         } else {
             return super.getResponseStatus(throwable);
         }
-    }
-
-    @Override
-    protected void logError(int errorNumber, Throwable cause) {
-        LOGGER.warn("request failed error:{}", errorNumber);
     }
 }
