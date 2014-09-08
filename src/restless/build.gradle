@@ -20,9 +20,10 @@ sourceSets {
 }
 
 dependencies {
-    // Guice injection depends at runtime on javax.inject
+    // Guice injection depends at runtime on javax.inject, but to make for
+    // simpler dependency inheritance, just make it a compile-time dep
     compile name: 'guice-aerofs'
-    runtime name: 'javax.inject'
+    compile 'javax.inject:javax.inject:1.0'
     // Jersey
     compile 'com.sun.jersey:jersey-core:1.17.1'
     compile 'com.sun.jersey:jersey-server:1.17.1'
