@@ -320,7 +320,6 @@ def dashboard():
     return render_template("dashboard.html",
             current_license=licenses.first(),
             appliance_version=appliance.latest_appliance_version(),
-            mobile_app_home="https://s3.amazonaws.com/aerofs.mobile"
             )
 
 @blueprint.route("/administrators", methods=["GET"])
