@@ -2,12 +2,12 @@ package com.aerofs.polaris;
 
 import com.aerofs.baseline.mappers.BaseExceptionMapper;
 import com.aerofs.polaris.api.InvalidTypeException;
-import com.aerofs.polaris.resources.InvalidObjectIDException;
+import com.aerofs.polaris.resources.AlreadyExistsException;
+import com.aerofs.polaris.resources.InvalidIDException;
 import com.aerofs.polaris.resources.NameConflictException;
-import com.aerofs.polaris.resources.ObjectAlreadyExistsException;
-import com.aerofs.polaris.resources.ObjectNotFoundException;
-import com.aerofs.polaris.resources.ObjectUpdateFailedException;
-import com.aerofs.polaris.resources.ObjectVersionMismatchException;
+import com.aerofs.polaris.resources.NotFoundException;
+import com.aerofs.polaris.resources.UpdateFailedException;
+import com.aerofs.polaris.resources.VersionMismatchException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
@@ -22,17 +22,17 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
     protected Response.Status getResponseStatus(Throwable throwable) {
         if (throwable instanceof InvalidTypeException) {
             return Response.Status.BAD_REQUEST;
-        } else if (throwable instanceof InvalidObjectIDException) {
+        } else if (throwable instanceof InvalidIDException) {
             return Response.Status.BAD_REQUEST;
-        } else if (throwable instanceof ObjectUpdateFailedException) {
+        } else if (throwable instanceof UpdateFailedException) {
             return Response.Status.BAD_REQUEST;
         } else if (throwable instanceof NameConflictException) {
             return Response.Status.CONFLICT;
-        } else if (throwable instanceof ObjectAlreadyExistsException) {
+        } else if (throwable instanceof AlreadyExistsException) {
             return Response.Status.CONFLICT;
-        } else if (throwable instanceof ObjectVersionMismatchException) {
+        } else if (throwable instanceof VersionMismatchException) {
             return Response.Status.CONFLICT;
-        } else if (throwable instanceof ObjectNotFoundException) {
+        } else if (throwable instanceof NotFoundException) {
             return Response.Status.NOT_FOUND;
         } else {
             return super.getResponseStatus(throwable);

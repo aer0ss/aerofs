@@ -54,7 +54,7 @@ public final class ObjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LogicalObject update(final Update update) throws ObjectUpdateFailedException {
+    public LogicalObject update(final Update update) throws UpdateFailedException {
         LogicalObject updated = dbi.inTransaction(new TransactionCallback<LogicalObject>() {
 
             @Override
@@ -71,12 +71,12 @@ public final class ObjectResource {
         if (updated != null) {
             return updated;
         } else {
-            throw new ObjectUpdateFailedException(oid);
+            throw new UpdateFailedException(oid);
         }
     }
 
     @Nullable
-    private LogicalObject insertChild(Handle conn, Update update) throws ObjectNotFoundException, ObjectAlreadyExistsException, NameConflictException, ObjectUpdateFailedException {
+    private LogicalObject insertChild(Handle conn, Update update) throws NotFoundException, AlreadyExistsException, NameConflictException, UpdateFailedException {
         Preconditions.checkArgument(update.child != null);
         Preconditions.checkArgument(update.childName != null);
         Preconditions.checkArgument(update.childObjectType != null);
@@ -93,19 +93,19 @@ public final class ObjectResource {
                 objectTypes.add(oid, ObjectType.ROOT);
                 parentObject = new LogicalObject(oid, oid, INITIAL_OBJECT_VERSION);
             } else {
-                throw new ObjectNotFoundException(oid);
+                throw new NotFoundException(oid);
             }
         }
 
         // check that it's something to which we can add a child
         ObjectType parentObjectType = objectTypes.get(oid);
         if (parentObjectType != ObjectType.ROOT && parentObjectType != ObjectType.FOLDER) {
-            throw new ObjectUpdateFailedException(oid);
+            throw new UpdateFailedException(oid);
         }
 
         // can't insert a child that already exists
         if (logicalObjects.get(update.child) != null) {
-            throw new ObjectAlreadyExistsException(oid, update.child);
+            throw new AlreadyExistsException(oid, update.child);
         }
 
         Children children = conn.attach(Children.class);

@@ -31,7 +31,7 @@ public final class ChangesResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Transform> getChangesSince(@QueryParam("since") final long since, @QueryParam("batchSize") final int batchSize) throws InvalidObjectIDException {
+    public List<Transform> getChangesSince(@QueryParam("since") final long since, @QueryParam("batchSize") final int batchSize) throws InvalidIDException {
         Preconditions.checkArgument(since >= 0, "since parameter %s out of range", since);
         Preconditions.checkArgument(batchSize >= 0, "batchSize parameter %s out of range", batchSize);
         Preconditions.checkArgument(batchSize <= Constants.MAX_RETURNED_TRANSFORMS, "batchSize parameter %s out of range", batchSize);
