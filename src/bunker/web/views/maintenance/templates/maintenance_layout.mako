@@ -30,7 +30,7 @@
             links = [
                 ('toggle_maintenance_mode', _("Toggle Mode")),
                 ('status', _("Service Status")),
-                ('logs', _("Server Logs")),
+                ('collect_logs', _("Collect Logs")),
                 ('upgrade', _("Upgrade")),
                 ('backup', _("Backup")),
             ]

@@ -17,16 +17,6 @@ LOG_ARCHIVE_PATH = '/opt/bootstrap/public/logs.zip'
 
 
 @view_config(
-    route_name='logs',
-    permission='maintain',
-    renderer='logs.mako'
-)
-def logs(request):
-    _log_customer_id(request)
-    return {}
-
-
-@view_config(
     route_name='logs_auto_download',
     permission='maintain',
     renderer='logs_auto_download.mako'
@@ -115,20 +105,21 @@ _OPTIONS = [_OPTION_AEROFS, _OPTION_ON_SITE]
     request_method='GET',
 )
 def collect_logs(request):
+    _log_customer_id(request)
+
     conf = get_conf(request)
 
     return {
-        'defect_id':    request.params[_FORM_PARAM_DEFECT_ID]
-        if _FORM_PARAM_DEFECT_ID in request.params else _generate_defect_id(),
+        'defect_id':    request.params.get(_FORM_PARAM_DEFECT_ID,
+                                           _generate_defect_id()),
         'users':        request.params.getall(_FORM_PARAM_USERS),
         'option':       conf[_DRYAD_OPTION_PROP],
         'email':        conf[_WWW_SUPPORT_PROP],
         'host':         conf[_DRYAD_HOST_PROP],
         'port':         conf[_DRYAD_PORT_PROP]
-        if conf[_DRYAD_PORT_PROP] != '' else 443,
+        if conf[_DRYAD_PORT_PROP] != '' else '443',
         'cert':         unformat_pem(conf[_DRYAD_CERT_PROP]),
-        'desc':         request.params[_FORM_PARAM_DESC]
-        if _FORM_PARAM_DESC in request.params else '',
+        'desc':         request.params.get(_FORM_PARAM_DESC, ''),
     }
 
 

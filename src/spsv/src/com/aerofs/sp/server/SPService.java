@@ -1781,7 +1781,7 @@ public class SPService implements ISPService
 
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             // private cloud e-mail content
-            String link = format("%s?defect_id=%s&email=%s&users=%s&desc=%s",
+            String link = format("%s?defect_id=%s&email=%s&users=%s&desc=%s#client",
                     WWW.COLLECT_LOGS_URL, urlEncode(defectID), urlEncode(contactEmail),
                     urlEncode(contactEmail), urlEncode(description));
             body = format("\n%s\n\nFollow this link to collect logs from this user:\n\n%s\n\n",

@@ -3,6 +3,7 @@
 
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="modal" file="modal.mako"/>
+<%namespace name="common" file="logs_common.mako"/>
 
 <%
     support_url = 'https://support.aerofs.com/hc/en-us/articles/202258960'
@@ -11,11 +12,29 @@
 <div class="page-block">
     <h2>Collect Logs</h2>
     <p>
-        AeroFS Support needs logs from users to solve software issues. You
-        may instruct AeroFS to collect users' logs and upload the logs to a
-        server. <a href="${support_url}">Learn more</a>
+        Logs may be helpful when things go wrong, and AeroFS Support often
+        requires logs to diagnose any issues that may arise.
     </p>
-    <hr>
+    <p>${common.submit_logs_text(True)}</p>
+    <hr/>
+</div>
+
+<div class="page-block">
+    <a name="appliance"></a><h4>Appliance Logs</h4>
+    <a href="#" class="btn btn-primary"
+            onclick="archiveAndDownloadLogs(); return false;">
+        Download Appliance Logs
+    </a>
+    <hr/>
+</div>
+
+<div class="page-block">
+    <a name="client"></a><h4>Client Logs</h4>
+    <p>
+        You can instruct the AeroFS appliance to automatically collect client
+        logs from computers running AeroFS.
+        <a href="${support_url}">Read more</a> about collecting client logs.
+    </p>
 </div>
 
 <form role="form" autocomplete="off">
@@ -99,8 +118,8 @@
         </p>
 
         <p>
-            AeroFS logs will be collected from the users' computers over the
-            next seven days.
+            AeroFS client logs will be collected from the users' computers over
+            the next seven days.
         </p>
 
         <hr>
@@ -109,7 +128,7 @@
     </%modal:modal>
 
     <div class="form-group">
-        <label for="select-users">Collect logs from these users:</label>
+        <label for="select-users">Collect client logs from these users:</label>
         <button type="button" id="select-users"
                 class="btn btn-default">Select Users</button>
     </div>
@@ -190,10 +209,14 @@
     </div>
 
     <hr/>
-    <button type="submit" class="btn btn-primary">Collect Logs</button>
+    <button type="submit" class="btn btn-primary">Collect Client Logs</button>
 </form>
 
+<%common:html/>
+
 <%block name="scripts">
+    <%common:scripts/>
+
     <script type="text/javascript">
         $(document).ready(function() {
             var $modal = $('#modal');
