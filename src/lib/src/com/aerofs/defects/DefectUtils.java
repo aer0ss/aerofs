@@ -8,6 +8,7 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
@@ -59,7 +60,7 @@ class DefectUtils
 
     static String newDefectID()
     {
-        return UUID.randomUUID().toString();
+        return UniqueID.generate().toStringFormal();
     }
 
     static String getTimeStamp()

@@ -75,7 +75,7 @@ public class TestDefect extends AbstractTest
 
         // Check the basic properties of the defect
         // TODO (GS): Check timestamp
-        assertNotNull(UUID.fromString(result.defect_id)); // check that a valid UUID was generated
+        assertEquals(32, result.defect_id.length()); // check that a valid UUID was generated
         assertEquals("defect.test", result.name);
         assertEquals("hello", result.message);
         assertEquals(Priority.Auto, result.priority);
