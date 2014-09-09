@@ -10,3 +10,16 @@ server {
         }
     }
 }
+
+server {
+    listen 443;
+    server_name <%= @triksdn %>;
+
+    location / {
+        proxy_pass http://127.0.0.1:9200/client/metrics;
+        client_max_body_size 10m;
+        limit_except PUT POST {
+            deny all;
+        }
+    }
+}

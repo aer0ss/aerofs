@@ -24,6 +24,26 @@ class rocklog(
         notify  => Service["nginx"]
     }
 
+    file {"/etc/nginx/certs/service.key":
+        ensure  => present,
+        owner   => "root",
+        group   => "root",
+        mode    => "0400",
+        source  => "puppet:///aerofs_ssl/rocklog.key",
+        require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"],
+    }
+
+    file {"/etc/nginx/certs/service.cert":
+        ensure  => present,
+        owner   => "root",
+        group   => "root",
+        mode    => "0644",
+        source  => "puppet:///aerofs_ssl/rocklog.cert",
+        require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"],
+    }
+
     file {"/etc/nginx/certs/browser.key":
         ensure  => present,
         owner   => "root",
