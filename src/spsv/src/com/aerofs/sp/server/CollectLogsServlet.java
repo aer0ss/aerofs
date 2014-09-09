@@ -105,6 +105,7 @@ public class CollectLogsServlet extends HttpServlet
 
         try {
             String defectID         = req.getParameter("defectID");
+            String version          = req.getParameter("version");
             List<UserID> userIDs    = getUsersIDs(req.getParameterValues("users"));
             boolean toOnsite        = equal(req.getParameter("option"), OPTION_ONSITE);
             String desc             = req.getParameter("desc");
@@ -121,14 +122,15 @@ public class CollectLogsServlet extends HttpServlet
                 commandMessage = createUploadLogsToOnSiteCommandMessage(defectID, getExpiryTime(),
                         hostname, port, cert);
                 enqueueCommandsForUsers(commandMessage, userIDs);
-                emailOnSiteSupport(hostname, defectID, userIDs);
+                notifyOnSiteSupport(hostname, defectID, userIDs);
             } else {
                 String email = req.getParameter("email");
 
                 commandMessage = createUploadLogsToAeroFSCommandMessage(defectID, getExpiryTime());
                 enqueueCommandsForUsers(commandMessage, userIDs);
-                emailAeroFSSupport(customerID, customerName, email, defectID, userIDs, desc);
-                emailOnSiteSupport(L.brand() + " Support", defectID, userIDs);
+                emailAeroFSSupport(customerID, customerName, email, defectID, version, userIDs,
+                        desc);
+                notifyOnSiteSupport(L.brand() + " Support", defectID, userIDs);
             }
         } catch (Exception e) {
             resp.setStatus(500);
@@ -193,7 +195,7 @@ public class CollectLogsServlet extends HttpServlet
     }
 
     // sends a confirmation e-mail to on-site support to acknowledge the command has been issued
-    private void emailOnSiteSupport(String hostname, String defectID, List<UserID> users)
+    private void notifyOnSiteSupport(String dest, String defectID, List<UserID> users)
             throws Exception
     {
         String fromName = SPParam.EMAIL_FROM_NAME;
@@ -202,11 +204,11 @@ public class CollectLogsServlet extends HttpServlet
         String subject = format("%s Problem #%s", L.brand(), defectID);
         String header = format("An administrator has issued a command to collect logs from " +
                         "%s users.", L.brand());
-        String body = format("%s logs on the following users' computers will be uploaded to %s " +
-                        "over the next seven days.\n\n" +
+        String body = format("%s client logs on the following users' computers will be uploaded " +
+                        "to %s over the next seven days.\n\n" +
                         "Defect ID: %s\n" +
                         "Users to collect logs from:\n%s\n",
-                L.brand(), hostname, defectID, formatUsersList(users));
+                L.brand(), dest, defectID, formatUsersList(users));
 
         Email email = new Email();
         email.addSection(header, body);
@@ -216,7 +218,7 @@ public class CollectLogsServlet extends HttpServlet
 
     // sends an e-mail to ZenDesk to create a support ticket
     private void emailAeroFSSupport(long customerID, String customerName, String contactEmail,
-            String defectID, List<UserID> users, String desc) throws Exception
+            String defectID, String version, List<UserID> users, String desc) throws Exception
     {
         String fromName = SPParam.EMAIL_FROM_NAME;
         // this e-mail is intended for AeroFS Support (not the on-site support), so we e-mail to
@@ -227,12 +229,14 @@ public class CollectLogsServlet extends HttpServlet
         String header = format("%s has reported an issue while using %s.", contactEmail, L.brand());
         String body = format(
                 "Defect ID: %s\n" +
+                "Version: %s\n" +
                 "Customer ID: %s\n" +
                 "Customer Name: %s\n" +
                 "Contact Email: %s\n" +
                 "Users:\n%s\n" +
                 "%s",
-                defectID, customerID, customerName, contactEmail, formatUsersList(users), desc);
+                defectID, version, customerID, customerName, contactEmail, formatUsersList(users),
+                desc);
 
         Email email = new Email();
         email.addSection(header, body);

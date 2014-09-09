@@ -9,6 +9,7 @@ from pyramid.view import view_config
 from maintenance_util import get_conf, get_conf_client, write_pem_to_file, \
     is_certificate_formatted_correctly, format_pem, unformat_pem
 from web.error import error
+from web.version import get_private_version
 
 log = logging.getLogger(__name__)
 
@@ -150,9 +151,10 @@ def json_collect_logs(request):
     _validate_collect_logs_options(request.params)
 
     payload = {
-        'defectID': request.params[_FORM_PARAM_DEFECT_ID]
+        'defectID': request.params.get(_FORM_PARAM_DEFECT_ID,
         # front-end should have prevented this; falls back gracefully anyway
-        if _FORM_PARAM_DEFECT_ID in request.params else _generate_defect_id(),
+                                       _generate_defect_id()),
+        'version':  get_private_version(request.registry.settings),
         'users':    request.params.getall(_FORM_PARAM_USERS),
         'option':   request.params[_FORM_PARAM_OPTION],
         'email':    request.params[_FORM_PARAM_EMAIL],
