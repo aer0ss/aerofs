@@ -22,19 +22,11 @@ public class TextEmail implements IEmail {
     throws IOException
     {
         if (_finalized) throw new IOException("cannot add section to a finalized email");
-        int len = header.length();
 
-        _sb.append("\n");
-
-        _sb.append(header);
-
-        _sb.append("\n");
-        for (int i =0; i < len; i++) _sb.append("=");
-        _sb.append("\n");
-
-        _sb.append("\n");
-        _sb.append(body);
-
+        _sb.append("\n")
+                .append(header)
+                .append("\n===\n\n")
+                .append(body);
     }
 
     @Override
@@ -43,12 +35,12 @@ public class TextEmail implements IEmail {
     {
         if (_finalized) throw new IOException("cannot add signature to a finalized email");
 
-        _sb.append("\n\n");
-        _sb.append(valediction);
-        _sb.append("\n" + name);
-
-        _sb.append("\n\n" + ps);
-
+        _sb.append("\n\n")
+                .append(valediction)
+                .append("\n")
+                .append(name)
+                .append("\n\n")
+                .append(ps);
     }
 
     public String getEmail() {
@@ -59,5 +51,4 @@ public class TextEmail implements IEmail {
         }
         return _sb.toString();
     }
-
 }
