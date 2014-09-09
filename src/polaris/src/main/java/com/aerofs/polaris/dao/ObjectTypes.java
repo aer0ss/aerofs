@@ -26,9 +26,12 @@ public interface ObjectTypes {
 
     public static final class ObjectTypeMapper implements ResultSetMapper<ObjectType>{
 
+        private static final int COL_OID         = 1;
+        private static final int COL_OBJECT_TYPE = 2;
+
         @Override
         public ObjectType map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            int typeId = r.getInt(1);
+            int typeId = r.getInt(COL_OBJECT_TYPE);
 
             try {
                 return ObjectType.fromTypeId(typeId);

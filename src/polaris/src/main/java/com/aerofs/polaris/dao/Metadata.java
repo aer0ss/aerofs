@@ -24,7 +24,13 @@ public interface Metadata {
     @SuppressWarnings("unused")
     void close();
 
-    final class FileMetadataMapper implements ResultSetMapper<FileMetadata> {
+    public final class FileMetadataMapper implements ResultSetMapper<FileMetadata> {
+
+        private static final int COL_OID     = 1;
+        private static final int COL_VERSION = 2;
+        private static final int COL_HASH    = 3;
+        private static final int COL_SIZE    = 4;
+        private static final int COL_MTIME   = 5;
 
         @Override
         @Nullable
@@ -32,7 +38,7 @@ public interface Metadata {
             if (!r.next()) {
                 return null;
             } else {
-                return new FileMetadata(r.getString(1), r.getLong(2), r.getString(3), r.getLong(4), r.getLong(5));
+                return new FileMetadata(r.getString(COL_OID), r.getLong(COL_VERSION), r.getString(COL_HASH), r.getLong(COL_SIZE), r.getLong(COL_MTIME));
             }
         }
     }

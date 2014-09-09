@@ -42,10 +42,10 @@ public final class Update {
 
         return expectedVersion == other.expectedVersion
                 && transformType == other.transformType
-                && (child == null ? other.child == null : child.equals(other.child))
-                && (childObjectType == null ? other.childObjectType == null : childObjectType == other.childObjectType)
-                && (childName == null ? other.childName == null : childName.equals(other.childName))
-                && (contentHash == null ? other.contentHash == null : contentHash.equals(other.contentHash))
+                && Objects.equal(child, other.child)
+                && Objects.equal(childObjectType, other.childObjectType)
+                && Objects.equal(childName, other.childName)
+                && Objects.equal(contentHash, other.contentHash)
                 && contentMtime == other.contentMtime
                 && contentSize == other.contentSize;
     }

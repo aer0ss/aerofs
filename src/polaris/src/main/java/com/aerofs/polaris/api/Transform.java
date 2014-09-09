@@ -14,7 +14,7 @@ public final class Transform {
 
     public final TransformType transformType;
 
-    public final long version;
+    public final long newVersion;
 
     @Nullable
     public final String child;
@@ -22,12 +22,12 @@ public final class Transform {
     @Nullable
     public final String childName;
 
-    public Transform(long changeId, String root, String oid, TransformType transformType, long version, @Nullable String child, @Nullable String childName) {
+    public Transform(long changeId, String root, String oid, TransformType transformType, long newVersion, @Nullable String child, @Nullable String childName) {
         this.changeId = changeId;
         this.root = root;
         this.oid = oid;
         this.transformType = transformType;
-        this.version = version;
+        this.newVersion = newVersion;
         this.child = child;
         this.childName = childName;
     }
@@ -42,14 +42,14 @@ public final class Transform {
                 && root.equals(other.root)
                 && oid.equals(other.oid)
                 && transformType == other.transformType
-                && version == other.version
-                && (child == null ? other.child == null : child.equals(other.child))
-                && (childName == null ? other.childName == null : childName.equals(other.childName));
+                && newVersion == other.newVersion
+                && Objects.equal(child, other.child)
+                && Objects.equal(childName, other.childName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(changeId, root, oid, version, transformType, child, childName);
+        return Objects.hashCode(changeId, root, oid, newVersion, transformType, child, childName);
     }
 
     @Override
@@ -60,7 +60,7 @@ public final class Transform {
                 .add("sid", root)
                 .add("oid", oid)
                 .add("transformType", transformType)
-                .add("version", version)
+                .add("newVersion", newVersion)
                 .add("child", child)
                 .add("childName", childName)
                 .toString();

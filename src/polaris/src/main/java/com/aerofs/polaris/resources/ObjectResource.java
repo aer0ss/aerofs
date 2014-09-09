@@ -1,5 +1,6 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.ObjectType;
 import com.aerofs.polaris.api.TransformType;
@@ -17,8 +18,10 @@ import org.skife.jdbi.v2.TransactionStatus;
 import javax.annotation.Nullable;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
@@ -27,10 +30,12 @@ public final class ObjectResource {
     private static final long INITIAL_OBJECT_VERSION = 0;
 
     private final DBI dbi;
+    private final ResourceContext resourceContext;
     private final String oid;
 
-    public ObjectResource(@Context DBI dbi, @PathParam("oid") String oid) {
+    public ObjectResource(@Context DBI dbi, @Context ResourceContext resourceContext, @PathParam("oid") String oid) {
         this.dbi = dbi;
+        this.resourceContext = resourceContext;
         this.oid = oid;
     }
 
@@ -39,10 +44,10 @@ public final class ObjectResource {
 //        return new VersionsResource(dbi, oid);
 //    }
 //
-//    @Path("/changes")
-//    public ChangesResource getChanges() {
-//        return new ChangesResource(dbi, oid);
-//    }
+    @Path("/changes")
+    public ChangesResource getChanges() {
+        return resourceContext.getResource(ChangesResource.class);
+    }
 
     // the following methods run within a single database transaction
 
@@ -83,7 +88,7 @@ public final class ObjectResource {
         LogicalObject parentObject = logicalObjects.get(oid);
 
         if (parentObject == null) {
-            if (isSharedFolder(oid)) {
+            if (Constants.isSharedFolder(oid)) {
                 logicalObjects.add(oid, oid, 0);
                 objectTypes.add(oid, ObjectType.ROOT);
                 parentObject = new LogicalObject(oid, oid, INITIAL_OBJECT_VERSION);
@@ -137,9 +142,5 @@ public final class ObjectResource {
 
         // return the child object
         return logicalObjects.get(update.child);
-    }
-
-    private static boolean isSharedFolder(String oid) {
-        return oid.startsWith("SF");
     }
 }

@@ -1,8 +1,6 @@
 package com.aerofs.polaris.dao;
 
-import com.aerofs.polaris.api.InvalidTypeException;
 import com.aerofs.polaris.api.LogicalObject;
-import com.aerofs.polaris.api.ObjectType;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -40,10 +38,18 @@ public interface LogicalObjects {
 
     public static final class LogicalObjectMapper implements ResultSetMapper<LogicalObject> {
 
+        private static final int COL_ROOT_OID = 1;
+        private static final int COL_OID      = 2;
+        private static final int COL_VERSION  = 3;
+
         @Override
         @Nullable
         public LogicalObject map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            return new LogicalObject(r.getString(1), r.getString(2), r.getLong(3));
+            if (!r.next()) {
+                return null;
+            } else {
+                return new LogicalObject(r.getString(COL_ROOT_OID), r.getString(COL_OID), r.getLong(COL_VERSION));
+            }
         }
     }
 }

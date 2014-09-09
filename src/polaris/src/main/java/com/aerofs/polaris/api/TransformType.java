@@ -16,7 +16,7 @@ public enum TransformType {
 
     public static TransformType fromTypeId(int typeId) throws InvalidTypeException {
         for (TransformType type : TransformType.values()) {
-            if (type.typeId == typeId) {
+            if (typeId == type.typeId) {
                 return type;
             }
         }

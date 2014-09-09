@@ -55,7 +55,7 @@ public final class FileMetadata {
         FileMetadata other = (FileMetadata) o;
         return oid.equals(other.oid)
                 && version == other.version
-                && (hash == null ? other.hash == null : hash.equals(other.hash))
+                && Objects.equal(hash, other.hash)
                 && modificationTime == other.modificationTime
                 && size == other.size;
     }
