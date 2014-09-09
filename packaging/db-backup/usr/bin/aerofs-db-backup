@@ -24,14 +24,17 @@ cp -a /opt/config/properties/external.properties aerofs-db-backup/external.prope
 
 echo ">>> Backing up verkehr persistent topics..."
 mkdir -p aerofs-db-backup/topics
-rsync -a /data/topics/. aerofs-db-backup/topics/.
+rsync --sparse -a /data/topics/. aerofs-db-backup/topics/.
 
 echo ">>> Creating backup file..."
-tar cf aerofs-db-backup.tar aerofs-db-backup/*
+# gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
+# bsd tar does not handle extracting sparse files efficiently and fills all the holes
+# takeaway: create tars with bsdtar, and extract them with gnutar
+bsdtar -Scf aerofs-db-backup.tar aerofs-db-backup/*
 gzip aerofs-db-backup.tar
 
 popd 1>/dev/null 2>/dev/null
 cp -a $tempdir/aerofs-db-backup.tar.gz .
 rm -rf $tempdir
 
-echo ">>> AeroFS databases backed up to $(pwd)/aerofs-db-backup.tar.gz"
+echo ">>> AeroFS appliance data backed up to $(pwd)/aerofs-db-backup.tar.gz"

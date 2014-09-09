@@ -4,4 +4,4 @@ Priority: required
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS database backup and restore package.
 Architecture: all
-Depends: aerofs-redis-server, mysql-server
+Depends: aerofs-redis-server, mysql-server, bsdtar, tar

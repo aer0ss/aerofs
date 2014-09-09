@@ -32,7 +32,10 @@ tempdir=$(mktemp -d /tmp/aerofs-db-backup.XXXXXXXXX)
 cp -a "$file" "$tempdir"
 
 pushd $tempdir 1>/dev/null 2>/dev/null
-tar xf $file
+# gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
+# bsd tar does not handle extracting sparse files efficiently and fills all the holes
+# takeaway: create tars with bsdtar, and extract them with gnutar
+tar --extract --sparse -f $file
 
 if [ ! -d aerofs-db-backup ]
 then
@@ -96,7 +99,7 @@ echo ">>> Restoring verkehr persistent topics..."
 if [ -d aerofs-db-backup/topics ] ; then
     rm -rf /data/topics
     mkdir -p /data/topics
-    rsync -a aerofs-db-backup/topics/. /data/topics/.
+    rsync --sparse -a aerofs-db-backup/topics/. /data/topics/.
 fi
 
 echo ">>> Restoring configuration properties..."
