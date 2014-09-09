@@ -39,11 +39,11 @@ public final class ObjectResource {
         this.oid = oid;
     }
 
-//    @Path("/versions")
-//    public VersionsResource getVersions() {
-//        return new VersionsResource(dbi, oid);
-//    }
-//
+    @Path("/versions")
+    public VersionsResource getVersions() {
+        return resourceContext.getResource(VersionsResource.class);
+    }
+
     @Path("/changes")
     public ChangesResource getChanges() {
         return resourceContext.getResource(ChangesResource.class);
