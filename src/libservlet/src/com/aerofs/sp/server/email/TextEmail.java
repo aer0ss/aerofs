@@ -25,7 +25,7 @@ public class TextEmail implements IEmail {
 
         _sb.append("\n")
                 .append(header)
-                .append("\n===\n\n")
+                .append("\n\n")
                 .append(body);
     }
 
