@@ -10,7 +10,7 @@ public final class Update {
 
     @NotNull
     @Min(0)
-    public long expectedVersion;
+    public long localVersion;
 
     @NotNull
     public TransformType transformType;
@@ -40,7 +40,7 @@ public final class Update {
 
         Update other = (Update) o;
 
-        return expectedVersion == other.expectedVersion
+        return localVersion == other.localVersion
                 && transformType == other.transformType
                 && Objects.equal(child, other.child)
                 && Objects.equal(childObjectType, other.childObjectType)
@@ -52,14 +52,14 @@ public final class Update {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(expectedVersion, child, childName, contentHash, contentMtime, contentSize, transformType, childObjectType);
+        return Objects.hashCode(localVersion, child, childName, contentHash, contentMtime, contentSize, transformType, childObjectType);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("expectedVersion", expectedVersion)
+                .add("localVersion", localVersion)
                 .add("transformType", transformType)
                 .add("child", child)
                 .add("childObjectType", childObjectType)

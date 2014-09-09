@@ -62,6 +62,8 @@ public final class ObjectResource {
                 switch (update.transformType) {
                     case INSERT_CHILD:
                         return insertChild(conn, update);
+                    case REMOVE_CHILD:
+                        return removeChild(conn, update);
                     default:
                         throw new UnsupportedTransformType(oid, update.transformType);
                 }
@@ -142,5 +144,66 @@ public final class ObjectResource {
 
         // return the child object
         return logicalObjects.get(update.child);
+    }
+
+    @Nullable
+    private LogicalObject removeChild(Handle conn, Update update) throws NotFoundException, VersionMismatchException, UpdateFailedException {
+        Preconditions.checkArgument(update.child != null);
+
+        LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
+
+        // FIXME (AG): this block of code is common
+        // this object exists
+        LogicalObject parentObject = logicalObjects.get(oid);
+        if (parentObject == null) {
+            if (Constants.isSharedFolder(oid)) {
+                logicalObjects.add(oid, oid, 0);
+                ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
+                objectTypes.add(oid, ObjectType.ROOT);
+                parentObject = new LogicalObject(oid, oid, INITIAL_OBJECT_VERSION);
+            } else {
+                throw new NotFoundException(oid);
+            }
+        }
+
+        // the server version and local version of the parent match
+        if (update.localVersion != parentObject.version) {
+            throw new VersionMismatchException(oid, update.localVersion, parentObject.version);
+        }
+
+        // the child we're removing exists
+        LogicalObject childObject = logicalObjects.get(update.child);
+        if (childObject == null) {
+            throw new NotFoundException(oid);
+        }
+
+        Children children = conn.attach(Children.class);
+
+        // the child we're removing is actually the child of this object
+        Preconditions.checkArgument(children.isChild(oid, update.child));
+
+        // check that the child we're removing has no children itself
+        if (children.countChildren(update.child) != 0) {
+            throw new UpdateFailedException(update.child);
+        }
+
+        // at this point we've done all the input checks
+        // we're ready to go ahead and actually start removing
+
+        // add a row in the transforms table
+        Transforms transforms = conn.attach(Transforms.class);
+        long newParentVersion = parentObject.version + 1;
+        transforms.add(parentObject.root, oid, TransformType.REMOVE_CHILD, newParentVersion, update.child, null);
+
+        // update the version of the parent object
+        logicalObjects.update(parentObject.root, parentObject.oid, newParentVersion);
+
+        // remove the child from the list of children
+        children.remove(oid, update.child);
+
+        // remove the child from the object table
+        logicalObjects.remove(update.child);
+
+        return parentObject;
     }
 }

@@ -20,5 +20,5 @@ Polaris is the AeroFS centralized metadata server. It is built on top of baselin
   (should throw bad request within Jersey pipeline if parameter is not explicitly nullable)
 * ExceptionMapper does not have access to the request
 * Validate JSON objects
-* JDBI exceptions should be unwrapped and the underlying exception only printed
 * Remove getXXX and setXXX for configuration objects
+* Separate baseline db code from non-db code

@@ -22,6 +22,9 @@ public interface LogicalObjects {
     @SqlUpdate("update objects set root_oid = :root_oid, version = :version where oid = :oid")
     int update(@Bind("root_oid") String root, @Bind("oid") String oid, @Bind("version") long version);
 
+    @SqlUpdate("delete from objects where oid = :oid")
+    int remove(@Bind("oid") String oid);
+
     @Nullable
     @SqlQuery("select root_oid, oid, version from objects where oid = :oid")
     LogicalObject get(@Bind("oid") String oid);
