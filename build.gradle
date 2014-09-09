@@ -180,14 +180,14 @@ subprojects {
 // tasks
 //-----------------------------------------------------------------------------
 
-task generateAllProtoClasses(type: Exec, description: "run ant to build the protobuf plugins and generate all Java and Python protobuf classes") {
+task generateAllProtoClasses(type: Exec, description: "run invoke to build the protobuf plugins and generate all Java and Python protobuf classes") {
     workingDir "${rootDir}"
-    executable 'ant'
-    args 'proto'
+    executable "python"
+    args "${rootDir}/invoke", 'build_protoc_plugins', 'proto'
 }
 
-task cleanAllProtoClasses(type: Exec, description: "run ant to delete generated Java and Python protobuf classes") {
+task cleanAllProtoClasses(type: Exec, description: "run invoke to delete generated Java and Python protobuf classes") {
     workingDir "${rootDir}"
-    executable 'ant'
-    args 'clean'
+    executable 'python'
+    args "${rootDir}/invoke", 'clean'
 }
