@@ -6,8 +6,9 @@ import hashlib
 import qrcode
 from pyramid.view import view_config
 from pyramid.response import Response
+from pyramid.exceptions import Forbidden
 
-from web.util import get_rpc_stub
+from web.util import get_rpc_stub, is_mobile_disabled
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ def get_mobile_access_code(request):
 
     Example: GET https://unified.syncfs.com/devices/get_mobile_access_code?format=qrcode
     """
+    if is_mobile_disabled(request.registry.settings):
+        raise Forbidden("mobile is disabled, cannot generate access codes")
 
     # Parse arguments
     token_format = request.params.get('format')

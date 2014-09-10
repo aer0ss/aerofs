@@ -3,13 +3,25 @@
 <%! page_title = "AeroFS for Mobile Devices" %>
 
 <%!
-    from web.util import is_private_deployment
+    from web.util import is_private_deployment, is_mobile_disabled
+%>
+
+<%
+    support_email = request.registry.settings.get("base.www.support_email_address", False)
 %>
 
 <div class="page-block">
     <h2>AeroFS for Mobile Devices</h2>
-    <p>Ready to set up AeroFS on your mobile device?</p>
+    %if is_mobile_disabled(request.registry.settings):
+        <p>Your administrator has disabled mobile access to AeroFS.</p>
+        <br/>
+        <p>Please contact ${support_email} with any requests for mobile access to AeroFS.</p>
+    %else:
+        <p>Ready to set up AeroFS on your mobile device?</p>
+    %endif
 </div>
+
+%if not is_mobile_disabled(request.registry.settings):
 
 <ol>
 %if not is_private_deployment(request.registry.settings):
@@ -39,6 +51,8 @@
     <div id="result"></div>
 </li>
 </ol>
+
+%endif
 
 <%block name="scripts">
     <script>

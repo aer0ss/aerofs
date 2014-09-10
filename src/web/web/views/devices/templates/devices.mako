@@ -1,6 +1,10 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "My Devices" %>
 
+<%!
+    from web.util import is_mobile_disabled
+%>
+
 <%block name="css">
     <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
 </%block>
@@ -29,6 +33,8 @@
     <p>
     %if are_team_servers:
        <a href="${request.route_path('download_team_server')}">Install the Team Server app</a>
+    %elif is_mobile_disabled(request.registry.settings):
+        Add new devices by installing <a href="${request.route_path('download')}">desktop apps</a>.
     %else:
         Add new devices by installing <a href="${request.route_path('download')}">desktop</a> or
         <a href="${request.route_path('add_mobile_device')}">mobile</a> apps.

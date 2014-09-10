@@ -184,6 +184,10 @@ def str2bool(v):
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 
+def is_mobile_disabled(settings):
+    # only true if on private deployment
+    return is_private_deployment(settings) and str2bool(settings.get('web.disable_download_mobile_client', False))
+
 def is_linksharing_enabled(settings):
     return str2bool(settings.get('url_sharing.enabled', True));
 

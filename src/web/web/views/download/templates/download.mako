@@ -5,6 +5,10 @@
     <link href="${request.static_path('web:static/css/download.css')}" rel="stylesheet">
 </%block>
 
+<%!
+    from web.util import is_mobile_disabled
+%>
+
 <%
     if is_team_server:
         program = 'Team Server'
@@ -84,7 +88,7 @@
             os_names[also_available[1]])
     %>
     Also available for
-    %if is_team_server:
+    %if is_team_server or is_mobile_disabled(request.registry.settings):
         ${avail1 | n} and ${avail2 | n}.
     %else:
         ${avail1 | n}, ${avail2 | n}, and
