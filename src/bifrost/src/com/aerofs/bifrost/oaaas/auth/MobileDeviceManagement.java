@@ -68,7 +68,7 @@ public class MobileDeviceManagement
                     return true;
                 }
             } catch (IllegalArgumentException e) {
-                l.warn("Mobile Device Management only supports IPv4 addresses");
+                l.warn("Mobile Device Management Support is only compatible with IPv4 addresses");
                 return false;
             }
         }

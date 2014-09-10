@@ -206,14 +206,17 @@ public class TokenResource
         if(MobileDeviceManagement.isMDMEnabled() && hasMobileClientId(accessTokenRequest.getClientId())) {
             List<String> realIPVals = headers.getRequestHeader(X_REAL_IP);
             if (realIPVals == null) {
+                l.error("denied mobile client's create token request with missing IP, should have been set by nginx");
                 return sendErrorResponse(ValidationResponse.MISSING_X_REAL_IP);
             }
             String remoteIP = realIPVals.get(0);
+            l.debug("got a mobile token request from real ip: {}", remoteIP);
             if (!MobileDeviceManagement.isWhitelistedIP(remoteIP)) {
                 l.info("denied mobile client in create token request from non-whitelisted IP: {}",
                         remoteIP);
                 return sendErrorResponse(ValidationResponse.FAIL_IP_WHITELIST);
             }
+            l.info("mobile client create token request from whitelisted IP: {}", remoteIP);
         }
 
         ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);

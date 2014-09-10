@@ -95,7 +95,7 @@ public interface OAuth2Validator {
 
     INVALID_GRANT_REFRESH_TOKEN("invalid_grant", "The refresh token is invalid"),
 
-    FAIL_IP_WHITELIST("invalid_grant", "Did not come from a trusted IP of Mobile Device Management"),
+    FAIL_IP_WHITELIST("invalid_grant", "Did not come from a trusted IP of Mobile Device Management Support"),
 
     MISSING_X_REAL_IP("invalid_request", "Malformed request could not find remote address");
 
