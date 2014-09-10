@@ -89,6 +89,8 @@ public class GetUsersServlet extends HttpServlet
             }
         } while (userIDs.size() >= pageSize);
 
+        users.add(PRIVATE_ORGANIZATION.toTeamServerUserID().getString());
+
         return users;
     }
 

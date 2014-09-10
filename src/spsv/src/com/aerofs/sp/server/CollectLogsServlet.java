@@ -248,7 +248,8 @@ public class CollectLogsServlet extends HttpServlet
     {
         StringBuilder sb = new StringBuilder();
         for (UserID user : users) {
-            sb.append(user.getString()).append("\n");
+            sb.append(user.isTeamServerID() ? "Team Server" : user.getString())
+                    .append("\n");
         }
         return sb.toString();
     }
