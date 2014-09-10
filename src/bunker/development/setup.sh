@@ -23,7 +23,7 @@ fi
 virtualenv "$ENV"
 
 # Install bunker's dependencies in virtualenv
-"$ENV/bin/pip" install --requirement ${SRC_ROOT}/bunker/requirements.txt
+"$ENV/bin/pip" install --requirement ${SRC_ROOT}/bunker/requirements-exact.txt
 
 # Install links for python-lib and bunker
 "$ENV/bin/pip" install --editable "$SRC_ROOT/python-lib"
