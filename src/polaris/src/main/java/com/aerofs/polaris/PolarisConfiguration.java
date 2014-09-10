@@ -1,6 +1,6 @@
 package com.aerofs.polaris;
 
-import com.aerofs.baseline.Configuration;
+import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.google.common.base.Objects;
 
