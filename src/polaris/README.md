@@ -22,3 +22,5 @@ Polaris is the AeroFS centralized metadata server. It is built on top of baselin
 * Validate JSON objects
 * Remove getXXX and setXXX for configuration objects
 * Separate baseline db code from non-db code
+* Disable OSGI on startup
+* Specify application request executor
