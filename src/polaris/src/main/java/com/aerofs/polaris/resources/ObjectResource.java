@@ -7,6 +7,7 @@ import com.aerofs.polaris.api.TransformType;
 import com.aerofs.polaris.api.Update;
 import com.aerofs.polaris.dao.Children;
 import com.aerofs.polaris.dao.LogicalObjects;
+import com.aerofs.polaris.dao.Metadata;
 import com.aerofs.polaris.dao.ObjectTypes;
 import com.aerofs.polaris.dao.Transforms;
 import com.google.common.base.Preconditions;
@@ -64,6 +65,8 @@ public final class ObjectResource {
                         return insertChild(conn, update);
                     case REMOVE_CHILD:
                         return removeChild(conn, update);
+                    case MAKE_CONTENT:
+                        return makeContent(conn, update);
                     default:
                         throw new UnsupportedTransformType(oid, update.transformType);
                 }
@@ -204,6 +207,51 @@ public final class ObjectResource {
         // remove the child from the object table
         logicalObjects.remove(update.child);
 
-        return parentObject;
+        // return the latest version of the parent object
+        return logicalObjects.get(oid);
+    }
+
+    private LogicalObject makeContent(Handle conn, Update update) throws NotFoundException, VersionMismatchException {
+        Preconditions.checkArgument(update.contentHash != null);
+        Preconditions.checkArgument(!update.contentHash.isEmpty());
+        Preconditions.checkArgument(update.contentSize > 0);
+        Preconditions.checkArgument(update.contentMtime > 0);
+
+        LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
+
+        // check that the object exists
+        LogicalObject logicalObject = logicalObjects.get(oid);
+        if (logicalObject == null) {
+            throw new NotFoundException(oid);
+        }
+
+        // check that we're trying to add content for a file
+        ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
+        ObjectType objectType = objectTypes.get(oid);
+        Preconditions.checkArgument(objectType == ObjectType.FILE, "cannot add content for %s type", objectType);
+
+        // check that we're at the right version
+        if (update.localVersion != logicalObject.version) {
+            throw new VersionMismatchException(oid, update.localVersion, logicalObject.version);
+        }
+
+        // this file exists with a matching version
+        // at this point we can safely add content
+
+        long newObjectVersion = logicalObject.version + 1;
+
+        // add an entry in the transforms table
+        Transforms transforms = conn.attach(Transforms.class);
+        transforms.add(logicalObject.root, oid, TransformType.MAKE_CONTENT, newObjectVersion, null, null);
+
+        // add a row to the content table
+        Metadata metadata = conn.attach(Metadata.class);
+        metadata.add(oid, newObjectVersion, update.contentHash, update.contentSize, update.contentMtime);
+
+        // update the version for the object
+        logicalObjects.update(logicalObject.root, oid, newObjectVersion);
+
+        // return the latest version of the object
+        return logicalObjects.get(oid);
     }
 }

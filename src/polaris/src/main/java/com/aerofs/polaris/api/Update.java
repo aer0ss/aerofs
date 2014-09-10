@@ -28,10 +28,11 @@ public final class Update {
     public String contentHash;
 
     @Min(0)
-    public long contentMtime;
+    public long contentSize;
 
     @Min(0)
-    public long contentSize;
+    public long contentMtime;
+
 
     @Override
     public boolean equals(@Nullable Object o) {
@@ -46,13 +47,13 @@ public final class Update {
                 && Objects.equal(childObjectType, other.childObjectType)
                 && Objects.equal(childName, other.childName)
                 && Objects.equal(contentHash, other.contentHash)
-                && contentMtime == other.contentMtime
-                && contentSize == other.contentSize;
+                && contentSize == other.contentSize
+                && contentMtime == other.contentMtime;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(localVersion, child, childName, contentHash, contentMtime, contentSize, transformType, childObjectType);
+        return Objects.hashCode(localVersion, transformType, child, childObjectType, childName, contentHash, contentSize, contentMtime);
     }
 
     @Override
@@ -65,8 +66,8 @@ public final class Update {
                 .add("childObjectType", childObjectType)
                 .add("childName", childName)
                 .add("contentHash", contentHash)
-                .add("contentMtime", contentMtime)
                 .add("contentSize", contentSize)
+                .add("contentMtime", contentMtime)
                 .toString();
     }
 }
