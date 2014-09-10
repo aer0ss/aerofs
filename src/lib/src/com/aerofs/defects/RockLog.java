@@ -7,13 +7,20 @@ package com.aerofs.defects;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 
 public class RockLog
 {
@@ -47,19 +54,31 @@ public class RockLog
     }
 
     private HttpURLConnection getRockLogConnection(String url)
-            throws IOException
+            throws IOException, GeneralSecurityException
     {
-        URL rocklogURL = new URL(url);
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
 
-        HttpURLConnection rocklogConnection = (HttpURLConnection) rocklogURL.openConnection();
-        rocklogConnection.setUseCaches(false);
-        rocklogConnection.setConnectTimeout(SOCKET_TIMEOUT);
-        rocklogConnection.setReadTimeout(SOCKET_TIMEOUT);
-        rocklogConnection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json");
-        rocklogConnection.setDoOutput(true);
-        rocklogConnection.connect();
+        // FIXME (AT): we need to support http connection for TestRockLog
+        if (conn instanceof HttpsURLConnection) {
+            ((HttpsURLConnection)conn).setSSLSocketFactory(createSSLContext().getSocketFactory());
+        }
 
-        return rocklogConnection;
+        conn.setUseCaches(false);
+        conn.setConnectTimeout(SOCKET_TIMEOUT);
+        conn.setReadTimeout(SOCKET_TIMEOUT);
+        conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json");
+        conn.setDoOutput(true);
+        conn.connect();
+
+        return conn;
+    }
+
+    private SSLContext createSSLContext()
+            throws IOException, GeneralSecurityException
+    {
+        return new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
+                new CfgCACertificateProvider(), null)
+                .getSSLContext();
     }
 
     public static class Noop extends RockLog

@@ -51,6 +51,8 @@ public class DryadClientUtil
     private static SSLContext createPublicDryadSSLContext()
             throws IOException, GeneralSecurityException
     {
+        // FIXME (AT): remove overwriting cacert.pem, delete aerofs_public_cacert.pem, and then
+        //   just read from cacert.pem
         return createSSLContext(new FileBasedCertificateProvider(
                 new File(AppRoot.abs(), "aerofs_public_cacert.pem").getAbsolutePath()));
     }

@@ -46,6 +46,10 @@ public class TestRockLog extends AbstractTest
     @Before
     public void setUp()
     {
+        // even though we are posting over https on HC, it's not meaningful for us to spin up a
+        // https server for test purpose. The main reason for that is the SSL handshakes are handled
+        // by nginx, not Java, in HC. So we don't actually improve coverage by running a https
+        // server in this test.
         _server = new HttpServerTest(TEST_PORT);
         _server.startAndWait();
     }

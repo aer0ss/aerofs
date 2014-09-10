@@ -137,7 +137,7 @@ public class DefectFactory
             dryad = new DryadClient.Noop();
         } else {
             rockLog = new RockLog(
-                    getStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com"),
+                    getStringProperty("lib.rocklog.url", "https://rocklog.aerofs.com"),
                     new Gson());
             dryad = createPublicDryadClient();
         }
