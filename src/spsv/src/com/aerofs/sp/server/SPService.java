@@ -1763,7 +1763,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> sendPriorityDefectEmail(String defectID,
-            String contactEmail, String description, @Nullable String version)
+            String contactEmail, String description, @Nullable String version,
+            @Nullable ByteString deviceID)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1788,12 +1789,21 @@ public class SPService implements ISPService
             body = format("\n%s\n\nFollow this link to collect logs from this user:\n\n%s\n\n",
                     description, link);
         } else {
+            String strDeviceID;
+            try {
+                strDeviceID = DID.fromExternal(deviceID.toByteArray()).toStringFormal();
+            } catch (Exception e) {
+                strDeviceID = "unknown";
+            }
+
             // hybrid cloud e-mail content
             body = format("\nDefect ID: %s\n" +
                             "Contact Email: %s\n" +
+                            "Device ID: %s\n" +
                             "Version: %s\n\n" +
                             "%s",
-                    defectID, contactEmail, defaultIfEmpty(version, "unknown"), description);
+                    defectID, contactEmail, strDeviceID,
+                    defaultIfEmpty(version, "unknown"), description);
         }
 
         Email email = new Email();

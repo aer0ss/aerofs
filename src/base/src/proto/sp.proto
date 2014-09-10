@@ -1563,6 +1563,7 @@ message SendPriorityDefectEmailCall {
     required string description = 3;
     // this is optional because backwards-compatibility
     optional string version = 4;
+    optional bytes device_id = 5;
 }
 
 message SetupTwoFactorCall {

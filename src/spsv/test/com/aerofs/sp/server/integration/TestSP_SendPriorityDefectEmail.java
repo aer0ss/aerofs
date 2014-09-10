@@ -7,6 +7,8 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.LicenseProperties;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -14,6 +16,7 @@ import com.aerofs.proto.Common.Void;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,7 +31,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
 
     private static final String DEFECT_ID = "0000deadbeef00000000deadbeef0000";
 
-private void setupOnSiteProperties()
+    private void setupOnSiteProperties()
             throws Exception
     {
         // back up the previous support e-mail address
@@ -80,7 +83,7 @@ private void setupOnSiteProperties()
             throws Exception
     {
         service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                null);
+                "100.0.0", DID.ZERO);
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
@@ -96,14 +99,18 @@ private void setupOnSiteProperties()
             throws Exception
     {
         String[][] testCases = {
-                { "0.8.65", "Version: 0.8.65" },
-                { "", "Version: unknown" },
-                { null, "Version: unknown" }
+                { "0.8.65", "0.8.65" },
+                { "100.0.0", "100.0.0" },
+                { "", "unknown" },
+                { null, "unknown" }
         };
 
         for (String[] testCase : testCases) {
+            String version = testCase[0];
+            String expected = "Version: " + testCase[1];
+
             service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                    testCase[0]);
+                    version, null);
 
             verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                     anyString(),
@@ -111,7 +118,41 @@ private void setupOnSiteProperties()
                     anyString(),
                     anyString(),
                     anyString(),
-                    contains(testCase[1]));
+                    contains(expected));
+            reset(asyncEmailSender);
+        }
+    }
+
+    @Test
+    public void shouldSendEmailWithDeviceID()
+            throws Exception
+    {
+        Object[][] testCases = {
+                { UniqueID.ZERO, "00000000000000000000000000000000" },
+                { DID.fromStringFormal("feedbeef31415926deadbead11111111"),
+                        "feedbeef31415926deadbead11111111" },
+                // NOTE: 0x30 is the UTF-8 for the character 0
+                { ByteString.copyFromUtf8("0000000000000000"), "30303030303030303030303030303030" },
+                { ByteString.copyFromUtf8("did1 in disguise"), "6469643120696e206469736775697365" },
+                { null, "unknown" },
+                { ByteString.copyFromUtf8(""), "unknown" },
+                { ByteString.copyFromUtf8("rogue did"), "unknown" },
+        };
+
+        for (Object[] testCase : testCases) {
+            ByteString input = (ByteString) testCase[0];
+            String expected = "Device ID: " + testCase[1];
+
+            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com",
+                    "Plops are for closers!", "100.0.0", input);
+
+            verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    anyString(),
+                    contains(expected));
             reset(asyncEmailSender);
         }
     }
@@ -123,7 +164,7 @@ private void setupOnSiteProperties()
         setupOnSiteProperties();
 
         service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                null);
+                null, null);
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
@@ -145,7 +186,7 @@ private void setupOnSiteProperties()
         session.deauthorize();
 
         service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                null);
+                null, null);
     }
 
     @Test(expected = ExInvalidEmailAddress.class)
@@ -153,6 +194,6 @@ private void setupOnSiteProperties()
             throws Exception
     {
         service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "My plops will go on",
-                null);
+                null, null);
     }
 }
