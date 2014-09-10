@@ -22,6 +22,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
@@ -31,7 +33,8 @@ import static com.aerofs.dryad.LogStore.DIR_DEFECTS;
 @Path(Service.VERSION + "/")
 public class LogsResource
 {
-    private final Logger l = LoggerFactory.getLogger(LogsResource.class);
+    private static final Logger l = LoggerFactory.getLogger(LogsResource.class);
+    private static final Pattern ID_FORMAT = Pattern.compile("^[0-9a-fA-F]{32}$");
 
     private final LogStore _logStore;
     private final UserBlacklist _userBlacklist;
@@ -57,7 +60,7 @@ public class LogsResource
     {
         l.info("PUT {}", _uriInfo.getPath());
 
-        throwIfInvalid(defectID);
+        throwIfInvalidDefectID(defectID);
 
         String filePath = format("%s/%s/appliance.zip", DIR_DEFECTS, defectID);
         l.info("Saving defect {}/appliance to {}", defectID, filePath);
@@ -79,7 +82,8 @@ public class LogsResource
 
         _userBlacklist.throwIfBlacklisted(userID);
         _deviceBlacklist.throwIfBlacklisted(deviceID);
-        throwIfInvalid(defectID, userID, deviceID);
+        throwIfInvalidDefectID(defectID);
+        throwIfInvalid(userID, deviceID);
 
         String filePath = format("%s/%s/%s_%s.zip", DIR_DEFECTS, defectID, userID, deviceID);
         l.info("Saving defect {}/client to {}", defectID, filePath);
@@ -124,8 +128,18 @@ public class LogsResource
             throws IllegalArgumentException
     {
         for (String arg : args) {
-            checkArgument(!arg.equals("..") && !arg.contains("/"),
+            checkArgument(!arg.equals("..") && !arg.equals(".") && !arg.contains("/"),
                     format("Invalid argument: %s", arg));
         }
+    }
+
+    private void throwIfInvalidDefectID(String defectID)
+            throws IllegalArgumentException
+    {
+        // new defect ID format.
+        if (ID_FORMAT.matcher(defectID).matches()) return;
+
+        // old defect ID format, this throws IllegalArgumentException if invalid
+        UUID.fromString(defectID);
     }
 }
