@@ -1,0 +1,23 @@
+app:
+  host: 0.0.0.0
+  port: 9999
+
+admin:
+  host: localhost
+  port: 8888
+
+database:
+  username: polaris
+  password: password
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost/polaris
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: true
+
+  file:
+    enabled: true
+    logfile: /var/log/polaris/polaris.log

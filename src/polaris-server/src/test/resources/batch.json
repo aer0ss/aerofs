@@ -1,0 +1,21 @@
+{
+    "atomic" : false,
+    "batchOperations" : [
+        {
+            "oid" : "OID_PARENT_0",
+            "update" : {
+                "localVersion" : 0,
+                "transformType" : "REMOVE_CHILD",
+                "child" : "OID0"
+            }
+        },
+        {
+            "oid" : "OID_PARENT_0",
+            "update" : {
+                "localVersion" : 1,
+                "transformType" : "INSERT_CHILD",
+                "child" : "OID1"
+            }
+        }
+    ]
+}

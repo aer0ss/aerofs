@@ -1,2 +1,5 @@
 /.metadata
 aerofsd-build*
+.idea
+polaris/build
+baseline/build
