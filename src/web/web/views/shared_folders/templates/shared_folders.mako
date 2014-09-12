@@ -1,7 +1,6 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "Shared Folders" %>
 
-<%namespace name="shared_folder_modals" file="shared_folder_modals.mako" />
 <%namespace name="spinner" file="spinner.mako"/>
 
 <%block name="css">
