@@ -21,9 +21,9 @@
                     </div>
                     <div class="my-table-body">
                         <div ng-repeat="folder in folders" class="my-row row">
-                            <div class="col-sm-3 col-xs-12"><strong class="visible-xs">{{folder.name}}</strong><span class="hidden-xs">{{folder.name}}</span></div>
-                            <div class="col-sm-3 col-xs-4"><strong class="visible-xs">Owners: </strong>{{folder.people|byRole:"Owner"|myMembers}}</div>
-                            <div class="col-sm-4 col-xs-4"><strong class="visible-xs">Members: </strong>{{folder.people|byRole:"Member"|myMembers}}</div>
+                            <div class="col-sm-3 col-xs-12" ng-cloak><strong class="visible-xs">{{folder.name}}</strong><span class="hidden-xs">{{folder.name}}</span></div>
+                            <div class="col-sm-3 col-xs-4" ng-cloak><strong class="visible-xs">Owners: </strong>{{folder.people|byRole:"Owner"|myMembers}}</div>
+                            <div class="col-sm-4 col-xs-4" ng-cloak><strong class="visible-xs">Members: </strong>{{folder.people|byRole:"Member"|myMembers}}</div>
 
                             <div class="col-sm-2 col-xs-4" id="folder-{{folder.spinnerID}}">
                                 <span class="folder-spinner pull-left">&nbsp;</span>
@@ -62,7 +62,7 @@
             </div>
         </div>
         <br>
-        <div class="pagination pull-right" ng-hide="pages.length < 2">
+        <div class="pagination pull-right" ng-show="pages.length > 1" ng-cloak>
             <a ng-hide="getCurrentPage() === 1" ng-click="showPage(getCurrentPage()-1)">&laquo;</a>
             <span ng-show="getCurrentPage() === 1">&laquo;</span>
             <span ng-repeat="number in pages">
@@ -73,7 +73,7 @@
             <span ng-show="getCurrentPage() === pages.length">&raquo;</span>
         </div>
         <br><br>
-        <div class="row" ng-show="leftFolders.length > 0">
+        <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
             <div class="col-sm-12">
                 <h2>Left folders</h2>
                 <div class="my-table">
@@ -96,9 +96,12 @@
     </div>
 </div>
 
+<%block name="head_scripts">
+    <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
+</%block>
+
 <%block name="scripts">
     <%spinner:scripts/>
-    <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script type="text/javascript">
         dataUrl = "${data_url}";

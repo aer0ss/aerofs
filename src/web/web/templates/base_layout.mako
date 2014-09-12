@@ -115,6 +115,8 @@
     </%block>
 
     <%block name="page_view_tracker"/>
+
+    <%block name="head_scripts"/>
 </head>
 
 <body>
