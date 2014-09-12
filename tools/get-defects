@@ -2,76 +2,70 @@
 # This script retrives defect log files and retrace them
 set -eu
 
-if [ $# -lt 3 ]; then
-    echo "usage: $0 public|private [version] [defect # (multiple, space separated)]"
+if [ $# -eq 0 ]; then
+    echo "usage: $0 [defect # (multiple, space separated)]"
     echo
-    echo "example: $0 public 0.2.37 6308 6310 6317"
+    echo "example: $0 ff8b799e-75dd-4f71-ac72-48a61cad9f0an"
     exit 1
 fi
 
-MODE="$1"
-VER="$2"
-shift 
-shift
 DEFECTS="$@"
 
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-MAP_FILE="$BASE"/"aerofs-$VER-$MODE.map"
 
 retrace()
 {
     FOLDER=$1
     PROGRAM=$2
-
-    LANG=C sed -i '' 's/^  /   at /g' "$FOLDER/$PROGRAM.log"
-    LANG=C sed -i '' 's/at at/at/g' "$FOLDER/$PROGRAM.log"
-
-    mv "$FOLDER/$PROGRAM.log" "$FOLDER/obfuscated.$PROGRAM.log"
-    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$FOLDER/obfuscated.$PROGRAM.log" > "$FOLDER/$PROGRAM.log"
+    ${BASE}/retrace_v2.py rl "$FOLDER/$PROGRAM.log"
 }
 
 main()
 {
-    $BASE/get-map $MODE $VER $BASE
-
     for DEFECT in $DEFECTS; do
         TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd
         if [[ -e "$TARGET_FOLDER" ]]; then
             echo "$TARGET_FOLDER already exists"
             continue
         fi
-        ZIP_FILE="log.defect-$DEFECT.zip"
-        scp sv.aerofs.com:/var/svlogs_prod/defect/"$ZIP_FILE" .
-        mkdir "$TARGET_FOLDER"
-        unzip -o "$ZIP_FILE" -d "$TARGET_FOLDER"
-        rm "$ZIP_FILE"
 
-        echo "Retracing logs for $DEFECT"
+        scp -r dryad.aerofs.com:/data/defects/$DEFECT $TARGET_FOLDER
 
-        for i in daemon cli gui; do
-            if [ -f "$TARGET_FOLDER/$i.log" ]; then
-                retrace "$TARGET_FOLDER" $i
-            fi
-        done
+        for file in "$TARGET_FOLDER"/*.zip
+        do
+            echo $file
+            typeset destdir=${file%%.zip}
+            mkdir -p $destdir ||:
+            unzip -o "$file" -d "$destdir"
+            rm $file
 
-        if [ ! -z "$(ls $TARGET_FOLDER/name*map 2>/dev/null)" ]
-        then
-            echo "Reverse crc logs for $DEFECT"
+            echo "Retracing logs for $DEFECT"
 
             for i in daemon cli gui; do
-                if [ -f "$TARGET_FOLDER/$i.log" ]; then
-                    mv "$TARGET_FOLDER/$i.log" "$TARGET_FOLDER/unmapped.$i.log"
-
-                    cat "$TARGET_FOLDER/unmapped.$i.log" | \
-                        ${BASE}/reverse-crc/reverse-crc.py -f $(ls "$TARGET_FOLDER/name"*"map") > \
-                        "$TARGET_FOLDER/$i.log"
+                if [ -f "$destdir/$i.log" ]; then
+                    retrace "$destdir" $i
                 fi
             done
-        fi
 
-        rm -f "$TARGET_FOLDER/obfuscated"*
-        rm -f "$TARGET_FOLDER/unmapped"*
-        rm -f "$TARGET_FOLDER/name"*"map"
+            if [ ! -z "$(ls $destdir/name*map 2>/dev/null)" ]
+            then
+                echo "Reverse crc logs for $DEFECT"
+
+                for i in daemon cli gui; do
+                    if [ -f "$destdir/$i.log" ]; then
+                        mv "$destdir/$i.log" "$destdir/unmapped.$i.log"
+
+                        cat "$destdir/unmapped.$i.log" | \
+                            ${BASE}/reverse-crc/reverse-crc.py -f $(ls "$destdir/name"*"map") > \
+                            "$destdir/$i.log"
+                    fi
+                done
+            fi
+
+            rm -f "$destdir/obfuscated"*
+            rm -f "$destdir/unmapped"*
+            rm -f "$destdir/name"*"map"
+        done
     done
 
     echo "Done"
