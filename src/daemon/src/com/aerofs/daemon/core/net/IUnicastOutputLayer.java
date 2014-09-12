@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 public interface IUnicastOutputLayer
 {
-    void sendUnicastDatagram_(byte[] bs, @Nullable IResultWaiter sendCallback, Endpoint ep)
+    void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws Exception;
 
     void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)

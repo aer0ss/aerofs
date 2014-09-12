@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.Cfg;
@@ -21,7 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -132,7 +130,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
         switch (o.getType()) {
         case UNICAST:
-            _lower.sendUnicastDatagram_(o.serialize(), o.getSendCallback(), o.getEndpoint());
+            _lower.sendUnicastDatagram_(o.serialize(), o.getEndpoint());
             break;
         case STREAM_BEGIN:
         case STREAM_CHUNK:
@@ -176,12 +174,12 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     //
 
     @Override
-    public void sendUnicastDatagram_(byte[] bs, @Nullable IResultWaiter sendCallback, Endpoint ep)
+    public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
             throws Exception
     {
         l.trace("send datagram {}", ep);
 
-        Outgoing o = new Outgoing(bs, ep, sendCallback);
+        Outgoing o = new Outgoing(bs, ep);
         process_(o, TC.currentThreadPrio());
     }
 

@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;
@@ -23,8 +22,6 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-
-import javax.annotation.Nullable;
 
 public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
@@ -64,14 +61,12 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     }
 
     @Override
-    public void sendUnicastDatagram_(byte[] bs, @Nullable IResultWaiter sendCallback, Endpoint ep)
+    public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws ExNoResource
     {
         _f._dlru.addDevice_(ep.did());
 
         EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
-        if (sendCallback != null) ev.setWaiter(sendCallback);
-
         ep.tp().q().enqueueThrows(ev, TC.currentThreadPrio());
     }
 

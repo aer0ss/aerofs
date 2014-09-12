@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -21,8 +20,6 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Core.PBCore;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -124,7 +121,7 @@ public class TransportRoutingLayer
         }
 
         l.debug("{} -> uc {},{} over {}", ep.did(), type, rpcid, ep.tp());
-        sendPacketWithFailureCallback_(ep, bs);
+        _stack.output().sendUnicastDatagram_(bs, ep);
 
         return true;
     }
@@ -142,44 +139,5 @@ public class TransportRoutingLayer
             if (!tp.supportsMulticast()) continue;
             tp.q().enqueueThrows(ev, TC.currentThreadPrio());
         }
-    }
-
-    // [sigh] ugh
-    //
-    // this code is brittle - there are timing issues here
-    // it's possible for the waiter to get triggered and for
-    // the (device, transport) to be placed into the "pulsing" state
-    // meanwhile, the connection could actually be set up
-    // properly in the transport layer. this could result in a brief
-    // period in which the core believes that the transport is
-    // being pulsed while the actual transport connection is fine.
-    //
-    // plus, this code is horrendous. I hate myself.
-    private void sendPacketWithFailureCallback_(final Endpoint ep, byte[] bs)
-            throws Exception
-    {
-        _stack.output().sendUnicastDatagram_(bs, new IResultWaiter()
-        {
-            @Override
-            public void okay()
-            {
-                // noop
-            }
-
-            @Override
-            public void error(Exception e)
-            {
-                _q.enqueueBlocking(new AbstractEBSelfHandling()
-                {
-                    @Override
-                    public void handle_()
-                    {
-                        // FIXME: Need to understand this guy. Ok, we start pulsing, but if we don't do that, is
-                        // there any purpose for this whole containing method?
-//                        _devices.startPulse_(ep.tp(), ep.did());
-                    }
-                }, Prio.LO);
-            }
-        }, ep);
     }
 }
