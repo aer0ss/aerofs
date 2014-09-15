@@ -150,11 +150,9 @@ public class MetadataBuilder
      * NOTE this returns the folder name of the external folder on _this_ client only. There
      * is no "global" name for an external folder, really.
      */
-    private String getRootFolderName(OA oa) throws SQLException
+    private String getRootFolderName(ResolvedPath resolvedPath) throws SQLException
     {
-        ResolvedPath resolvedPath = _ds.resolve_(oa);
         String absPath = _cfgAbsRoots.getNullable(resolvedPath.sid());
-
         return (resolvedPath.sid().isUserRoot()) ?
                 "AeroFS" : new java.io.File(absPath).getName();
     }
@@ -163,8 +161,16 @@ public class MetadataBuilder
             ChildrenList children) throws SQLException
     {
         OID oid = oa.soid().oid();
-        String name = oid.isRoot() ? getRootFolderName(oa) : oa.name();
-        String sid = oa.isAnchor() ? SID.anchorOID2storeSID(oid).toStringFormal() : null;
+        String name;
+        String sid;
+        if (oid.isRoot()) {
+            ResolvedPath resolvedPath = _ds.resolve_(oa);
+            name = getRootFolderName(resolvedPath);
+            sid = resolvedPath.sid().toStringFormal();
+        } else {
+            name = oa.name();
+            sid = oa.isAnchor() ? SID.anchorOID2storeSID(oid).toStringFormal() : null;
+        }
         return new Folder(object, name, parent, path, sid, children);
     }
 
@@ -205,11 +211,11 @@ public class MetadataBuilder
                 path = anchorPath.join(path);
             }
         }
-        // TODO: determine name for alternate roots (aka external shares)
+
         List<Folder> folders = Lists.newArrayList();
         if (!path.isEmpty()) {
             folders.add(new Folder(new RestObject(path.sid(), OID.ROOT).toStringFormal(),
-                    path.sid().isUserRoot() ? "AeroFS" :  "",
+                    path.sid().isUserRoot() ? "AeroFS" :  getRootFolderName(path),
                     path.sid().isUserRoot() ? null : path.sid().toStringFormal()));
         }
 
