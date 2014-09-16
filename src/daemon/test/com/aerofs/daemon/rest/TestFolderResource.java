@@ -127,8 +127,9 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldGetMetadataForRootStore() throws Exception
     {
         mds.root().anchor("a0").file("f1");
-
         SID sid = mds.root().getPath().sid();
+        when(absRoots.getNullable(sid)).thenReturn("/AeroFS");
+
         String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
 
         givenAccess()
