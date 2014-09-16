@@ -150,15 +150,17 @@ public class MetadataBuilder
      * NOTE this returns the folder name of the external folder on _this_ client only. There
      * is no "global" name for an external folder, really.
      */
-    private String getRootFolderName(ResolvedPath resolvedPath) throws SQLException
+    private String getRootFolderName(ResolvedPath resolvedPath) throws SQLException, ExNotFound
     {
         String absPath = _cfgAbsRoots.getNullable(resolvedPath.sid());
+        // if we can't resolve the root to an absolute path, it must not be present
+        if (absPath == null) { throw new ExNotFound(); }
         return (resolvedPath.sid().isUserRoot()) ?
                 "AeroFS" : new java.io.File(absPath).getName();
     }
 
     private Folder folder(OA oa, String object, String parent, @Nullable ParentPath path,
-            ChildrenList children) throws SQLException
+            ChildrenList children) throws SQLException, ExNotFound
     {
         OID oid = oa.soid().oid();
         String name;
