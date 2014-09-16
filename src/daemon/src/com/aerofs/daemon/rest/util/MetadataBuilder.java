@@ -166,7 +166,8 @@ public class MetadataBuilder
         if (oid.isRoot()) {
             ResolvedPath resolvedPath = _ds.resolve_(oa);
             name = getRootFolderName(resolvedPath);
-            sid = resolvedPath.sid().toStringFormal();
+            // a user root is NOT shared
+            sid = resolvedPath.sid().isUserRoot() ? null : resolvedPath.sid().toStringFormal();
         } else {
             name = oa.name();
             sid = oa.isAnchor() ? SID.anchorOID2storeSID(oid).toStringFormal() : null;

@@ -402,15 +402,12 @@ public class AbstractRestTest extends AbstractTest
     @Before
     public void setUp() throws Exception
     {
-        mds = new MockDS(rootSID, ds, sm, sm);
+        mds = new MockDS(rootSID, ds, sm, sm, ss);
         mds.root();  // setup sid<->sidx mapping for root..
 
         om = spy(new ObjectMover(vu, ds, expulsion));
 
         when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
-
-        SIndex rootSidx = sm.get_(rootSID);
-        when(ss.getParents_(argThat(not(equalTo(rootSidx))))).thenReturn(ImmutableSet.of(rootSidx));
 
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);
