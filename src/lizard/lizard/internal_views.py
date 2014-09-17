@@ -75,6 +75,31 @@ def all_customers():
     customers = models.Customer.query.all()
     return render_template("all_customers.html", customers=customers)
 
+@blueprint.route("/active_customers", methods=["GET"])
+def active_customers():
+    now = datetime.datetime.today()
+    # This is possibly inefficient because group by is hard to understand/map
+    # to sqlalchemy and this is internal anyway
+    # Pick out licenses that are still valid and for paying customers
+    licenses = models.License.query.filter(models.License.state == models.License.LicenseState.FILLED).\
+                                    filter(models.License.expiry_date > now).\
+                                    filter(models.License.is_trial == False)
+    # Collect the matching customers (those folks with currently-valid
+    # licenses).  Since a customer may have multiple currently-valid licenses,
+    # (say, bought one year at 200 seats, then upgraded to 400 seats later that
+    # year), uniquify the customer list.
+    customers = list(set([ l.customer for l in licenses ]))
+    rows = []
+    for c in customers:
+        # For each customer, we're only really interested in the most-recently-issued license
+        l = models.License.query.\
+                filter(models.License.customer_id==c.id).\
+                order_by(models.License.create_date.desc()).\
+                first()
+        rows.append( {"customer": c, "license": l} )
+    rows = sorted(rows, key=lambda row: row["license"].expiry_date)
+    return render_template("active_customers.html", rows=rows)
+
 @blueprint.route("/download_csv", methods=["GET"])
 def download_license_request_csv():
     to_add = models.License.query.filter_by(state=models.License.states.PENDING).all()

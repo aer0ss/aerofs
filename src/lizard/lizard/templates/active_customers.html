@@ -1,0 +1,27 @@
+{% extends "admin.html" %}
+
+{% block title %}Active customers{% endblock %}
+
+{% block content %}
+    <h1>Active paying customers</h1>
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Seats</th>
+            <th>Expiry</th>
+            <th>Admins</th>
+            <th>Actions</th>
+        </tr>
+        {% for row in rows %}
+            <tr>
+                <td><a href="{{ url_for('.customer_actions', org_id=row.customer.id) }}">{{ row.customer.name }}</a></td>
+                <td>{{ row.customer.id }}</td>
+                <td>{{ row.license.seats }}</td>
+                <td>{{ row.license.expiry_date }}</td>
+                <td>{% for admin in row.customer.admins.all() %}{{ admin.email }}<br>{% endfor %}</td>
+                <td><a href="{{ url_for('.customer_actions', org_id=row.customer.id) }}">Create new license request</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
