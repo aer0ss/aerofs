@@ -1,6 +1,6 @@
 var sarumanDirectives = angular.module('sarumanDirectives', []);
 
-sarumanDirectives.directive('ngDeviceRow', function() {
+sarumanDirectives.directive('aeroDeviceRow', function() {
     return {
         restrict: 'A',
         scope: false,

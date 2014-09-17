@@ -21,7 +21,7 @@
                 </div>
                 <div class="my-table-body">
                     <div ng-repeat="device in devices" class="my-row row">
-                        <div ng-device-row></div>
+                        <div aero-device-row></div>
                     </div>
                 </div>
             </div>

@@ -58,7 +58,7 @@
         <div class="col-md-6 col-sm-7 col-xs-12">
           <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></div>
           <div class="name">
-            <input in-place-edit
+            <input aero-in-place-edit
               type="text"
               ng-model="newFolder.name"
               focus-on="!newFolder.hidden"
@@ -78,7 +78,7 @@
       </div>
 
       <div class="my-row row" ng-repeat="object in objects | orderBy:['-type', 'name']">
-        <div ng-file-row template-type="my-files"></div>
+        <div aero-file-row template-type="my-files"></div>
       </div>
 
   </div>

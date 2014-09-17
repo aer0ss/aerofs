@@ -10,7 +10,7 @@
             <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{deref_anchor(object)}}">{{object.name}}</a>
             <a ng-if="object.type === 'file' && object.size > 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
             <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === 0 || object.size === -1)">{{object.name}}</span>
-            <input in-place-edit
+            <input aero-in-place-edit
                    ng-show="object.edit"
                    type="text"
                    ng-model="object.newName"
