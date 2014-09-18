@@ -14,10 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
@@ -48,24 +45,20 @@ public class TokenVerificationClient
     {
         _endpoint = fixPort(endpoint);
         _bootstrap = new ClientBootstrap(clientChannelFactory);
-        _bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                ChannelPipeline p = Channels.pipeline(
-                        new HttpClientCodec(),
-                        new HttpChunkAggregator(2 * C.KB),
-                        new IdleStateHandler(timer, 0, 0, 5, TimeUnit.SECONDS),
-                        new OAuthVerificationHandler<VerifyTokenResponse>(_endpoint,
-                                VerifyTokenResponse.class)
-                );
-                if (_endpoint.getScheme().equals("https")) {
-                    p.addFirst("ssl",
-                            new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert,
-                                    null).newSslHandler());
-                }
-                return p;
+        _bootstrap.setPipelineFactory(() -> {
+            ChannelPipeline p = Channels.pipeline(
+                    new HttpClientCodec(),
+                    new HttpChunkAggregator(2 * C.KB),
+                    new IdleStateHandler(timer, 0, 0, 5, TimeUnit.SECONDS),
+                    new OAuthVerificationHandler<>(_endpoint,
+                            VerifyTokenResponse.class)
+            );
+            if (_endpoint.getScheme().equals("https")) {
+                p.addFirst("ssl",
+                        new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert,
+                                null).newSslHandler());
             }
+            return p;
         });
     }
 
@@ -94,7 +87,7 @@ public class TokenVerificationClient
 
     public ListenableFuture<VerifyTokenResponse> verify(String accessToken, String auth)
     {
-        return verify(new VerifyTokenRequest<VerifyTokenResponse>(accessToken, auth));
+        return verify(new VerifyTokenRequest<>(accessToken, auth));
     }
 
     private ListenableFuture<VerifyTokenResponse> verify(final VerifyTokenRequest<VerifyTokenResponse> req)
@@ -109,17 +102,13 @@ public class TokenVerificationClient
         l.info("connect");
 
         _bootstrap.connect(new InetSocketAddress(_endpoint.getHost(), _endpoint.getPort()))
-                .addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture cf) throws Exception
-                    {
-                        if (cf.isSuccess()) {
-                            l.info("connected");
-                            onConnect(cf.getChannel(), req);
-                        } else {
-                            l.info("failed to connect");
-                            req.future.setException(cf.getCause());
-                        }
+                .addListener(cf -> {
+                    if (cf.isSuccess()) {
+                        l.info("connected");
+                        onConnect(cf.getChannel(), req);
+                    } else {
+                        l.info("failed to connect");
+                        req.future.setException(cf.getCause());
                     }
                 });
 
@@ -133,15 +122,10 @@ public class TokenVerificationClient
             write(req);
         }
 
-        c.getCloseFuture().addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                synchronized (this) {
-                    l.info("closed");
-                    _channel = null;
-                }
+        c.getCloseFuture().addListener(channelFuture -> {
+            synchronized (TokenVerificationClient.this) {
+                l.info("closed");
+                _channel = null;
             }
         });
     }
@@ -149,15 +133,11 @@ public class TokenVerificationClient
     private void write(final VerifyTokenRequest<VerifyTokenResponse> req)
     {
         l.info("write {}", req);
-        _channel.write(req).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture cf) throws Exception
-            {
-                if (!cf.isSuccess()) {
-                    l.warn("failed to write");
-                    req.future.setException(cf.getCause());
-                    cf.getChannel().close();
-                }
+        _channel.write(req).addListener(cf -> {
+            if (!cf.isSuccess()) {
+                l.warn("failed to write");
+                req.future.setException(cf.getCause());
+                cf.getChannel().close();
             }
         });
     }

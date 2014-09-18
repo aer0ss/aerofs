@@ -10,8 +10,6 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DownstreamMessageEvent;
@@ -36,7 +34,7 @@ import java.util.Queue;
  * Simple Netty channel handler to perform asynchronous OAuth token verification
  *
  * Sits on top of an HttpClientCodec, sends appropriate HTTP request for each VerifyTokenRequest,
- * decodes the response body using Gson and forwards the decoded repsonse to a future.
+ * decodes the response body using Gson and forwards the decoded response to a future.
  */
 public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
 {
@@ -151,14 +149,10 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
         http.setHeader(Names.AUTHORIZATION, req.auth);
 
         _requests.add(req);
-        me.getFuture().addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture cf) throws Exception
-            {
-                if (!cf.isSuccess()) {
-                    l.warn("failed to write ", BaseLogUtil.suppress(cf.getCause()));
-                    failRequests();
-                }
+        me.getFuture().addListener(cf -> {
+            if (!cf.isSuccess()) {
+                l.warn("failed to write ", BaseLogUtil.suppress(cf.getCause()));
+                failRequests();
             }
         });
         ctx.sendDownstream(new DownstreamMessageEvent(ctx.getChannel(), me.getFuture(), http, null));
