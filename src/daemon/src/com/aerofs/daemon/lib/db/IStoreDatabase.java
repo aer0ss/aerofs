@@ -20,7 +20,7 @@ public interface IStoreDatabase
 
     String getName_(SIndex sidx) throws SQLException;
 
-    void insert_(SIndex sidx, String name, Trans t) throws SQLException;
+    void insert_(SIndex sidx, String name, boolean usePolaris, Trans t) throws SQLException;
 
     void delete_(SIndex sidx, Trans t) throws SQLException;
 

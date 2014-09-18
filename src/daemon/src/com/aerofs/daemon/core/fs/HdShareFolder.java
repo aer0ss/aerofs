@@ -334,7 +334,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, true, t);
         } else {
             // create anchor, root and trash, ...
-            _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), 0, MAP, true, true, t);
+            _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), MAP, true, true, t);
         }
     }
 }

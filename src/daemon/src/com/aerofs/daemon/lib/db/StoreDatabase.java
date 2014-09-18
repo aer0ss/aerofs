@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -18,7 +19,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -43,13 +43,10 @@ public class StoreDatabase extends AbstractDatabase
     {
         try {
             PreparedStatement ps = _pswGA.get(c());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 Set<SIndex> srs = Sets.newTreeSet();
                 while (rs.next()) checkState(srs.add(new SIndex(rs.getInt(1))));
                 return srs;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGA.close();
@@ -65,14 +62,11 @@ public class StoreDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = _pswGN.get(c());
             ps.setInt(1, sidx.getInt());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 checkState(rs.next());
                 String name = rs.getString(1);
                 // the name may be null before DLTFetchStoreNames is executed.
                 return name != null ? name : "";
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGN.close();
@@ -88,12 +82,9 @@ public class StoreDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = _pswGCC.get(c());
             ps.setInt(1, sidx.getInt());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 checkState(rs.next());
                 return rs.getBoolean(1);
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGCC.close();
@@ -124,14 +115,11 @@ public class StoreDatabase extends AbstractDatabase
         // we don't prepare the statement as the method is called infrequently
         Statement stmt = c().createStatement();
         try {
-            ResultSet rs = stmt.executeQuery(select(T_STORE, "count(*)"));
-            try {
+            try (ResultSet rs = stmt.executeQuery(select(T_STORE, "count(*)"))) {
                 Util.verify(rs.next());
                 int count = rs.getInt(1);
                 assert !rs.next();
                 return count != 0;
-            } finally {
-                rs.close();
             }
         } finally {
             DBUtil.close(stmt);
@@ -155,13 +143,10 @@ public class StoreDatabase extends AbstractDatabase
                     selectWhere(T_STORE, C_STORE_SIDX + "=?", "count(*)"));
 
             _psAE.setInt(1, sidx.getInt());
-            ResultSet rs = _psAE.executeQuery();
-            try {
+            try (ResultSet rs = _psAE.executeQuery()) {
                 Util.verify(rs.next());
                 assert rs.getInt(1) == 1 : sidx;
                 assert !rs.next();
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psAE);
@@ -172,7 +157,7 @@ public class StoreDatabase extends AbstractDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public void insert_(SIndex sidx, String name, Trans t) throws SQLException
+    public void insert_(SIndex sidx, String name, boolean usePolaris, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {
@@ -189,6 +174,13 @@ public class StoreDatabase extends AbstractDatabase
             DBUtil.close(_psAdd);
             _psAdd = null;
             throw detectCorruption(e);
+        }
+        if (usePolaris) {
+            try (Statement s = c().createStatement()) {
+                s.executeUpdate("update " + T_STORE
+                                + " set " + C_STORE_LTS_LOCAL + "=-1"
+                                + " where " +  C_STORE_SIDX + "=" + sidx.getInt());
+            }
         }
     }
 
@@ -260,12 +252,9 @@ public class StoreDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get(c());
             ps.setInt(1, sidx.getInt());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) Util.verify(children.add(new SIndex(rs.getInt(1))));
                 return children;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             psw.close();

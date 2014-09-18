@@ -164,7 +164,7 @@ public class Devices implements IDiagnosable
             opm.add_(did, dev);
 
             // "s non-null" means, "the store is/should be present locally"
-            if (s != null) { s.notifyDeviceOnline(did); }
+            if (s != null) { s.notifyDeviceOnline_(did); }
         }
     }
 
@@ -180,7 +180,7 @@ public class Devices implements IDiagnosable
                 _sidx2opm.remove(sidx);
             }
 
-            if (s != null) { s.notifyDeviceOffline(did); }
+            if (s != null) { s.notifyDeviceOffline_(did); }
         }
     }
 

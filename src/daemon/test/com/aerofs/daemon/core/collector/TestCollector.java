@@ -97,7 +97,7 @@ public class TestCollector extends AbstractTest
         Store store = mock(Store.class);
         when(store.sidx()).thenReturn(sidx);
 
-        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", t);
+        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", false, t);
 
 
         Collector.Factory fact = new Collector.Factory(sched, csdb, csr, dls, tm, er, cfdb,

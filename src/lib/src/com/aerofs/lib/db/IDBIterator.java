@@ -20,7 +20,7 @@ import java.sql.SQLException;
  * It is an error not to call close_() after use.
  *
  */
-public interface IDBIterator<E>
+public interface IDBIterator<E> extends AutoCloseable
 {
     /**
      * @return the current item. The result is undefined if next_() has never
@@ -46,4 +46,8 @@ public interface IDBIterator<E>
      * @return whether close_() has been called
      */
     boolean closed_();
+
+    // for auto-close
+    @Override
+    default void close() throws SQLException { close_(); }
 }

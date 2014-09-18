@@ -42,8 +42,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test(expected = SQLException.class)
     public void shouldThrowOnAddingExistingStore() throws ExAlreadyExist, SQLException
     {
-        db.insert_(sidx, "", t);
-        db.insert_(sidx, "", t);
+        db.insert_(sidx, "", false, t);
+        db.insert_(sidx, "", false, t);
     }
 
     @Test(expected = AssertionError.class)
@@ -55,7 +55,7 @@ public class TestStoreDatabase extends AbstractTest
     @Test
     public void shouldReturnParents() throws SQLException
     {
-        db.insert_(sidx, "", t);
+        db.insert_(sidx, "", false, t);
         db.insertParent_(sidx, sidxParent, t);
         Collection<SIndex> sidxs = db.getParents_(sidx);
         assertEquals(sidxs.size(), 1);
@@ -65,8 +65,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test
     public void shouldReturnExistingStoresOnly() throws SQLException
     {
-        db.insert_(sidx, "", t);
-        db.insert_(sidx2, "", t);
+        db.insert_(sidx, "", false, t);
+        db.insert_(sidx2, "", false, t);
         db.delete_(sidx, t);
 
         Collection<SIndex> sidxs = db.getAll_();
@@ -79,7 +79,7 @@ public class TestStoreDatabase extends AbstractTest
     public void collectingContent_shouldWorkAsExpected()
             throws SQLException
     {
-        db.insert_(sidx, "", t);
+        db.insert_(sidx, "", false, t);
 
         // by default content collection is enabled
         assertTrue(db.isCollectingContent_(sidx));

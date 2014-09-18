@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 
@@ -16,6 +17,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 public class InMemorySQLiteDBCW extends SQLiteDBCW
 {
     private final InjectableDriver _dr;
+    private final CfgUsePolaris _usePolaris;
     private final CoreDBCW _core;
     private boolean _finiWasCalled;
 
@@ -23,10 +25,11 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
      * Mock database parameters and construct a component IDBCW with the mocks,
      * @param dr the Driver object that CoreSchema depends on
      */
-    public InMemorySQLiteDBCW(InjectableDriver dr)
+    public InMemorySQLiteDBCW(InjectableDriver dr, CfgUsePolaris usePolaris)
     {
         super("jdbc:sqlite::memory:", false, true, false);
         _dr = dr;
+        _usePolaris = usePolaris;
 
         _core = mock(CoreDBCW.class);
         when(_core.get()).thenReturn(this);
@@ -37,7 +40,7 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
      */
     public InMemorySQLiteDBCW()
     {
-        this(mock(InjectableDriver.class));
+        this(mock(InjectableDriver.class), mock(CfgUsePolaris.class));
     }
 
     public CoreDBCW getCoreDBCW()
@@ -59,7 +62,7 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
     public void init_() throws SQLException
     {
         super.init_();
-        new CoreSchema(_dr).create_(getConnection().createStatement(), _core.get());
+        new CoreSchema(_dr, _usePolaris).create_(getConnection().createStatement(), _core.get());
     }
 
     @Override

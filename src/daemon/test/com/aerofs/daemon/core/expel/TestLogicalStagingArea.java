@@ -23,6 +23,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -77,7 +79,7 @@ public class TestLogicalStagingArea extends AbstractTest
     @Mock Trans t;
 
     InjectableDriver dr = new InjectableDriver(OSUtil.get());
-    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr);
+    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr, mock(CfgUsePolaris.class));
     LogicalStagingAreaDatabase lsadb = new LogicalStagingAreaDatabase(dbcw.getCoreDBCW());
 
     MockDS mds;

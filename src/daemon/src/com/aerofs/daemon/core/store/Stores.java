@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.store.StoreHierarchy.StoreCreationListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -25,7 +24,6 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
     private final SIDMap _sm;
     private final Store.Factory _factStore;
     private final MapSIndex2Store _sidx2s;
-    private final Devices _devices;
 
     @Inject
     public Stores(
@@ -33,14 +31,12 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
             SIDMap sm,
             Store.Factory factStore,
             MapSIndex2Store sidx2s,
-            Devices devices,
             StoreDeletionOperators sdo)
     {
         _sh = sh;
         _sm = sm;
         _factStore = factStore;
         _sidx2s = sidx2s;
-        _devices = devices;
 
         _sh.setListener_(this);
         sdo.addImmediate_(this);
@@ -94,8 +90,7 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
         Store s = _factStore.create_(sidx);
         _sidx2s.add_(s);
 
-        _devices.afterAddingStore_(sidx);
-        s.postCreate();
+        s.postCreate_();
     }
 
     /**
@@ -104,9 +99,8 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
      */
     private void notifyDeletion_(SIndex sidx)
     {
-        _devices.beforeDeletingStore_(sidx);
 
-        _sidx2s.get_(sidx).preDelete();
+        _sidx2s.get_(sidx).preDelete_();
 
         _sidx2s.delete_(sidx);
         _sm.delete_(sidx);

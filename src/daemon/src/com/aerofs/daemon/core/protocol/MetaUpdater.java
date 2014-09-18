@@ -290,7 +290,8 @@ public class MetaUpdater
      * @return null if not to apply the update
      */
     public @Nullable
-    CausalityResult computeCausality_(SOID soid, Version vRemote, int metaDiff) throws SQLException, ExUnsolvedMetaMetaConflict
+    CausalityResult computeCausality_(SOID soid, Version vRemote, int metaDiff)
+            throws SQLException, ExUnsolvedMetaMetaConflict
     {
         SOCKID k = new SOCKID(soid, CID.META, KIndex.MASTER);
         final Version vLocal = _nvc.getLocalVersion_(k);
@@ -375,7 +376,7 @@ public class MetaUpdater
                 assert noNewVersion != null || Util.test(metaDiff, MetaDiff.PARENT | MetaDiff.NAME);
 
                 _oc.createMeta_(fromPB(meta.getType()), soid, oidParent, meta.getName(),
-                        meta.getFlags(), PhysicalOp.APPLY, true, false, t);
+                        PhysicalOp.APPLY, true, false, t);
 
             } else {
                 if (Util.test(metaDiff, MetaDiff.PARENT | MetaDiff.NAME)) {

@@ -23,6 +23,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -76,7 +77,7 @@ public class TestLinkedStagingArea extends AbstractTest
     @Mock LinkedRevFile rf;
 
     InjectableDriver dr = new InjectableDriver(OSUtil.get());
-    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr);
+    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr, mock(CfgUsePolaris.class));
     LinkedStagingAreaDatabase lsadb = new LinkedStagingAreaDatabase(dbcw.getCoreDBCW());
 
     LinkedStagingArea lsa;
@@ -106,13 +107,9 @@ public class TestLinkedStagingArea extends AbstractTest
         when(revProvider.newLocalRevFile(any(Path.class), anyString(), any(KIndex.class)))
                 .thenReturn(rf);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-            {
-                ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((AbstractEBSelfHandling)invocation.getArguments()[0]).handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
     }
 

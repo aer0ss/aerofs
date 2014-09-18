@@ -160,7 +160,7 @@ public class TestCollectorIterator extends AbstractTest
                 .then(new CSDBAnswer(cidOfGetMetaCS));
 
         idbcw.init_();
-        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", t);
+        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", false, t);
 
         // Collect content by default
         it = fact.create_(sidx);

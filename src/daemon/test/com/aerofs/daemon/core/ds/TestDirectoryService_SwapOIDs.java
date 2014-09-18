@@ -94,11 +94,11 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
         // TODO (MJ) the following root initialization is copy-pasted from StoreCreator
         mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, Type.DIR, 0, t);
 
-        ds.createOA_(Type.DIR, sidx, o1, OID.ROOT, o1.toString(), 0, t);
-        ds.createOA_(Type.DIR, sidx, o1_1, o1, o1_1.toString(), 0, t);
-        ds.createOA_(Type.DIR, sidx, o1_2, o1, o1_2.toString(), 0, t);
-        ds.createOA_(Type.DIR, sidx, o3, o1_1, o3.toString(), 0, t);
-        ds.createOA_(Type.DIR, sidx, o3_1, o3, o3_1.toString(), 0, t);
+        ds.createOA_(Type.DIR, sidx, o1, OID.ROOT, o1.toString(), t);
+        ds.createOA_(Type.DIR, sidx, o1_1, o1, o1_1.toString(), t);
+        ds.createOA_(Type.DIR, sidx, o1_2, o1, o1_2.toString(), t);
+        ds.createOA_(Type.DIR, sidx, o3, o1_1, o3.toString(), t);
+        ds.createOA_(Type.DIR, sidx, o3_1, o3, o3_1.toString(), t);
     }
 
     @Test

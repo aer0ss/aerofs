@@ -6,9 +6,13 @@ import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.Devices;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
+import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -17,13 +21,16 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class Store implements Comparable<Store>, IDumpStatMisc
 {
     private final SIndex _sidx;
+    private final boolean _usePolaris;
 
     private final Collector _collector;
     private final SenderFilters _senderFilters;
-    private final Devices _devices;
+    private final ChangeFetchScheduler _cfs;
 
     // For debugging.
     // The idea is that when this.deletePersistentData_ is called, this object
@@ -34,25 +41,37 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public static class Factory
     {
-        private Devices _devices;
-        private AntiEntropy _ae;
-        private Collector.Factory _factCollector;
-        private SenderFilters.Factory _factSF;
-        private IPulledDeviceDatabase _pddb;
+        private final CfgUsePolaris _usePolaris;
+        private final Devices _devices;
+        private final AntiEntropy _ae;
+        private final Collector.Factory _factCollector;
+        private final SenderFilters.Factory _factSF;
+        private final IPulledDeviceDatabase _pddb;
+        private final ChangeEpochDatabase _cedb;
+        private final ChangeNotificationSubscriber _cnsub;
+        private final ChangeFetchScheduler.Factory _factCFS;
 
         @Inject
-        public void inject_(
+        public Factory(
+                CfgUsePolaris usePolaris,
                 SenderFilters.Factory factSF,
                 Collector.Factory factCollector,
                 AntiEntropy ae,
                 Devices devices,
-                IPulledDeviceDatabase pddb)
+                IPulledDeviceDatabase pddb,
+                ChangeEpochDatabase cedb,
+                ChangeNotificationSubscriber cnsub,
+                ChangeFetchScheduler.Factory factCFS)
         {
+            _usePolaris = usePolaris;
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
             _devices = devices;
             _pddb = pddb;
+            _cedb = cedb;
+            _cnsub = cnsub;
+            _factCFS = factCFS;
         }
 
         public Store create_(SIndex sidx) throws SQLException
@@ -68,9 +87,10 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _sidx = sidx;
         _collector = f._factCollector.create_(sidx);
         _senderFilters = f._factSF.create_(sidx);
-        _devices = f._devices;
+        _cfs = f._factCFS.create(sidx);
         _isDeleted = false;
         _f = f;
+        _usePolaris = _f._usePolaris.get() && _f._cedb.getChangeEpoch_(_sidx) != null;
     }
 
     public Collector collector()
@@ -119,26 +139,46 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     }
 
     /** Notifier called when a device becomes potentially online for this store. */
-    public void notifyDeviceOnline(DID did) {
-        _collector.online_(did);
-        _f._ae.request_(_sidx, did);
+    public void notifyDeviceOnline_(DID did)
+    {
+        if (_usePolaris) {
+            // TODO: collector equivalent
+        } else {
+            _collector.online_(did);
+            _f._ae.request_(_sidx, did);
+        }
     }
 
     /** Notifier called when a device becomes offline for this store. */
-    public void notifyDeviceOffline(DID did) { _collector.offline_(did); }
+    public void notifyDeviceOffline_(DID did)
+    {
+        if (_usePolaris) {
+            // TODO: collector equivalent
+        } else {
+            _collector.offline_(did);
+        }
+    }
 
     /**
      * Called after the Store is created.
      * If there are no OPM devices for this store, do nothing.
      */
-    void postCreate()
+    void postCreate_()
     {
-        // TODO: is this necessary? Perhaps not.
+        if (_usePolaris) {
+            // start fetching updates from polaris
+            _cfs.schedule_();
+
+            // subscribe to change notifications
+            _f._cnsub.subscribe_(this);
+        }
+
+        _f._devices.afterAddingStore_(_sidx);
+
+        // make sure collector is started if peers are online
         if (hasOnlinePotentialMemberDevices_()) {
             // we map online devices in the collector as OPM devices of a member store
-            for (DID did : getOnlinePotentialMemberDevices_().keySet()) {
-                notifyDeviceOnline(did);
-            }
+            getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
         }
     }
 
@@ -146,12 +186,19 @@ public class Store implements Comparable<Store>, IDumpStatMisc
      * Pre-deletion trigger. Before we remove a Store from the map, mark the devices offline
      * for this store.
      */
-    void preDelete()
+    void preDelete_()
     {
-        // TODO: is this necessary? Perhaps not.
-        for (DID did : _devices.getOnlinePotentialMemberDevices_(_sidx).keySet()) {
-            notifyDeviceOffline(did);
+        if (_usePolaris) {
+            // stop fetching updates from polaris
+            _cfs.stop_();
+
+            _f._cnsub.unsubscribe_(this);
         }
+
+        _f._devices.beforeDeletingStore_(_sidx);
+
+        // stop collector if needed
+        getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOffline_);
     }
 
     ////////
@@ -159,13 +206,13 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
-        assert !_isDeleted;
-        return _devices.getOnlinePotentialMemberDevices_(_sidx);
+        checkState(!_isDeleted);
+        return _f._devices.getOnlinePotentialMemberDevices_(_sidx);
     }
 
     public boolean hasOnlinePotentialMemberDevices_()
     {
-        return _devices.getOPMDevices_(_sidx) != null;
+        return _f._devices.getOPMDevices_(_sidx) != null;
     }
 
     @Override
@@ -186,7 +233,14 @@ public class Store implements Comparable<Store>, IDumpStatMisc
      */
     public void startAntiEntropy_()
     {
+        if (_usePolaris) return;
         _f._ae.start_(_sidx);
+    }
+
+    public void fetchChanges_()
+    {
+        checkState(_usePolaris);
+        _cfs.schedule_();
     }
 
     /**

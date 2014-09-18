@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
@@ -23,6 +24,8 @@ public class CoreSchema implements ISchema
             C_STORE_SIDX    = "s_i",        // SIndex
             C_STORE_NAME    = "s_n",        // String
             C_STORE_COLLECTING_CONTENT = "s_c", // boolean
+            C_STORE_LTS_LOCAL = "s_lts",        // long: polaris logical timestamp
+            C_STORE_LTS_REMOTE = "s_rts",       // long: polaris logical timestamp
             // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
             // C_STORE_DIDS    = "s_d",     // concatenated DIDs
 
@@ -42,7 +45,28 @@ public class CoreSchema implements ISchema
             C_SC_SIDX       = "sc_s",
             C_SC_DID        = "sc_d",
 
-            // Versions
+            // Centralized object versions
+            T_VERSION       = "cv",
+            C_VERSION_SIDX  = "cv_s",
+            C_VERSION_OID   = "cv_o",
+            C_VERSION_TICK  = "cv_t",
+
+            // local knowledge of central object tree
+            T_REMOTE_LINK           = "rl",
+            C_REMOTE_LINK_SIDX      = "rl_s",
+            C_REMOTE_LINK_OID       = "rl_o",
+            C_REMOTE_LINK_PARENT    = "rl_p",
+            C_REMOTE_LINK_NAME      = "rl_n",
+            C_REMOTE_LINK_VERSION   = "rl_v",
+
+            // buffered meta changes
+            T_META_BUFFER           = "mb",
+            C_META_BUFFER_SIDX      = "mb_s",
+            C_META_BUFFER_OID       = "mb_o",
+            C_META_BUFFER_TYPE      = "mb_t",
+            C_META_BUFFER_BOUND     = "mb_b",
+
+            // Distributed Versions
             T_VER           = "v",
             C_VER_SIDX      = "v_i",        // SIndex
             C_VER_OID       = "v_o",        // OID
@@ -229,11 +253,13 @@ public class CoreSchema implements ISchema
 
 
     private final InjectableDriver _dr;
+    private final CfgUsePolaris _usePolaris;
 
     @Inject
-    public CoreSchema(InjectableDriver dr)
+    public CoreSchema(InjectableDriver dr, CfgUsePolaris usePolaris)
     {
         _dr = dr;
+        _usePolaris = usePolaris;
     }
 
     @Override
@@ -493,6 +519,12 @@ public class CoreSchema implements ISchema
         createUnlinkedRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
         createLogicalStagingArea(s, dbcw);
+
+        // to keep maximum flexibility, avoid rolling out schema changes for now
+        // TODO: remove this check when rolling out Polaris
+        if (_usePolaris.get()) {
+            createPolarisFetchTables(s, dbcw);
+        }
     }
 
     public static void createOATableAndIndices_(Statement s, IDBCW dbcw, InjectableDriver dr)
@@ -540,7 +572,6 @@ public class CoreSchema implements ISchema
     public static void createStoreTables(Statement s, IDBCW dbcw)
             throws SQLException
     {
-
         s.executeUpdate(
                 "create table " + T_STORE + "(" +
                         C_STORE_SIDX + " integer primary key," +
@@ -646,5 +677,41 @@ public class CoreSchema implements ISchema
                 + C_LSA_HISTORY_PATH + " text not null,"
                 + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
                 + ")");
+    }
+
+    public static void createPolarisFetchTables(Statement s, IDBCW dbcw) throws SQLException
+    {
+        // add epoch columns to store table
+        s.executeUpdate("alter table " + T_STORE
+                + " add column " + C_STORE_LTS_LOCAL + dbcw.longType());
+        s.executeUpdate("alter table " + T_STORE
+                + " add column " + C_STORE_LTS_REMOTE + dbcw.longType()
+                + " not null default -1");
+
+        s.executeUpdate("create table " + T_VERSION + "("
+                + C_VERSION_SIDX + " integer not null,"
+                + C_VERSION_OID + dbcw.uniqueIdType() + "not null,"
+                + C_VERSION_TICK + dbcw.longType() + "not null,"
+                + "primary key(" + C_VERSION_SIDX + "," + C_VERSION_OID + ")"
+                + ")");
+
+        s.executeUpdate("create table " + T_REMOTE_LINK + "("
+                + C_REMOTE_LINK_SIDX + " integer not null,"
+                + C_REMOTE_LINK_OID + dbcw.uniqueIdType() + "not null,"
+                + C_REMOTE_LINK_PARENT + dbcw.uniqueIdType() + "not null,"
+                + C_REMOTE_LINK_NAME + dbcw.nameType() + "not null,"
+                + C_REMOTE_LINK_VERSION + dbcw.longType() + "not null,"
+                + "primary key("+ C_REMOTE_LINK_SIDX + "," + C_REMOTE_LINK_OID + "))");
+
+        s.executeUpdate("create table " + T_META_BUFFER + "("
+                + C_META_BUFFER_SIDX + " integer not null,"
+                + C_META_BUFFER_OID + dbcw.uniqueIdType() + "not null,"
+                + C_META_BUFFER_TYPE + " integer not null,"
+                + C_META_BUFFER_BOUND + dbcw.longType() + " not null,"
+                + "primary key(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_OID + "))");
+
+        s.executeUpdate("create index " + T_META_BUFFER + "0 on " + T_META_BUFFER
+                + "(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_BOUND + ")");
+
     }
 }

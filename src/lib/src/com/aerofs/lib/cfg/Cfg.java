@@ -75,6 +75,7 @@ public class Cfg
     private static boolean _useAutoUpdate;
     private static boolean _isAggressiveCheckingEnabled;
     private static boolean _useXFF;
+    private static boolean _usePolaris;
     private static String _absDefaultRootAnchor;
     private static String _absDefaultAuxRoot;
     private static String _ver;
@@ -162,6 +163,7 @@ public class Cfg
         _useAutoUpdate = disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
         _isAggressiveCheckingEnabled = enabledByFile(rtRoot, LibParam.AGGRESSIVE_CHECKS);
         _useXFF = disabledByFile(rtRoot, LibParam.NOXFF);
+        _usePolaris = enabledByFile(rtRoot, "polaris");
 
         _inited = true;
     }
@@ -416,6 +418,8 @@ public class Cfg
     {
         return _useXFF;
     }
+
+    public static boolean usePolaris() { return _usePolaris; }
 
     public static boolean useFSTypeCheck(String rtRoot)
     {

@@ -142,7 +142,7 @@ public abstract class AbstractStoreJoiner
 
         while (true) {
             try {
-                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, 0, PhysicalOp.APPLY,
+                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, PhysicalOp.APPLY,
                         false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {

@@ -76,7 +76,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     private void verifyAnchorCreated(SID sid, String name) throws Exception
     {
         verify(oc).createMeta_(eq(Type.ANCHOR), eq(new SOID(rootSidx, SID.storeSID2anchorOID(sid))),
-                eq(OID.ROOT), eq(name), eq(0), eq(PhysicalOp.APPLY), eq(false), eq(false), eq(t));
+                eq(OID.ROOT), eq(name), eq(PhysicalOp.APPLY), eq(false), eq(false), eq(t));
     }
 
     @Test

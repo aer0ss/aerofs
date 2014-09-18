@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.tc.Cat;
@@ -64,6 +65,7 @@ public class Core implements IModule
     private final DaemonLaunchTasks _dlts;
     private final IQuotaEnforcement _quota;
     private final LogicalStagingArea _sa;
+    private final ChangeNotificationSubscriber _cnsub;
 
     @Inject
     public Core(
@@ -93,7 +95,8 @@ public class Core implements IModule
             ClientAuditEventReporter caer,
             IQuotaEnforcement quota,
             DaemonLaunchTasks dlts,
-            LogicalStagingArea sa)
+            LogicalStagingArea sa,
+            ChangeNotificationSubscriber cnsub)
     {
         _imce2core = imce.imce();
         _fl = fl;
@@ -122,6 +125,7 @@ public class Core implements IModule
         _dlts = dlts;
         _quota = quota;
         _sa = sa;
+        _cnsub = cnsub;
     }
 
     @Override
@@ -160,6 +164,7 @@ public class Core implements IModule
         _ss.init_();
         _stack.init_();
         _aclsub.init_();
+        _cnsub.init_();
         _ns.init_();
     }
 

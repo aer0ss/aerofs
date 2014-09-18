@@ -29,6 +29,7 @@
     <orderEntry type="module" module-name="bifrost" scope="TEST" />
     <orderEntry type="module" module-name="havre" scope="TEST" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="netty-4.1" level="project" />
   </component>
 </module>
 

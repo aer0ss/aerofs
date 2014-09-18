@@ -14,6 +14,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
@@ -227,21 +228,21 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
      * @throws ExNotFound if the parent is not found
      */
     @Override
-    public void createOA_(OA.Type type, SIndex sidx, OID oid, OID oidParent, String name, int flags,
-            Trans t) throws ExAlreadyExist, ExNotFound, SQLException
+    public void createOA_(Type type, SIndex sidx, OID oid, OID oidParent, String name, Trans t)
+            throws ExAlreadyExist, ExNotFound, SQLException
     {
-        assert !oid.equals(oidParent) : "s " + sidx + " o " + oid + " p " + oidParent;
+        checkState(!oid.equals(oidParent), "s %s o %s p %s", sidx, oid, oidParent);
 
         final SOID soid = new SOID(sidx, oid);
         final SOID soidParent = new SOID(sidx, oidParent);
 
-        if (l.isDebugEnabled()) l.debug(soid + ": create " + oidParent + "/" + name);
+        l.debug("{}: create {}/{}", soid,  oidParent, name);
 
         OA oaParent = getOAThrows_(soidParent);
 
-        assert oaParent.isDir();
+        checkState(oaParent.isDir());
 
-        _mdb.insertOA_(sidx, oid, oidParent, name, type, flags, t);
+        _mdb.insertOA_(sidx, oid, oidParent, name, type, 0, t);
 
         _cacheOA.invalidate_(soid);
 

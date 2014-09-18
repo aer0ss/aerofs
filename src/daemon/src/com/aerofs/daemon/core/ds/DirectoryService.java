@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.admin.Dumpables;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -197,8 +198,8 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * N.B. should be called by HdCreateObject only
      * @throws ExNotFound if the parent is not found
      */
-    public abstract void createOA_(OA.Type type, SIndex sidx, OID oid, OID oidParent, String name,
-            int flags, Trans t) throws ExAlreadyExist, ExNotFound, SQLException;
+    public abstract void createOA_(Type type, SIndex sidx, OID oid, OID oidParent, String name,
+            Trans t) throws ExAlreadyExist, ExNotFound, SQLException;
 
     public abstract void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException;
 

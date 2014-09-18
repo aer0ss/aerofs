@@ -86,6 +86,10 @@ public class DaemonPostUpdateTasks
             new DPUTAddLogicalStagingArea(dbcw),
             new DPUTRemoveBackupTicks(dbcw, localDID),
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
+
+            // only uncomment when rolling out Polaris to keep maximum flexibility
+            // during dev and integration tests
+            // new DPUTAddPolarisFetchTables(dbcw),
         };
 
         // please update this macro whenever new tasks are added

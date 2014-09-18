@@ -13,6 +13,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -28,10 +29,12 @@ public class StoreCreator
     private final IMetaDatabase _mdb;
     private final IMapSID2SIndex _sid2sidx;
     private final LogicalStagingArea _sa;
+    private final CfgUsePolaris _usePolaris;
 
     @Inject
     public StoreCreator(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
-            IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa)
+            IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa,
+            CfgUsePolaris usePolaris)
     {
         _ss = ss;
         _nvc = nvc;
@@ -40,6 +43,7 @@ public class StoreCreator
         _sid2sidx = sid2sidx;
         _ps = ps;
         _sa = sa;
+        _usePolaris = usePolaris;
     }
 
     /**
@@ -97,10 +101,17 @@ public class StoreCreator
         // create trash directory
         _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, LibParam.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
 
-        _nvc.restoreStore_(sidx, t);
-        _ivc.restoreStore_(sidx, t);
+        // TODO: ACL-controlled central/distrib store assignment and version conversion
+        boolean usePolaris = _usePolaris.get();
+
+        if (usePolaris) {
+
+        } else {
+            _nvc.restoreStore_(sidx, t);
+            _ivc.restoreStore_(sidx, t);
+        }
         _ps.createStore_(sidx, sid, name, t);
-        _ss.add_(sidx, name, t);
+        _ss.add_(sidx, name, usePolaris, t);
 
         return sidx;
     }

@@ -61,7 +61,7 @@ public class ObjectCreator
             throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
-        createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
+        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
         return soid;
     }
 
@@ -73,7 +73,7 @@ public class ObjectCreator
             throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), oid);
-        createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
+        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
 
         if (type == OA.Type.FILE) {
             final KIndex kidx = KIndex.MASTER;
@@ -96,11 +96,11 @@ public class ObjectCreator
      * all the logistics required by the new metadata including creation or
      * immigration of physical folders and anchored stores
      */
-    public void createMeta_(OA.Type type, final SOID soid, OID oidParent, String name, int flags,
-            PhysicalOp op, boolean detectImmigration, boolean updateVersion, Trans t)
+    public void createMeta_(Type type, final SOID soid, OID oidParent, String name, PhysicalOp op,
+            boolean detectImmigration, boolean updateVersion, Trans t)
             throws Exception
     {
-        boolean expelled = createOA_(type, soid, oidParent, name, flags, op, updateVersion, t);
+        boolean expelled = createOA_(type, soid, oidParent, name, op, updateVersion, t);
 
         boolean immigrated = !detectImmigration || expelled ? false :
             _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
@@ -115,7 +115,7 @@ public class ObjectCreator
             String name, PhysicalOp op, boolean updateVersion, Trans t)
             throws Exception
     {
-        boolean expelled = createOA_(type, soidTo, oidToParent, name, 0, op, updateVersion, t);
+        boolean expelled = createOA_(type, soidTo, oidToParent, name, op, updateVersion, t);
 
         boolean immigrated = !expelled && type == Type.FILE;
         if (immigrated) _imd.immigrateFile_(_ds.getOA_(soidFrom), _ds.getOA_(soidTo), op, t);
@@ -123,8 +123,8 @@ public class ObjectCreator
         adjustPhysicalObject_(soidTo, expelled, immigrated, op, t);
     }
 
-    private boolean createOA_(OA.Type type, final SOID soid, OID oidParent, String name, int flags,
-            PhysicalOp op,  boolean updateVersion, Trans t)
+    private boolean createOA_(Type type, final SOID soid, OID oidParent, String name, PhysicalOp op,
+            boolean updateVersion, Trans t)
             throws ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         // determine expelled flags
@@ -139,7 +139,7 @@ public class ObjectCreator
             expelled = false;
         }
 
-        _ds.createOA_(type, soid.sidx(), soid.oid(), oidParent, name, flags, t);
+        _ds.createOA_(type, soid.sidx(), soid.oid(), oidParent, name, t);
 
         if (updateVersion) _vu.update_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
 

@@ -95,7 +95,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
                 // create a new object with no associated CA (this is important to avoid generating
                 // a bogus empty version)
                 soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
-                _oc.createMeta_(OA.Type.FILE, soid, soidParent.oid(), ev._dest.last(), 0,
+                _oc.createMeta_(OA.Type.FILE, soid, soidParent.oid(), ev._dest.last(),
                         PhysicalOp.APPLY, false, true, t);
                 t.commit_();
             } finally {
