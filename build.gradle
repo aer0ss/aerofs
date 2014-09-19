@@ -77,6 +77,8 @@ subprojects {
 
     compileJava.options.compilerArgs << '-Werror'
     compileJava.options.compilerArgs << '-Xlint:all'
+    compileTestJava.options.compilerArgs << '-Werror'
+    compileTestJava.options.compilerArgs << '-Xlint:all'
 
     //-------------------------------------------------------------------------
     // dependency configuration

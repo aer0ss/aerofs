@@ -7,7 +7,7 @@ package com.aerofs.testlib;
 import com.google.common.base.Preconditions;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
@@ -79,7 +79,7 @@ public abstract class SecTestUtil
 
         if (isCA) {
             BasicConstraints caConstraint = new BasicConstraints(true);
-            certificateBuilder.addExtension(X509Extension.basicConstraints, true, caConstraint);
+            certificateBuilder.addExtension(Extension.basicConstraints, true, caConstraint);
         }
 
         ContentSigner signer = new JcaContentSignerBuilder("SHA1withRSA")
