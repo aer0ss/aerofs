@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
+import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmissionScheduler;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
@@ -31,6 +32,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     private final Collector _collector;
     private final SenderFilters _senderFilters;
     private final ChangeFetchScheduler _cfs;
+    private final MetaChangeSubmissionScheduler _css;
 
     // For debugging.
     // The idea is that when this.deletePersistentData_ is called, this object
@@ -50,6 +52,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         private final ChangeEpochDatabase _cedb;
         private final ChangeNotificationSubscriber _cnsub;
         private final ChangeFetchScheduler.Factory _factCFS;
+        private final MetaChangeSubmissionScheduler.Factory _factCSS;
 
         @Inject
         public Factory(
@@ -61,7 +64,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
                 IPulledDeviceDatabase pddb,
                 ChangeEpochDatabase cedb,
                 ChangeNotificationSubscriber cnsub,
-                ChangeFetchScheduler.Factory factCFS)
+                ChangeFetchScheduler.Factory factCFS,
+                MetaChangeSubmissionScheduler.Factory factCSS)
         {
             _usePolaris = usePolaris;
             _factSF = factSF;
@@ -72,6 +76,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
             _cedb = cedb;
             _cnsub = cnsub;
             _factCFS = factCFS;
+            _factCSS = factCSS;
         }
 
         public Store create_(SIndex sidx) throws SQLException
@@ -88,6 +93,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _collector = f._factCollector.create_(sidx);
         _senderFilters = f._factSF.create_(sidx);
         _cfs = f._factCFS.create(sidx);
+        _css = f._factCSS.create(sidx);
         _isDeleted = false;
         _f = f;
         _usePolaris = _f._usePolaris.get() && _f._cedb.getChangeEpoch_(_sidx) != null;
@@ -166,6 +172,9 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     void postCreate_()
     {
         if (_usePolaris) {
+            // start submitting local updates to polaris
+            _css.start_();
+
             // start fetching updates from polaris
             _cfs.schedule_();
 
@@ -189,6 +198,9 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     void preDelete_()
     {
         if (_usePolaris) {
+            // stop submitting local updates to polaris
+            _css.stop_();
+
             // stop fetching updates from polaris
             _cfs.stop_();
 

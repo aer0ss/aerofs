@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
@@ -29,12 +30,13 @@ public class StoreCreator
     private final IMetaDatabase _mdb;
     private final IMapSID2SIndex _sid2sidx;
     private final LogicalStagingArea _sa;
+    private final MetaChangesDatabase _mcdb;
     private final CfgUsePolaris _usePolaris;
 
     @Inject
     public StoreCreator(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
             IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa,
-            CfgUsePolaris usePolaris)
+            MetaChangesDatabase mcdb, CfgUsePolaris usePolaris)
     {
         _ss = ss;
         _nvc = nvc;
@@ -43,6 +45,7 @@ public class StoreCreator
         _sid2sidx = sid2sidx;
         _ps = ps;
         _sa = sa;
+        _mcdb = mcdb;
         _usePolaris = usePolaris;
     }
 
@@ -105,7 +108,7 @@ public class StoreCreator
         boolean usePolaris = _usePolaris.get();
 
         if (usePolaris) {
-
+            _mcdb.createStore_(sidx, t);
         } else {
             _nvc.restoreStore_(sidx, t);
             _ivc.restoreStore_(sidx, t);

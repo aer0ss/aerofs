@@ -66,6 +66,13 @@ public class CoreSchema implements ISchema
             C_META_BUFFER_TYPE      = "mb_t",
             C_META_BUFFER_BOUND     = "mb_b",
 
+            // Local meta changes
+            T_META_CHANGE               = "mc",
+            C_META_CHANGE_IDX           = "mc_i",
+            C_META_CHANGE_OID           = "mc_o",
+            C_META_CHANGE_NEW_PARENT    = "mc_p",
+            C_META_CHANGE_NEW_NAME      = "mc_n",
+
             // Distributed Versions
             T_VER           = "v",
             C_VER_SIDX      = "v_i",        // SIndex

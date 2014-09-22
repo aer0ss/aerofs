@@ -25,8 +25,10 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
+import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmissionScheduler;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.Store;
@@ -77,6 +79,7 @@ public class InMemoryDS
         sm = new SIDMap(new SIDDatabase(dbcw));
         MetaDatabase mdb = new MetaDatabase(dbcw);
         StoreDatabase sdb = new StoreDatabase(dbcw);
+        MetaChangesDatabase mcdb = new MetaChangesDatabase(dbcw, sdo);
         ChangeEpochDatabase cedb = new ChangeEpochDatabase(dbcw);
         TransManager tm = mock(TransManager.class);
         StoreHierarchy sh;
@@ -92,7 +95,7 @@ public class InMemoryDS
         }
 
         sc = new StoreCreator(mock(NativeVersionControl.class), mock(ImmigrantVersionControl.class),
-                mdb, sm, sh, ps, mock(LogicalStagingArea.class), usePolaris);
+                mdb, sm, sh, ps, mock(LogicalStagingArea.class), mcdb, usePolaris);
 
         SenderFilters.Factory factSF = mock(SenderFilters.Factory.class);
         try {
@@ -104,10 +107,12 @@ public class InMemoryDS
         } catch (SQLException e) { throw new AssertionError(); }
         ChangeFetchScheduler.Factory factCFS = mock(ChangeFetchScheduler.Factory.class);
         when(factCFS.create(any(SIndex.class))).thenReturn(mock(ChangeFetchScheduler.class));
+        MetaChangeSubmissionScheduler.Factory factCSS = mock(MetaChangeSubmissionScheduler.Factory.class);
+        when(factCSS.create(any(SIndex.class))).thenReturn(mock(MetaChangeSubmissionScheduler.class));
 
         Store.Factory factStore  = new Store.Factory(usePolaris, factSF, factCollector,
                 mock(AntiEntropy.class), mock(Devices.class), mock(IPulledDeviceDatabase.class),
-                cedb, mock(ChangeNotificationSubscriber.class), factCFS);
+                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factCSS);
         stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
 
         ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
