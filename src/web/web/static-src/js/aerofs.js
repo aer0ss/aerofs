@@ -16,7 +16,7 @@ function escapify(message) {
 function showErrorMessageUnnormalizedUnsafe(message) {
     hideAllMessages();
     $('#flash-msg-error-body').html(message);
-    window.scrollTo(0,0)
+    window.scrollTo(0,0);
     $("#flash-msg-error").fadeIn();
 }
 
@@ -39,7 +39,7 @@ function showSuccessMessageUnsafe(message) {
     hideAllMessages();
     var $msg = $("#flash-msg-success");
     $msg.html(normalizeMessage(message));
-    window.scrollTo(0,0)
+    window.scrollTo(0,0);
     $msg.fadeIn();
 
     // Fade out the message in 8 seconds
@@ -78,7 +78,7 @@ function normalizeMessage(message) {
     message = message.charAt(0).toUpperCase() + message.slice(1);
     var last = message.slice(-1);
 
-    if (last != '.' && last != '?' && last != '!') {
+    if (last != '.' && last != '?' && last != '!' && last != '>') {
         message += '.';
     }
     return message;
@@ -116,12 +116,13 @@ function getClientsOfflineErrorText(isPrivate) {
     if (isPrivate) {
         supportUrl = 'https://support.aerofs.com/hc/en-us/articles/201438964';
     }
-    return "All AeroFS clients are offline. Please make sure at least one AeroFS desktop client or Team Server is" +
+    return "<p>Your AeroFS clients are not currently reachable from the web.</p>" +
+        "<p>To administer your files from this page, please make sure at least one AeroFS desktop client or Team Server is" +
         " online and <a href='" + supportUrl + "' target='_blank'>" +
         "has API access enabled</a>. " +
-        "<a href='https://support.aerofs.com/hc/en-us/articles/202460390'>More information here</a>.";
+        "For more information about how AeroFS provides secure web access to your data, " +
+        "<a href='https://support.aerofs.com/hc/en-us/articles/202460390'>click here</a>.</p>";
 }
-
 
 function getErrorTypeNullable(xhr) {
     return xhr.status == 400 ? $.parseJSON(xhr.responseText).type : null;

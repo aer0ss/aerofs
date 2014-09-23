@@ -1,7 +1,6 @@
-<div ng-show="currentFolder || isSingleObject">
-
 <div id="breadcrumb-and-actions" ng-if="!share || enableLinksharing">
-  <div id="actions" ng-hide="share">
+  <div id="actions"
+    ng-hide="share || !(fsLocation.currentFolder || fsLocation.isSingleObject)">
     <span aero-file-upload class="btn btn-primary" id="upload-file"></span>
     <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
   </div>
@@ -9,16 +8,24 @@
   <div class="row" ng-hide="isSingleObject">
     <h2 ng-show="share">Download files from folder</h2>
     <ul class="breadcrumb">
-        <li ng-if="currentFolder.id == 'root' && share" class="active">Download files from folder</li>
-        <li ng-if="currentFolder.id == 'root' && share === undefined" class="active">My Files</li>
-        <li ng-if="currentFolder.id != 'root' && share === undefined"><a href="#/root">My Files</a></li>
+        <li class="active"
+          ng-if="fsLocation.currentFolder.id == 'root' && share">
+          Download files from folder
+        </li>
+        <li class="active"
+          ng-if="(fsLocation.currentFolder.id == 'root' || error.status == 503) && share === undefined">
+            My Files
+        </li>
+        <li ng-if="fsLocation.currentFolder.id != 'root' && error.status != 503 && share === undefined">
+            <a href="#/root">My Files</a>
+        </li>
 
         <li ng-repeat="folder in breadcrumbs">
           <a ng-href="#/{{deref_anchor(folder)}}">{{folder.name}}</a>
         </li>
 
-        <li ng-if="currentFolder.id != 'root'" class="active">
-          {{currentFolder.name}}
+        <li ng-if="fsLocation.currentFolder.id != 'root'" class="active">
+          {{fsLocation.currentFolder.name}}
         </li>
     </ul>
   </div>
@@ -71,9 +78,15 @@
       </div>
 
       <div class="my-row row" ng-if="!objects.length">
-        <div class="col-sm-12">
-          <div class='icon'>&nbsp;</div>
-          No files found
+        <div class="col-sm-12 object">
+          <div ng-hide="error.status == 503 && !(fsLocation.currentFolder || fsLocation.isSingleObject)">
+            <div class='icon'>&nbsp;</div>
+            <div class="name">No files found</div>
+          </div>
+          <div class="name"
+            ng-show="error.status == 503 && !(fsLocation.currentFolder || fsLocation.isSingleObject)">
+            <div ng-bind-html="error.text"></div>
+          </div>
         </div>
       </div>
 
@@ -147,6 +160,4 @@
       </div>
     </div>
   </div>
-</div>
-
 </div>

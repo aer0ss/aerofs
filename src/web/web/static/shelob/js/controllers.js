@@ -1,7 +1,7 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', 'API', 'Token', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter',
-        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, API, Token, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', '$sce', 'API', 'Token', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter',
+        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, $sce, API, Token, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -33,16 +33,17 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // the future.
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
-    // $scope.currentFolder is an object describing the current active folder.
-    $rootScope.linkPasswordEntered, $scope.objects, $scope.links, $scope.currentFolder, $scope.enableLinksharing;
+    $rootScope.linkPasswordEntered, $scope.objects, $scope.links;
 
     // See if linksharing has been turned off
     $scope.enableLinksharing = enableLinksharing;
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
     $scope.requestHeaders = {};
-    // True if linkshare is to a file rather than a folder.
-    $scope.isSingleObject = false;
+    $scope.fsLocation = {
+        currentFolder: null,
+        isSingleObject: false
+    };
     // Despite the name, this means the sid for the current folder shown
     // TODO: clarify nomenclature here, this is silly
     $scope.rootFolder = $routeParams.oid;
@@ -63,7 +64,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             $scope.requestHeaders).then(function(response) {
             OutstandingRequestsCounter.pop();
             // this is used as the last element of the breadcrumb trail
-            $scope.currentFolder = {
+            $scope.fsLocation.currentFolder = {
                 id: $scope.rootFolder,
                 name: response.data.name
             };
@@ -101,7 +102,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 $log.info('Request may be for a file rather than a folder, retrying...');
                 API.get('/files/' + $scope.rootFolder + '?fields=children,path&t=' + Math.random(),
                     $scope.requestHeaders).then(function(response) {
-                        $scope.isSingleObject = true;
+                        $scope.fsLocation.isSingleObject = true;
                         var object = response.data;
                         object.type = 'file';
                         $scope.objects = [object];
@@ -119,7 +120,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         if ($scope.rootFolder !== "root") {
             sid = sid.toString().slice(0,sid.length/2);
         }
-        OutstandingRequestsCounter.push()
+        OutstandingRequestsCounter.push();
         $http.get('/list_urls_for_store?sid=' + sid).success(function(response){
             OutstandingRequestsCounter.pop();
             // check if object data's done loading, if so, populate link data
@@ -156,7 +157,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 showErrorMessageUnsafe("This file is currently unavailable because <a href='https://support.aerofs.com/hc/en-us/articles/203143390'>all sharer AeroFS clients are offline</a>. " +
                 "Please check with the person who shared this link.");
             } else if (status == 503) {
-                showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                $scope.error = {
+                    status: 503,
+                    text: $sce.trustAsHtml(getClientsOfflineErrorText(IS_PRIVATE))
+                };
             } else if (status == 401) {
                 showErrorMessage("Authorization failure; please login again.");
             } else if (status == 404 || status == 400) {
@@ -290,7 +294,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     $scope.submitNewFolder = function() {
         $log.debug("new folder: " + $scope.newFolder.name);
         if ($scope.newFolder.name !== '') {
-            var folderData = {name: $scope.newFolder.name, parent: $scope.currentFolder.id};
+            var folderData = {name: $scope.newFolder.name, parent: $scope.fsLocation.currentFolder.id};
             API.post('/folders', folderData).then(function(response) {
                 // POST /folders returns the new folder object
                 $scope.objects.push({
@@ -351,7 +355,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             return;
         }
         var path = '/' + object.type + 's/' + object.id;
-        API.put(path, {parent: $scope.currentFolder.id, name: object.newName}).then(function(response) {
+        API.put(path, {parent: $scope.fsLocation.currentFolder.id, name: object.newName}).then(function(response) {
             // rename succeeded
             object.name = response.data.name;
             if (response.data.last_modified) object.last_modified = response.data.last_modified;
