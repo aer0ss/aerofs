@@ -1,7 +1,6 @@
 package com.aerofs.polaris.api;
 
 import com.google.common.base.Objects;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -9,7 +8,7 @@ import javax.validation.constraints.NotNull;
 
 public final class BatchOperation {
 
-    @NotEmpty
+    @NotNull
     public String oid;
 
     @Valid

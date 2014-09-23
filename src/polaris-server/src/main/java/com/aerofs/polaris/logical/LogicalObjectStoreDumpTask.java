@@ -1,6 +1,7 @@
-package com.aerofs.polaris.tasks;
+package com.aerofs.polaris.logical;
 
 import com.aerofs.baseline.Task;
+import com.aerofs.baseline.admin.TasksResource;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.Child;
 import com.aerofs.polaris.api.LogicalObject;
@@ -8,7 +9,6 @@ import com.aerofs.polaris.api.ObjectType;
 import com.aerofs.polaris.dao.Children;
 import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.ObjectTypes;
-import com.aerofs.polaris.logical.LogicalObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,21 +24,21 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.io.PrintWriter;
 import java.util.List;
 
-public final class TreeTask implements Task {
+public final class LogicalObjectStoreDumpTask implements Task {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TreeTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogicalObjectStoreDumpTask.class);
 
     private final LogicalObjectStore logicalObjectStore;
     private final ObjectMapper mapper;
 
-    public TreeTask(LogicalObjectStore logicalObjectStore, ObjectMapper mapper) {
+    public LogicalObjectStoreDumpTask(LogicalObjectStore logicalObjectStore, ObjectMapper mapper) {
         this.logicalObjectStore = logicalObjectStore;
         this.mapper = mapper;
     }
 
     @Override
     public String getName() {
-        return "tree";
+        return "dump";
     }
 
     @Override
@@ -134,6 +134,6 @@ public final class TreeTask implements Task {
         });
 
         Object serialized = mapper.treeToValue(forest, Object.class);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(outputWriter, serialized);
+        TasksResource.printFormattedJson(serialized, queryParameters, mapper, outputWriter);
     }
 }

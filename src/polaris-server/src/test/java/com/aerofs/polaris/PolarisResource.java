@@ -12,7 +12,7 @@ import org.junit.rules.ExternalResource;
 
      @Override
      protected void before() throws Throwable {
-         polaris.runWithConfiguration(TestStatics.POLARIS_CONFIGURATION);
+         polaris.runWithConfiguration(ServerConfiguration.POLARIS);
      }
 
      @Override

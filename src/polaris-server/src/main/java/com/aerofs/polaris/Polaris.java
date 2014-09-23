@@ -10,10 +10,10 @@ import com.aerofs.polaris.dao.ObjectTypeArgument;
 import com.aerofs.polaris.dao.TransformTypeArgument;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import com.aerofs.polaris.logical.LogicalObjectStoreBinder;
+import com.aerofs.polaris.logical.LogicalObjectStoreDumpTask;
 import com.aerofs.polaris.resources.BatchedResource;
 import com.aerofs.polaris.resources.ChangesResource;
 import com.aerofs.polaris.resources.ObjectsResource;
-import com.aerofs.polaris.tasks.TreeTask;
 import org.flywaydb.core.Flyway;
 import org.skife.jdbi.v2.DBI;
 
@@ -48,7 +48,7 @@ public final class Polaris extends Service<PolarisConfiguration> {
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
 
         // register the tree-printer
-        registerTask(new TreeTask(logicalObjectStore, environment.getObjectMapper()));
+        registerTask(new LogicalObjectStoreDumpTask(logicalObjectStore, environment.getObjectMapper()));
 
         // setup providers (these are singletons)
         addProvider(new DBIExceptionMapper());

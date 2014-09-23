@@ -30,7 +30,7 @@ public final class TestObjectResource {
 
     @Test
     public void shouldReceiveErrorOnMakingPostWithEmptyBody() throws ExecutionException, InterruptedException {
-        HttpPost post = new HttpPost(TestStatics.POLARIS_URI + "/objects/SF0");
+        HttpPost post = new HttpPost(ServerConfiguration.POLARIS_URI + "/objects/SF0");
         post.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON));
 
         Future<HttpResponse> future = client.getClient().execute(post, null);
@@ -43,12 +43,12 @@ public final class TestObjectResource {
         Update update = new Update();
         update.localVersion = 1;
 
-        String serialized = TestStatics.OBJECT_MAPPER.writeValueAsString(update);
+        String serialized = ServerConfiguration.OBJECT_MAPPER.writeValueAsString(update);
         ByteArrayInputStream contentInputStream = new ByteArrayInputStream(serialized.getBytes(Charsets.US_ASCII));
         BasicHttpEntity entity = new BasicHttpEntity();
         entity.setContent(contentInputStream);
 
-        HttpPost post = new HttpPost(TestStatics.POLARIS_URI + "/objects/SF0");
+        HttpPost post = new HttpPost(ServerConfiguration.POLARIS_URI + "/objects/SF0");
         post.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON));
         post.setEntity(entity);
 
