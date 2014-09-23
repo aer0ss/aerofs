@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.sharing.users;
+package com.aerofs.gui.sharing.members;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;

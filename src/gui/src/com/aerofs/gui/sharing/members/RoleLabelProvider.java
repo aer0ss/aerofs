@@ -1,4 +1,4 @@
-package com.aerofs.gui.sharing.users;
+package com.aerofs.gui.sharing.members;
 
 class RoleLabelProvider extends SharingLabelProvider
 {

@@ -1,4 +1,4 @@
-package com.aerofs.gui.sharing.users;
+package com.aerofs.gui.sharing.members;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
@@ -9,7 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.sharing.users.RoleMenu.RoleChangeListener;
+import com.aerofs.gui.sharing.members.RoleMenu.RoleChangeListener;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -49,7 +49,7 @@ import java.util.Map;
 
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
-import static com.aerofs.gui.sharing.users.SharedFolderMember.Factory;
+import static com.aerofs.gui.sharing.members.SharedFolderMember.Factory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;

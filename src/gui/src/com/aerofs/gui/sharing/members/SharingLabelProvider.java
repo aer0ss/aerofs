@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.sharing.users;
+package com.aerofs.gui.sharing.members;
 
 import com.aerofs.sp.common.SharedFolderState;
 import com.swtdesigner.SWTResourceManager;
