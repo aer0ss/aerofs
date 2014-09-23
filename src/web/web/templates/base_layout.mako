@@ -128,7 +128,7 @@
             <div class="row">
                 <div class="col-sm-12" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
-                        <li><a href="${self.home_url()}">
+                        <li class="logo"><a href="${self.home_url()}">
                             <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
                         </a></li>
                         <%block name="top_navigation_bar_desktop"/>
