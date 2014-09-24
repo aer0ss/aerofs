@@ -1,11 +1,13 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
 
 import javax.inject.Singleton;
+import javax.validation.constraints.Min;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -26,7 +28,7 @@ public final class LocationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getLocationsForContent(@PathParam("oid") final String oid, @PathParam("version") final long version, @PathParam("did") final String did) {
+    public List<String> getLocationsForContent(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
         return logicalObjectStore.inTransaction(new TransactionCallback<List<String>>() {
 
             @Override
@@ -37,7 +39,7 @@ public final class LocationResource {
     }
 
     @POST
-    public void markContentAtLocation(@PathParam("oid") final String oid, @PathParam("version") final long version, @PathParam("did") final String did) {
+    public void markContentAtLocation(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
         logicalObjectStore.inTransaction(new TransactionCallback<Void>() {
 
             @Override
@@ -49,7 +51,7 @@ public final class LocationResource {
     }
 
     @DELETE
-    public void unmarkContentAtLocation(@PathParam("oid") final String oid, @PathParam("version") final long version, @PathParam("did") final String did) {
+    public void unmarkContentAtLocation(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
         logicalObjectStore.inTransaction(new TransactionCallback<Void>() {
 
             @Override

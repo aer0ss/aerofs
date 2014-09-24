@@ -2,6 +2,7 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.Update;
+import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import com.aerofs.polaris.logical.UpdateFailedException;
 import org.skife.jdbi.v2.Handle;
@@ -34,15 +35,10 @@ public final class ObjectResource {
         return resourceContext.getResource(VersionsResource.class);
     }
 
-    @Path("/transforms")
-    public TransformsResource getTransforms() {
-        return resourceContext.getResource(TransformsResource.class);
-    }
-
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LogicalObject update(@PathParam("oid") final String oid, final Update update) throws UpdateFailedException {
+    public LogicalObject update(@Identifier @PathParam("oid") final String oid, final Update update) throws UpdateFailedException {
         return logicalObjectStore.inTransaction(new TransactionCallback<LogicalObject>() {
 
             @Override

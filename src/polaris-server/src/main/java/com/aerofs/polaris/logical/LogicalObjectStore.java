@@ -1,6 +1,7 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.Constants;
+import com.aerofs.polaris.ids.Identifiers;
 import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.ObjectType;
 import com.aerofs.polaris.api.Transform;
@@ -232,7 +233,7 @@ public final class LogicalObjectStore {
     }
 
     public List<Transform> getTransformsSince(Handle conn, String oid, long startTimestamp, long maxResultCount) {
-        Preconditions.checkArgument(LogicalObjectStore.isSharedFolder(oid), "oid %s not an SID", oid);
+        Preconditions.checkArgument(Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid), "oid %s not an SID", oid);
 
         List<Transform> returned = Lists.newArrayList();
 
@@ -341,7 +342,7 @@ public final class LogicalObjectStore {
 
         // create it if it's a shared folder root
         if (parentObject == null) {
-            if (LogicalObjectStore.isSharedFolder(oid)) {
+            if (Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid)) {
                 parentObject = newRoot(logicalObjects, objectTypes, oid);
             } else {
                 throw new NotFoundException(oid);
@@ -358,7 +359,7 @@ public final class LogicalObjectStore {
     //
 
     private LogicalObject newRoot(LogicalObjects logicalObjects, ObjectTypes objectTypes, String oid) {
-        Preconditions.checkArgument(isSharedFolder(oid), "%s not shared folder id", oid);
+        Preconditions.checkArgument(Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid), "%s not shared folder id", oid);
 
         return newObject(logicalObjects, objectTypes, oid, oid, ObjectType.ROOT);
     }
@@ -375,7 +376,7 @@ public final class LogicalObjectStore {
     }
 
     private void removeObject(LogicalObjects logicalObjects, String oid) {
-        Preconditions.checkArgument(!isSharedFolder(oid));
+        Preconditions.checkArgument(!(Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid)));
 
         logicalObjects.remove(oid);
     }
@@ -427,13 +428,5 @@ public final class LogicalObjectStore {
 
         // update the version for the object
         logicalObjects.update(fileObject.root, fileObject.oid, newVersion);
-    }
-
-    //
-    // utility functions
-    //
-
-    private static boolean isSharedFolder(String oid) {
-        return oid.startsWith("SF");
     }
 }
