@@ -14,8 +14,6 @@ public final class Transform {
 
     public final String oid;
 
-    public final ObjectType objectType;
-
     public final TransformType transformType;
 
     public final long newVersion;
@@ -24,16 +22,27 @@ public final class Transform {
     public final String child;
 
     @Nullable
+    public final ObjectType childObjectType;
+
+    @Nullable
     public final String childName;
 
-    public Transform(long logicalTimestamp, String root, String oid, ObjectType objectType, TransformType transformType, long newVersion, @Nullable String child, @Nullable String childName) {
+    public Transform(
+            long logicalTimestamp,
+            String root,
+            String oid,
+            TransformType transformType,
+            long newVersion,
+            @Nullable String child,
+            @Nullable ObjectType childObjectType,
+            @Nullable String childName) {
         this.logicalTimestamp = logicalTimestamp;
         this.root = root;
         this.oid = oid;
-        this.objectType = objectType;
         this.transformType = transformType;
         this.newVersion = newVersion;
         this.child = child;
+        this.childObjectType = childObjectType;
         this.childName = childName;
     }
 
@@ -46,16 +55,16 @@ public final class Transform {
         return logicalTimestamp == other.logicalTimestamp
                 && root.equals(other.root)
                 && oid.equals(other.oid)
-                && objectType.equals(other.objectType)
                 && transformType == other.transformType
                 && newVersion == other.newVersion
                 && Objects.equal(child, other.child)
+                && Objects.equal(childObjectType, other.childObjectType)
                 && Objects.equal(childName, other.childName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(logicalTimestamp, root, oid, objectType, newVersion, transformType, child, childName);
+        return Objects.hashCode(logicalTimestamp, root, oid, transformType, newVersion, child, childObjectType, childName);
     }
 
     @Override
@@ -65,10 +74,10 @@ public final class Transform {
                 .add("logicalTimestamp", logicalTimestamp)
                 .add("sid", root)
                 .add("oid", oid)
-                .add("objectType", objectType)
                 .add("transformType", transformType)
                 .add("newVersion", newVersion)
                 .add("child", child)
+                .add("childObjectType", childObjectType)
                 .add("childName", childName)
                 .toString();
     }

@@ -8,20 +8,23 @@ package com.aerofs.polaris.api;
  *     <li>FOLDER</li>
  *     <li>MOUNT_POINT (shared-folder mount point)</li>
  * </ul>
+ *
+ * <strong>IMPORTANT:</strong> The type ids start at 1 because the Java ResultSet API
+ * is "suboptimal" and returns 0 if the value in the column is null. Yeah. Really.
  */
 public enum ObjectType {
 
     /** root of a shared folder */
-    ROOT(0),
+    ROOT(1),
 
     /** file on the filesystem */
-    FILE(1),
+    FILE(2),
 
     /** folder on the filesystem */
-    FOLDER(2),
+    FOLDER(3),
 
     /** mount point for a shared folder */
-    MOUNT_POINT(3);
+    MOUNT_POINT(4);
 
     public final int typeId;
 

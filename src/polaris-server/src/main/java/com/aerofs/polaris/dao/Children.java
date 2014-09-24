@@ -53,9 +53,8 @@ public interface Children {
 
         @Override
         public Child map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            int storedObjectType = r.getInt(COL_OBJECT_TYPE);
             try {
-                return new Child(r.getString(COL_CHILD_OID), r.getString(COL_CHILD_NAME), ObjectType.fromTypeId(storedObjectType));
+                return new Child(r.getString(COL_CHILD_OID), r.getString(COL_CHILD_NAME), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

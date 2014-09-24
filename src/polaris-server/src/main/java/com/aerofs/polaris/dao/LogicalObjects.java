@@ -49,9 +49,8 @@ public interface LogicalObjects {
 
         @Override
         public LogicalObject map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            int storedObjectTypeId = r.getInt(COL_OBJECT_TYPE);
             try {
-                return new LogicalObject(r.getString(COL_ROOT_OID), r.getString(COL_OID), r.getLong(COL_VERSION), ObjectType.fromTypeId(storedObjectTypeId));
+                return new LogicalObject(r.getString(COL_ROOT_OID), r.getString(COL_OID), r.getLong(COL_VERSION), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

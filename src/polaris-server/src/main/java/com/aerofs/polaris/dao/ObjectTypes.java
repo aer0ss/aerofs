@@ -36,10 +36,8 @@ public interface ObjectTypes {
 
         @Override
         public ObjectType map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            int typeId = r.getInt(COL_OBJECT_TYPE);
-
             try {
-                return ObjectType.fromTypeId(typeId);
+                return ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }
