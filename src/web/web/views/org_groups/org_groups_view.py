@@ -5,7 +5,7 @@ from web.sp_util import exception2error
 from web import util
 
 log = logging.getLogger(__name__)
-
+PAGE_LIMIT = 20
 
 @view_config(
     route_name = 'org_groups',
@@ -17,7 +17,8 @@ def org_groups(request):
     reply = sp.get_org_preferences()
 
     return {
-        'organization_name': reply.organization_name
+        'organization_name': reply.organization_name,
+        'pagination_limit': PAGE_LIMIT
     }
 
 @view_config(

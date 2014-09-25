@@ -24,13 +24,20 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                     {email:'hp@blah.com'},{email:'sprout@blah.com'}, {email:'janie@blah.com'}]
             }];
             $scope.groups = fakeData;
-            $scope.total = fakeData.length;
+            $scope.paginationInfo.total = fakeData.length;
             for (var i = 0; i < fakeData.length; i++) {
                 $rootScope.knownGroupNames.push(fakeData[i].name);
             }
-            $scope.calculatePages($scope.groups.length);
         };
-        $scope = pagination.activate($scope, paginationLimit, getGroupData);
+        $scope.paginationInfo = {
+            total: 0,
+            offset: 0,
+            limit: parseInt(paginationLimit, 10),
+            callback: function(offset){
+                $scope.paginationInfo.offset = offset;
+                getGroupData();
+            }
+        };
         getGroupData();
 
         $scope.getNewGroup = function () {

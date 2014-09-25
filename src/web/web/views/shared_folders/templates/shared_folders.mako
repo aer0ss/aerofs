@@ -62,8 +62,11 @@
             </div>
         </div>
         <br>
-        <div aero-pagination></div>
-        <br><br>
+        <div aero-pagination
+            total="paginationInfo.total"
+            offset="paginationInfo.offset"
+            pagelimit="paginationInfo.limit"
+            callback="paginationInfo.callback(offset)"></div>
         <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
             <div class="col-sm-12">
                 <h2>Left folders</h2>
@@ -106,6 +109,6 @@
     </script>
     <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>
-    <script src="${request.static_path('web:static/shadowfax/pagination.js')}"></script>
+    <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax/controllers.js')}"></script>
 </%block>

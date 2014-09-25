@@ -14,17 +14,18 @@ shadowfaxControllers.controller('SharedFoldersController',
             }
             $http.get(dataUrl, {
                 params: {
-                    offset: $scope.offset.toString()
+                    offset: $scope.paginationInfo.offset.toString()
                 }
             }).success(function(response){
                 // reset folder data to empty
+                var folder;
                 $scope.folders = [];
                 $scope.leftFolders = [];
                 // total number of folders the server knows about
                 // number received may be less, due to pagination
-                $scope.total = response.total;
+                $scope.paginationInfo.total = response.total;
                 for (var i=0; i < response.data.length; i++) {
-                    var folder = response.data[i];
+                    folder = response.data[i];
                     folder.people = folder.owners.concat(folder.members);
                     folder.spinnerID = i;
                     if (response.data[i].is_left) {
@@ -34,14 +35,20 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
                 $rootScope.me = response.me;
-
-                $scope.calculatePages(response.data.length);
             }).error(function(response){
                 $log.warn('Shared folders data failed to load.');
                 showErrorMessageFromResponse(response);
             });
         };
-        $scope = pagination.activate($scope, paginationLimit, getData);
+        $scope.paginationInfo = {
+            total: 0,
+            offset: 0,
+            limit: parseInt(paginationLimit, 10),
+            callback: function(offset){
+                $scope.paginationInfo.offset = offset;
+                getData();
+            }
+        };
         getData();
 
         $scope.manage = function(folder) {

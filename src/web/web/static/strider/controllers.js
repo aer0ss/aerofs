@@ -8,24 +8,32 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
         $scope.userDevicesURL = userDevicesURL;
         $rootScope.isPrivate = isPrivate;
 
-        var getUsersData = function(){
+        var getUsersData = function(message){
+            $log.info(message);
             $http.get(userDataURL, {
                 params: {
-                    offset: $scope.offset.toString()
+                    offset: $scope.paginationInfo.offset.toString()
                 }
             }).success(function(response){
                 $scope.users = response.data;
                 $rootScope.use_restricted = response.use_restricted;
                 $rootScope.me = response.me;
 
-                $scope.total = response.total;
-                $scope.calculatePages(response.data.length);
+                $scope.paginationInfo.total = response.total;
             }).error(function(response){
                 $log.warn(response);
             });
         };
-        $scope = pagination.activate($scope, paginationLimit, getUsersData);
-        getUsersData();
+        $scope.paginationInfo = {
+            total: 0,
+            offset: 0,
+            limit: parseInt(paginationLimit, 10),
+            callback: function(offset){
+                $scope.paginationInfo.offset = offset;
+                getUsersData('Retrieving new page data');
+            }
+        };
+        getUsersData('Retrieving initial data');
 
         $scope.toggleAdmin = function(user) {
             user.is_admin = !user.is_admin;

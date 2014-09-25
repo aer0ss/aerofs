@@ -32,7 +32,11 @@
             </div>
 
             <br>
-            <div aero-pagination></div>
+            <div aero-pagination
+                    total="paginationInfo.total"
+                    offset="paginationInfo.offset"
+                    pagelimit="paginationInfo.limit"
+                    callback="paginationInfo.callback(offset)"></div>
         </div>
     </div>
 </div>
@@ -40,12 +44,12 @@
 <%block name="scripts">
     <script type="text/javascript">
         addGroupURL = "${request.route_path('json.add_org_group')}";
-        paginationLimit = 20;
+        paginationLimit = "${pagination_limit}";
     </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/fellowship/app.js')}"></script>
-    <script src="${request.static_path('web:static/shadowfax/pagination.js')}"></script>
+    <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
     <script src="${request.static_path('web:static/fellowship/controllers.js')}"></script>
     <script src="${request.static_path('web:static/fellowship/filters.js')}"></script>
     <script src="${request.static_path('web:static/fellowship/directives.js')}"></script>
