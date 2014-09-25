@@ -1,5 +1,6 @@
 package com.aerofs.polaris;
 
+import com.aerofs.baseline.HttpClientResource;
 import com.aerofs.polaris.api.Update;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Charsets;
