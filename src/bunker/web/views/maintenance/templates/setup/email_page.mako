@@ -257,7 +257,7 @@
             if (!verifyPresence("base-www-support-email-address",
                         "Please specify a support email address.")) return;
 
-            var remote = $(":input[name=email-server]:checked").val() == 'remote';
+            var remote = $("input[name='email-server']:checked").val() == 'remote';
             if (remote && (
                     !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
                     !verifyPresence("email-sender-public-port", "Please specify SMTP port."))) {

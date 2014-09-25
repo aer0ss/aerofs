@@ -366,7 +366,7 @@
                 $progressModal.modal('hide');
             };
 
-            var authenticator = $(':input[name=lib.authenticator]:checked').val();
+            var authenticator = $('input[name="lib.authenticator"]:checked').val();
             if (authenticator == 'local_credential') {
                 post(always);
             } else {
