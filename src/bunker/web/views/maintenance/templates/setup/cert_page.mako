@@ -66,7 +66,7 @@
         function submitForm() {
             disableNavButtons();
 
-            var choice = $(':input[name=cert.option]:checked').val();
+            var choice = $('input[name="cert.option"]:checked').val();
             if (choice == 'existing') {
                 gotoNextPage();
             } else if (choice == 'new') {
