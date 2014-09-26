@@ -20,13 +20,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@Path("/changes")
+@Path("/transforms")
 @Singleton
-public final class ChangesResource {
+public final class TransformsResource {
 
     private final LogicalObjectStore logicalObjectStore;
 
-    public ChangesResource(@Context LogicalObjectStore logicalObjectStore) {
+    public TransformsResource(@Context LogicalObjectStore logicalObjectStore) {
         this.logicalObjectStore = logicalObjectStore;
     }
 

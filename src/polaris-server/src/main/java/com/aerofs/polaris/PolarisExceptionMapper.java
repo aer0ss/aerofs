@@ -16,7 +16,7 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
         super(ErrorResponseEntity.NO_STACK_IN_RESPONSE, StackLogging.DISABLE_LOGGING);
     }
 
-    protected Response.Status getResponseStatus(Throwable throwable) {
+    protected Response.Status getResponseStatus(PolarisException throwable) {
         if (throwable instanceof UpdateFailedException) {
             return Response.Status.BAD_REQUEST;
         } else if (throwable instanceof NameConflictException) {

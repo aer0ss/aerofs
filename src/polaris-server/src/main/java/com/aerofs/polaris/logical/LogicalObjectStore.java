@@ -1,19 +1,24 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.ids.Identifiers;
 import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.ObjectType;
 import com.aerofs.polaris.api.Transform;
 import com.aerofs.polaris.api.TransformType;
-import com.aerofs.polaris.api.Update;
+import com.aerofs.polaris.api.operation.InsertChild;
+import com.aerofs.polaris.api.operation.MoveChild;
+import com.aerofs.polaris.api.operation.Operation;
+import com.aerofs.polaris.api.operation.RemoveChild;
+import com.aerofs.polaris.api.operation.UpdateContent;
 import com.aerofs.polaris.dao.Children;
 import com.aerofs.polaris.dao.Locations;
 import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.ObjectProperties;
 import com.aerofs.polaris.dao.ObjectTypes;
 import com.aerofs.polaris.dao.Transforms;
+import com.aerofs.polaris.ids.Identifiers;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
@@ -23,6 +28,7 @@ import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public final class LogicalObjectStore {
@@ -57,25 +63,34 @@ public final class LogicalObjectStore {
     // high-level operations
     //
 
-    public LogicalObject transform(Handle conn, String oid, Update update) throws UpdateFailedException, NotFoundException, NameConflictException, VersionConflictException {
-        switch (update.transformType) {
-            case INSERT_CHILD:
-                return insertChild(conn, oid, update);
-            case REMOVE_CHILD:
-                return removeChild(conn, oid, update);
-            case RENAME_CHILD:
-                return renameChild(conn, oid, update);
-            case UPDATE_CONTENT:
-                return makeContent(conn, oid, update);
+    public List<LogicalObject> performOperation(Handle conn, String oid, Operation operation) throws UpdateFailedException, NotFoundException, NameConflictException, VersionConflictException {
+        switch (operation.type) {
+            case INSERT_CHILD: {
+                InsertChild insertChild = (InsertChild) operation;
+                return ImmutableList.of(insertChild(conn, oid, insertChild.child, insertChild.childObjectType, insertChild.childName));
+            }
+            case MOVE_CHILD: {
+                MoveChild moveChild = (MoveChild) operation;
+                if (oid.equals(moveChild.newParent)) {
+                    return ImmutableList.of(renameChild(conn, oid, moveChild.child, moveChild.newChildName));
+                } else {
+                    return ImmutableList.of(insertChild(conn, moveChild.newParent, moveChild.child, null, moveChild.newChildName), removeChild(conn, oid, moveChild.child));
+                }
+            }
+            case REMOVE_CHILD: {
+                RemoveChild removeChild = (RemoveChild) operation;
+                return ImmutableList.of(removeChild(conn, oid, removeChild.child));
+            }
+            case UPDATE_CONTENT: {
+                UpdateContent updateContent = (UpdateContent) operation;
+                return ImmutableList.of(makeContent(conn, oid, updateContent.localVersion, updateContent.contentHash, updateContent.contentSize, updateContent.contentMTime));
+            }
             default:
-                throw new IllegalArgumentException("unsupported transform " + update.transformType);
+                throw new IllegalArgumentException("unsupported operation " + operation.type);
         }
     }
 
-    public LogicalObject insertChild(Handle conn, String oid, Update update) throws NotFoundException, NameConflictException, UpdateFailedException {
-        Preconditions.checkArgument(update.child != null);
-        Preconditions.checkArgument(update.childName != null);
-
+    public LogicalObject insertChild(Handle conn, String oid, String child, @Nullable ObjectType childObjectType, String childName) throws NotFoundException, NameConflictException, UpdateFailedException {
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
         ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
@@ -89,44 +104,42 @@ public final class LogicalObjectStore {
         }
 
         // check for name conflicts within the parent
-        int matchingNamesCount = children.countChildrenWithName(oid, update.childName);
+        int matchingNamesCount = children.countChildrenWithName(oid, childName);
         if (matchingNamesCount != 0) {
-            throw new NameConflictException(oid, update.childName);
+            throw new NameConflictException(oid, childName);
         }
 
         LogicalObject childObject;
 
         // check if the caller is intending to create a new
         // object or simply create a hardlink to an existing object
-        ObjectType childObjectType = objectTypes.get(update.child);
-        if (childObjectType != null) {
-            Preconditions.checkArgument(update.childObjectType == null || update.childObjectType.equals(childObjectType), "mismatched object type exp:%s act:%s", childObjectType, update.childObjectType);
-            childObject = logicalObjects.get(update.child);
+        ObjectType storedChildObjectType = objectTypes.get(child);
+        if (storedChildObjectType != null) {
+            Preconditions.checkArgument(childObjectType == null || childObjectType.equals(storedChildObjectType), "mismatched object type exp:%s act:%s", storedChildObjectType, childObjectType);
+            childObject = logicalObjects.get(child);
         } else {
-            Preconditions.checkArgument(update.childObjectType != null);
-            childObject = newObject(logicalObjects, objectTypes, oid, update.child, update.childObjectType);
+            Preconditions.checkNotNull(childObjectType);
+            childObject = newObject(logicalObjects, objectTypes, parentObject.root, child, childObjectType);
         }
 
         // either unrooted or not, the child object should exist
-        Preconditions.checkState(childObject != null, "child:%s", update.child);
+        Preconditions.checkState(childObject != null, "child:%s", child);
 
         // attach the object to the requested parent
-        attachChild(logicalObjects, transforms, children, parentObject, update.child, update.childName);
+        attachChild(logicalObjects, transforms, children, parentObject, child, childName);
 
         // check if we have to root the object
         if (childObject.root.equals(Constants.NO_ROOT) && !parentObject.root.equals(Constants.NO_ROOT)) {
             logicalObjects.update(parentObject.root, childObject.oid, childObject.version);
         }
 
-        LOGGER.info("insert {} into {}", update.child, oid);
+        LOGGER.info("insert {} into {}", child, oid);
 
         // return the latest version of the *parent* object
         return logicalObjects.get(oid);
     }
 
-    public LogicalObject removeChild(Handle conn, String oid, Update update) throws NotFoundException, VersionConflictException, UpdateFailedException {
-        Preconditions.checkArgument(update.child != null);
-
+    public LogicalObject removeChild(Handle conn, String oid, String child) throws NotFoundException, VersionConflictException, UpdateFailedException {
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
         ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
@@ -137,32 +150,29 @@ public final class LogicalObjectStore {
         LogicalObject parentObject = getOrCreateParent(logicalObjects, objectTypes, oid);
 
         // the child we're removing exists
-        LogicalObject childObject = logicalObjects.get(update.child);
+        LogicalObject childObject = logicalObjects.get(child);
         if (childObject == null) {
-            throw new UpdateFailedException(oid, update.child + " does not exist");
+            throw new UpdateFailedException(oid, child + " does not exist");
         }
 
         // the child we're removing is actually the child of this object
-        Preconditions.checkArgument(children.isChild(oid, update.child));
+        Preconditions.checkArgument(children.isChild(oid, child));
 
         // detach the child from its parent
-        detachChild(logicalObjects, transforms, children, parentObject, update.child);
+        detachChild(logicalObjects, transforms, children, parentObject, child);
 
         // check if we should unroot the object
         if (!children.isChild(oid)) {
             logicalObjects.update(Constants.NO_ROOT, childObject.oid, childObject.version);
         }
 
-        LOGGER.info("remove {} from {}", update.child, oid);
+        LOGGER.info("remove {} from {}", child, oid);
 
         // return the latest version of the *parent* object
         return logicalObjects.get(oid);
     }
 
-    public LogicalObject renameChild(Handle conn, String oid, Update update) throws NotFoundException, VersionConflictException, UpdateFailedException, NameConflictException {
-        Preconditions.checkArgument(update.child != null);
-        Preconditions.checkArgument(update.childName != null);
-
+    public LogicalObject renameChild(Handle conn, String oid, String child, String newChildName) throws NotFoundException, VersionConflictException, UpdateFailedException, NameConflictException {
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
         ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
@@ -173,36 +183,36 @@ public final class LogicalObjectStore {
         LogicalObject parentObject = getOrCreateParent(logicalObjects, objectTypes, oid);
 
         // the child we're removing exists
-        LogicalObject childObject = logicalObjects.get(update.child);
+        LogicalObject childObject = logicalObjects.get(child);
         if (childObject == null) {
-            throw new UpdateFailedException(oid, update.child + " does not exist");
+            throw new UpdateFailedException(oid, child + " does not exist");
         }
 
         // the child we're removing is actually the child of this object
-        Preconditions.checkArgument(children.isChild(oid, update.child));
+        Preconditions.checkArgument(children.isChild(oid, child));
 
         // get the current child name (informational)
-        String currentChildName = children.getChildName(oid, update.child);
+        String currentChildName = children.getChildName(oid, child);
 
         // check for name conflicts with the new name
-        int matchingNamesCount = children.countChildrenWithName(oid, update.childName);
+        int matchingNamesCount = children.countChildrenWithName(oid, newChildName);
         if (matchingNamesCount != 0) {
-            throw new NameConflictException(oid, update.childName);
+            throw new NameConflictException(oid, newChildName);
         }
 
         // rename the child to the new name within the same tree
-        renameChild(logicalObjects, transforms, parentObject, update.child, update.childName);
+        renameChild(logicalObjects, transforms, parentObject, child, newChildName);
 
-        LOGGER.info("rename {} from {} to {} in {}", update.child, currentChildName, update.childName, oid);
+        LOGGER.info("rename {} from {} to {} in {}", child, currentChildName, newChildName, oid);
 
         // return the latest version of the *parent* object
         return logicalObjects.get(oid);
     }
 
-    public LogicalObject makeContent(Handle conn, String oid, Update update) throws NotFoundException, VersionConflictException {
-        Preconditions.checkArgument(update.contentHash != null && !update.contentHash.isEmpty());
-        Preconditions.checkArgument(update.contentSize > 0);
-        Preconditions.checkArgument(update.contentMtime > 0);
+    public LogicalObject makeContent(Handle conn, String oid, long localVersion, String contentHash, long contentSize, long contentMtime) throws NotFoundException, VersionConflictException {
+        Preconditions.checkArgument(!contentHash.isEmpty());
+        Preconditions.checkArgument(contentSize > 0);
+        Preconditions.checkArgument(contentMtime > 0);
 
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
@@ -221,12 +231,12 @@ public final class LogicalObjectStore {
         Preconditions.checkArgument(objectType == ObjectType.FILE, "cannot add content for %s type", objectType);
 
         // check that we're at the right version
-        if (update.localVersion != fileObject.version) {
-            throw new VersionConflictException(oid, update.localVersion, fileObject.version);
+        if (localVersion != fileObject.version) {
+            throw new VersionConflictException(oid, localVersion, fileObject.version);
         }
 
         // create an entry for a new version of the content
-        newContent(logicalObjects, transforms, objectProperties, fileObject, update.contentHash, update.contentSize, update.contentMtime);
+        newContent(logicalObjects, transforms, objectProperties, fileObject, contentHash, contentSize, contentMtime);
 
         // return the latest version of the object
         return logicalObjects.get(oid);
@@ -365,6 +375,8 @@ public final class LogicalObjectStore {
     }
 
     private LogicalObject newObject(LogicalObjects logicalObjects, ObjectTypes objectTypes, String root, String oid, ObjectType objectType) {
+        Preconditions.checkArgument(Identifiers.isRootStore(root) || Identifiers.isSharedFolder(root), "invalid root %s", root);
+
         // create the object at the initial version
         logicalObjects.add(root, oid, Constants.INITIAL_OBJECT_VERSION);
 

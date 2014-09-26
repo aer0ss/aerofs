@@ -6,14 +6,16 @@ import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
 import com.aerofs.baseline.db.DataSources;
 import com.aerofs.baseline.db.DatabaseConfiguration;
+import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.dao.ObjectTypeArgument;
 import com.aerofs.polaris.dao.TransformTypeArgument;
+import com.aerofs.polaris.dao.Transforms;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import com.aerofs.polaris.logical.LogicalObjectStoreBinder;
 import com.aerofs.polaris.logical.LogicalObjectStoreDumpTask;
-import com.aerofs.polaris.resources.BatchedResource;
-import com.aerofs.polaris.resources.ChangesResource;
+import com.aerofs.polaris.resources.BatchResource;
 import com.aerofs.polaris.resources.ObjectsResource;
+import com.aerofs.polaris.resources.TransformsResource;
 import org.flywaydb.core.Flyway;
 import org.skife.jdbi.v2.DBI;
 
@@ -44,6 +46,9 @@ public final class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
+        // setup the api-object deserializer
+        Operation.registerDeserializer(environment.getObjectMapper());
+
         // setup the object store
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
 
@@ -57,8 +62,8 @@ public final class Polaris extends Service<PolarisConfiguration> {
         addProvider(new LogicalObjectStoreBinder(logicalObjectStore));
 
         // setup root resources (these are managed by the container)
+        addResource(BatchResource.class);
         addResource(ObjectsResource.class);
-        addResource(ChangesResource.class);
-        addResource(BatchedResource.class);
+        addResource(TransformsResource.class);
     }
 }

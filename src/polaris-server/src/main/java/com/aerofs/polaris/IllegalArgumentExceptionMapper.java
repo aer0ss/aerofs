@@ -9,10 +9,10 @@ import javax.ws.rs.ext.Provider;
 public final class IllegalArgumentExceptionMapper extends BaseExceptionMapper<IllegalArgumentException> {
 
     public IllegalArgumentExceptionMapper() {
-        super(ErrorResponseEntity.NO_STACK_IN_RESPONSE, StackLogging.DISABLE_LOGGING);
+        super(ErrorResponseEntity.NO_STACK_IN_RESPONSE, StackLogging.ENABLE_LOGGING);
     }
 
-    protected Response.Status getResponseStatus(Throwable throwable) {
+    protected Response.Status getResponseStatus(IllegalArgumentException throwable) {
         return Response.Status.BAD_REQUEST;
     }
 }

@@ -74,7 +74,7 @@ public final class Transform {
                 .add("logicalTimestamp", logicalTimestamp)
                 .add("sid", root)
                 .add("oid", oid)
-                .add("transformType", transformType)
+                .add("updateType", transformType)
                 .add("newVersion", newVersion)
                 .add("child", child)
                 .add("childObjectType", childObjectType)

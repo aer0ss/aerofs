@@ -1,40 +1,38 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.operation;
 
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-public final class BatchOperation {
+public final class RemoveChild extends Operation {
 
     @NotNull
-    public String oid;
+    public String child;
 
-    @Valid
-    @NotNull
-    public Update update;
+    public RemoveChild() {
+        super(OperationType.REMOVE_CHILD);
+    }
 
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BatchOperation other = (BatchOperation) o;
-        return oid.equals(other.oid) && update.equals(other.update);
+        RemoveChild other = (RemoveChild) o;
+        return type == other.type && child.equals(other.child);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(oid, update);
+        return Objects.hashCode(type, child);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("oid", oid)
-                .add("update", update)
+                .add("child", child)
                 .toString();
     }
 }

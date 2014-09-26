@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.polaris.api.LogicalObject;
-import com.aerofs.polaris.api.Update;
+import com.aerofs.polaris.api.operation.Operation;
+import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import com.aerofs.polaris.logical.UpdateFailedException;
@@ -38,12 +38,12 @@ public final class ObjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LogicalObject update(@Identifier @PathParam("oid") final String oid, final Update update) throws UpdateFailedException {
-        return logicalObjectStore.inTransaction(new TransactionCallback<LogicalObject>() {
+    public OperationResult update(@Identifier @PathParam("oid") final String oid, final Operation operation) throws UpdateFailedException {
+        return logicalObjectStore.inTransaction(new TransactionCallback<OperationResult>() {
 
             @Override
-            public LogicalObject inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                return logicalObjectStore.transform(conn, oid, update);
+            public OperationResult inTransaction(Handle conn, TransactionStatus status) throws Exception {
+                return new OperationResult(logicalObjectStore.performOperation(conn, oid, operation));
             }
         });
     }
