@@ -29,11 +29,12 @@ public interface Children {
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_oid = :child_oid")
     boolean isChild(@Bind("oid") String oid, @Bind("child_oid") String child);
 
-    @SqlQuery("select count(child_oid) from children where oid = :oid")
-    int countChildren(@Bind("oid") String oid);
-
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_name = :child_name")
     int countChildrenWithName(@Bind("oid") String oid, @Bind("child_name") String childName);
+
+    @Nullable
+    @SqlQuery("select child_oid from children where child_name := child_name")
+    String getChildWithName(@Bind("child_name") String childName);
 
     @Nullable
     @SqlQuery("select child_name from children where oid = :oid and child_oid = :child_oid")

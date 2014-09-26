@@ -4,7 +4,6 @@ import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import com.aerofs.polaris.logical.UpdateFailedException;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
@@ -38,7 +37,7 @@ public final class ObjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public OperationResult update(@Identifier @PathParam("oid") final String oid, final Operation operation) throws UpdateFailedException {
+    public OperationResult update(@Identifier @PathParam("oid") final String oid, final Operation operation) {
         return logicalObjectStore.inTransaction(new TransactionCallback<OperationResult>() {
 
             @Override

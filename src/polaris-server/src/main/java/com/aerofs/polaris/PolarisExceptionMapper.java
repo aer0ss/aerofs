@@ -3,7 +3,6 @@ package com.aerofs.polaris;
 import com.aerofs.baseline.BaseExceptionMapper;
 import com.aerofs.polaris.logical.NameConflictException;
 import com.aerofs.polaris.logical.NotFoundException;
-import com.aerofs.polaris.logical.UpdateFailedException;
 import com.aerofs.polaris.logical.VersionConflictException;
 
 import javax.ws.rs.core.Response;
@@ -17,9 +16,7 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
     }
 
     protected Response.Status getResponseStatus(PolarisException throwable) {
-        if (throwable instanceof UpdateFailedException) {
-            return Response.Status.BAD_REQUEST;
-        } else if (throwable instanceof NameConflictException) {
+        if (throwable instanceof NameConflictException) {
             return Response.Status.CONFLICT;
         } else if (throwable instanceof VersionConflictException) {
             return Response.Status.CONFLICT;

@@ -1,7 +1,0 @@
-<root>
-    <item name='com.google.common.base.Preconditions void checkState(boolean)'>
-        <annotation name='org.jetbrains.annotations.Contract'>
-            <val val="&quot;false -&gt; false&quot;"/>
-        </annotation>
-    </item>
-</root>

@@ -63,7 +63,7 @@ public final class LogicalObjectStore {
     // high-level operations
     //
 
-    public List<LogicalObject> performOperation(Handle conn, String oid, Operation operation) throws UpdateFailedException, NotFoundException, NameConflictException, VersionConflictException {
+    public List<LogicalObject> performOperation(Handle conn, String oid, Operation operation) throws NotFoundException, NameConflictException, VersionConflictException {
         switch (operation.type) {
             case INSERT_CHILD: {
                 InsertChild insertChild = (InsertChild) operation;
@@ -90,7 +90,11 @@ public final class LogicalObjectStore {
         }
     }
 
-    public LogicalObject insertChild(Handle conn, String oid, String child, @Nullable ObjectType childObjectType, String childName) throws NotFoundException, NameConflictException, UpdateFailedException {
+    public LogicalObject insertChild(Handle conn, String oid, String child, @Nullable ObjectType childObjectType, String childName) throws NotFoundException, NameConflictException {
+
+        // FIXME (AG): NOP reinsert of child
+        // FIXME (AG): do not allow insert of child under different tree
+
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
         ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
@@ -99,14 +103,13 @@ public final class LogicalObjectStore {
 
         // get the parent
         LogicalObject parentObject = getOrCreateParent(logicalObjects, objectTypes, oid);
-        if (parentObject.objectType != ObjectType.ROOT && parentObject.objectType != ObjectType.FOLDER) {
-            throw new UpdateFailedException(oid, "is not a ROOT or FOLDER");
-        }
+        Preconditions.checkArgument(parentObject.objectType == ObjectType.ROOT || parentObject.objectType == ObjectType.FOLDER);
 
         // check for name conflicts within the parent
         int matchingNamesCount = children.countChildrenWithName(oid, childName);
         if (matchingNamesCount != 0) {
-            throw new NameConflictException(oid, childName);
+            LogicalObject conflictingChildObject = getConflictingChild(children, logicalObjects, childName);
+            throw new NameConflictException(oid, childName, conflictingChildObject);
         }
 
         LogicalObject childObject;
@@ -139,7 +142,7 @@ public final class LogicalObjectStore {
         return logicalObjects.get(oid);
     }
 
-    public LogicalObject removeChild(Handle conn, String oid, String child) throws NotFoundException, VersionConflictException, UpdateFailedException {
+    public LogicalObject renameChild(Handle conn, String oid, String child, String newChildName) throws NotFoundException, VersionConflictException, NameConflictException {
         // dao objects
         LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
         ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
@@ -152,7 +155,51 @@ public final class LogicalObjectStore {
         // the child we're removing exists
         LogicalObject childObject = logicalObjects.get(child);
         if (childObject == null) {
-            throw new UpdateFailedException(oid, child + " does not exist");
+            throw new NotFoundException(oid);
+        }
+
+        // the child we're removing is actually the child of this object
+        Preconditions.checkArgument(children.isChild(oid, child));
+
+        // get the current child name (informational)
+        String currentChildName = children.getChildName(oid, child);
+
+        // check for name conflicts with the new name
+        int matchingNamesCount = children.countChildrenWithName(oid, newChildName);
+        if (matchingNamesCount != 0) {
+            LogicalObject conflictingChildObject = getConflictingChild(children, logicalObjects, newChildName);
+            throw new NameConflictException(oid, newChildName, conflictingChildObject);
+        }
+
+        // rename the child to the new name within the same tree
+        renameChild(logicalObjects, transforms, parentObject, child, newChildName);
+
+        LOGGER.info("rename {} from {} to {} in {}", child, currentChildName, newChildName, oid);
+
+        // return the latest version of the *parent* object
+        return logicalObjects.get(oid);
+    }
+
+    private LogicalObject getConflictingChild(Children children, LogicalObjects logicalObjects, String childName) {
+        String conflictingChild = children.getChildWithName(childName);
+        Preconditions.checkNotNull(conflictingChild);
+        return logicalObjects.get(conflictingChild);
+    }
+
+    public LogicalObject removeChild(Handle conn, String oid, String child) throws NotFoundException, VersionConflictException {
+        // dao objects
+        LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
+        ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
+        Transforms transforms = conn.attach(Transforms.class);
+        Children children = conn.attach(Children.class);
+
+        // get the parent
+        LogicalObject parentObject = getOrCreateParent(logicalObjects, objectTypes, oid);
+
+        // the child we're removing exists
+        LogicalObject childObject = logicalObjects.get(child);
+        if (childObject == null) {
+            throw new NotFoundException(oid);
         }
 
         // the child we're removing is actually the child of this object
@@ -167,43 +214,6 @@ public final class LogicalObjectStore {
         }
 
         LOGGER.info("remove {} from {}", child, oid);
-
-        // return the latest version of the *parent* object
-        return logicalObjects.get(oid);
-    }
-
-    public LogicalObject renameChild(Handle conn, String oid, String child, String newChildName) throws NotFoundException, VersionConflictException, UpdateFailedException, NameConflictException {
-        // dao objects
-        LogicalObjects logicalObjects = conn.attach(LogicalObjects.class);
-        ObjectTypes objectTypes = conn.attach(ObjectTypes.class);
-        Transforms transforms = conn.attach(Transforms.class);
-        Children children = conn.attach(Children.class);
-
-        // get the parent
-        LogicalObject parentObject = getOrCreateParent(logicalObjects, objectTypes, oid);
-
-        // the child we're removing exists
-        LogicalObject childObject = logicalObjects.get(child);
-        if (childObject == null) {
-            throw new UpdateFailedException(oid, child + " does not exist");
-        }
-
-        // the child we're removing is actually the child of this object
-        Preconditions.checkArgument(children.isChild(oid, child));
-
-        // get the current child name (informational)
-        String currentChildName = children.getChildName(oid, child);
-
-        // check for name conflicts with the new name
-        int matchingNamesCount = children.countChildrenWithName(oid, newChildName);
-        if (matchingNamesCount != 0) {
-            throw new NameConflictException(oid, newChildName);
-        }
-
-        // rename the child to the new name within the same tree
-        renameChild(logicalObjects, transforms, parentObject, child, newChildName);
-
-        LOGGER.info("rename {} from {} to {} in {}", child, currentChildName, newChildName, oid);
 
         // return the latest version of the *parent* object
         return logicalObjects.get(oid);

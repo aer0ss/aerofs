@@ -27,13 +27,6 @@ public final class BatchOperationResult {
         this.errorMessage = null;
     }
 
-    public BatchOperationResult(Throwable throwable) {
-        this.successful = false;
-        this.logicalObjects = null;
-        this.errorCode = ErrorCode.UNKNOWN;
-        this.errorMessage = throwable.getMessage();
-    }
-
     public BatchOperationResult(ErrorCode errorCode, String errorMessage) {
         this.successful = false;
         this.logicalObjects = null;

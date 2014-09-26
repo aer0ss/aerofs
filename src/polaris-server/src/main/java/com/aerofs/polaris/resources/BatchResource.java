@@ -1,6 +1,8 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.DBIExceptions;
+import com.aerofs.polaris.PolarisException;
+import com.aerofs.polaris.api.ErrorCode;
 import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.batch.Batch;
 import com.aerofs.polaris.api.batch.BatchOperation;
@@ -38,7 +40,7 @@ public final class BatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public BatchResult submitBatch(final Batch batch) throws BatchException {
+    public BatchResult submitBatch(final Batch batch) {
         final BatchResult batchResult = new BatchResult(batch.operations.size());
 
         for (final BatchOperation operation : batch.operations) {
@@ -52,9 +54,19 @@ public final class BatchResource {
                     }
                 });
             } catch (CallbackFailedException e) {
+                @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
                 Throwable cause = DBIExceptions.findRootCause(e);
+
+                BatchOperationResult result;
+                if (cause instanceof PolarisException) {
+                    PolarisException polarisException = (PolarisException) cause;
+                    result = new BatchOperationResult(polarisException.getErrorCode(), polarisException.getMessage());
+                } else {
+                    result = new BatchOperationResult(ErrorCode.UNKNOWN, cause.getMessage());
+                }
+
                 LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
-                batchResult.results.add(new BatchOperationResult(cause)); // FIXME (AG): respond with the proper error code
+                batchResult.results.add(result);
             }
         }
 

@@ -37,7 +37,6 @@ public class TestOperationConversion {
     public void shouldSerializeAndDeserializeRemoveChild() throws IOException {
         RemoveChild removeChild = new RemoveChild();
         removeChild.child = "CHILD";
-        removeChild.childName = "CHILD NAME";
 
         String serialized = mapper.writeValueAsString(removeChild);
         LOGGER.info("remove_child:{}", serialized);
@@ -50,7 +49,6 @@ public class TestOperationConversion {
     public void shouldSerializeAndDeserializeMoveChild() throws IOException {
         MoveChild moveChild = new MoveChild();
         moveChild.child = "CHILD";
-        moveChild.childName = "CHILD NAME";
         moveChild.newParent = "NEW PARENT";
         moveChild.newChildName = "CHILD NAME";
 

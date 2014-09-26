@@ -1,5 +1,12 @@
 /.metadata
 aerofsd-build*
 .idea
-polaris/build
+polaris.iml
 baseline/build
+baseline/baseline.iml
+baseline-test/build
+baseline-test/baseline-test.iml
+polaris-api/build
+polaris-api/polaris-api.iml
+polaris-server/build
+polaris-server/polaris-server.iml
