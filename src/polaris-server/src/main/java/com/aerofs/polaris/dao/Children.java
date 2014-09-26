@@ -20,6 +20,9 @@ public interface Children {
     @SqlUpdate("insert into children(oid, child_oid, child_name) values(:oid, :child_oid, :child_name)")
     int add(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") String childName);
 
+    @SqlUpdate("update children set child_name = :child_name where oid = :oid and child_oid = :child_oid")
+    void update(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") String newChildName);
+
     @SqlUpdate("delete from children where oid = :oid and child_oid = :child_oid")
     int remove(@Bind("oid") String oid, @Bind("child_oid") String child);
 

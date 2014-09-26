@@ -48,14 +48,14 @@ public abstract class PolarisException extends Exception {
         LinkedHashMap<String, Object> properties = Maps.newLinkedHashMap();
 
         properties.put("error_code", errorCode.getCode());
-        properties.put("error_code_human_readable", errorCode);
-        properties.put("error_message", getSimpleMessage());
+        properties.put("error_name", errorCode);
+        properties.put("error_text", getSimpleMessage());
         addProperties(properties);
 
         try {
             return MAPPER.writeValueAsString(properties);
         } catch (JsonProcessingException e) {
-            return String.format("{\"error_code\":\"%d\"", errorCode.getCode());
+            return String.format("{\"error_code\":\"%d\",\"error_name\":\"%s\",\"error_text\":\"%s\"}", errorCode.getCode(), errorCode.name(), getSimpleMessage());
         }
     }
 }

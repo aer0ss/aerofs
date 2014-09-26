@@ -172,7 +172,7 @@ public final class LogicalObjectStore {
         }
 
         // rename the child to the new name within the same tree
-        renameChild(logicalObjects, transforms, parentObject, child, newChildName);
+        renameChild(logicalObjects, transforms, children, parentObject, child, newChildName);
 
         LOGGER.info("rename {} from {} to {} in {}", child, currentChildName, newChildName, oid);
 
@@ -429,7 +429,7 @@ public final class LogicalObjectStore {
         children.remove(parentObject.oid, child);
     }
 
-    private void renameChild(LogicalObjects logicalObjects, Transforms transforms, LogicalObject parentObject, String child, String childName) {
+    private void renameChild(LogicalObjects logicalObjects, Transforms transforms, Children children, LogicalObject parentObject, String child, String childName) {
         long newParentVersion = parentObject.version + 1;
 
         // add the transform
@@ -437,6 +437,9 @@ public final class LogicalObjectStore {
 
         // update the version of the parent
         logicalObjects.update(parentObject.root, parentObject.oid, newParentVersion);
+
+        // update the child entry in the children table
+        children.update(parentObject.oid, child, childName);
     }
 
     private void newContent(LogicalObjects logicalObjects, Transforms transforms, ObjectProperties objectProperties, LogicalObject fileObject, String hash, long size, long mtime) {
