@@ -141,7 +141,7 @@ def setup_submit_data_collection_form(request):
 
 @view_config(
     route_name='json_setup_disable_data_collection',
-    permission='permission',
+    permission='maintain',
     renderer='json',
     request_method='POST'
 )
