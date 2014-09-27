@@ -136,8 +136,9 @@ public class StoreDeleter
         // atomic recursive deletion of physical objects, if applicable
         _ps.deleteFolderRecursively_(pathOld, op, t);
 
-        _sa.stageCleanup_(new SOID(sidx, OID.ROOT), pathOld, t);
-
+        // Run immediate deletion operators now; then call into the staging area, which will
+        // finalize and run the deferred operators.
         _operators.runAllImmediate_(sidx, t);
+        _sa.stageCleanup_(new SOID(sidx, OID.ROOT), pathOld, t);
     }
 }

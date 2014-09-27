@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -16,7 +17,6 @@ import com.google.inject.Inject;
 
 public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
 {
-
     private final IStores _ss;
     private final TransManager _tm;
     private final IPhysicalStorage _ps;
@@ -47,6 +47,8 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
     {
         SIndex sidxRoot = _sid2sidx.getThrows_(ev._sid);
 
+        if (_lrm.get_(ev._sid) == null) throw new ExBadArgs();
+
         l.info("Unlink external root sid: {}", ev._sid);
         Trans t = _tm.begin_();
         try {
@@ -54,8 +56,8 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
             _urdb.addUnlinkedRoot(ev._sid, _ss.getName_(sidxRoot), t);
             // MAP is used here because we don't want to physically delete the user's files. MAP
             // will cleanup NROs and conflict branches.
+            // NB: Store deletion WILL call LinkerRootMap#unlink_
             _sd.deleteRootStore_(sidxRoot, PhysicalOp.MAP, t);
-            _lrm.unlink_(ev._sid, t);
             t.commit_();
             l.info("Unlinked external root sid: {}", ev._sid);
         } finally {

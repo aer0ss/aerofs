@@ -111,13 +111,18 @@ public interface IPhysicalStorage extends IStartable
             throws SQLException, IOException;
 
     /**
+     * External roots need not be scrubbed as the aux root is discarded
+     */
+    boolean shouldScrub_(SID sid);
+
+    /**
      * For storage backends that do not duplicate path information for all objects,
      * {@link #deleteFolderRecursively_} is not sufficient to perform a thorough cleanup,
      * hence the existennce of this method.
      *
      * Specifically:
      *   - BlockStorage maintains NO path->object mapping
-     *   - LinkedStorage does not maintain path->oject mappping for conflicts and NROs
+     *   - LinkedStorage does not maintain path->object mappping for conflicts and NROs
      *
      * @param historyPath path under which to preserve old versions. If empty, files are discarded
      */

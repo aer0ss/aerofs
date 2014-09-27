@@ -299,7 +299,16 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         }
 
         checkState(oa.isDir());
-        if (!_ds.hasChildren_(soid)) return;
+        if (soid.oid().isRoot()) {
+            checkState(isStoreStaged_(soid.sidx()));
+            // finalize store cleanup immediately for external roots and empty stores
+            if (!_ps.shouldScrub_(_sidx2sid.getAbsent_(soid.sidx())) || !_ds.hasChildren_(soid)) {
+                finalizeStoreCleanup_(soid.sidx(), historyPath.sid(), t);
+                return;
+            }
+        } else if (!_ds.hasChildren_(soid)) {
+            return;
+        }
 
         l.info("sched dir cleanup {} {}", soid, historyPath);
         _sadb.addEntry_(soid, historyPath, t);
@@ -385,12 +394,18 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         // folder in said store then it is time to perform store-wide, post-cleanup
         // tasks
         SIndex sidx = soid.sidx();
-        if  (isStoreStaged_(sidx) && !_sadb.hasMoreEntries_(sidx)) {
-            l.info("finalize store cleanup {}", sidx);
-            SID sid  = _sidx2sid.getAbsent_(sidx);
-            _ps.deleteStore_(physicalRoot, sidx, sid, t);
-            _storeDeletionOperators.runAllDeferred_(sidx, t);
+        if (isStoreStaged_(sidx) && !_sadb.hasMoreEntries_(sidx)) {
+            finalizeStoreCleanup_(sidx, physicalRoot, t);
         }
+    }
+
+    private void finalizeStoreCleanup_(SIndex sidx, SID physicalRoot, Trans t)
+            throws SQLException, IOException
+    {
+        l.info("finalize store cleanup {}", sidx);
+        SID sid = _sidx2sid.getAbsent_(sidx);
+        _ps.deleteStore_(physicalRoot, sidx, sid, t);
+        _storeDeletionOperators.runAllDeferred_(sidx, t);
     }
 
     private boolean cleanupObject_(OA oa, Path historyPath, Trans t)

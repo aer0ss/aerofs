@@ -288,7 +288,7 @@ public class LinkedStorage implements IPhysicalStorage
      * cleanup is finalized.
      *
      * Hence this contorted approach which creates a randomly-named directory in the staging area,
-     * moves all children of the physical root into that directory and stages the tmeporary dir.
+     * moves all children of the physical root into that directory and stages the temporary dir.
      */
     private String stagePhysicalRoot_(SID sid, Trans t) throws IOException
     {
@@ -315,6 +315,12 @@ public class LinkedStorage implements IPhysicalStorage
         return staging.getAbsolutePath();
     }
 
+    @Override
+    public boolean shouldScrub_(SID sid)
+    {
+        // no point scrubbing external roots as the aux root is discarded anyway...
+        return _lrm.get_(sid) == null;
+    }
 
     @Override
     public void scrub_(SOID soid,  @Nonnull Path historyPath, Trans t)

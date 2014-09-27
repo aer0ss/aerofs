@@ -323,6 +323,9 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
+    public boolean shouldScrub_(SID sid) { return true; }
+
+    @Override
     public void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
             throws SQLException, IOException
     {
