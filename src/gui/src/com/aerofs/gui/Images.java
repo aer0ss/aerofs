@@ -37,6 +37,7 @@ public class Images {
 
     public static final String ICON_LOGO16 = "logo16.png";
     public static final String ICON_LOGO32 = "logo32.png";
+    public static final String ICON_LOGO48 = "logo48.png";
     public static final String ICON_LOGO64 = "logo64.png";
     public static final String ICON_LOGO32_ERROR = "logo32err.png";
 

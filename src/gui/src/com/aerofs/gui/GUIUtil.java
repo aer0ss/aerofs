@@ -97,6 +97,7 @@ public class GUIUtil
             shell.setImages(new Image[] {
                     Images.get(Images.ICON_LOGO16),
                     Images.get(Images.ICON_LOGO32),
+                    Images.get(Images.ICON_LOGO48),
                     Images.get(Images.ICON_LOGO64),
                 });
         }
