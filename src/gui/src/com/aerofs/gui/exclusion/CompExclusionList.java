@@ -108,8 +108,8 @@ public class CompExclusionList extends Composite
         button.addSelectionListener(new SelectiveSyncSelectionAdapter(button, currentPath,
                 folderData, _m._external));
         // Not a big fan of hardcoding column numbers but life is hard.
-        item.setImage(2, folderData._isShared ? Images.get(Images.ICON_SHARED_FOLDER) :
-                Images.get(Images.ICON_FOLDER));
+        item.setImage(2, folderData._isShared ? Images.getSharedFolderIcon() :
+                Images.getFolderIcon());
         item.setText(2, folderData._name);
     }
 

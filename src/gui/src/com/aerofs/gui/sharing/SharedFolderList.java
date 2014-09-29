@@ -370,7 +370,7 @@ class SharedFolderList extends Composite
     {
         Path path = Path.fromPB(folder.getPath());
         ti.setData(PATH_DATA, path);
-        ti.setImage(Images.get(Images.ICON_SHARED_FOLDER));
+        ti.setImage(Images.getSharedFolderIcon());
         ti.setText(0, folder.getName());
 
         // absPath only available for Linked storage

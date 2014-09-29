@@ -42,8 +42,8 @@ public class Images {
     public static final String ICON_LOGO32_ERROR = "logo32err.png";
 
     public static final String ICON_FILE = "file.gif";
-    public static final String ICON_FOLDER = "folder.png";
-    public static final String ICON_SHARED_FOLDER = "sharedFolder.png";
+    private static final String ICON_FOLDER = "folder.png";
+    private static final String ICON_SHARED_FOLDER = "sharedFolder.png";
     public static final String ICON_TICK = "tick.png";
     public static final String ICON_WARNING = "warning.png";
     public static final String ICON_ERROR = "exclamation.png";
@@ -100,6 +100,11 @@ public class Images {
             }
         }
         return s_spinner_frames[frame % s_spinner_frames.length];
+    }
+
+    public static Image getSharedFolderIcon()
+    {
+        return get(ICON_SHARED_FOLDER);
     }
 
     public static Image getFolderIcon()

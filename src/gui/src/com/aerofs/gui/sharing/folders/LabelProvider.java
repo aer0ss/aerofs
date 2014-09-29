@@ -26,14 +26,14 @@ public class LabelProvider extends org.eclipse.jface.viewers.LabelProvider
             if (element instanceof Path) {
                 Path path = (Path) element;
                 if(_cp.isPathForSharedFolder(path)) {
-                    return Images.get(Images.ICON_SHARED_FOLDER);
+                    return Images.getSharedFolderIcon();
                 }
             } else {
                 // In case we don't see an object of type Path, we will display the Folder icon but
                 // will log that error here.
                 l.warn("Unexpected type of object {}", element.getClass());
             }
-            return Images.get(Images.ICON_FOLDER);
+            return Images.getFolderIcon();
         }
     }
 
