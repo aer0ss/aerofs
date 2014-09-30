@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing.members;
 
+import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.Viewer;
 
@@ -79,10 +80,13 @@ public class SharedFolderMemberComparators
         return compare(a._state == JOINED, b._state == JOINED);
     }
 
-    // members with names < members with only emails (hasn't signed up)
+    // users with names < users with only emails (hasn't signed up)
     private static int compareByHavingNames(SharedFolderMember a, SharedFolderMember b)
     {
-        return compare(a.hasName(), b.hasName());
+        return a instanceof User && b instanceof User
+                ? compare(((User) a).hasName(), ((User) b).hasName())
+                // return equal because we cannot compare members unless they are both users.
+                : 0;
     }
 
     // alphabetical order of the label

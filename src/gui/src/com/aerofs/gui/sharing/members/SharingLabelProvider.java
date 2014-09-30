@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing.members;
 
+import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.sp.common.SharedFolderState;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -31,8 +32,8 @@ public class SharingLabelProvider extends ColumnLabelProvider
     @Override
     public String getToolTipText(Object element)
     {
-        if (element instanceof SharedFolderMember) {
-            return ((SharedFolderMember)element)._userID.getString() +
+        if (element instanceof User) {
+            return ((User)element)._userID.getString() +
                     (isPendingUser(element) ? "\nThis user hasn't accepted the invitation yet." : "");
         } else {
             return "";

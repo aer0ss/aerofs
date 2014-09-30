@@ -9,6 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -369,14 +370,18 @@ public class CompUserList extends Composite
             public void run()
                     throws Exception
             {
-                UserID subject = member._userID;
+                if (member instanceof User) {
+                    UserID subject = ((User)member)._userID;
 
-                if (permissions == null) {
-                    UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
-                } else {
-                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), permissions.toPB(),
-                            suppressSharedFolderRulesWarnings);
+                    if (permissions == null) {
+                        UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
+                    } else {
+                        UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), permissions.toPB(),
+                                suppressSharedFolderRulesWarnings);
+                    }
                 }
+
+                // TODO (AT): implement updating role for a Group
             }
 
             @Override
