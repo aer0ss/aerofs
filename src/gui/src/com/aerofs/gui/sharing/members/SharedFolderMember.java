@@ -14,9 +14,6 @@ import com.aerofs.sp.common.SharedFolderState;
 
 import javax.annotation.Nonnull;
 
-import static com.aerofs.gui.GUIUtil.aggregateComparisonResults;
-import static com.aerofs.gui.GUIUtil.compare;
-import static com.aerofs.sp.common.SharedFolderState.JOINED;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trim;
 
@@ -60,7 +57,7 @@ public class SharedFolderMember
         return _factory._localUser.get().equals(_userID);
     }
 
-    private boolean hasName()
+    protected boolean hasName()
     {
         return !isBlank(getName());
     }
@@ -68,55 +65,6 @@ public class SharedFolderMember
     private String getName()
     {
         return trim(trim(_firstname) + " " + trim(_lastname));
-    }
-
-    public int compareToBySubject(SharedFolderMember that)
-    {
-        return aggregateComparisonResults(
-                compareByIsLocalUser(this, that),
-                compareByState(this, that),
-                compareByHavingNames(this, that),
-                compareByLabel(this, that));
-    }
-
-    public int compareToByRole(SharedFolderMember that)
-    {
-        return aggregateComparisonResults(
-                compareByIsLocalUser(this, that),
-                compareByState(this, that),
-                compareByRole(this, that),
-                compareByHavingNames(this, that),
-                compareByLabel(this, that));
-    }
-
-    // local user < non-local users
-    private static int compareByIsLocalUser(SharedFolderMember a, SharedFolderMember b)
-    {
-        return compare(a.isLocalUser(), b.isLocalUser());
-    }
-
-    // joined members < pending members | left members
-    private static int compareByState(SharedFolderMember a, SharedFolderMember b)
-    {
-        return compare(a._state == JOINED, b._state == JOINED);
-    }
-
-    // members with names < members with only emails (hasn't signed up)
-    private static int compareByHavingNames(SharedFolderMember a, SharedFolderMember b)
-    {
-        return compare(a.hasName(), b.hasName());
-    }
-
-    // alphabetical order of the label
-    private static int compareByLabel(SharedFolderMember a, SharedFolderMember b)
-    {
-        return a.getLabel().compareTo(b.getLabel());
-    }
-
-    // owner < editor < viewer
-    private static int compareByRole(SharedFolderMember a, SharedFolderMember b)
-    {
-        return a._permissions.compareTo(b._permissions);
     }
 
     @Override
