@@ -9,7 +9,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.sharing.members.RoleMenu.RoleChangeListener;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -173,14 +172,8 @@ public class CompUserList extends Composite
                 if (!RoleMenu.hasContextMenu(member)) return;
 
                 RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserPermissions, member);
-                menu.setRoleChangeListener(new RoleChangeListener()
-                {
-                    @Override
-                    public void onRoleChangeSelected(UserID subject, Permissions permissions)
-                    {
-                        setRole(_path, subject, permissions, false);
-                    }
-                });
+                menu.setRoleChangeListener(
+                        permissions -> setRole(_path, member, permissions, false));
                 menu.open();
             }
         });
@@ -362,7 +355,7 @@ public class CompUserList extends Composite
     /**
      * {@paramref path} needs to be passed in because _path can change while ISWTWorker does work
      */
-    private void setRole(final Path path, final UserID subject, final Permissions permissions,
+    private void setRole(final Path path, final SharedFolderMember member, final Permissions permissions,
             final boolean suppressSharedFolderRulesWarnings)
     {
         final Table table = _tv.getTable();
@@ -376,6 +369,8 @@ public class CompUserList extends Composite
             public void run()
                     throws Exception
             {
+                UserID subject = member._userID;
+
                 if (permissions == null) {
                     UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
                 } else {
@@ -392,10 +387,6 @@ public class CompUserList extends Composite
                 if (!table.isDisposed()) {
                     table.setEnabled(true);
                     table.setFocus();
-
-                    SharedFolderMember member = _members.stream()
-                            .filter(x -> x._userID.equals(subject))
-                            .findFirst().get();
 
                     if (permissions == null) {
                         _members.remove(member);
@@ -420,7 +411,7 @@ public class CompUserList extends Composite
 
                 if (canHandle(e)) {
                     if (promptUserToSuppressWarning(getShell(), e)) {
-                        setRole(path, subject, permissions, true);
+                        setRole(path, member, permissions, true);
                     }
                 } else {
                     String message = permissions == null ? "Failed to remove the user." :

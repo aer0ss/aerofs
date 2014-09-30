@@ -27,18 +27,17 @@ public class RoleMenu
         _menu = new Menu(parent);
 
         final UserID subject = member._userID;
-        Permissions subjectPermissions = member._permissions;
 
         if (shouldShowUpdateACLMenuItems(selfPermissions)) {
             for (final Permissions r : Permissions.ROLE_NAMES.keySet()) {
-                if (!subjectPermissions.equals(r)) {
+                if (!member._permissions.equals(r)) {
                     MenuItem mi = new MenuItem(_menu, SWT.PUSH);
                     mi.setText("Set as " + r.roleName());
                     mi.addSelectionListener(new SelectionAdapter() {
                         @Override
                         public void widgetSelected(SelectionEvent e)
                         {
-                            select(subject, r);
+                            select(r);
                         }
                     });
                 }
@@ -67,7 +66,7 @@ public class RoleMenu
                                     "This will delete the folder from the person's computers." +
                                     " However, old content may be still accessible from the" +
                                     " person's sync history.")) {
-                        select(subject, null);
+                        select(null);
                     }
                 }
             });
@@ -85,11 +84,11 @@ public class RoleMenu
     /**
      * @param permissions set to null to remove the user
      */
-    private void select(UserID subject, @Nullable Permissions permissions)
+    private void select(@Nullable Permissions permissions)
     {
         _menu.dispose();
 
-        if (_listener != null) _listener.onRoleChangeSelected(subject, permissions);
+        if (_listener != null) _listener.onRoleChangeSelected(permissions);
     }
 
     public static boolean hasContextMenu(SharedFolderMember member)
@@ -121,6 +120,6 @@ public class RoleMenu
 
     public interface RoleChangeListener
     {
-        void onRoleChangeSelected(UserID subject, Permissions permissions);
+        void onRoleChangeSelected(Permissions permissions);
     }
 }
