@@ -63,9 +63,9 @@ public class TestOperationConversion {
     public void shouldSerializeAndDeserializeUpdateContent() throws IOException {
         UpdateContent updateContent = new UpdateContent();
         updateContent.localVersion = 1;
-        updateContent.contentHash = "HASH";
-        updateContent.contentSize = 100;
-        updateContent.contentMTime = System.currentTimeMillis();
+        updateContent.hash = "HASH";
+        updateContent.size = 100;
+        updateContent.mtime = System.currentTimeMillis();
 
         String serialized = mapper.writeValueAsString(updateContent);
         LOGGER.info("update_content:{}", serialized);

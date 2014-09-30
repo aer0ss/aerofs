@@ -26,12 +26,14 @@ CREATE TABLE IF NOT EXISTS `file_properties`(
   PRIMARY KEY (oid, version))
   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 CREATE TABLE IF NOT EXISTS `locations`(
   `oid`                      CHAR(32)     NOT NULL,
   `version`                  BIGINT       NOT NULL,
-  `did`                      CHAR(32)     NOT NULL,
-  PRIMARY KEY (oid, version))
+  `did`                      CHAR(32)     NOT NULL)
   ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE INDEX `locations_index` ON `locations` (oid, version);
 
 CREATE TABLE IF NOT EXISTS `children`(
   `oid`                      CHAR(32)     NOT NULL,
@@ -41,12 +43,17 @@ CREATE TABLE IF NOT EXISTS `children`(
 
 CREATE TABLE IF NOT EXISTS `transforms`(
   `logical_timestamp`        BIGINT       AUTO_INCREMENT NOT NULL,
+  `originator`               CHAR(32)     NOT NULL               ,
   `root_oid`                 CHAR(32)     NOT NULL               ,
   `oid`                      CHAR(32)     NOT NULL               ,
   `transform_type`           INTEGER      NOT NULL               ,
   `new_version`              BIGINT       NOT NULL               ,
   `child_oid`                CHAR(32)     DEFAULT NULL           ,
   `child_name`               VARCHAR(255) DEFAULT NULL           ,
+  `atomic_operation_id`      CHAR(32)     DEFAULT NULL           ,
+  `atomic_operation_index`   INT          DEFAULT NULL           ,
+  `atomic_operation_total`   INT          DEFAULT NULL           ,
+  `timestamp`                BIGINT       NOT NULL               ,
   PRIMARY KEY (logical_timestamp))
   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

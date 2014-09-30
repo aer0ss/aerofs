@@ -48,7 +48,7 @@ public abstract class Operation {
 
             ObjectMapper mapper = (ObjectMapper) jp.getCodec();
             ObjectNode root = mapper.readTree(jp);
-            Preconditions.checkState(root != null);
+            Preconditions.checkArgument(root != null, "empty Operation object");
 
             Iterator<Map.Entry<String, JsonNode>> elementsIterator = root.fields();
             while (elementsIterator.hasNext()) {
@@ -66,7 +66,7 @@ public abstract class Operation {
             }
 
             if (operationClass == null) {
-                throw new IOException("unrecognized operation object");
+                throw new IllegalArgumentException("unrecognized Operation object");
             }
 
             return mapper.treeToValue(root, operationClass);

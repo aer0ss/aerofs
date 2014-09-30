@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import javax.annotation.Nullable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class UpdateContent extends Operation {
 
@@ -12,13 +13,14 @@ public final class UpdateContent extends Operation {
     public long localVersion;
 
     @NotNull
-    public String contentHash;
+    @Size(min = 1)
+    public String hash;
 
     @Min(0)
-    public long contentSize;
+    public long size;
 
     @Min(0)
-    public long contentMTime;
+    public long mtime;
 
     public UpdateContent() {
         super(OperationType.UPDATE_CONTENT);
@@ -30,12 +32,12 @@ public final class UpdateContent extends Operation {
         if (o == null || getClass() != o.getClass()) return false;
 
         UpdateContent other = (UpdateContent) o;
-        return type == other.type && localVersion == other.localVersion && contentHash.equals(other.contentHash) && contentSize == other.contentSize && contentMTime == other.contentMTime;
+        return type == other.type && localVersion == other.localVersion && hash.equals(other.hash) && size == other.size && mtime == other.mtime;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(type, localVersion, contentHash, contentSize, contentMTime);
+        return Objects.hashCode(type, localVersion, hash, size, mtime);
     }
 
     @Override
@@ -43,9 +45,9 @@ public final class UpdateContent extends Operation {
         return Objects
                 .toStringHelper(this)
                 .add("localVersion", localVersion)
-                .add("contentHash", contentHash)
-                .add("contentSize", contentSize)
-                .add("contentMTime", contentMTime)
+                .add("hash", hash)
+                .add("size", size)
+                .add("mtime", mtime)
                 .toString();
     }
 }

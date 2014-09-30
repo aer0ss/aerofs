@@ -1,8 +1,8 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.PolarisException;
-import com.aerofs.polaris.api.ErrorCode;
 import com.aerofs.polaris.api.LogicalObject;
+import com.aerofs.polaris.api.PolarisError;
 
 import java.util.Map;
 
@@ -15,7 +15,7 @@ public final class NameConflictException extends PolarisException {
     private final LogicalObject conflictingObject;
 
     public NameConflictException(String parent, String childName, LogicalObject conflictingObject) {
-        super(ErrorCode.NAME_CONFLICT);
+        super(PolarisError.NAME_CONFLICT);
 
         this.parent = parent;
         this.childName = childName;
@@ -28,9 +28,9 @@ public final class NameConflictException extends PolarisException {
     }
 
     @Override
-    protected void addProperties(Map<String, Object> errorProperties) {
-        errorProperties.put("parent", parent);
-        errorProperties.put("child_name", childName);
-        errorProperties.put("conflicting_object", conflictingObject);
+    protected void addErrorFields(Map<String, Object> errorFields) {
+        errorFields.put("conflicting_object", conflictingObject);
+        errorFields.put("child_name", childName);
+        errorFields.put("parent", parent);
     }
 }

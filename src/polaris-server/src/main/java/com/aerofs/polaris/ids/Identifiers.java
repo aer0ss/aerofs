@@ -2,8 +2,14 @@ package com.aerofs.polaris.ids;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.BaseEncoding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Random;
 
 public abstract class Identifiers {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Identifiers.class);
 
     /**
      * UniqueID obtained from generate() are UUID version 4 as specified by RFC 4122
@@ -38,6 +44,10 @@ public abstract class Identifiers {
         return versionNibble == 0;
     }
 
+    public static String newRandomSharedFolder() {
+        return getNibbledRandomBytes(0);
+    }
+
     public static boolean isMountPoint(String identifier) {
         return isMountPoint(hexDecode(identifier));
     }
@@ -56,6 +66,10 @@ public abstract class Identifiers {
         return versionNibble == 4;
     }
 
+    public static String newRandomObject() {
+        return getNibbledRandomBytes(4);
+    }
+
     public static boolean isDevice(String identifier) {
         return isDevice(hexDecode(identifier));
     }
@@ -65,13 +79,28 @@ public abstract class Identifiers {
         return versionNibble == 4;
     }
 
+    public static String newRandomDevice() {
+        return getNibbledRandomBytes(4);
+    }
+
+    private static String getNibbledRandomBytes(int nibbleValue) {
+        // create random bytes
+        Random random = new Random();
+        byte[] bytes = new byte[NUM_BYTES_IN_IDENTIFIER];
+        random.nextBytes(bytes);
+
+        // set the version nibble
+        bytes[VERSION_BYTE] &= ((nibbleValue << VERSION_SHIFT) | ~VERSION_MASK);
+        return BaseEncoding.base16().lowerCase().encode(bytes);
+    }
+
     public static int getVersionNibble(byte[] identifier) {
         checkIdentifierLength(identifier);
         return (identifier[VERSION_BYTE] & VERSION_MASK) >> VERSION_SHIFT;
     }
 
     private static void checkIdentifierLength(byte[] identifier) {
-        Preconditions.checkArgument(hasValdiIdentifierLength(identifier), "unique id has invalid length %d", identifier.length);
+        Preconditions.checkArgument(hasValdiIdentifierLength(identifier), "identifier has invalid length %d", identifier.length);
     }
 
     public static boolean hasValdiIdentifierLength(byte[] identifier) {
@@ -79,7 +108,12 @@ public abstract class Identifiers {
     }
 
     public static byte[] hexDecode(String identifier) {
-        return BaseEncoding.base16().lowerCase().decode(identifier.toLowerCase());
+        try {
+            return BaseEncoding.base16().lowerCase().decode(identifier.toLowerCase());
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("invalid identifier {}", identifier);
+            throw new IllegalArgumentException(identifier + " is not a valid identifier");
+        }
     }
 
     private Identifiers() {

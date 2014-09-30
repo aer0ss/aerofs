@@ -1,9 +1,12 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.baseline.auth.AeroPrincipal;
 import com.aerofs.baseline.db.DBIExceptions;
 import com.aerofs.polaris.PolarisException;
-import com.aerofs.polaris.api.ErrorCode;
-import com.aerofs.polaris.api.LogicalObject;
+import com.aerofs.polaris.acl.Access;
+import com.aerofs.polaris.acl.AccessManager;
+import com.aerofs.polaris.api.PolarisError;
+import com.aerofs.polaris.api.Updated;
 import com.aerofs.polaris.api.batch.Batch;
 import com.aerofs.polaris.api.batch.BatchOperation;
 import com.aerofs.polaris.api.batch.BatchOperationResult;
@@ -16,6 +19,7 @@ import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -25,30 +29,36 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
+@RolesAllowed(AeroPrincipal.CLIENT_ROLE)
 @Path("/batch")
 @Singleton
 public final class BatchResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BatchResource.class);
 
-    private final LogicalObjectStore logicalObjectStore;
+    private final LogicalObjectStore objectStore;
+    private final AccessManager accessManager;
 
-    public BatchResource(@Context LogicalObjectStore logicalObjectStore) {
-        this.logicalObjectStore = logicalObjectStore;
+    public BatchResource(@Context LogicalObjectStore objectStore, @Context AccessManager accessManager) {
+        this.objectStore = objectStore;
+        this.accessManager = accessManager;
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public BatchResult submitBatch(final Batch batch) {
+    public BatchResult submitBatch(@Context final AeroPrincipal principal, final Batch batch) {
+
         final BatchResult batchResult = new BatchResult(batch.operations.size());
 
         for (final BatchOperation operation : batch.operations) {
             try {
-                logicalObjectStore.inTransaction(new TransactionCallback<Void>() {
+                accessManager.checkAccess(principal.getUser(), operation.oid, Access.WRITE);
+
+                objectStore.inTransaction(new TransactionCallback<Void>() {
                     @Override
                     public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                        List<LogicalObject> updated = logicalObjectStore.performOperation(conn, operation.oid, operation.operation);
+                        List<Updated> updated = objectStore.performOperation(conn, principal.getDevice(), operation.oid, operation.operation);
                         batchResult.results.add(new BatchOperationResult(updated));
                         return null;
                     }
@@ -56,20 +66,29 @@ public final class BatchResource {
             } catch (CallbackFailedException e) {
                 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
                 Throwable cause = DBIExceptions.findRootCause(e);
-
-                BatchOperationResult result;
-                if (cause instanceof PolarisException) {
-                    PolarisException polarisException = (PolarisException) cause;
-                    result = new BatchOperationResult(polarisException.getErrorCode(), polarisException.getMessage());
-                } else {
-                    result = new BatchOperationResult(ErrorCode.UNKNOWN, cause.getMessage());
-                }
-
+                BatchOperationResult result = getBatchOperationErrorResult(cause);
+                LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
+                batchResult.results.add(result);
+            } catch (Exception e) {
+                BatchOperationResult result = getBatchOperationErrorResult(e);
                 LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
                 batchResult.results.add(result);
             }
         }
 
         return batchResult;
+    }
+
+    private static BatchOperationResult getBatchOperationErrorResult(Throwable cause) {
+        BatchOperationResult result;
+
+        if (cause instanceof PolarisException) {
+            PolarisException polarisException = (PolarisException) cause;
+            result = new BatchOperationResult(polarisException.getErrorCode(), polarisException.getMessage());
+        } else {
+            result = new BatchOperationResult(PolarisError.UNKNOWN, cause.getMessage());
+        }
+
+        return result;
     }
 }

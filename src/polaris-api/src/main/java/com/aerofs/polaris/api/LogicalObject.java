@@ -4,18 +4,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class LogicalObject {
 
-    // this property exists when we pull it from the db
-    // but we won't return it to the client (they don't need the sid)
-    @JsonIgnore
+    @JsonIgnore // property exists, but we won't serialize it
+    @NotNull
+    @Size(min = 1)
     public final String root;
 
+    @NotNull
+    @Size(min = 1)
     public final String oid;
 
+    @Min(0)
     public final long version;
 
+    @NotNull
     public final ObjectType objectType;
 
     public LogicalObject(String root, String oid, long version, ObjectType objectType) {

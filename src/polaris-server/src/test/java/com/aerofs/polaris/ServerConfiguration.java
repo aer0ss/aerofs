@@ -7,7 +7,7 @@ import com.aerofs.baseline.logging.LoggingConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
-abstract class ServerConfiguration {
+public abstract class ServerConfiguration {
 
     public static final HttpConfiguration APP = new HttpConfiguration();
     static {
@@ -27,10 +27,12 @@ abstract class ServerConfiguration {
 
     public static final DatabaseConfiguration DATABASE = new DatabaseConfiguration();
     static {
-        DATABASE.setDriverClass("org.h2.Driver");
+        // DATABASE.setUrl("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS polaris\\;SET SCHEMA polaris"); (works, but only if flyway.setSchemas uses POLARIS as the schema name)
         DATABASE.setUrl("jdbc:h2:mem:test");
+        DATABASE.setDriverClass("org.h2.Driver");
         DATABASE.setUsername("test");
         DATABASE.setPassword("test");
+        DATABASE.setMinIdleConnections(1); // explicitly keep one connection around to prevent the db from being harvested
     }
 
     public static final LoggingConfiguration LOGGING = new LoggingConfiguration();
@@ -45,9 +47,6 @@ abstract class ServerConfiguration {
         POLARIS.setDatabase(DATABASE);
         POLARIS.setLogging(LOGGING);
     }
-
-    public static final String POLARIS_URI = String.format("http://%s:%s", APP.getHost(), APP.getPort());
-    public static final String POLARIS_ADMIN_URI = String.format("http://%s:%s", ADMIN.getHost(), ADMIN.getPort());
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     static {

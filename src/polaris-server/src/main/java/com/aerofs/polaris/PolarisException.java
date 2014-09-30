@@ -1,12 +1,8 @@
 package com.aerofs.polaris;
 
-import com.aerofs.polaris.api.ErrorCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Maps;
+import com.aerofs.polaris.api.PolarisError;
+import com.google.common.base.Objects;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -17,26 +13,19 @@ import java.util.Map;
  */
 public abstract class PolarisException extends Exception {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private final PolarisError errorCode;
 
-    private final ErrorCode errorCode;
-
-    public PolarisException(ErrorCode errorCode) {
+    public PolarisException(PolarisError errorCode) {
         this.errorCode = errorCode;
     }
 
-    public ErrorCode getErrorCode() {
+    public PolarisError getErrorCode() {
         return errorCode;
     }
 
     protected abstract String getSimpleMessage();
 
-    protected abstract void addProperties(Map<String, Object> errorProperties);
-
-    @Override
-    public String toString() {
-        return getMessage();
-    }
+    protected abstract void addErrorFields(Map<String, Object> errorFields);
 
     @Override
     public String getLocalizedMessage() {
@@ -45,17 +34,14 @@ public abstract class PolarisException extends Exception {
 
     @Override
     public String getMessage() {
-        LinkedHashMap<String, Object> properties = Maps.newLinkedHashMap();
+        return toString();
+    }
 
-        properties.put("error_code", errorCode.getCode());
-        properties.put("error_name", errorCode);
-        properties.put("error_text", getSimpleMessage());
-        addProperties(properties);
-
-        try {
-            return MAPPER.writeValueAsString(properties);
-        } catch (JsonProcessingException e) {
-            return String.format("{\"error_code\":\"%d\",\"error_name\":\"%s\",\"error_text\":\"%s\"}", errorCode.getCode(), errorCode.name(), getSimpleMessage());
-        }
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("errorCode", errorCode)
+                .add("errorMessage", getSimpleMessage())
+                .toString();
     }
 }

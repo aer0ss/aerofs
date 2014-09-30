@@ -1,6 +1,7 @@
-package com.aerofs.polaris;
+package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.HttpClientResource;
+import com.aerofs.polaris.PolarisResource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Rule;
 import org.junit.Test;

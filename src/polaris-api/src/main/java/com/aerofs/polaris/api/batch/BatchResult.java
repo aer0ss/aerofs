@@ -4,10 +4,14 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 public final class BatchResult {
 
+    @NotNull
+    @Size(min = 1)
     public final List<BatchOperationResult> results;
 
     public BatchResult(int resultCount) {

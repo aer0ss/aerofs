@@ -4,20 +4,31 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class MoveChild extends Operation {
 
     @NotNull
+    @Size(min = 1)
     public String child;
 
     @NotNull
+    @Size(min = 1)
     public String newParent;
 
     @NotNull
+    @Size(min = 1)
     public String newChildName;
 
     public MoveChild() {
         super(OperationType.MOVE_CHILD);
+    }
+
+    public MoveChild(String child, String newParent, String newChildName) {
+        super(OperationType.MOVE_CHILD);
+        this.child = child;
+        this.newParent = newParent;
+        this.newChildName = newChildName;
     }
 
     @Override

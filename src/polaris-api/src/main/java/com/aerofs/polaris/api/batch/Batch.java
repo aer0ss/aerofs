@@ -4,12 +4,14 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
 public final class Batch {
 
     @Valid
+    @NotNull
     @Size(min = 1)
     public List<BatchOperation> operations;
 

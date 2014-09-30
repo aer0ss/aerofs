@@ -1,11 +1,16 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.polaris.acl.Access;
+import com.aerofs.polaris.acl.AccessException;
+import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
 import org.skife.jdbi.v2.TransactionStatus;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.validation.constraints.Min;
 import javax.ws.rs.DELETE;
@@ -17,46 +22,67 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
+@RolesAllowed(AeroPrincipal.CLIENT_ROLE)
 @Singleton
 public final class LocationResource {
 
-    private final LogicalObjectStore logicalObjectStore;
+    private final LogicalObjectStore objectStore;
+    private final AccessManager accessManager;
 
-    public LocationResource(@Context LogicalObjectStore logicalObjectStore) {
-        this.logicalObjectStore = logicalObjectStore;
+    public LocationResource(@Context LogicalObjectStore objectStore, @Context AccessManager accessManager) {
+        this.objectStore = objectStore;
+        this.accessManager = accessManager;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getLocationsForContent(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
-        return logicalObjectStore.inTransaction(new TransactionCallback<List<String>>() {
+    public List<String> getLocationsForContent(
+            @Context AeroPrincipal principal,
+            @PathParam("oid") @Identifier final String oid,
+            @PathParam("version") @Min(0) final long version,
+            @PathParam("did") @Identifier final String did) throws AccessException {
+        accessManager.checkAccess(principal.getUser(), oid, Access.READ);
+
+        return objectStore.inTransaction(new TransactionCallback<List<String>>() {
 
             @Override
             public List<String> inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                return logicalObjectStore.getLocations(conn, oid, version);
+                return objectStore.getLocations(conn, oid, version);
             }
         });
     }
 
     @POST
-    public void markContentAtLocation(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
-        logicalObjectStore.inTransaction(new TransactionCallback<Void>() {
+    public void markContentAtLocation(
+            @Context AeroPrincipal principal,
+            @PathParam("oid") @Identifier final String oid,
+            @PathParam("version") @Min(0) final long version,
+            @PathParam("did") @Identifier final String did) throws AccessException {
+        accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
+
+        objectStore.inTransaction(new TransactionCallback<Void>() {
 
             @Override
             public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                logicalObjectStore.addLocation(conn, oid, version, did);
+                objectStore.addLocation(conn, oid, version, did);
                 return null;
             }
         });
     }
 
     @DELETE
-    public void unmarkContentAtLocation(@Identifier @PathParam("oid") final String oid, @Min(0) @PathParam("version") final long version, @Identifier @PathParam("did") final String did) {
-        logicalObjectStore.inTransaction(new TransactionCallback<Void>() {
+    public void unmarkContentAtLocation(
+            @Context AeroPrincipal principal,
+            @PathParam("oid") @Identifier final String oid,
+            @PathParam("version") @Min(0) final long version,
+            @PathParam("did") @Identifier final String did) throws AccessException {
+        accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
+
+        objectStore.inTransaction(new TransactionCallback<Void>() {
 
             @Override
             public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                logicalObjectStore.removeLocation(conn, oid, version, did);
+                objectStore.removeLocation(conn, oid, version, did);
                 return null;
             }
         });

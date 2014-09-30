@@ -4,10 +4,12 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class RemoveChild extends Operation {
 
     @NotNull
+    @Size(min = 1)
     public String child;
 
     public RemoveChild() {

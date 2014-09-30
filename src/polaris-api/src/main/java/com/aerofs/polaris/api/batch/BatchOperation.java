@@ -4,15 +4,15 @@ import com.aerofs.polaris.api.operation.Operation;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class BatchOperation {
 
     @NotNull
+    @Size(min = 1)
     public String oid;
 
-    @Valid
     @NotNull
     public Operation operation;
 

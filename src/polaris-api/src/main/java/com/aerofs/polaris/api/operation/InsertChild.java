@@ -5,20 +5,30 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class InsertChild extends Operation {
 
     @NotNull
+    @Size(min = 1)
     public String child;
 
     @NotNull
     public ObjectType childObjectType;
 
     @NotNull
+    @Size(min = 1)
     public String childName;
 
     public InsertChild() {
         super(OperationType.INSERT_CHILD);
+    }
+
+    public InsertChild(String child, ObjectType childObjectType, String childName) {
+        super(OperationType.INSERT_CHILD);
+        this.child = child;
+        this.childObjectType = childObjectType;
+        this.childName = childName;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.aerofs.polaris.api.batch;
 
-import com.aerofs.polaris.api.ErrorCode;
-import com.aerofs.polaris.api.LogicalObject;
+import com.aerofs.polaris.api.PolarisError;
+import com.aerofs.polaris.api.Updated;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -12,24 +12,24 @@ public final class BatchOperationResult {
     public final boolean successful;
 
     @Nullable
-    public final List<LogicalObject> logicalObjects;
+    public final List<Updated> updated;
 
     @Nullable
-    public final ErrorCode errorCode;
+    public final PolarisError errorCode;
 
     @Nullable
     public final String errorMessage;
 
-    public BatchOperationResult(List<LogicalObject> logicalObjects) {
+    public BatchOperationResult(List<Updated> updated) {
         this.successful = true;
-        this.logicalObjects = logicalObjects;
+        this.updated = updated;
         this.errorCode = null;
         this.errorMessage = null;
     }
 
-    public BatchOperationResult(ErrorCode errorCode, String errorMessage) {
+    public BatchOperationResult(PolarisError errorCode, String errorMessage) {
         this.successful = false;
-        this.logicalObjects = null;
+        this.updated = null;
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
@@ -42,14 +42,14 @@ public final class BatchOperationResult {
         BatchOperationResult other = (BatchOperationResult) o;
 
         return successful == other.successful
-                && Objects.equal(logicalObjects, other.logicalObjects)
+                && Objects.equal(updated, other.updated)
                 && Objects.equal(errorCode, other.errorCode)
                 && Objects.equal(errorMessage, other.errorMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(successful, logicalObjects, errorCode, errorMessage);
+        return Objects.hashCode(successful, updated, errorCode, errorMessage);
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class BatchOperationResult {
         return Objects
                 .toStringHelper(this)
                 .add("successful", successful)
-                .add("logicalObjects", logicalObjects)
+                .add("updated", updated)
                 .add("errorCode", errorCode)
                 .add("errorMessage", errorMessage)
                 .toString();

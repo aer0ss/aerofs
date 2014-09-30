@@ -32,6 +32,10 @@ public interface Children {
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_oid = :child_oid")
     boolean isChild(@Bind("oid") String oid, @Bind("child_oid") String child);
 
+    @Nullable
+    @SqlQuery("select oid from children where child_oid = :child_oid")
+    String getParent(@Bind("child_oid") String child);
+
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_name = :child_name")
     int countChildrenWithName(@Bind("oid") String oid, @Bind("child_name") String childName);
 
@@ -58,7 +62,7 @@ public interface Children {
         @Override
         public Child map(int index, ResultSet r, StatementContext ctx) throws SQLException {
             try {
-                return new Child(r.getString(COL_CHILD_OID), r.getString(COL_CHILD_NAME), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)));
+                return new Child(r.getString(COL_CHILD_OID), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getString(COL_CHILD_NAME));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

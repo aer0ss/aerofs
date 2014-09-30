@@ -1,7 +1,7 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.PolarisException;
-import com.aerofs.polaris.api.ErrorCode;
+import com.aerofs.polaris.api.PolarisError;
 
 import java.util.Map;
 
@@ -12,7 +12,7 @@ public final class NotFoundException extends PolarisException {
     private final String oid;
 
     public NotFoundException(String oid) {
-        super(ErrorCode.NO_SUCH_OBJECT);
+        super(PolarisError.NO_SUCH_OBJECT);
         this.oid = oid;
     }
 
@@ -22,7 +22,7 @@ public final class NotFoundException extends PolarisException {
     }
 
     @Override
-    protected void addProperties(Map<String, Object> errorProperties) {
-        errorProperties.put("oid", oid);
+    protected void addErrorFields(Map<String, Object> errorFields) {
+        errorFields.put("oid", oid);
     }
 }

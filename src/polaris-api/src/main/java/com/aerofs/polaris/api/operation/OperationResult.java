@@ -1,16 +1,20 @@
 package com.aerofs.polaris.api.operation;
 
-import com.aerofs.polaris.api.LogicalObject;
+import com.aerofs.polaris.api.Updated;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 public final class OperationResult {
 
-    public final List<LogicalObject> updated;
+    @NotNull
+    @Size(min = 1)
+    public final List<Updated> updated;
 
-    public OperationResult(List<LogicalObject> updated) {
+    public OperationResult(List<Updated> updated) {
         this.updated = updated;
     }
 

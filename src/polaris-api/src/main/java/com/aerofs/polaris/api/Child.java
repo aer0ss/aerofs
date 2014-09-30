@@ -4,20 +4,22 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
-// FIXME (AG): combine with LogicalObject if possible
 public final class Child {
 
     @NotNull
+    @Size(min = 1)
     public final String oid;
 
     @NotNull
+    @Size(min = 1)
     public final String name;
 
     @NotNull
     public final ObjectType objectType;
 
-    public Child(String oid, String name, ObjectType objectType) {
+    public Child(String oid, ObjectType objectType, String name) {
         this.oid = oid;
         this.name = name;
         this.objectType = objectType;

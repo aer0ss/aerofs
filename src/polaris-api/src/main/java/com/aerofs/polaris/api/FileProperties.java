@@ -3,18 +3,26 @@ package com.aerofs.polaris.api;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 public final class FileProperties {
 
+    @NotNull
+    @Size(min = 1)
     public final String oid;
 
+    @Min(0)
     public final long version;
 
     @Nullable
     public final String hash;
 
+    @Min(0)
     public final long size;
 
+    @Min(0)
     public final long mtime;
 
     public FileProperties(String oid, long version) {
