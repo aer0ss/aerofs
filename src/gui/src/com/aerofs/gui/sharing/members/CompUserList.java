@@ -22,7 +22,6 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
@@ -43,9 +42,9 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
@@ -54,6 +53,8 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
+import static java.util.Collections.emptyList;
 
 /**
  * SharedFolder and ACL are terms that are closely related: SharedFolder is the product feature to
@@ -97,7 +98,7 @@ public class CompUserList extends Composite
      * UI thread to avoid a race against the UI thread.
      */
     // _members is cached because we want to look up a member by user ID in setRole().
-    private @Nonnull Map<UserID, SharedFolderMember> _members = Maps.newHashMap();
+    private List<SharedFolderMember> _members = emptyList();
     private Permissions _localUserPermissions;
     private Path _path;
 
@@ -210,7 +211,7 @@ public class CompUserList extends Composite
     /**
      * @pre must be called from UI thread and members must not be null.
      */
-    private void setState(@Nonnull Map<UserID, SharedFolderMember> members, Permissions localUserPermissions, Path path)
+    private void setState(List<SharedFolderMember> members, Permissions localUserPermissions, Path path)
     {
         checkState(GUI.get().isUIThread());
         checkNotNull(members);
@@ -221,7 +222,7 @@ public class CompUserList extends Composite
 
         // N.B. this establishes a tight binding; if the data in _members is updated, the changes
         // will be visible after _tv refreshes.
-        _tv.setInput(_members.values());
+        _tv.setInput(_members);
     }
 
     /**
@@ -265,7 +266,7 @@ public class CompUserList extends Composite
 
         GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
         {
-            Map<UserID, SharedFolderMember> _newMembers = Maps.newHashMap();
+            List<SharedFolderMember> _newMembers = emptyList();
             Permissions _newLocalUserPermissions;
 
             @Override
@@ -278,10 +279,16 @@ public class CompUserList extends Composite
                 SID sid = getStoreID(path);
                 Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(sid);
 
-                _newMembers = filterLeftMembersAndCreateMapFromPB(new Factory(localUser), pbFolder);
+                _newMembers = createListFromPBAndFilterLeftMembers(new Factory(localUser),
+                        pbFolder);
+
                 // N.B. the local user may not be a member, e.g. Team Server
-                SharedFolderMember localUserAsMember = _newMembers.get(localUser.get());
-                if (localUserAsMember != null) _newLocalUserPermissions = localUserAsMember._permissions;
+                Optional<SharedFolderMember> localUserAsMember = _newMembers.stream()
+                        .filter(SharedFolderMember::isLocalUser)
+                        .findAny();
+                if (localUserAsMember.isPresent()) {
+                    _newLocalUserPermissions = localUserAsMember.get()._permissions;
+                }
             }
 
             // makes a ritual call to retrieve the list of shared folders and their sids and
@@ -312,16 +319,15 @@ public class CompUserList extends Composite
                 return reply.getSharedFolder(0);
             }
 
-            private Map<UserID, SharedFolderMember> filterLeftMembersAndCreateMapFromPB(
+            private List<SharedFolderMember> createListFromPBAndFilterLeftMembers(
                     Factory factory, Sp.PBSharedFolder pbFolder) throws ExBadArgs
             {
-                Map<UserID, SharedFolderMember> members =
-                        Maps.newHashMapWithExpectedSize(pbFolder.getUserPermissionsAndStateCount());
+                List<SharedFolderMember> members = newArrayListWithExpectedSize(
+                        pbFolder.getUserPermissionsAndStateCount());
 
                 for (PBUserPermissionsAndState urs : pbFolder.getUserPermissionsAndStateList()) {
                     if (urs.getState() != PBSharedFolderState.LEFT) {
-                        SharedFolderMember member = factory.fromPB(urs);
-                        members.put(member._userID, member);
+                        members.add(factory.fromPB(urs));
                     }
                 }
 
@@ -387,10 +393,12 @@ public class CompUserList extends Composite
                     table.setEnabled(true);
                     table.setFocus();
 
-                    SharedFolderMember member = _members.get(subject);
+                    SharedFolderMember member = _members.stream()
+                            .filter(x -> x._userID.equals(subject))
+                            .findFirst().get();
 
                     if (permissions == null) {
-                        _members.remove(subject);
+                        _members.remove(member);
                     } else {
                         member._permissions = permissions;
                     }
