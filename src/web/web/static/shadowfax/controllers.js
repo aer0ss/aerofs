@@ -56,6 +56,8 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.folder = folder;
               $scope.people = $scope.folder.people;
               $scope.is_privileged = $scope.folder.is_privileged;
+              $scope.error = false;
+
               $scope.newMember = function(){
                 return {
                     email: '',
@@ -87,8 +89,25 @@ shadowfaxControllers.controller('SharedFoldersController',
                     return permissions[role];
               };
 
-              var _make_member_request = function(email, permissions, is_multiple, is_last) {
+              $scope.ok = function () {
+                $modalInstance.close();
+              };
+
+              var showModalErrorMessage = function(message) {
+                return function(response) {
+                    if (response && response.status == 403) {
+                        $scope.error = message +
+                            " It appears you are not authorized to administer this folder. " +
+                            "Please try reloading the page or logging back in.";
+                    } else {
+                        $scope.error = message + " Please try again.";
+                    }
+                };
+              };
+
+              var _make_member_request = function(email, permissions) {
                 $log.info("Adding member " + email);
+                $scope.error = false;
                 $http.post(addMemberUrl,
                     {
                         user_id: email,
@@ -98,13 +117,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                         suppress_sharing_rules_warnings: false
                     }
                 ).success(function() {
-                    if (is_multiple && is_last) {
-                        showSuccessMessage('Invitations have been sent.');
-                        $scope.invitees = '';
-                    } else if (!is_multiple) {
-                        showSuccessMessage('Invitation has been sent.');
-                        $scope.invitees = '';
-                    }
+                    $scope.invitees = '';
                     var person = $scope.newMember();
                     person.email = email;
                     if (permissions.indexOf('MANAGE') != -1 && permissions.indexOf('WRITE') != -1) {
@@ -113,11 +126,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                         person.can_edit = true;
                     }
                     $scope.people.push(person);
-                }).error(showErrorMessageFromResponse);
-              };
-
-              $scope.ok = function () {
-                $modalInstance.close();
+                }).error(showModalErrorMessage("Sorry, the invitation failed."));
               };
 
               $scope.inviteMembers = function (invitees, inviteeRole) {
@@ -126,11 +135,9 @@ shadowfaxControllers.controller('SharedFoldersController',
                         function(item){
                             return item.indexOf('@') != -1;
                         });
+                var permissions = _get_json_permissions(inviteeRole);
                 for (var i = 0; i < email_list.length; i++) {
-                    _make_member_request(email_list[i],
-                        _get_json_permissions(inviteeRole),
-                        email_list.length > 1,
-                        i === email_list.length - 1);
+                    _make_member_request(email_list[i], permissions);
                 }
                 stopModalSpinner();
               };
@@ -150,7 +157,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     person.can_edit = (role === "Owner" || role === "Editor");
                     stopModalSpinner();
                 })
-                .error(showErrorMessageFromResponse);
+                .error(showModalErrorMessage("Sorry, the permissions change failed."));
               };
 
               $scope.remove = function(person) {
