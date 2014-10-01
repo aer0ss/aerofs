@@ -31,6 +31,8 @@ import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Main
 {
@@ -115,8 +117,10 @@ public class Main
         String rtRoot = args[0];
         String prog = args[1];
 
-        String[] appArgs = new String[args.length - REQUIRED_ARGS];
-        System.arraycopy(args, REQUIRED_ARGS, appArgs, 0, appArgs.length);
+        List<String> appArgs = new LinkedList<String>();
+        for (int i = REQUIRED_ARGS; i < args.length; i++) {
+            appArgs.add(args[i]);
+        }
 
         // access LibParam, C
         if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
@@ -176,10 +180,7 @@ public class Main
                 // message forward as an application argument.
                 // FIXME(AT): refactor Main to only start the programs and have individual program
                 // run initialization (through inheritance maybe).
-                String[] temp = new String[appArgs.length + 1];
-                System.arraycopy(appArgs, 0, temp, 0, appArgs.length);
-                temp[temp.length - 1] = "-E" + msg;
-                appArgs = temp;
+                appArgs.add("-E" + msg);
             } else {
                 System.err.println("failed in main(): " + Util.e(e));
                 ExitCode.CONFIGURATION_INIT.exit();
@@ -206,7 +207,7 @@ public class Main
         try {
             loadCfg(rtRoot, prog);
             Util.registerLibExceptions();
-            launchProgram(rtRoot, prog, appArgs);
+            launchProgram(rtRoot, prog, appArgs.toArray(new String[0]));
         } catch (ExDBCorrupted e) {
             // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
             String message = "db corrupted: " + e._integrityCheckResult;
