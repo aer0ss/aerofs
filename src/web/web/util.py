@@ -189,7 +189,11 @@ def is_mobile_disabled(settings):
     return is_private_deployment(settings) and str2bool(settings.get('web.disable_download_mobile_client', False))
 
 def is_linksharing_enabled(settings):
-    return str2bool(settings.get('url_sharing.enabled', True));
+    # Unfortunately, upgrading appliances will have an empty string for this property
+    # and str2bool treats that value as "False".  We want the default to be True here,
+    # so we treat empty string as True, and otherwise obey a provided preference.
+    str_value = settings.get('url_sharing.enabled', '')
+    return True if str_value == '' else str2bool(str_value)
 
 def is_restricted_external_sharing_enabled(settings):
     return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))

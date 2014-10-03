@@ -73,7 +73,7 @@ public class PropertiesHelper
             Boolean defaultValue)
     {
         String val = properties.getProperty(key);
-        return (val == null) ? defaultValue : Boolean.valueOf(val);
+        return isNullOrEmpty(val) ? defaultValue : Boolean.valueOf(val);
     }
 
     /**
