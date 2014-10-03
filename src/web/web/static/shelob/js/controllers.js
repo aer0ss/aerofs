@@ -40,16 +40,13 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
     $scope.requestHeaders = {};
+    $scope.rootFolder = 'root';
     $scope.fsLocation = {
-        currentFolder: null,
+        currentFolder: {
+            id: $routeParams.oid || 'root'
+        },
         isSingleObject: false
     };
-    // Despite the name, this means the sid for the current folder shown
-    // TODO: clarify nomenclature here, this is silly
-    $scope.rootFolder = $routeParams.oid;
-    if (!$routeParams.oid) {
-        $scope.rootFolder = 'root';
-    }
 
     // for anchor SID/OID: return root folder SID/OID
     // for folder: return input
@@ -60,14 +57,11 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     var _getFolders = function (){
         OutstandingRequestsCounter.push();
-        API.get('/folders/' + $scope.rootFolder + '?fields=children,path&t=' + Math.random(),
+        API.get('/folders/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
             $scope.requestHeaders).then(function(response) {
             OutstandingRequestsCounter.pop();
             // this is used as the last element of the breadcrumb trail
-            $scope.fsLocation.currentFolder = {
-                id: $scope.rootFolder,
-                name: response.data.name
-            };
+            $scope.fsLocation.currentFolder.name = response.data.name;
 
             // omit the root AeroFS folder from the breadcrumb trail, since we will always
             // include a link to the root with the label "My Files"
@@ -75,6 +69,19 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 $scope.breadcrumbs = response.data.path.folders.slice(1);
             } else {
                 $scope.breadcrumbs = response.data.path.folders.slice(0);
+            }
+            // Don't show breadcrumbs for folders outside the domain of the share
+            if ($scope.share) {
+                if ($scope.fsLocation.currentFolder.id === $scope.rootFolder) {
+                    $scope.breadcrumbs = [];
+                } else {
+                    for (var i = 0; i < $scope.breadcrumbs.length; i++) {
+                        if ($scope.breadcrumbs[i].id === $scope.rootFolder) {
+                            $scope.breadcrumbs = $scope.breadcrumbs.slice(i);
+                            break;
+                        }
+                    }
+                }
             }
 
             // set object.type and object.last_modified for files and folders and concat the lists
@@ -100,7 +107,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             if ($scope.share && response.status == 404) {
                 /* Maybe the request is for a file, not a folder! */
                 $log.info('Request may be for a file rather than a folder, retrying...');
-                API.get('/files/' + $scope.rootFolder + '?fields=children,path&t=' + Math.random(),
+                API.get('/files/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
                     $scope.requestHeaders).then(function(response) {
                         $scope.fsLocation.isSingleObject = true;
                         var object = response.data;
@@ -116,8 +123,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // Get link sharing data, check if objects are done loading
     // Note: if this is a linksharing page, we don't need this data
     var _getLinks = function (){
-        var sid = $scope.rootFolder;
-        if ($scope.rootFolder !== "root") {
+        var sid = $scope.fsLocation.currentFolder.id;
+        if ($scope.fsLocation.currentFolder.id !== "root") {
             sid = sid.toString().slice(0,sid.length/2);
         }
         OutstandingRequestsCounter.push();
@@ -195,6 +202,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 // linkshare root is never 'root', fixing it
                 if ($scope.rootFolder === 'root') {
                     $scope.rootFolder = response.soid;
+                }
+                if ($scope.fsLocation.currentFolder.id === 'root') {
+                    $scope.fsLocation.currentFolder.id = response.soid;
                 }
                 // manual expiration checking
                 if (response.expires < 0) {
@@ -392,7 +402,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     $scope.submitMove = function(object, destination) {
 
         // exit early if move is a no-op
-        if (destination.id == $scope.rootFolder) return;
+        if (destination.id == $scope.fsLocation.currentFolder.id) return;
 
         // exit early if you try to move a folder into itself
         if (destination.id == object.id) {
