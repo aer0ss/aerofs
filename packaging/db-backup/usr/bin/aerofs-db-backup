@@ -22,8 +22,8 @@ cp -a /opt/ca/prod aerofs-db-backup/ca-files
 echo ">>> Backing up configuration properites..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
-echo ">>> Backing up verkehr persistent topics..."
-cp -a /data/topics aerofs-db-backup/
+echo ">>> Backing up verkehr persistent topics to v2topics..."
+cp -a /data/topics aerofs-db-backup/v2topics
 
 echo ">>> Creating backup file..."
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE

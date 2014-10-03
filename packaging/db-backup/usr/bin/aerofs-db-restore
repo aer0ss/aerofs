@@ -35,7 +35,10 @@ pushd $tempdir 1>/dev/null 2>/dev/null
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
 # bsd tar does not handle extracting sparse files efficiently and fills all the holes
 # takeaway: create tars with bsdtar, and extract them with gnutar
-tar --extract --sparse -f $file
+# NOTE: In case the backup file came from 0.8.63 through 0.8.68 inclusive,
+# we will deliberately ignore any topics that live in /data/topics.
+#           Let this monument stand for all time.
+tar --extract --sparse --exclude aerofs-db-backup/topics -f $file
 
 if [ ! -d aerofs-db-backup ]
 then
@@ -94,12 +97,13 @@ cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
 service ca-server start 1>/dev/null 2>/dev/null
 
 # Only restore verkehr topics for backups that are new enough to contain
-# backed-up topic sets.
+# backed-up topic sets, version 2. This works around a bug that existed
+# in private-0.8.63 to private-0.8.68. We deliberately exclude topics
+# under /data/topics in the tar expansion.
 echo ">>> Restoring verkehr persistent topics..."
-if [ -d aerofs-db-backup/topics ] ; then
+if [ -d aerofs-db-backup/v2topics ] ; then
     rm -rf /data/topics
-    mkdir -p /data/topics
-    rsync --sparse -a aerofs-db-backup/topics/. /data/topics/.
+    cp -a aerofs-db-backup/v2topics /data/topics
 fi
 
 echo ">>> Restoring configuration properties..."
