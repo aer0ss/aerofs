@@ -6,6 +6,8 @@
     Are you sure you want to delete "{{folder.name}}"? This will <strong>delete the folder and all its contents</strong> for you and for <strong>everyone</strong> that the folder is shared with.
 </div>
 <div class="modal-footer">
-    <a href="#" class="btn btn-danger pull-right" ng-click="ok()">Delete folder</a>
-    <a href="#" class="btn btn-default pull-right" ng-click="cancel()">Cancel</a>
+    <div class="pull-right">
+        <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+        <button class="btn btn-danger" ng-click="ok()">Delete folder</button>
+    </div>
 </div>

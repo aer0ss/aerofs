@@ -242,8 +242,9 @@ shadowfaxControllers.controller('SharedFoldersController',
         };
 
         $scope.destroyCheck = function(folder) {
-            var DestroyModalCtrl = function ($scope, $modalInstance, folder) {
+            var DestroyModalCtrl = function ($scope, $modalInstance, folder, deleteFolder) {
               $scope.folder = folder;
+              $scope.deleteFolder = deleteFolder;
 
               $scope.cancel = function () {
                 $modalInstance.close();
@@ -259,12 +260,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 ).success(function(e) {
                     showSuccessMessage('You have deleted folder "'+ $scope.folder.name +'".');
-                    for (var i = 0; i < $scope.folders.length; i++) {
-                        if ($scope.folders[i].sid === $scope.folder.sid){
-                            $scope.folders.splice(i,1);
-                            break;
-                        }
-                    }
+                    $scope.deleteFolder($scope.folder);
                     $modalInstance.close();
                 }).error(showErrorMessageFromResponse);
               };
@@ -276,6 +272,16 @@ shadowfaxControllers.controller('SharedFoldersController',
                 resolve: {
                     folder: function() {
                         return folder;
+                    },
+                    deleteFolder: function() {
+                        return function(doomedFolder){
+                            for (var i = 0; i < $scope.folders.length; i++) {
+                                if ($scope.folders[i].sid === doomedFolder.sid){
+                                    $scope.folders.splice(i,1);
+                                    break;
+                                }
+                            }
+                        };
                     }
                 }
             });
