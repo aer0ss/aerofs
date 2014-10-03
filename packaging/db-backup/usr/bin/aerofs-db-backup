@@ -23,15 +23,16 @@ echo ">>> Backing up configuration properites..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
 echo ">>> Backing up verkehr persistent topics..."
-mkdir -p aerofs-db-backup/topics
-rsync --sparse -a /data/topics/. aerofs-db-backup/topics/.
+cp -a /data/topics aerofs-db-backup/
 
 echo ">>> Creating backup file..."
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
 # bsd tar does not handle extracting sparse files efficiently and fills all the holes
-# takeaway: create tars with bsdtar, and extract them with gnutar
-bsdtar -Scf aerofs-db-backup.tar aerofs-db-backup/*
-gzip aerofs-db-backup.tar
+# bsd tar also doesn't support producing sparse archives at all until 3.0.4S.
+#   Ubuntu 12.04 ships version 3.0.3. :(
+# takeaway: use bsdtar on sufficiently up-to-date systems.
+#           use gnu tar on older stuff, like this appliance.
+tar -Sczf aerofs-db-backup.tar.gz aerofs-db-backup/*
 
 popd 1>/dev/null 2>/dev/null
 cp -a $tempdir/aerofs-db-backup.tar.gz .
