@@ -46,8 +46,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 } else {
                     $log.info('User ' + user.email + ' is no longer an admin.');
                 }
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
+            }).error(function(data, status){
+                showErrorMessageWith(data, status)
                 user.is_admin = !user.is_admin;
             });
         };
@@ -63,8 +63,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 } else {
                     $log.info('User ' + user.email + ' is no longer a publisher.');
                 }
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
+            }).error(function(data, status){
+                showErrorMessageWith(data, status)
                 user.is_publisher = !user.is_publisher;
             });
         };
@@ -85,8 +85,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                         $log.info("Two factor authentication has been disabled for " +
                             $scope.user + ".");
                         $modalInstance.close();
-                    }).error(function(response){
-                        showErrorMessageFromResponse(response);
+                    }).error(function(data, status){
+                        showErrorMessageWith(data, status)
                         $scope.user.has_two_factor = true;
                         $modalInstance.close();
                     });
@@ -126,8 +126,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                             }
                         }
                         $modalInstance.close();
-                    }).error(function(response){
-                        showErrorMessageFromResponse(response);
+                    }).error(function(data, status){
+                        showErrorMessageWith(data, status)
                         $modalInstance.close();
                     });
                 };
@@ -169,8 +169,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                             }
                         }
                         $modalInstance.close();
-                    }).error(function(response){
-                        showErrorMessageFromResponse(response);
+                    }).error(function(data, status){
+                        showErrorMessageWith(data, status)
                         $modalInstance.close();
                     });
                 };
@@ -211,9 +211,7 @@ striderControllers.controller('InviteesController', ['$scope', '$log', '$http',
                     email: $scope.newInvitee
                 });
                 $scope.newInvitee = '';
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
-            });
+            }).error(showErrorMessageWith);
         };
 
         $scope.uninvite = function(invitee) {
@@ -227,8 +225,6 @@ striderControllers.controller('InviteesController', ['$scope', '$log', '$http',
                         break;
                     }
                 }
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
-            });
+            }).error(showErrorMessageWith);
         };
     }]);

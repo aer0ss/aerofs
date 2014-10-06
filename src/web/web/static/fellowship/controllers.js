@@ -99,8 +99,8 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                         $scope.newGroup.members = _email_list_to_user_objects($scope.newGroup.members);
                         $scope.groups.push($scope.newGroup);
                         $modalInstance.close();
-                    }).error(function(response){
-                        showErrorMessageFromResponse(response);
+                    }).error(function(data, status) {
+                        showErrorMessageWith(data, status)
                         $modalInstance.close();
                     });
                 };

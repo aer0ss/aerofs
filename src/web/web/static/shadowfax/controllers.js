@@ -35,9 +35,9 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
                 $rootScope.me = response.me;
-            }).error(function(response){
+            }).error(function(data, status){
                 $log.warn('Shared folders data failed to load.');
-                showErrorMessageFromResponse(response);
+                showErrorMessageWith(data, status)
             });
         };
         $scope.paginationInfo = {
@@ -89,10 +89,6 @@ shadowfaxControllers.controller('SharedFoldersController',
                     return permissions[role];
               };
 
-              $scope.ok = function () {
-                $modalInstance.close();
-              };
-
               var showModalErrorMessage = function(message) {
                 return function(response) {
                     if (response && response.status == 403) {
@@ -129,6 +125,10 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }).error(showModalErrorMessage("Sorry, the invitation failed."));
               };
 
+              $scope.ok = function () {
+                $modalInstance.close();
+              };
+
               $scope.inviteMembers = function (invitees, inviteeRole) {
                 startModalSpinner();
                 var email_list = $.trim(invitees).split(/\s*[,;\s]\s*/).filter(
@@ -156,8 +156,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     person.is_owner = role === "Owner";
                     person.can_edit = (role === "Owner" || role === "Editor");
                     stopModalSpinner();
-                })
-                .error(showModalErrorMessage("Sorry, the permissions change failed."));
+                }).error(showModalErrorMessage("Sorry, the permissions change failed."));
               };
 
               $scope.remove = function(person) {
@@ -218,11 +217,10 @@ shadowfaxControllers.controller('SharedFoldersController',
                         break;
                     }
                 }
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
+            }).error(function(data, status){
+                showErrorMessageWith(data, status)
                 spinner.stop();
             });
-        
         };
 
         $scope.rejoin = function(folder) {
@@ -242,8 +240,8 @@ shadowfaxControllers.controller('SharedFoldersController',
                         break;
                     }
                 }
-            }).error(function(response){
-                showErrorMessageFromResponse(response);
+            }).error(function(data, status){
+                showErrorMessageWith(data, status)
                 spinner.stop();
             });
         };
@@ -256,7 +254,7 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.cancel = function () {
                 $modalInstance.close();
               };
-              
+
               $scope.ok = function () {
                 $http.post(destroyFolderUrl,
                     {
@@ -269,7 +267,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     showSuccessMessage('You have deleted folder "'+ $scope.folder.name +'".');
                     $scope.deleteFolder($scope.folder);
                     $modalInstance.close();
-                }).error(showErrorMessageFromResponse);
+                }).error(showErrorMessageWith);
               };
             };
 

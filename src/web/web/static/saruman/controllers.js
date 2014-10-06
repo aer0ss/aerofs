@@ -12,9 +12,9 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
         }).success(function(data){
             $scope.devices = data.devices.concat(data.mobile_devices);
             $rootScope.devices = $scope.devices;
-        }).error(function(response){
+        }).error(function(data, status){
             $log.warn('Device data failed to load.');
-            showErrorMessageFromResponse(response);
+            showErrorMessageWith(data, status)
         });
 
         $scope.changeName = function(device) {
@@ -30,10 +30,10 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
             }).success(function(){
                 $log.info("Device name changed to " + device.name + ".");
                 device.changingName = false;
-            }).error(function(response){
+            }).error(function(data, status){
                 $log.warn('Device rename failed.');
                 device.name = oldName;
-                showErrorMessageFromResponse(response);
+                showErrorMessageWith(data, status)
             });
         };
 
@@ -82,13 +82,13 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
                             }
                         }
                         $modalInstance.close();
-                    }).error(function(response){
+                    }).error(function(data, status){
                         if (action == "erase") {
                             $log.warn("Device erasure failed.");
                         } else {
                             $log.warn("Device unlinking failed.");
                         }
-                        showErrorMessageFromResponse(response);
+                        showErrorMessageWith(data, status)
                         $modalInstance.close();
                     });
                 };

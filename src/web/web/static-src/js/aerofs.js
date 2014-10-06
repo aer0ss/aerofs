@@ -85,10 +85,14 @@ function normalizeMessage(message) {
 }
 
 function showErrorMessageFromResponse(xhr) {
-    if (xhr.status == 400) {
+    showErrorMessageWith($.parseJSON(xhr.responseText), xhr.status);
+}
+
+function showErrorMessageWith(data, status) {
+    if (status == 400) {
         // We only use 400 for expected JSON error replies. See error.py
-        showErrorMessage(getAeroFSErrorMessage(xhr));
-    } else if (xhr.status == 403) {
+        showErrorMessage(data.message);
+    } else if (status == 403) {
         // See error_view.py:_force_login on generation of 403
         // Note that both web and bunker uses 'login' as the login route
         window.location.assign("/login?next=" +
@@ -96,8 +100,8 @@ function showErrorMessageFromResponse(xhr) {
                 window.location.search + window.location.hash));
     } else {
         showErrorMessageUnsafe(getInternalErrorText());
-        console.log("show error message. status: " + xhr.status +
-            " statusText: " + xhr.statusText + " responseText: " + xhr.responseText);
+        console.log("show error message. status: " + status +
+            " data: " + data);
     }
 }
 
