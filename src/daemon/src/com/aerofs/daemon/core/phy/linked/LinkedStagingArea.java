@@ -29,6 +29,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -40,7 +41,7 @@ import static com.aerofs.defects.Defects.newMetric;
 
 /**
  * To implement efficient atomic deletion of large object tree in LinkedStorage we introduce the
- * concept of a stagin area.
+ * concept of a staging area.
  *
  * Instead of immediately deleting files and folders, which on most systems would require walking
  * the whole tree, we simply move the folder to be deleted in a special auxiliary folder. This
@@ -105,10 +106,20 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         final InjectableFile from = _factFile.create(absPath);
         if (!from.exists()) return;
 
-        long id = _sadb.addEntry_(historyPath, t);
-        final InjectableFile to = stagedPath(id, historyPath.sid());
+        // the staging area may contain entries from a previous installation
+        // in which case we should:
+        //   1. add a corresponding entry to the db to burn these remains
+        //   2. keep looking for a "free" spot
+        long id;
+        InjectableFile sf;
+        do {
+            id = _sadb.addEntry_(historyPath, t);
+            sf = stagedPath(id, historyPath.sid());
+        } while (sf.exists());
 
         l.debug("staging[{}] {} -> {}", absPath, historyPath, id);
+
+        final InjectableFile to = sf;
 
         from.moveInSameFileSystem(to);
         t.addListener_(new AbstractTransListener() {
@@ -160,13 +171,14 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                 if (processStagedFolder_(f, tk)) {
                     removeEntry_(f.id);
                 } else {
+                    l.info("failed to process staged folder id: {}", f.id);
                     ok = false;
                 }
                 lastId = f.id;
             }
             if (!ok) {
                 l.info("deferred processing of staging area");
-                return true;
+                throw new ExRetryLater("failed to clear staging area");
             }
         } finally {
             tk.reclaim_();
@@ -200,19 +212,42 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     private boolean processStagedFolder_(StagedFolder sf, Token tk) throws ExAborted
     {
         l.debug("staged {} {}", sf.id, sf.historyPath);
-        // ignore entries whose physical root was ulinked
+        // ignore entries whose physical root was unlinked
         if (_lrm.get_(sf.historyPath.sid()) == null) return true;
         InjectableFile f = stagedPath(sf.id, sf.historyPath.sid());
         if (!f.exists()) return true;
         TCB tcb = tk.pseudoPause_("psa");
         try {
             if (sf.historyPath.isEmpty()) {
-                return f.deleteIgnoreErrorRecursively();
+                return deleteIgnoreErrorRecursively_(f);
             } else {
                 return moveToRevIgnoreErrorRecursively_(f, sf.historyPath);
             }
         } finally {
             tcb.pseudoResumed_();
+        }
+    }
+
+    private boolean deleteIgnoreErrorRecursively_(InjectableFile f)
+    {
+        if (f.isDirectory()) {
+            fixDirectoryPermissions(f);
+            InjectableFile[] children = f.listFiles();
+            if (children != null) {
+                for (InjectableFile child : children) deleteIgnoreErrorRecursively_(child);
+            }
+        }
+
+        return f.deleteIgnoreError();
+    }
+
+    private void fixDirectoryPermissions(InjectableFile f)
+    {
+        try {
+            f.fixDirectoryPermissions();
+        } catch (Exception e) {
+            l.warn("couldn't set write permissions on folder at {} in the staging area," +
+                    "check that the daemon owns those folders", f, BaseLogUtil.suppress(e));
         }
     }
 
@@ -222,12 +257,13 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
             // file doesn't exist, nothing we need to delete
             return true;
         } else if (f.isDirectory()) {
+            fixDirectoryPermissions(f);
             String[] children = f.list();
             if (children != null) {
                 for (String c : children) {
                     InjectableFile cf = _factFile.create(f, c);
                     if (_il.isIgnored(c)) {
-                        cf.deleteIgnoreError();
+                        deleteIgnoreErrorRecursively_(cf);
                     } else {
                         moveToRevIgnoreErrorRecursively_(cf, p.append(c));
                     }

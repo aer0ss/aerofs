@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.nio.file.Files;
 
@@ -24,6 +25,7 @@ import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -172,6 +174,25 @@ public class InjectableFile
     public boolean exists()
     {
         return winSafe().exists();
+    }
+
+    /**
+     * Directories to be sync are expected to be both readable and writable
+     */
+    public void fixDirectoryPermissions() throws IOException
+    {
+        if (_factory._osutil.getOSFamily() != OSFamily.WINDOWS) {
+            try {
+                Files.setPosixFilePermissions(winSafe().toPath(),
+                        ImmutableSet.of(PosixFilePermission.OWNER_WRITE,
+                                PosixFilePermission.OWNER_READ,
+                                PosixFilePermission.OWNER_EXECUTE));
+                return;
+            } catch (UnsupportedOperationException e) {}
+        }
+        File w = winSafe();
+        w.setReadable(true);
+        w.setWritable(true);
     }
 
     public long getLength() throws IOException
