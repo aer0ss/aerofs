@@ -26,11 +26,12 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -41,9 +42,10 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.aerofs.daemon.core.notification.Notifications.newRootsChangedNotification;
 import static com.aerofs.defects.Defects.newMetric;
@@ -66,7 +68,7 @@ public class LinkerRootMap
     private LinkerRoot.Factory _factLR;
     private final Map<SID, LinkerRoot> _map = Maps.newHashMap();
 
-    public static interface IListener
+    static interface IListener
     {
         /**
          * Called *before* the root is effectively added
@@ -79,10 +81,10 @@ public class LinkerRootMap
         void removingRoot_(LinkerRoot root) throws IOException;
     }
 
-    private List<IListener> _listeners = Lists.newArrayList();
+    private Optional<IListener> _listener;
 
     @Inject
-    public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
+    public LinkerRootMap(IOSUtil os, Factory factFile, CfgAbsRoots cfgAbsRoots,
             SharedFolderTagFileAndIcon sfti, UnlinkedRootDatabase urdb, RitualNotificationServer rns,
             CfgAbsRTRoot rtRoot)
     {
@@ -96,22 +98,18 @@ public class LinkerRootMap
     }
 
     // work around circular dep using explicit injection of the factory
-    void setFactory(LinkerRoot.Factory factLR)
-    {
-        _factLR = factLR;
-    }
-
-    public void addListener_(IListener listener)
-    {
-        _listeners.add(listener);
-    }
+    void setFactory(LinkerRoot.Factory factLR) { _factLR = factLR; }
+    void setListener_(IListener listener) { _listener = Optional.of(listener); }
 
     /**
-     * Create new {@code LinkerRoot} for all roots specified in the conf DB
+     * Create new {@code LinkerRoot} for all roots specified in the conf DB.
      *
-     * NB: roots for which the listener throws an exception are ignored
+     * If the Linker throws an exception, the root may be ignored (in the case of FileNotFound)
+     * or cause the daemon to exit (in all other cases).
+     *
+     * Returns a list of SIDs that the caller should treat as locally-unlinked.
      */
-    void init_()
+    Set<SID> init_()
     {
         Charset cs = Charset.defaultCharset();
         l.info("encoding {} {}", cs, System.getProperty("file.encoding"));
@@ -129,17 +127,23 @@ public class LinkerRootMap
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        Set<SID> missingStores = Sets.newHashSet();
         for (Entry<SID, String> e : roots.entrySet()) {
-            IOException ex = add_(e.getKey(), e.getValue());
-            if (ex != null) {
-                l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
-                setFailedRootSID_(e.getKey());
-                if (ex instanceof ProbeException) {
-                    ExitCode.FILESYSTEM_PROBE_FAILED.exit();
+            try {
+                if (!add_(e.getKey(), e.getValue())) {
+                    missingStores.add(e.getKey());
                 }
-                ExitCode.JNOTIFY_WATCH_CREATION_FAILED.exit();
+            } catch (IOException ex) {
+                l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
+
+                setFailedRootSID_(e.getKey());
+                ExitCode exitCode = (ex instanceof ProbeException)
+                    ? ExitCode.FILESYSTEM_PROBE_FAILED : ExitCode.JNOTIFY_WATCH_CREATION_FAILED;
+                exitCode.exit();
             }
         }
+        return missingStores;
     }
 
     /**
@@ -148,13 +152,9 @@ public class LinkerRootMap
      */
     private void setFailedRootSID_(SID sid)
     {
-        try {
-            OutputStream o = new FileOutputStream(Util.join(_rtRoot.get(), LibParam.FAILED_SID));
-            try {
-                o.write(BaseUtil.string2utf(sid.toStringFormal()));
-            } finally {
-                o.close();
-            }
+        try (OutputStream o = new FileOutputStream(
+                Util.join(_rtRoot.get(), LibParam.FAILED_SID))) {
+            o.write(BaseUtil.string2utf(sid.toStringFormal()));
         } catch (IOException e) {
             l.warn("failed to communicate failing SID to UI", e);
         }
@@ -205,8 +205,7 @@ public class LinkerRootMap
             _factFile.create(auxRoot, af._name).deleteOrThrowIfExistRecursively();
         }
 
-        IOException e = add_(sid, absRoot);
-        if (e != null) throw e;
+        if (!add_(sid, absRoot)) l.warn("add root dne? {} {}", sid, absRoot);
         _sfti.addTagFileAndIconIn(sid, absRoot, t);
         _urdb.removeUnlinkedRoot(sid, t);
 
@@ -219,10 +218,13 @@ public class LinkerRootMap
             {
                 try {
                     _cfgAbsRoots.remove(sid);
+                    remove_(sid);
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
+                } catch (IOException e) {
+                    // not much to do for an IOException on the compensation part of the trigger
+                    l.error("ioe in rollback", e);
                 }
-                remove_(sid);
             }
 
             @Override
@@ -243,8 +245,7 @@ public class LinkerRootMap
         final String absPath = absRootAnchor_(sid);
         if (absPath == null) return;
 
-        IOException e = remove_(sid);
-        if (e != null) throw e;
+        remove_(sid);
         _sfti.removeTagFileAndIconIn(sid, absPath, t);
 
         // MUST be the last thing before adding the trans listener
@@ -256,10 +257,13 @@ public class LinkerRootMap
             {
                 try {
                     _cfgAbsRoots.add(sid, absPath);
+                    add_(sid, absPath);
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
+                } catch (IOException ioe) {
+                    // not much to do for an IOException on the compensation part of the trigger
+                    l.error("ioe in rollback", ioe);
                 }
-                add_(sid, absPath);
             }
 
             @Override
@@ -281,8 +285,7 @@ public class LinkerRootMap
         final String absPath = absRootAnchor_(sid);
         assert absPath != null : sid;
 
-        IOException e = move_(sid, newAbsPath);
-        if (e != null) throw e;
+        move_(sid, newAbsPath);
 
         _cfgAbsRoots.move(sid, newAbsPath);
 
@@ -384,45 +387,54 @@ public class LinkerRootMap
         return _map.get(sid);
     }
 
-    private IOException add_(SID sid, String absRoot)
+    /**
+     * @return True if the given Store is added successfully. False if the store cannot be
+     * added at the given root path (because the path does not exist, generally)
+     *
+     * @throws IOException Platform-specific failures adding the store will be bundled up into
+     * an IO exception; for instance due to platform-specific filesystem sanity checks.
+     */
+    private boolean add_(SID sid, String absRoot) throws IOException
     {
         Preconditions.checkState(!_map.containsKey(sid), _map.get(sid) + " " + absRoot);
         l.info("add root {} {}", sid, absRoot);
 
-        try {
-            // must ensure existence of aux root before creating LinkerRoot as
-            // filesystem properties are probed in the aux root
-            // NB: can't use auxRoot_ method as the root is not in the map yet
-            ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
-            LinkerRoot root = _factLR.create_(sid, absRoot);
-            for (IListener listener : _listeners) listener.addingRoot_(root);
-            _map.put(root.sid(), root);
-        } catch (IOException e) {
-            return e;
+        // must ensure existence of aux root before creating LinkerRoot as
+        // filesystem properties are probed in the aux root
+        // NB: can't use auxRoot_ method as the root is not in the map yet
+        ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
+        LinkerRoot root = _factLR.create_(sid, absRoot);
+
+        boolean rootExists = _factFile.create(root.absRootAnchor()).exists();
+
+        if (rootExists) {
+            _listener.get().addingRoot_(root);
+        } else {
+            // root folder doesn't exist. We'll remove the root in a moment. For now let's
+            // try to limit how much damage this pre-unlinked root can do...
+            root._removed = true;
         }
-        return null;
+        // make sure the root is in the linker map or downstream code will get very confused.
+        _map.put(root.sid(), root);
+
+        return rootExists;
     }
 
-    private IOException remove_(SID sid)
+    private void remove_(SID sid) throws IOException
     {
         LinkerRoot root = get_(sid);
-        if (root == null) return null;
+        if (root == null) return;
         l.info("remove root {} {}", sid, root.absRootAnchor());
 
-        try {
-            for (IListener listener : _listeners) listener.removingRoot_(root);
-            _map.remove(root.sid());
-            root._removed = true;
-        } catch (IOException e) {
-            return e;
-        }
-        return null;
+        _listener.get().removingRoot_(root);
+        _map.remove(root.sid());
+        root._removed = true;
     }
 
-    private IOException move_(SID sid, String newAbsPath)
+    private void move_(SID sid, String newAbsPath) throws IOException
     {
-        IOException e = remove_(sid);
-        return e != null ? e : add_(sid, newAbsPath);
+        remove_(sid);
+        add_(sid, newAbsPath);
     }
 
     private void ensureSaneAuxRoot_(String absAuxRoot) throws IOException

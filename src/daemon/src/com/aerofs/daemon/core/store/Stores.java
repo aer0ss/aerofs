@@ -60,7 +60,8 @@ public class Stores implements IStores, IStoreDeletionOperator
     @Override
     public void init_() throws Exception
     {
-        for (SIndex sidx : _sdb.getAll_()) notifyAddition_(sidx);
+        // IOException is in my base, killin all my lambdazzz
+        for (SIndex sidx : _sdb.getAll_()) { notifyAddition_(sidx); }
     }
 
     private final TransLocal<Set<SIndex>> _tlChanged = new TransLocal<Set<SIndex>>() {
@@ -188,15 +189,9 @@ public class Stores implements IStores, IStoreDeletionOperator
 
         notifyAddition_(sidx);
 
-        registerRollbackHandler_(t, new Callable<Void>()
-        {
-            @Override
-            public Void call()
-                    throws SQLException
-            {
-                notifyDeletion_(sidx);
-                return null;
-            }
+        registerRollbackHandler_(t, () -> {
+            notifyDeletion_(sidx);
+            return null;
         });
     }
 
@@ -221,13 +216,9 @@ public class Stores implements IStores, IStoreDeletionOperator
 
         l.debug("store deleted: " + sidx);
 
-        registerRollbackHandler_(t, new Callable<Void>() {
-            @Override
-            public Void call() throws SQLException
-            {
-                notifyAddition_(sidx);
-                return null;
-            }
+        registerRollbackHandler_(t, () -> {
+            notifyAddition_(sidx);
+            return null;
         });
     }
 

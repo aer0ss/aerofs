@@ -18,6 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -45,7 +46,7 @@ public class StoreDatabase extends AbstractDatabase
             ResultSet rs = ps.executeQuery();
             try {
                 Set<SIndex> srs = Sets.newTreeSet();
-                while (rs.next()) Util.verify(srs.add(new SIndex(rs.getInt(1))));
+                while (rs.next()) checkState(srs.add(new SIndex(rs.getInt(1))));
                 return srs;
             } finally {
                 rs.close();

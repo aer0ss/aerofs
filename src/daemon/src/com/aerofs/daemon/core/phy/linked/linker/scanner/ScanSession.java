@@ -289,6 +289,9 @@ class ScanSession
                  */
                 l.warn("root {} no longer a dir. skip", pcRoot._absPath);
                 iter.remove();
+                // if the pcRoot is the root of an external... no chance it's under a rescan path
+                if (pcRoot._path.isEmpty()) continue;
+
                 PathCombo p = pcRoot.parent();
                 if (lastRescan == null || !p._path.isStrictlyUnder(lastRescan._path)) {
                     rescan.add(p._absPath);

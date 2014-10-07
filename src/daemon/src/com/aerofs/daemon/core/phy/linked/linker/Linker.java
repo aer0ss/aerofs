@@ -2,16 +2,18 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ILinker;
+import com.aerofs.daemon.core.phy.ScanCompletionCallback;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
+import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
+import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
-import com.aerofs.daemon.core.phy.ScanCompletionCallback;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -22,7 +24,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-public class Linker implements ILinker, LinkerRootMap.IListener
+public class Linker implements ILinker, IListener
 {
     private static final Logger l = Loggers.getLogger(Linker.class);
 
@@ -57,15 +59,17 @@ public class Linker implements ILinker, LinkerRootMap.IListener
         _notifier = factNotifier.create();
         _lrm = lrm;
         _lrm.setFactory(factLR);
-        _lrm.addListener_(this);
+        _lrm.setListener_(this);
     }
 
     @Override
     public void init_()
     {
         // add roots from config db, adding watches and starting scan as needed
-        // NB: any root that cannot be added is simply ignored
-        _lrm.init_();
+        // Any root that cannot be added will be scheduled for unlinking.
+        for (SID sid : _lrm.init_()) {
+            _sched.schedule(new EIUnlinkRoot(sid), 0);
+        }
     }
 
     @Override
