@@ -8,15 +8,12 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelException;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -84,14 +81,10 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
 
                 // Add a timeout
                 if (_timeoutDuration > 0) {
-                    _timer.newTimeout(new TimerTask()
-                    {
-                        @Override
-                        public void run(Timeout timeout) throws Exception {
-                            synchronized (AbstractRpcClientHandler.this) {
-                                if (_pendingReads.contains(readFuture)) {
-                                    disconnect(new IOException("request timed out"));
-                                }
+                    _timer.newTimeout(timeout -> {
+                        synchronized (AbstractRpcClientHandler.this) {
+                            if (_pendingReads.contains(readFuture)) {
+                                disconnect(new IOException("request timed out"));
                             }
                         }
                     }, _timeoutDuration, MILLISECONDS);
@@ -123,14 +116,9 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
         ChannelFuture writeFuture = _channel.write(buffer);
 
         // If write failed, drain all requests and close the channel
-        writeFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception
-            {
-                if (!future.isSuccess()) {
-                    disconnect(future.getCause());
-                }
+        writeFuture.addListener(future -> {
+            if (!future.isSuccess()) {
+                disconnect(future.getCause());
             }
         });
     }
@@ -182,14 +170,8 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     {
         synchronized (this) {
             _channel = e.getChannel();
-            _channel.getCloseFuture().addListener(new ChannelFutureListener()
-            {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception
-                {
-                    drainPendingRequests(getCloseReason(_channel));
-                }
-            });
+            _channel.getCloseFuture().addListener(
+                    future -> drainPendingRequests(getCloseReason(_channel)));
         }
         super.channelOpen(ctx, e);
     }

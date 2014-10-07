@@ -49,6 +49,7 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
     protected void finalize() throws Throwable
     {
         assertTrue(_finiWasCalled);
+        super.finalize();
     }
 
     /**

@@ -9,7 +9,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
@@ -22,7 +21,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
@@ -88,7 +86,6 @@ public final class TransportFactory
     private final Proxy proxy;
     private final Timer timer;
     private final BlockingPrioQueue<IEvent> transportEventSink;
-    private final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector;
     private final LinkStateService linkStateService;
     private final ServerSocketChannelFactory serverSocketChannelFactory;
     private final ClientSocketChannelFactory clientSocketChannelFactory;
@@ -123,7 +120,6 @@ public final class TransportFactory
             BlockingPrioQueue<IEvent> transportEventSink,
             LinkStateService linkStateService,
             MaxcastFilterReceiver maxcastFilterReceiver,
-            @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             ClientSocketChannelFactory clientSocketChannelFactory,
             ServerSocketChannelFactory serverSocketChannelFactory,
             SSLEngineFactory clientSslEngineFactory,
@@ -159,7 +155,6 @@ public final class TransportFactory
         this.serverSocketChannelFactory = serverSocketChannelFactory;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
-        this.mobileServerZephyrConnector = mobileServerZephyrConnector;
         this.roundTripTimes = roundTripTimes;
     }
 
@@ -222,7 +217,6 @@ public final class TransportFactory
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
-                mobileServerZephyrConnector,
                 timer,
                 xmppServerAddress,
                 xmppServerDomain,

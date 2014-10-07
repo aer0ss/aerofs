@@ -22,8 +22,6 @@ import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.MetaUpdater;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.store.StoreCreator;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 import static org.mockito.Mockito.mock;
 

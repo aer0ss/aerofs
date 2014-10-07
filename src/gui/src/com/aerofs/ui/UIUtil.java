@@ -243,22 +243,12 @@ public class UIUtil
             final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        ThreadUtil.startDaemonThread("launch", new Runnable() {
-            @Override
-            public void run()
-            {
-                if (launchInWorkerThread()) {
-                    finishLaunch(postLaunch);
-                } else {
-                    // we get there if the user choose to reinstall due to a tampered/corrupted DB
-                    UI.get().asyncExec(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            launchImpl(rtRoot, null, postLaunch);
-                        }
-                    });
-                }
+        ThreadUtil.startDaemonThread("launch", () -> {
+            if (launchInWorkerThread()) {
+                finishLaunch(postLaunch);
+            } else {
+                // we get there if the user choose to reinstall due to a tampered/corrupted DB
+                UI.get().asyncExec(() -> launchImpl(rtRoot, null, postLaunch));
             }
         });
     }
@@ -309,14 +299,7 @@ public class UIUtil
         Runnable onClick = null;
 
         if (!L.isMultiuser()) {
-            onClick = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    GUIUtil.launch(Cfg.absDefaultRootAnchor());
-                }
-            };
+            onClick = () -> GUIUtil.launch(Cfg.absDefaultRootAnchor());
         }
 
         UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", onClick);
@@ -423,14 +406,7 @@ public class UIUtil
             }
         }
         // Sort the shared folders based on their names.
-        Collections.sort(filteredStores, new Comparator<PBSharedFolder>()
-        {
-            @Override
-            public int compare(PBSharedFolder o1, PBSharedFolder o2)
-            {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        Collections.sort(filteredStores, (o1, o2) -> o1.getName().compareTo(o2.getName()));
 
         return filteredStores;
     }

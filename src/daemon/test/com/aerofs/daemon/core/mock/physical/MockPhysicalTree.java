@@ -18,9 +18,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;

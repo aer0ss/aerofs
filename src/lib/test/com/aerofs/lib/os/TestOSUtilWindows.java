@@ -5,11 +5,8 @@
 package com.aerofs.lib.os;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.File;
 
 import static com.aerofs.lib.os.OSUtilWindows.replaceEnvironmentVariables;
 import static org.junit.Assert.assertEquals;

@@ -15,16 +15,13 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.CoreExecutor;
-import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Core.PBCore;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.net.NetworkInterface;
 import java.util.Map;
 
 /**
@@ -54,18 +51,9 @@ public class RPC
     {
         _trl = trl;
 
-        lss.addListener(new ILinkStateListener()
-        {
-            @Override
-            public void onLinkStateChanged(
-                    ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current,
-                    ImmutableSet<NetworkInterface> added,
-                    ImmutableSet<NetworkInterface> removed)
-            {
-                if (current.isEmpty()) {
-                    linkDown_();
-                }
+        lss.addListener((previous, current, added, removed) -> {
+            if (current.isEmpty()) {
+                linkDown_();
             }
         }, coreExecutor); // want to be notified on the core thread
     }

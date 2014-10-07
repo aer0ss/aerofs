@@ -169,8 +169,7 @@ public abstract class Updater
         Status currentStatus = Status.ERROR;
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(updateVersionFile));
-            try {
+            try (BufferedReader reader = new BufferedReader(new FileReader(updateVersionFile))) {
                 String knownVersion = reader.readLine();
                 if (knownVersion == null) {
                     l.warn("update version file is empty");
@@ -187,8 +186,6 @@ public abstract class Updater
                     currentStatus = Status.ONGOING;
                     downloadedVersion = knownVersion;
                 }
-            } finally {
-                reader.close();
             }
         } catch (FileNotFoundException e) {
             l.warn("update exists but file is not found"); // FIXME: how can this happen?
@@ -258,30 +255,25 @@ public abstract class Updater
      */
     public void start()
     {
-        ThreadUtil.startDaemonThread("updater", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                /*
-                * run() is executed _after_ onStartup.
-                * If a user clicks the skip button in onStartup->applyUpdate, then run() needs to
-                * disable the menu icons, because it will remove the ~/.aerofs/update folder and
-                * re-add it in an hour.
-                */
-                setUpdateStatus(Status.LATEST, -1);
+        ThreadUtil.startDaemonThread("updater", () -> {
+            /*
+            * run() is executed _after_ onStartup.
+            * If a user clicks the skip button in onStartup->applyUpdate, then run() needs to
+            * disable the menu icons, because it will remove the ~/.aerofs/update folder and
+            * re-add it in an hour.
+            */
+            setUpdateStatus(Status.LATEST, -1);
 
-                if (UI.isGUI() && GUI.get().st() != null) {
-                    GUI.get().st().getIcon().showNotification(NotificationReason.UPDATE, false);
-                }
+            if (UI.isGUI() && GUI.get().st() != null) {
+                GUI.get().st().getIcon().showNotification(NotificationReason.UPDATE, false);
+            }
 
-                ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
+            ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
 
-                //noinspection InfiniteLoopStatement
-                while (true) {
-                    checkForUpdate(false);
-                    ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INTERVAL);
-                }
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                checkForUpdate(false);
+                ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INTERVAL);
             }
         });
     }
@@ -347,10 +339,8 @@ public abstract class Updater
             l.info("update size: " + updateFileExpectedSize);
 
             String localFilePath = Util.join(dirName, filename);
-            InputStream downloadStream = conn.getInputStream();
-            try {
-                FileOutputStream out = new FileOutputStream(localFilePath);
-                try {
+            try (InputStream downloadStream = conn.getInputStream()) {
+                try (FileOutputStream out = new FileOutputStream(localFilePath)) {
                     int bytesRead;
                     int downloadedFileSize = 0;
                     int oldPercent = 0;
@@ -360,7 +350,7 @@ public abstract class Updater
                         downloadedFileSize += bytesRead;
 
                         _percentDownloaded = Math.round(
-                                (downloadedFileSize / (float) updateFileExpectedSize) * 100);
+                                (downloadedFileSize / (float)updateFileExpectedSize) * 100);
 
                         if (oldPercent < _percentDownloaded) {
                             oldPercent = _percentDownloaded;
@@ -371,22 +361,15 @@ public abstract class Updater
                     // we should have downloaded the exact expected number of bytes; if not, assert
                     // and in doing so delete the directory into which we downloaded the update
 
-                    assert downloadedFileSize == updateFileExpectedSize :
-                            dir.deleteIgnoreErrorRecursively();
-                } finally {
-                    out.close();
+                    assert downloadedFileSize ==
+                            updateFileExpectedSize : dir.deleteIgnoreErrorRecursively();
                 }
-            } finally {
-                downloadStream.close();
             }
 
             // create the ./ver file
             File temp = new File(Util.join(dirName, LibParam.UPDATE_VER));
-            BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
-            try {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(temp))) {
                 bw.write(ver);
-            } finally {
-                bw.close();
             }
 
             // rename the tmp download directory to be the update directory
@@ -515,14 +498,7 @@ public abstract class Updater
             checkForUpdateImpl();
         } else {
             // user requested a check for update, let them know
-            new Thread(new Runnable()
-            {
-                @Override
-                public synchronized void run()
-                {
-                    checkForUpdateImpl();
-                }
-            }, "update").start();
+            new Thread(this::checkForUpdateImpl, "update").start();
         }
     }
 

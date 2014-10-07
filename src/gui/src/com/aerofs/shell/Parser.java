@@ -13,7 +13,7 @@ public class Parser {
         QUOTE,
         QUOTE_ESC,
         ERROR,
-    };
+    }
 
     static enum Input {
         SPACE,

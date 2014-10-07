@@ -14,8 +14,6 @@ import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;

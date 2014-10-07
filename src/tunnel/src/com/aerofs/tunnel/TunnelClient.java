@@ -36,19 +36,15 @@ public class TunnelClient extends AbstractNettyReconnectingClient
     @Override
     protected ChannelPipelineFactory pipelineFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                TunnelHandler handler = new TunnelHandler(null, _pipelineFactory);
-                return Channels.pipeline(_sslEngineFactory.newSslHandler(),
-                        TunnelHandler.newFrameDecoder(),
-                        TunnelHandler.newLengthFieldPrepender(),
-                        NettyUtil.newCNameVerificationHandler(handler, _user, _did),
-                        new ChunkedWriteHandler(),
-                        TunnelHandler.newIdleStateHandler(_timer),
-                        handler);
-            }
+        return () -> {
+            TunnelHandler handler = new TunnelHandler(null, _pipelineFactory);
+            return Channels.pipeline(_sslEngineFactory.newSslHandler(),
+                    TunnelHandler.newFrameDecoder(),
+                    TunnelHandler.newLengthFieldPrepender(),
+                    NettyUtil.newCNameVerificationHandler(handler, _user, _did),
+                    new ChunkedWriteHandler(),
+                    TunnelHandler.newIdleStateHandler(_timer),
+                    handler);
         };
     }
 }

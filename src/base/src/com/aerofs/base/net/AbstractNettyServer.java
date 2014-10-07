@@ -71,16 +71,12 @@ public abstract class AbstractNettyServer
 
     protected ChannelPipelineFactory getPipelineFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                ChannelPipeline p = getSpecializedPipeline();
-                if (_sslHandlerFactory != null) {
-                    p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
-                }
-                return p;
+        return () -> {
+            ChannelPipeline p = getSpecializedPipeline();
+            if (_sslHandlerFactory != null) {
+                p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
             }
+            return p;
         };
     }
 

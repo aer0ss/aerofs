@@ -267,12 +267,9 @@ public class DBUtil
 
     public static long generatedId(PreparedStatement ps) throws SQLException
     {
-        ResultSet rs = ps.getGeneratedKeys();
-        try {
+        try (ResultSet rs = ps.getGeneratedKeys()) {
             checkState(rs.next());
             return rs.getLong(1);
-        } finally {
-            rs.close();
         }
     }
 }

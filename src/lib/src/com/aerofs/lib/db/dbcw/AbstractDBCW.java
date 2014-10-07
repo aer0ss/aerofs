@@ -51,11 +51,8 @@ abstract class AbstractDBCW implements IDBCW
         try {
             Connection c = DriverManager.getConnection(_url, _properties);
 
-            Statement stmt = c.createStatement();
-            try {
+            try (Statement stmt = c.createStatement()) {
                 initImpl_(stmt);
-            } finally {
-                stmt.close();
             }
 
             c.setAutoCommit(_autoCommit);

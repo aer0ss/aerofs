@@ -24,13 +24,7 @@ public class TransUtil
     {
         from.moveInSameFileSystem(to);
 
-        onRollback_(from, t, new IPhysicalOperation() {
-            @Override
-            public void run_() throws IOException
-            {
-                to.moveInSameFileSystem(from);
-            }
-        });
+        onRollback_(from, t, () -> to.moveInSameFileSystem(from));
     }
 
     /**

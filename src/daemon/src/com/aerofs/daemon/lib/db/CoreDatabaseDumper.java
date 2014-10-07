@@ -97,8 +97,6 @@ public class CoreDatabaseDumper
         ps.println();
         dumpAL_(s, ps, formal);
         ps.println();
-        dumpSyncStatPushQueue_(s, ps, formal);
-        ps.println();
     }
 
     private void dumpKwlg_(Statement s, PrintStream ps, boolean formal) throws SQLException
@@ -188,30 +186,6 @@ public class CoreDatabaseDumper
                 ps.println(sidx.toString() + '\t' + oid + '\t' + parent + '\t'
                         + type + '\t' + flags + '\t' + strFID + '\t' + '\t'
                         + Util.crc32(name) + " " + name);
-            }
-        }
-    }
-
-    public void dumpSyncStatPushQueue_(Statement s, PrintStream ps, boolean formal) throws SQLException
-    {
-        StringBuilder sbNullFID = new StringBuilder("null");
-        for (int i = 0; i < _dr.getFIDLength() * 2 - 4; i++) sbNullFID.append(' ');
-
-        ResultSet rs = s.executeQuery(
-                "select " + C_SSPQ_SIDX + "," + C_SSPQ_OID + " from " + T_SSPQ +
-                        " order by " + C_SSPQ_IDX);
-        ps.println("================== " + T_SSPQ + " =====================");
-        ps.println(C_SSPQ_SIDX + "\t" + C_SSPQ_OID);
-        ps.println("------------------------------------------");
-
-        while (rs.next()) {
-            SIndex sidx = new SIndex(rs.getInt(1));
-            OID oid = new OID(rs.getBytes(2));
-
-            if (formal) {
-                ps.println(sidx.toString() + '\t' + oid.toStringFormal());
-            } else {
-                ps.println(sidx.toString() + '\t' + oid);
             }
         }
     }

@@ -153,7 +153,7 @@ public class Sparta extends Service
     @Override
     protected Set<Class<?>> singletons()
     {
-        return ImmutableSet.<Class<?>>of(
+        return ImmutableSet.of(
                 AuthProvider.class,
                 FactoryReaderProvider.class,
                 TransactionWrapper.class,

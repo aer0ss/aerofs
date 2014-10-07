@@ -15,7 +15,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
-import java.util.concurrent.Callable;
 
 /**
  * Infrastructure for persistent queueing

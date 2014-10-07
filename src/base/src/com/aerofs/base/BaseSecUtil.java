@@ -615,16 +615,13 @@ public abstract class BaseSecUtil
     {
         MessageDigest md = newMessageDigest();
 
-        FileInputStream is = new FileInputStream(f);
-        try {
+        try (FileInputStream is = new FileInputStream(f)) {
             byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
             while (true) {
                 int read = is.read(bs);
                 if (read < 0) break;
                 md.update(bs, 0, read);
             }
-        } finally {
-            is.close();
         }
         return md.digest();
     }
@@ -715,22 +712,19 @@ public abstract class BaseSecUtil
             throws IOException, NoSuchAlgorithmException, InvalidKeySpecException
     {
         File f = new File(serverKeyFilename);
-        InputStream in = new FileInputStream(f);
-        try {
-            byte[] fileContents = new byte[(int) f.length()];
+        try (InputStream in = new FileInputStream(f)) {
+            byte[] fileContents = new byte[(int)f.length()];
             in.read(fileContents);
 
             String fileString = new String(fileContents);
             fileString = fileString.replace("-----BEGIN PRIVATE KEY-----", "");
-            fileString = fileString.replace("-----END PRIVATE KEY-----"  , "");
+            fileString = fileString.replace("-----END PRIVATE KEY-----", "");
             fileString = fileString.trim();
 
             byte[] decoded = Base64.decode(fileString);
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decoded);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePrivate(keySpec);
-        } finally {
-            in.close();
         }
     }
 

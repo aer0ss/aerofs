@@ -38,7 +38,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkState;
 

@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.TimeZone;
-import java.util.UUID;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Util.crc32;

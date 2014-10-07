@@ -99,7 +99,7 @@ public class DryadServer extends Service
     @Override
     protected Set<Class<?>> singletons()
     {
-        return ImmutableSet.<Class<?>>of(
+        return ImmutableSet.of(
                 LogStore.class,
                 DryadExceptionMapper.class,
                 UserBlacklist.class,

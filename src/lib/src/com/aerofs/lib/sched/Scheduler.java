@@ -8,10 +8,8 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 
-import javax.annotation.Nonnull;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -29,13 +27,7 @@ public class Scheduler implements IScheduler
     {
         _sink = checkNotNull(sink);
         _name = checkNotNull(name);
-        _executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public @Nonnull Thread newThread(@Nonnull Runnable r)
-            {
-                return new Thread(r, _name);
-            }
-        });
+        _executor = Executors.newScheduledThreadPool(1, r -> new Thread(r, _name));
     }
 
     public void shutdown()
@@ -46,12 +38,7 @@ public class Scheduler implements IScheduler
     @Override
     public void schedule(final IEvent ev, long relativeTimeInMSec)
     {
-        _executor.schedule(new Runnable() {
-            @Override
-            public void run()
-            {
-                _sink.enqueueBlocking(ev, Prio.LO);
-            }
-        }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
+        _executor.schedule(() -> _sink.enqueueBlocking(ev, Prio.LO),
+                relativeTimeInMSec, TimeUnit.MILLISECONDS);
     }
 }

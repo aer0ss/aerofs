@@ -11,8 +11,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.defects.Defect;
-import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.xray.server.XRayServer;
@@ -50,7 +48,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.mockito.Mockito.mock;
 
 // FIXME (AG): send multiple streams simultaneously from both directions
 // FIXME (AG): send multiple streams and kill one

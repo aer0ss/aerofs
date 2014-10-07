@@ -76,18 +76,17 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
     protected String integrityCheck()
     {
         try {
-            Statement s = getConnection().createStatement();
             // make sure the CoreProgressWatcher doesn't kill the daemon even if the
             // integrity check takes a long time
             ProgressIndicators.get().startSyscall();
-            try {
+            try (Statement s = getConnection().createStatement()) {
                 ResultSet rs = s.executeQuery("pragma integrity_check");
                 StringBuilder bd = new StringBuilder();
                 while (rs.next()) bd.append(rs.getString(1)).append('\n');
                 return bd.toString();
             } finally {
                 ProgressIndicators.get().endSyscall();
-                s.close();
+
             }
         } catch (Throwable t) {
             return t.toString();
@@ -180,37 +179,23 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
 
     @Override
     public boolean columnExists(String table, String column) throws SQLException {
-        Statement s = getConnection().createStatement();
-        try {
-            ResultSet rs = s.executeQuery("pragma table_info(" + table + ")");
-            try {
+        try (Statement s = getConnection().createStatement()) {
+            try (ResultSet rs = s.executeQuery("pragma table_info(" + table + ")")) {
                 while (rs.next()) {
                     if (rs.getString(2).equals(column)) return true;
                 }
-            } finally {
-                rs.close();
             }
             return false;
-        } finally {
-            s.close();
         }
     }
 
     @Override
     public boolean tableExists(String tableName) throws SQLException {
-        Statement s = getConnection().createStatement();
-        try {
-            boolean ok = false;
-            ResultSet rs = s.executeQuery("select name from sqlite_master" +
-                    " where type='table' and name='" + tableName + "'");
-            try {
-                ok = rs.next();
-            } finally {
-                rs.close();
+        try (Statement s = getConnection().createStatement()) {
+            try (ResultSet rs = s.executeQuery("select name from sqlite_master" +
+                    " where type='table' and name='" + tableName + "'")) {
+                return rs.next();
             }
-            return ok;
-        } finally {
-            s.close();
         }
     }
 }

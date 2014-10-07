@@ -158,11 +158,8 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         File f = new File(System.getenv("HOME") + File.separator + ".gtk-bookmarks");
 
         if (f.exists()) {
-            FileWriter fw = new FileWriter(f,true);
-            try {
+            try (FileWriter fw = new FileWriter(f, true)) {
                 fw.write("file://" + path);
-            } finally {
-                fw.close();
             }
         }
     }

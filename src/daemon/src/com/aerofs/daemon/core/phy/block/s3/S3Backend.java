@@ -32,7 +32,6 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.concurrent.Callable;
 
 /**
  * BlockStorage backend based on Amazon S3
@@ -66,9 +65,7 @@ public class S3Backend implements IBlockStorageBackend
     {
         try {
             _secretKey = _s3CryptoConfig.getSecretKey();
-        } catch (NoSuchAlgorithmException e) {
-            ExitCode.S3_BAD_CREDENTIALS.exit();
-        } catch (InvalidKeySpecException e) {
+        } catch (NoSuchAlgorithmException|InvalidKeySpecException e) {
             ExitCode.S3_BAD_CREDENTIALS.exit();
         }
     }
@@ -80,8 +77,6 @@ public class S3Backend implements IBlockStorageBackend
         S3Object o;
         try {
             o = _s3Client.getObject(_s3BucketIdConfig.getS3BucketId(), key);
-        } catch (AmazonServiceException e) {
-            throw new IOException(e);
         } catch (AmazonClientException e) {
             throw new IOException(e);
         }
@@ -153,40 +148,35 @@ public class S3Backend implements IBlockStorageBackend
     public void putBlock(final ContentBlockHash key, final InputStream input, final long decodedLength,
             final Object encoderData) throws IOException
     {
-        AWSRetry.retry(new Callable<Void>()
-        {
-            @Override
-            public Void call() throws IOException
-            {
-                String baseKey = key.toHex();
-                String s3Key = getBlockKey(baseKey);
-                String bucketName = _s3BucketIdConfig.getS3BucketId();
+        AWSRetry.retry(() -> {
+            String baseKey = key.toHex();
+            String s3Key = getBlockKey(baseKey);
+            String bucketName = _s3BucketIdConfig.getS3BucketId();
 
-                try {
-                    ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, s3Key);
-                    l.debug("md:{}", metadata);
-                    return null;
-                } catch (AmazonServiceException e) {
-                    l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
-                }
-
-                EncoderData d = (EncoderData)encoderData;
-
-                ObjectMetadata metadata = new ObjectMetadata();
-                metadata.setContentType("application/octet-stream");
-                metadata.setContentLength(d.encodedLength);
-                metadata.setContentMD5(Base64.encodeBytes(d.md5));
-                metadata.addUserMetadata("Chunk-Length", Long.toString(decodedLength));
-                metadata.addUserMetadata("Chunk-Hash", baseKey);
-                try {
-                    _s3Client.putObject(bucketName, s3Key, input, metadata);
-                } finally {
-                    // caller guarantees that calling reset will bring the input stream back to the
-                    // start of the block without losing any data
-                    input.reset();
-                }
+            try {
+                ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, s3Key);
+                l.debug("md:{}", metadata);
                 return null;
+            } catch (AmazonServiceException e) {
+                l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
             }
+
+            EncoderData d = (EncoderData)encoderData;
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType("application/octet-stream");
+            metadata.setContentLength(d.encodedLength);
+            metadata.setContentMD5(Base64.encodeBytes(d.md5));
+            metadata.addUserMetadata("Chunk-Length", Long.toString(decodedLength));
+            metadata.addUserMetadata("Chunk-Hash", baseKey);
+            try {
+                _s3Client.putObject(bucketName, s3Key, input, metadata);
+            } finally {
+                // caller guarantees that calling reset will bring the input stream back to the
+                // start of the block without losing any data
+                input.reset();
+            }
+            return null;
         });
     }
 
@@ -196,18 +186,13 @@ public class S3Backend implements IBlockStorageBackend
         try {
             tk.pseudoPause("s3-del");
             try {
-                AWSRetry.retry(new Callable<Void>()
-                {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        String baseKey = key.toHex();
-                        String s3Key = getBlockKey(baseKey);
-                        String bucketName = _s3BucketIdConfig.getS3BucketId();
+                AWSRetry.retry(() -> {
+                    String baseKey = key.toHex();
+                    String s3Key = getBlockKey(baseKey);
+                    String bucketName = _s3BucketIdConfig.getS3BucketId();
 
-                        _s3Client.deleteObject(bucketName, s3Key);
-                        return null;
-                    }
+                    _s3Client.deleteObject(bucketName, s3Key);
+                    return null;
                 });
             } finally {
                 tk.pseudoResumed();

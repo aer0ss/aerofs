@@ -24,14 +24,8 @@ public class UIScheduler implements IScheduler
 
     public UIScheduler()
     {
-        _executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable runnable)
-            {
-                return new Thread(runnable, "ui-exec");
-            }
-        });
+        _executor = Executors.newSingleThreadScheduledExecutor(
+                runnable -> new Thread(runnable, "ui-exec"));
     }
 
     public void shutdown()
@@ -42,13 +36,9 @@ public class UIScheduler implements IScheduler
     @Override
     public void schedule(final IEvent ev, long relativeTimeInMSec)
     {
-        _executor.schedule(new Runnable() {
-                @Override
-                public void run()
-                {
-                assert ev instanceof AbstractEBSelfHandling;
-                ((AbstractEBSelfHandling) ev).handle_();
-            }
-        }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
+        _executor.schedule(() -> {
+        assert ev instanceof AbstractEBSelfHandling;
+        ((AbstractEBSelfHandling) ev).handle_();
+    }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
     }
 }

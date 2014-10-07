@@ -8,8 +8,6 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 
-import java.util.concurrent.Callable;
-
 /**
  * Regular DPUTs cannot solve every problems, in particular some update tasks requires an active
  * internet connection, can be completed in any order and do not have a hard deadline on completion.

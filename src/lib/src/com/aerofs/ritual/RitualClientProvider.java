@@ -8,8 +8,6 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
@@ -38,18 +36,11 @@ public final class RitualClientProvider implements IRitualClientProvider
     public RitualClientProvider(ClientSocketChannelFactory clientSocketChannelFactory)
     {
         ClientBootstrap bootstrap = new ClientBootstrap(clientSocketChannelFactory);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-            {
-                return Channels.pipeline(
-                        new AddressResolverHandler(newSingleThreadExecutor()),
-                        new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0, LENGTH_FIELD_SIZE),
-                        new LengthFieldPrepender(LENGTH_FIELD_SIZE),
-                        new RitualClientHandler());
-            }
-        });
+        bootstrap.setPipelineFactory(() -> Channels.pipeline(
+                new AddressResolverHandler(newSingleThreadExecutor()),
+                new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0, LENGTH_FIELD_SIZE),
+                new LengthFieldPrepender(LENGTH_FIELD_SIZE),
+                new RitualClientHandler()));
 
         _bootstrap = bootstrap;
     }

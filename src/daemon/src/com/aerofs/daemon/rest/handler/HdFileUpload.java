@@ -271,12 +271,9 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 // and schedule a self-handling event to apply the prefix at the end of the
                 // transfer
                 if (md != null && pf.getLength_() > 0) {
-                    InputStream is = pf.newInputStream_();
-                    try {
+                    try (InputStream is = pf.newInputStream_()) {
                         ByteStreams.copy(is,
                                 new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-                    } finally {
-                        is.close();
                     }
                 }
                 OutputStream out = pf.newOutputStream_(true);

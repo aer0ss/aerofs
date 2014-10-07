@@ -7,23 +7,16 @@ package com.aerofs.defects;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.concurrent.Executor;
 
 import static com.aerofs.defects.DefectUtils.*;
-import static com.aerofs.defects.DryadClientUtil.createDefectLogsResource;
-import static com.aerofs.lib.Util.test;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Maps.newHashMap;
 

@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.protocol.MetaUpdater.CausalityResult;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;

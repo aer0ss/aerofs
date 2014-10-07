@@ -17,7 +17,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgManageSharedFolders;
-import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -107,21 +106,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
         if (Cfg.storageType() == StorageType.LINKED) {
             _indexingPoller = new IndexingPoller(UIGlobals.scheduler());
             _indexingTrayMenuSection = new IndexingTrayMenuSection(_indexingPoller);
-            _indexingPoller.addListener(new IIndexingCompletionListener()
-            {
-                @Override
-                public void onIndexingDone()
-                {
-                    GUI.get().asyncExec(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            rebuildMenu();
-                        }
-                    });
-                }
-            });
+            _indexingPoller.addListener(() -> GUI.get().asyncExec(this::rebuildMenu));
             _indexingTrayMenuSection.addListener(this);
         } else {
             _indexingPoller = null;
@@ -160,20 +145,16 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
         if (!rebuilding) {
             rebuilding = true;
             // The rebuild has to happen on the GUI thread.
-            GUI.get().disp().syncExec(new Runnable() {
-                @Override
-                public void run()
-                {
-                    switch (_rebuildDisposition) {
-                    case REBUILD:
-                        unsafeRebuildMenu();
-                        break;
-                    case REUSE:
-                        unsafeRepopulateExistingMenu();
-                        break;
-                    }
-                    rebuilding = false;
+            GUI.get().disp().syncExec(() -> {
+                switch (_rebuildDisposition) {
+                case REBUILD:
+                    unsafeRebuildMenu();
+                    break;
+                case REUSE:
+                    unsafeRepopulateExistingMenu();
+                    break;
                 }
+                rebuilding = false;
             });
         }
     }
@@ -413,14 +394,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             rebuildMenu();
             break;
         case REUSE:
-            GUI.get().exec(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    updateLastMenuInPlace();
-                }
-            });
+            GUI.get().exec(this::updateLastMenuInPlace);
             break;
         }
     }

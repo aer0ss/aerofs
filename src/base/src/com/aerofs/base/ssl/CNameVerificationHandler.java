@@ -8,11 +8,10 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Mobile.CNameVerificationInfo;
+import com.aerofs.proto.Common.CNameVerificationInfo;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
@@ -90,14 +89,9 @@ public class CNameVerificationHandler extends SimpleChannelHandler
         ctx.setAttachment(originalFuture);
 
         ChannelFuture newConnectFuture = future(ctx.getChannel());
-        newConnectFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception
-            {
-                if (!future.isSuccess()) {
-                    failConnectFuture(ctx, future.getCause());
-                }
+        newConnectFuture.addListener(future -> {
+            if (!future.isSuccess()) {
+                failConnectFuture(ctx, future.getCause());
             }
         });
 

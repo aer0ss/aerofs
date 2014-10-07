@@ -220,13 +220,9 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
-        _provider.foreach(new Function<VirtualChannel, Void>() {
-            @Override
-            public Void apply(VirtualChannel c)
-            {
-                Channels.fireChannelInterestChanged(c);
-                return null;
-            }
+        _provider.foreach(c -> {
+            Channels.fireChannelInterestChanged(c);
+            return null;
         });
     }
 
@@ -236,13 +232,9 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         if (_channel == null) return;
         checkState(_addr != null);
         l.info("tunnel disconnect {}", this);
-        _provider.foreach(new Function<VirtualChannel, Void>() {
-            @Override
-            public Void apply(VirtualChannel c)
-            {
-                c.fireDisconnected();
-                return null;
-            }
+        _provider.foreach(c -> {
+            c.fireDisconnected();
+            return null;
         });
         _provider.clear();
         if (_listener != null) _listener.tunnelClosed(_addr, this);
@@ -308,23 +300,14 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         try {
             writeMsg((ops & Channel.OP_READ) == 0 ? MSG_SUSPEND : MSG_RESUME,
                     virtualChannel.getConnectionId())
-                    .addListener(new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture cf) throws Exception
-                        {
-                            if (cf.isSuccess()) {
-                                // execute in I/O thread to respect Netty's threading model
-                                virtualChannel.getPipeline().execute(new Runnable() {
-                                    @Override
-                                    public void run()
-                                    {
-                                        // TODO: fire on ack?
-                                        virtualChannel.fireInterestChanged(ops);
-                                    }
-                                }).addListener(new ChannelFutureNotifier(future));
-                            } else {
-                                future.setFailure(cf.getCause());
-                            }
+                    .addListener(cf -> {
+                        if (cf.isSuccess()) {
+                            // execute in I/O thread to respect Netty's threading model
+                            virtualChannel.getPipeline()
+                                    .execute(() -> virtualChannel.fireInterestChanged(ops))
+                                    .addListener(new ChannelFutureNotifier(future));
+                        } else {
+                            future.setFailure(cf.getCause());
                         }
                     });
         } catch (ClosedChannelException e) {
@@ -365,13 +348,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         _provider.put(c);
         Channels.fireChannelOpen(c);
         // execute in I/O thread to respect Netty's threading model
-        c.getPipeline().execute(new Runnable() {
-            @Override
-            public void run()
-            {
-                Channels.fireChannelConnected(c, _addr);
-            }
-        });
+        c.getPipeline().execute(() -> Channels.fireChannelConnected(c, _addr));
         return c;
     }
 

@@ -21,12 +21,17 @@ public class Program implements IProgram {
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
-        IProgram program;
-        if (prog.equals(LibParam.SH_NAME)) program = new ShProgram();
-        else if (prog.equals(LibParam.GUI_NAME)) program = new GUIProgram();
-        else if (prog.equals(LibParam.CLI_NAME)) program = new CLIProgram();
-        else if (prog.equals(LibParam.TOOLS_NAME)) program = new ToolsProgram();
-        else throw new ExProgramNotFound(prog);
-        program.launch_(rtRoot, prog, args);
+        getProgram(prog).launch_(rtRoot, prog, args);
+    }
+
+    private IProgram getProgram(String prog) throws ExProgramNotFound
+    {
+        switch (prog) {
+        case LibParam.SH_NAME:      return new ShProgram();
+        case LibParam.GUI_NAME:     return new GUIProgram();
+        case LibParam.CLI_NAME:     return new CLIProgram();
+        case LibParam.TOOLS_NAME:   return new ToolsProgram();
+        default: throw new ExProgramNotFound(prog);
+        }
     }
 }

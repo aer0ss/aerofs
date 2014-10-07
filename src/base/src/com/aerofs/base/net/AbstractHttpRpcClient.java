@@ -61,13 +61,10 @@ public abstract class AbstractHttpRpcClient
                     + "=" + URLEncoder.encode(Base64.encodeBytes(data), charSet);
 
             // Send call
-            OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-            try {
+            try (OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream())) {
                 wr.write(encodedData);
                 // TODO unsure whether this is necessary
                 wr.flush();
-            } finally {
-                wr.close();
             }
 
             LOGGER.debug("url={} headers={}", _url, connection.getHeaderFields());

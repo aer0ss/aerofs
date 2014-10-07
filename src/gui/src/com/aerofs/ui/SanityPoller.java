@@ -63,24 +63,19 @@ public class SanityPoller
         // gain. So long as our polling interval is short enough that the change
         // to the root anchor location is fresh in the users mind, this will work
         // fine.
-        _t = ThreadUtil.startDaemonThread("sanity", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (!_stopping) {
-                    check();
+        _t = ThreadUtil.startDaemonThread("sanity", () -> {
+            while (!_stopping) {
+                check();
 
-                    // Do not use uninterruptable sleep so that stop() can stop us immediately.
-                    try {
-                        Thread.sleep(UIParam.ROOT_ANCHOR_POLL_INTERVAL);
-                    } catch (InterruptedException e) {
-                        // If we were interrupted and we have not beeen stopped by the stop()
-                        // function, this is bad and we must bail.
-                        if (!_stopping) {
-                            l.error("Interrupted exception while sleeping in poller: " + Util.e(e));
-                            SystemUtil.fatal(e);
-                        }
+                // Do not use uninterruptable sleep so that stop() can stop us immediately.
+                try {
+                    Thread.sleep(UIParam.ROOT_ANCHOR_POLL_INTERVAL);
+                } catch (InterruptedException e) {
+                    // If we were interrupted and we have not beeen stopped by the stop()
+                    // function, this is bad and we must bail.
+                    if (!_stopping) {
+                        l.error("Interrupted exception while sleeping in poller: " + Util.e(e));
+                        SystemUtil.fatal(e);
                     }
                 }
             }
@@ -165,14 +160,8 @@ public class SanityPoller
             if (UI.isGUI()) {
                 // use a notification because it is less disruptive. However, this also increases
                 // the complexity of the logic.
-                UI.get().notify(MessageType.WARN, title, message, new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        askUserToIgnoreDiskFullErrors(details);
-                    }
-                });
+                UI.get().notify(MessageType.WARN, title, message,
+                        () -> askUserToIgnoreDiskFullErrors(details));
             } else {
                 askUserToIgnoreDiskFullErrors(details);
             }
@@ -235,14 +224,11 @@ public class SanityPoller
         // Check if a 'move' operation was executed from the 'Preferences' menu.
         if (onPotentialRootAnchorChange_(oldAbsPath, sid)) return;
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                if (UI.isGUI()) {
-                    new DlgRootAnchorUpdater(GUI.get().sh(), oldAbsPath, sid).openDialog();
-                } else {
-                    new CLIRootAnchorUpdater(CLI.get(), oldAbsPath, sid).ask();
-                }
+        Runnable runnable = () -> {
+            if (UI.isGUI()) {
+                new DlgRootAnchorUpdater(GUI.get().sh(), oldAbsPath, sid).openDialog();
+            } else {
+                new CLIRootAnchorUpdater(CLI.get(), oldAbsPath, sid).ask();
             }
         };
         UI.get().exec(runnable);

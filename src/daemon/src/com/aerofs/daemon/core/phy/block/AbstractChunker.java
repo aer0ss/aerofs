@@ -174,27 +174,18 @@ public abstract class AbstractChunker
         // read a chunk of input into a buffer, perform any backend-specific encoding and
         // compute any metadata (hash, length, ...) required for the actual write
         Block block = new Block();
-        IEncodingBuffer buffer = makeEncodingBuffer(blockSize);
-        try {
-            OutputStream out = wrapOutputStream(block, buffer.encoderOutput());
-            try {
+        try (IEncodingBuffer buffer = makeEncodingBuffer(blockSize)) {
+            try (OutputStream out = wrapOutputStream(block, buffer.encoderOutput())) {
                 ByteStreams.copy(input, out);
-            } finally {
-                out.close();
             }
             // write chunk into persistent storage, keyed by content hash
             StorageState blockState = prePutBlock_(block);
             if (blockState == StorageState.NEEDS_STORAGE) {
-                InputStream encoded = buffer.encoded();
-                try {
+                try (InputStream encoded = buffer.encoded()) {
                     _bsb.putBlock(block._hash, encoded, block._length, block._encoderData);
-                } finally {
-                    encoded.close();
                 }
             }
             postPutBlock_(block);
-        } finally {
-            buffer.close();
         }
         return block._hash;
     }

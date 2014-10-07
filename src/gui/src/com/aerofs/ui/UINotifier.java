@@ -50,14 +50,7 @@ public class UINotifier implements IViewNotifier
     {
         if (UI.get() != null) {
             // We're running a Java UI. Notify in the context of the UI thread
-            UI.get().asyncExec(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    doNotify(type, notification);
-                }
-            });
+            UI.get().asyncExec(() -> doNotify(type, notification));
         } else {
             // We're running a native UI. Notify in the context of the caller thread
             // TODO: what would be the most appropriate thread to deliver the notification on?

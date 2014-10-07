@@ -50,8 +50,6 @@ import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 import java.util.Set;

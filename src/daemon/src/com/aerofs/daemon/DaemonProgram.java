@@ -20,7 +20,6 @@ import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.daemon.mobile.MobileModule;
 import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.RestTunnelClient;
@@ -112,7 +111,7 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), getMultiplicityModule(),
-                new CoreModule(), getStorageModule(), new RestModule(), new MobileModule());
+                new CoreModule(), getStorageModule(), new RestModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 

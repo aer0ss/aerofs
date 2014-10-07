@@ -25,8 +25,7 @@ public class PostUpdate
     private static Map<String, byte[]> getChecksums()
             throws IOException, ExFormatError
     {
-        Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)));
-        try {
+        try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)))) {
             // skip the version number
             s.nextLine();
 
@@ -39,11 +38,7 @@ public class PostUpdate
                 if (parts.length != 2) throw new IOException("ver file format error");
                 chksums.put(parts[0], BaseUtil.hexDecode(parts[1]));
             }
-
             return chksums;
-
-        } finally {
-            s.close();
         }
     }
 

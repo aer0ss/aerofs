@@ -27,7 +27,6 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;

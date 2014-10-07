@@ -35,12 +35,9 @@ public class MimeTypeDetector extends DefaultDetector
             Metadata m = new Metadata();
             m.set(TikaMetadataKeys.RESOURCE_NAME_KEY, name);
             // NB: only use name-based detection for now
-            InputStream s = new ByteArrayInputStream(new byte[0]);
-            try {
+            try (InputStream s = new ByteArrayInputStream(new byte[0])) {
                 type = detect(s, m).toString();
                 l.info("mediatype detected: {} -> {}", name, type);
-            } finally {
-                s.close();
             }
         } catch (IOException e) {
             l.warn("mediatype detection failed", e);

@@ -73,11 +73,8 @@ class BlockPrefix implements IPhysicalPrefix
     @Override
     public void truncate_(long length) throws IOException
     {
-        FileOutputStream s = new FileOutputStream(_f.getImplementation());
-        try {
+        try (FileOutputStream s = new FileOutputStream(_f.getImplementation())) {
             s.getChannel().truncate(length);
-        } finally {
-            s.close();
         }
     }
 }

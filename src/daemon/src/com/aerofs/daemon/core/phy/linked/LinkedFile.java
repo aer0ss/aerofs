@@ -10,7 +10,6 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
-import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;

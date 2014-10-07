@@ -72,23 +72,19 @@ public class RestService extends Service
     @Override
     protected ChannelPipelineFactory getPipelineFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                ChannelPipeline p = getSpecializedPipeline();
-                p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
-                return p;
-            }
+        return () -> {
+            ChannelPipeline p = getSpecializedPipeline();
+            p.addFirst("ssl", _sslHandlerFactory.newSslHandler());
+            return p;
         };
     }
 
     @Override
     protected Set<Class<?>> singletons()
     {
-        // specify all providers explictly instead of using a package scanner
+        // specify all providers explicitly instead of using a package scanner
         // because we flatten packages in the proguard step
-        return ImmutableSet.<Class<?>>of(
+        return ImmutableSet.of(
                 OAuthProvider.class,
                 FactoryReaderProvider.class,
                 JsonExceptionMapper.class,

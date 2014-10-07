@@ -7,13 +7,11 @@ import com.aerofs.base.net.AbstractNettyReconnectingClient;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
@@ -59,17 +57,11 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
     @Override
     protected ChannelPipelineFactory pipelineFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                return Channels.pipeline(
-                        new MagicFrameDecoder(LibParam.RITUAL_NOTIFICATION_MAGIC),
-                        new ProtobufDecoder(PBNotification.getDefaultInstance()),
-                        new NotificationHandler()
-                );
-            }
-        };
+        return () -> Channels.pipeline(
+                new MagicFrameDecoder(LibParam.RITUAL_NOTIFICATION_MAGIC),
+                new ProtobufDecoder(PBNotification.getDefaultInstance()),
+                new NotificationHandler()
+        );
     }
 
     @Override
@@ -113,25 +105,15 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) throws IOException
         {
             final PBNotification notification = (PBNotification)me.getMessage();
-            _listeners.notifyOnOtherThreads(new IListenerVisitor<IRitualNotificationListener>() {
-                @Override
-                public void visit(IRitualNotificationListener listener)
-                {
-                    listener.onNotificationReceived(notification);
-                }
-            });
+            _listeners.notifyOnOtherThreads(
+                    listener -> listener.onNotificationReceived(notification));
         }
 
         @Override
         public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
         {
-            _listeners.notifyOnOtherThreads(new IListenerVisitor<IRitualNotificationListener>() {
-                @Override
-                public void visit(IRitualNotificationListener listener)
-                {
-                    listener.onNotificationChannelBroken();
-                }
-            });
+            _listeners.notifyOnOtherThreads(
+                    IRitualNotificationListener::onNotificationChannelBroken);
         }
     }
 }

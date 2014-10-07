@@ -5,7 +5,6 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.defects.AutoDefect;
-import com.aerofs.defects.Defect;
 import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.MockDefects;
 import com.aerofs.testlib.LoggerSetup;
@@ -18,8 +17,6 @@ import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 

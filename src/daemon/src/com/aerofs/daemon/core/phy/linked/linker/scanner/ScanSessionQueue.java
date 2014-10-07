@@ -14,14 +14,12 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableSystem;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -102,17 +100,11 @@ public class ScanSessionQueue implements IDumpStatMisc
         public String toString()
         {
             return FluentIterable.from(ImmutableSet.copyOf(_absPaths))
-                    .transform(new Function<String, String>()
-                    {
-                        @Nullable
-                        @Override
-                        public String apply(@Nullable String path)
-                        {
-                            if (path != null) {
-                                return ObfuscatingFormatters.obfuscatePath(path);
-                            }
-                            return null;
+                    .transform(path -> {
+                        if (path != null) {
+                            return ObfuscatingFormatters.obfuscatePath(path);
                         }
+                        return null;
                     })
                     .toString() + ":" + _recursive;
         }

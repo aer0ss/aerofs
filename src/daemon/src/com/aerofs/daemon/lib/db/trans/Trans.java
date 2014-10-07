@@ -125,13 +125,7 @@ public class Trans
     {
         try {
             end_();
-        } catch (Error e) {
-            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
-            throw e;
-        } catch (RuntimeException e) {
-            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
-            throw e;
-        } catch (SQLException e) {
+        } catch (Error|RuntimeException|SQLException e) {
             if (rollbackCause != null) concatStackTrace(e, rollbackCause);
             throw e;
         }

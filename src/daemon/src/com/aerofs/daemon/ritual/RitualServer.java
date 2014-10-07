@@ -21,8 +21,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -60,19 +58,11 @@ public class RitualServer
         // Set up the pipeline factory.
         // RitualServerHandler is the class that will receive the bytes from the client
 
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-                    throws Exception
-            {
-                return Channels.pipeline(
-                        new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0,
-                                LENGTH_FIELD_SIZE),
-                        new LengthFieldPrepender(LENGTH_FIELD_SIZE),
-                        new RitualServerHandler());
-            }
-        });
+        bootstrap.setPipelineFactory(() -> Channels.pipeline(
+                new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0,
+                        LENGTH_FIELD_SIZE),
+                new LengthFieldPrepender(LENGTH_FIELD_SIZE),
+                new RitualServerHandler()));
 
         // Bind and start to accept incoming connections.
 

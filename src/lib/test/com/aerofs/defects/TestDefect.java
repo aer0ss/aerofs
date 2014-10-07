@@ -18,7 +18,6 @@ import org.mockito.Mock;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 
 import static java.util.Collections.emptyMap;

@@ -46,18 +46,14 @@ public abstract class AbstractNettyReconnectingClient
 
     private int _reconnectDelay = MIN_RETRY_DELAY;
 
-    private final ChannelFutureListener onConnect = new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture cf) throws Exception
-        {
-            if (cf.isSuccess()) {
-                l.info("{} open", AbstractNettyReconnectingClient.this);
-                _reconnectDelay = MIN_RETRY_DELAY;
-            } else {
-                l.warn("{} failed to connect", AbstractNettyReconnectingClient.this,
-                        BaseLogUtil.suppress(cf.getCause(),
-                                ConnectException.class, ClosedChannelException.class));
-            }
+    private final ChannelFutureListener onConnect = cf -> {
+        if (cf.isSuccess()) {
+            l.info("{} open", AbstractNettyReconnectingClient.this);
+            _reconnectDelay = MIN_RETRY_DELAY;
+        } else {
+            l.warn("{} failed to connect", AbstractNettyReconnectingClient.this,
+                    BaseLogUtil.suppress(cf.getCause(),
+                            ConnectException.class, ClosedChannelException.class));
         }
     };
 

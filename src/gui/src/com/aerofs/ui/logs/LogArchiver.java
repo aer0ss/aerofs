@@ -41,19 +41,14 @@ public final class LogArchiver
 
     public void start()
     {
-        startDaemonThread("archiver", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                l.info("start archiver");
+        startDaemonThread("archiver", () -> {
+            l.info("start archiver");
 
-                sleepUninterruptable(DM_LOG_ARCHIVE_STARTUP_DELAY);
+            sleepUninterruptable(DM_LOG_ARCHIVE_STARTUP_DELAY);
 
-                while (true) {
-                    uploadArchivedLogs();
-                    sleepUninterruptable(DM_LOG_ARCHIVE_INTERVAL);
-                }
+            while (true) {
+                uploadArchivedLogs();
+                sleepUninterruptable(DM_LOG_ARCHIVE_INTERVAL);
             }
         });
     }

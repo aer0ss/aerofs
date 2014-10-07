@@ -5,8 +5,6 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.tunnel.TunnelClient;
 import com.google.inject.Inject;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -21,16 +19,7 @@ public class RestTunnelClient extends TunnelClient
     {
         super(getStringProperty("api.tunnel.host", "api.aerofs.com"),
                 getIntegerProperty("api.tunnel.port", 8084), user.get(), did.get(),
-                getClientChannelFactory(), sslEngineFactory,
-                new ChannelPipelineFactory()
-                {
-                    @Override
-                    public ChannelPipeline getPipeline()
-                            throws Exception
-                    {
-                        return service.getSpecializedPipeline();
-                    }
-                }, timer);
+                getClientChannelFactory(), sslEngineFactory, service::getSpecializedPipeline, timer);
     }
 
     @Override

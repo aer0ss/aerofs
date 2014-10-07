@@ -215,3 +215,9 @@ message PBFolderInvitation {
 message PBCounterVector {
     repeated int32 counter = 1 [packed = true];
 }
+
+// see CNameVerificationHandler.java
+message CNameVerificationInfo {
+    required string user = 1;
+    required bytes did = 2;
+}

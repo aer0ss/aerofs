@@ -112,49 +112,31 @@ class AsyncDownload extends Download
 
     void include_(Set<DID> dids, IDownloadCompletionListener completionListener)
     {
-        for (DID did : dids) _from.add_(did);
+        dids.forEach(_from::add_);
         _listeners.add(completionListener);
     }
 
     /**
      * Try to download the target object until no KMLs are left or all devices have been tried
-     * and inform listeners of success/failure appropirately
+     * and inform listeners of success/failure appropriately
      */
     void do_()
     {
         try {
             final DID replier = doImpl_();
-            notifyListeners_(new IDownloadCompletionListenerVisitor() {
-                @Override
-                public void notify_(IDownloadCompletionListener l)
-                {
-                    l.onDownloadSuccess_(_socid, replier);
-                }
-            });
+            notifyListeners_(listener -> listener.onDownloadSuccess_(_socid, replier));
         } catch (ExNoAvailDevice e) {
             l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
             // This download object tracked all reasons (Exceptions) for why each device was
             // avoided. Thus if the To object indicated no devices were available, then inform
             // the listener about all attempted devices, and why they failed to deliver the socid.
-            notifyListeners_(new IDownloadCompletionListenerVisitor() {
-                @Override
-                public void notify_(IDownloadCompletionListener l)
-                {
-                    l.onPerDeviceErrors_(_socid, _did2e);
-                }
-            });
+            notifyListeners_(listener -> listener.onPerDeviceErrors_(_socid, _did2e));
         } catch (RuntimeException e) {
             // we don't want the catch-all block to swallow runtime exceptions
             SystemUtil.fatal(e);
         } catch (final Exception e) {
             l.warn("{} :", _socid, BaseLogUtil.suppress(e, ExNoPerm.class));
-            notifyListeners_(new IDownloadCompletionListenerVisitor() {
-                @Override
-                public void notify_(IDownloadCompletionListener l)
-                {
-                    l.onGeneralError_(_socid, e);
-                }
-            });
+            notifyListeners_(listener -> listener.onGeneralError_(_socid, e));
         } finally {
             _tk.reclaim_();
         }
@@ -177,13 +159,7 @@ class AsyncDownload extends Download
                 // before a successful remote call
                 final DID replier = download_();
 
-                notifyListeners_(new IDownloadCompletionListenerVisitor() {
-                    @Override
-                    public void notify_(IDownloadCompletionListener l)
-                    {
-                        l.onPartialDownloadSuccess_(_socid, replier);
-                    }
-                });
+                notifyListeners_(listener -> listener.onPartialDownloadSuccess_(_socid, replier));
 
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 

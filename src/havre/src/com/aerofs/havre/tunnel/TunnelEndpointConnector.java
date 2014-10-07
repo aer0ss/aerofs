@@ -14,10 +14,8 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -199,26 +197,14 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
                 Iterables.concat(
                         suitable(teamServer(c.principal), c.minVersion),
                         suitable(c.principal.getEffectiveUserID(), c.minVersion)),
-                new Predicate<DID>() {
-            @Override
-            public boolean apply(DID o)
-            {
-                return !did.equals(o);
-            }
-        });
+                other -> !did.equals(other));
     }
 
     Iterable<DID> suitable(UserID userID, @Nullable Version minVersion)
     {
         UserDevices uds = _endpointsByUser.get(userID);
         if (uds == null) return Collections.emptyList();
-        return Iterables.transform(uds.suitableDevices(minVersion), new Function<UserDevice, DID>() {
-            @Override
-            public DID apply(UserDevice ud)
-            {
-                return ud.did;
-            }
-        });
+        return Iterables.transform(uds.suitableDevices(minVersion), ud -> ud.did);
     }
 
     @Override

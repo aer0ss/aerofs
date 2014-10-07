@@ -82,7 +82,7 @@ public class ExternalSorter<T> implements Closeable
             READY,
             DONE,
             FAILED,
-        };
+        }
 
         private State state = State.NOT_READY;
         private T next;

@@ -197,12 +197,6 @@ public class CoreSchema implements ISchema
             C_AL_DIDS        = "ao_d",      // bytes: one or more concatenated DIDs
             C_AL_TIME        = "ao_ts",     // long
 
-            // Sync status push queue
-            T_SSPQ          = "sspq",
-            C_SSPQ_IDX      = "sspq_i",
-            C_SSPQ_SIDX     = "sspq_s",
-            C_SSPQ_OID      = "sspq_o",
-
             // SP Leave (Shared Folder) Queue
             T_SPQ           = "spq",
             C_SPQ_IDX       = "spq_i",
@@ -495,7 +489,6 @@ public class CoreSchema implements ISchema
 
         createStoreTables(s, dbcw);
         createActivityLogTables(s, dbcw);
-        createSyncStatusPushQueueTable(s, dbcw);
         createUpdateQueueTable(s, dbcw);
         createUnlinkedRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
@@ -568,15 +561,6 @@ public class CoreSchema implements ISchema
 
         // for getChildren()
         s.executeUpdate("create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
-    }
-
-    public static void createSyncStatusPushQueueTable(Statement s, IDBCW dbcw) throws SQLException
-    {
-        s.executeUpdate("create table if not exists " + T_SSPQ  + "(" +
-                C_SSPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                C_SSPQ_SIDX + " integer not null," +
-                C_SSPQ_OID + dbcw.uniqueIdType() + " not null" +
-                ")");
     }
 
     public static void createUpdateQueueTable(Statement s, IDBCW dbcw) throws SQLException

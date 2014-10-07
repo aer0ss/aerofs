@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -504,12 +503,8 @@ public abstract class Util
 
     public static void deleteOldHeapDumps()
     {
-        File[] heapDumps = new File(absRTRoot()).listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File arg0, String arg1) {
-                    return arg1.endsWith(LibParam.HPROF_FILE_EXT);
-                }
-            });
+        File[] heapDumps = new File(absRTRoot()).listFiles(
+                (arg0, arg1) -> arg1.endsWith(LibParam.HPROF_FILE_EXT));
         if (heapDumps == null) {
             l.error("rtRoot not found.");
             return;
@@ -622,14 +617,8 @@ public abstract class Util
             final Callable<Void> call,
             final Class<?> ... excludes)
     {
-        ThreadUtil.startDaemonThread(name, new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                exponentialRetry(name, initialRetryInterval, maxRetryInterval, call, excludes);
-            }
-        });
+        ThreadUtil.startDaemonThread(name,
+                () -> exponentialRetry(name, initialRetryInterval, maxRetryInterval, call, excludes));
     }
 
     public static void exponentialRetry(String name, Callable<Void> call, Class<?>... excludes)

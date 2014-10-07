@@ -114,7 +114,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
     static public class GetBySignUpCodeResult {
         public UserID _userID;
         public OrganizationID _orgID;
-    };
+    }
 
     public @Nullable GetBySignUpCodeResult getBySignUpCodeNullable(String signUpCode)
             throws SQLException

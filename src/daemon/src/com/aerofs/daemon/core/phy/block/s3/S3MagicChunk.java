@@ -152,11 +152,8 @@ class S3MagicChunk implements IBlockStorageInitable
     private void downloadMagicChunk() throws IOException
     {
         byte[] bytes;
-        InputStream in = new BlockInputStream(_bsb, MAGIC_HASH);
-        try {
+        try (InputStream in = new BlockInputStream(_bsb, MAGIC_HASH)) {
             bytes = ByteStreams.toByteArray(in);
-        } finally {
-            in.close();
         }
 
         if (!Arrays.equals(MAGIC, bytes)) {

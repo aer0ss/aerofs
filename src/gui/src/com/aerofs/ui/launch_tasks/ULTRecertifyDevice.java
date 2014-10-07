@@ -57,24 +57,18 @@ public class ULTRecertifyDevice extends UILaunchTask
         // Or, maybe everything is okay. In which case, do nothing.
         if (!SecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
 
-            recertify(new NullCallable() {
-                @Override
-                public void call() throws Exception { signInToRecertify(); }
-            });
+            recertify(this::signInToRecertify);
 
         } else if (Cfg.recertify(Cfg.absRTRoot())
                 || (!SecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY))) {
-            recertify(new NullCallable() {
-                @Override
-                public void call() throws Exception {
-                    l.info("Attempting to refresh the device certificate...");
+            recertify(() -> {
+                l.info("Attempting to refresh the device certificate...");
 
-                    SPBlockingClient mutualAuthClient = newMutualAuthClientFactory().create();
-                    mutualAuthClient.signInDevice(_userId.getString(), _deviceId.toPB());
-                    CredentialUtil.recertifyDevice(_userId, mutualAuthClient);
+                SPBlockingClient mutualAuthClient = newMutualAuthClientFactory().create();
+                mutualAuthClient.signInDevice(_userId.getString(), _deviceId.toPB());
+                CredentialUtil.recertifyDevice(_userId, mutualAuthClient);
 
-                    l.info("Successfully refreshed the device certificate.");
-                }
+                l.info("Successfully refreshed the device certificate.");
             });
         } else {
             l.debug("client cert is signed by CA, good");

@@ -12,7 +12,6 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.ChannelMonitor;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
@@ -24,7 +23,6 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.daemon.transport.xmpp.multicast.Multicast;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPPresenceProcessor;
 import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
@@ -39,10 +37,8 @@ import com.google.common.collect.Sets;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.jivesoftware.smack.SASLAuthentication;
-import org.jivesoftware.smack.XMPPConnection;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -91,7 +87,6 @@ public final class Zephyr implements ITransport
             SSLEngineFactory clientSSLEngineFactory,
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
-            final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             Timer timer,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
@@ -174,28 +169,6 @@ public final class Zephyr implements ITransport
         // information will already be sent by the time the presence manager registers to get them.
         xmppConnectionService.addListener(xmppPresenceProcessor);
         xmppConnectionService.addListener(multicast);
-
-        // FIXME (AG): This should be removed, and mobileServerZephyrConnection should do this itself
-        if (mobileServerZephyrConnector != null) {
-            xmppConnectionService.addListener(new IXMPPConnectionServiceListener()
-            {
-                @Override
-                public void xmppServerConnected(XMPPConnection xmppConnection)
-                        throws Exception
-                {
-                    mobileServerZephyrConnector.setConnection(xmppConnection);
-                }
-
-                @Override
-                public void xmppServerDisconnected()
-                {
-                    // intentionally a noop
-                    // looks like mobileServerZephyrConnector doesn't
-                    // know how to deal with null connections, and I really
-                    // don't want to touch that code
-                }
-            });
-        }
     }
 
     public void enableMulticast()

@@ -272,11 +272,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         try {
             String path = Util.join(Cfg.absRTRoot(), LibParam.FAILED_SID);
-            InputStream i = new FileInputStream(path);
-            try {
+            try (InputStream i = new FileInputStream(path)) {
                 return SID.fromStringFormal(BaseUtil.utf2string(ByteStreams.toByteArray(i)));
             } finally {
-                i.close();
                 new File(path).delete();
             }
         } catch (Exception e) {

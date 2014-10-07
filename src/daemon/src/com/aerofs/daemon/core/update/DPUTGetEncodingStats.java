@@ -15,7 +15,6 @@ import java.text.Normalizer.Form;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_NAME;
-import static com.aerofs.defects.Defects.newDefect;
 import static com.aerofs.defects.Defects.newMetric;
 
 public class DPUTGetEncodingStats implements IDaemonPostUpdateTask

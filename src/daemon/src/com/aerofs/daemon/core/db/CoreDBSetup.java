@@ -48,11 +48,8 @@ public class CoreDBSetup
         assert !c.getAutoCommit();
 
         // setup all DB schemas, in no particular order
-        Statement stmt = c.createStatement();
-        try {
+        try (Statement stmt = c.createStatement()) {
             for (ISchema s : _schemas) s.create_(stmt, _idbcw);
-        } finally {
-            stmt.close();
         }
 
         // commit changes after setup complete

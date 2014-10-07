@@ -116,14 +116,12 @@ class DLTFetchStoreNames extends DaemonLaunchTask
     private void setName_(SIndex sidx, String name)
             throws SQLException
     {
-        PreparedStatement ps = _dbcw.get().getConnection().prepareStatement(
-                updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_NAME));
-        try {
+        try (PreparedStatement ps = _dbcw.get()
+                .getConnection()
+                .prepareStatement(updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_NAME))) {
             ps.setString(1, name);
             ps.setInt(2, sidx.getInt());
             checkState(ps.executeUpdate() == 1);
-        } finally {
-            ps.close();
         }
     }
 }

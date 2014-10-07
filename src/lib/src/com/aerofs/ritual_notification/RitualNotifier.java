@@ -4,7 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -51,16 +50,10 @@ public class RitualNotifier extends SimpleChannelHandler
     {
         final Channel channel = writeFuture.getChannel();
 
-        writeFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                if (!channelFuture.isSuccess()) {
-                    l.warn("fail write notification to " + clientString(channel));
-                    channel.close();
-                }
+        writeFuture.addListener(channelFuture -> {
+            if (!channelFuture.isSuccess()) {
+                l.warn("fail write notification to " + clientString(channel));
+                channel.close();
             }
         });
     }

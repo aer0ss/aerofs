@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.cfg.CfgAbsRoots;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;

@@ -149,7 +149,6 @@ public final class TransportResource extends ExternalResource
                 outgoingEventSink,
                 linkStateService,
                 new MaxcastFilterReceiver(),
-                null,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 clientSSLEngineFactory,

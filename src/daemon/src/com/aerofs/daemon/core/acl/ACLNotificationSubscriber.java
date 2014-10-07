@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.addCallback;

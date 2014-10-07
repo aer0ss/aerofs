@@ -12,7 +12,6 @@ import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.AbstractTrayMenu;
 import com.aerofs.gui.tray.ITrayMenu;
-import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
 import com.aerofs.gui.tray.RebuildDisposition;
 import com.aerofs.gui.tray.TrayIcon;
@@ -60,26 +59,16 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
 
         // Delay start of the shellext service to avoid spamming
         // daemon with status requests while it is busy indexing...
-        _indexingPoller.addListener(new IIndexingCompletionListener() {
-            @Override
-            public void onIndexingDone()
-            {
-                GUI.get().asyncExec(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            UIGlobals.shellext().start_();
-                        } catch (Exception e) {
-                            newDefectWithLogs("shellext")
-                                    .setMessage("can't start shellext worker")
-                                    .setException(e)
-                                    .sendAsync();
-                        }
-                    }
-                });
+        _indexingPoller.addListener(() -> GUI.get().asyncExec(() -> {
+            try {
+                UIGlobals.shellext().start_();
+            } catch (Exception e) {
+                newDefectWithLogs("shellext")
+                        .setMessage("can't start shellext worker")
+                        .setException(e)
+                        .sendAsync();
             }
-        });
+        }));
 
         UIGlobals.rnc().addListener(this);
         // It's critical that we rebuild the menu here, since otherwise Ubuntu won't
@@ -174,13 +163,8 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             final String absPath = UIUtil.absPathNullable(p);
             if (absPath != null) {
                 UI.get().notify(MessageType.INFO,
-                        "You have joined the shared folder \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        GUIUtil.launch(absPath);
-                    }
-                });
+                        "You have joined the shared folder \"" + UIUtil.sharedFolderName(p, null) + "\"",
+                        () -> GUIUtil.launch(absPath));
             }
             break;
         case Type.SHARED_FOLDER_KICKOUT_VALUE:
@@ -239,19 +223,14 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        UI.get().asyncExec(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                try {
-                                    if (paused) _prs.resume();
-                                    else _prs.pause(1 * C.HOUR);
-                                } catch (Exception e) {
-                                    UI.get().show(MessageType.ERROR, "Couldn't " +
-                                            (paused ? "resume" : "pause") + " syncing. " +
-                                            S.TRY_AGAIN_LATER);
-                                }
+                        UI.get().asyncExec(() -> {
+                            try {
+                                if (paused) _prs.resume();
+                                else _prs.pause(1 * C.HOUR);
+                            } catch (Exception e) {
+                                UI.get().show(MessageType.ERROR, "Couldn't " +
+                                        (paused ? "resume" : "pause") + " syncing. " +
+                                        S.TRY_AGAIN_LATER);
                             }
                         });
                     }

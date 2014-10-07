@@ -14,7 +14,6 @@ import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -34,7 +33,6 @@ import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
@@ -77,7 +75,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             CoreQueue coreQueue,
             MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
-            @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             ClientSSLEngineFactory clientSslEngineFactory,
             ServerSSLEngineFactory serverSslEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
@@ -111,7 +108,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 coreQueue,
                 linkStateService,
                 maxcastFilterReceiver,
-                mobileServerZephyrConnector,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 clientSslEngineFactory,

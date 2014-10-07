@@ -56,7 +56,6 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.aerofs.defects.Defects.newMetric;
-import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedStorage implements IPhysicalStorage
 {
