@@ -64,7 +64,6 @@
     <ul>
         ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/entries/22661589 as well
         <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8484, 8888, and 29438.</li>
-        <li>UDP port: 3478.</li>
     </ul>
 
     <p>Your firewall or VPN may require configuration to unblock these ports for
