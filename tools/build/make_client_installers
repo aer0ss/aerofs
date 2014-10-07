@@ -286,6 +286,11 @@ function make_osx_packages() {
         SECURE_VOLUME="/Volumes/aerofskeys"
         OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
         OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/windows/passphrase.txt"
+        if [[ $BUILD_MODE == "PUBLIC" ]] ; then
+            RULES_PLIST="$BUILD_SCRIPT_DIR/osx/rules-10.9.plist"
+        else
+            RULES_PLIST="$BUILD_SCRIPT_DIR/osx/rules.plist"
+        fi
         security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
@@ -296,7 +301,7 @@ function make_osx_packages() {
         # modify anything under the .osax folder.
         #codesign --force --sign "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
         codesign --force --sign "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/Growl.framework/Versions/A"
-        codesign --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
+        codesign --resource-rules "$RULES_PLIST" \
                  --force \
                  --sign "Air Computing, Inc." \
                  "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
