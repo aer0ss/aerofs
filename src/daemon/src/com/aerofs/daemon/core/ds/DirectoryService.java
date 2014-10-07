@@ -238,7 +238,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * Tread with care when using walk as it may be an expensive operation and there
      * is currently no way to predict how many object it will touch.
      *
-     * Also be aware that walking across epxulsion and store boundaries may lead to
+     * Also be aware that walking across expulsion and store boundaries may lead to
      * unexpected behavior, especially if incremental cleanup is ongoing.
      *
      * See {@link com.aerofs.daemon.core.expel.LogicalStagingArea} for details.
