@@ -44,7 +44,8 @@ def my_shared_folders(request):
 
     return _shared_folders(request,
             _("Manage shared folders"),
-            request.route_url('json.get_my_shared_folders'))
+            request.route_url('json.get_my_shared_folders'),
+            can_administer=False)
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -74,17 +75,19 @@ def org_shared_folders(request):
     return _shared_folders(request,
             _("Shared folders in my organization"),
             request.route_url('json.get_org_shared_folders'),
-            has_pagination=True)
+            has_pagination=True,
+            can_administer=True)
 
 
-# @param {un,}privileged_modal_subtitle: the subtitles used in the shared folder
-# modal if the user {has,doesn't have) the privilege to manage the folder.
-def _shared_folders(request, page_heading, data_url, has_pagination=False):
+def _shared_folders(request, page_heading, data_url, has_pagination=False, can_administer=False):
     return {
         'pagination_limit': PAGE_LIMIT,
         # variables
         'session_user': authenticated_userid(request),
         'is_admin': is_admin(request),
+        # admins can modify all shared folders but only on the org shared folders page
+        # not on their own shared folders page unless they own it personally
+        'can_administer': is_admin(request) and can_administer,
         'use_restricted': is_restricted_external_sharing_enabled(request.registry.settings),
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.

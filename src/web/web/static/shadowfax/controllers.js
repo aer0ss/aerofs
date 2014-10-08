@@ -37,7 +37,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 $rootScope.me = response.me;
             }).error(function(data, status){
                 $log.warn('Shared folders data failed to load.');
-                showErrorMessageWith(data, status)
+                showErrorMessageWith(data, status);
             });
         };
         $scope.paginationInfo = {
@@ -57,6 +57,7 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.people = $scope.folder.people;
               $scope.is_privileged = $scope.folder.is_privileged;
               $scope.error = false;
+              $scope.canAdminister = canAdminister || false;
 
               $scope.newMember = function(){
                 return {

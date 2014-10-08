@@ -98,6 +98,7 @@
     <%spinner:scripts/>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script type="text/javascript">
+        canAdminister = "${can_administer}" == "True" ? true : false;
         dataUrl = "${data_url}";
         setPermUrl = "${request.route_path('json.set_shared_folder_perm')}";
         addMemberUrl = "${request.route_path('json.add_shared_folder_perm')}";
