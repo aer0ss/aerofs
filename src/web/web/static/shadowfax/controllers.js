@@ -219,7 +219,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
             }).error(function(data, status){
-                showErrorMessageWith(data, status)
+                showErrorMessageWith(data, status);
                 spinner.stop();
             });
         };
@@ -242,7 +242,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     }
                 }
             }).error(function(data, status){
-                showErrorMessageWith(data, status)
+                showErrorMessageWith(data, status);
                 spinner.stop();
             });
         };
@@ -265,7 +265,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                         user_id: $scope.me,
                     }
                 ).success(function(e) {
-                    showSuccessMessage('You have deleted folder "'+ $scope.folder.name +'".');
+                    $log.info('You have deleted folder "'+ $scope.folder.name +'".');
                     $scope.deleteFolder($scope.folder);
                     $modalInstance.close();
                 }).error(showErrorMessageWith);

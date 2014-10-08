@@ -100,7 +100,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                         $scope.groups.push($scope.newGroup);
                         $modalInstance.close();
                     }).error(function(data, status) {
-                        showErrorMessageWith(data, status)
+                        showErrorMessageWith(data, status);
                         $modalInstance.close();
                     });
                 };

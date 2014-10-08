@@ -14,7 +14,7 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
             $rootScope.devices = $scope.devices;
         }).error(function(data, status){
             $log.warn('Device data failed to load.');
-            showErrorMessageWith(data, status)
+            showErrorMessageWith(data, status);
         });
 
         $scope.changeName = function(device) {
@@ -33,7 +33,7 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
             }).error(function(data, status){
                 $log.warn('Device rename failed.');
                 device.name = oldName;
-                showErrorMessageWith(data, status)
+                showErrorMessageWith(data, status);
             });
         };
 
@@ -88,7 +88,7 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
                         } else {
                             $log.warn("Device unlinking failed.");
                         }
-                        showErrorMessageWith(data, status)
+                        showErrorMessageWith(data, status);
                         $modalInstance.close();
                     });
                 };
