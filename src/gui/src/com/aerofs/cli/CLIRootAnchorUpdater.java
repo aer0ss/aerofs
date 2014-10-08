@@ -11,6 +11,7 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.SanityPoller.ShouldProceed;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
@@ -27,6 +28,7 @@ public class CLIRootAnchorUpdater
     private final @Nullable SID _sid;
 
     private final String _relocateMsg;
+    private final ShouldProceed _shouldProceed;
     // This string must be consistent with the string in CompRootAnchorUpdater
     // TODO (WW) define the string in S.java?
     private final String _unlinkOrQuitMsg = "If you want to move the missing folder " +
@@ -36,12 +38,13 @@ public class CLIRootAnchorUpdater
             "choose \"Unlink.\" You will be asked to setup " + L.product() + " the next time " +
             L.product() + " launches.";
 
-    public CLIRootAnchorUpdater(CLI cli, String oldAbsPath, @Nullable SID sid)
+    public CLIRootAnchorUpdater(CLI cli, String oldAbsPath, @Nullable SID sid, ShouldProceed uc)
     {
         _cli = cli;
         _oldAbsPath = oldAbsPath;
         _sid = sid;
         _relocateMsg = relocateQuestion(oldAbsPath, sid);
+        _shouldProceed = uc;
     }
 
     /**
@@ -50,11 +53,19 @@ public class CLIRootAnchorUpdater
     public void ask()
     {
         try {
-            if (_cli.ask(MessageType.INFO, _relocateMsg)) {
-                // if the location provided is not valid, reask the user to enter a new location
-                selectRootAnchorLocation();
+            _cli.out().print(_relocateMsg);
+            if (_sid == null) {
+                // The missing folder is the user's AeroFS folder. Relocate, Unlink, or Quit.
+                if (_cli.ask(MessageType.INFO, "Would you like to select a new folder location?")) {
+                    // if the location provided is not valid, reask the user to enter a new location
+                    selectRootAnchorLocation();
+                } else {
+                    unlinkOrQuit();
+                }
+            } else if (L.isMultiuser()) {
+                quitOrTryAgain();
             } else {
-                unlinkOrQuit();
+                leaveFolderOrTryAgain(_shouldProceed);
             }
         } catch (ExNoConsole exNoConsole) {
             _cli.show(MessageType.INFO, "Quit now.");
@@ -72,8 +83,7 @@ public class CLIRootAnchorUpdater
     private static String relocateQuestion(String oldAbsPath, @Nullable SID sid)
     {
         return folderDescription(sid)
-                + " was not found in the original location:\n" + oldAbsPath + ".\n"
-                + "Would you like to select a new folder location?";
+                + " was not found in the original location:\n" + oldAbsPath + ".\n";
     }
 
     /**
@@ -159,6 +169,30 @@ public class CLIRootAnchorUpdater
                 _cli.show(MessageType.ERROR, "Couldn't unlink the computer " + ErrorMessages.e2msgDeprecated(
                         e));
             }
+        }
+    }
+
+    private void leaveFolderOrTryAgain(ShouldProceed shouldProceed) throws ExNoConsole
+    {
+        shouldProceed.proceedIf(
+                _cli.ask(
+                        MessageType.INFO,
+                        "Would you like to unlink this folder on this device? If not, you must " +
+                        "restore the folder on disk before continuing.",
+                        "Yes",
+                        "No"));
+    }
+
+    private void quitOrTryAgain() throws ExNoConsole
+    {
+        if (!_cli.ask(
+                MessageType.INFO,
+                "If you would like to move the folder back to its original location, " +
+                "please do so and try again.\n" + L.product() + " cannot proceed until " +
+                "the missing folder is restored.",
+                "Try Again",
+                "Quit")) {
+            _cli.shutdown();
         }
     }
 

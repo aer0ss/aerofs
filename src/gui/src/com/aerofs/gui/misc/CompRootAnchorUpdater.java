@@ -6,7 +6,6 @@ package com.aerofs.gui.misc;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.id.SID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
@@ -16,10 +15,10 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.UI;
-import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -33,7 +32,6 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Label;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.File;
 
 public class CompRootAnchorUpdater extends Composite
@@ -45,7 +43,7 @@ public class CompRootAnchorUpdater extends Composite
     private final String UNLINK_TEXT = S.UNLINK_THIS_COMPUTER;
     private final String QUIT_BUTTON_TEXT = "Quit";
 
-    public CompRootAnchorUpdater(Composite parent, final String oldAbsPath, final @Nullable SID sid)
+    public CompRootAnchorUpdater(Composite parent, final String oldAbsPath)
     {
         super(parent, SWT.NONE);
         GridLayout gridLayout = new GridLayout(2, false);
@@ -63,14 +61,10 @@ public class CompRootAnchorUpdater extends Composite
         gdErrorLabel.widthHint = 360;
         errorLabel.setLayoutData(gdErrorLabel);
         // TODO: fix this fugly dialog by splitting this label into a nicer multi-component layout
-        String folderDescription = sid == null
-                ? "Your " + S.ROOT_ANCHOR
-                : "One of your shared folders";
-
         // This string must be consistent with the string in CLIRootAnchorUpdater
         // TODO (WW) define the string in S.java?
         errorLabel.setText(
-                folderDescription + " was not found in the original location:\n" +
+                "Your " + S.ROOT_ANCHOR + " was not found in the original location:\n" +
                 oldAbsPath + "\n\n" +
                 "If you moved the folder, click \"" + NEW_LOCATION_TEXT + "\" " +
                 "below, and specify the new location.\n\n" +
@@ -95,7 +89,7 @@ public class CompRootAnchorUpdater extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                if (selectRootAnchorLocation(oldAbsPath, sid)) closeAndDisposeDialog();
+                if (selectRootAnchorLocation(oldAbsPath)) closeAndDisposeDialog();
             }
         });
 
@@ -127,7 +121,7 @@ public class CompRootAnchorUpdater extends Composite
      * @return True if a new root anchor path was selected and applied to the CfgDatabase,
      * False otherwise.
      */
-    private boolean selectRootAnchorLocation(String oldAbsPath, @Nullable SID sid)
+    private boolean selectRootAnchorLocation(String oldAbsPath)
     {
         // Select the new Root Anchor.
         DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
@@ -136,7 +130,7 @@ public class CompRootAnchorUpdater extends Composite
 
         if (rootPath == null) return false;
 
-        String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath, sid);
+        String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath, null);
         try {
             RootAnchorUtil.checkNewRootAnchor(oldAbsPath, newRootPath);
             File f = new File(newRootPath);
@@ -151,7 +145,7 @@ public class CompRootAnchorUpdater extends Composite
 
         // Apply the changes to the CfgDatabase.
         try {
-            RootAnchorUtil.updateAbsRootCfg(sid, newRootPath);
+            RootAnchorUtil.updateAbsRootCfg(null, newRootPath);
             Cfg.init_(Cfg.absRTRoot(), false);
             GUI.get().show(getShell(), MessageType.INFO, "The location was successfully updated!");
             return true;

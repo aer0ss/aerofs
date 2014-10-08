@@ -49,6 +49,13 @@ public class SanityPoller
 
     private volatile boolean _ignoreDiskFullErrors; // for users to suppress error notifications
 
+    public static class ShouldProceed
+    {
+        private boolean _val = false;
+        boolean shouldProceed() { return _val; }
+        public void proceedIf(boolean predicate) { _val = _val || predicate; }
+    }
+
     public void start()
     {
         // start must be idempotent to handle launch->setup backtracking
@@ -58,7 +65,7 @@ public class SanityPoller
         StorageType storageType = Cfg.storageType();
         if (storageType == StorageType.S3) return;
 
-        // We poll for the existance of the root anchor. We used to use
+        // We poll for the existence of the root anchor. We used to use
         // JNotify for this but it cause problems and only gave a negligible
         // gain. So long as our polling interval is short enough that the change
         // to the root anchor location is fresh in the users mind, this will work
@@ -212,8 +219,6 @@ public class SanityPoller
     }
 
     /**
-     * This method should never return
-     *
      * The polling thread will block when calling this method, only showing the dialogue once.
      */
     private void notifyMissingRootAnchor_(final String oldAbsPath, final @Nullable SID sid)
@@ -224,20 +229,20 @@ public class SanityPoller
         // Check if a 'move' operation was executed from the 'Preferences' menu.
         if (onPotentialRootAnchorChange_(oldAbsPath, sid)) return;
 
-        Runnable runnable = () -> {
+        ShouldProceed uc = new ShouldProceed();
+        UI.get().exec(() -> {
             if (UI.isGUI()) {
-                new DlgRootAnchorUpdater(GUI.get().sh(), oldAbsPath, sid).openDialog();
+                new DlgRootAnchorUpdater(GUI.get().sh(), oldAbsPath, sid, uc).openDialog();
             } else {
-                new CLIRootAnchorUpdater(CLI.get(), oldAbsPath, sid).ask();
+                new CLIRootAnchorUpdater(CLI.get(), oldAbsPath, sid, uc).ask();
             }
-        };
-        UI.get().exec(runnable);
+        });
 
-        // Check if we successfully changed the location of the root anchor after the user
-        // manually moved the root anchor.
-        if (onPotentialRootAnchorChange_(oldAbsPath, sid)) {
-            restartDaemon();
-        }
+        // Proceed if permitted by the user; or if we successfully changed
+        // the location of the root anchor after the user manually moved the root anchor.
+
+        uc.proceedIf(onPotentialRootAnchorChange_(oldAbsPath, sid));
+        if (uc.shouldProceed()) restartDaemon();
     }
 
     /**
