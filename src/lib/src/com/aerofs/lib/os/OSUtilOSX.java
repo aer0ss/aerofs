@@ -94,7 +94,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public String getFullOSName()
     {
-        return System.getProperty("os.name") + " " + System.getProperty("os.version");
+        return OSUtil.getOSName() + " " + OSUtil.getOSVersion();
     }
 
     @Override
@@ -379,7 +379,8 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // This logic seems weird, but I'm just refactoring, not rewriting
         InjectableFile.Factory factFile = new InjectableFile.Factory();
         InjectableFile result = factFile.create(AppRoot.abs());
-        result = result.newChild("icons").newChild(icon.name + ".icns");
+        String suffix = OSUtil.getOSVersion().startsWith("10.10") ? "Yosemite" : "";
+        result = result.newChild("icons").newChild(icon.name + suffix + ".icns");
         if (!result.exists()) {
             newDefectWithLogs("gui.icon_path.osx")
                     .setMessage("icon not found: " + result.getAbsolutePath())

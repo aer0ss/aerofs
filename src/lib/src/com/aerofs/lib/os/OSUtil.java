@@ -53,6 +53,7 @@ public abstract class OSUtil
 
     private static final IOSUtil _os;
     private static final OSArch _arch;
+    private static final String _version;
 
     static {
         String os = getOSName();
@@ -106,10 +107,13 @@ public abstract class OSUtil
             _os = null;
             _arch = null;
         }
+
         // If we didn't figure out the architecture, die loudly
         if (_arch == null) {
             ExitCode.FAIL_TO_DETECT_ARCH.exit();
         }
+
+        _version = System.getProperty("os.version");
     }
 
     private static byte[] readHeader() throws IOException
@@ -118,7 +122,7 @@ public abstract class OSUtil
         try {
             byte[] b = new byte[5];
             f = new FileInputStream("/proc/self/exe");
-            if (f.read(b) != 5) { return new byte[0]; };
+            if (f.read(b) != 5) { return new byte[0]; }
             return b;
         } finally {
             if (f != null) f.close();
@@ -150,6 +154,11 @@ public abstract class OSUtil
     public static OSArch getOSArch()
     {
         return _arch;
+    }
+
+    public static String getOSVersion()
+    {
+        return _version;
     }
 
     public static boolean isLinux()

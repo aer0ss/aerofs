@@ -6,6 +6,7 @@ import com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.OSUtilOSX;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
@@ -44,6 +45,8 @@ public class Images {
     public static final String ICON_FILE = "file.gif";
     private static final String ICON_FOLDER = "folder.png";
     private static final String ICON_SHARED_FOLDER = "sharedFolder.png";
+    private static final String ICON_FOLDER_YOSEMITE = "folderYosemite.png";
+    private static final String ICON_SHARED_FOLDER_YOSEMITE = "sharedFolderYosemite.png";
     public static final String ICON_TICK = "tick.png";
     public static final String ICON_WARNING = "warning.png";
     public static final String ICON_ERROR = "exclamation.png";
@@ -102,14 +105,19 @@ public class Images {
         return s_spinner_frames[frame % s_spinner_frames.length];
     }
 
+    private static boolean isOSXYosemite()
+    {
+        return OSUtil.isOSX() && OSUtil.getOSVersion().startsWith("10.10");
+    }
+
     public static Image getSharedFolderIcon()
     {
-        return get(ICON_SHARED_FOLDER);
+        return isOSXYosemite() ? get(ICON_SHARED_FOLDER_YOSEMITE) : get(ICON_SHARED_FOLDER);
     }
 
     public static Image getFolderIcon()
     {
-        return get(ICON_FOLDER);
+        return isOSXYosemite() ? get(ICON_FOLDER_YOSEMITE) : get(ICON_FOLDER);
     }
 
     /**

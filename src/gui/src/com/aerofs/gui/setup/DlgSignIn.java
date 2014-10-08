@@ -314,7 +314,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     static private boolean shouldAlwaysOnTop()
     {
         // On 10.5 the cocoasudo dialog goes behind the setup dialog if it's always on top.
-        return !(OSUtil.isOSX() && System.getProperty("os.version").startsWith("10.5"));
+        return !(OSUtil.isOSX() && OSUtil.getOSVersion().startsWith("10.5"));
     }
 
     @Override
