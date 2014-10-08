@@ -21,6 +21,6 @@ then
     usage
 fi
 
-# Top level directory is the org ID. Next level directory is the dryad ID.
-# Only find and delete based on dryad IDs.
-find /data/ -mindepth 2 -maxdepth 2 -mtime +$days_to_keep -print -exec rm -rf {} \;
+# Top level is just a single defects folder, the next level contains individual defects folder,
+# and the next level is the actual log files
+find /data/ -mindepth 2 -maxdepth 3 -mtime +$days_to_keep -print -exec rm -rf {} \;

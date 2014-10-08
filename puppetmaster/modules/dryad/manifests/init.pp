@@ -8,9 +8,9 @@ class dryad {
         mode    => "0755",
     }
 
-    # We keep 90 dayds worth of logs. Clean once a day, at noon.
+    # We keep 30 dayds worth of logs. Clean once a day, at noon.
     cron { "remove old dryad logs":
-        command => "/usr/bin/clean-dryad-logs 90",
+        command => "/usr/bin/clean-dryad-logs 30",
         minute  => "0",
         hour    => "12",
         require => Package["aerofs-dryad"],
