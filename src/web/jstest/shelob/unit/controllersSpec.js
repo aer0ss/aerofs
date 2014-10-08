@@ -54,7 +54,7 @@ describe('Shelob Controllers', function() {
 
             FileListCtrl = $controller('FileListCtrl', {'$scope': $rootScope, '$routeParams': routeParams, '$modal': modal});
 
-            $httpBackend.whenGET('/json_token').respond('token');
+            $httpBackend.whenGET(/\/json_token(\?t=[01]?.?\d*)?/).respond('token');
             $httpBackend.whenGET('/json_new_token').respond('newtoken');
             $httpBackend.whenGET('/list_urls_for_store?sid=root').respond({ urls: []});
         }));

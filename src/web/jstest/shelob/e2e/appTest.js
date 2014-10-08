@@ -73,7 +73,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     );
 
     // mock out the /json_token backend service
-    $httpBackend.whenGET('/json_token').respond(
+    $httpBackend.whenGET(/\/json_token(\?t=[01]?.?\d*)?/).respond(
         {token: 'tokentokentoken'}
     );
 

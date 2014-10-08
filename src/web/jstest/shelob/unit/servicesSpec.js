@@ -5,6 +5,7 @@ describe('Shelob Services', function() {
     describe('API service', function() {
 
         var injector, $httpBackend, Token, API;
+        var tokenRoute = /\/json_token(\?t=[01]?.?\d*)?/;
 
         beforeEach(inject(function($injector) {
             injector = $injector;
@@ -32,7 +33,7 @@ describe('Shelob Services', function() {
         });
 
         it('should not request a second new token if successive API calls get a 401 response', function() {
-            $httpBackend.whenGET('/json_token').respond('token');
+            $httpBackend.whenGET(tokenRoute).respond('token');
             $httpBackend.whenGET('/json_new_token').respond('newtoken');
             // should only try twice
             $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(401);
@@ -45,7 +46,7 @@ describe('Shelob Services', function() {
         });
 
         it('should fail without requesting a second token if API call gets a 500 response', function() {
-            $httpBackend.whenGET('/json_token').respond('token');
+            $httpBackend.whenGET(tokenRoute).respond('token');
             $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(500);
             var failure = jasmine.createSpy();
             API.get('/folders/root/children').catch(failure);
@@ -54,7 +55,7 @@ describe('Shelob Services', function() {
         });
 
         it('should fail API call with 500 status if getting a token fails', function() {
-            $httpBackend.expectGET('/json_token').respond(500);
+            $httpBackend.expectGET(tokenRoute).respond(500);
             var failure = jasmine.createSpy();
             API.get('/folders/root/children').catch(failure);
             $httpBackend.flush();
@@ -83,7 +84,7 @@ describe('Shelob Services', function() {
                 }});
 
                 // assume token acquisition succeeds
-                $httpBackend.whenGET('/json_token').respond('token');
+                $httpBackend.whenGET(tokenRoute).respond('token');
                 $httpBackend.whenGET('/json_new_token').respond('newtoken');
             });
 
