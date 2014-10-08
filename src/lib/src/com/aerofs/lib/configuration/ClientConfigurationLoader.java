@@ -72,16 +72,49 @@ public class ClientConfigurationLoader
 
             if (staticProperties.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals(
                     "true")) {
+                boolean loaded = false;
                 // Load site configuration file, failing if it doesn't exist.
-                siteConfigProperties.load(new FileInputStream(new File(approot, SITE_CONFIG_FILE)));
+                // Avoiding using OSUtil because static initializers suck.
+                // We do crazy stuff on OSX because codesigning is mean, but not mean enough.
+                if (System.getProperty("os.name").startsWith("Mac OS X")) {
+                    // We need to read the config from Resources/site-config.lproj/locversion.plist,
+                    // which is conveniently omitted from the codesigning seal.
+                    // construct relative path from approot:
+                    File codesigningEvadingFile = new File(
+                            new File(
+                                    new File(approot).getParentFile(),
+                                    "site-config.lproj"
+                            ),
+                            "locversion.plist"
+                    );
+                    if (codesigningEvadingFile.isFile()) {
+                        try (FileInputStream stream = new FileInputStream(codesigningEvadingFile)) {
+                            siteConfigProperties.load(stream);
+                            loaded = true;
+                        }
+                    }
+                }
+                // Load config from site-config.properties, if it exists
+                File siteConfigFile = new File(approot, SITE_CONFIG_FILE);
+                if (siteConfigFile.isFile()) {
+                    try (FileInputStream stream = new FileInputStream(siteConfigFile)) {
+                        siteConfigProperties.load(stream);
+                        loaded = true;
+                    }
+                }
+
+                if (!loaded) throw new IOException("Missing " + siteConfigFile);
+
                 siteConfigProperties = _propertiesHelper.parseProperties(siteConfigProperties);
 
-                // Load HTTP configuration, failing if it cannot be loaded.
+                // Load HTTP configuration, warning if it cannot be loaded.
                 downloadHttpConfig(approot, staticProperties, siteConfigProperties);
+                // FIXME: HTTP_CONFIG_CACHE should get placed in rtroot, not approot
                 httpProperties.load(new FileInputStream(new File(approot, HTTP_CONFIG_CACHE)));
                 httpProperties = _propertiesHelper.parseProperties(httpProperties);
 
             } else if (new File(approot, SITE_CONFIG_FILE).exists()) {
+                // This ignores the repackaged OSX case, but I'm okay with this
                 throw new IncompatibleModeException();
             }
 
