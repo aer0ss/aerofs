@@ -128,7 +128,6 @@ public class TestFolderResource extends AbstractRestTest
     {
         mds.root().anchor("a0").file("f1");
         SID sid = mds.root().getPath().sid();
-        when(absRoots.getNullable(sid)).thenReturn("/AeroFS");
 
         String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
 
@@ -147,7 +146,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         SID sid = SID.generate();
         mds.root(sid).file("f1");
-        when(absRoots.getNullable(sid)).thenReturn("/foo/bar/baz");
+        when(ss.getName_(sm.get_(sid))).thenReturn("baz");
 
         String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
 
