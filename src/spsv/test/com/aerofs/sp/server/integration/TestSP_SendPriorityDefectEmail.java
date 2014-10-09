@@ -10,6 +10,7 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.LicenseProperties;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Common.Void;
@@ -22,6 +23,7 @@ import org.junit.Test;
 
 import java.util.Properties;
 
+import static com.aerofs.lib.Util.urlEncode;
 import static org.mockito.Mockito.*;
 
 public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
@@ -30,6 +32,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
     private String _supportEmail;
 
     private static final String DEFECT_ID = "0000deadbeef00000000deadbeef0000";
+    private User _sessionUser;
 
     private void setupOnSiteProperties()
             throws Exception
@@ -43,6 +46,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         properties.setProperty(LicenseProperties.CUSTOMER_ID, "9001");
         properties.setProperty(LicenseProperties.CUSTOMER_NAME, "MyPlops Inc.");
         ConfigurationProperties.setProperties(properties);
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
 
         // renew license is necessary to reload license properties
         license = spy(new License());
@@ -55,6 +59,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         WWW.SUPPORT_EMAIL_ADDRESS = _supportEmail;
 
         ConfigurationProperties.setProperties(new Properties());
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
 
         // renew license is necessary to reload license properties
         license = spy(new License());
@@ -67,10 +72,10 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
             throws Exception
     {
         sqlTrans.begin();
-        User user = saveUser();
+        _sessionUser = saveUser();
         sqlTrans.commit();
 
-        setSession(user);
+        setSession(_sessionUser);
 
         ListenableFuture<Void> nothing =
                 UncancellableFuture.createSucceeded(Void.getDefaultInstance());
@@ -163,18 +168,21 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
     {
         setupOnSiteProperties();
 
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                null, null);
+        try {
+            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+                    null, null);
 
-        verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
-                eq("AeroFS"),
-                eq("support@myplops.com"),
-                eq("replyto@example.com"),
-                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
-                anyString(),
-                anyString());
-
-        restoreDefaultProperties();
+            verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
+                    eq("AeroFS"),
+                    eq("support@myplops.com"),
+                    eq("replyto@example.com"),
+                    eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
+                    // also check that the log collection link contains session user's UserID
+                    contains(urlEncode(_sessionUser.id().getString())),
+                    contains(urlEncode(_sessionUser.id().getString())));
+        } finally {
+            restoreDefaultProperties();
+        }
     }
 
     @Test(expected = ExNotAuthenticated.class)
