@@ -14,7 +14,7 @@ pagination.directive('aeroPagination', function() {
             pagelimit: '=',
             callback: '&'
         },
-        templateUrl: getModuleBaseURL('pagination.js') + 'pagination.html',
+        templateUrl: '/static/ng-modules/pagination/pagination.html',
         link: function($scope, element, attrs) {
             $scope.$watch('total', function(newValue, oldValue){
                 $scope.pages = [];
