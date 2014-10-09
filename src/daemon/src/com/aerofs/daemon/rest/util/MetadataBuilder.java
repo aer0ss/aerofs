@@ -52,12 +52,11 @@ public class MetadataBuilder
     private final EntityTagUtil _etags;
     private final LocalACL _acl;
     private final ICollectorStateDatabase _csdb;
-    private final CfgAbsRoots _cfgAbsRoots;
 
     @Inject
     public MetadataBuilder(DirectoryService ds, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
             IStores stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl,
-            ICollectorStateDatabase csdb, CfgAbsRoots cfgAbsRoots)
+            ICollectorStateDatabase csdb)
     {
         _ds = ds;
         _stores = stores;
@@ -67,7 +66,6 @@ public class MetadataBuilder
         _etags = etags;
         _acl = acl;
         _csdb = csdb;
-        _cfgAbsRoots = cfgAbsRoots;
     }
 
     public RestObject object(SOID soid) throws ExNotFound
@@ -147,16 +145,14 @@ public class MetadataBuilder
      *
      * If the object given is the root of an external folder, we look it up from the db.
      *
-     * NOTE this returns the folder name of the external folder on _this_ client only. There
-     * is no "global" name for an external folder, really.
+     * NB: the name in the DB reflects the name of the shared folder at the time the local
+     * device first received ACL for it and for linked storage it may quite possibly differ
+     * from the folder to which the store is locally linked.
      */
     private String getRootFolderName(ResolvedPath resolvedPath) throws SQLException, ExNotFound
     {
-        String absPath = _cfgAbsRoots.getNullable(resolvedPath.sid());
-        // if we can't resolve the root to an absolute path, it must not be present
-        if (absPath == null) { throw new ExNotFound(); }
-        return (resolvedPath.sid().isUserRoot()) ?
-                "AeroFS" : new java.io.File(absPath).getName();
+        if (resolvedPath.sid().isUserRoot()) return "AeroFS";
+        return _stores.getName_(_sid2sidx.get_(resolvedPath.sid()));
     }
 
     private Folder folder(OA oa, String object, String parent, @Nullable ParentPath path,
