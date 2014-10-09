@@ -26,7 +26,7 @@ public abstract class Operation {
     @JsonProperty(TYPE_FIELD_NAME)
     public final OperationType type;
 
-    Operation(OperationType type) {
+    protected Operation(OperationType type) {
         this.type = type;
     }
 
@@ -37,6 +37,8 @@ public abstract class Operation {
     }
 
     public static final class Deserializer extends StdDeserializer<Operation> {
+
+        private static final long serialVersionUID = -2018877680784383623L;
 
         public Deserializer() {
             super(Operation.class);

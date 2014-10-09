@@ -1,5 +1,6 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.operation;
 
+import com.aerofs.polaris.api.types.LogicalObject;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -9,10 +10,16 @@ import javax.validation.constraints.NotNull;
 public final class Updated {
 
     @Min(0)
-    public final long transformTimestamp;
+    public long transformTimestamp;
 
     @NotNull
-    public final LogicalObject object;
+    public LogicalObject object;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private Updated() { }
 
     public Updated(long transformTimestamp, LogicalObject object) {
         this.transformTimestamp = transformTimestamp;

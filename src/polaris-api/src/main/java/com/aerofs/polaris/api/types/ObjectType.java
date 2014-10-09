@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
 /**
  * List of logical objects that can be represented in the AeroFS virtual filesystem. These are:

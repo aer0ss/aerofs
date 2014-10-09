@@ -42,6 +42,7 @@ public abstract class ServerConfiguration {
 
     public static final PolarisConfiguration POLARIS = new PolarisConfiguration();
     static {
+        POLARIS.setMaxReturnedTransforms(10);
         POLARIS.setApp(APP);
         POLARIS.setAdmin(ADMIN);
         POLARIS.setDatabase(DATABASE);
@@ -52,6 +53,12 @@ public abstract class ServerConfiguration {
     static {
         OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     }
+
+    public static final String OBJECTS_URL = String.format("http://%s:%s/objects/", APP.getHost(), APP.getPort());
+
+    public static final String BATCH_URL = String.format("http://%s:%s/batch/", APP.getHost(), APP.getPort());
+
+    public static final String TRANSFORMS_URL = String.format("http://%s:%s/transforms/", APP.getHost(), APP.getPort());
 
     private ServerConfiguration() {
         // to prevent instantiation by subclasses

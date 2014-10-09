@@ -6,11 +6,11 @@ import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.Updated;
 import com.aerofs.polaris.api.batch.Batch;
 import com.aerofs.polaris.api.batch.BatchOperation;
 import com.aerofs.polaris.api.batch.BatchOperationResult;
 import com.aerofs.polaris.api.batch.BatchResult;
+import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
@@ -29,7 +29,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@RolesAllowed(AeroPrincipal.CLIENT_ROLE)
+@RolesAllowed(AeroPrincipal.Roles.CLIENT)
 @Path("/batch")
 @Singleton
 public final class BatchResource {
@@ -51,29 +51,32 @@ public final class BatchResource {
 
         final BatchResult batchResult = new BatchResult(batch.operations.size());
 
-        for (final BatchOperation operation : batch.operations) {
-            try {
+        BatchOperation operation = null;
+        try {
+            for (int i = 0; i < batch.operations.size(); i++) {
+                operation = batch.operations.get(i);
                 accessManager.checkAccess(principal.getUser(), operation.oid, Access.WRITE);
 
+                final BatchOperation submitted = operation;
                 objectStore.inTransaction(new TransactionCallback<Void>() {
                     @Override
                     public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                        List<Updated> updated = objectStore.performOperation(conn, principal.getDevice(), operation.oid, operation.operation);
+                        List<Updated> updated = objectStore.performOperation(conn, principal.getDevice(), submitted.oid, submitted.operation);
                         batchResult.results.add(new BatchOperationResult(updated));
                         return null;
                     }
                 });
-            } catch (CallbackFailedException e) {
-                @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-                Throwable cause = DBIExceptions.findRootCause(e);
-                BatchOperationResult result = getBatchOperationErrorResult(cause);
-                LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
-                batchResult.results.add(result);
-            } catch (Exception e) {
-                BatchOperationResult result = getBatchOperationErrorResult(e);
-                LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
-                batchResult.results.add(result);
             }
+        } catch (CallbackFailedException e) {
+            @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+            Throwable cause = DBIExceptions.findRootCause(e);
+            BatchOperationResult result = getBatchOperationErrorResult(cause);
+            LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
+            batchResult.results.add(result);
+        } catch (Exception e) {
+            BatchOperationResult result = getBatchOperationErrorResult(e);
+            LOGGER.warn("fail batch operation {} err:{}", operation, e.getMessage());
+            batchResult.results.add(result);
         }
 
         return batchResult;

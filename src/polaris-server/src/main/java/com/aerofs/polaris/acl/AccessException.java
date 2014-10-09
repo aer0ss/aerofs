@@ -28,8 +28,8 @@ public final class AccessException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("access", access);
-        errorFields.put("oid", oid);
         errorFields.put("user", user);
+        errorFields.put("oid", oid);
+        errorFields.put("access", access);
     }
 }

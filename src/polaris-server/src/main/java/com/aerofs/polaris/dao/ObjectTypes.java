@@ -1,6 +1,6 @@
 package com.aerofs.polaris.dao;
 
-import com.aerofs.polaris.api.ObjectType;
+import com.aerofs.polaris.api.types.ObjectType;
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;

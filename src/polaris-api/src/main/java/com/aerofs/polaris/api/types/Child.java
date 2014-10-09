@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
 import com.google.common.base.Objects;
 
@@ -10,14 +10,20 @@ public final class Child {
 
     @NotNull
     @Size(min = 1)
-    public final String oid;
+    public String oid;
 
     @NotNull
     @Size(min = 1)
-    public final String name;
+    public String name;
 
     @NotNull
-    public final ObjectType objectType;
+    public ObjectType objectType;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private Child() { }
 
     public Child(String oid, ObjectType objectType, String name) {
         this.oid = oid;

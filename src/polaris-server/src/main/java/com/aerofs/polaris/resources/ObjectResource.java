@@ -1,12 +1,12 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.ids.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
-import com.aerofs.polaris.ids.Identifier;
 import com.aerofs.polaris.logical.LogicalObjectStore;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.TransactionCallback;
@@ -23,7 +23,7 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-@RolesAllowed(AeroPrincipal.CLIENT_ROLE)
+@RolesAllowed(AeroPrincipal.Roles.CLIENT)
 @Singleton
 public final class ObjectResource {
 

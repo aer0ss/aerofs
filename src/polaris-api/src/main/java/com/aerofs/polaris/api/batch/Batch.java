@@ -15,6 +15,16 @@ public final class Batch {
     @Size(min = 1)
     public List<BatchOperation> operations;
 
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private Batch() {}
+
+    public Batch(List<BatchOperation> operations) {
+        this.operations = operations;
+    }
+
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;

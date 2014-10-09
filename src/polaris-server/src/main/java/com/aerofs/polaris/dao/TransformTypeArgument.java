@@ -1,6 +1,6 @@
 package com.aerofs.polaris.dao;
 
-import com.aerofs.polaris.api.TransformType;
+import com.aerofs.polaris.api.types.TransformType;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.Argument;
 import org.skife.jdbi.v2.tweak.ArgumentFactory;

@@ -20,12 +20,17 @@ public final class MoveChild extends Operation {
     @Size(min = 1)
     public String newChildName;
 
-    public MoveChild() {
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private MoveChild() {
         super(OperationType.MOVE_CHILD);
     }
 
     public MoveChild(String child, String newParent, String newChildName) {
         super(OperationType.MOVE_CHILD);
+
         this.child = child;
         this.newParent = newParent;
         this.newChildName = newChildName;

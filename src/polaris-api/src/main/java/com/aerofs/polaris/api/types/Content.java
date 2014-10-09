@@ -1,5 +1,6 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -7,29 +8,44 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-public final class FileProperties {
+public final class Content {
+
+    @JsonIgnore
+    public static final String INVALID_HASH = null;
+
+    @JsonIgnore
+    public static final long INVALID_MODIFICATION_TIME = -1;
+
+    @JsonIgnore
+    public static final long INVALID_SIZE = -1;
 
     @NotNull
     @Size(min = 1)
-    public final String oid;
+    public String oid;
 
     @Min(0)
-    public final long version;
+    public long version;
 
     @Nullable
-    public final String hash;
+    public String hash;
 
     @Min(0)
-    public final long size;
+    public long size;
 
     @Min(0)
-    public final long mtime;
+    public long mtime;
 
-    public FileProperties(String oid, long version) {
-        this(oid, version, Constants.INVALID_HASH, Constants.INVALID_SIZE, Constants.INVALID_MODIFICATION_TIME);
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private Content() { }
+
+    public Content(String oid, long version) {
+        this(oid, version, INVALID_HASH, INVALID_SIZE, INVALID_MODIFICATION_TIME);
     }
 
-    public FileProperties(String oid, long version, @Nullable String hash, long size, long mtime) {
+    public Content(String oid, long version, @Nullable String hash, long size, long mtime) {
         this.oid = oid;
         this.version = version;
         this.hash = hash;
@@ -42,7 +58,7 @@ public final class FileProperties {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FileProperties other = (FileProperties) o;
+        Content other = (Content) o;
         return oid.equals(other.oid)
                 && version == other.version
                 && Objects.equal(hash, other.hash)

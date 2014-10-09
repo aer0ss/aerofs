@@ -1,6 +1,6 @@
 package com.aerofs.polaris.dao;
 
-import com.aerofs.polaris.api.FileProperties;
+import com.aerofs.polaris.api.types.Content;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -18,12 +18,12 @@ public interface ObjectProperties {
     int add(@Bind("oid") String oid, @Bind("version") long version, @Bind("hash") String hash, @Bind("size") long size, @Bind("mtime") long mtime);
 
     @SqlQuery("select oid, version, hash, size, mtime, from file_properties where oid = :oid and version = :version")
-    FileProperties get(@Bind("oid") String oid, @Bind("version") long version);
+    Content get(@Bind("oid") String oid, @Bind("version") long version);
 
     @SuppressWarnings("unused")
     void close();
 
-    public final class FilePropertiesMapper implements ResultSetMapper<FileProperties> {
+    public final class FilePropertiesMapper implements ResultSetMapper<Content> {
 
         private static final int COL_OID     = 1;
         private static final int COL_VERSION = 2;
@@ -32,8 +32,8 @@ public interface ObjectProperties {
         private static final int COL_MTIME   = 5;
 
         @Override
-        public FileProperties map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            return new FileProperties(r.getString(COL_OID), r.getLong(COL_VERSION), r.getString(COL_HASH), r.getLong(COL_MTIME), r.getLong(COL_SIZE));
+        public Content map(int index, ResultSet r, StatementContext ctx) throws SQLException {
+            return new Content(r.getString(COL_OID), r.getLong(COL_VERSION), r.getString(COL_HASH), r.getLong(COL_MTIME), r.getLong(COL_SIZE));
         }
     }
 }

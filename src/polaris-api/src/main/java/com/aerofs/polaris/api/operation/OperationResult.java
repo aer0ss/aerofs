@@ -1,6 +1,5 @@
 package com.aerofs.polaris.api.operation;
 
-import com.aerofs.polaris.api.Updated;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;

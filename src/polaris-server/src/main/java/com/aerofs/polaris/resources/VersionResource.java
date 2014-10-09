@@ -8,7 +8,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 
-@RolesAllowed(AeroPrincipal.CLIENT_ROLE)
+@RolesAllowed(AeroPrincipal.Roles.CLIENT)
 @Singleton
 public final class VersionResource {
 

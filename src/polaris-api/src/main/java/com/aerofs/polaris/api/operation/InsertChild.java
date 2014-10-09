@@ -1,6 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
-import com.aerofs.polaris.api.ObjectType;
+import com.aerofs.polaris.api.types.ObjectType;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -20,7 +20,11 @@ public final class InsertChild extends Operation {
     @Size(min = 1)
     public String childName;
 
-    public InsertChild() {
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private InsertChild() {
         super(OperationType.INSERT_CHILD);
     }
 

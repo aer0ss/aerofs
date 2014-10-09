@@ -22,8 +22,21 @@ public final class UpdateContent extends Operation {
     @Min(0)
     public long mtime;
 
-    public UpdateContent() {
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private UpdateContent() {
         super(OperationType.UPDATE_CONTENT);
+    }
+
+    public UpdateContent(long localVersion, String hash, long size, long mtime) {
+        super(OperationType.UPDATE_CONTENT);
+
+        this.localVersion = localVersion;
+        this.hash = hash;
+        this.size = size;
+        this.mtime = mtime;
     }
 
     @Override

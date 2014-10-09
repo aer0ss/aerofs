@@ -4,13 +4,24 @@ import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.google.common.base.Objects;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 
 @SuppressWarnings("unused")
 public final class PolarisConfiguration extends Configuration {
 
+    private int maxReturnedTransforms = Constants.MAX_RETURNED_TRANSFORMS;
+
     @Valid
     private DatabaseConfiguration database;
+
+    public int getMaxReturnedTransforms() {
+        return maxReturnedTransforms;
+    }
+
+    public void setMaxReturnedTransforms(int maxReturnedTransforms) {
+        this.maxReturnedTransforms = maxReturnedTransforms;
+    }
 
     public DatabaseConfiguration getDatabase() {
         return database;
@@ -21,7 +32,7 @@ public final class PolarisConfiguration extends Configuration {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;

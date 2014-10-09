@@ -1,6 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
-import com.aerofs.polaris.api.Transform;
+import com.aerofs.polaris.api.types.Transform;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -11,10 +11,17 @@ import java.util.List;
 public final class AppliedTransforms {
 
     @Min(0)
-    public final long maxTransformCount;
+    public long maxTransformCount;
 
+    // @JsonInclude(JsonInclude.Include.ALWAYS) [uncomment if we want to serialize the empty list]
     @NotNull
-    public final List<Transform> transforms;
+    public List<Transform> transforms;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private AppliedTransforms() { }
 
     public AppliedTransforms(long maxTransformCount, List<Transform> transforms) {
         this.maxTransformCount = maxTransformCount;

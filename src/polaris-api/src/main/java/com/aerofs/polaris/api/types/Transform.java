@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,64 +13,63 @@ import javax.validation.constraints.Size;
 public final class Transform {
 
     @Min(1)
-    public final long logicalTimestamp;
+    public long logicalTimestamp = -1;
 
     @NotNull
     @Size(min = 1)
-    public final String originator;
+    public String originator = null;
 
-    @JsonIgnore
-    public final String root;
+    @JsonIgnore // not included in response
+    public String root = null;
 
     @NotNull
     @Size(min = 1)
-    public final String oid;
+    public String oid = null;
 
     @NotNull
-    public final TransformType transformType;
+    public TransformType transformType = null;
 
     @Min(0)
-    public final long newVersion;
+    public long newVersion = -1;
 
     @Min(1)
-    public final long timestamp;
+    public long timestamp = -1;
 
     //
     // these parameters are set when the transform is part of an atomic operation
     //
 
-    public String atomicOperationId;
+    public String atomicOperationId = null;
 
-    public int atomicOperationIndex;
+    public int atomicOperationIndex = -1;
 
-    public int atomicOperationTotal;
+    public int atomicOperationTotal = -1;
 
     //
     // these parameters are set when the transform modifies a child
     //
 
-    public String child;
+    public String child = null;
 
-    public ObjectType childObjectType;
+    public ObjectType childObjectType = null;
 
-    public String childName;
+    public String childName = null;
 
-    // do not *ever* use this constructor - used by Jackson reflection only!
-    private Transform() {
-        this.logicalTimestamp = 0;
-        this.originator = null;
-        this.root = null;
-        this.oid = null;
-        this.transformType = null;
-        this.newVersion = -1; // 0 is a valid version!
-        this.timestamp = 0;
-        this.atomicOperationId = null;
-        this.atomicOperationIndex = 0;
-        this.atomicOperationTotal = 0;
-        this.child = null;
-        this.childObjectType = null;
-        this.childName = null;
-    }
+    //
+    // these parameters are set when the transform modifies the content for an object
+    //
+
+    public String contentHash = null;
+
+    public long contentSize = -1;
+
+    public long contentMtime = -1;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private Transform() { }
 
     //
     // constructor only includes parameters that must *always* be set
@@ -99,10 +98,16 @@ public final class Transform {
         this.atomicOperationTotal = atomicOperationTotal;
     }
 
-    public void setChildParameters(String child, ObjectType childObjectType, @Nullable String childName) {
+    public void setChildParameters(String child, @Nullable ObjectType childObjectType, @Nullable String childName) {
         this.child = child;
         this.childObjectType = childObjectType;
         this.childName = childName;
+    }
+
+    public void setContentParameters(String hash, long size, long mtime) {
+        this.contentHash = hash;
+        this.contentSize = size;
+        this.contentMtime = mtime;
     }
 
     @Override
@@ -123,12 +128,31 @@ public final class Transform {
                 && atomicOperationTotal == other.atomicOperationTotal
                 && Objects.equal(child, other.child)
                 && childObjectType == other.childObjectType
-                && Objects.equal(childName, other.childName);
+                && Objects.equal(childName, other.childName)
+                && Objects.equal(contentHash, other.contentHash)
+                && contentSize == other.contentSize
+                && contentMtime == other.contentMtime;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(logicalTimestamp, originator, root, oid, transformType, newVersion, timestamp, atomicOperationId, atomicOperationIndex, atomicOperationTotal, child, childObjectType, childName);
+        return Objects.hashCode(
+                logicalTimestamp,
+                originator,
+                root,
+                oid,
+                transformType,
+                newVersion,
+                timestamp,
+                atomicOperationId,
+                atomicOperationIndex,
+                atomicOperationTotal,
+                child,
+                childObjectType,
+                childName,
+                contentHash,
+                contentSize,
+                contentMtime);
     }
 
     @Override
@@ -148,6 +172,9 @@ public final class Transform {
                 .add("child", child)
                 .add("childObjectType", childObjectType)
                 .add("childName", childName)
+                .add("contentHash", contentHash)
+                .add("contentSize", contentSize)
+                .add("contentMtime", contentMtime)
                 .toString();
     }
 }

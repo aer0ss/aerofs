@@ -12,7 +12,13 @@ public final class BatchResult {
 
     @NotNull
     @Size(min = 1)
-    public final List<BatchOperationResult> results;
+    public List<BatchOperationResult> results;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private BatchResult() { }
 
     public BatchResult(int resultCount) {
         this.results = Lists.newArrayListWithCapacity(resultCount);

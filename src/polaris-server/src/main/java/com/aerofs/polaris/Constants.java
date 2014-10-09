@@ -2,7 +2,6 @@ package com.aerofs.polaris;
 
 public abstract class Constants {
 
-    // FIXME (AG): make this a configuration parameter
     public static final int MAX_RETURNED_TRANSFORMS = 100;
 
     //
@@ -10,8 +9,6 @@ public abstract class Constants {
     //
 
     public static final String NO_ROOT = "00000000000000000000000000000000";
-
-    public static final String NO_ORIGINATOR = "00000000000000000000000000000000";
 
     //
     // other defaults

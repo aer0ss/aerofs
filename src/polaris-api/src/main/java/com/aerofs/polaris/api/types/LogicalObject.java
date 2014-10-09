@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
@@ -13,17 +13,23 @@ public final class LogicalObject {
     @JsonIgnore // property exists, but we won't serialize it
     @NotNull
     @Size(min = 1)
-    public final String root;
+    public String root;
 
     @NotNull
     @Size(min = 1)
-    public final String oid;
+    public String oid;
 
     @Min(0)
-    public final long version;
+    public long version;
 
     @NotNull
-    public final ObjectType objectType;
+    public ObjectType objectType;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private LogicalObject() { }
 
     public LogicalObject(String root, String oid, long version, ObjectType objectType) {
         this.root = root;

@@ -1,16 +1,17 @@
 package com.aerofs.polaris.logical;
 
+import com.aerofs.baseline.ids.Identifiers;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.api.LogicalObject;
-import com.aerofs.polaris.api.ObjectType;
-import com.aerofs.polaris.api.Transform;
-import com.aerofs.polaris.api.TransformType;
-import com.aerofs.polaris.api.Updated;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.MoveChild;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.RemoveChild;
 import com.aerofs.polaris.api.operation.UpdateContent;
+import com.aerofs.polaris.api.operation.Updated;
+import com.aerofs.polaris.api.types.LogicalObject;
+import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.api.types.Transform;
+import com.aerofs.polaris.api.types.TransformType;
 import com.aerofs.polaris.dao.Atomic;
 import com.aerofs.polaris.dao.Children;
 import com.aerofs.polaris.dao.Locations;
@@ -18,7 +19,6 @@ import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.ObjectProperties;
 import com.aerofs.polaris.dao.ObjectTypes;
 import com.aerofs.polaris.dao.Transforms;
-import com.aerofs.polaris.ids.Identifiers;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import org.skife.jdbi.v2.DBI;
@@ -198,7 +198,6 @@ public final class LogicalObjectStore {
     }
 
     // FIXME (AG): NOP reinsert of child
-    // FIXME (AG): do not allow insert of child under different tree
 
     private Updated insertChild(Handle conn, String originator, String oid, String child, @Nullable ObjectType childObjectType, String childName, boolean allowReinsert, @Nullable Atomic atomic) throws NotFoundException, NameConflictException, ParentConflictException {
         // dao objects

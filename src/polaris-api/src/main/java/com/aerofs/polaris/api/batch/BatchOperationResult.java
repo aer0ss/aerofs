@@ -1,7 +1,7 @@
 package com.aerofs.polaris.api.batch;
 
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.Updated;
+import com.aerofs.polaris.api.operation.Updated;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -9,16 +9,22 @@ import java.util.List;
 
 public final class BatchOperationResult {
 
-    public final boolean successful;
+    public boolean successful;
 
     @Nullable
-    public final List<Updated> updated;
+    public List<Updated> updated;
 
     @Nullable
-    public final PolarisError errorCode;
+    public PolarisError errorCode;
 
     @Nullable
-    public final String errorMessage;
+    public String errorMessage;
+
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private BatchOperationResult() { }
 
     public BatchOperationResult(List<Updated> updated) {
         this.successful = true;

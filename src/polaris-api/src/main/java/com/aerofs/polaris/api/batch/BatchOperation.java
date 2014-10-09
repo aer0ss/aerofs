@@ -16,6 +16,17 @@ public final class BatchOperation {
     @NotNull
     public Operation operation;
 
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private BatchOperation() { }
+
+    public BatchOperation(String oid, Operation operation) {
+        this.oid = oid;
+        this.operation = operation;
+    }
+
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;

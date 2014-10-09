@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api;
+package com.aerofs.polaris.api.types;
 
 /**
  * <strong>IMPORTANT:</strong> The type ids start at 1 because the Java ResultSet API

@@ -12,8 +12,17 @@ public final class RemoveChild extends Operation {
     @Size(min = 1)
     public String child;
 
-    public RemoveChild() {
+    /**
+     * For Jackson use only - do not use directly.
+     */
+    @SuppressWarnings("unused")
+    private RemoveChild() {
         super(OperationType.REMOVE_CHILD);
+    }
+
+    public RemoveChild(String child) {
+        super(OperationType.REMOVE_CHILD);
+        this.child = child;
     }
 
     @Override

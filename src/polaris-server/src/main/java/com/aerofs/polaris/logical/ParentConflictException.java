@@ -1,8 +1,8 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.PolarisException;
-import com.aerofs.polaris.api.LogicalObject;
 import com.aerofs.polaris.api.PolarisError;
+import com.aerofs.polaris.api.types.LogicalObject;
 
 import java.util.Map;
 
@@ -28,8 +28,8 @@ public final class ParentConflictException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("conflicting_parent", conflictingParent);
-        errorFields.put("requested_parent", requestedParent);
         errorFields.put("child", child);
+        errorFields.put("requested_parent", requestedParent);
+        errorFields.put("conflicting_parent", conflictingParent);
     }
 }

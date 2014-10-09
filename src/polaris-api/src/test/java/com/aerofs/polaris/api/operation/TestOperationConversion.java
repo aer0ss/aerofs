@@ -1,5 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
+import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -22,9 +23,7 @@ public class TestOperationConversion {
 
     @Test
     public void shouldSerializeAndDeserializeInsertChild() throws IOException {
-        InsertChild insertChild = new InsertChild();
-        insertChild.child = "CHILD";
-        insertChild.childName = "CHILD NAME";
+        InsertChild insertChild = new InsertChild("CHILD", ObjectType.FOLDER, "CHILD NAME");
 
         String serialized = mapper.writeValueAsString(insertChild);
         LOGGER.info("insert_child:{}", serialized);
@@ -35,8 +34,7 @@ public class TestOperationConversion {
 
     @Test
     public void shouldSerializeAndDeserializeRemoveChild() throws IOException {
-        RemoveChild removeChild = new RemoveChild();
-        removeChild.child = "CHILD";
+        RemoveChild removeChild = new RemoveChild("CHILD");
 
         String serialized = mapper.writeValueAsString(removeChild);
         LOGGER.info("remove_child:{}", serialized);
@@ -47,10 +45,7 @@ public class TestOperationConversion {
 
     @Test
     public void shouldSerializeAndDeserializeMoveChild() throws IOException {
-        MoveChild moveChild = new MoveChild();
-        moveChild.child = "CHILD";
-        moveChild.newParent = "NEW PARENT";
-        moveChild.newChildName = "CHILD NAME";
+        MoveChild moveChild = new MoveChild("CHILD", "NEW PARENT", "CHILD NAME");
 
         String serialized = mapper.writeValueAsString(moveChild);
         LOGGER.info("move_child:{}", serialized);
@@ -61,11 +56,7 @@ public class TestOperationConversion {
 
     @Test
     public void shouldSerializeAndDeserializeUpdateContent() throws IOException {
-        UpdateContent updateContent = new UpdateContent();
-        updateContent.localVersion = 1;
-        updateContent.hash = "HASH";
-        updateContent.size = 100;
-        updateContent.mtime = System.currentTimeMillis();
+        UpdateContent updateContent = new UpdateContent(1, "HASH", 100, System.currentTimeMillis());
 
         String serialized = mapper.writeValueAsString(updateContent);
         LOGGER.info("update_content:{}", serialized);
