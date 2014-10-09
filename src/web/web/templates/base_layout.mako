@@ -231,5 +231,9 @@
     <%block name="layout_scripts"/>
 
     <%block name="scripts"/>
+
+    %if not is_private_deployment(request.registry.settings):
+        <script src="${request.static_path('web:static/js/compiled/recruiting.js')}"></script>
+    %endif
 </body>
 </html>
