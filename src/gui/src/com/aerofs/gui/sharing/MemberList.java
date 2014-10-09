@@ -5,34 +5,29 @@
 package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.sharing.members.CompUserList;
-import com.aerofs.gui.sharing.members.CompUserList.ILoadListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
+import static com.aerofs.gui.sharing.DlgInviteUsers.getLabelByName;
 
 /**
  * The member user list in the Manage Shared Folder dialog
@@ -40,31 +35,6 @@ import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 class MemberList extends Composite
 {
     private static final Logger l = Loggers.getLogger(MemberList.class);
-
-    private static class DlgInvite extends AeroFSDialog
-    {
-        private final Path _path;
-        private final String _name;
-
-        public DlgInvite(Shell parent, Path path, String name)
-        {
-            super(parent, "Invite Members to " + Util.quote(name), true, false);
-            _path = path;
-            _name = name;
-        }
-
-        @Override
-        protected void open(Shell shell)
-        {
-            if (GUIUtil.isWindowBuilderPro()) {
-                shell = new Shell(getParent(), getStyle());
-            }
-
-            shell.setLayout(new FillLayout(SWT.HORIZONTAL));
-
-            new CompInviteUsers(shell, _path, _name, false);
-        }
-    }
 
     private final CompUserList _userList;
     private final Composite _btnBar;
@@ -134,18 +104,14 @@ class MemberList extends Composite
      */
     private void refreshAsync()
     {
-        _userList.setLoadListener(new ILoadListener() {
-                @Override
-                public void loaded(int membersCount, @Nullable Permissions localUserPermissions)
-                {
-                    // gray out invite button when not admin, except on Team Server where
-                    // the ACL check is slightly more complicated...
-                    // FIXME: TS needs effective ACL
-                    _iAmAdmin = L.isMultiuser() ||
-                        (localUserPermissions != null
-                                && localUserPermissions.covers(Permission.MANAGE));
-                    _btnInvite.setEnabled(_iAmAdmin);
-                }
+        _userList.setLoadListener((membersCount, localUserPermissions) -> {
+            // gray out invite button when not admin, except on Team Server where
+            // the ACL check is slightly more complicated...
+            // FIXME: TS needs effective ACL
+            _iAmAdmin = L.isMultiuser() ||
+                (localUserPermissions != null
+                        && localUserPermissions.covers(Permission.MANAGE));
+            _btnInvite.setEnabled(_iAmAdmin);
         });
         _userList.load(_path);
 
@@ -158,7 +124,7 @@ class MemberList extends Composite
             l.error("invite to a null folder?");
 
         } else if (_iAmAdmin) {
-            new DlgInvite(getShell(), _path, _name).openDialog();
+            new DlgInviteUsers(getShell(), getLabelByName(_name), _path, _name, true).openDialog();
             refreshAsync();
 
         } else {

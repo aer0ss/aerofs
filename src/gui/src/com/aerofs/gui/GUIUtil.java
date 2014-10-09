@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.sharing.DlgShareFolder;
+import com.aerofs.gui.sharing.DlgInviteUsers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
@@ -49,6 +49,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.gui.sharing.DlgInviteUsers.getLabelByPath;
 
 public class GUIUtil
 {
@@ -317,13 +318,8 @@ public class GUIUtil
             return;
         }
 
-        GUI.get().asyncExec(new Runnable() {
-            @Override
-            public void run()
-            {
-                new DlgShareFolder(GUI.get().sh(), path, name).openDialog();
-            }
-        });
+        GUI.get().asyncExec(() -> new DlgInviteUsers(GUI.get().sh(),
+                getLabelByPath(path), path, name, false).openDialog());
     }
 
     /**
@@ -331,14 +327,7 @@ public class GUIUtil
      */
     public static void showVersionHistory(final Path path)
     {
-        GUI.get().asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new DlgHistory(GUI.get().sh(), path).openDialog();
-            }
-        });
+        GUI.get().asyncExec(() -> new DlgHistory(GUI.get().sh(), path).openDialog());
     }
 
     /**
@@ -346,14 +335,7 @@ public class GUIUtil
      */
     public static void showConflictResolutionDialog(final Path path)
     {
-        GUI.get().asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new DlgConflicts(GUI.get().sh(), path).openDialog();
-            }
-        });
+        GUI.get().asyncExec(() -> new DlgConflicts(GUI.get().sh(), path).openDialog());
     }
 
     /**

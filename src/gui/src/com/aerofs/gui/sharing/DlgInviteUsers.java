@@ -13,16 +13,17 @@ import org.eclipse.swt.layout.FillLayout;
 
 /**
  * This dialog is used when the user selects shell extension's "Share This Folder..." menu on either
- * a shared or non-shared folder.
+ * a shared or non-shared folder or when the user select tray menu -> "Manage Shared Folders..." ->
+ * "Invite Others..."
  */
-public class DlgShareFolder extends AeroFSDialog
+public class DlgInviteUsers extends AeroFSDialog
 {
     private final Path _path;
     private final String _name;
 
-    public DlgShareFolder(Shell parent, Path path, String name)
+    public DlgInviteUsers(Shell parent, String label, Path path, String name, boolean sheet)
     {
-        super(parent, "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, "")), false, false);
+        super(parent, label, sheet, false);
         _path = path;
         _name = name;
     }
@@ -37,5 +38,15 @@ public class DlgShareFolder extends AeroFSDialog
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         new CompInviteUsers(shell, _path, _name, true);
+    }
+
+    public static String getLabelByPath(Path path)
+    {
+        return "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, ""));
+    }
+
+    public static String getLabelByName(String name)
+    {
+        return "Invite Members to " + Util.quote(name);
     }
 }
