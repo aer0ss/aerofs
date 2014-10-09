@@ -11,8 +11,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.events.VerifyListener;
-import org.eclipse.swt.events.VerifyEvent;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
@@ -44,20 +42,14 @@ public class CompEmailAddressTextBox extends Composite
         setLayout(new FillLayout(SWT.HORIZONTAL));
 
         _text = new Text(this, SWT.BORDER | SWT.WRAP | SWT.MULTI);
-        _text.addVerifyListener(new VerifyListener() {
-            @Override
-            public void verifyText(VerifyEvent ev)
-            {
-                verify(GUIUtil.getNewText(_text, ev));
-            }
-        });
+        _text.addVerifyListener(ev -> verify(GUIUtil.getNewText(_text, ev)));
     }
 
     private void verify(String text)
     {
         if (text == null) text = _text.getText();
 
-        _userIDs = new ArrayList<UserID>();
+        _userIDs = new ArrayList<>();
         _invalidAddresses = 0;
 
         String[] tokens = _pattern.split(text);
@@ -93,9 +85,9 @@ public class CompEmailAddressTextBox extends Composite
         return _userIDs;
     }
 
-    public int getInvalidUserIDCount()
+    public boolean hasInvalidAddresses()
     {
-        return _invalidAddresses;
+        return _invalidAddresses > 0;
     }
 
     @Override

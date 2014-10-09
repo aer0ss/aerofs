@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.AeroFSButton;
 import com.aerofs.gui.CompEmailAddressTextBox;
-import com.aerofs.gui.CompEmailAddressTextBox.IInputChangeListener;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
@@ -52,7 +51,7 @@ import java.util.List;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
-public class CompInviteUsers extends Composite implements IInputChangeListener
+public class CompInviteUsers extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompInviteUsers.class);
     private final Button _btnOk;
@@ -88,7 +87,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         GridData gd__compAddresses = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
         gd__compAddresses.heightHint = 60;
         _compAddresses.setLayoutData(gd__compAddresses);
-        _compAddresses.addInputChangeListener(this);
+        _compAddresses.addInputChangeListener(this::updateStatus);
 
         createRoleComposite(this);
 
@@ -167,13 +166,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     _fromPerson = Cfg.user().getString();
                 }
 
-                GUI.get().safeAsyncExec(shell, new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        setAsyncFields();
-                    }
-                });
+                GUI.get().safeAsyncExec(shell, CompInviteUsers.this::setAsyncFields);
             }
         }, "gui-invt").start();
     }
@@ -224,12 +217,8 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private void updateStatus()
     {
         Collection<UserID> userIDs = _compAddresses.getValidUserIDs();
-        int invalid = _compAddresses.getInvalidUserIDCount();
 
-        // do not change the size of the dialog otherwise it would grow as the user types addresses
-        //getShell().pack();
-
-        _btnOk.setEnabled(userIDs.size() > 0 && invalid == 0);
+        _btnOk.setEnabled(userIDs.size() > 0 && !_compAddresses.hasInvalidAddresses());
     }
 
     private void setStatusText(String msg)
@@ -302,12 +291,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 if (_notifyOnSuccess) UI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT);
             }
         });
-    }
-
-    @Override
-    public void inputChanged()
-    {
-        updateStatus();
     }
 
     private static class ComboRoles extends AeroFSButton
