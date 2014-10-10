@@ -48,7 +48,7 @@ PackagesForRequirementsAreAllPresent() {
     declare -i failcount=0
     declare -a failures
     for line in $( cat "$arg_requirements_file" ) ; do
-        package_underscores="${line/-/_}"
+        package_underscores="${line//-/_}"
         package_filename_prefix="${package_underscores/==/-}."
         package_filename_prefix_alt="${line/==/-}."
         # We can't know in advance if a package's archive will be a .zip, a

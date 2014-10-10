@@ -4,8 +4,7 @@
 # env/bin/pip freeze > requirements-exact.txt
 # rm -rf env
 # Our explicit dependencies:
-CherryPy
-Flask
+tornado
+# requests and protobuf dependencies are hoisted from python-lib
 requests
-# Protobuf dependency is hoisted from python-lib, which depends on it
 protobuf
