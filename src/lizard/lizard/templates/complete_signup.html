@@ -1,9 +1,10 @@
 {% extends "public.html" %}
-
 {% from "_formhelpers.html" import render_field, submit_button, render_disabled_field %}
 
+{% block title %}Complete Signup | AeroFS Private Cloud{% endblock %}
+
 {% block content %}
-    <h1>Complete your signup</h1>
+    <h1>Complete Signup</h1>
     <form class="form-horizontal" action="" method="post" name="login">
         {{ form.hidden_tag() }}
         {{ render_disabled_field('Email:', record.email) }}

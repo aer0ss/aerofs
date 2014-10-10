@@ -1,10 +1,10 @@
 {% extends 'admin.html' %}
 {% from "_formhelpers.html" import render_field, submit_button %}
 
-{% block title %}Upload license bundle{% endblock %}
+{% block title %}Upload License Bundle | AeroFS Licensing Admin{% endblock %}
 
 {% block content %}
-    <h1>Upload license bundle</h1>
+    <h1>Upload License Bundle</h1>
     <form action="" method="post" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         {{ render_field(form.license_bundle) }}
