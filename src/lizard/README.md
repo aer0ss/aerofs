@@ -8,4 +8,10 @@ env/bin/pip install --editable ../licensing
 ./rundebug.py
 ```
 
+To run the lizard administrative interface locally, do a
+
+```
+./rundebug.py internal
+```
+
 Now you should be able to hit the instance on localhost:5000 in your browser.
