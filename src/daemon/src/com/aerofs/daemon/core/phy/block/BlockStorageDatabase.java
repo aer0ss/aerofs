@@ -38,6 +38,7 @@ import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Maintains mapping between logical object (SOKID) and physical objects (64bit index)
@@ -612,13 +613,13 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     private final PreparedStatementWrapper _pswAliasFileEntry = new PreparedStatementWrapper(
             DBUtil.updateWhere(T_FileInfo, C_FileInfo_InternalName + "=?", C_FileInfo_InternalName));
-    void updateInternalName_(String internalName, String newInternalName, Trans t) throws SQLException
+    int updateInternalName_(String internalName, String newInternalName, Trans t) throws SQLException
     {
         try {
             PreparedStatement ps = _pswAliasFileEntry.get(c());
             ps.setString(1, newInternalName);
             ps.setString(2, internalName);
-            Util.verify(ps.executeUpdate() == 1);
+            return ps.executeUpdate();
         } catch (SQLException e) {
             _pswAliasFileEntry.close();
             throw detectCorruption(e);

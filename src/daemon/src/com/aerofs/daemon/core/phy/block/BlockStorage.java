@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.block;
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
@@ -642,8 +643,9 @@ class BlockStorage implements IPhysicalStorage
 
     void updateSOID_(SOKID oldId, SOID newId, Trans t) throws SQLException
     {
-        _bsdb.updateInternalName_(makeFileName(oldId),
+        int n = _bsdb.updateInternalName_(makeFileName(oldId),
                 makeFileName(new SOKID(newId.sidx(), newId.oid(), oldId.kidx())), t);
+        checkState(n == 0 || n == 1);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

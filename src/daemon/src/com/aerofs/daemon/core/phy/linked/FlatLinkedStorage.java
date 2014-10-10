@@ -148,7 +148,6 @@ public class FlatLinkedStorage extends LinkedStorage
     public void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t)
             throws IOException, SQLException
     {
-        _sfti.deleteTagFileAndIconIn(_lrm.absRootAnchor_(sid));
         _lrm.unlink_(sid, t);
     }
 
