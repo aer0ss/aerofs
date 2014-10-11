@@ -9,6 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -21,12 +22,13 @@ import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Attempt to authenticate principal/credential pairs against an LDAP server.
@@ -73,11 +76,14 @@ public class LdapAuthority implements IAuthority
     /**
      * Test the LDAP connection.
      */
-    public void testConnection() throws ExExternalServiceUnavailable
+    public void testConnection() throws ExExternalServiceUnavailable, LDAPException
     {
-        // For now to test the connection we just verify a call to the getPool() function works.
-        // In the future we can query users, and do other fancy things to verify sanity.
-        getPool();
+        // This will throw if:
+        //  - the connection is not viable.
+        //  - the query parameters are badly mangled. We can't safely
+        //    look for any specific user - but we can run a search against the tree and make
+        //    sure the LDAP query isn't entirely malformed.
+        canAuthenticateThrows(UserID.fromInternal("test@example.com"), true);
     }
 
     /**
@@ -130,20 +136,21 @@ public class LdapAuthority implements IAuthority
     public boolean canAuthenticate(UserID userID) throws ExExternalServiceUnavailable
     {
         try {
-            return canAuthenticateThrows(userID);
-        } catch (LDAPSearchException e) {
+            return canAuthenticateThrows(userID, false);
+        } catch (LDAPException e) {
             _l.warn("LDAP search exception", LogUtil.suppress(e));
             return false;
         }
     }
 
-    private boolean canAuthenticateThrows(UserID userID)
-            throws ExExternalServiceUnavailable, LDAPSearchException
+    private boolean canAuthenticateThrows(UserID userID, boolean useExtraFilter)
+            throws ExExternalServiceUnavailable, LDAPException
     {
         LDAPConnectionPool pool = getPool();
         LDAPConnection conn = getConnectionFromPool(pool);
         try {
-            return conn.search(_cfg.USER_BASE, _scope, buildFilter(userID), _cfg.USER_RDN)
+            return conn.search(
+                    _cfg.USER_BASE, _scope, buildFilter(userID, useExtraFilter), _cfg.USER_RDN)
                     .getEntryCount() > 0;
         } finally {
             getPool().releaseAndReAuthenticateConnection(conn);
@@ -204,7 +211,9 @@ public class LdapAuthority implements IAuthority
             //   for objects that match "buildFilter(userId)",
             //   and returning for each object the following fields:
             //     USER_FIRSTNAME, USER_LASTNAME
-            return conn.search(_cfg.USER_BASE, _scope, buildFilter(userId), _cfg.USER_FIRSTNAME,
+            return conn.search(_cfg.USER_BASE, _scope,
+                    buildFilter(userId, true),
+                    _cfg.USER_FIRSTNAME,
                     _cfg.USER_LASTNAME);
         } catch (LDAPException lde) {
             _l.error("Error searching on LDAP server", lde);
@@ -229,11 +238,24 @@ public class LdapAuthority implements IAuthority
         }
     }
 
-    private Filter buildFilter(UserID userId)
+    /**
+     * Build an LDAP filter for the user email, object class, and an optional additional filter.
+     *
+     * @param userId The UserId to search for.
+     * @param useAdditionalFilter if true, cfg.USER_ADDITIONALFILTER is taken into account.
+     * @throws LDAPException Query error (fragment is malformed or otherwise invalid)
+     */
+    private Filter buildFilter(UserID userId, boolean useAdditionalFilter) throws LDAPException
     {
-        return Filter.createANDFilter(
-                Filter.createEqualityFilter(_cfg.USER_EMAIL, userId.getString()),
-                Filter.createEqualityFilter("objectClass", _cfg.USER_OBJECTCLASS));
+        List<Filter> filterList = Lists.newLinkedList();
+
+        filterList.add(Filter.createEqualityFilter(_cfg.USER_EMAIL, userId.getString()));
+        filterList.add(Filter.createEqualityFilter("objectClass", _cfg.USER_OBJECTCLASS));
+        if (useAdditionalFilter && !Strings.isNullOrEmpty(_cfg.USER_ADDITIONALFILTER)) {
+            filterList.add(Filter.create(_cfg.USER_ADDITIONALFILTER));
+        }
+
+        return Filter.createANDFilter(filterList);
     }
 
     /*
@@ -372,12 +394,16 @@ public class LdapAuthority implements IAuthority
      */
     private void cacheUserScope()
     {
-        if (_cfg.USER_SCOPE.equals("base")) {
+        switch (_cfg.USER_SCOPE) {
+        case "base":
             _scope = SearchScope.BASE;
-        } else if (_cfg.USER_SCOPE.equals("one")) {
+            break;
+        case "one":
             _scope = SearchScope.ONE;
-        } else { // default...
+            break;
+        default:
             _scope = SearchScope.SUB;
+            break;
         }
     }
 

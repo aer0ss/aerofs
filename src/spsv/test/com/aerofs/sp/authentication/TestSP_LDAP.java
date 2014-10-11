@@ -11,12 +11,15 @@ import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Spy;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -26,6 +29,7 @@ import static org.mockito.Mockito.verify;
 public class TestSP_LDAP extends AbstractSPTest
 {
     private static InMemoryServer _server;
+    private static AtomicInteger _idx = new AtomicInteger(1);
     LdapConfiguration _cfg = new LdapConfiguration();
     @Mock ACLNotificationPublisher aclPublisher;
     @Spy Authenticator _authenticator = new Authenticator(
@@ -121,6 +125,45 @@ public class TestSP_LDAP extends AbstractSPTest
                 "memberOf: cn=admins,dc=roles,dc=example,dc=org",
                 "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
         return email;
+    }
+
+    private String generateUniqueEmail()
+    {
+                String s = new StringBuilder("uniq")
+                .append(_idx.incrementAndGet())
+                .append("@b.c")
+                .toString();
+        l.warn(s);
+        return s;
+    }
+
+    @Test
+    public void shouldSignInWithCompatFilter() throws Exception
+    {
+        String u = generateUniqueEmail();
+        createTestUser(u, "dontcare");
+        _cfg.USER_ADDITIONALFILTER = "uid=" + u.substring(0, u.indexOf('@'));
+
+        service.signInUser(u, ByteString.copyFrom("dontcare".getBytes()));
+    }
+
+    @Test(expected = ExBadCredential.class)
+    public void shouldFailIfExcludedByFilter() throws Exception
+    {
+        String u = generateUniqueEmail();
+        createTestUser(u, "dontcare");
+        _cfg.USER_ADDITIONALFILTER = "uid=" + "nosir";
+
+        service.signInUser(u, ByteString.copyFrom("hithere".getBytes()));
+    }
+
+    @Test
+    public void filterShouldNotAffectExistenceCheck() throws Exception
+    {
+        String u = generateUniqueEmail();
+        createTestUser(u, "dontcare");
+        _cfg.USER_ADDITIONALFILTER = "uid=bad_uid";
+        assertTrue(new LdapAuthority(_cfg).canAuthenticate(UserID.fromExternal(u)));
     }
 
     // ---- Tests for LDAP credentials in legacy signin methods ----

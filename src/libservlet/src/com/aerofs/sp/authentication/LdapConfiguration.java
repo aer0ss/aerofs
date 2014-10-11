@@ -138,6 +138,9 @@ public class LdapConfiguration
     public String                                   USER_OBJECTCLASS =
             getStringProperty(                      "ldap.server.schema.user.class", "");
 
+    public String                                   USER_ADDITIONALFILTER =
+            getStringProperty(                      "ldap.server.schema.user.filter", "");
+
     /**
      * A quick converter from a configuration property name to an enum that falls back to a default
      * rather than throw IllegalArg.

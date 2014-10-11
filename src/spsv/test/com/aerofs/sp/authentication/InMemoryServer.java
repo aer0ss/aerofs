@@ -54,6 +54,7 @@ public abstract class InMemoryServer
         cfg.SERVER_PRINCIPAL = PRINCIPAL;
         cfg.SERVER_CREDENTIAL = CRED;
 
+        cfg.USER_ADDITIONALFILTER = "";
         cfg.USER_SCOPE = "sub";
         cfg.USER_BASE = "dc=users,dc=example,dc=org";
         cfg.USER_EMAIL = "mail";

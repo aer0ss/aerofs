@@ -10,6 +10,7 @@ import com.aerofs.base.ex.Exceptions;
 import com.aerofs.sp.authentication.ExLdapConfigurationError;
 import com.aerofs.sp.authentication.LdapAuthority;
 import com.aerofs.sp.authentication.LdapConfiguration;
+import com.unboundid.ldap.sdk.LDAPException;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -69,12 +70,13 @@ public class LdapVerificationServlet extends HttpServlet
             lcfg.USER_RDN          = getParameter(req, "ldap_server_schema_user_field_rdn");
             lcfg.USER_OBJECTCLASS  = getParameter(req, "ldap_server_schema_user_class");
             lcfg.SERVER_CA_CERT    = getParameter(req, "ldap_server_ca_certificate");
+            lcfg.USER_ADDITIONALFILTER = getParameter(req, "ldap_server_schema_user_filter");
 
             LdapAuthority lauth = new LdapAuthority(lcfg);
 
             try {
                 lauth.testConnection();
-            } catch (ExExternalServiceUnavailable e) {
+            } catch (ExExternalServiceUnavailable | LDAPException e) {
                 l.error("Error connecting to LDAP server: " + Exceptions.getStackTraceAsString(e));
                 resp.setStatus(400);
                 resp.getWriter().print(e.getMessage());

@@ -270,9 +270,23 @@
             <input class="form-control" id="ldap-server-schema-user-field-rdn"
                    name="ldap_server_schema_user_field_rdn" type="text" required
                    value="${value}">
-            <div class="help-block">This attribute should return an LDAPidentifier like
+            <div class="help-block">This attribute should return an LDAP identifier like
                 "CN=User,OU=People,DC=example,DC=com".
                 Default is <code>${default}</code>.</div>
+        </div>
+        <div class="col-sm-6">
+            <%
+                default = ''
+                value = conf['ldap.server.schema.user.filter']
+                if not value: value = default
+            %>
+            <label class="control-label" for="ldap-server-schema-user-filter">Additional LDAP filter criteria:</label>
+            <input class="form-control" id="ldap-server-schema-user-filter"
+                   name="ldap_server_schema_user_filter" type="text"
+                   value="${value}">
+            <div class="help-block">
+                An optional LDAP query fragment that will be included in the user search.
+                This is not commonly used.
         </div>
     </div>
 
