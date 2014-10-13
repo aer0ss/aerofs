@@ -41,7 +41,11 @@ watch:
 $(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
 	lessc $? > $@
 	minify $@
+	# move over compiled and minified marketing site css
+	if [ "$@" == static/css/compiled/aerofs-marketing.css ] ; then cp static/css/compiled/aerofs-marketing.min.css ../../../web/styles/css/compiled/style.css ; fi
 
 $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
 	cp $? $@
 	uglifyjs -o $@ $@
+	# move over marketing JS to marketing site
+	if [ "$@" == static/js/compiled/recruiting.js ] ; then cp $@ ../../../web/js/recruiting.js ; fi

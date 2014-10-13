@@ -1,0 +1,597 @@
+/* Variables */
+@blue: #4BAFEE;
+@ltblue: #aad3e9;
+@medblue: #358ac3;
+@darkblue: #0E6190;
+@darkestblue: #0A2C49;
+@haze: rgba(255,255,255,.8);
+@gold: #fdd251;
+@oatmeal: #f9f9f9;
+@darkoats: #e7e7e7;
+
+@navheight: 50px;
+@videoheight: 150px;
+@signupformbuttonwidth: 160px;
+
+/* Mixin */
+// Default font size and weight
+.standardtext {
+    font: 400 16px/24px 'Open Sans';
+}
+
+/* Default styles for elements on entire marketing site */
+body {
+  .standardtext();
+  font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'san-serif';
+  font-size: 16px;
+  color: #777; 
+  h1 {
+    font: 300 48px/70px 'Open Sans';
+    letter-spacing: -2px;
+    color: #000;
+    }
+  h2 {
+    font: 300 36px/48px 'Open Sans';
+    color: #000;
+    }
+
+  h3 {
+  font: 400 24px/30px 'Open Sans';
+  color: #000; }
+
+  h4 {
+  font: 400 18px/30px 'Open Sans';
+  color: #333; }
+
+  h5 {
+  font: 400 16px/24px 'Open Sans';
+  color: #AAA; }
+
+  strong {
+    color: black;
+  }
+
+  input {
+  color: #999999; }
+
+  ul {
+  color: #878787; }
+
+  li {
+    color: @blue;
+    text-align: left; 
+    p {
+      line-height: 157%;
+      display: inline-block;
+      vertical-align: text-top;
+      color: #878787;
+    }
+  }
+
+  hr {
+    border-top: 1pt solid @ltblue;
+    border-bottom: 0;
+  }
+
+  article {
+    margin: 0;
+    padding: @navheight 0;
+  }
+
+  /* form styles */
+  .form label, .form input, .form textarea {
+    font: 400 18px/30px 'Open Sans'; }
+
+    a:not(.btn) {
+    color: #3394c9;
+    }
+    a:not(.btn):active, a:not(.btn):hover {
+      color: @darkblue;
+      text-decoration: none; }
+
+  /* On pages where articles alternate colors */
+  .wrapper {
+    .zebra:nth-child(even), .zebra-reversed:nth-child(even) {
+      background-color: #f7f7f7;
+    }
+  }
+  .zebra-reversed {
+    .img-wrapper {
+      img {
+        max-width: 100%;
+        width: auto;
+      }
+    }
+  }
+
+  footer {
+      height: 100%;
+      background: @darkestblue;
+      color: @ltblue;
+      margin-top: 0;
+      padding: @navheight / 2 0;
+      font-size: 85%;
+      h4, h4 a:not(.btn) {
+          color: @medblue;
+      }
+      a:not(.btn) {
+          color: white;
+          &:hover {
+              color: @blue;
+              text-decoration: underline;
+          }
+      }
+      ul {
+          padding: 0;
+          li {
+              list-style-type: none;
+          }
+      }
+
+      hr {
+        border-top: 1pt solid @darkblue;
+      }
+  }
+
+  /* killall Bootstrap rounded corners */
+  .btn, input, .form-control {
+    border-radius: 0;
+  }
+}
+
+/* Mixin: used for signup button and free trial button */
+.gold-button {
+    background-color: @gold;
+    border-color: darken(@gold, 20%);
+    color: #000;
+    font-weight: 600;
+    &:hover {
+        background-color: lighten(@gold, 5%);
+    }
+    &:active {
+        border-color: @gold;
+        background-color: darken(@gold, 10%);
+    }
+}
+
+/* Mixin */
+.link-with-arrow {
+  &:after {
+        content: ' »'
+    }
+}
+
+/* Navbar-related styling */
+.navbar {
+  background: transparent;
+  border-color: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+
+  .btn {
+    margin: 8px 0 8px 15px;
+  }
+  .navbar-collapse.in {
+    ul:not(.hidden-xs) {
+        border-bottom: 2pt solid @darkoats;
+        &:last-of-type {
+            border-bottom: none;
+        }
+        a:hover {
+            background: @oatmeal;
+        }
+    }
+  }
+}
+.navbar-default .navbar-nav li a, .submenu li a {
+    color: @darkblue;
+    padding: 15px 15px;
+    &:hover {
+        color: @darkestblue;
+    }
+}
+/* Applies to col-sm, but not smaller or larger*/
+@media (min-width: 768px) and (max-width: 991px) { 
+    .navbar-default .navbar-nav li a, .submenu li a {
+        padding: 15px 10px;
+    }
+}
+.submenu {
+  height: @navheight;
+  background: @haze;
+  position: absolute;
+  top: @navheight;
+  left: 0;
+  width: 100%;
+  display: none;
+  ul {
+    display: none;
+    padding: 0;
+    li {
+      display: inline-block;
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      a {
+        display: inline-block;
+        padding: 13px 15px;
+        &:hover {
+            background: @haze;
+          }
+      }
+    }
+  }
+}
+.logo img {
+  height: @navheight - 5;
+  padding: 10px 15px 5px 0;
+  margin: 0;
+}
+.top-header {
+  padding: @navheight/2 0;
+  background: @darkblue url('../../images/fog-background.png') bottom repeat;
+  h1 {
+    letter-spacing: -2px;
+    color: white;
+    font: 600 60px/120% 'Open Sans';
+    text-align: center;
+    span {
+      font-weight: 400;
+    }
+  }
+  h3 {
+    font-size: 32px;
+    font-weight: 300;
+    margin-top: 15px;
+    letter-spacing: -1px; 
+    line-height: 1.5;
+  }
+  h3, h4 {
+    color: @darkoats;
+    text-align: center;
+  }
+
+  &.front-page h3 {
+    text-align: right;
+  }
+
+  h4 {
+    font: 400 18px/30px 'Open Sans';
+    height: auto;
+  }
+  .video-player {
+    width: 256px;
+    height: @videoheight;
+    margin: 15px 0 0 0;
+    border: 2px solid @darkoats;
+    h4 {
+        color: @oatmeal;
+    }
+    .play-button {
+      width: 70px;
+      height: 70px;
+      cursor: pointer;
+      display: block;
+      margin: 15px auto 0 auto;
+      background: url('../../images/player_play.png') no-repeat center;
+      -webkit-background-size: cover;
+      background-size: cover;
+    }
+  }
+}
+
+/* Signup form styles */
+.signup-form-container {
+    background: @darkestblue;
+    margin-bottom: @navheight / 2;
+    padding: @navheight / 2 0;
+
+    span {
+      color: @medblue;
+      a {
+        .link-with-arrow();
+        color: @medblue;
+        &:hover {
+          color: @gold;
+        }
+      }
+    }
+
+    .try-out {
+      text-align: right;
+      color: white;
+    }
+
+    &.bottom-signup {
+        margin-bottom: 0;
+        background: @darkblue url('../../images/fog-background.png') bottom repeat;
+        border-top: 1pt solid @medblue;
+        border-bottom: 1pt solid @medblue;
+        span:not(.try-out) {
+          color: @darkestblue;
+          a {
+            color: @darkestblue;
+            &:hover {
+              color: @gold;
+            }
+          }
+        }
+    }
+
+    .signup-form {
+        width: 100%;
+
+        input, button {
+            font: 300 18px/30px 'Open Sans';
+            height: auto;
+        }
+
+        input {
+            border-color: darken(@blue, 20%);
+            color: black;
+            width: 72%;
+        }
+
+        button {
+            .gold-button();
+            font-weight: 600;
+            width: 25%;
+        }
+    }
+}
+
+/* Special styling for private cloud frontpage section*/
+.cloud {
+    padding-top: @navheight;
+    padding-bottom: 0;
+    overflow: hidden;
+    .wrapper {
+        background: @oatmeal;
+    }
+    .container {
+    }
+
+    img {
+        margin-top: -@navheight;
+        -webkit-mask-image:-webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
+    }
+    .img-wrapper {
+        background-color: @blue;
+        background: url('../../images/private_cloud_img_large.png') no-repeat center;
+        width: 983px;
+        height: 545px;
+        position: absolute;
+        top: -@navheight;
+        left: 60px;
+    }
+}
+
+/* Special styles for pricing section */
+.plan-select {
+    h4 {
+        color: #aaa;
+    }
+    .phone {
+        font-weight: 600;
+        color: #666;
+    }
+    .pricing {
+        h2, h3, h4 {
+            margin: 0;
+            padding: 0 12px;
+        }
+        h2 {
+            line-height: 48px;
+            color: white;
+        }
+        h3 {
+            font: 600 42px/60px 'Open Sans';
+            background: @darkblue;
+            color: white;
+            margin-bottom: 0;
+            margin-top: .5em;
+            min-height: 60px;
+        }
+        h4 {
+            color: @haze;
+        }
+        header {
+            background: @darkestblue;
+            padding-top: 10px;
+        }
+    }
+    .price-tag {
+        &:before, &:after {
+            font: 300 30px/30px 'Open Sans';
+        }
+        &:before {
+          content: '$';
+        }
+        &:after {
+          position: relative;
+          display: inline-block;
+          content: '/user/mo'; 
+        }
+    }
+    table {
+        width: 100%;
+        td {
+            padding: 11px 0;
+        }
+        .btn.yellow {
+            .gold-button();
+        }
+
+        .try-me {
+            padding-top: 11px;
+            border-top: 1pt solid @darkblue;
+            border-bottom: 1pt solid @darkblue;
+        }
+    }
+}
+
+/* Applies to col-sm, but not smaller or larger*/
+@media (min-width: 768px) and (max-width: 991px) {
+    .plan-select .pricing {
+        h2, h3 {
+            font: 600 30px/48px 'Open Sans';
+        }
+        h2 {
+            font-weight: 300;
+        }
+        .price-tag {
+            &:before, &:after {
+                font: 300 24px/48px 'Open Sans';
+            }
+        }
+    }
+}
+
+/* Special styles for press summary and customer testimonials sections */
+.reviews {
+    background: @oatmeal;
+}
+.blurb, .caption p {
+      font-size: 10pt;
+}
+.customers {
+  .blurb-logo {
+        width: 100%;
+        height: 130px;
+        background: @darkoats;
+        text-align: center;
+        margin: 1em auto;
+        img {
+            width: 150px;
+            margin-top: 45px;
+        }
+    }
+
+    .caption h4 {
+        .standardtext();
+        text-align: right;
+        margin-bottom: 2em;
+        &:before {
+            content: '— '; 
+        }
+    }
+}
+.blurb-logo {
+    width: 100px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+    background: none;
+    img {
+        width: 100%;
+    }
+}
+
+/* Special styles for customer stats section */
+.customer-stats {
+    background: @oatmeal;
+    h1 {
+        margin-bottom: 6px;
+    }
+}
+
+/* Special styles on careers page */
+.careers {
+  table {
+    width: 100%;
+    border-top: 1pt solid @ltblue;
+    border-bottom: 1pt solid @ltblue;
+    a {
+      .link-with-arrow();
+      display: block;
+      width: 100%;
+      padding: 12px 6px 12px 12px;
+    }
+  }
+}
+
+/* Social icons related styles (in footer) */
+.social {
+    margin-right: 6px;
+    span {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        background-repeat: no-repeat;
+        background-position: center; 
+        -webkit-background-size: cover;
+        background-size: cover;
+        &.facebook {
+            background-image: url('../../images/facebook_share_icon.png');
+            &:hover {
+                background-image: url('../../images/facebook_share_icon_hover.png');
+            }
+        }
+        &.twitter {
+            background-image: url('../../images/twitter_share_icon.png');
+            &:hover {
+                background-image: url('../../images/twitter_share_icon_hover.png');
+            }
+        }
+    }
+}
+
+/* Some special styles for small screens */
+/* Applies to col-sm and smaller */
+@media (max-width: 991px) {
+  .signup-form-container {
+    .signup-form {
+      width: 100%;
+      input {
+        width: 700px - @signupformbuttonwidth;
+      }
+      button {
+        width: @signupformbuttonwidth;
+      }
+    }
+    .private-cloud-blurb {
+      line-height: 48px;
+    }
+  }
+}
+/* Applies to col-xs */
+@media (max-width: 767px) {
+    .top-header, .top-header.front-page{
+        h1 {
+            font: 400 48px/70px 'Open Sans';
+            span {
+              font-weight: 300;
+            }
+        }
+        h3 {
+            font: 300 24px/30px 'Open Sans';
+            text-align: center;
+        }
+        .video-player {
+            margin: @navheight / 2 auto 0 auto;
+        }
+    }
+
+    .signup-form-container .signup-form {
+      margin: 0;
+        input {
+            width: 72%;
+            display: inline;
+        }
+        button {
+            margin-top: -5px;
+            width: 25%;
+        }
+    }
+
+    // Front page loses oatmeal alternation on xs
+    // since press blurbs go away
+    .customers {
+      background: @oatmeal;
+    }
+
+    .customer-stats {
+      background: transparent;
+    }
+}
