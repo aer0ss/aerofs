@@ -1,4 +1,4 @@
-package com.aerofs.polaris;
+package com.aerofs.baseline.simple;
 
 import com.aerofs.baseline.metrics.MetricRegistries;
 import com.codahale.metrics.Metric;
@@ -6,13 +6,13 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import org.junit.rules.ExternalResource;
 
-public final class PolarisResource extends ExternalResource {
+public final class SimpleResource extends ExternalResource {
 
-    private final Polaris polaris = new Polaris();
+    private final Simple simple = new Simple();
 
     @Override
     protected void before() throws Throwable {
-        polaris.runWithConfiguration(ServerConfiguration.POLARIS);
+        simple.runWithConfiguration(ServerConfiguration.SIMPLE);
     }
 
     @Override
@@ -27,6 +27,6 @@ public final class PolarisResource extends ExternalResource {
         });
 
         // shutdown the server
-        polaris.shutdown();
+        simple.shutdown();
     }
 }

@@ -1,4 +1,4 @@
-package com.aerofs.polaris;
+package com.aerofs.baseline.simple;
 
 import ch.qos.logback.classic.Level;
 import com.aerofs.baseline.db.DatabaseConfiguration;
@@ -30,7 +30,6 @@ public abstract class ServerConfiguration {
     public static final DatabaseConfiguration DATABASE = new DatabaseConfiguration();
 
     static {
-        // DATABASE.setUrl("jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS polaris\\;SET SCHEMA polaris"); (works, but only if flyway.setSchemas uses POLARIS as the schema name)
         DATABASE.setUrl("jdbc:h2:mem:test");
         DATABASE.setDriverClass("org.h2.Driver");
         DATABASE.setUsername("test");
@@ -44,14 +43,14 @@ public abstract class ServerConfiguration {
         LOGGING.setLevel(Level.ALL.levelStr);
     }
 
-    public static final PolarisConfiguration POLARIS = new PolarisConfiguration();
+    public static final SimpleConfiguration SIMPLE = new SimpleConfiguration();
 
     static {
-        POLARIS.setMaxReturnedTransforms(10);
-        POLARIS.setApp(APP);
-        POLARIS.setAdmin(ADMIN);
-        POLARIS.setDatabase(DATABASE);
-        POLARIS.setLogging(LOGGING);
+        SIMPLE.setMaxSeats(10);
+        SIMPLE.setApp(APP);
+        SIMPLE.setAdmin(ADMIN);
+        SIMPLE.setDatabase(DATABASE);
+        SIMPLE.setLogging(LOGGING);
     }
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -60,13 +59,9 @@ public abstract class ServerConfiguration {
         OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     }
 
-    public static final String OBJECTS_URL = String.format("http://%s:%s/objects/", APP.getHost(), APP.getPort());
+    public static final String CUSTOMERS_URL = String.format("http://%s:%s/customers/", APP.getHost(), APP.getPort());
 
-    public static final String BATCH_URL = String.format("http://%s:%s/batch/", APP.getHost(), APP.getPort());
-
-    public static final String TRANSFORMS_URL = String.format("http://%s:%s/transforms/", APP.getHost(), APP.getPort());
-
-    public static final String TREE_URL = String.format("http://%s:%s/tasks/tree/", ADMIN.getHost(), ADMIN.getPort());
+    public static final String DUMP_URL = String.format("http://%s:%s/tasks/dump/", ADMIN.getHost(), ADMIN.getPort());
 
     private ServerConfiguration() {
         // to prevent instantiation by subclasses

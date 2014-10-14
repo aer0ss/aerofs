@@ -1,5 +1,6 @@
 package com.aerofs.polaris.dao;
 
+import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.ObjectType;
 import org.skife.jdbi.v2.ResultIterator;
@@ -26,8 +27,8 @@ public interface Children {
     @SqlUpdate("delete from children where oid = :oid and child_oid = :child_oid")
     int remove(@Bind("oid") String oid, @Bind("child_oid") String child);
 
-    @SqlQuery("select count(child_oid) from children where child_oid = :child_oid")
-    boolean isChild(@Bind("child_oid") String child);
+    @SqlQuery("select count(child_oid) from children where child_oid = :child_oid and oid <> '" + Constants.NO_ROOT + "'")
+    boolean isActiveChild(@Bind("child_oid") String child);
 
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_oid = :child_oid")
     boolean isChild(@Bind("oid") String oid, @Bind("child_oid") String child);
@@ -36,19 +37,16 @@ public interface Children {
     @SqlQuery("select oid from children where child_oid = :child_oid")
     String getParent(@Bind("child_oid") String child);
 
-    @SqlQuery("select count(child_oid) from children where oid = :oid and child_name = :child_name")
-    int countChildrenWithName(@Bind("oid") String oid, @Bind("child_name") String childName);
-
     @Nullable
-    @SqlQuery("select child_oid from children where child_name := child_name")
-    String getChildWithName(@Bind("child_name") String childName);
+    @SqlQuery("select child_oid from children where oid = :oid and child_name = :child_name")
+    String getChildNamed(@Bind("oid") String oid, @Bind("child_name") String childName);
 
     @Nullable
     @SqlQuery("select child_name from children where oid = :oid and child_oid = :child_oid")
     String getChildName(@Bind("oid") String oid, @Bind("child_oid") String child);
 
     @SqlQuery("select child_oid, child_name, object_type from children inner join object_types on (children.child_oid = object_types.oid) where children.oid = :oid")
-    ResultIterator<Child> listChildren(@Bind("oid") String oid);
+    ResultIterator<Child> getChildren(@Bind("oid") String oid);
 
     @SuppressWarnings("unused")
     void close();

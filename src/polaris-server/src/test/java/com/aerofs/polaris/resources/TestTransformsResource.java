@@ -30,7 +30,7 @@ public final class TestTransformsResource {
     }
 
     private final String device = Identifiers.newRandomDevice();
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", device);
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(device, "test@aerofs.com");
 
     @Rule
     public PolarisResource polarisResource = new PolarisResource();
@@ -137,7 +137,7 @@ public final class TestTransformsResource {
     }
 
     @Test
-    public void shouldReturnBoudedListOfTransformsIfResultCountIsTooHigh() {
+    public void shouldReturnBoundedListOfTransformsIfResultCountIsTooHigh() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
         String[] folders = {
                 TestUtilities.newFolder(verified, sharedFolder, "folder_1"),
@@ -163,7 +163,7 @@ public final class TestTransformsResource {
         assertThat(applied.maxTransformCount, is(13L));
 
         count = 1;
-        for(int i = 0; i < applied.transforms.size(); i++) {
+        for (int i = 0; i < applied.transforms.size(); i++) {
             assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
         }
 
@@ -172,7 +172,7 @@ public final class TestTransformsResource {
         assertThat(applied.maxTransformCount, is(13L));
 
         count = 11;
-        for(int i = 0; i < applied.transforms.size(); i++) {
+        for (int i = 0; i < applied.transforms.size(); i++) {
             assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
         }
     }

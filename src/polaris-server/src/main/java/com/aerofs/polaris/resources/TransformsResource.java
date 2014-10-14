@@ -8,10 +8,9 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.Transform;
+import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.TransactionCallback;
-import org.skife.jdbi.v2.TransactionStatus;
+import com.aerofs.polaris.logical.Transactional;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -51,11 +50,11 @@ public final class TransformsResource {
         accessManager.checkAccess(principal.getUser(), oid, Access.READ);
 
         final int actualResultCount = Math.min(resultCount, maxReturnedTransforms);
-        return objectStore.inTransaction(new TransactionCallback<AppliedTransforms>() {
+        return objectStore.inTransaction(new Transactional<AppliedTransforms>() {
             @Override
-            public AppliedTransforms inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                int transformCount = objectStore.getTransformCount(conn, oid);
-                List<Transform> transforms = objectStore.getTransformsSince(conn, oid, since, actualResultCount);
+            public AppliedTransforms execute(DAO dao) throws Exception {
+                int transformCount = objectStore.getTransformCount(dao, oid);
+                List<Transform> transforms = objectStore.getTransformsSince(dao, oid, since, actualResultCount);
                 return new AppliedTransforms(transformCount, transforms);
             }
         });

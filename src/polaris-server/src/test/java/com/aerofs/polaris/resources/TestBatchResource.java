@@ -31,7 +31,7 @@ public final class TestBatchResource {
         RestAssured.config = TestUtilities.newRestAssuredConfig();
     }
 
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", Identifiers.newRandomDevice());
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(Identifiers.newRandomDevice(), "test@aerofs.com");
 
     @Rule
     public PolarisResource polarisResource = new PolarisResource();
@@ -50,12 +50,12 @@ public final class TestBatchResource {
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
         BatchResult result = given()
-               .spec(verified)
-               .and()
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-               .when().post(TestUtilities.getBatchURL())
-               .then()
-               .extract().response().as(BatchResult.class);
+                .spec(verified)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
+                .when().post(TestUtilities.getBatchURL())
+                .then()
+                .extract().response().as(BatchResult.class);
 
         assertThat(result.results, hasSize(3));
 
@@ -80,12 +80,12 @@ public final class TestBatchResource {
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
         BatchResult result = given()
-               .spec(verified)
-               .and()
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-               .when().post(TestUtilities.getBatchURL())
-               .then()
-               .extract().response().as(BatchResult.class);
+                .spec(verified)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
+                .when().post(TestUtilities.getBatchURL())
+                .then()
+                .extract().response().as(BatchResult.class);
 
         assertThat(result.results, hasSize(3));
 
@@ -123,12 +123,12 @@ public final class TestBatchResource {
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
         BatchResult result = given()
-               .spec(verified)
-               .and()
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-               .when().post(TestUtilities.getBatchURL())
-               .then()
-               .extract().response().as(BatchResult.class);
+                .spec(verified)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
+                .when().post(TestUtilities.getBatchURL())
+                .then()
+                .extract().response().as(BatchResult.class);
 
         assertThat(result.results, hasSize(2));
 

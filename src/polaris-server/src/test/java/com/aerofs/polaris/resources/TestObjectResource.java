@@ -4,18 +4,15 @@ import com.aerofs.baseline.ids.Identifiers;
 import com.aerofs.polaris.PolarisResource;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.types.ObjectType;
-import com.google.common.net.HttpHeaders;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 public final class TestObjectResource {
@@ -24,13 +21,25 @@ public final class TestObjectResource {
         RestAssured.config = TestUtilities.newRestAssuredConfig();
     }
 
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", Identifiers.newRandomDevice());
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(Identifiers.newRandomDevice(), "test@aerofs.com");
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Rule
     public PolarisResource polarisResource = new PolarisResource();
 
     @Test
-    public void shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees() throws InterruptedException {
+    public void shouldProperlyCreateObjectTree() throws Exception {
+        String root = Identifiers.newRandomSharedFolder();
+        String a = TestUtilities.newFolder(verified, root, "A");
+        String b = TestUtilities.newFolder(verified, a, "B");
+        String c = TestUtilities.newFolder(verified, b, "C");
+        String d = TestUtilities.newFile(verified, c, "f1");
+
+        Object response = TestUtilities.getTree();
+    }
+
+    @Test
+    public void shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees() throws Exception {
         // construct root -> folder_1 -> filename
         String root = Identifiers.newRandomSharedFolder();
         String folder = TestUtilities.newFolder(verified, root, "folder_1");
@@ -45,7 +54,7 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove() throws InterruptedException {
+    public void shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove() throws Exception {
         // construct root -> folder_1 -> filename
         String root = Identifiers.newRandomSharedFolder();
         String folder = TestUtilities.newFolder(verified, root, "folder_1");
@@ -61,7 +70,7 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename() throws InterruptedException {
+    public void shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename() throws Exception {
         // construct root -> folder_1 -> filename_original
         String root = Identifiers.newRandomSharedFolder();
         String folder = TestUtilities.newFolder(verified, root, "folder_1");
@@ -77,7 +86,22 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent() throws InterruptedException {
+    public void shouldNotAllowRenameIfItWouldCauseANameConflict() throws Exception {
+        // construct root -> folder_1 -> filename_original
+        String root = Identifiers.newRandomSharedFolder();
+        String folder = TestUtilities.newFolder(verified, root, "name1");
+        String file = TestUtilities.newFile(verified, root, "name2");
+
+        // rename name2 -> name1
+        // should fail, because name1 already exists
+        TestUtilities
+                .moveObject(verified, root, root, file, "name1")
+                .assertThat()
+                .statusCode(Response.Status.CONFLICT.getStatusCode());
+    }
+
+    @Test
+    public void shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent() throws Exception {
         // construct root -> filename
         String root = Identifiers.newRandomSharedFolder();
         TestUtilities.newFile(verified, root, "filename");
@@ -90,5 +114,62 @@ public final class TestObjectResource {
                 .body("error_code", equalTo(PolarisError.NAME_CONFLICT.code()));
     }
 
-    // update to a deleted object? (what is this about rooting?)
+    @Test
+    public void shouldAllowUpdateToADeletedObject() throws Exception {
+        // construct root -> filename
+        String root = Identifiers.newRandomSharedFolder();
+        String file = TestUtilities.newFile(verified, root, "filename");
+
+        // update the content for the file
+        TestUtilities
+                .newContent(verified, file, 0, "HASH", 100, 1024)
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode()); // why is version 0?
+
+        // now, delete the file
+        TestUtilities
+                .removeObject(verified, root, file)
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode());
+
+        // verify that I can still update it
+        TestUtilities
+                .newContent(verified, file, 1, "HASH-2", 102, 1025)
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode());
+    }
+
+    @Test
+    public void shouldAllowMoveFromDeletedParentToNonDeletedParent() throws Exception {
+        // construct root -> folder_1 -> folder_1_1 -> file
+        //           root -> folder_2
+        String root = Identifiers.newRandomSharedFolder();
+        String folder1 = TestUtilities.newFolder(verified, root, "folder_1");
+        String folder11 = TestUtilities.newFolder(verified, folder1, "folder_1_1");
+        String file = TestUtilities.newFile(verified, folder11, "file");
+        String folder2 = TestUtilities.newFolder(verified, root, "folder_2");
+
+        // now, delete folder_1
+        TestUtilities
+                .removeObject(verified, root, folder1)
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode());
+
+        // check that I can move the file
+        TestUtilities
+                .moveObject(verified, folder11, root, file, "file")
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode());
+
+        // and even its containing folder
+        TestUtilities
+                .moveObject(verified, folder1, root, folder11, "folder_1_1")
+                .assertThat()
+                .statusCode(Response.Status.OK.getStatusCode());
+    }
+
+    @Test
+    public void shouldAllowTwoObjectsWithTheSameNameToBeRemoved() throws Exception {
+
+    }
 }

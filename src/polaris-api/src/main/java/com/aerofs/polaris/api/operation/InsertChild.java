@@ -13,7 +13,7 @@ public final class InsertChild extends Operation {
     @Size(min = 1)
     public String child;
 
-    @NotNull
+    @Nullable
     public ObjectType childObjectType;
 
     @NotNull
@@ -28,7 +28,7 @@ public final class InsertChild extends Operation {
         super(OperationType.INSERT_CHILD);
     }
 
-    public InsertChild(String child, ObjectType childObjectType, String childName) {
+    public InsertChild(String child, @Nullable ObjectType childObjectType, String childName) {
         super(OperationType.INSERT_CHILD);
         this.child = child;
         this.childObjectType = childObjectType;

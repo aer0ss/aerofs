@@ -50,18 +50,17 @@ public abstract class TestUtilities {
                                 }));
     }
 
-    public static RequestSpecification newVerifiedAeroUserSpecification(String user, String device) {
+    public static RequestSpecification newVerifiedAeroUserSpecification(String device, String user) {
         return new RequestSpecBuilder().addHeaders(
                 ImmutableMap.of(
-                        Headers.AERO_USERID_HEADER, user,
-                        Headers.AERO_DEVICE_HEADER, device,
-                        Headers.DNAME_HEADER, newDNameHeader(user, device),
+                        Headers.AERO_AUTHORIZATION_HEADER, String.format(Headers.AERO_AUTHORIZATION_HEADER_FORMAT, device, user),
+                        Headers.DNAME_HEADER, newDNameHeader(device, user),
                         Headers.VERIFY_HEADER, Headers.VERIFY_HEADER_OK_VALUE
-        )).build();
+                )).build();
     }
 
-    private static String newDNameHeader(String user, String device) {
-        return String.format("G=test.aerofs.com/CN=%s", SecurityContexts.getCertificateCName(user, device));
+    private static String newDNameHeader(String device, String user) {
+        return String.format("G=test.aerofs.com/CN=%s", SecurityContexts.getCertificateCName(device, user));
     }
 
     //
@@ -82,12 +81,14 @@ public abstract class TestUtilities {
     }
 
     public static ValidatableResponse newObject(RequestSpecification validDevice, String parent, String child, String childName, ObjectType childObjectType) {
-        return given().spec(validDevice)
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-               .body(new InsertChild(child, childObjectType, childName))
-               .when()
-               .post(getObjectURL(parent))
-               .then();
+        return given()
+                .spec(validDevice)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .body(new InsertChild(child, childObjectType, childName))
+                .when()
+                .post(getObjectURL(parent))
+                .then();
     }
 
     public static void newFileContent(RequestSpecification validDevice, String file, long localVersion, String hash, long size, long mtime) {
@@ -95,12 +96,14 @@ public abstract class TestUtilities {
     }
 
     public static ValidatableResponse newContent(RequestSpecification validDevice, String file, long localVersion, String hash, long size, long mtime) {
-        return given().spec(validDevice)
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-               .body(new UpdateContent(localVersion, hash, size, mtime))
-               .when()
-               .post(getObjectURL(file))
-               .then();
+        return given()
+                .spec(validDevice)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .body(new UpdateContent(localVersion, hash, size, mtime))
+                .when()
+                .post(getObjectURL(file))
+                .then();
     }
 
     public static String removeFileOrFolder(RequestSpecification validDevice, String parent, String child) {
@@ -110,12 +113,14 @@ public abstract class TestUtilities {
     }
 
     public static ValidatableResponse removeObject(RequestSpecification validDevice, String parent, String child) {
-        return given().spec(validDevice)
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-               .body(new RemoveChild(child))
-               .when()
-               .post(getObjectURL(parent))
-               .then();
+        return given()
+                .spec(validDevice)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .body(new RemoveChild(child))
+                .when()
+                .post(getObjectURL(parent))
+                .then();
     }
 
     public static String moveFileOrFolder(RequestSpecification validDevice, String parent, String newParent, String child, String newChildName) {
@@ -125,12 +130,25 @@ public abstract class TestUtilities {
     }
 
     public static ValidatableResponse moveObject(RequestSpecification validDevice, String parent, String newParent, String child, String newChildName) {
-        return given().spec(validDevice)
-               .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-               .body(new MoveChild(child, newParent, newChildName))
-               .when()
-               .post(getObjectURL(parent))
-               .then();
+        return given()
+                .spec(validDevice)
+                .and()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .body(new MoveChild(child, newParent, newChildName))
+                .when()
+                .post(getObjectURL(parent))
+                .then();
+    }
+
+    public static Object getTree() {
+        return given()
+                    .queryParam(com.aerofs.baseline.Constants.JSON_PRETTY_PRINTING_QUERY_PARAMETER)
+                    .post(ServerConfiguration.TREE_URL)
+                    .then()
+                    .assertThat()
+                    .statusCode(Response.Status.OK.getStatusCode())
+                    .extract()
+                    .as(Object.class);
     }
 
     //
@@ -138,13 +156,14 @@ public abstract class TestUtilities {
     //
 
     public static AppliedTransforms getTransforms(RequestSpecification validDevice, String root, long since, int resultCount) {
-        return given().spec(validDevice)
-               .and()
-               .parameters("oid", root, "since", since, "count", resultCount)
-               .when()
-               .get(getTransformsURL(root))
-               .then()
-               .extract().as(AppliedTransforms.class);
+        return given()
+                .spec(validDevice)
+                .and()
+                .parameters("oid", root, "since", since, "count", resultCount)
+                .when()
+                .get(getTransformsURL(root))
+                .then()
+                .extract().as(AppliedTransforms.class);
     }
 
     public static String getObjectURL(String oid) {
@@ -162,4 +181,5 @@ public abstract class TestUtilities {
     private TestUtilities() {
         // to prevent instantiation by subclasses
     }
+
 }

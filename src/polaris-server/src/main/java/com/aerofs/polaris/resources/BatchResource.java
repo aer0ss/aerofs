@@ -11,10 +11,9 @@ import com.aerofs.polaris.api.batch.BatchOperation;
 import com.aerofs.polaris.api.batch.BatchOperationResult;
 import com.aerofs.polaris.api.batch.BatchResult;
 import com.aerofs.polaris.api.operation.Updated;
+import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.TransactionCallback;
-import org.skife.jdbi.v2.TransactionStatus;
+import com.aerofs.polaris.logical.Transactional;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +57,10 @@ public final class BatchResource {
                 accessManager.checkAccess(principal.getUser(), operation.oid, Access.WRITE);
 
                 final BatchOperation submitted = operation;
-                objectStore.inTransaction(new TransactionCallback<Void>() {
+                objectStore.inTransaction(new Transactional<Void>() {
                     @Override
-                    public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                        List<Updated> updated = objectStore.performOperation(conn, principal.getDevice(), submitted.oid, submitted.operation);
+                    public Void execute(DAO dao) throws Exception {
+                        List<Updated> updated = objectStore.performOperation(dao, principal.getDevice(), submitted.oid, submitted.operation);
                         batchResult.results.add(new BatchOperationResult(updated));
                         return null;
                     }

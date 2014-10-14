@@ -1,4 +1,4 @@
-package com.aerofs.polaris;
+package com.aerofs.baseline.simple;
 
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
@@ -6,21 +6,26 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 
+/**
+ * Configuration object for the {@code} Simple server.
+ */
 @SuppressWarnings("unused")
-public final class PolarisConfiguration extends Configuration {
+public final class SimpleConfiguration extends Configuration {
 
-    private int maxReturnedTransforms = Constants.MAX_RETURNED_TRANSFORMS;
+    @Min(1)
+    private int maxSeats;
 
     @Valid
     private DatabaseConfiguration database;
 
-    public int getMaxReturnedTransforms() {
-        return maxReturnedTransforms;
+    public int getMaxSeats() {
+        return maxSeats;
     }
 
-    public void setMaxReturnedTransforms(int maxReturnedTransforms) {
-        this.maxReturnedTransforms = maxReturnedTransforms;
+    public void setMaxSeats(int maxSeats) {
+        this.maxSeats = maxSeats;
     }
 
     public DatabaseConfiguration getDatabase() {
@@ -37,20 +42,20 @@ public final class PolarisConfiguration extends Configuration {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        PolarisConfiguration that = (PolarisConfiguration) o;
-        return maxReturnedTransforms == that.maxReturnedTransforms && database.equals(that.database) && super.equals(that);
+        SimpleConfiguration other = (SimpleConfiguration) o;
+        return maxSeats == other.maxSeats && database.equals(other.database) && super.equals(other);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + Objects.hashCode(maxReturnedTransforms, database);
+        return super.hashCode() + Objects.hashCode(maxSeats, database);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("maxReturnedTransforms", getMaxReturnedTransforms())
+                .add("maxSeats", getMaxSeats())
                 .add("app", getApp())
                 .add("admin", getAdmin())
                 .add("logging", getLogging())

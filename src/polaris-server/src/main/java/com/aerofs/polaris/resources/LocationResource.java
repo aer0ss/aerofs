@@ -5,10 +5,9 @@ import com.aerofs.baseline.ids.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
+import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.TransactionCallback;
-import org.skife.jdbi.v2.TransactionStatus;
+import com.aerofs.polaris.logical.Transactional;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -43,11 +42,11 @@ public final class LocationResource {
             @PathParam("did") @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.READ);
 
-        return objectStore.inTransaction(new TransactionCallback<List<String>>() {
+        return objectStore.inTransaction(new Transactional<List<String>>() {
 
             @Override
-            public List<String> inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                return objectStore.getLocations(conn, oid, version);
+            public List<String> execute(DAO dao) throws Exception {
+                return objectStore.getLocations(dao, oid, version);
             }
         });
     }
@@ -60,11 +59,11 @@ public final class LocationResource {
             @PathParam("did") @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
 
-        objectStore.inTransaction(new TransactionCallback<Void>() {
+        objectStore.inTransaction(new Transactional<Object>() {
 
             @Override
-            public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                objectStore.addLocation(conn, oid, version, did);
+            public Void execute(DAO dao) throws Exception {
+                objectStore.addLocation(dao, oid, version, did);
                 return null;
             }
         });
@@ -78,11 +77,11 @@ public final class LocationResource {
             @PathParam("did") @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
 
-        objectStore.inTransaction(new TransactionCallback<Void>() {
+        objectStore.inTransaction(new Transactional<Object>() {
 
             @Override
-            public Void inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                objectStore.removeLocation(conn, oid, version, did);
+            public Void execute(DAO dao) throws Exception {
+                objectStore.removeLocation(dao, oid, version, did);
                 return null;
             }
         });

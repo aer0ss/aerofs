@@ -1,0 +1,17 @@
+{
+  "A": {
+    "type": "FILE"
+  },
+  "B": {
+    "type": "FOLDER"
+  },
+  "C": {
+    "type": "FOLDER",
+    "D": {
+      "type": "FILE"
+    },
+    "E": {
+      "type": "FILE"
+    }
+  }
+}

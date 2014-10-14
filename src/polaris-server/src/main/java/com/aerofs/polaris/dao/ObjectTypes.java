@@ -29,7 +29,7 @@ public interface ObjectTypes {
     @SuppressWarnings("unused")
     void close();
 
-    public static final class ObjectTypeMapper implements ResultSetMapper<ObjectType>{
+    public static final class ObjectTypeMapper implements ResultSetMapper<ObjectType> {
 
         private static final int COL_OID         = 1;
         private static final int COL_OBJECT_TYPE = 2;

@@ -1,0 +1,25 @@
+maxSeats: 60
+
+app:
+  host: 0.0.0.0
+  port: 9999
+
+admin:
+  host: localhost
+  port: 8888
+
+database:
+  username: simple
+  password: password
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost/simple
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: true
+
+  file:
+    enabled: true
+    logfile: /var/log/simple/simple.log

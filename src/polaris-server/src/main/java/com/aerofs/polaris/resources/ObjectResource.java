@@ -7,10 +7,9 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
+import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.TransactionCallback;
-import org.skife.jdbi.v2.TransactionStatus;
+import com.aerofs.polaris.logical.Transactional;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -49,11 +48,11 @@ public final class ObjectResource {
     public OperationResult update(@Context final AeroPrincipal principal, @PathParam("oid") @Identifier final String oid, final Operation operation) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.READ, Access.WRITE);
 
-        return objectStore.inTransaction(new TransactionCallback<OperationResult>() {
+        return objectStore.inTransaction(new Transactional<OperationResult>() {
 
             @Override
-            public OperationResult inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                return new OperationResult(objectStore.performOperation(conn, principal.getDevice(), oid, operation));
+            public OperationResult execute(DAO dao) throws Exception {
+                return new OperationResult(objectStore.performOperation(dao, principal.getDevice(), oid, operation));
             }
         });
     }
