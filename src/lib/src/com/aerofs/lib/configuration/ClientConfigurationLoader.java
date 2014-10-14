@@ -103,7 +103,7 @@ public class ClientConfigurationLoader
                     }
                 }
 
-                if (!loaded) throw new IOException("Missing " + siteConfigFile);
+                if (!loaded) throw new FileNotFoundException("Missing " + siteConfigFile);
 
                 siteConfigProperties = _propertiesHelper.parseProperties(siteConfigProperties);
 
