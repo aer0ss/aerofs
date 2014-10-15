@@ -31,9 +31,7 @@ dependencies {
     compile project(':src/rest-api')
     compile project(':src/tunnel')
     compile project(path: ':src/zephyr', configuration: 'client')
-    compile project(path: ':src/xray', configuration: 'client')
     compile project(path: ':src/verkehr', configuration: 'wireClient')
-    testCompile project(':src/xray')
     testCompile project(':src/zephyr')
     testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
     testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'

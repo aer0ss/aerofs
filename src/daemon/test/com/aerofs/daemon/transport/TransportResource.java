@@ -74,7 +74,6 @@ public final class TransportResource extends ExternalResource
     private final String transportId;
     private final MockCA mockCA;
     private final InetSocketAddress zephyrAddress;
-    private final InetSocketAddress xrayAddress;
     private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
     private DID did;
@@ -84,7 +83,7 @@ public final class TransportResource extends ExternalResource
     private boolean readerSet;
 
     public TransportResource(TransportType transportType, MockCA mockCA,
-            InetSocketAddress zephyrAddress, InetSocketAddress xrayAddress)
+            InetSocketAddress zephyrAddress)
     {
         l.info("seed:{}", seed);
 
@@ -94,7 +93,6 @@ public final class TransportResource extends ExternalResource
         this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
         this.mockCA = mockCA;
         this.zephyrAddress = zephyrAddress;
-        this.xrayAddress = xrayAddress;
     }
 
     @Override
@@ -142,8 +140,6 @@ public final class TransportResource extends ExternalResource
                 3,
                 10 * C.SEC,
                 zephyrAddress,
-                10 * C.SEC,
-                xrayAddress,
                 Proxy.NO_PROXY,
                 timer,
                 outgoingEventSink,

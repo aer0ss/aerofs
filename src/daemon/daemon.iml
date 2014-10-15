@@ -16,7 +16,6 @@
     <orderEntry type="module" module-name="rest-api" />
     <orderEntry type="module" module-name="libjingle.binding" />
     <orderEntry type="module" module-name="zephyr" />
-    <orderEntry type="module" module-name="xray" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="module" module-name="restless" />

@@ -23,5 +23,4 @@ include 'src/auditor',
         'src/spsv',
         'src/tunnel',
         'src/verkehr',
-        'src/xray',
         'src/zephyr'

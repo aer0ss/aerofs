@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.xray.server.XRayServer;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
@@ -69,7 +68,7 @@ public final class TestTransports
     @Parameters
     public static Collection<Object[]> transports()
     {
-        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}, {TransportType.XRAYRS}}; // jingle cannot be tested in-process
+        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}}; // jingle cannot be tested in-process
         return Arrays.asList(data);
     }
 
@@ -83,11 +82,9 @@ public final class TestTransports
     // for all tests
     private final TransportType transportType;
     private final InetSocketAddress zephyrAddress;
-    private final InetSocketAddress xrayAddress;
 
     // servers
     private ZephyrServer zephyr;
-    private XRayServer xray;
 
     // for the stream tests
     private TransportDigestStreamSender streamSender;
@@ -105,15 +102,14 @@ public final class TestTransports
         SecureRandom secureRandom = new SecureRandom();
 
         zephyrAddress = InetSocketAddress.createUnresolved("localhost", secureRandom.nextInt(10000) + 5000);
-        xrayAddress = InetSocketAddress.createUnresolved("localhost", secureRandom.nextInt(10000) + 5000);
 
         MockCA mockCA = new MockCA(String.format("testca-%d@arrowfs.org", Math.abs(secureRandom.nextInt())), secureRandom);
 
         this.transportType = transportType;
-        this.transport0 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
-        this.transport1 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
-        this.transport2 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
-        this.transport3 = new TransportResource(transportType, mockCA, zephyrAddress, xrayAddress);
+        this.transport0 = new TransportResource(transportType, mockCA, zephyrAddress);
+        this.transport1 = new TransportResource(transportType, mockCA, zephyrAddress);
+        this.transport2 = new TransportResource(transportType, mockCA, zephyrAddress);
+        this.transport3 = new TransportResource(transportType, mockCA, zephyrAddress);
     }
 
     @Before
@@ -141,20 +137,6 @@ public final class TestTransports
         zephyrRunner.setName("zephyr");
         zephyrRunner.start();
 
-        // start up xray
-        xray = new XRayServer(xrayAddress.getHostName(), (short) xrayAddress.getPort(), new com.aerofs.xray.server.core.Dispatcher());
-        xray.init();
-        Thread xrayRunner = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                xray.start();
-            }
-        });
-        xrayRunner.setName("xray");
-        xrayRunner.start();
-
         // start the individual client transports
         l.info("RUNNING END-TO-END TRANSPORT TEST FOR {} T0:{} D0:{}, T1:{} D1:{}, T2:{} D2:{}, T3:{} D3:{}",
                 transportType,
@@ -175,10 +157,6 @@ public final class TestTransports
 
         if (zephyr != null) {
             zephyr.stop();
-        }
-
-        if (xray != null) {
-            xray.stop();
         }
 
         if (streamSender != null) {

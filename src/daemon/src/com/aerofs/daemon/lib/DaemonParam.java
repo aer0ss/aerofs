@@ -41,11 +41,6 @@ public class DaemonParam
         public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
     }
 
-    public static class XRay
-    {
-        public static final long HANDSHAKE_TIMEOUT    = 10 * C.SEC;
-    }
-
     public static class Zephyr
     {
         public static final long HANDSHAKE_TIMEOUT    = 10 * C.SEC;

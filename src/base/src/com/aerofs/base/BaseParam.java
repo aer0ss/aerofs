@@ -84,12 +84,6 @@ public class BaseParam
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
     }
 
-    public static class XRay
-    {
-        // this value is dynamic but clients will not pick up the new value on failure
-        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.xray.address", InetSocketAddress.createUnresolved("undefined", 9999));
-    }
-
     public static class WWW
     {
         public static final String DASHBOARD_HOST_URL = getStringProperty("base.www.url", "https://www.aerofs.com");

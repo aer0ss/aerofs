@@ -14,7 +14,6 @@ import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
-import com.aerofs.daemon.transport.xray.XRay;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.event.IEvent;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -30,8 +29,7 @@ public final class TransportFactory
     {
         LANTCP("t", 0),
         JINGLE("j", 1),
-        ZEPHYR("z", 2),
-        XRAYRS("x", 3);
+        ZEPHYR("z", 2);
 
         private final String id;
         private final int rank;
@@ -81,8 +79,6 @@ public final class TransportFactory
     private final int maxFailedHeartbeats;
     private final long zephyrHandshakeTimeout;
     private final InetSocketAddress zephyrServerAddress;
-    private final long xrayHandshakeTimeout;
-    private final InetSocketAddress xrayServerAddress;
     private final Proxy proxy;
     private final Timer timer;
     private final BlockingPrioQueue<IEvent> transportEventSink;
@@ -113,8 +109,6 @@ public final class TransportFactory
             int maxFailedHeartbeats,
             long zephyrHandshakeTimeout,
             InetSocketAddress zephyrServerAddress,
-            long xrayHandshakeTimeout,
-            InetSocketAddress xrayServerAddress,
             Proxy proxy,
             Timer timer,
             BlockingPrioQueue<IEvent> transportEventSink,
@@ -144,8 +138,6 @@ public final class TransportFactory
         this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.zephyrServerAddress = zephyrServerAddress;
-        this.xrayHandshakeTimeout = xrayHandshakeTimeout;
-        this.xrayServerAddress = xrayServerAddress;
         this.proxy = proxy;
         this.timer = timer;
         this.transportEventSink = transportEventSink;
@@ -166,8 +158,6 @@ public final class TransportFactory
             return newLanTcp(transportId, transportRank);
         case ZEPHYR:
             return newZephyr(transportId, transportRank);
-        case XRAYRS:
-            return newXrayRS(transportId, transportRank);
         case JINGLE:
             return newJingle(transportId, transportRank);
         default:
@@ -228,35 +218,6 @@ public final class TransportFactory
                 maxFailedHeartbeats,
                 zephyrHandshakeTimeout,
                 zephyrServerAddress,
-                proxy,
-                roundTripTimes);
-    }
-
-    private ITransport newXrayRS(String transportId, int transportRank)
-    {
-        return new XRay(
-                userID,
-                did,
-                scrypted,
-                transportId,
-                transportRank,
-                transportEventSink,
-                linkStateService,
-                maxcastFilterReceiver,
-                clientSslEngineFactory,
-                serverSslEngineFactory,
-                clientSocketChannelFactory,
-                timer,
-                xmppServerAddress,
-                xmppServerDomain,
-                xmppServerConnectionLinkStateChangePingInterval,
-                numPingsBeforeDisconnectingXmppServerConnection,
-                xmppServerConnectionInitialReconnectInterval,
-                xmppServerConnectionMaxReconnectInterval,
-                heartbeatInterval,
-                maxFailedHeartbeats,
-                xrayHandshakeTimeout,
-                xrayServerAddress,
                 proxy,
                 roundTripTimes);
     }
