@@ -191,24 +191,20 @@ public class TestLinkedStagingArea extends AbstractTest
         return factFile.create(auxPath(AuxFolder.STAGING_AREA, Long.toHexString(id)));
     }
 
-    private static Answer<Boolean> DELETE = new Answer<Boolean>() {
-        @Override
-        public Boolean answer(InvocationOnMock invocation)
-        {
-            doReturn(false).when((InjectableFile)invocation.getMock()).exists();
-            return true;
-        }
+    private static Answer<Boolean> DELETE = invocation -> {
+        doReturn(false).when((InjectableFile)invocation.getMock()).exists();
+        return true;
     };
 
     @Test
     public void shouldDeleteRecursively() throws Exception
     {
         InjectableFile staged = staged(Path.root(rootSID));
-        when(staged.deleteIgnoreErrorRecursively()).thenAnswer(DELETE);
+        when(staged.deleteIgnoreError()).thenAnswer(DELETE);
 
         lsa.start_();
 
-        verify(staged).deleteIgnoreErrorRecursively();
+        verify(staged).deleteIgnoreError();
         assertStagingDatabaseEmpty();
     }
 
@@ -226,11 +222,11 @@ public class TestLinkedStagingArea extends AbstractTest
     public void shouldRetryWhenDeleteRecursivelyFails() throws Exception
     {
         InjectableFile staged = staged(Path.root(rootSID));
-        when(staged.deleteIgnoreErrorRecursively()).thenReturn(false).thenAnswer(DELETE);
+        when(staged.deleteIgnoreError()).thenReturn(false).thenAnswer(DELETE);
 
         lsa.start_();
 
-        verify(staged, times(2)).deleteIgnoreErrorRecursively();
+        verify(staged, times(2)).deleteIgnoreError();
         assertStagingDatabaseEmpty();
     }
 
