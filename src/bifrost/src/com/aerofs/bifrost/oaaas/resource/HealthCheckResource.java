@@ -5,6 +5,7 @@
 package com.aerofs.bifrost.oaaas.resource;
 
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.bifrost.server.Transactional;
 import org.hibernate.SessionFactory;
 
 import javax.inject.Inject;
@@ -16,6 +17,7 @@ import javax.ws.rs.core.Response;
  * Resource for handling all calls related to client management.
  */
 @Path("/healthcheck")
+@Transactional(readOnly = true)
 public class HealthCheckResource
 {
     @Inject

@@ -1,88 +1,76 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2014.
  */
 
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Loggers;
-import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
+import com.sun.jersey.api.model.AbstractMethod;
+import com.sun.jersey.spi.container.ResourceMethodDispatchAdapter;
+import com.sun.jersey.spi.container.ResourceMethodDispatchProvider;
+import com.sun.jersey.spi.dispatch.RequestDispatcher;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 
-/**
- * A netty handler that wraps upstream handlers in a Hibernate transaction
- */
-public class TransactionalWrapper extends SimpleChannelUpstreamHandler
+import javax.annotation.Nullable;
+import javax.ws.rs.ext.Provider;
+
+@Provider
+public class TransactionalWrapper implements ResourceMethodDispatchAdapter
 {
     private final static Logger l = Loggers.getLogger(TransactionalWrapper.class);
 
     private final SessionFactory _sessionFactory;
-    private static Logger _l = Loggers.getLogger(TransactionalWrapper.class);
 
-    // list of path that need transactions, either read-write or read-only
-    private final ImmutableSet<String> _rw;
-    private final ImmutableSet<String> _ro;
-
-    /**
-     * Create a transactional filter with an explicity readonly setting.
-     */
-    public TransactionalWrapper(SessionFactory sessionFactory,
-            ImmutableSet<String> rw, ImmutableSet<String> ro)
+    @Inject
+    public TransactionalWrapper(SessionFactory sessionFactory)
     {
         _sessionFactory = sessionFactory;
-        _rw = rw;
-        _ro = ro;
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent me)
+    public ResourceMethodDispatchProvider adapt(ResourceMethodDispatchProvider provider)
     {
-        HttpRequest request = (HttpRequest)me.getMessage();
-
-        String path = new QueryStringDecoder(request.getUri()).getPath();
-        int idx = path.indexOf('/', 1);
-        String base = path.substring(0, idx != -1 ? idx : path.length());
-        boolean rw = _rw.contains(base);
-        if (rw || _ro.contains(base)) {
-            wrapInTransaction(ctx, me, !rw);
-        } else {
-            ctx.sendUpstream(me);
-        }
+        return am -> {
+            RequestDispatcher d = provider.create(am);
+            final Transactional t = transactional(am);
+            if (t == null) return d;
+            final boolean readOnly = t.readOnly();
+            return (o, httpContext) -> {
+                l.debug("hibernate trans {}", readOnly);
+                Session session = _sessionFactory.openSession();
+                try {
+                    session.setDefaultReadOnly(readOnly);
+                    ManagedSessionContext.bind(session);
+                    session.beginTransaction();
+                    try {
+                        d.dispatch(o, httpContext);
+                        doCommit(session);
+                    } catch (RuntimeException e) {
+                        l.warn("Txn failure {}", e);
+                        doRollback(session);
+                        throw e;
+                    }
+                } finally {
+                    session.close();
+                    ManagedSessionContext.unbind(_sessionFactory);
+                }
+            };
+        };
     }
 
-    private void wrapInTransaction(ChannelHandlerContext ctx, MessageEvent me, boolean readOnly)
+    private static @Nullable Transactional transactional(AbstractMethod am)
     {
-        l.debug("hibernate trans {}", readOnly);
-        final Session session = _sessionFactory.openSession();
-
-        try {
-            session.setDefaultReadOnly(readOnly);
-            ManagedSessionContext.bind(session);
-            session.beginTransaction();
-
-            try {
-                ctx.sendUpstream(me);
-                doCommit(session);
-            } catch (Exception e) {
-                _l.warn("Txn failure {}", e);
-                doRollback(session);
-                throw new RuntimeException(e);
-            }
-        } finally {
-            session.close();
-            ManagedSessionContext.unbind(_sessionFactory);
-        }
+        Transactional t = am.getAnnotation(Transactional.class);
+        if (t == null) t = am.getMethod().getDeclaringClass().getAnnotation(Transactional.class);
+        return t;
     }
 
-    private void doRollback(Session session)
+    private static void doRollback(Session session)
     {
         final Transaction txn = session.getTransaction();
         if (txn != null && txn.isActive()) {
@@ -90,7 +78,7 @@ public class TransactionalWrapper extends SimpleChannelUpstreamHandler
         }
     }
 
-    private void doCommit(Session session)
+    private static void doCommit(Session session)
     {
         final Transaction txn = session.getTransaction();
         if (txn != null && txn.isActive()) {

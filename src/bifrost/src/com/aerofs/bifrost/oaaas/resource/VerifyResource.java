@@ -23,6 +23,7 @@ import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.oauth.VerifyTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ import static com.aerofs.bifrost.oaaas.resource.TokenResource.WWW_AUTHENTICATE;
  * >specification</a> as basis.
  */
 @Path("/tokeninfo")
+@Transactional(readOnly = true)
 @Produces(MediaType.APPLICATION_JSON)
 public class VerifyResource {
 

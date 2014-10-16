@@ -35,6 +35,7 @@ import com.aerofs.bifrost.oaaas.model.TokenResponseObject;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
+import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
@@ -77,6 +78,7 @@ import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.U
  * href="http://tools.ietf.org/html/draft-ietf-oauth-v2"> the OAuth spec</a>.
  */
 @Path("/")
+@Transactional
 public class TokenResource
 {
     public static final String X_REAL_IP = "X-Real-IP";
@@ -104,6 +106,7 @@ public class TokenResource
 
     @GET
     @Path("/tokenlist")
+    @Transactional(readOnly = true)
     @Produces(MediaType.APPLICATION_JSON)
     public Response listTokens(@QueryParam("owner") String owner)
     {

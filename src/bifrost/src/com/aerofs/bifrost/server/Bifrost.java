@@ -40,11 +40,11 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.google.inject.internal.Scoping;
 import org.hibernate.SessionFactory;
-import org.jboss.netty.channel.ChannelPipeline;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.util.Properties;
+import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -56,24 +56,10 @@ public class Bifrost extends Service
         Loggers.init();
     }
 
-    private final TransactionalWrapper _trans;
-
     @Inject
     public Bifrost(Injector injector)
     {
         super("bifrost", new InetSocketAddress(getIntegerProperty("bifrost.port", 8700)), injector);
-
-        SessionFactory sessionFactory = injector.getInstance(SessionFactory.class);
-        _trans = new TransactionalWrapper(sessionFactory,
-                ImmutableSet.of( // read-write
-                        "/token",
-                        "/clients",
-                        "/users",
-                        "/authorize"),
-                ImmutableSet.of( // read-only
-                        "/tokeninfo",
-                        "/tokenlist",
-                        "/healthcheck"));
 
         addResource(AuthorizeResource.class);
         addResource(VerifyResource.class);
@@ -82,12 +68,11 @@ public class Bifrost extends Service
         addResource(HealthCheckResource.class);
     }
 
+
     @Override
-    public ChannelPipeline getSpecializedPipeline()
+    protected Set<Class<?>> singletons()
     {
-        ChannelPipeline p = super.getSpecializedPipeline();
-        p.addBefore(JERSEY_HANLDER, "trans", _trans);
-        return p;
+        return ImmutableSet.of(TransactionalWrapper.class);
     }
 
     public static void main(String[] args) throws Exception

@@ -8,6 +8,7 @@ import com.aerofs.bifrost.oaaas.model.NewClientResponse;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.bifrost.server.Transactional;
 import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ import java.util.UUID;
  * Resource for handling all calls related to client management.
  */
 @Path("/clients")
+@Transactional
 public class ClientsResource
 {
     private static final Logger l = LoggerFactory.getLogger(ClientsResource.class);

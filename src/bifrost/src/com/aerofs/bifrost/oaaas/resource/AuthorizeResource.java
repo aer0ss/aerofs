@@ -9,6 +9,7 @@ import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
+import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.PrincipalFactory;
@@ -33,6 +34,7 @@ import java.util.Set;
  * Resource for handling authorization codes
  */
 @Path("/authorize")
+@Transactional
 public class AuthorizeResource
 {
     @Inject
