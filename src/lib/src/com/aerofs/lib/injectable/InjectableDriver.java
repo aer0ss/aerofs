@@ -147,6 +147,7 @@ public class InjectableDriver
         FIDAndType fnt = getFIDAndTypeNullable(absPath);
         return fnt == null ? null : fnt._fid;
     }
+
     public static class ReplaceFileException extends IOException
     {
         private static final long serialVersionUID = 0L;

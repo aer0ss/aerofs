@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
@@ -369,7 +370,7 @@ public class LinkedStorage implements IPhysicalStorage
         final LinkedPrefix p = (LinkedPrefix) prefix;
 
         if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
-            applyPreservingStreamsAndACLs_(wasPresent, t, f, p);
+            applyPreservingStreamsAndACLs_(p, f, wasPresent, t);
         } else {
             if (wasPresent) moveToRev_(f, t);
             move_(p, f, t);
@@ -382,8 +383,8 @@ public class LinkedStorage implements IPhysicalStorage
         return f._f.lastModified();
     }
 
-    private void applyPreservingStreamsAndACLs_(boolean wasPresent, Trans t, final LinkedFile f,
-            final LinkedPrefix p)
+    private void applyPreservingStreamsAndACLs_(final LinkedPrefix p, final LinkedFile f,
+            boolean wasPresent, Trans t)
             throws SQLException, IOException
     {
         // We use ReplaceFile to ensure preservation of DACL but that only works if the file is
@@ -395,7 +396,7 @@ public class LinkedStorage implements IPhysicalStorage
         }
 
         // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
-        final String revPath =  _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
+        final String revPath = _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
                 f._sokid.kidx());
         _factFile.create(revPath).getParentFile().ensureDirExists();
         try {
@@ -403,14 +404,17 @@ public class LinkedStorage implements IPhysicalStorage
         } catch (ReplaceFileException e) {
             newMetric("linked.replace")
                     .setException(e)
+                    .addData("replacedMovedToBackup", e.replacedMovedToBackup)
                     .sendAsync();
             if (e.replacedMovedToBackup) {
-                try {
-                    _factFile.create(revPath).moveInSameFileSystem(f._f);
-                } catch (IOException re) {
-                    l.error("fs rollback failed", re);
-                    // FIXME: reset CA to prevent a spurious deletion?
+                l.info("replace failed. move fallback", BaseLogUtil.suppress(e));
+                if (!wasPresent) {
+                    // delete dummy file
+                    _factFile.create(revPath).deleteIgnoreError();
                 }
+                // try a regular move w/ NRO fallback
+                move_(p, f, t);
+                return;
             }
             throw e;
         }
