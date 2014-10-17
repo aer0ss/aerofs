@@ -10,6 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -30,6 +31,25 @@ import java.util.Collection;
 public class Organization
 {
     private final static Logger l = Loggers.getLogger(Organization.class);
+
+    public static enum TwoFactorEnforcementLevel {
+        // Only append to this list.  If you change ordinals, you will
+        // change the meaning of existing DBs.  That would be bad.
+        DISALLOWED,
+        OPT_IN,
+        MANDATORY;
+
+        public static TwoFactorEnforcementLevel valueOf(int i) {
+            return TwoFactorEnforcementLevel.values()[i];
+        }
+        public static TwoFactorEnforcementLevel fromPB(PBTwoFactorEnforcementLevel pblevel) {
+            return valueOf(pblevel.getNumber());
+        }
+
+        public PBTwoFactorEnforcementLevel toPB() {
+            return PBTwoFactorEnforcementLevel.valueOf(ordinal());
+        }
+    }
 
     public static class Factory
     {
@@ -283,5 +303,17 @@ public class Organization
     public String getContactPhone() throws SQLException, ExNotFound
     {
         return _f._odb.getContactPhone(_id);
+    }
+
+    public void setTwoFactorEnforcementLevel(TwoFactorEnforcementLevel level)
+            throws SQLException
+    {
+        _f._odb.setTwoFactorEnforcementLevel(_id, level);
+    }
+
+    public TwoFactorEnforcementLevel getTwoFactorEnforcementLevel()
+            throws SQLException, ExNotFound
+    {
+        return _f._odb.getTwoFactorEnforcementLevel(_id);
     }
 }

@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
@@ -130,7 +131,8 @@ public class SPSession
     @Nonnull
     @Override
     public User getAuthenticatedUserLegacyProvenance()
-            throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException
+            throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException,
+            ExSecondFactorSetupRequired
     {
         User user = getUserNullable();
         if (user == null) {

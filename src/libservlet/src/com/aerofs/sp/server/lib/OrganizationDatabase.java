@@ -14,6 +14,7 @@ import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
@@ -34,6 +35,7 @@ import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_QUOTA_PER_USER;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_TWO_FACTOR_ENFORCEMENT_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -93,11 +95,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", "count(*)"));
         ps.setInt(1, orgID.getInt());
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return binaryCount(rs);
-        } finally {
-            rs.close();
         }
     }
 
@@ -109,23 +108,17 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public @Nullable StripeCustomerID getStripeCustomerIDNullable(final OrganizationID orgID)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID);
-        try {
+        try (ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID)) {
             String id = rs.getString(1);
             return id == null ? null : StripeCustomerID.create(id);
-        } finally {
-            rs.close();
         }
     }
 
     public @Nonnull String getName(OrganizationID orgID)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryOrg(orgID, C_O_NAME);
-        try {
+        try (ResultSet rs = queryOrg(orgID, C_O_NAME)) {
             return Objects.firstNonNull(rs.getString(1), "An Awesome Team");
-        } finally {
-            rs.close();
         }
     }
 
@@ -147,12 +140,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      */
     public String getContactPhone(final OrganizationID orgID) throws SQLException, ExNotFound
     {
-        final ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE);
-
-        try {
+        try (ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE)) {
             return Strings.nullToEmpty(rs.getString(1));
-        } finally {
-            rs.close();
         }
     }
 
@@ -188,13 +177,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      */
     public @Nullable Long getQuotaPerUser(final OrganizationID orgID) throws SQLException, ExNotFound
     {
-        final ResultSet rs = queryOrg(orgID, C_O_QUOTA_PER_USER);
-
-        try {
+        try (ResultSet rs = queryOrg(orgID, C_O_QUOTA_PER_USER)) {
             Long quota = rs.getLong(1);
             return rs.wasNull() ? null : quota;
-        } finally {
-            rs.close();
         }
     }
 
@@ -265,11 +250,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         psLU.setInt(2, maxResults);
         psLU.setInt(3, offset);
 
-        ResultSet rs = psLU.executeQuery();
-        try {
+        try (ResultSet rs = psLU.executeQuery()) {
             return usersResultSet2List(rs);
-        } finally {
-            rs.close();
         }
     }
 
@@ -282,11 +264,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 C_USER_ID));
         ps.setInt(1, orgId.getInt());
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return usersResultSet2List(rs);
-        } finally {
-            rs.close();
         }
     }
 
@@ -301,11 +280,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 C_USER_ORG_ID + "=?" + andActiveNonTeamServerUser(), "count(*)"));
 
         ps.setInt(1, orgId.getInt());
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return count(rs);
-        } finally {
-            rs.close();
         }
     }
 
@@ -324,11 +300,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         ps.setInt(1, orgId.getInt());
         ps.setInt(2, authlevel.ordinal());
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return count(rs);
-        } finally {
-            rs.close();
         }
     }
 
@@ -355,8 +328,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         ps.setInt(2, maxResults);
         ps.setInt(3, offset);
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             Set<SID> set = Sets.newHashSet();
             while (rs.next()) {
                 SID sid = new SID(rs.getBytes(1));
@@ -364,8 +336,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 Util.verify(set.add(sid));
             }
             return set;
-        } finally {
-            rs.close();
         }
     }
 
@@ -381,11 +351,28 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
         ps.setString(1, orgId.toTeamServerUserID().getString());
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             return DBUtil.count(rs);
-        } finally {
-            rs.close();
+        }
+    }
+
+    public void setTwoFactorEnforcementLevel(OrganizationID id, TwoFactorEnforcementLevel level)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION,
+                C_O_ID + "=?", C_O_TWO_FACTOR_ENFORCEMENT_LEVEL));
+
+        ps.setInt(1, level.ordinal());
+        ps.setInt(2, id.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    public TwoFactorEnforcementLevel getTwoFactorEnforcementLevel(OrganizationID id)
+            throws SQLException, ExNotFound
+    {
+        try (ResultSet rs = queryOrg(id, C_O_TWO_FACTOR_ENFORCEMENT_LEVEL)) {
+            return TwoFactorEnforcementLevel.valueOf(rs.getInt(1));
         }
     }
 }

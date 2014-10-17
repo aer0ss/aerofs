@@ -24,6 +24,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExNotLocallyManaged;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
@@ -75,6 +76,7 @@ import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.GetQuotaReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
+import com.aerofs.proto.Sp.GetTwoFactorSetupEnforcementReply;
 import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUrlInfoReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
@@ -102,6 +104,7 @@ import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBStripeData;
+import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
@@ -150,6 +153,7 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.session.ISession.Provenance;
@@ -581,7 +585,8 @@ public class SPService implements ISPService
 
         int sharedFolderCount = org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org, user);
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org,
+                user);
 
         _sqlTrans.commit();
 
@@ -638,7 +643,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
             throws ExNotAuthenticated, ExNoPerm, SQLException, ExFormatError, ExNotFound,
-            ExEmptyEmailAddress, ExSecondFactorRequired
+            ExEmptyEmailAddress, ExSecondFactorRequired, ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
 
@@ -664,7 +669,8 @@ public class SPService implements ISPService
      * organization
      */
     private void throwIfSessionUserIsNotOrAdminOf(User user)
-            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired
+            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired,
+            ExSecondFactorSetupRequired
     {
         User currentUser = _session.getAuthenticatedUserLegacyProvenance();
 
@@ -1500,8 +1506,10 @@ public class SPService implements ISPService
         @Nullable Long quota = requester.getOrganization().getQuotaPerUser();
         _sqlTrans.commit();
 
-        return createReply(quota == null ? GetQuotaReply.getDefaultInstance() :
-                GetQuotaReply.newBuilder().setQuota(quota).build());
+        return createReply(
+                quota == null ? GetQuotaReply.getDefaultInstance() : GetQuotaReply.newBuilder()
+                        .setQuota(quota)
+                        .build());
     }
 
     @Override
@@ -1736,6 +1744,37 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> setTwoFactorSetupEnforcement(PBTwoFactorEnforcementLevel pblevel)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+        user.throwIfNotAdmin();
+        Organization org = user.getOrganization();
+        TwoFactorEnforcementLevel level = TwoFactorEnforcementLevel.fromPB(pblevel);
+        org.setTwoFactorEnforcementLevel(level);
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetTwoFactorSetupEnforcementReply> getTwoFactorSetupEnforcement()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserLegacyProvenance();
+        Organization org = user.getOrganization();
+        TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
+        _sqlTrans.commit();
+
+        GetTwoFactorSetupEnforcementReply.Builder reply =
+                GetTwoFactorSetupEnforcementReply.newBuilder()
+                        .setLevel(level.toPB());
+        return createReply(reply.build());
+    }
+
+    @Override
     public ListenableFuture<Void> destroySharedFolder(ByteString sharedId)
             throws Exception
     {
@@ -1854,7 +1893,6 @@ public class SPService implements ISPService
         } else if (!requester.checkSecondFactor(currentCode)) {
             // failed, incorrect code
             l.warn("2fa failed: incorrect code {} for {}", currentCode, requester);
-            // TODO: reject request correctly
             throw new ExSecondFactorRequired();
         } else {
             _session.setSecondFactorAuthDate(System.currentTimeMillis());
@@ -1882,7 +1920,6 @@ public class SPService implements ISPService
         } else if (!requester.checkBackupCode(backupCode)) {
             // failed, incorrect code
             l.warn("2fa failed: incorrect backup code {} for {}", backupCode, requester);
-            // TODO: reject request correctly
             throw new ExSecondFactorRequired();
         } else {
             _session.setSecondFactorAuthDate(System.currentTimeMillis());
@@ -2136,7 +2173,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
             Integer orgID)
-            throws SQLException, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired
+            throws SQLException, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired,
+            ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
 
@@ -2331,7 +2369,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetStripeDataReply> getStripeData()
-            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired
+            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired,
+            ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
 
@@ -2348,7 +2387,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
-            throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired
+            throws SQLException, ExNoPerm, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired,
+            ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserLegacyProvenance();
@@ -2668,12 +2708,17 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
         boolean enforceTwoFactor = user.shouldEnforceTwoFactor();
+        TwoFactorEnforcementLevel level = user.getOrganization().getTwoFactorEnforcementLevel();
+        boolean needSecondFactorSetup = (level == TwoFactorEnforcementLevel.MANDATORY) &&
+                !enforceTwoFactor;
         boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
                 .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
         _sqlTrans.commit();
 
-        return createReply(
-                SignInUserReply.newBuilder().setNeedSecondFactor(needSecondFactor).build());
+        return createReply(SignInUserReply.newBuilder()
+                        .setNeedSecondFactor(needSecondFactor)
+                        .setNeedSecondFactorSetup(needSecondFactorSetup)
+                        .build());
     }
 
     /**
@@ -2931,12 +2976,17 @@ public class SPService implements ISPService
             _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
         boolean enforceSecondFactor = user.shouldEnforceTwoFactor();
+        TwoFactorEnforcementLevel level = user.getOrganization().getTwoFactorEnforcementLevel();
         _sqlTrans.commit();
         l.info("SI (OpenID): " + user.toString());
 
         // Set the session cookie.
         _session.setUser(user);
         _session.setBasicAuthDate(System.currentTimeMillis());
+
+        // Check if the user will need to set up a second factor per organization policy
+        boolean needSecondFactorSetup = (level == TwoFactorEnforcementLevel.MANDATORY) &&
+                !enforceSecondFactor;
 
         // Check if the user will need to provide a second factor to use this session
         boolean needSecondFactor = enforceSecondFactor && !_session.getAuthenticatedProvenances()
@@ -2955,6 +3005,7 @@ public class SPService implements ISPService
                 .setFirstName(attrs.getFirstName())
                 .setLastName(attrs.getLastName())
                 .setNeedSecondFactor(needSecondFactor)
+                .setNeedSecondFactorSetup(needSecondFactorSetup)
                 .build());
     }
 
@@ -3141,7 +3192,8 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        Set<UserID> sharedUsers = _db.getSharedUsersSet(_session.getAuthenticatedUserLegacyProvenance().id());
+        Set<UserID> sharedUsers = _db.getSharedUsersSet(
+                _session.getAuthenticatedUserLegacyProvenance().id());
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {
@@ -3185,9 +3237,8 @@ public class SPService implements ISPService
                 sessionUser.getOrganization(), sessionUser);
         _sqlTrans.commit();
 
-        return createReply(ListSharedFoldersReply.newBuilder()
-                .addAllSharedFolder(pbFolders)
-                .build());
+        return createReply(
+                ListSharedFoldersReply.newBuilder().addAllSharedFolder(pbFolders).build());
     }
 
     @Override

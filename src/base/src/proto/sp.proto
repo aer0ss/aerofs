@@ -873,6 +873,16 @@ service SPService {
     // Throws:
     //   ExNotFound if the group in question does not exist.
     rpc ListGroupMembers(ListGroupMembersCall) returns (ListGroupMembersReply);
+
+    // Set the two-factor enforcement level for the admin's organization
+    //
+    // Required Auth Level: admin
+    rpc SetTwoFactorSetupEnforcement(SetTwoFactorSetupEnforcementCall) returns (Void);
+
+    // Get the current user's org's two-factor enforcement level
+    //
+    // Required Auth Level: user
+    rpc GetTwoFactorSetupEnforcement(Void) returns (GetTwoFactorSetupEnforcementReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1397,6 +1407,7 @@ message SignInUserCall {
 message SignInUserReply {
     // optional for backwards-compatibility with Void reply
     optional bool need_second_factor = 1;
+    optional bool need_second_factor_setup = 2;
 }
 
 message OpenIdSessionNonces {
@@ -1416,6 +1427,7 @@ message OpenIdSessionAttributes {
     optional string firstName = 2;
     optional string lastName = 3;
     optional bool need_second_factor = 4;
+    optional bool need_second_factor_setup = 5;
 }
 
 message MobileAccessCode {
@@ -1646,4 +1658,19 @@ message ListGroupMembersCall {
 
 message ListGroupMembersReply {
     repeated PBUser users = 1;
+}
+
+// Do not change ordinals, they are stored in the DB directly
+enum PBTwoFactorEnforcementLevel {
+    DISALLOWED = 0;
+    OPT_IN     = 1; // Default
+    MANDATORY  = 2;
+}
+
+message SetTwoFactorSetupEnforcementCall {
+    required PBTwoFactorEnforcementLevel level = 1;
+}
+
+message GetTwoFactorSetupEnforcementReply {
+    required PBTwoFactorEnforcementLevel level = 1;
 }

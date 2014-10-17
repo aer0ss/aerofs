@@ -90,3 +90,8 @@ class _SPServiceWrapper(object):
     def set_two_factor_enforcement(self, enforce, current_code=None, user_id=None):
         return self._service.set_two_factor_enforcement(enforce, current_code, user_id)
 
+    def get_two_factor_setup_enforcement(self):
+        return self._service.get_two_factor_setup_enforcement()
+
+    def set_two_factor_setup_enforcement(self, level):
+        return self._service.set_two_factor_setup_enforcement(level)

@@ -10,6 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -34,6 +35,7 @@ import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
@@ -738,17 +740,57 @@ public class User
             throws SQLException, ExNotFound
     {
         ImmutableList.Builder<Provenance> builder = ImmutableList.builder();
+        TwoFactorEnforcementLevel level = getOrganization().getTwoFactorEnforcementLevel();
         switch (group) {
         case LEGACY:
-            if (shouldEnforceTwoFactor()) {
-                builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
-            } else {
-                builder.add(Provenance.BASIC);
+            switch (level) {
+                case DISALLOWED:
+                    // Basic is always sufficient for organizations with 2FA disallowed
+                    builder.add(Provenance.BASIC);
+                    break;
+                case OPT_IN:
+                    // Let the user's preferences pick what's sufficient for them
+                    if (shouldEnforceTwoFactor()) {
+                        builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+                    } else {
+                        builder.add(Provenance.BASIC);
+                    }
+                    break;
+                case MANDATORY:
+                    // Require two-factor
+                    builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+                    break;
+                default:
+                    // Should never be reached
+                    Preconditions.checkState(false, "Invalid 2fa enforcement level {}", level);
             }
             builder.add(Provenance.CERTIFICATE);
             break;
+        case TWO_FACTOR_SETUP:
+            // Two factor setup will ignore the MANDATORY enforcement level, but only for the
+            // specific two-factor auth setup RPCs.  Two factor setup may not be performed by
+            // devices.
+            switch (level) {
+                case DISALLOWED:
+                    builder.add(Provenance.BASIC);
+                    break;
+                case OPT_IN:
+                case MANDATORY:
+                    if (shouldEnforceTwoFactor()) {
+                        builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+                    } else {
+                        builder.add(Provenance.BASIC);
+                    }
+                    break;
+                default:
+                    // Should never be reached
+                    Preconditions.checkState(false, "Invalid 2fa enforcement level {}", level);
+            }
+            break;
+
         default:
             // Should never be reached; allow no provenances.
+            Preconditions.checkState(false, "Invalid provenance group {}", group);
             break;
         }
         return builder.build();
@@ -756,7 +798,8 @@ public class User
 
     public static void checkProvenance(User user,
             ImmutableList<Provenance> authenticatedProvenances, ProvenanceGroup provenanceGroup)
-            throws ExNotAuthenticated, ExSecondFactorRequired, SQLException, ExNotFound
+            throws ExNotAuthenticated, ExSecondFactorRequired, SQLException, ExNotFound,
+            ExSecondFactorSetupRequired
     {
         switch (provenanceGroup) {
         case LEGACY:
@@ -774,6 +817,10 @@ public class User
             if (authenticatedProvenances.contains(Provenance.BASIC) &&
                     sufficient.contains(Provenance.BASIC_PLUS_SECOND_FACTOR) &&
                     !sufficient.contains(Provenance.BASIC)) {
+                if (user.getOrganization().getTwoFactorEnforcementLevel() ==
+                        TwoFactorEnforcementLevel.MANDATORY && !user.shouldEnforceTwoFactor()) {
+                    throw new ExSecondFactorSetupRequired();
+                }
                 throw new ExSecondFactorRequired();
             } else {
                 throw new ExNotAuthenticated();

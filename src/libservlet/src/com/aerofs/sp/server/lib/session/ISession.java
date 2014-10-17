@@ -6,6 +6,7 @@ package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
@@ -28,11 +29,16 @@ public interface ISession
         // RECENT_BASIC_PLUS_SECOND_FACTOR, analogous
     }
 
+    // Provenance usages
     public enum ProvenanceGroup
     {
         LEGACY, // A catch-all group that is permitted if you have either CERTIFICATE provenance
                 // or BASIC (if your user doesn't use two-factor) or BASIC_PLUS_SECOND_FACTOR (if
                 // your user has enabled two-factor enforcement)
+        TWO_FACTOR_SETUP, // Allows users to set up two-factor auth if their organization uses
+        INTERACTIVE, // Like LEGACY, but doesn't allow CERTIFICATE provenance.  Useful if you want
+                     // to allow actions only to user sessions, rather than to automated device
+                     // certificate-originated sessions.
     }
 
     /**
@@ -42,7 +48,8 @@ public interface ISession
      */
     @Nonnull
     User getAuthenticatedUserLegacyProvenance()
-            throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException;
+            throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException,
+            ExSecondFactorSetupRequired;
 
     User getUserNullable();
 

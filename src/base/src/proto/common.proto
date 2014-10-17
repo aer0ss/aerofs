@@ -148,6 +148,9 @@ message PBException {
 
         // A user tried to edit a group that is not locally managed.
         NOT_LOCALLY_MANAGED = 416;
+
+        // A user has not set up their second factor, but their organization requires 2FA
+        SECOND_FACTOR_SETUP_REQUIRED = 417;
     }
 
     required Type type = 1;
