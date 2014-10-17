@@ -66,7 +66,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
         }
     );
 
-    $httpBackend.whenGET(/^\/list_urls_for_store\?sid=(.*)?$/).respond(
+    $httpBackend.whenGET(/^\/api\/v1.3\/shares\/(.*)?\/urls$/).respond(
         {
             urls: []
         }

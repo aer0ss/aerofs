@@ -262,20 +262,3 @@ def remove_url_password(request):
 
     return {}
 
-
-@view_config(
-        route_name='list_urls_for_store',
-        renderer='json',
-        http_cache = 0,
-        permission='user',
-        request_method='GET',
-)
-def list_urls_for_store(request):
-    sid = request.params.get("sid")
-    if sid is None:
-        error.error('missing "sid" param')
-    sid_bytes = 'root'.encode('utf-8') if sid == 'root' else sid.decode('hex')
-    reply = _make_sp_request(get_rpc_stub(request).list_urls_for_store, (sid_bytes,))
-
-    return {'urls': [_pb_rest_object_url_to_dict(u) for u in reply.url]}
-

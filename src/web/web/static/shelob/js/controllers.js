@@ -29,7 +29,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     */
     // $rootScope.linkPasswordEntered contains user-entered password attempt,
     // if linkshare is password-protected. Nothing, otherwise. Uses $rootScope so that
-    // state can be shared with the login controller. Hopefully this can be reformulated in 
+    // state can be shared with the login controller. Hopefully this can be reformulated in
     // the future.
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
@@ -126,19 +126,21 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // Note: if this is a linksharing page, we don't need this data
     var _getLinks = function (){
         var sid = $scope.fsLocation.currentFolder.id;
-        if ($scope.fsLocation.currentFolder.id !== "root") {
+        if (sid !== "root") {
             sid = sid.toString().slice(0,sid.length/2);
         }
         OutstandingRequestsCounter.push();
-        $http.get('/list_urls_for_store?sid=' + sid).success(function(response){
+        // TODO: caching
+        // links are fetched per store, no need to re-fetch every time the current folder is changed
+        API.get('/shares/' + sid + '/urls', $scope.requestHeaders, {version: '1.3'}).then(function(response){
             OutstandingRequestsCounter.pop();
             // check if object data's done loading, if so, populate link data
             // (if not, will populate via the _getFolders call once it's done)
-            $scope.links = response.urls;
+            $scope.links = response.data.urls;
             if ($scope.objects) {
                 _populateLinks();
             }
-        }).error(function(response){
+        }, function(response){
             OutstandingRequestsCounter.pop();
             $log.debug("Link data failed to load.");
         });
@@ -564,7 +566,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     // Takes a number of seconds and an optional boolean
     // Returns a human-readable approximate string for the expiration time
-    // If actual_date is true and there's more than a little time left, 
+    // If actual_date is true and there's more than a little time left,
     // it returns a more precise time or datestamp
     var _humanTime = function(seconds, actual_date) {
         var minutes = Math.floor(seconds/60);

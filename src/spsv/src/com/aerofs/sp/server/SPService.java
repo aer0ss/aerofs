@@ -139,7 +139,7 @@ import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
 import com.aerofs.sp.server.LdapGroupSynchronizer.AffectedUsersAndError;
-import com.aerofs.sp.server.URLSharing.UrlShare;
+import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.authorization.DeviceAuthClient;

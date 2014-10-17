@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.sp.server.URLSharing;
+package com.aerofs.sp.server.url_sharing;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseSecUtil.KeyDerivation;
@@ -16,9 +16,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
-import com.aerofs.sp.server.URLSharing.UrlSharingDatabase.HashedPasswordAndSalt;
+import com.aerofs.sp.server.url_sharing.UrlSharingDatabase.HashedPasswordAndSalt;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Iterables;
 import com.lambdaworks.crypto.SCrypt;
 
 import javax.annotation.Nonnull;
@@ -46,7 +46,7 @@ public class UrlShare
 
     public static class Factory
     {
-        private UrlSharingDatabase _db;
+        private final UrlSharingDatabase _db;
 
         // Whether URL sharing is enabled
         private final boolean ENABLED = getBooleanProperty("url_sharing.enabled", true);
@@ -92,13 +92,11 @@ public class UrlShare
             }
         }
 
-        public @Nonnull Collection<UrlShare> getAllInStore(@Nonnull SID sid)
+        public @Nonnull Iterable<UrlShare> getAllInStore(@Nonnull SID sid)
                 throws SQLException
         {
             Collection<String> keys = _db.getKeysInStore(sid);
-            Collection<UrlShare> urlShares = Lists.newArrayListWithCapacity(keys.size());
-            for (String key : keys) urlShares.add(new UrlShare(this, key));
-            return urlShares;
+            return Iterables.transform(keys, key -> new UrlShare(this, key));
         }
     }
 

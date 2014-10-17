@@ -9,6 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.C;
 import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
@@ -42,6 +43,7 @@ import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
+import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.sparta.Transactional;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
@@ -82,6 +84,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 {
     private final User.Factory _factUser;
     private final SharedFolder.Factory _factSF;
+    private final UrlShare.Factory _factUrlShare;
     private final SharingRulesFactory _sharingRules;
     private final InvitationHelper _invitationHelper;
     private final SharedFolderNotificationEmailer _sfnEmailer;
@@ -89,13 +92,14 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final AuditClient _audit;
 
     @Inject
-    public SharedFolderResource(SharingRulesFactory sharingRules, User.Factory factUser,
-            SharedFolder.Factory factSF, InvitationHelper invitationHelper,
-            ACLNotificationPublisher aclNotifier, SharedFolderNotificationEmailer sfnEmailer,
-            AuditClient audit)
+    public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF,
+            UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
+            InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
+            SharedFolderNotificationEmailer sfnEmailer, AuditClient audit)
     {
         _factUser = factUser;
         _factSF = factSF;
+        _factUrlShare = factUrlShare;
         _sharingRules = sharingRules;
         _invitationHelper = invitationHelper;
         _aclNotifier = aclNotifier;
@@ -534,6 +538,54 @@ public class SharedFolderResource extends AbstractSpartaResource
         }
 
         return Response.noContent()
+                .build();
+    }
+
+    /**
+     * NB: this route is currently undocumented
+     *
+     * This is intended to be temporary. Eventually we should figure out acceptable semantics and
+     * document them in the public API docs.
+     *
+     * see ENG-2315
+     */
+    @Since("1.3")
+    @GET
+    @Path("/{id}/urls")
+    public Response listURLs(@Auth IUserAuthToken token,
+            @PathParam("id") SharedFolder sf)
+            throws ExNotFound, ExNoPerm, SQLException
+    {
+        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
+        User caller = _factUser.create(token.user());
+
+        // FIXME: that seems overly restrictive
+        // surely it would be good for users to know which files have been shared via links
+        // even if they can't create/remove/edit links in this shared folder
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+
+        // TODO: etag support
+        List<com.aerofs.rest.api.UrlShare> urls = Lists.newArrayList();
+        for (UrlShare url : _factUrlShare.getAllInStore(sf.id())) {
+            // NB: expiry logic should probably be moved to the frontend
+            // For now this needs to be a drop-in replacement for the json endpoint in the web code
+            Long expires = url.getExpiresNullable();
+            if (expires == null) {
+                expires = 0L;
+            } else {
+                // FIXME: if the link expires NOW it will be shown as never expiring
+                // this is pretty unlikely but should still be fixed in the fullness of time
+                expires = (expires - System.currentTimeMillis()) / C.SEC;
+            }
+            urls.add(new com.aerofs.rest.api.UrlShare(url.getKey(),
+                    url.getRestObject().toStringFormal(),
+                    url.getToken(),
+                    url.getCreatedBy().getString(),
+                    url.hasPassword(),
+                    expires));
+        }
+        return Response.ok()
+                .entity(ImmutableMap.of("urls", urls))
                 .build();
     }
 

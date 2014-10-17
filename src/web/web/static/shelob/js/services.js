@@ -90,7 +90,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             from the Token service */
             var doStuffWithToken = function (token, doNotRetry) {
                 config.headers.Authorization = 'Bearer ' + token;
-                config.url = API_LOCATION + '/api/v1.2' + config.path;
+                config.url = API_LOCATION + '/api/v' + (config.version || '1.2') + config.path;
                 // if data is an array buffer, send the bytes directly. Otherwise, allow
                 // angular to apply the default transforms (handling encoding, etc.)
                 config.transformRequest = function(data) {

@@ -13,7 +13,8 @@ log = logging.getLogger(__name__)
 def get_new_shelob_token(request):
     client_id = 'aerofs-shelob'
     client_secret = request.registry.settings["oauth.shelob_client_secret"]
-    return get_new_oauth_token(request, client_id, client_secret)
+    return get_new_oauth_token(request, client_id, client_secret, 0,
+                               ['files.read', 'files.write', 'acl.read'])
 
 
 @view_config(

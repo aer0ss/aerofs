@@ -23,11 +23,9 @@ public abstract class AbstractRestConfiguration implements Configuration
     public void addGlobalHeaders(HttpRequest request, HttpResponse response)
     {
         HttpHeaders h = response.headers();
+        // inhibit caching by default
         if (!h.contains(Names.CACHE_CONTROL)) {
-            // If the response is successful, cache for 3 minutes, otherwise do not cache
-            int code = response.getStatus().getCode();
-            int maxAge = (code >= 200 && code < 300) ? 3 * 60 : 0;
-            h.set(Names.CACHE_CONTROL, getCacheControl(maxAge));
+            h.set(Names.CACHE_CONTROL, getCacheControl(0));
         }
 
         /*
@@ -44,15 +42,11 @@ public abstract class AbstractRestConfiguration implements Configuration
      * Helper method to construct a cache-control header value given a max age in seconds.
      * If maxAge is zero, the reply will not be cached.
      */
-    protected static String getCacheControl(int maxAge)
+    public static String getCacheControl(int maxAge)
     {
-        String result = Values.PRIVATE  // This response is intended for a single user and must not be cached by a shared cache.
+        return Values.PRIVATE  // This response is intended for a single user and must not be cached by a shared cache.
                 + ", " + Values.NO_TRANSFORM  // Proxies should not alter the content
-                + ", " + Values.MAX_AGE + "=" + maxAge;
-
-        if (maxAge == 0) result += ", " + Values.NO_CACHE;
-
-        return result;
+                + ", " + (maxAge > 0 ? Values.MAX_AGE + "=" + maxAge : Values.NO_CACHE);
     }
 
     @Override
