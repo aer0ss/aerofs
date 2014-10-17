@@ -1,8 +1,11 @@
 <div id="breadcrumb-and-actions" ng-if="!share || enableLinksharing">
   <div id="actions"
     ng-hide="share || !(fsLocation.currentFolder || fsLocation.isSingleObject)">
-    <span aero-file-upload class="btn btn-primary" id="upload-file"></span>
-    <button type="button" class="btn btn-default" id="new-folder" ng-click="newFolder.hidden=false">New Folder</button>
+    <span aero-file-upload class="btn btn-primary" id="upload-file"
+      ng-class="{'disabled': error.status == 503}"></span>
+    <button type="button" class="btn btn-default" id="new-folder"
+      ng-click="newFolder.hidden=false"
+      ng-class="{'disabled': error.status == 503}">New Folder</button>
   </div>
 
   <div class="row" ng-hide="isSingleObject">
@@ -79,12 +82,12 @@
 
       <div class="my-row row" ng-if="!objects.length">
         <div class="col-sm-12 object dir-status">
-          <div ng-hide="error.status == 503 && !(fsLocation.currentFolder || fsLocation.isSingleObject)">
+          <div ng-hide="error.status == 503 && !(fsLocation.isSingleObject)">
             <div class='icon'>&nbsp;</div>
             <div class="name">No files found</div>
           </div>
           <div class="name"
-            ng-show="error.status == 503 && !(fsLocation.currentFolder || fsLocation.isSingleObject)">
+            ng-show="error.status == 503 && !(fsLocation.isSingleObject)">
             <div ng-bind-html="error.text"></div>
           </div>
         </div>

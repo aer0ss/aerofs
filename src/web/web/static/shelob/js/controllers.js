@@ -164,6 +164,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 showErrorMessageUnsafe("This file is currently unavailable because <a href='https://support.aerofs.com/hc/en-us/articles/203143390'>all sharer AeroFS clients are offline</a>. " +
                 "Please check with the person who shared this link.");
             } else if (status == 503) {
+                $log.info('None of your AeroFS clients are currently online, or API access is disabled.');
                 $scope.error = {
                     status: 503,
                     text: $sce.trustAsHtml(getClientsOfflineErrorText(IS_PRIVATE))
