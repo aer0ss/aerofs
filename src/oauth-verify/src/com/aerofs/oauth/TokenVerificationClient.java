@@ -6,8 +6,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.base.ssl.SSLEngineFactory.Mode;
-import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.oauth.OAuthVerificationHandler.VerifyTokenRequest;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -23,6 +21,8 @@ import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSessionContext;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,13 +37,31 @@ public class TokenVerificationClient
 
     private final URI _endpoint;
     private final ClientBootstrap _bootstrap;
+    private final SSLEngineFactory _sslEngineFactory;
 
     private volatile Channel _channel;
+
+    private static class ClientSSLEngineFactory extends SSLEngineFactory
+    {
+        public ClientSSLEngineFactory(ICertificateProvider trustedCA)
+        {
+            super(Mode.Client, Platform.Desktop, null, trustedCA, null);
+        }
+
+        @Override
+        protected void onSSLContextCreated(SSLContext context)
+        {
+            SSLSessionContext sessionContext = context.getClientSessionContext();
+            sessionContext.setSessionCacheSize(1);
+            sessionContext.setSessionTimeout((int)C.HOUR);
+        }
+    }
 
     public TokenVerificationClient(URI endpoint, final ICertificateProvider cacert,
             ClientSocketChannelFactory clientChannelFactory, final Timer timer)
     {
         _endpoint = fixPort(endpoint);
+        _sslEngineFactory = new ClientSSLEngineFactory(cacert);
         _bootstrap = new ClientBootstrap(clientChannelFactory);
         _bootstrap.setPipelineFactory(() -> {
             ChannelPipeline p = Channels.pipeline(
@@ -54,9 +72,7 @@ public class TokenVerificationClient
                             VerifyTokenResponse.class)
             );
             if (_endpoint.getScheme().equals("https")) {
-                p.addFirst("ssl",
-                        new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert,
-                                null).newSslHandler());
+                p.addFirst("ssl", _sslEngineFactory.newSslHandler());
             }
             return p;
         });
