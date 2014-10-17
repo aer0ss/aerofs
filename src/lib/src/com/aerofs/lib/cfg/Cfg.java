@@ -3,6 +3,7 @@ package com.aerofs.lib.cfg;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -22,6 +23,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.LeanByteString;
@@ -40,6 +42,8 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -287,6 +291,31 @@ public class Cfg
         }
 
         return _ver;
+    }
+
+    private static List<UserID> _usersInShard;
+
+    public static List<UserID> usersInShard()
+    {
+        if (_usersInShard != null) return _usersInShard;
+        try {
+            List<UserID> l = Lists.newArrayList();
+            Scanner s = new Scanner(new File(Util.join(absRTRoot(), "users.csv")));
+            s.useDelimiter(",");
+            try {
+                while (s.hasNext()) {
+                    try {
+                        l.add(UserID.fromExternal(s.next()));
+                    } catch (ExEmptyEmailAddress e) {}
+                }
+            } finally {
+                s.close();
+            }
+            _usersInShard = l;
+        } catch (FileNotFoundException e) {
+            _usersInShard = Collections.emptyList();
+        }
+        return _usersInShard;
     }
 
     public static String absRTRoot()

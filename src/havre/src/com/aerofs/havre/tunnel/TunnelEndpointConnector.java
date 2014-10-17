@@ -9,6 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.havre.TeamServerInfo;
 import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.tunnel.ITunnelConnectionListener;
@@ -17,6 +18,7 @@ import com.aerofs.tunnel.TunnelHandler;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.FutureCallback;
@@ -29,8 +31,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.SortedSet;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -54,6 +58,7 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     {
         public final DID did;
         public final Version version;
+        public final Set<UserID> usersInShard;
         public final TunnelHandler handler;
 
         UserDevice(DID did, Version version, TunnelHandler handler)
@@ -61,6 +66,9 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             this.did = did;
             this.version = version;
             this.handler = handler;
+            this.usersInShard = version instanceof TeamServerInfo
+                    ? Sets.newHashSet(((TeamServerInfo)version).users)
+                    : Collections.emptySet();
         }
 
         @Override
@@ -86,6 +94,18 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             return c;
         }
 
+        /**
+         * Only relevant for Team Servers
+         *
+         * An empty list of users implies that the TS is NOT sharded and can serve the entire org
+         *
+         * @return true if the team Server can service requests for the given user
+         */
+        public boolean canServiceUser(UserID user)
+        {
+            return usersInShard.isEmpty() || usersInShard.contains(user);
+        }
+
         static UserDevice lowest(Version version)
         {
             return new UserDevice(new DID(DID.LOWEST), version, null);
@@ -106,11 +126,11 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
             checkState(_byVersion.add(d));
         }
 
-        TunnelHandler get_(DID did, @Nullable Version minVersion)
+        UserDevice get_(DID did, @Nullable Version minVersion)
         {
             UserDevice d = _byDID.get(did);
             return d != null && (minVersion == null || minVersion.compareTo(d.version) <= 0)
-                    ? d.handler : null;
+                    ? d : null;
         }
 
         void remove_(DID did, TunnelHandler handler)
@@ -133,17 +153,9 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
                     ? _byVersion : _byVersion.tailSet(UserDevice.lowest(minVersion));
         }
 
-        /**
-         * Pick a random device that support the requested minimum version
-         */
-        @Nullable TunnelHandler pick_(@Nullable Version minVersion)
+        SortedSet<UserDevice> suitableDevices(@Nullable Version minVersion, UserID user)
         {
-            // filter out endpoints with version strictly lower than minVersion
-            SortedSet<UserDevice> candidates = suitableDevices(minVersion);
-
-            l.debug("v: {} cand: {}", minVersion, candidates.size());
-            return candidates.isEmpty() ? null
-                    : Iterables.get(candidates, _random.nextInt(candidates.size())).handler;
+            return Sets.filter(suitableDevices(minVersion), ud -> ud.canServiceUser(user));
         }
     }
 
@@ -175,7 +187,9 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     {
         TunnelHandler tunnel = getEndpoint(principal, did, strictMatch, minVersion);
         Channel channel = tunnel != null ? tunnel.newVirtualChannel(pipeline) : null;
-        if  (channel != null) channel.setAttachment(new EndpointConstraint(principal, minVersion));
+        if (channel != null && !strictMatch) {
+            channel.setAttachment(new EndpointConstraint(principal, minVersion));
+        }
         return channel;
     }
 
@@ -193,18 +207,11 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         EndpointConstraint c = (EndpointConstraint)o;
 
         final DID did = device(channel);
-        return Iterables.filter(
-                Iterables.concat(
-                        suitable(teamServer(c.principal), c.minVersion),
-                        suitable(c.principal.getEffectiveUserID(), c.minVersion)),
-                other -> !did.equals(other));
-    }
-
-    Iterable<DID> suitable(UserID userID, @Nullable Version minVersion)
-    {
-        UserDevices uds = _endpointsByUser.get(userID);
-        if (uds == null) return Collections.emptyList();
-        return Iterables.transform(uds.suitableDevices(minVersion), ud -> ud.did);
+        return Iterables.transform(
+                Iterables.filter(
+                        getSuitableDevices(c.principal, c.minVersion),
+                        ud -> !did.equals(ud.did)),
+                ud -> ud.did);
     }
 
     @Override
@@ -257,11 +264,32 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private @Nullable TunnelHandler getEndpoint(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch, @Nullable Version minVersion)
     {
-        // prefer talking to Team Server
-        TunnelHandler handler = getEndpoint(teamServer(principal), did, strictMatch, minVersion);
-        return handler != null
-                ? handler
-                : getEndpoint(principal.getEffectiveUserID(), did, strictMatch, minVersion);
+        l.info("get {} {} {}", principal.getEffectiveUserID(), did, minVersion);
+
+        TunnelHandler h = getMatchingEndpoint(principal, did, minVersion);
+        if (strictMatch || h != null) return h;
+
+        List<UserDevice> candidates = getSuitableDevices(principal, minVersion);
+        l.info("v: {} cand: {}", minVersion, candidates.size());
+
+        return candidates.isEmpty() ? null
+                : candidates.get(_random.nextInt(candidates.size())).handler;
+    }
+
+    private TunnelHandler getMatchingEndpoint(AuthenticatedPrincipal principal, DID did,
+            @Nullable Version minVersion)
+    {
+        UserDevice ud = getMatchingEndpoint(principal.getEffectiveUserID(), did, minVersion);
+        if (ud != null) return ud.handler;
+        ud = getMatchingEndpoint(teamServer(principal), did, minVersion);
+        if (ud != null && ud.canServiceUser(principal.getEffectiveUserID())) return ud.handler;
+        return null;
+    }
+
+    private UserDevice getMatchingEndpoint(UserID user, DID did, @Nullable Version minVersion)
+    {
+        UserDevices connected = _endpointsByUser.get(user);
+        return connected != null ? connected.get_(did, minVersion) : null;
     }
 
     private static UserID teamServer(AuthenticatedPrincipal principal)
@@ -269,15 +297,21 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         return principal.getOrganizationID().toTeamServerUserID();
     }
 
-    private @Nullable TunnelHandler getEndpoint(UserID user, DID did, boolean strictMatch,
+    private List<UserDevice> getSuitableDevices(AuthenticatedPrincipal principal,
             @Nullable Version minVersion)
     {
-        l.debug("get {} {} {}", user, did, minVersion);
-        TunnelAddress addr = new TunnelAddress(user, did);
-        UserDevices connectedDevices = _endpointsByUser.get(addr.user);
-        if (connectedDevices == null || connectedDevices.isEmpty_()) return null;
+        List<UserDevice> l = Lists.newArrayList();
 
-        TunnelHandler h = connectedDevices.get_(addr.did, minVersion);
-        return strictMatch || h != null ? h : connectedDevices.pick_(minVersion);
+        UserDevices ts = _endpointsByUser.get(teamServer(principal));
+        if (ts != null && !ts.isEmpty_()) {
+            l.addAll(ts.suitableDevices(minVersion, principal.getEffectiveUserID()));
+        }
+
+        UserDevices user = _endpointsByUser.get(principal.getEffectiveUserID());
+        if (user != null && !user.isEmpty_()) {
+            l.addAll(user.suitableDevices(minVersion));
+        }
+
+        return l;
     }
 }

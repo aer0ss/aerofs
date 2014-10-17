@@ -15,7 +15,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
@@ -33,6 +32,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
@@ -54,7 +54,7 @@ public class ACLSynchronizer
 
     private final TokenManager _tokenManager;
     private final TransManager _tm;
-    private final IACLDatabase _adb;
+    private final ACLFilter _filter;
     private final LocalACL _lacl;
     private final AbstractStoreJoiner _storeJoiner;
     private final IMapSIndex2SID _sidx2sid;
@@ -93,13 +93,13 @@ public class ACLSynchronizer
     }
 
     @Inject
-    public ACLSynchronizer(TokenManager tokenManager, TransManager tm, IACLDatabase adb, LocalACL lacl,
+    public ACLSynchronizer(TokenManager tokenManager, TransManager tm, ACLFilter filter, LocalACL lacl,
             AbstractStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
             CfgLocalUser cfgLocalUser, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
         _tm = tm;
-        _adb = adb;
+        _filter = filter;
         _lacl = lacl;
         _storeJoiner = storeJoiner;
         _sidx2sid = sIndex2SID;
@@ -136,7 +136,7 @@ public class ACLSynchronizer
      */
     public void syncToLocal_() throws Exception
     {
-        long localEpochBeforeSPCall = _adb.getEpoch_();
+        long localEpochBeforeSPCall = _filter.getEpoch_();
         updateACLFromSP_(localEpochBeforeSPCall);
     }
 
@@ -146,10 +146,10 @@ public class ACLSynchronizer
      */
     public void syncToLocal_(long serverEpoch) throws Exception
     {
-        long localEpochBeforeSPCall = _adb.getEpoch_();
+        long localEpochBeforeSPCall = _filter.getEpoch_();
         if (serverEpoch == localEpochBeforeSPCall) {
-            l.info("acl notification ignored server epoch:" + serverEpoch + " local epoch:" +
-                    localEpochBeforeSPCall);
+            l.info("acl notification ignored server epoch:{} local epoch:{}",
+                    serverEpoch, localEpochBeforeSPCall);
             return;
         }
         updateACLFromSP_(localEpochBeforeSPCall);
@@ -171,10 +171,10 @@ public class ACLSynchronizer
         // get the local acl again. we do this to verify that another acl update didn't sneak in
         // while we were parked
         //
-        long localEpochAfterSPCall = _adb.getEpoch_();
+        long localEpochAfterSPCall = _filter.getEpoch_();
         if (serverACLReturn._serverEpoch <= localEpochAfterSPCall) {
-            l.info("server has no acl updates " + localEpochBeforeSPCall + " " +
-                    localEpochAfterSPCall + " " + serverACLReturn._serverEpoch);
+            l.info("server has no acl updates {} {} {}",
+                    localEpochBeforeSPCall, localEpochAfterSPCall, serverACLReturn._serverEpoch);
             return;
         }
 
@@ -273,7 +273,8 @@ public class ACLSynchronizer
         return sidx;
     }
 
-    private SIndex updateACLAndJoin_(SIndex sidx, SID sid, StoreInfo info, Set<SIndex> stores)
+    private SIndex updateACLAndJoin_(@Nullable SIndex sidx, SID sid, StoreInfo info,
+            Set<SIndex> stores)
             throws Exception
     {
         Trans t = _tm.begin_();
@@ -354,7 +355,7 @@ public class ACLSynchronizer
     {
         Trans t = _tm.begin_();
         try {
-            _adb.setEpoch_(serverEpoch, t);
+            _filter.updateEpoch_(serverEpoch, t);
             t.commit_();
         } finally {
             t.end_();
@@ -385,6 +386,8 @@ public class ACLSynchronizer
         l.info("server return acl server epoch {} local epoch {}", serverEpoch, localEpoch);
 
         for (PBStoreACL store : aclReply.getStoreAclList()) {
+            SID sid = new SID(store.getStoreId());
+
             Set<UserID> externalMembers = Sets.newHashSet();
             ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
             for (PBSubjectPermissions pbPair : store.getSubjectPermissionsList()) {
@@ -397,7 +400,12 @@ public class ACLSynchronizer
 
             StoreInfo si = new StoreInfo(store.getName(), store.getExternal(), builder.build(),
                     externalMembers);
-            stores.put(new SID(store.getStoreId()), si);
+
+            if (_filter.shouldKeep_(si._roles.keySet())) {
+                stores.put(sid, si);
+            } else {
+                l.info("filter out {} {}", sid, si._roles.keySet());
+            }
         }
 
         return new ServerACLReturn(serverEpoch, stores);

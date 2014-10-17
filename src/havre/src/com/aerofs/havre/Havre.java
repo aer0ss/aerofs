@@ -104,7 +104,7 @@ public class Havre
 
         ConfigurationProperties.setProperties(extra);
 
-        // dummy daemon-like identity for CName verification when esablishing tunnel
+        // dummy daemon-like identity for CName verification when establishing tunnel
         UserID tunnelUser = UserID.DUMMY;
         DID tunnelDevice = new DID(UniqueID.ZERO);
 

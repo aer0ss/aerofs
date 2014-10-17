@@ -8,25 +8,32 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.havre.TeamServerInfo;
 import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
+import java.util.List;
+import java.util.Random;
+
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,16 +74,16 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
         TunnelHandler handler = mock(TunnelHandler.class);
         when(handler.address()).thenReturn(addr);
         when(handler.newVirtualChannel(any(ChannelPipeline.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable
-                    {
-                        Channel c = mock(Channel.class);
-                        when(c.getRemoteAddress()).thenReturn(addr);
-                        when(detector.detectHighestSupportedVersion(c))
-                                .thenReturn(UncancellableFuture.createSucceeded(version));
-                        return c;
-                    }
+                .thenAnswer(invocation -> {
+                    Channel c = mock(Channel.class);
+                    when(c.getRemoteAddress()).thenReturn(addr);
+                    doAnswer(i ->  {
+                        when(c.getAttachment()).thenReturn(i.getArguments()[0]);
+                        return null;
+                    }).when(c).setAttachment(any(Object.class));
+                    when(detector.detectHighestSupportedVersion(c))
+                            .thenReturn(UncancellableFuture.createSucceeded(version));
+                    return c;
                 });
         connector.tunnelOpen(addr, handler);
         return handler;
@@ -192,7 +199,13 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
 
     private void assertOneOf(Channel c, DID... dids)
     {
-        assertThat(connector.device(c), isIn(dids));
+        DID did = connector.device(c);
+        List<DID> alt = Lists.newArrayList(connector.alternateDevices(c));
+
+        assertThat(did, isIn(dids));
+        assertThat(did, not(isIn(alt)));
+        alt.add(did);
+        assertThat(alt, hasItems(dids));
     }
 
     @Test
@@ -239,15 +252,39 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
     }
 
     @Test
-    public void shouldPickTeamServerOverRegularClient() throws Exception
+    public void shouldNotPickTSIfUserNotInShard() throws Exception
     {
-        TunnelHandler h0 = connectClient(ts, DID.generate(), new Version(0, 10));
-        TunnelHandler h1 = connectClient(user, did, new Version(0, 10));
+        TunnelHandler h0 = connectClient(ts, DID.generate(),
+                new TeamServerInfo(0, 10, ImmutableList.of(UserID.fromExternal("joe@acme.corp"))));
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNull(c);
+        verify(h0, never()).newVirtualChannel(pipeline);
+    }
+
+    @Test
+    public void shouldPickTSIfUserInShard() throws Exception
+    {
+        TunnelHandler h0 = connectClient(ts, DID.generate(),
+                new TeamServerInfo(0, 10, ImmutableList.of(user.getEffectiveUserID())));
 
         ChannelPipeline pipeline = Channels.pipeline();
         Channel c = connector.connect(user, null, false, null, pipeline);
         assertNotNull(c);
         verify(h0).newVirtualChannel(pipeline);
-        verify(h1, never()).newVirtualChannel(pipeline);
+    }
+
+    @Test
+    public void shouldNotPickTSOfDifferentEvenIfUserInShard() throws Exception
+    {
+        UserID ts2 = new OrganizationID(new Random().nextInt()).toTeamServerUserID();
+        TunnelHandler h0 = connectClient(newPrincipal(ts2.getString()), DID.generate(),
+                new TeamServerInfo(0, 10, ImmutableList.of(user.getEffectiveUserID())));
+
+        ChannelPipeline pipeline = Channels.pipeline();
+        Channel c = connector.connect(user, null, false, null, pipeline);
+        assertNull(c);
+        verify(h0, never()).newVirtualChannel(pipeline);
     }
 }

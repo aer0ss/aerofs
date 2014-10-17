@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.acl.ACLFilter;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -42,6 +43,7 @@ public class MultiuserModule extends AbstractModule
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
         bind(ImmigrantDetector.class).to(MultiuserImmigrantDetector.class);
 
+        bind(ACLFilter.class).to(MultiuserACLFilter.class);
         bind(AbstractStoreJoiner.class).to(MultiuserStoreJoiner.class);
 
         bind(IQuotaEnforcement.class).to(QuotaEnforcement.class);

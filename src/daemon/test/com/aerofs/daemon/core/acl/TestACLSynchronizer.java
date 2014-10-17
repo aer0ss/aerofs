@@ -34,7 +34,6 @@ import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Before;
@@ -48,14 +47,16 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -82,6 +83,7 @@ public class TestACLSynchronizer extends AbstractTest
     IACLDatabase adb = new ACLDatabase(idbcw.getCoreDBCW());
 
     // mix of real objects and mocks don't work well with @InjectMocks...
+    ACLFilter filter = spy(new ACLFilter(adb));
     LocalACL lacl;
     ACLSynchronizer aclsync;
 
@@ -125,7 +127,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         lacl = new LocalACL(cfgLocalUser, tm, stores, adb, ds);
 
-        aclsync = new ACLSynchronizer(tokenManager, tm, adb, lacl, storeJoiner,
+        aclsync = new ACLSynchronizer(tokenManager, tm, filter, lacl, storeJoiner,
                 sidx2sid, sid2sidx, cfgLocalUser, factSP);
     }
 
@@ -185,7 +187,8 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.update_(sidx, user1, Permissions.allOf(Permission.WRITE), false);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class), any(Boolean.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class),
+                any(Boolean.class));
         assertEquals(ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), lacl.get_(sidx));
     }
 
@@ -259,10 +262,6 @@ public class TestACLSynchronizer extends AbstractTest
 
         verify(spClient).getACL(anyLong());
 
-        Map<UserID, Permissions> newRoles = Maps.newHashMap();
-        newRoles.put(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
-        newRoles.put(user2, Permissions.allOf(Permission.MANAGE));
-
         verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq(SHARED_FOLDER_NAME), eq(external),
                 eq(t));
     }
@@ -295,6 +294,43 @@ public class TestACLSynchronizer extends AbstractTest
 
         lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
         mockGetACL(42L);
+
+        aclsync.syncToLocal_();
+
+        verify(spClient).getACL(anyLong());
+        verify(storeJoiner).leaveStore_(sidx, sid1, t);
+    }
+
+    @Test
+    public void shouldNotJoinFolderWhenAccessGainedForUserOutOfShard() throws Exception
+    {
+        SIndex sidx = new SIndex(2);
+        mockAbsent(sidx, sid1);
+
+        mockGetACL(42L, storeACL(sid1,
+                new SubjectPermissions(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new SubjectPermissions(user2, Permissions.allOf(Permission.WRITE))));
+        when(filter.shouldKeep_(anySetOf(UserID.class))).thenReturn(false);
+
+        aclsync.syncToLocal_();
+
+        verify(spClient).getACL(anyLong());
+
+        verify(storeJoiner, never()).joinStore_(eq(sidx), eq(sid1), eq(SHARED_FOLDER_NAME),
+                eq(external), eq(t));
+    }
+
+    @Test
+    public void shouldLeaveFolderWhenUserRemovedFromShard() throws Exception
+    {
+        SIndex sidx = new SIndex(2);
+        mockPresent(sidx, sid1);
+
+        lacl.set_(sidx, ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), t);
+        mockGetACL(42L, storeACL(sid1,
+                new SubjectPermissions(user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE)),
+                new SubjectPermissions(user2, Permissions.allOf(Permission.WRITE))));
+        when(filter.shouldKeep_(anySetOf(UserID.class))).thenReturn(false);
 
         aclsync.syncToLocal_();
 

@@ -1,10 +1,14 @@
 package com.aerofs.havre.tunnel;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.havre.TeamServerInfo;
 import com.aerofs.havre.Version;
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -23,8 +27,6 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -72,8 +74,17 @@ public class EndpointVersionDetector implements ChannelPipelineFactory
             HttpResponse response = (HttpResponse)me.getMessage();
             int status = response.getStatus().getCode();
             if (status == HttpResponseStatus.OK.getCode()) {
-                InputStream in = new ChannelBufferInputStream(response.getContent());
-                Version version = _gson.fromJson(new InputStreamReader(in), Version.class);
+                String content = BaseUtil.utf2string(ByteStreams.toByteArray(
+                        new ChannelBufferInputStream(response.getContent())));
+                Version version;
+                try {
+                    version = _gson.fromJson(content, TeamServerInfo.class);
+                    if (version != null && ((TeamServerInfo)version).users == null) {
+                        version = new Version(version.major, version.minor);
+                    }
+                } catch (JsonParseException e) {
+                    version = null;
+                }
                 if (version != null) {
                     _future.set(version);
                 } else {
