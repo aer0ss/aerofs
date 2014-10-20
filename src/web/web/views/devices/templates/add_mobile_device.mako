@@ -65,7 +65,7 @@
             var img = $('<img/>');
             img.attr('src', "${qrcode_url}");
             img.error(function () {
-                showErrorMessage(getInternalErrorText());
+                showErrorMessageUnsafe(getInternalErrorText());
                 console.log("failed to load: " + $(this).attr('src'));
             });
 
