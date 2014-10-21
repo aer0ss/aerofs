@@ -1,5 +1,6 @@
 SRC=static-src
 DEST=static
+MARKETING_DEST=../../../web
 LESS=less
 JS=js
 
@@ -7,13 +8,23 @@ IS_WATCHMAN=$(shell which watchman)
 
 .PHONY : all clean watch clean-watch clean-dirs
 
-FILES_IN_CSS = $(shell find $(SRC)/$(LESS) -name *.less -maxdepth 1)
-FILES_OUT_CSS = $(subst static-src,static,$(subst /less/,/css/compiled/,$(FILES_IN_CSS:.less=.css)))
-FILES_IN_JS = $(shell find $(SRC)/$(JS) -name *.js -maxdepth 1)
+# input less files
+FILES_IN_LESS = $(wildcard $(SRC)/$(LESS)/*.less)
+# intermediate css files - compiled from less, but not yet minified
+FILES_OUT_CSS = $(subst static-src,static,$(subst /less/,/css/compiled/,$(FILES_IN_LESS:.less=.css)))
+# minified css files, suitable for production use
+FILES_OUT_MINIFIED_CSS = $(subst .css,.min.css,$(FILES_OUT_CSS))
+
+# input js files
+FILES_IN_JS = $(wildcard $(SRC)/$(JS)/*.js)
+# uglified js files, smaller, faster loading
 FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_JS)))
 
+# A couple resources go in external folders, with special file paths.
+EXTERNAL_ASSETS_OUT = $(MARKETING_DEST)/styles/css/compiled/style.css $(MARKETING_DEST)/js/recruiting.js
+
 # Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_CSS)
+all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT)
 
 # Destroy the final targets
 ifneq ($(IS_WATCHMAN),)
@@ -29,6 +40,7 @@ clean-watch:
 clean-dirs:
 	rm -rf $(DEST)/css/compiled/
 	rm -rf $(DEST)/js/compiled/
+	rm -f $(EXTERNAL_ASSETS_OUT)
 	mkdir $(DEST)/css/compiled/
 	mkdir $(DEST)/js/compiled/
 
@@ -38,14 +50,23 @@ watch:
 	watchman -- trigger $(shell pwd) remakejs '*.js' -- python $(shell pwd)/make.py
 	watchman -- trigger $(shell pwd) remakeless '*.less' -- python $(shell pwd)/make.py
 
+# Two special rules for things which get placed outside of the web project
+$(MARKETING_DEST)/js/recruiting.js: $(DEST)/js/compiled/recruiting.js
+	mkdir -p $(MARKETING_DEST)/js
+	cp $? $@
+
+$(MARKETING_DEST)/styles/css/compiled/style.css: $(DEST)/css/compiled/aerofs-marketing.css
+	mkdir -p $(MARKETING_DEST)/styles/css/compiled
+	cp $? $@
+
+# .min.css files come from .css files...
+$(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css
+	minify $?
+
+# and .css files come from .less files.
 $(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
 	lessc $? > $@
-	minify $@
-	# move over compiled and minified marketing site css
-	if [ "$@" == static/css/compiled/aerofs-marketing.css ] ; then cp static/css/compiled/aerofs-marketing.min.css ../../../web/styles/css/compiled/style.css ; fi
 
+# .js files in the compiled folder come from .js files in the source folder
 $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
-	cp $? $@
-	uglifyjs -o $@ $@
-	# move over marketing JS to marketing site
-	if [ "$@" == static/js/compiled/recruiting.js ] ; then cp $@ ../../../web/js/recruiting.js ; fi
+	uglifyjs -o $@ $?
