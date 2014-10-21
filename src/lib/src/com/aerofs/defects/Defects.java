@@ -5,6 +5,7 @@
 package com.aerofs.defects;
 
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -24,10 +25,10 @@ public class Defects
     private static DefectFactory _factory;
 
     // Main calls this to initialize the default defect system.
-    public static void init(String programName, String rtroot, boolean isPrivateDeployment)
+    public static void init(String programName, String rtroot)
             throws IOException, GeneralSecurityException
     {
-        setFactory(newFactory(programName, rtroot, isPrivateDeployment));
+        setFactory(newFactory(programName, rtroot));
     }
 
     // used by frequent, command, and priority defects

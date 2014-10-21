@@ -6,6 +6,7 @@ package com.aerofs.defects;
 
 import com.aerofs.base.id.UserID;
 import com.aerofs.defects.Defect.Priority;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;
 import com.google.gson.Gson;
@@ -115,8 +116,7 @@ public class DefectFactory
     }
 
     // achievement unlocked: FactoryFactory
-    public static DefectFactory newFactory(String programName, String rtroot,
-            boolean isPrivateDeployment)
+    public static DefectFactory newFactory(String programName, String rtroot)
             throws IOException, GeneralSecurityException
     {
         Executor executor = new ThreadPoolExecutor(
@@ -132,7 +132,7 @@ public class DefectFactory
         RockLog rockLog;
         DryadClient dryad;
 
-        if (isPrivateDeployment) {
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             rockLog = new RockLog.Noop();
             dryad = new DryadClient.Noop();
         } else {

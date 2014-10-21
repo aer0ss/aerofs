@@ -24,9 +24,11 @@ import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.RestTunnelClient;
 import com.aerofs.daemon.ritual.RitualServer;
+import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -76,6 +78,18 @@ public class DaemonProgram implements IProgram
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
         Util.initDriver("dc"); // "dc" stands for daemon native library in C
+
+        // TODO (AT): really need to tidy up our launch sequence
+        // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
+        // difference is how the exception is handled.
+        try {
+            Defects.init(prog, rtRoot);
+        } catch (Exception e) {
+            System.err.println("Failed to initialize the defects system.\n" +
+                    "Cause: " + e.toString());
+            l.error("Failed to initialize the defects system.", e);
+            ExitCode.FAIL_TO_LAUNCH.exit();
+        }
 
         Daemon daemon = inject_();
 

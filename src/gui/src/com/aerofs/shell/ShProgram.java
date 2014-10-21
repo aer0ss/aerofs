@@ -7,11 +7,13 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
 import com.aerofs.cli.CLI;
+import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
@@ -58,6 +60,18 @@ public class ShProgram implements IProgram, ICallback
     @Override
     public void launch_(String rtRoot, String prog, String[] args)
     {
+        // TODO (AT): really need to tidy up our launch sequence
+        // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
+        // difference is how the exception is handled.
+        try {
+            Defects.init(prog, rtRoot);
+        } catch (Exception e) {
+            System.err.println("Failed to initialize the defects system.\n" +
+                    "Cause: " + e.toString());
+            l.error("Failed to initialized the defects system.", e);
+            ExitCode.FAIL_TO_LAUNCH.exit();
+        }
+
         try {
             UI.set(new CLI());
 

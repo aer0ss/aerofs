@@ -5,7 +5,9 @@
 package com.aerofs.gui;
 
 import com.aerofs.LaunchArgs;
+import com.aerofs.base.Loggers;
 import com.aerofs.controller.SPBadCredentialListener;
+import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -17,9 +19,12 @@ import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.slf4j.Logger;
 
 public class GUIProgram implements IProgram
 {
+    private static final Logger l = Loggers.getLogger(GUIProgram.class);
+
     private static final String WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE =
             L.product() +
                     " cannot launch because the Microsoft Visual " +
@@ -56,7 +61,18 @@ public class GUIProgram implements IProgram
             if (arg.startsWith("-X")) {
                launchArgs.addArg(arg);
             }
+        }
 
+        // TODO (AT): really need to tidy up our launch sequence
+        // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
+        // difference is how the exception is handled.
+        try {
+            Defects.init(prog, rtRoot);
+        } catch (Exception e) {
+            showError("Failed to initialize the defects system.\n\n" +
+                    "Cause: " + e.toString());
+            l.error("Failed to initialized the defects system.", e);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
 
         UIGlobals.initialize_(true, launchArgs);

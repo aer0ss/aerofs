@@ -168,9 +168,9 @@ public class Main
                             "Please make sure the disk is not full and " + L.product() + " has " +
                             "permission to write to " + appRoot;
                 } else {
-                    msg = "Unable to launch: configuration error. Please verify that your " +
+                    msg = "Unable to launch: configuration error.\n\nPlease verify that your " +
                           L.brand() + " Appliance is reachable on the required ports (see " +
-                          "http://ae.ro/1kH9UgV for details). Contact your systems administrator " +
+                          "http://ae.ro/1kH9UgV for details).\n\nContact your systems administrator " +
                           "if the problem persists.";
                 }
 
@@ -192,17 +192,6 @@ public class Main
         //
         ProgramInformation.init_(prog);
         SystemUtil.setDefaultUncaughtExceptionHandler();
-
-        // The defects system is useful for GUI, Shell, CLI, and Daemon.
-        // why do we need this for all other programs? I have no clues.
-        try {
-            Defects.init(prog, rtRoot, PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT);
-        } catch (Exception e) {
-            String message = "Failed to initialize the defects system: " + e.toString();
-            System.err.println(message);
-            l.error(message, e);
-            ExitCode.FAIL_TO_LAUNCH.exit();
-        }
 
         try {
             loadCfg(rtRoot, prog);
