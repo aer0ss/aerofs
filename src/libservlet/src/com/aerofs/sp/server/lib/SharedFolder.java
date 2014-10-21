@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -64,8 +65,8 @@ public class SharedFolder
         public SharedFolder _create(String s)
         {
             try {
-                return create(new SID(s));
-            } catch (ExFormatError e) {
+                return create(s.contains("@") ? SID.rootSID(UserID.fromExternal(s)) : new SID(s));
+            } catch (ExEmptyEmailAddress|ExFormatError e) {
                 throw new IllegalArgumentException("Invalid SID");
             }
         }

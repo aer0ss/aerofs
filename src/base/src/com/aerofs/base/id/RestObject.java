@@ -1,6 +1,9 @@
 package com.aerofs.base.id;
 
 import com.aerofs.base.ParamFactory;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class RestObject
 {
@@ -35,6 +38,11 @@ public class RestObject
         // allow the use of the SID alone as a shorthand for the root dir of a store
         if (id.length() == HEXID_LENGTH) {
             return new RestObject(new SID(decode(id, 0, HEXID_LENGTH)));
+        }
+        if (id.contains("@")) {
+            try {
+                return new RestObject(SID.rootSID(UserID.fromExternal(id)));
+            } catch (ExEmptyEmailAddress e) { checkArgument(false); }
         }
         return new RestObject(new SID(decode(id, 0, HEXID_LENGTH)),
                 new OID(decode(id, HEXID_LENGTH, 2 * HEXID_LENGTH)));

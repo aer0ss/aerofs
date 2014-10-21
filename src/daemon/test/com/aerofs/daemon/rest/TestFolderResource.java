@@ -124,6 +124,42 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldGetMetadataForRootStoreWhenGivenRootAlias() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+        SID sid = mds.root().getPath().sid();
+
+        String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(oid))
+                .body("name", equalTo("AeroFS"))
+                .body("is_shared", equalTo(false))
+                .body("parent", equalTo(oid))
+        .when().get(RESOURCE, "root").prettyPrint();
+    }
+
+    @Test
+    public void shouldGetMetadataForRootStoreWhenGivenUserID() throws Exception
+    {
+        mds.root().anchor("a0").file("f1");
+        SID sid = mds.root().getPath().sid();
+
+        String oid = sid.toStringFormal() + OID.ROOT.toStringFormal();
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(oid))
+                .body("name", equalTo("AeroFS"))
+                .body("is_shared", equalTo(false))
+                .body("parent", equalTo(oid))
+        .when().get(RESOURCE, user.getString()).prettyPrint();
+    }
+
+    @Test
     public void shouldGetMetadataForRootStore() throws Exception
     {
         mds.root().anchor("a0").file("f1");

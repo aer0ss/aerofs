@@ -68,6 +68,22 @@ public class TestSharedFolderResource extends AbstractResourceTest
     }
 
     @Test
+    public void shouldListRootStoreWhenGivenUserID() throws Exception
+    {
+        SID sid = SID.rootSID(user);
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("members.email", hasItem(user.getString()))
+                .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
+                .body("pending", emptyIterable())
+        .when()
+                .get(RESOURCE, user.getString());
+    }
+
+    @Test
     public void shouldGetSharedFolder() throws Exception
     {
         SID sid = mkShare("Test", user.getString());
