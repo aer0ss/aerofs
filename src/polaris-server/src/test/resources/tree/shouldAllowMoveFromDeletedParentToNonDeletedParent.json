@@ -1,0 +1,11 @@
+{
+  "folder_2": {
+    "type": "FOLDER"
+  },
+  "file": {
+    "type": "FILE"
+  },
+  "folder_1_1": {
+    "type": "FOLDER"
+  }
+}

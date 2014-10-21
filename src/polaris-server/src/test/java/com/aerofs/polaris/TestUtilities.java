@@ -24,6 +24,7 @@ import com.jayway.restassured.specification.RequestSpecification;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 
 import static com.jayway.restassured.RestAssured.given;
 
@@ -140,15 +141,17 @@ public abstract class TestUtilities {
                 .then();
     }
 
-    public static Object getTree() {
+    public static InputStream getTreeAsStream(String root) {
         return given()
+                    .queryParam("root", root)
                     .queryParam(com.aerofs.baseline.Constants.JSON_PRETTY_PRINTING_QUERY_PARAMETER)
                     .post(ServerConfiguration.TREE_URL)
                     .then()
                     .assertThat()
                     .statusCode(Response.Status.OK.getStatusCode())
                     .extract()
-                    .as(Object.class);
+                    .body()
+                    .asInputStream();
     }
 
     //

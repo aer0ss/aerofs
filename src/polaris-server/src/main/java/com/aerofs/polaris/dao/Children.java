@@ -28,7 +28,7 @@ public interface Children {
     int remove(@Bind("oid") String oid, @Bind("child_oid") String child);
 
     @SqlQuery("select count(child_oid) from children where child_oid = :child_oid and oid <> '" + Constants.NO_ROOT + "'")
-    boolean isActiveChild(@Bind("child_oid") String child);
+    int getActiveReferenceCount(@Bind("child_oid") String child);
 
     @SqlQuery("select count(child_oid) from children where oid = :oid and child_oid = :child_oid")
     boolean isChild(@Bind("oid") String oid, @Bind("child_oid") String child);

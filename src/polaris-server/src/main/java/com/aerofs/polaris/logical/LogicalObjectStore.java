@@ -233,7 +233,7 @@ public final class LogicalObjectStore {
         long transformTimestamp = detachChild(dao, origin, parentObject, child, atomic);
 
         // check if we should unroot the object
-        if (!dao.children.isActiveChild(oid)) {
+        if (dao.children.getActiveReferenceCount(child) == 0) {
             unrootObject(dao, childObject, childName);
         }
 

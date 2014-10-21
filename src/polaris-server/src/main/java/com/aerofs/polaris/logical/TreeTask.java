@@ -4,6 +4,7 @@ import com.aerofs.baseline.Task;
 import com.aerofs.baseline.admin.TasksResource;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.types.Child;
+import com.aerofs.polaris.api.types.Content;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -82,6 +83,15 @@ public final class TreeTask implements Task {
 
                         ObjectNode node = mapper.createObjectNode();
                         node.put("type", child.objectType.name());
+
+                        if (child.objectType == ObjectType.FILE) {
+                            Content content = dao.objectProperties.getLatest(child.oid);
+                            if (content != null) {
+                                node.put("hash", content.hash);
+                                node.put("size", content.size);
+                                node.put("mtime", content.mtime);
+                            }
+                        }
 
                         if (child.objectType == ObjectType.FOLDER) {
                             folders.put(child.oid, node);
