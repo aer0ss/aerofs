@@ -132,6 +132,11 @@ body {
       }
   }
 
+  .btn {
+    .standardtext();
+    height: 38px;
+  }
+
   /* killall Bootstrap rounded corners */
   .btn, input, .form-control {
     border-radius: 0;
@@ -368,6 +373,9 @@ body {
 
 /* Special styles for pricing section */
 .plan-select {
+    a:not(.btn) {
+      padding-top: 7px;
+    }
     h4 {
         color: #aaa;
     }
