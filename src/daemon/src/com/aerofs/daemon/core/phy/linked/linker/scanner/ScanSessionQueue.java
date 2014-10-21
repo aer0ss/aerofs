@@ -171,13 +171,12 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     public void scanImmediately_(Set<String> absPaths, boolean recursive)
     {
-        scanImpl_(new PathKey(absPaths, recursive), 0, new ScanCompletionCallback());
+        scanImpl_(new PathKey(absPaths, recursive), 0, () -> {});
     }
 
     public void scanAfterDelay_(Set<String> absPaths, boolean recursive)
     {
-        scanImpl_(new PathKey(absPaths, recursive), LibParam.EXP_RETRY_MIN_DEFAULT,
-                new ScanCompletionCallback());
+        scanImpl_(new PathKey(absPaths, recursive), LibParam.EXP_RETRY_MIN_DEFAULT, () -> {});
     }
 
     /**

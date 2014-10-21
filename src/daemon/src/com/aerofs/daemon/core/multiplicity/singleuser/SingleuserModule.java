@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.migration.SingleuserImmigr
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
@@ -34,8 +34,8 @@ public class SingleuserModule extends AbstractModule
 
         binder().disableCircularProxies();
 
-        bind(IStores.class).to(SingleuserStores.class);
-        bind(AbstractPathResolver.class).to(SingleuserPathResolver.class);
+        bind(StoreHierarchy.class).to(SingleuserStoreHierarchy.class);
+        bind(AbstractPathResolver.Factory.class).to(SingleuserPathResolver.Factory.class);
 
         bind(IEmigrantTargetSIDLister.class).to(EmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);

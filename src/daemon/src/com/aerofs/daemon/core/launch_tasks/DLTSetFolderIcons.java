@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
@@ -50,7 +50,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
     private final CfgAbsDefaultRoot _cfgAbsDefRoot;
     private final CfgAbsRoots       _cfgAbsRoots;
     private final CfgStorageType    _cfgStorageType;
-    private final IStores           _ss;
+    private final StoreHierarchy    _ss;
     private final IMapSIndex2SID    _sidx2sid;
     private final IMapSID2SIndex    _sid2sidx;
     private final DirectoryService  _ds;
@@ -59,8 +59,8 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
 
     @Inject
     DLTSetFolderIcons(CoreScheduler sched, InjectableDriver driver, CfgAbsDefaultRoot cfgAbsRoot,
-            CfgAbsRoots cfgAbsRoots, CfgStorageType cfgStorageType,
-            IStores ss, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, DirectoryService ds,
+            CfgAbsRoots cfgAbsRoots, CfgStorageType cfgStorageType, StoreHierarchy ss,
+            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, DirectoryService ds,
             ILinker linker, Factory factory)
     {
         super(sched);

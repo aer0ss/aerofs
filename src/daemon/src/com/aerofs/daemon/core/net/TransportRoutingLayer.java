@@ -41,17 +41,15 @@ public class TransportRoutingLayer
     private final MaxcastFilterSender _mcfs = new MaxcastFilterSender();
 
     private DID _localdid;
-    private CoreQueue _q;
     private Devices _devices;
     private Transports _tps;
     private UnicastInputOutputStack _stack;
 
     @Inject
-    public void inject_(CfgLocalDID localDID, CoreQueue q, Devices dp, Transports tps,
+    public void inject_(CfgLocalDID localDID, Devices dp, Transports tps,
             UnicastInputOutputStack stack)
     {
         _localdid = localDID.get();
-        _q = q;
         _devices = dp;
         _tps = tps;
         _stack = stack;

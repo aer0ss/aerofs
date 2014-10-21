@@ -4,189 +4,58 @@
 
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.device.Devices;
+import com.aerofs.daemon.core.store.StoreHierarchy.StoreCreationListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /*
  * There should be one instance of this class.
  * Access to this class is protected by the core lock.
  */
-public class Stores implements IStores, IStoreDeletionOperator
+public class Stores implements IStoreDeletionOperator, StoreCreationListener
 {
-    protected IStoreDatabase _sdb;
-    private SIDMap _sm;
-    private MapSIndex2Store _sidx2s;
-    private Devices _devices;
-
-    // cached hierarchy information
-    private Map<SIndex, Set<SIndex>> _parents = Maps.newHashMap();
-    private Map<SIndex, Set<SIndex>> _children = Maps.newHashMap();
-
-    private static final Logger l = Loggers.getLogger(Stores.class);
+    private final StoreHierarchy _sh;
+    private final SIDMap _sm;
+    private final Store.Factory _factStore;
+    private final MapSIndex2Store _sidx2s;
+    private final Devices _devices;
 
     @Inject
-    public void inject_(
-            IStoreDatabase sdb,
+    public Stores(
+            StoreHierarchy sh,
             SIDMap sm,
+            Store.Factory factStore,
             MapSIndex2Store sidx2s,
             Devices devices,
             StoreDeletionOperators sdo)
     {
-        _sdb = sdb;
+        _sh = sh;
         _sm = sm;
+        _factStore = factStore;
         _sidx2s = sidx2s;
         _devices = devices;
 
+        _sh.setListener_(this);
         sdo.addImmediate_(this);
     }
 
-    @Override
     public void init_() throws Exception
     {
         // IOException is in my base, killin all my lambdazzz
-        for (SIndex sidx : _sdb.getAll_()) { notifyAddition_(sidx); }
+        for (SIndex sidx : _sh.getAll_()) { notifyAddition_(sidx); }
     }
 
-    private final TransLocal<Set<SIndex>> _tlChanged = new TransLocal<Set<SIndex>>() {
-        @Override
-        protected Set<SIndex> initialValue(Trans t)
-        {
-            final Set<SIndex> set = Sets.newHashSet();
-            t.addListener_(new AbstractTransListener() {
-                @Override
-                public void aborted_()
-                {
-                    // invalidate entries touched by transaction
-                    for (SIndex sidx : set) {
-                        _parents.remove(sidx);
-                        _children.remove(sidx);
-                    }
-                }
-            });
-            return set;
-        }
-    };
-
     @Override
-    public void addParent_(SIndex sidx, SIndex sidxParent, Trans t)
+    public void storeAdded_(final SIndex sidx, Trans t)
             throws SQLException
     {
-        _sdb.assertExists_(sidx);
-        _sdb.assertExists_(sidxParent);
-
-        Set<SIndex> p = _parents.get(sidx);
-        if (p != null) {
-            _tlChanged.get(t).add(sidx);
-            p.add(sidxParent);
-        }
-
-        Set<SIndex> c = _children.get(sidxParent);
-        if (c != null) {
-            _tlChanged.get(t).add(sidxParent);
-            c.add(sidx);
-        }
-
-        _sdb.insertParent_(sidx, sidxParent, t);
-    }
-
-    @Override
-    public void deleteParent_(SIndex sidx, SIndex sidxParent, Trans t)
-            throws SQLException
-    {
-        _sdb.assertExists_(sidxParent);
-
-        Set<SIndex> p = _parents.get(sidx);
-        if (p != null) {
-            _tlChanged.get(t).add(sidx);
-            p.remove(sidxParent);
-        }
-
-        Set<SIndex> c = _children.get(sidxParent);
-        if (c != null) {
-            _tlChanged.get(t).add(sidxParent);
-            c.remove(sidx);
-        }
-
-        _sdb.deleteParent_(sidx, sidxParent, t);
-    }
-
-    @Override
-    public boolean isRoot_(SIndex sidx) throws SQLException
-    {
-        return getParents_(sidx).isEmpty();
-    }
-
-    @Override
-    public @Nonnull Set<SIndex> getParents_(SIndex sidx) throws SQLException
-    {
-        Set<SIndex> p = _parents.get(sidx);
-        if (p == null) {
-            _sdb.assertExists_(sidx);
-            p = _sdb.getParents_(sidx);
-            _parents.put(sidx, p);
-        }
-        return Sets.newHashSet(p);
-    }
-
-    @Override
-    public @Nonnull Set<SIndex> getChildren_(SIndex sidx) throws SQLException
-    {
-        Set<SIndex> c = _children.get(sidx);
-        if (c == null) {
-            _sdb.assertExists_(sidx);
-            c = _sdb.getChildren_(sidx);
-            _children.put(sidx, c);
-        }
-        return Sets.newHashSet(c);
-    }
-
-    @Override
-    public @Nonnull Set<SIndex> getAll_() throws SQLException
-    {
-        return _sdb.getAll_();
-    }
-
-    @Override
-    public SIndex getPhysicalRoot_(SIndex sidx) throws SQLException
-    {
-        // default implementation for multiuser system, overriden in SingleuserStores
-        return sidx;
-    }
-
-    @Override
-    public String getName_(SIndex sidx) throws SQLException
-    {
-        return _sdb.getName_(sidx);
-    }
-
-    @Override
-    public void add_(final SIndex sidx, String name, Trans t)
-            throws SQLException
-    {
-        Preconditions.checkState(!_parents.containsKey(sidx), sidx);
-        Preconditions.checkState(!_children.containsKey(sidx), sidx);
-        Preconditions.checkState(_sdb.getParents_(sidx).isEmpty());
-        Preconditions.checkState(_sdb.getChildren_(sidx).isEmpty());
-
-        _sdb.insert_(sidx, name, t);
-
         notifyAddition_(sidx);
 
         registerRollbackHandler_(t, () -> {
@@ -198,23 +67,15 @@ public class Stores implements IStores, IStoreDeletionOperator
     @Override
     public void deleteStore_(final SIndex sidx, Trans t) throws SQLException
     {
-        assert _sdb.getChildren_(sidx).isEmpty();
-
-        _parents.remove(sidx);
-        _children.remove(sidx);
-
         // Grab a reference to the Store object before notifyDeletion_ removes in-memory references
         // to it
         Store s = _sidx2s.get_(sidx);
 
         notifyDeletion_(sidx);
 
+        _sh.remove_(sidx, t);
+
         s.deletePersistentData_(t);
-
-        // The following deletes the parent and DeviceBitMap for a store.
-        _sdb.delete_(sidx, t);
-
-        l.debug("store deleted: " + sidx);
 
         registerRollbackHandler_(t, () -> {
             notifyAddition_(sidx);
@@ -230,7 +91,8 @@ public class Stores implements IStores, IStoreDeletionOperator
     {
         _sm.add_(sidx);
         // this is the only place Store instances are created...
-        Store s = _sidx2s.add_(sidx);
+        Store s = _factStore.create_(sidx);
+        _sidx2s.add_(s);
 
         _devices.afterAddingStore_(sidx);
         s.postCreate();
@@ -252,15 +114,14 @@ public class Stores implements IStores, IStoreDeletionOperator
 
     private void registerRollbackHandler_(Trans t, final Callable<Void> callable)
     {
-        t.addListener_(new AbstractTransListener()
-        {
+        t.addListener_(new AbstractTransListener() {
             @Override
             public void aborted_()
             {
                 try {
                     callable.call();
                 } catch (Exception e) {
-                    // we can't recover from the erorr
+                    // we can't recover from the error
                     SystemUtil.fatal(e);
                 }
             }

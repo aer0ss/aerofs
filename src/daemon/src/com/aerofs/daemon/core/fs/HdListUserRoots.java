@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.event.admin.EIListUserRoots;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -19,11 +19,11 @@ import java.util.Map;
 
 public class HdListUserRoots extends AbstractHdIMC<EIListUserRoots>
 {
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public HdListUserRoots(IStores ss, IMapSIndex2SID sidx2sid)
+    public HdListUserRoots(StoreHierarchy ss, IMapSIndex2SID sidx2sid)
     {
         _ss = ss;
         _sidx2sid = sidx2sid;

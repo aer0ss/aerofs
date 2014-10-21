@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.inject.Inject;
 
@@ -20,7 +21,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
@@ -41,12 +41,12 @@ public class SingleuserImmigrantDetector extends ImmigrantDetector
     private IMapSID2SIndex _sid2sidx;
     private IMapSIndex2SID _sidx2sid;
     private AdmittedObjectLocator _aol;
-    private IStores _ss;
+    private StoreHierarchy _ss;
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             IPhysicalStorage ps, ObjectDeleter od, IMapSID2SIndex sid2sidx,
-            AdmittedObjectLocator aol, IMapSIndex2SID sidx2sid, IStores ss)
+            AdmittedObjectLocator aol, IMapSIndex2SID sidx2sid, StoreHierarchy ss)
     {
         baseInject_(ds, nvc, ivc, ps);
         _ss = ss;

@@ -22,8 +22,8 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -82,7 +82,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock ObjectMover om;
     @Mock ObjectDeleter od;
     @Mock SIDMap sm;
-    @Mock IStores ss;
+    @Mock StoreHierarchy ss;
     @Mock DescendantStores dss;
     @Mock ACLSynchronizer aclsync;
     @Mock InjectableSPBlockingClientFactory factSP;

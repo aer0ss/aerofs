@@ -8,8 +8,8 @@ import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.KIndex;
@@ -34,12 +34,12 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     private final LogicalStagingArea _sa;
     private final StoreDeleter _sd;
     private final IMapSIndex2SID _sidx2sid;
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
 
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
             IPhysicalStorage ps, LogicalStagingArea sa,
-            DirectoryService ds, IMapSIndex2SID sidx2sid, IStores ss)
+            DirectoryService ds, IMapSIndex2SID sidx2sid, StoreHierarchy ss)
     {
         _sd = sd;
         _expulsion = expulsion;

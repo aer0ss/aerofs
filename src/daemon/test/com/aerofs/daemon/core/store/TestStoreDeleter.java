@@ -27,7 +27,7 @@ public class TestStoreDeleter extends AbstractTest
 {
     @Mock DirectoryService ds;
     @Mock IPhysicalStorage ps;
-    @Mock IStores ss;
+    @Mock StoreHierarchy ss;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock StoreDeletionOperators _operators;
     @InjectMocks LogicalStagingArea sa = mock(LogicalStagingArea.class);

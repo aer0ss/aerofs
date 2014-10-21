@@ -4,8 +4,8 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
@@ -17,7 +17,7 @@ import com.google.inject.Inject;
 
 public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
 {
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
     private final TransManager _tm;
     private final IPhysicalStorage _ps;
     private final StoreDeleter _sd;
@@ -26,7 +26,7 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
     private final LinkerRootMap _lrm;
 
     @Inject
-    public HdUnlinkRoot(IStores ss, IPhysicalStorage ps, TransManager tm, StoreDeleter sd,
+    public HdUnlinkRoot(StoreHierarchy ss, IPhysicalStorage ps, TransManager tm, StoreDeleter sd,
         IMapSID2SIndex sid2sidx, UnlinkedRootDatabase urdb, LinkerRootMap lrm)
     {
         _ss = ss;

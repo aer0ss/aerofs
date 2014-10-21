@@ -21,17 +21,17 @@ public class StoreCreator
 {
     private static final Logger l = Loggers.getLogger(StoreCreator.class);
 
-    private IStores _ss;
-    private IPhysicalStorage _ps;
-    private NativeVersionControl _nvc;
-    private ImmigrantVersionControl _ivc;
-    private IMetaDatabase _mdb;
-    private IMapSID2SIndex _sid2sidx;
-    private LogicalStagingArea _sa;
+    private final StoreHierarchy _ss;
+    private final IPhysicalStorage _ps;
+    private final NativeVersionControl _nvc;
+    private final ImmigrantVersionControl _ivc;
+    private final IMetaDatabase _mdb;
+    private final IMapSID2SIndex _sid2sidx;
+    private final LogicalStagingArea _sa;
 
     @Inject
-    public void inject_(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
-            IMapSID2SIndex sid2sidx, IStores ss, IPhysicalStorage ps, LogicalStagingArea sa)
+    public StoreCreator(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
+            IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa)
     {
         _ss = ss;
         _nvc = nvc;

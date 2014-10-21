@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
@@ -41,7 +42,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
 {
     @Mock Trans t;
 
-    @Mock SingleuserStores stores;
+    @Mock SingleuserStoreHierarchy stores;
     @Mock ObjectCreator oc;
     @Mock ObjectDeleter od;
     @Mock ObjectSurgeon os;
@@ -51,11 +52,11 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock RitualNotificationServer rns;
     @Mock SharedFolderAutoUpdater lod;
     @Mock IMapSIndex2SID sidx2sid;
+    @Mock IMapSID2SIndex sid2sidx;
     @Mock UnlinkedRootDatabase urdb;
     @Mock RitualNotifier _ritualNotifier;
 
     @InjectMocks SingleuserStoreJoiner ssj;
-
 
     SIndex sidx = new SIndex(123);
 
@@ -68,7 +69,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     public void setUp()
     {
         when(cfgRootSID.get()).thenReturn(rootSID);
-        when(stores.getUserRoot_()).thenReturn(rootSidx);
+        when(sid2sidx.get_(rootSID)).thenReturn(rootSidx);
         when(rns.getRitualNotifier()).thenReturn(_ritualNotifier);
     }
 

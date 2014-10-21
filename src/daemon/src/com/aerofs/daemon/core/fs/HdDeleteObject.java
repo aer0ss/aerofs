@@ -14,12 +14,12 @@ import com.google.inject.Inject;
 
 public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
 {
-    private DirectoryService _ds;
-    private TransManager _tm;
-    private ObjectDeleter _od;
+    private final DirectoryService _ds;
+    private final TransManager _tm;
+    private final ObjectDeleter _od;
 
     @Inject
-    public void inject_(ObjectDeleter od, TransManager tm, DirectoryService ds)
+    public HdDeleteObject(ObjectDeleter od, TransManager tm, DirectoryService ds)
     {
         _ds = ds;
         _od = od;

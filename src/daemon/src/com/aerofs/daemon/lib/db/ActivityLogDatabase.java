@@ -9,7 +9,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -45,11 +45,11 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_V
  */
 public class ActivityLogDatabase extends AbstractDatabase implements IActivityLogDatabase
 {
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public ActivityLogDatabase(CoreDBCW dbcw, IStores stores, IMapSIndex2SID sidx2sid)
+    public ActivityLogDatabase(CoreDBCW dbcw, StoreHierarchy stores, IMapSIndex2SID sidx2sid)
     {
         super(dbcw.get());
         _stores = stores;

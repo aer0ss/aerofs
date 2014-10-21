@@ -231,14 +231,10 @@ public class LinkerRoot
             callback.done_();
         } else {
             _ssq.recursiveScanImmediately_(Collections.singleton(_absRootAnchor),
-                    new ScanCompletionCallback() {
-                @Override
-                public void done_()
-                {
-                    _og.onScanCompletion_();
-                    callback.done_();
-                }
-            });
+                    () -> {
+                        _og.onScanCompletion_();
+                        callback.done_();
+                    });
         }
     }
 }

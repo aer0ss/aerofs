@@ -4,7 +4,9 @@
 
 package com.aerofs.daemon.core.first_launch;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ILinker;
@@ -15,8 +17,10 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.cfg.RootDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -48,6 +52,7 @@ public class FirstLaunch
 
     private final CfgStorageType _cfgStorageType;
     private final CfgDatabase _cfgDB;
+    private final CfgRootSID _cfgRootSID;
     private final CfgAbsRoots _cfgAbsRoots;
     private final AccessibleStores _as;
     private final ScanProgressReporter _spr;
@@ -79,13 +84,14 @@ public class FirstLaunch
     @Inject
     public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreScheduler sched, AccessibleStores as,
             ScanProgressReporter spr, CfgAbsRoots absRoots, CfgStorageType storageType,
-            StoreCreator sc, TransManager tm)
+            CfgRootSID rootSID, StoreCreator sc, TransManager tm)
     {
         _as = as;
         _spr = spr;
         _linker = linker;
         _sched = sched;
         _cfgDB = cfgDB;
+        _cfgRootSID = rootSID;
         _cfgAbsRoots = absRoots;
         _cfgStorageType = storageType;
         _sc = sc;
@@ -109,30 +115,30 @@ public class FirstLaunch
             return false;
         }
 
-        // NB: fetcAccessibleStore needs to be performed from a Core thread in case the SP sign-in
+        // NB: fetchAccessibleStore needs to be performed from a Core thread in case the SP sign-in
         // fails as it causes a Ritual notification to be sent
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
-                ScanCompletionCallback cb = new ScanCompletionCallback() {
-                    @Override
-                    public void done_()
-                    {
-                        l.info("done indexing");
-                        onFirstLaunchCompletion_();
+                ScanCompletionCallback cb = () -> {
+                    l.info("done indexing");
+                    onFirstLaunchCompletion_();
 
-                        callback.done_();
+                    callback.done_();
 
-                        try {
-                            // RitualService responds with ExIndexing as long as FIRST_START is set
-                            // so resetting it needs to be the *last* step of the FirstLaunch
-                            _cfgDB.set(Key.FIRST_START, false);
-                        } catch (SQLException e) {
-                            SystemUtil.fatal(e);
-                        }
+                    try {
+                        // RitualService responds with ExIndexing as long as FIRST_START is set
+                        // so resetting it needs to be the *last* step of the FirstLaunch
+                        _cfgDB.set(Key.FIRST_START, false);
+                    } catch (SQLException e) {
+                        SystemUtil.fatal(e);
                     }
                 };
+
+                if (!L.isMultiuser()) {
+                    createUserRootStore_();
+                }
 
                 l.info("start indexing");
 
@@ -156,6 +162,21 @@ public class FirstLaunch
     {
         _as.onFirstLaunchCompletion_();
         _spr.onFirstLaunchCompletion_();
+    }
+
+    private void createUserRootStore_()
+    {
+        try {
+            Trans t = _tm.begin_();
+            try {
+                _sc.createRootStore_(_cfgRootSID.get(), "", t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void restoreRoots_()
@@ -201,7 +222,7 @@ public class FirstLaunch
             _as._accessibleStores = stores.build();
         } catch (Exception e) {
             _as._accessibleStores = ImmutableMap.of();
-            l.warn("Unable to fetch accessible stores: " + Util.e(e));
+            l.warn("Unable to fetch accessible stores", BaseLogUtil.suppress(e));
         }
     }
 }

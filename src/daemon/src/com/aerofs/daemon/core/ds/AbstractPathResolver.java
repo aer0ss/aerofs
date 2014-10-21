@@ -41,6 +41,11 @@ public abstract class AbstractPathResolver
     protected final IMapSIndex2SID _sidx2sid;
     protected final IMapSID2SIndex _sid2sidx;
 
+    public interface Factory
+    {
+        AbstractPathResolver create(DirectoryService ds);
+    }
+
     protected AbstractPathResolver(DirectoryService ds, IMapSIndex2SID sidx2sid,
             IMapSID2SIndex sid2sidx)
     {

@@ -71,13 +71,13 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Inject
     public void inject_(IMetaDatabase mdb, MapAlias2Target alias2target,
             TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
-            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver)
+            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver.Factory pathResolver)
     {
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
-        _pathResolver = pathResolver;
+        _pathResolver = pathResolver.create(this);
 
         _cacheDS = new DBCache<>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<>(tm, DaemonParam.DB.OA_CACHE_SIZE);

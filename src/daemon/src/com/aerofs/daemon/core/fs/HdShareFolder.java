@@ -20,7 +20,7 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -70,7 +70,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final ObjectMover _om;
     private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
@@ -80,7 +80,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     @Inject
     public HdShareFolder(TokenManager tokenManager, TransManager tm, ObjectCreator oc,
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
-            ObjectDeleter od, IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss,
+            ObjectDeleter od, IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
             CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb)
     {

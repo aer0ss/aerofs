@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.daemon.core.migration.EmigrantUtil;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -28,7 +28,7 @@ public class TestEmigrantTargetSIDLister extends AbstractTest
 {
     @Mock IMapSID2SIndex sid2sidx;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock SingleuserStores sss;
+    @Mock SingleuserStoreHierarchy sss;
 
     @InjectMocks EmigrantTargetSIDLister emc;
 

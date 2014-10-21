@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Ritual.PBSharedFolder;
@@ -20,10 +20,10 @@ import java.sql.SQLException;
  */
 public class MultiUserLinkedAndExpelledSharedFolders implements IListLinkedAndExpelledSharedFolders
 {
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
 
     @Inject
-    public MultiUserLinkedAndExpelledSharedFolders(IStores ss)
+    public MultiUserLinkedAndExpelledSharedFolders(StoreHierarchy ss)
     {
         _ss = ss;
     }

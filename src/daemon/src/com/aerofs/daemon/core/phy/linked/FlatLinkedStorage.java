@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.S;
@@ -53,7 +53,7 @@ public class FlatLinkedStorage extends LinkedStorage
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
             InjectableDriver dr,
-            IStores stores,
+            StoreHierarchy stores,
             RepresentabilityHelper rh,
             IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,

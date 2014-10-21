@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -80,7 +80,7 @@ public class TestHdGetActivities extends AbstractTest
     @Mock Trans t;
     @Mock UserAndDeviceNameDatabase udndb;
     @Mock NativeVersionControl nvc;
-    @Mock IStores stores;
+    @Mock StoreHierarchy stores;
     @Mock IMapSIndex2SID sidx2sid;
 
     HdGetActivities hd;

@@ -17,8 +17,6 @@ import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTarge
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.QuotaEnforcement;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
-import com.aerofs.daemon.core.store.IStores;
-import com.aerofs.daemon.core.store.Stores;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
@@ -36,8 +34,7 @@ public class MultiuserModule extends AbstractModule
 
         binder().disableCircularProxies();
 
-        bind(IStores.class).to(Stores.class);
-        bind(AbstractPathResolver.class).to(MultiuserPathResolver.class);
+        bind(AbstractPathResolver.Factory.class).to(MultiuserPathResolver.Factory.class);
 
         bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);

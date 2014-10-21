@@ -16,9 +16,8 @@ import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -44,7 +43,7 @@ public class Core implements IModule
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
-    private final IStores _ss;
+    private final Stores _ss;
     private final LinkStateService _lss;
     private final Transports _tps;
     private final TC _tc;
@@ -87,7 +86,7 @@ public class Core implements IModule
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
             TamperingDetection tamperingDetection,
-            IStores ss,
+            Stores ss,
             IMetriks metriks,
             CharlieClient charlieClient,
             HealthCheckService hcs,
@@ -153,7 +152,7 @@ public class Core implements IModule
         // this service should not be enabled
         // unless auditing is allowed for this
         // installation
-        // TDOO (WW) use DI and polymorphysm
+        // TDOO (WW) use DI and polymorphism
         if (Audit.AUDIT_ENABLED) {
             _caer.init_();
         }
@@ -181,7 +180,7 @@ public class Core implements IModule
         // start Ritual notifications as we use them to report progress
         _rns.start_();
 
-        if (_fl.onFirstLaunch_(new CoreScanCompletionCallback())) {
+        if (_fl.onFirstLaunch_(this::onFirstLaunchCompleted_)) {
             _tc.start_();
         } else {
             startAll_();
@@ -192,7 +191,8 @@ public class Core implements IModule
         }
     }
 
-    private class CoreScanCompletionCallback extends ScanCompletionCallback {
+    private void onFirstLaunchCompleted_()
+    {
         /**
          * The start up sequence is sort of messy and the addition of an uninterruptible scan on
          * first launch brings many issues to the surface:
@@ -206,38 +206,34 @@ public class Core implements IModule
          *   temporary thread that executes the regular startup sequence
          *   => we need to suspend event processing in TC during that time
          */
-        @Override
-        public void done_()
-        {
-            _tc.suspend_();
+        _tc.suspend_();
 
-            Token tk = checkNotNull(_tokenManager.acquire_(Cat.UNLIMITED, "first-launch"));
+        Token tk = checkNotNull(_tokenManager.acquire_(Cat.UNLIMITED, "first-launch"));
+        try {
+            TCB tcb = null;
             try {
-                TCB tcb = null;
-                try {
-                    tcb = tk.pseudoPause_("first-launch");
+                tcb = tk.pseudoPause_("first-launch");
 
-                    Thread t = new Thread() {
-                        @Override
-                        public void run()
-                        {
-                            startAll_();
-                        }
-                    };
+                Thread t = new Thread() {
+                    @Override
+                    public void run()
+                    {
+                        startAll_();
+                    }
+                };
 
-                    t.start();
-                    t.join();
-                } finally {
-                    if (tcb != null) tcb.pseudoResumed_();
-                }
-            } catch (Exception e) {
-                SystemUtil.fatal(e);
+                t.start();
+                t.join();
             } finally {
-                tk.reclaim_();
+                if (tcb != null) tcb.pseudoResumed_();
             }
-
-            _tc.resume_();
+        } catch (Exception e) {
+            SystemUtil.fatal(e);
+        } finally {
+            tk.reclaim_();
         }
+
+        _tc.resume_();
     }
 
     private void startAll_()

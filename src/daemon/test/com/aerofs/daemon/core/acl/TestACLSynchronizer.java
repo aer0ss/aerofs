@@ -9,9 +9,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -46,7 +44,6 @@ import org.mockito.Mock;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -69,11 +66,9 @@ public class TestACLSynchronizer extends AbstractTest
     @Mock TCB tcb;
     @Mock Trans t;
     @Mock TransManager tm;
-    @Mock IStores stores;
     @Mock DirectoryService ds;
     @Mock AbstractStoreJoiner storeJoiner;
-    @Mock IMapSID2SIndex sid2sidx;
-    @Mock IMapSIndex2SID sidx2sid;
+    @Mock SIDMap sm;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock SPBlockingClient spClient;
     @Mock InjectableSPBlockingClientFactory factSP;
@@ -125,10 +120,10 @@ public class TestACLSynchronizer extends AbstractTest
         when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
-        lacl = new LocalACL(cfgLocalUser, tm, stores, adb, ds);
+        lacl = new LocalACL(cfgLocalUser, tm, sm, adb, ds);
 
         aclsync = new ACLSynchronizer(tokenManager, tm, filter, lacl, storeJoiner,
-                sidx2sid, sid2sidx, cfgLocalUser, factSP);
+                sm, sm, cfgLocalUser, factSP);
     }
 
     @After
@@ -168,7 +163,6 @@ public class TestACLSynchronizer extends AbstractTest
     public void shouldGetACLOnDifferentEpoch() throws Exception
     {
         adb.setEpoch_(10L, t);
-        when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
         when(spClient.getACL(anyLong()))
                 .thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
 
@@ -268,22 +262,22 @@ public class TestACLSynchronizer extends AbstractTest
 
     private void mockPresent(SIndex sidx, SID sid) throws SQLException
     {
-        when(sidx2sid.get_(eq(sidx))).thenReturn(sid);
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid);
-        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
-        when(sid2sidx.get_(sid)).thenReturn(sidx);
-        when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
+        when(sm.get_(eq(sidx))).thenReturn(sid);
+        when(sm.getNullable_(eq(sidx))).thenReturn(sid);
+        when(sm.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
+        when(sm.get_(sid)).thenReturn(sidx);
+        when(sm.getNullable_(sid)).thenReturn(sidx);
+        when(sm.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
     }
 
     private void mockAbsent(SIndex sidx, SID sid) throws SQLException
     {
-        when(sidx2sid.get_(eq(sidx))).thenThrow(new AssertionError());
-        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(null);
-        when(sidx2sid.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
-        when(sid2sidx.get_(sid)).thenThrow(new AssertionError());
-        when(sid2sidx.getNullable_(sid)).thenReturn(null);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
+        when(sm.get_(eq(sidx))).thenThrow(new AssertionError());
+        when(sm.getNullable_(eq(sidx))).thenReturn(null);
+        when(sm.getLocalOrAbsent_(eq(sidx))).thenReturn(sid);
+        when(sm.get_(sid)).thenThrow(new AssertionError());
+        when(sm.getNullable_(sid)).thenReturn(null);
+        when(sm.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
     }
 
     @Test

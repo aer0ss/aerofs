@@ -11,9 +11,9 @@ import java.util.List;
 
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
@@ -23,12 +23,12 @@ import com.google.inject.Inject;
 
 public class EmigrantTargetSIDLister implements IEmigrantTargetSIDLister
 {
-    private final SingleuserStores _sss;
+    private final SingleuserStoreHierarchy _sss;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public EmigrantTargetSIDLister(SingleuserStores sss, IMapSID2SIndex sid2sidx,
+    public EmigrantTargetSIDLister(SingleuserStoreHierarchy sss, IMapSID2SIndex sid2sidx,
             IMapSIndex2SID sidx2sid)
     {
         _sss = sss;

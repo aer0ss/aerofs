@@ -20,11 +20,28 @@ import java.util.List;
 
 public class MultiuserPathResolver extends AbstractPathResolver
 {
-    @Inject
-    public MultiuserPathResolver(DirectoryService ds, IMapSIndex2SID sidx2sid,
-            IMapSID2SIndex sid2sidx)
+    public static class Factory implements AbstractPathResolver.Factory
     {
-        super(ds, sidx2sid, sid2sidx);
+        private final IMapSIndex2SID _sidx2sid;
+        private final IMapSID2SIndex _sid2sidx;
+
+        @Inject
+        public Factory(IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+        {
+            _sid2sidx = sid2sidx;
+            _sidx2sid = sidx2sid;
+        }
+
+        @Override
+        public AbstractPathResolver create(DirectoryService ds)
+        {
+            return new MultiuserPathResolver(ds, this);
+        }
+    }
+
+    private MultiuserPathResolver(DirectoryService ds, Factory f)
+    {
+        super(ds, f._sidx2sid, f._sid2sidx);
     }
 
     @Override

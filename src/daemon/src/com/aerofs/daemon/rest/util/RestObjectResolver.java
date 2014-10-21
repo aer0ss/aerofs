@@ -18,7 +18,7 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -57,7 +57,7 @@ public class RestObjectResolver
     @Inject private DirectoryService _ds;
     @Inject private IMapSID2SIndex _sid2sidx;
     @Inject private IMapSIndex2SID _sidx2sid;
-    @Inject private IStores _stores;
+    @Inject private StoreHierarchy _stores;
     @Inject private IOSUtil _os;
     @Inject private CfgStorageType _storageType;
     @Inject private CfgAbsRoots _absRoots;

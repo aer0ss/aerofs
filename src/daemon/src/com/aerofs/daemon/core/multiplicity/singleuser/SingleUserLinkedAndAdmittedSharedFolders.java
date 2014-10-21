@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
@@ -27,14 +27,14 @@ import java.sql.SQLException;
  */
 public class SingleUserLinkedAndAdmittedSharedFolders implements IListLinkedAndExpelledSharedFolders
 {
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
     private final DirectoryService _ds;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
     private final CfgRootSID _cfgRootSid;
 
     @Inject
-    public SingleUserLinkedAndAdmittedSharedFolders(IStores ss, DirectoryService ds,
+    public SingleUserLinkedAndAdmittedSharedFolders(StoreHierarchy ss, DirectoryService ds,
             IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, CfgRootSID cfgRootSid)
     {
         _ss = ss;

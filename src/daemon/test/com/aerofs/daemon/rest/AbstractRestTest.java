@@ -39,8 +39,8 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -167,7 +167,7 @@ public class AbstractRestTest extends AbstractTest
 
     protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
-    protected @Mock IStores ss;
+    protected @Mock StoreHierarchy ss;
     protected @Mock IDID2UserDatabase did2user;
 
     protected @Mock CfgLocalUser localUser;
@@ -504,7 +504,7 @@ public class AbstractRestTest extends AbstractTest
             {
                 bind(CfgLocalUser.class).toInstance(localUser);
                 bind(CfgCACertificateProvider.class).toInstance(cacert);
-                bind(IStores.class).toInstance(ss);
+                bind(StoreHierarchy.class).toInstance(ss);
                 bind(NativeVersionControl.class).toInstance(nvc);
                 bind(DirectoryService.class).toInstance(ds);
                 bind(LocalACL.class).toInstance(acl);

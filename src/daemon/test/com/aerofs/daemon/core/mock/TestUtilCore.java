@@ -6,7 +6,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -15,6 +14,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
@@ -124,7 +124,7 @@ public class TestUtilCore
     }
 
     public static void mockStore(@Nullable Store s, SID sid, SIndex sidx, SIndex sidxParent,
-            @Nullable IStores ss, @Nullable MapSIndex2Store sidx2s, @Nullable
+            @Nullable StoreHierarchy sh, @Nullable MapSIndex2Store sidx2s, @Nullable
             IMapSID2SIndex sid2sidx, @Nullable IMapSIndex2SID sidx2sid)
             throws ExNotFound, SQLException
     {
@@ -132,12 +132,12 @@ public class TestUtilCore
             when(s.sidx()).thenReturn(sidx);
         }
 
-        if (ss != null) {
-            when(ss.getParents_(sidx)).thenReturn(Collections.singleton(sidxParent));
-            Set<SIndex> children = ss.getChildren_(sidxParent);
+        if (sh != null) {
+            when(sh.getParents_(sidx)).thenReturn(Collections.singleton(sidxParent));
+            Set<SIndex> children = sh.getChildren_(sidxParent);
             if (children == null) children = Sets.newHashSet();
             children.add(sidx);
-            when(ss.getChildren_(sidxParent)).thenReturn(children);
+            when(sh.getChildren_(sidxParent)).thenReturn(children);
         }
 
         if (sidx2s != null && s != null) {

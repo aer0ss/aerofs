@@ -16,12 +16,12 @@ import com.google.inject.Inject;
 
 public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 {
-    private DirectoryService _ds;
-    private TransManager _tm;
-    private ObjectCreator _oc;
+    private final DirectoryService _ds;
+    private final TransManager _tm;
+    private final ObjectCreator _oc;
 
     @Inject
-    public void inject_(DirectoryService ds, TransManager tm, ObjectCreator oc)
+    public HdCreateObject(DirectoryService ds, TransManager tm, ObjectCreator oc)
     {
         _ds = ds;
         _tm = tm;

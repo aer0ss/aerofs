@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 public class TestAdmittedObjectLocator extends AbstractTest
 {
-    @Mock IStores stores;
+    @Mock StoreHierarchy stores;
     @Mock DirectoryService ds;
     @Mock CfgAggressiveChecking cfgAggressiveChecking;
     @Mock OA oaAdmitted;

@@ -2,10 +2,11 @@ package com.aerofs.daemon.core.acl;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -37,19 +38,19 @@ public class LocalACL
 {
     private final CfgLocalUser _cfgLocalUser;
     private final IACLDatabase _adb;
-    private final IStores _ss;
+    private final IMapSIndex2SID _sidx2sid;
     private final DirectoryService _ds;
 
     // mapping: store -> (subject -> role). It's an in-memory cache of the ACL table in the db.
     private final Map<SIndex, ImmutableMap<UserID, Permissions>> _cache = Maps.newHashMap();
 
     @Inject
-    public LocalACL(CfgLocalUser cfgLocalUser, TransManager tm, IStores ss, IACLDatabase adb,
-            DirectoryService ds)
+    public LocalACL(CfgLocalUser cfgLocalUser, TransManager tm, IMapSIndex2SID sidx2sid,
+            IACLDatabase adb, DirectoryService ds)
     {
         _adb = adb;
         _cfgLocalUser = cfgLocalUser;
-        _ss = ss;
+        _sidx2sid = sidx2sid;
         _ds = ds;
 
         // clear the cache when a transaction is aborted
@@ -74,7 +75,8 @@ public class LocalACL
         // always allow the local user to operate on root stores, so that newly installed
         // devices can instantly start syncing with other devices without waiting for ACL to be
         // downloaded.
-        return allowed || (subject.equals(_cfgLocalUser.get()) && _ss.isRoot_(sidx));
+        return allowed || (subject.equals(_cfgLocalUser.get())
+                                   && _sidx2sid.get_(sidx).equals(SID.rootSID(subject)));
     }
 
     /**

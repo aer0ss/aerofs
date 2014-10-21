@@ -22,5 +22,4 @@ public class TransLocalVersionAssistant extends TransLocal<VersionAssistant>
         t.addListener_(va);
         return va;
     }
-
 }

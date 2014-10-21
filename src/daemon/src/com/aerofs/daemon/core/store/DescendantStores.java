@@ -22,14 +22,14 @@ import java.util.Set;
 public class DescendantStores
 {
     final private DirectoryService _ds;
-    final private IStores _ss;
+    final private StoreHierarchy _sh;
     final private IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public DescendantStores(DirectoryService ds, IStores ss, IMapSIndex2SID sidx2sid)
+    public DescendantStores(DirectoryService ds, StoreHierarchy sh, IMapSIndex2SID sidx2sid)
     {
         _ds = ds;
-        _ss = ss;
+        _sh = sh;
         _sidx2sid = sidx2sid;
     }
 
@@ -44,7 +44,7 @@ public class DescendantStores
         Path path = _ds.resolve_(soid);
 
         // among immediate children of the given store, find those who are under the given path
-        Collection<SIndex> children = _ss.getChildren_(sidx);
+        Collection<SIndex> children = _sh.getChildren_(sidx);
         for (SIndex csidx : children) {
             if (csidx.equals(sidx)) continue;
 
@@ -64,6 +64,6 @@ public class DescendantStores
     {
         if (set.contains(sidx)) return;
         set.add(sidx);
-        for (SIndex csidx : _ss.getChildren_(sidx)) addChildren_(csidx, set);
+        for (SIndex csidx : _sh.getChildren_(sidx)) addChildren_(csidx, set);
     }
 }

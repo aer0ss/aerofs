@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
@@ -19,12 +19,12 @@ import java.sql.SQLException;
  */
 class AdmittedObjectLocator
 {
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     private final DirectoryService _ds;
     private final CfgAggressiveChecking _cfgAggressiveChecking;
 
     @Inject
-    public AdmittedObjectLocator(IStores stores, DirectoryService ds,
+    public AdmittedObjectLocator(StoreHierarchy stores, DirectoryService ds,
             CfgAggressiveChecking cfgAggressiveChecking)
     {
         _ds = ds;

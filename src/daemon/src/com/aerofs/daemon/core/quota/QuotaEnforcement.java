@@ -9,9 +9,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -46,7 +46,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
     private final IMapSIndex2SID _sidx2sid;
     private final MapSIndex2Store _sidx2s;
     private final CoreScheduler _sched;
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     private final TokenManager _tokenManager;
     private final TransManager _tm;
     private final SPBlockingClient.Factory _factSP;
@@ -54,7 +54,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
 
     @Inject
     public QuotaEnforcement(IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, MapSIndex2Store sidx2s,
-            CoreScheduler sched, IStores stores, TokenManager tokenManager, TransManager tm,
+            CoreScheduler sched, StoreHierarchy stores, TokenManager tokenManager, TransManager tm,
             InjectableSPBlockingClientFactory factSP, StoreUsageCache usage)
     {
         _sid2sidx = sid2sidx;

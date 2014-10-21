@@ -113,13 +113,7 @@ public class Linker implements ILinker, IListener
             public void handle_()
             {
                 l.info("begin scan {}", root.sid());
-                root.recursiveScanImmediately_(new ScanCompletionCallback() {
-                    @Override
-                    public void done_()
-                    {
-                        l.info("end scan {}", root.sid());
-                    }
-                });
+                root.recursiveScanImmediately_(() -> l.info("end scan {}", root.sid()));
             }
         }, 0);
     }
@@ -132,7 +126,7 @@ public class Linker implements ILinker, IListener
 
     void fullScan()
     {
-        scan(new ScanCompletionCallback());
+        scan(() -> {});
     }
 
     @Override
@@ -153,13 +147,8 @@ public class Linker implements ILinker, IListener
             l.info("scan finished");
             callback.done_();
         } else {
-            roots.get(0).recursiveScanImmediately_(new ScanCompletionCallback() {
-                @Override
-                public void done_()
-                {
-                    scan_(roots.subList(1, roots.size()), callback);
-                }
-            });
+            roots.get(0).recursiveScanImmediately_(
+                    () -> scan_(roots.subList(1, roots.size()), callback));
         }
     }
 }

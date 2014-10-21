@@ -14,9 +14,9 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class MultiuserStoreJoiner extends AbstractStoreJoiner
 {
     private final CfgRootSID _cfgRootSID;
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     private final StoreCreator _sc;
     private final StoreDeleter _sd;
     private final IMapSIndex2SID _sidx2sid;
@@ -37,7 +37,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     private final ILinker _linker;
 
     @Inject
-    public MultiuserStoreJoiner(CfgRootSID cfgRootSID, IStores stores,
+    public MultiuserStoreJoiner(CfgRootSID cfgRootSID, StoreHierarchy stores,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
             StoreCreator sc, StoreDeleter sd, DirectoryService ds,
             ObjectCreator oc, ObjectDeleter od, ObjectSurgeon os,

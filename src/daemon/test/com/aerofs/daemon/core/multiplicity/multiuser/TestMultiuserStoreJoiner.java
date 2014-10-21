@@ -6,9 +6,9 @@ package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 public class TestMultiuserStoreJoiner extends AbstractTest
 {
     @Mock CfgRootSID cfgRootSID;
-    @Mock IStores stores;
+    @Mock StoreHierarchy stores;
     @Mock StoreDeleter sd;
     @Mock StoreCreator sc;
     @Mock IMapSIndex2SID sidx2sid;

@@ -18,10 +18,9 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -44,7 +43,7 @@ import java.util.List;
 
 public class MetadataBuilder
 {
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
@@ -55,7 +54,7 @@ public class MetadataBuilder
 
     @Inject
     public MetadataBuilder(DirectoryService ds, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            IStores stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl,
+            StoreHierarchy stores, MimeTypeDetector detector, EntityTagUtil etags, LocalACL acl,
             ICollectorStateDatabase csdb)
     {
         _ds = ds;

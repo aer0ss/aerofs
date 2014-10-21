@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.AbstractStoreJoiner;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -31,19 +32,20 @@ import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderP
 
 public class SingleuserStoreJoiner extends AbstractStoreJoiner
 {
-    private final SingleuserStores _stores;
+    private final SingleuserStoreHierarchy _stores;
     private final StoreDeleter _sd;
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoUpdater _lod;
     private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
     private final UnlinkedRootDatabase _urdb;
 
     @Inject
-    public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
+    public SingleuserStoreJoiner(DirectoryService ds, SingleuserStoreHierarchy stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
             SharedFolderAutoUpdater lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
-            UnlinkedRootDatabase urdb)
+            IMapSID2SIndex sid2sidx, UnlinkedRootDatabase urdb)
     {
         super(ds, os, oc, od);
         _sd = sd;
@@ -52,6 +54,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         _rns = rns;
         _lod = lod;
         _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
         _urdb = urdb;
     }
 
@@ -75,9 +78,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
             return;
         }
 
-        SIndex root = _stores.getUserRoot_();
-
-        createAnchorIfNeeded_(sidx, sid, folderName, root, t);
+        createAnchorIfNeeded_(sidx, sid, folderName, _sid2sidx.get_(_cfgRootSID.get()), t);
 
         final Path path = new Path(_cfgRootSID.get(), folderName);
         t.addListener_(new AbstractTransListener() {
@@ -96,7 +97,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
 
-        l.info("leaving share: " + sidx + " " + sid);
+        l.info("leaving share: {} {}", sidx, sid);
 
         // remove any unlinked external root
         _urdb.removeUnlinkedRoot(sid, t);

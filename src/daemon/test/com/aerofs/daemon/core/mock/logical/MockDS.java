@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
@@ -96,7 +96,7 @@ public class MockDS
     }
 
     public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
-            @Nullable IMapSIndex2SID sidx2sid, @Nullable IStores  stores) throws  Exception
+            @Nullable IMapSIndex2SID sidx2sid, @Nullable StoreHierarchy stores) throws  Exception
     {
         _ds = ds;
         _sid2sidx = sid2sidx;

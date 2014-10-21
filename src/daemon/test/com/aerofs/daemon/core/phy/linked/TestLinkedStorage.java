@@ -20,7 +20,7 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -54,8 +54,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,20 +126,12 @@ public class TestLinkedStorage extends AbstractTest
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
         when(cfgAbsRoots.getAll()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
-        when(cfgStoragePolicy.useHistory()).thenAnswer(new Answer<Boolean>()
-        {
-            @Override
-            public Boolean answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return useHistory;
-            }
-        });
+        when(cfgStoragePolicy.useHistory()).thenAnswer(invocation -> useHistory);
 
         IMapSIndex2SID sidx2sid = mock(IMapSIndex2SID.class);
         when(sidx2sid.get_(sidx)).thenReturn(rootSID);
 
-        IStores stores = mock(IStores.class);
+        StoreHierarchy stores = mock(StoreHierarchy.class);
         when(stores.getPhysicalRoot_(any(SIndex.class))).thenReturn(sidx);
 
         NRODatabase nro = mock(NRODatabase.class);

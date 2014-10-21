@@ -27,7 +27,7 @@ public class StoreDeleter
     private static final Logger l = Loggers.getLogger(StoreDeleter.class);
 
     private final IPhysicalStorage _ps;
-    private final IStores _ss;
+    private final StoreHierarchy _ss;
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final StoreDeletionOperators _operators;
@@ -36,7 +36,8 @@ public class StoreDeleter
 
     @Inject
     public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
-            IStores ss, LocalACL lacl, StoreDeletionOperators operators, LogicalStagingArea sa)
+            StoreHierarchy ss, LocalACL lacl, StoreDeletionOperators operators,
+            LogicalStagingArea sa)
     {
         _ss = ss;
         _ps = ps;

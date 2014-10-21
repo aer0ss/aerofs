@@ -15,7 +15,7 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.ex.ExNotFound;
@@ -117,7 +117,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
 
         s = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh,
-                mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
+                mock(StoreHierarchy.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class),
                 mock(LinkedStagingArea.class),
                 mock(LinkedRevProvider.class), mock(CoreScheduler.class));

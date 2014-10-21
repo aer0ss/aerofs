@@ -22,7 +22,7 @@ import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
@@ -71,7 +71,7 @@ public class LinkedStorage implements IPhysicalStorage
     private final InjectableDriver _dr;
     private final CfgStoragePolicy _cfgStoragePolicy;
     protected final CfgAbsRoots _cfgAbsRoots;
-    private final IStores _stores;
+    private final StoreHierarchy _stores;
     protected final IMapSIndex2SID _sidx2sid;
     private final LinkedStagingArea _sa;
     private final LinkedRevProvider _revProvider;
@@ -93,7 +93,7 @@ public class LinkedStorage implements IPhysicalStorage
             IOSUtil osutil,
             InjectableDriver dr,
             RepresentabilityHelper rh,
-            IStores stores,
+            StoreHierarchy stores,
             IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,
             CfgStoragePolicy cfgStoragePolicy,

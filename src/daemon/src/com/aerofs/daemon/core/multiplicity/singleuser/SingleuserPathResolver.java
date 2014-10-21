@@ -23,14 +23,33 @@ import java.util.List;
 
 public class SingleuserPathResolver extends AbstractPathResolver
 {
-    private final SingleuserStores _sss;
+    private final SingleuserStoreHierarchy _sss;
 
-    @Inject
-    public SingleuserPathResolver(SingleuserStores sss, DirectoryService ds,
-            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+    public static class Factory implements AbstractPathResolver.Factory
     {
-        super(ds, sidx2sid, sid2sidx);
-        _sss = sss;
+        private final SingleuserStoreHierarchy _sh;
+        private final IMapSIndex2SID _sidx2sid;
+        private final IMapSID2SIndex _sid2sidx;
+
+        @Inject
+        public Factory(SingleuserStoreHierarchy sh, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+        {
+            _sh = sh;
+            _sid2sidx = sid2sidx;
+            _sidx2sid = sidx2sid;
+        }
+
+        @Override
+        public AbstractPathResolver create(DirectoryService ds)
+        {
+            return new SingleuserPathResolver(ds, this);
+        }
+    }
+
+    private SingleuserPathResolver(DirectoryService ds, Factory f)
+    {
+        super(ds, f._sidx2sid, f._sid2sidx);
+        _sss = f._sh;
     }
 
     @Override
