@@ -32,7 +32,6 @@ node "z.arrowfs.org" inherits default {
   pagerduty::probe::base{[
     # N.B. clean_defects will trigger at 90% at t=50m, so we shouldn't reach
     # 90% unless something goes wrong.
-    "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
     "dryad df90 pagerduty@dryad.aerofs.com 22 /dev/xvdf",
@@ -48,7 +47,6 @@ node "z.arrowfs.org" inherits default {
     "rocklog url http://rocklog.aerofs.com/",
     "web url http://www.aerofs.com",
     "pc url https://privatecloud.aerofs.com/login",
-    "sv url https://sv.aerofs.com/sv_beta/sv",
     "sp url-internalcert https://sp.aerofs.com/sp",
     "api port api.aerofs.com 443",
     "api port api.aerofs.com 4433",
