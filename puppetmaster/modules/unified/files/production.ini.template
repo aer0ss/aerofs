@@ -35,6 +35,9 @@ session.secure = True
 session.httponly = True
 # 1 year. Session timeouts are handled by SP.
 session.timeout = 31536000
+# Cookies never expire, so we'll still have some user info no matter how long
+# they don't use our site
+session.cookie_expires = False
 session.validate_key = {{ validate_key }}
 session.encrypt_key = {{ encrypt_key }}
 
