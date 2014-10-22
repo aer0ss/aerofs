@@ -284,7 +284,7 @@ body {
   .video-player {
     width: 256px;
     height: @videoheight;
-    margin: 15px 0 0 0;
+    margin: 12px 0 0 0;
     border: 2px solid @darkoats;
     h4 {
         color: @oatmeal;
@@ -361,6 +361,33 @@ body {
         }
     }
 }
+
+/* Special styling for private mobileiron section*/
+.mobileiron {
+    padding-top: @navheight;
+    padding-bottom: 0;
+    overflow: hidden;
+    .wrapper {
+        background: @oatmeal;
+    }
+    .container {
+    }
+
+    img {
+        margin-top: -@navheight;
+        -webkit-mask-image:-webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
+    }
+    .img-wrapper {
+        background-color: @blue;
+        background: url('../../images/mobileiron-devices.png') no-repeat center;
+        width: 983px;
+        height: 545px;
+        position: absolute;
+        top: -@navheight;
+        left: 60px;
+    }
+}
+
 
 /* Special styling for private cloud frontpage section*/
 .cloud {
@@ -535,6 +562,32 @@ body {
   }
 }
 
+.landing-page {
+  ul {
+    margin-top: 12px;
+    li {
+      color: white;
+    }
+  }
+  .landing-page-form {
+    background: @gold;
+    padding: 12px;
+    color: black;
+    h3 {
+      color: black;
+    }
+    input {
+      margin-bottom: 12px;
+    }
+    .password input {
+      margin-bottom: 6px;
+    }
+  }
+  .small-press {
+    background: #2794cb;
+    color: white;
+  }
+}
 /* Social icons related styles (in footer) */
 .social {
     margin-right: 6px;
@@ -581,7 +634,7 @@ body {
 }
 /* Applies to col-xs */
 @media (max-width: 767px) {
-    .top-header, .top-header.front-page{
+    .top-header:not(.landing-page), .top-header.front-page {
         h1 {
             font: 400 48px/70px 'Open Sans';
             span {
