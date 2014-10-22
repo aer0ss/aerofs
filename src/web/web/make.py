@@ -1,7 +1,7 @@
 from subprocess import call
 
 def make():
-    call(['make'])
+    call(['make', '-j8'])
 
 
 if __name__ == '__main__':
