@@ -7,7 +7,7 @@ import com.google.common.base.Objects;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public final class BatchOperationResult {
+public final class TransformBatchOperationResult {
 
     public boolean successful;
 
@@ -24,16 +24,16 @@ public final class BatchOperationResult {
      * For Jackson use only - do not use directly.
      */
     @SuppressWarnings("unused")
-    private BatchOperationResult() { }
+    private TransformBatchOperationResult() { }
 
-    public BatchOperationResult(List<Updated> updated) {
+    public TransformBatchOperationResult(List<Updated> updated) {
         this.successful = true;
         this.updated = updated;
         this.errorCode = null;
         this.errorMessage = null;
     }
 
-    public BatchOperationResult(PolarisError errorCode, String errorMessage) {
+    public TransformBatchOperationResult(PolarisError errorCode, String errorMessage) {
         this.successful = false;
         this.updated = null;
         this.errorCode = errorCode;
@@ -45,7 +45,7 @@ public final class BatchOperationResult {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BatchOperationResult other = (BatchOperationResult) o;
+        TransformBatchOperationResult other = (TransformBatchOperationResult) o;
 
         return successful == other.successful
                 && Objects.equal(updated, other.updated)

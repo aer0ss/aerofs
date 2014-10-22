@@ -4,6 +4,7 @@ import com.aerofs.polaris.api.types.LogicalObject;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
@@ -13,6 +14,7 @@ public final class Updated {
     public long transformTimestamp;
 
     @NotNull
+    @Valid
     public LogicalObject object;
 
     /**
@@ -32,7 +34,7 @@ public final class Updated {
         if (o == null || getClass() != o.getClass()) return false;
 
         Updated other = (Updated) o;
-        return transformTimestamp == other.transformTimestamp && object.equals(other.object);
+        return transformTimestamp == other.transformTimestamp && Objects.equal(object, other.object);
     }
 
     @Override

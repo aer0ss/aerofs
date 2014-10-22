@@ -37,7 +37,7 @@ public final class Child {
         if (o == null || getClass() != o.getClass()) return false;
 
         Child other = (Child) o;
-        return oid.equals(other.oid) && name.equals(other.name) && objectType.equals(other.objectType);
+        return Objects.equal(oid, other.oid) && Objects.equal(name, other.name) && Objects.equal(objectType, other.objectType);
     }
 
     @Override

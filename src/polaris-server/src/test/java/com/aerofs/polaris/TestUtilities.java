@@ -173,8 +173,12 @@ public abstract class TestUtilities {
         return ServerConfiguration.OBJECTS_URL + oid + "/";
     }
 
-    public static String getBatchURL() {
-        return ServerConfiguration.BATCH_URL;
+    public static String getTransformBatchURL() {
+        return ServerConfiguration.BATCH_URL + "transforms/";
+    }
+
+    public static String getLocationBatchURL() {
+        return ServerConfiguration.BATCH_URL + "locations/";
     }
 
     private static String getTransformsURL(String root) {

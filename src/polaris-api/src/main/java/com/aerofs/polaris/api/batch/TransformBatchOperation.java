@@ -1,28 +1,32 @@
 package com.aerofs.polaris.api.batch;
 
+import com.aerofs.polaris.api.operation.Operation;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.util.List;
 
-public final class Batch {
+public final class TransformBatchOperation {
 
-    @Valid
     @NotNull
     @Size(min = 1)
-    public List<BatchOperation> operations;
+    public String oid;
+
+    @NotNull
+    @Valid
+    public Operation operation;
 
     /**
      * For Jackson use only - do not use directly.
      */
     @SuppressWarnings("unused")
-    private Batch() {}
+    private TransformBatchOperation() { }
 
-    public Batch(List<BatchOperation> operations) {
-        this.operations = operations;
+    public TransformBatchOperation(String oid, Operation operation) {
+        this.oid = oid;
+        this.operation = operation;
     }
 
     @Override
@@ -30,20 +34,21 @@ public final class Batch {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Batch other = (Batch) o;
-        return operations.equals(other.operations);
+        TransformBatchOperation other = (TransformBatchOperation) o;
+        return Objects.equal(oid, other.oid) && Objects.equal(operation, other.operation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(operations);
+        return Objects.hashCode(oid, operation);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("operations", operations)
+                .add("oid", oid)
+                .add("operation", operation)
                 .toString();
     }
 }

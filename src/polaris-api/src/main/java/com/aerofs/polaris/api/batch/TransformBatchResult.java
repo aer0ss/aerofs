@@ -4,23 +4,25 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
-public final class BatchResult {
+public final class TransformBatchResult {
 
     @NotNull
     @Size(min = 1)
-    public List<BatchOperationResult> results;
+    @Valid
+    public List<TransformBatchOperationResult> results;
 
     /**
      * For Jackson use only - do not use directly.
      */
     @SuppressWarnings("unused")
-    private BatchResult() { }
+    private TransformBatchResult() { }
 
-    public BatchResult(int resultCount) {
+    public TransformBatchResult(int resultCount) {
         this.results = Lists.newArrayListWithCapacity(resultCount);
     }
 
@@ -29,8 +31,8 @@ public final class BatchResult {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BatchResult other = (BatchResult) o;
-        return results.equals(other.results);
+        TransformBatchResult other = (TransformBatchResult) o;
+        return Objects.equal(results, other.results);
     }
 
     @Override

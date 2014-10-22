@@ -4,10 +4,10 @@ import com.aerofs.baseline.ids.Identifiers;
 import com.aerofs.polaris.PolarisResource;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.batch.Batch;
-import com.aerofs.polaris.api.batch.BatchOperation;
-import com.aerofs.polaris.api.batch.BatchOperationResult;
-import com.aerofs.polaris.api.batch.BatchResult;
+import com.aerofs.polaris.api.batch.TransformBatch;
+import com.aerofs.polaris.api.batch.TransformBatchOperation;
+import com.aerofs.polaris.api.batch.TransformBatchOperationResult;
+import com.aerofs.polaris.api.batch.TransformBatchResult;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.google.common.collect.ImmutableList;
@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public final class TestBatchResource {
+public final class TestTransformBatchResource {
 
     static {
         RestAssured.config = TestUtilities.newRestAssuredConfig();
@@ -41,25 +41,25 @@ public final class TestBatchResource {
         // construct a number of files in root
         String root = Identifiers.newRandomSharedFolder();
 
-        Batch batch = new Batch(ImmutableList.of(
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_3"))
+        TransformBatch batch = new TransformBatch(ImmutableList.of(
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_3"))
         ));
 
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
-        BatchResult result = given()
+        TransformBatchResult result = given()
                 .spec(verified)
                 .and()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-                .when().post(TestUtilities.getBatchURL())
+                .when().post(TestUtilities.getTransformBatchURL())
                 .then()
-                .extract().response().as(BatchResult.class);
+                .extract().response().as(TransformBatchResult.class);
 
         assertThat(result.results, hasSize(3));
 
-        for (BatchOperationResult operationResult : result.results) {
+        for (TransformBatchOperationResult operationResult : result.results) {
             assertThat(operationResult.successful, is(true));
             assertThat(operationResult.updated, hasSize(1));
             assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
@@ -71,25 +71,25 @@ public final class TestBatchResource {
         // construct a number of files in root
         String root = Identifiers.newRandomSharedFolder();
 
-        Batch batch = new Batch(ImmutableList.of(
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1"))
+        TransformBatch batch = new TransformBatch(ImmutableList.of(
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1"))
         ));
 
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
-        BatchResult result = given()
+        TransformBatchResult result = given()
                 .spec(verified)
                 .and()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-                .when().post(TestUtilities.getBatchURL())
+                .when().post(TestUtilities.getTransformBatchURL())
                 .then()
-                .extract().response().as(BatchResult.class);
+                .extract().response().as(TransformBatchResult.class);
 
         assertThat(result.results, hasSize(3));
 
-        BatchOperationResult operationResult;
+        TransformBatchOperationResult operationResult;
 
         // first result
         operationResult = result.results.get(0);
@@ -114,25 +114,25 @@ public final class TestBatchResource {
         // construct a number of files in root
         String root = Identifiers.newRandomSharedFolder();
 
-        Batch batch = new Batch(ImmutableList.of(
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
-                new BatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2"))
+        TransformBatch batch = new TransformBatch(ImmutableList.of(
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(root, new InsertChild(Identifiers.newRandomObject(), ObjectType.FILE, "file_2"))
         ));
 
         // attempt to reinsert filename into root to create:
         // root -> (folder_1 -> filename, filename)
-        BatchResult result = given()
+        TransformBatchResult result = given()
                 .spec(verified)
                 .and()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).and().body(batch)
-                .when().post(TestUtilities.getBatchURL())
+                .when().post(TestUtilities.getTransformBatchURL())
                 .then()
-                .extract().response().as(BatchResult.class);
+                .extract().response().as(TransformBatchResult.class);
 
         assertThat(result.results, hasSize(2));
 
-        BatchOperationResult operationResult;
+        TransformBatchOperationResult operationResult;
 
         // first result
         operationResult = result.results.get(0);

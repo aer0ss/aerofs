@@ -1,6 +1,5 @@
-package com.aerofs.polaris.api.types;
+package com.aerofs.polaris.api.batch;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -8,12 +7,12 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-public final class LogicalObject {
+public final class LocationBatchOperation {
 
-    @JsonIgnore // property exists, but we won't serialize it
-    @NotNull
-    @Size(min = 1)
-    public String root;
+    public static enum LocationUpdateType {
+        INSERT,
+        REMOVE,
+    }
 
     @NotNull
     @Size(min = 1)
@@ -23,19 +22,23 @@ public final class LogicalObject {
     public long version;
 
     @NotNull
-    public ObjectType objectType;
+    @Size(min = 1)
+    public String did;
+
+    @NotNull
+    public LocationUpdateType locationUpdateType;
 
     /**
      * For Jackson use only - do not use directly.
      */
     @SuppressWarnings("unused")
-    private LogicalObject() { }
+    private LocationBatchOperation() { }
 
-    public LogicalObject(String root, String oid, long version, ObjectType objectType) {
-        this.root = root;
+    public LocationBatchOperation(String oid, long version, String did, LocationUpdateType locationUpdateType) {
         this.oid = oid;
         this.version = version;
-        this.objectType = objectType;
+        this.did = did;
+        this.locationUpdateType = locationUpdateType;
     }
 
     @Override
@@ -43,23 +46,23 @@ public final class LogicalObject {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LogicalObject other = (LogicalObject) o;
-        return Objects.equal(root, other.root) && Objects.equal(oid, other.oid) && version == other.version && Objects.equal(objectType, other.objectType);
+        LocationBatchOperation other = (LocationBatchOperation) o;
+        return Objects.equal(oid, other.oid) && version == other.version && Objects.equal(did, other.did) && Objects.equal(locationUpdateType, other.locationUpdateType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(root, oid, version, objectType);
+        return Objects.hashCode(oid, version, did, locationUpdateType);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("root", root)
                 .add("oid", oid)
                 .add("version", version)
-                .add("objectType", objectType)
+                .add("did", did)
+                .add("locationUpdateType", locationUpdateType)
                 .toString();
     }
 }

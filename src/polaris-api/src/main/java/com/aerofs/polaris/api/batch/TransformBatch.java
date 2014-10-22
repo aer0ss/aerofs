@@ -1,28 +1,28 @@
-package com.aerofs.polaris.api.operation;
+package com.aerofs.polaris.api.batch;
 
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
 
-public final class RemoveChild extends Operation {
+public final class TransformBatch {
 
     @NotNull
     @Size(min = 1)
-    public String child;
+    @Valid
+    public List<TransformBatchOperation> operations;
 
     /**
      * For Jackson use only - do not use directly.
      */
     @SuppressWarnings("unused")
-    private RemoveChild() {
-        super(OperationType.REMOVE_CHILD);
-    }
+    private TransformBatch() {}
 
-    public RemoveChild(String child) {
-        super(OperationType.REMOVE_CHILD);
-        this.child = child;
+    public TransformBatch(List<TransformBatchOperation> operations) {
+        this.operations = operations;
     }
 
     @Override
@@ -30,21 +30,20 @@ public final class RemoveChild extends Operation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        RemoveChild other = (RemoveChild) o;
-        return type == other.type && Objects.equal(child, other.child);
+        TransformBatch other = (TransformBatch) o;
+        return Objects.equal(operations, other.operations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(type, child);
+        return Objects.hashCode(operations);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("type", type)
-                .add("child", child)
+                .add("operations", operations)
                 .toString();
     }
 }

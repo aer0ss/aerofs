@@ -6,12 +6,16 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 @SuppressWarnings("unused")
 public final class PolarisConfiguration extends Configuration {
 
+    @Min(1)
     private int maxReturnedTransforms = Constants.MAX_RETURNED_TRANSFORMS;
 
+    @NotNull
     @Valid
     private DatabaseConfiguration database;
 
@@ -37,8 +41,8 @@ public final class PolarisConfiguration extends Configuration {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        PolarisConfiguration that = (PolarisConfiguration) o;
-        return maxReturnedTransforms == that.maxReturnedTransforms && database.equals(that.database) && super.equals(that);
+        PolarisConfiguration other = (PolarisConfiguration) o;
+        return maxReturnedTransforms == other.maxReturnedTransforms && Objects.equal(database, other.database);
     }
 
     @Override

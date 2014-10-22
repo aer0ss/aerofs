@@ -191,8 +191,8 @@ public final class TestTransformsResource {
             @Override
             protected boolean matchesSafely(Transform item) {
                 return logicalTimestamp == item.logicalTimestamp
-                        && originator.equals(item.originator)
-                        && oid.equals(item.oid)
+                        && Objects.equal(originator, item.originator)
+                        && Objects.equal(oid, item.oid)
                         && transformType == item.transformType
                         && newVersion == item.newVersion
                         && Objects.equal(child, item.child)
@@ -231,8 +231,8 @@ public final class TestTransformsResource {
             @Override
             protected boolean matchesSafely(Transform item) {
                 return logicalTimestamp == item.logicalTimestamp
-                        && originator.equals(item.originator)
-                        && oid.equals(item.oid)
+                        && Objects.equal(originator, item.originator)
+                        && Objects.equal(oid, item.oid)
                         && item.transformType == TransformType.UPDATE_CONTENT
                         && newVersion == item.newVersion
                         && item.child == null

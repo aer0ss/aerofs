@@ -270,7 +270,7 @@ public final class LogicalObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, oid));
     }
 
-    public void addLocation(DAO dao, String oid, long version, String did) throws NotFoundException {
+    public void insertLocation(DAO dao, String oid, long version, String did) throws NotFoundException {
         // check that the object exists
         LogicalObject object = getExistingObject(dao, oid);
 

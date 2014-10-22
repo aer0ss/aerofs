@@ -4,6 +4,7 @@ import com.aerofs.polaris.api.types.Transform;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -15,6 +16,7 @@ public final class AppliedTransforms {
 
     // @JsonInclude(JsonInclude.Include.ALWAYS) [uncomment if we want to serialize the empty list]
     @NotNull
+    @Valid
     public List<Transform> transforms;
 
     /**
@@ -34,7 +36,7 @@ public final class AppliedTransforms {
         if (o == null || getClass() != o.getClass()) return false;
 
         AppliedTransforms other = (AppliedTransforms) o;
-        return maxTransformCount == other.maxTransformCount && transforms.equals(other.transforms);
+        return maxTransformCount == other.maxTransformCount && Objects.equal(transforms, other.transforms);
     }
 
     @Override

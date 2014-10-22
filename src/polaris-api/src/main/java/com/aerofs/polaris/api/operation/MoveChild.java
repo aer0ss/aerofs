@@ -42,7 +42,7 @@ public final class MoveChild extends Operation {
         if (o == null || getClass() != o.getClass()) return false;
 
         MoveChild other = (MoveChild) o;
-        return type == other.type && child.equals(other.child) && newParent.equals(other.newParent) && newChildName.equals(other.newChildName);
+        return type == other.type && Objects.equal(child, other.child) && Objects.equal(newParent, other.newParent) && Objects.equal(newChildName, other.newChildName);
     }
 
     @Override
@@ -53,6 +53,7 @@ public final class MoveChild extends Operation {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
+                .add("type", type)
                 .add("child", child)
                 .add("newParent", newParent)
                 .add("newChildName", newChildName)

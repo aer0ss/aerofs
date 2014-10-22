@@ -59,7 +59,7 @@ public final class Content {
         if (o == null || getClass() != o.getClass()) return false;
 
         Content other = (Content) o;
-        return oid.equals(other.oid)
+        return Objects.equal(oid, other.oid)
                 && version == other.version
                 && Objects.equal(hash, other.hash)
                 && size == other.size

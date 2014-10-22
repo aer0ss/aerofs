@@ -27,7 +27,7 @@ public final class Atomic {
         if (o == null || getClass() != o.getClass()) return false;
 
         Atomic other = (Atomic) o;
-        return id.equals(other.id) && total == other.total && index == other.index;
+        return Objects.equal(id, other.id) && total == other.total && index == other.index;
     }
 
     @Override

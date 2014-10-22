@@ -63,7 +63,7 @@ public final class LocationResource {
 
             @Override
             public Void execute(DAO dao) throws Exception {
-                objectStore.addLocation(dao, oid, version, did);
+                objectStore.insertLocation(dao, oid, version, did);
                 return null;
             }
         });

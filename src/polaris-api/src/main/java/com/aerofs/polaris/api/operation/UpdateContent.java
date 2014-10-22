@@ -45,7 +45,7 @@ public final class UpdateContent extends Operation {
         if (o == null || getClass() != o.getClass()) return false;
 
         UpdateContent other = (UpdateContent) o;
-        return type == other.type && localVersion == other.localVersion && hash.equals(other.hash) && size == other.size && mtime == other.mtime;
+        return type == other.type && localVersion == other.localVersion && Objects.equal(hash, other.hash) && size == other.size && mtime == other.mtime;
     }
 
     @Override
@@ -57,6 +57,7 @@ public final class UpdateContent extends Operation {
     public String toString() {
         return Objects
                 .toStringHelper(this)
+                .add("type", type)
                 .add("localVersion", localVersion)
                 .add("hash", hash)
                 .add("size", size)

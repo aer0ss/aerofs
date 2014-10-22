@@ -41,7 +41,7 @@ public final class InsertChild extends Operation {
         if (o == null || getClass() != o.getClass()) return false;
 
         InsertChild other = (InsertChild) o;
-        return type == other.type && child.equals(other.child) && childObjectType == other.childObjectType && childName.equals(other.childName);
+        return type == other.type && Objects.equal(child, other.child) && Objects.equal(childObjectType, other.childObjectType) && Objects.equal(childName, other.childName);
     }
 
     @Override

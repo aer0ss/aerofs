@@ -7,6 +7,7 @@ import com.google.common.base.Objects;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 /**
  * Configuration object for the {@code} Simple server.
@@ -17,6 +18,7 @@ public final class SimpleConfiguration extends Configuration {
     @Min(1)
     private int maxSeats;
 
+    @NotNull
     @Valid
     private DatabaseConfiguration database;
 
@@ -43,7 +45,7 @@ public final class SimpleConfiguration extends Configuration {
         if (!super.equals(o)) return false;
 
         SimpleConfiguration other = (SimpleConfiguration) o;
-        return maxSeats == other.maxSeats && database.equals(other.database) && super.equals(other);
+        return maxSeats == other.maxSeats && Objects.equal(database, other.database);
     }
 
     @Override

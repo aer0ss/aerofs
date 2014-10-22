@@ -117,17 +117,17 @@ public final class Transform {
 
         Transform other = (Transform) o;
         return logicalTimestamp == other.logicalTimestamp
-                && originator.equals(other.originator)
-                && root.equals(other.root)
-                && oid.equals(other.oid)
-                && transformType == other.transformType
+                && Objects.equal(originator, other.originator)
+                && Objects.equal(root, other.root)
+                && Objects.equal(oid, other.oid)
+                && Objects.equal(transformType, other.transformType)
                 && newVersion == other.newVersion
                 && timestamp == other.timestamp
                 && Objects.equal(atomicOperationId, other.atomicOperationId)
                 && atomicOperationIndex == other.atomicOperationIndex
                 && atomicOperationTotal == other.atomicOperationTotal
                 && Objects.equal(child, other.child)
-                && childObjectType == other.childObjectType
+                && Objects.equal(childObjectType, other.childObjectType)
                 && Objects.equal(childName, other.childName)
                 && Objects.equal(contentHash, other.contentHash)
                 && contentSize == other.contentSize
