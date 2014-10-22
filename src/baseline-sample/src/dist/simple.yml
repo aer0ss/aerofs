@@ -5,7 +5,7 @@ app:
   port: 9999
 
 admin:
-  host: localhost
+  host: 0.0.0.0
   port: 8888
 
 database:
@@ -15,7 +15,7 @@ database:
   url: jdbc:mysql://localhost/simple
 
 logging:
-  level: DEBUG
+  level: INFO
 
   console:
     enabled: true

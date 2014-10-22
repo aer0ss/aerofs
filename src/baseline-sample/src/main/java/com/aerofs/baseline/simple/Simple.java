@@ -25,9 +25,6 @@ public final class Simple extends Service<SimpleConfiguration> {
 
     @Override
     public void init(SimpleConfiguration configuration, Environment environment) throws Exception {
-        // setup app security
-        addProvider(RolesAllowedDynamicFeature.class);
-
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
         DataSource dataSource = DataSources.newManagedDataSource(database, environment);
@@ -40,7 +37,7 @@ public final class Simple extends Service<SimpleConfiguration> {
         // setup JDBI
         DBI dbi = DBIInstances.newDBI(dataSource);
 
-        // register the task that dumps the object tree
+        // register the task that dumps the list of customers
         registerTask(new DumpTask(dbi, environment.getObjectMapper()));
 
         // register singleton providers

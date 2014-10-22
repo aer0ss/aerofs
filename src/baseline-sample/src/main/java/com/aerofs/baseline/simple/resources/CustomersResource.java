@@ -1,9 +1,12 @@
 package com.aerofs.baseline.simple.resources;
 
 import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.baseline.simple.SimpleConfiguration;
 import com.aerofs.baseline.simple.api.Customer;
 import com.aerofs.baseline.simple.db.Customers;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.base.Preconditions;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
@@ -12,7 +15,6 @@ import org.skife.jdbi.v2.TransactionStatus;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ResourceContext;
@@ -30,6 +32,8 @@ import javax.ws.rs.core.MediaType;
  */
 @Path("/customers")
 public final class CustomersResource {
+
+    private static final Timer CUSTOMER_CREATION_TIMER = MetricRegistries.getRegistry().timer(MetricRegistry.name("simple", "customer", "new"));
 
     private final DBI dbi;
     private final SimpleConfiguration configuration;
@@ -49,16 +53,23 @@ public final class CustomersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public int add(final Customer customer) {
-        Preconditions.checkArgument(customer.seats <= configuration.getMaxSeats(), "%s exceeds max seats (%s)", customer.seats, configuration.getMaxSeats());
+        Timer.Context timerContext = CUSTOMER_CREATION_TIMER.time();
 
-        return dbi.inTransaction(new TransactionCallback<Integer>() {
+        try {
+            Preconditions.checkArgument(customer.seats <= configuration.getMaxSeats(), "%s exceeds max seats (%s)", customer.seats, configuration.getMaxSeats());
 
-            @Override
-            public Integer inTransaction(Handle conn, TransactionStatus status) throws Exception {
-                Customers customers = conn.attach(Customers.class);
-                return customers.add(customer.customerName, customer.organizationName, customer.seats);
-            }
-        });
+            return dbi.inTransaction(new TransactionCallback<Integer>() {
+
+                @Override
+                public Integer inTransaction(Handle conn, TransactionStatus status) throws Exception {
+                    Customers customers = conn.attach(Customers.class);
+
+                    return customers.add(customer.customerName, customer.organizationName, customer.seats);
+                }
+            });
+        } finally {
+            timerContext.stop();
+        }
     }
 
     // this is a JAX-RS sub-resource
