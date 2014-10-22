@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.protocol;
 
-import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -16,7 +15,6 @@ import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
@@ -178,13 +176,6 @@ public class ComponentContentSender
         final ContentHash h = _ds.getCAHash_(k.sokid());
         boolean contentIsSame = false;
 
-//        if (h == null && !vRemote.sub_(vLocal).isZero_()) {
-//            // TODO: automatically compute missing hash if requested version does not dominate
-//            // advertised remote version?
-//            // This would avoid having to interrupt the transfer on receiver side to request the
-//            // hash, saving disk bandwidth, network bandwidth, two round trips and cpu cycles...
-//        }
-
         if (h != null) {
             if (remoteHash != null && h.equals(remoteHash)) {
                 contentIsSame = true;
@@ -254,8 +245,8 @@ public class ComponentContentSender
         // the file might not exist if len is 0
         InputStream is = len == 0 ? null : pf.newInputStream_();
 
-        MessageDigest md = hash == null ? SecUtil.newMessageDigest() : null;
-        if (is != null && md != null) is = new DigestInputStream(is, md);
+        MessageDigest md = SecUtil.newMessageDigest();
+        if (is != null) is = new DigestInputStream(is, md);
 
         try {
             long copied = is != null ? ByteStreams.copy(is, os) : 0;
@@ -272,32 +263,21 @@ public class ComponentContentSender
                 is.close();
             }
         }
-        return md != null ? new ContentHash(md.digest()) : null;
+        return new ContentHash(md.digest());
     }
 
-    private @Nullable MessageDigest createDigestIfNeeded_(SOCKID k, long prefixLen, Token tk,
-            @Nullable ContentHash hash, IPhysicalFile pf) throws Exception
+    private @Nullable MessageDigest createDigestIfNeeded_(long prefixLen, IPhysicalFile pf)
+            throws Exception
     {
-        // no need to rehash if we already have a content hash in the db
-        if (hash != null) return null;
-
         // see definition of PREFIX_REHASH_MAX_LENGTH for rationale of rehash limit on prefix length
         if (prefixLen >= DaemonParam.PREFIX_REHASH_MAX_LENGTH) return null;
 
         MessageDigest md = SecUtil.newMessageDigest();
         if (prefixLen == 0) return md;
 
-        TCB tcb = prefixLen > 4 * C.KB ? tk.pseudoPause_("rehash " + k + " " + prefixLen) : null;
-        try {
-            InputStream is = pf.newInputStream_();
-            try {
-                ByteStreams.copy(ByteStreams.limit(is, prefixLen),
-                        new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-            } finally {
-                is.close();
-            }
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
+        try (InputStream is = pf.newInputStream_()) {
+            ByteStreams.copy(ByteStreams.limit(is, prefixLen),
+                    new DigestOutputStream(ByteStreams.nullOutputStream(), md));
         }
         return md;
     }
@@ -316,7 +296,7 @@ public class ComponentContentSender
         final FileChunker chunker = new FileChunker(pf, mtime, len, prefixLen,
                 _m.getMaxUnicastSize_(), OSUtil.isWindows());
 
-        @Nullable MessageDigest md = createDigestIfNeeded_(k, prefixLen, tk, hash, pf);
+        @Nullable MessageDigest md = createDigestIfNeeded_(prefixLen, pf);
 
         Object ongoing = _ongoing.start(k);
         try {

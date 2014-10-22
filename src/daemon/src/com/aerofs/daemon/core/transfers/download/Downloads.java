@@ -5,10 +5,12 @@
 package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.TC;
@@ -45,6 +47,8 @@ public class Downloads
     private CoreQueue _q;
     private CoreScheduler _sched;
 
+    private ChangeEpochDatabase _cedb;
+
     private final Map<SOCID, AsyncDownload> _ongoing = Maps.newTreeMap();
 
     static class ExNoAvailDeviceForDep extends Exception
@@ -56,12 +60,13 @@ public class Downloads
 
     @Inject
     public void inject_(CoreQueue q, CoreScheduler sched, TokenManager tokenManager,
-            AsyncDownload.Factory factDL)
+            AsyncDownload.Factory factDL, ChangeEpochDatabase cedb)
     {
         _q = q;
         _sched = sched;
         _factDL = factDL;
         _tokenManager = tokenManager;
+        _cedb = cedb;
     }
 
     /**
@@ -110,6 +115,14 @@ public class Downloads
     {
         assert socid.cid().isMeta() : socid;
         assert !dids.isEmpty() : socid + " " + cxt;
+
+        try {
+            if (socid.cid().isMeta() && _cedb.getChangeEpoch_(socid.sidx()) != null) {
+                throw new ExBadArgs("no p2p meta transfer when polaris enabled");
+            }
+        } catch (Exception e) {
+            throw new ExUnsatisfiedDependency(socid, null, e);
+        }
 
         final TCB tcb = TC.tcb();
         final OutArg<Exception> ex = new OutArg<Exception>();

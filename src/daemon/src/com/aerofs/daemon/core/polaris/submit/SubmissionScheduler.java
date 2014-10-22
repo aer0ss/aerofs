@@ -68,6 +68,7 @@ public class SubmissionScheduler<T extends Submitter>
             }
         });
 
+        // TODO: META/CONTENT split?
         _f._vu.addListener_((soid, t) -> startOnCommit_(t));
     }
 

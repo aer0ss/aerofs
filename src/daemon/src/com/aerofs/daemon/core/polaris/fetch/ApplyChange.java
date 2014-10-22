@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -19,20 +20,26 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase.BufferedChange;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -60,12 +67,16 @@ public class ApplyChange
     private final MetaBufferDatabase _mbdb;
     private final MetaChangesDatabase _mcdb;
     private final MetaChangeSubmitter _submitter;
+    private final ContentChangesDatabase _ccdb;
+    private final RemoteContentDatabase _rcdb;
+    private final MapSIndex2Store _sidx2s;
 
     @Inject
     public ApplyChange(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
             CentralVersionDatabase cvdb, RemoteLinkDatabase rpdb, MapAlias2Target a2t,
             ObjectSurgeon os, MetaBufferDatabase mbdb, MetaChangesDatabase mcdb,
-            MetaChangeSubmitter submitter)
+            MetaChangeSubmitter submitter, ContentChangesDatabase ccdb, RemoteContentDatabase rcdb,
+            MapSIndex2Store sidx2s)
     {
         _ds = ds;
         _ps = ps;
@@ -77,6 +88,9 @@ public class ApplyChange
         _mbdb = mbdb;
         _mcdb = mcdb;
         _submitter = submitter;
+        _ccdb = ccdb;
+        _rcdb = rcdb;
+        _sidx2s = sidx2s;
     }
 
     public void apply_(SIndex sidx, RemoteChange c, long mergeBoundary, Trans t) throws Exception
@@ -85,6 +99,11 @@ public class ApplyChange
         if (_ds.getOANullable_(parent) == null && !_mbdb.isBuffered_(parent)) {
             l.error("dafuq {} {}", sidx, parent);
             throw new ExProtocolError();
+        }
+
+        if (c.transformType == RemoteChange.Type.UPDATE_CONTENT) {
+            applyContentChange_(parent, c ,t);
+            return;
         }
 
         // the value of version indicate that we have applied *ALL* changes up to that point
@@ -97,11 +116,6 @@ public class ApplyChange
 
         l.info("apply[{}] {} {} {}: {} {} {}",
                 sidx, c.logicalTimestamp, c.oid, c.newVersion, c.transformType, c.child, c.childName);
-
-        if (c.transformType == RemoteChange.Type.UPDATE_CONTENT) {
-            // TODO:
-            return;
-        }
 
         OID child = c.child;
         RemoteLink lnk = _rpdb.getParent_(sidx, child);
@@ -152,6 +166,50 @@ public class ApplyChange
         default:
             l.error("unsupported change type {}", c.transformType);
             throw new ExProtocolError();
+        }
+    }
+
+    private void applyContentChange_(SOID soid, RemoteChange c, Trans t)
+            throws SQLException, IOException
+    {
+        SIndex sidx = soid.sidx();
+
+        Long version = _rcdb.getMaxVersion_(sidx, soid.oid());
+        if (version != null && version >= c.newVersion) {
+            l.info("ignoring obsolete content change {}:{} {}", soid, version, c.newVersion);
+            return;
+        }
+
+        OA oa = _ds.getOANullable_(soid);
+        if (oa != null && !oa.isExpelled()) {
+            ContentHash h = _ds.getCAHash_(new SOKID(soid, KIndex.MASTER));
+            if (h != null && h.equals(c.contentHash)
+                    && oa.caMaster().length() == c.contentSize) {
+                l.info("match local content -> ignore");
+                _ccdb.deleteChange_(sidx, soid.oid(), t);
+                _cvdb.setVersion_(sidx, soid.oid(), c.newVersion, t);
+                _rcdb.deleteUpToVersion_(sidx, soid.oid(), c.newVersion, t);
+
+                // delete conflict branch if any
+                if (oa.cas().size() > 1) {
+                    checkState(oa.cas().size() == 2);
+                    KIndex kidx = KIndex.MASTER.increment();
+                    l.info("delete branch {}", kidx);
+                    _ds.deleteCA_(soid, kidx, t);
+                    _ps.newFile_(_ds.resolve_(oa), kidx).delete_(PhysicalOp.APPLY, t);
+                }
+                return;
+            }
+        }
+        // NB: it's safe to apply content change immediately even if the creation of the
+        // file is still in the meta buffer. The content fetcher will simply ignore the entry
+        // until the OA is created. If the object end up being deleted when buffered changes
+        // are applied then either LogicalStagingArea or ContentFetcherIterator will clean up
+        // the db as required.
+        _rcdb.insert_(sidx, soid.oid(), c.newVersion, new DID(c.originator), c.contentHash,
+                c.contentSize, t);
+        if (oa == null || !oa.isExpelled()) {
+            _sidx2s.get_(sidx).contentFetcher().schedule_(soid.oid(), t);
         }
     }
 
@@ -278,7 +336,8 @@ public class ApplyChange
             Trans t) throws Exception
     {
         _ds.createOA_(type, sidx, oidChild, oidParent, name, t);
-        if (type == Type.DIR || type == Type.ANCHOR) {
+        OA oa = _ds.getOA_(new SOID(sidx, oidChild));
+        if (!oa.isExpelled() && oa.isDirOrAnchor()) {
             _ps.newFolder_(_ds.resolve_(new SOID(sidx, oidChild))).create_(PhysicalOp.APPLY, t);
         }
     }
@@ -344,8 +403,8 @@ public class ApplyChange
             RemoteLink clnk = _rpdb.getParent_(sidx, oidConflict);
             OA oaConflict = _ds.getOA_(new SOID(sidx, oidConflict));
 
-            // TODO: should NOT allow aliasing if local change submitted but no response received
-            // instead should throw nad let the submitter perform aliasing on 409
+            // TODO(phoenix): should NOT allow aliasing if local change submitted but not ack'ed
+            // instead should throw and let the submitter perform aliasing on 409
             if (oaChild == null && clnk == null
                     && oaConflict.type() == c.type&& c.type != Type.ANCHOR) {
                 alias_(sidx, c.oid, oaConflict, t);
@@ -418,12 +477,14 @@ public class ApplyChange
             // expect no conflict branch since alias are always local-only
             checkState(oaConflict.cas().size() <= 1);
             if (oaConflict.caMasterNullable() != null) {
-                _ps.newFile_(pConflict, KIndex.MASTER).updateSOID_(pConflict.soid(), t);
+                _ps.newFile_(pConflict, KIndex.MASTER).updateSOID_(new SOID(sidx, oid), t);
             }
-            // TODO: clear prefixes if any
-            // TODO: deal with CAs and other content-related things
+            _ps.deletePrefix_(new SOKID(oaConflict.soid(), KIndex.MASTER));
+            if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t)) {
+                _ccdb.insertChange_(sidx, oid, t);
+            }
         } else {
-            _ps.newFolder_(pConflict).updateSOID_(oaConflict.soid(), t);
+            _ps.newFolder_(pConflict).updateSOID_(new SOID(sidx, oid), t);
         }
     }
 }

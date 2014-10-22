@@ -19,12 +19,16 @@ import com.aerofs.daemon.core.polaris.InMemoryDS;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AliasDatabase;
+import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgUsePolaris;
@@ -73,6 +77,7 @@ public class TestApplyChange extends AbstractBaseTest
         @Override public boolean get() { return true; }
     };
     final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(mock(InjectableDriver.class), usePolaris);
+    final CoreDBCW cdbcw = dbcw.getCoreDBCW();
 
     final UserID user = UserID.fromInternal("foo@bar.baz");
     final SID rootSID = SID.rootSID(user);
@@ -81,10 +86,12 @@ public class TestApplyChange extends AbstractBaseTest
 
     final InMemoryDS mds = new InMemoryDS(dbcw.getCoreDBCW(), usePolaris, ps, user);
 
-    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(dbcw.getCoreDBCW(), mds.sdo);
-    final MetaBufferDatabase mbdb = new MetaBufferDatabase(dbcw.getCoreDBCW(), mds.sdo);
-    final CentralVersionDatabase cvdb = new CentralVersionDatabase(dbcw.getCoreDBCW(), mds.sdo);
-    final AliasDatabase adb = new AliasDatabase(dbcw.getCoreDBCW());
+    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(cdbcw, mds.sdo);
+    final MetaBufferDatabase mbdb = new MetaBufferDatabase(cdbcw, mds.sdo);
+    final CentralVersionDatabase cvdb = new CentralVersionDatabase(cdbcw, mds.sdo);
+    final AliasDatabase adb = new AliasDatabase(cdbcw);
+    final ContentChangesDatabase ccdb = new ContentChangesDatabase(cdbcw, mds.sco, mds.sdo);
+    final RemoteContentDatabase rcdb = new RemoteContentDatabase(cdbcw, mds.sco, mds.sdo);
 
     final MapAlias2Target a2t = new MapAlias2Target(adb);
     final MetaChangesDatabase mcdb = mock(MetaChangesDatabase.class);
@@ -113,7 +120,8 @@ public class TestApplyChange extends AbstractBaseTest
         } catch (Exception e) { throw new AssertionError(e); }
         sidx = mds.sm.get_(rootSID);
 
-        ac = new ApplyChange(ds, ps, expulsion, cvdb, rldb, a2t, ds, mbdb, mcdb, submitter);
+        ac = new ApplyChange(ds, ps, expulsion, cvdb, rldb, a2t, ds, mbdb, mcdb, submitter, ccdb,
+                rcdb, mock(MapSIndex2Store.class));
     }
 
     @After

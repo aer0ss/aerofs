@@ -13,16 +13,11 @@ import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -32,7 +27,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
@@ -57,7 +51,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.defects.Defects.newMetric;
@@ -89,7 +82,7 @@ import static com.google.common.base.Preconditions.checkState;
  * auxiliary threads are used. If the queue overflows, hashing will be done synchronously in the
  * calling thread to throttle incoming hash requests.
  */
-public class HashQueue implements IVersionControlListener
+public class HashQueue
 {
     private final static Logger l = Loggers.getLogger(HashQueue.class);
 
@@ -97,10 +90,7 @@ public class HashQueue implements IVersionControlListener
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
     private final TransManager _tm;
-    private final IPhysicalStorage _ps;
-    private final LinkerRootMap _lrm;
     private final TokenManager _tokenManager;
-    private final InjectableFile.Factory _factFile;
     private final AnalyticsEventCounter _saveCounter;
 
     enum State
@@ -314,19 +304,14 @@ public class HashQueue implements IVersionControlListener
             new CoreLockReleaseRunPolicy());                // blocking submit on queue overflow
 
     @Inject
-    public HashQueue(CoreScheduler sched, DirectoryService ds, NativeVersionControl nvc,
-            VersionUpdater vu, IPhysicalStorage ps, LinkerRootMap lrm, TransManager tm,
-            TokenManager tokenManager, InjectableFile.Factory factFile, Analytics analytics)
+    public HashQueue(CoreScheduler sched, DirectoryService ds, VersionUpdater vu, TransManager tm,
+            TokenManager tokenManager, Analytics analytics)
     {
         _sched = sched;
         _ds = ds;
         _vu = vu;
         _tm = tm;
-        _ps = ps;
-        _lrm = lrm;
         _tokenManager = tokenManager;
-        _factFile = factFile;
-        nvc.addListener_(this);
         _saveCounter = new AnalyticsEventCounter(analytics) {
             @Override
             public IAnalyticsEvent createEvent(int count)
@@ -388,35 +373,4 @@ public class HashQueue implements IVersionControlListener
             return m;
         }
     };
-
-    // TODO: Phoenix equivalent
-    @Override
-    public void localVersionAdded_(SOCKID sockid, Version v, Trans t) throws SQLException
-    {
-        if (sockid.cid().isContent() && !sockid.kidx().isMaster()) return;
-
-        HashRequest r = _requests.get(sockid.soid());
-        if (r == null || r.aborted) {
-            return;
-        }
-
-        if (sockid.cid().isMeta()) {
-            if (r.state != State.PENDING) return;
-
-            // update path on META change
-            ResolvedPath p = _ds.resolve_(sockid.soid());
-            String absPath = _ps.newFile_(p, KIndex.MASTER).getAbsPath_();
-            LinkerRoot lr = _lrm.get_(p.sid());
-            l.info("meta change during hashing {} {} -> {}", r.soid, r.f, absPath);
-            if (lr.isPhysicallyEquivalent(absPath, r.f.getAbsolutePath())) return;
-
-            synchronized (r) {
-                r.f = _factFile.create(absPath);
-            }
-        } else if (r.state != State.COMMITTED) {
-            l.warn("log diff, abort hash {}", sockid.socid());
-            r.aborted = true;
-            r.removeSelf();
-        }
-    }
 }

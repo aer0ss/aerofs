@@ -17,6 +17,10 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.protocol.ComputeHash;
 import com.aerofs.daemon.core.protocol.ContentUpdater;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;
@@ -24,6 +28,7 @@ import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.MetaUpdater;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOKID;
 
 import java.sql.SQLException;
@@ -56,16 +61,24 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public final Hasher _hasher = mock(Hasher.class);
     public final ComputeHash _computeHash = mock(ComputeHash.class);
     public final ReceiveAndApplyUpdate _raau = mock(ReceiveAndApplyUpdate.class);
+    public final ChangeEpochDatabase _cedb = mock(ChangeEpochDatabase.class);
+    public final CentralVersionDatabase _cvdb = mock(CentralVersionDatabase.class);
+    public final ContentChangesDatabase _ccdb = mock(ContentChangesDatabase.class);
+    public final RemoteContentDatabase _rcdb = mock(RemoteContentDatabase.class);
 
     public final MetaUpdater _mu = new MetaUpdater();
     public final ContentUpdater _cu =
-            new ContentUpdater(_tm, _ds, _ps, _iss, _a2t, _lacl, _nvc, _bd, _hasher, _computeHash, _raau);
+            new ContentUpdater(_tm, _ds, _ps, _iss, _a2t, _lacl, _nvc, _bd, _hasher, _computeHash, _raau,
+            _cedb, _cvdb, _ccdb, _rcdb);
     public final GetComponentResponse _gcr =
             new GetComponentResponse(_mu, _cu, _iss);
 
     public GetComponentResponseWithMocks()
     {
         _mu.inject_(_tm, _ds, _nvc, _mdiff, _al, _a2t, _lacl, _emd, _oc, _om, _sc, _vu);
+        try {
+            when(_cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
+        } catch (SQLException e) { fail(); }
         try {
             when(_ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(mock(IPhysicalPrefix.class));
         } catch (SQLException e) { fail(); }

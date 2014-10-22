@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris.api;
 import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.ContentHash;
 
 @NoObfuscation
 public class RemoteChange
@@ -33,7 +34,7 @@ public class RemoteChange
     public ObjectType childObjectType;
 
     // for content changes
-    public String contentHash;
+    public ContentHash contentHash;
     public Long contentSize;
     public Long contentMtime;
 

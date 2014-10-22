@@ -4,11 +4,10 @@
 
 package com.aerofs.daemon.core.expel;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ContentVersionControl;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -21,16 +20,12 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.OSUtil;
@@ -69,7 +64,7 @@ public class TestLogicalStagingArea extends AbstractTest
 {
     @Mock DirectoryService ds;
     @Mock IPhysicalStorage ps;
-    @Mock NativeVersionControl nvc;
+    @Mock ContentVersionControl cvc;
     @Mock PrefixVersionControl pvc;
     @Mock CoreScheduler sched;
     @Mock TransManager tm;
@@ -93,14 +88,9 @@ public class TestLogicalStagingArea extends AbstractTest
         dbcw.init_();
 
         mds = new MockDS(rootSID, ds, sm, sm);
-        lsa = new LogicalStagingArea(ds, ps, nvc, pvc, lsadb, sched, sm, sdo, tm);
+        lsa = new LogicalStagingArea(ds, ps, cvc, pvc, lsadb, sched, sm, sdo, tm);
 
         when(tm.begin_()).thenReturn(t);
-
-        when(nvc.getKMLVersion_(any(SOCID.class)))
-                .thenReturn(Version.empty());
-        when(nvc.getLocalVersion_(any(SOCKID.class)))
-                .thenReturn(Version.of(DID.generate(), new Tick(1)));
 
         doAnswer(invocation -> {
             SOID soid  = (SOID)invocation.getArguments()[0];
@@ -171,7 +161,7 @@ public class TestLogicalStagingArea extends AbstractTest
         int n = sm.getNullable_(soid.sidx()) != null ? 1 : 0;
         VerificationMode mode = times(n);
         verify(ds, mode).unsetFID_(soid, t);
-        verify(nvc, mode).moveAllContentTicksToKML_(soid, t);
+        verify(cvc, mode).fileExpelled_(soid, t);
         verify(ds, mode).deleteCA_(soid, KIndex.MASTER, t);
 
         verify(ps).scrub_(soid, historyPath, t);

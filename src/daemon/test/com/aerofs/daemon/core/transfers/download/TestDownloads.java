@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.Token;
@@ -60,12 +61,14 @@ public class TestDownloads extends AbstractTest
     DID did = DID.generate();
     @Mock ITokenReclamationListener trl;
     @Mock IDownloadCompletionListener dcl;
+    @Mock ChangeEpochDatabase cedb;
 
     @Before
     public void setUp() throws Exception
     {
         dls = new Downloads();
-        dls.inject_(q, sched, tokenManager, factDL);
+        dls.inject_(q, sched, tokenManager, factDL, cedb);
+        when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
     }
 
     @Test

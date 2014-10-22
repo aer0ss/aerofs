@@ -9,12 +9,13 @@ import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -34,6 +35,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     private final SenderFilters _senderFilters;
     private final ChangeFetchScheduler _cfs;
     private final SubmissionScheduler<MetaChangeSubmitter> _mcss;
+    private final SubmissionScheduler<ContentChangeSubmitter> _ccss;
+    private final ContentFetcher _cf;
 
     // For debugging.
     // The idea is that when this.deletePersistentData_ is called, this object
@@ -44,7 +47,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public static class Factory
     {
-        private final CfgUsePolaris _usePolaris;
         private final Devices _devices;
         private final AntiEntropy _ae;
         private final Collector.Factory _factCollector;
@@ -54,10 +56,11 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         private final ChangeNotificationSubscriber _cnsub;
         private final ChangeFetchScheduler.Factory _factCFS;
         private final SubmissionScheduler.Factory<MetaChangeSubmitter> _factMCSS;
+        private final SubmissionScheduler.Factory<ContentChangeSubmitter> _factCCSS;
+        private final ContentFetcher.Factory _factCF;
 
         @Inject
         public Factory(
-                CfgUsePolaris usePolaris,
                 SenderFilters.Factory factSF,
                 Collector.Factory factCollector,
                 AntiEntropy ae,
@@ -66,9 +69,10 @@ public class Store implements Comparable<Store>, IDumpStatMisc
                 ChangeEpochDatabase cedb,
                 ChangeNotificationSubscriber cnsub,
                 ChangeFetchScheduler.Factory factCFS,
-                SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS)
+                SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS,
+                SubmissionScheduler.Factory<ContentChangeSubmitter> factCCSS,
+                ContentFetcher.Factory factCF)
         {
-            _usePolaris = usePolaris;
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
@@ -78,6 +82,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
             _cnsub = cnsub;
             _factCFS = factCFS;
             _factMCSS = factMCSS;
+            _factCCSS = factCCSS;
+            _factCF = factCF;
         }
 
         public Store create_(SIndex sidx) throws SQLException
@@ -95,9 +101,11 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _senderFilters = f._factSF.create_(sidx);
         _cfs = f._factCFS.create(sidx);
         _mcss = f._factMCSS.create(sidx);
+        _ccss = f._factCCSS.create(sidx);
+        _cf = f._factCF.create_(sidx);
         _isDeleted = false;
         _f = f;
-        _usePolaris = _f._usePolaris.get() && _f._cedb.getChangeEpoch_(_sidx) != null;
+        _usePolaris = _f._cedb.getChangeEpoch_(_sidx) != null;
     }
 
     public Collector collector()
@@ -116,6 +124,12 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     {
         assert !_isDeleted;
         return _sidx;
+    }
+
+    public ContentFetcher contentFetcher()
+    {
+        checkState(_usePolaris && !_isDeleted);
+        return _cf;
     }
 
     @Override
@@ -149,7 +163,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     public void notifyDeviceOnline_(DID did)
     {
         if (_usePolaris) {
-            // TODO: collector equivalent
+            _cf.online_(did);
         } else {
             _collector.online_(did);
             _f._ae.request_(_sidx, did);
@@ -160,7 +174,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     public void notifyDeviceOffline_(DID did)
     {
         if (_usePolaris) {
-            // TODO: collector equivalent
+            _cf.offline_(did);
         } else {
             _collector.offline_(did);
         }
@@ -175,6 +189,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         if (_usePolaris) {
             // start submitting local updates to polaris
             _mcss.start_();
+            _ccss.start_();
 
             // start fetching updates from polaris
             _cfs.schedule_();
@@ -201,6 +216,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         if (_usePolaris) {
             // stop submitting local updates to polaris
             _mcss.stop_();
+            _ccss.stop_();
 
             // stop fetching updates from polaris
             _cfs.stop_();

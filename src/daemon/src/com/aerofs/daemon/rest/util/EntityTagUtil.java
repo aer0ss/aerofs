@@ -57,6 +57,7 @@ public class EntityTagUtil
 
     public EntityTag etagForContent(SOID soid) throws SQLException
     {
+        // TODO(phoenix)
         return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid, CID.CONTENT)));
     }
 

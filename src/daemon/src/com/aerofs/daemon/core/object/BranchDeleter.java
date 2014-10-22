@@ -41,13 +41,14 @@ public class BranchDeleter
             boolean deleteVersionPermanently, Trans t)
         throws SQLException, IOException
     {
-        l.debug("delete branch " + k);
+        l.debug("delete branch {}", k);
 
         // During aliasing the MASTER branch of the aliased object can be deleted.
 
         assert k.cid().equals(CID.CONTENT);
         assert !v.isZero_();
 
+        // TODO(phoenix)
         if (deleteVersionPermanently) _nvc.deleteLocalVersionPermanently_(k, v, t);
         else _nvc.deleteLocalVersion_(k, v, t);
 

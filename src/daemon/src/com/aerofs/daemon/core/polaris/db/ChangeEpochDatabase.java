@@ -34,6 +34,7 @@ public class ChangeEpochDatabase extends AbstractDatabase
             DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_LOCAL));
     public @Nullable Long getChangeEpoch_(SIndex sidx) throws SQLException
     {
+        if (!_dbcw.columnExists(T_STORE, C_STORE_LTS_LOCAL)) return null;
         return exec(_pswGetEpoch, ps -> {
             ps.setInt(1, sidx.getInt());
             try (ResultSet rs = ps.executeQuery()) {

@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
@@ -67,21 +68,21 @@ public class ReceiveAndApplyUpdate
 {
     private static final Logger l = Loggers.getLogger(ReceiveAndApplyUpdate.class);
 
-    private DirectoryService _ds;
-    private PrefixVersionControl _pvc;
-    private NativeVersionControl _nvc;
-    private IPhysicalStorage _ps;
-    private DownloadState _dlState;
-    private IncomingStreams _iss;
-    private BranchDeleter _bd;
-    private TransManager _tm;
-    private AnalyticsEventCounter _conflictCounter;
+    private final DirectoryService _ds;
+    private final PrefixVersionControl _pvc;
+    private final NativeVersionControl _nvc;
+    private final IPhysicalStorage _ps;
+    private final DownloadState _dlState;
+    private final IncomingStreams _iss;
+    private final BranchDeleter _bd;
+    private final TransManager _tm;
+    private final AnalyticsEventCounter _conflictCounter;
+    private final ChangeEpochDatabase _cedb;
 
     @Inject
     public ReceiveAndApplyUpdate(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IPhysicalStorage ps, DownloadState dlState,
-            IncomingStreams iss, BranchDeleter bd, TransManager tm,
-            Analytics analytics)
+            IPhysicalStorage ps, DownloadState dlState, ChangeEpochDatabase cedb,
+            IncomingStreams iss, BranchDeleter bd, TransManager tm, Analytics analytics)
     {
         _ds = ds;
         _pvc = pvc;
@@ -91,6 +92,7 @@ public class ReceiveAndApplyUpdate
         _iss = iss;
         _bd = bd;
         _tm = tm;
+        _cedb = cedb;
         _conflictCounter = new AnalyticsEventCounter(analytics)
         {
             @Override
@@ -243,8 +245,7 @@ public class ReceiveAndApplyUpdate
                 _iss.end_(msg.streamKey());
 
                 // Use the content from the local branch
-                IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()),
-                        matchingLocalBranch);
+                IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()), matchingLocalBranch);
 
                 try {
                     try (InputStream is = file.newInputStream_()) {
@@ -259,7 +260,7 @@ public class ReceiveAndApplyUpdate
                 } catch (FileNotFoundException e) {
                     SOCKID conflict = new SOCKID(k.soid(), CID.CONTENT, matchingLocalBranch);
 
-                    if (!matchingLocalBranch.equals(KIndex.MASTER)) {
+                    if (!matchingLocalBranch.isMaster()) {
                         // A conflict branch does not exist, even though there is an entry
                         // in our database. This is an inconsistency, we must remove the
                         // entry in our database. AeroFS will redownload the conflict at a later
@@ -268,7 +269,16 @@ public class ReceiveAndApplyUpdate
 
                         Trans t = _tm.begin_();
                         try {
-                            _bd.deleteBranch_(conflict, _nvc.getLocalVersion_(conflict), false, t);
+                            if (_cedb.getChangeEpoch_(k.sidx()) != null) {
+                                // TODO(phoenix): version adjustment?
+                                //   rewind -> reset central version to base version of MASTER ca
+                                //   merge  -> update base version of MASTER CA
+                                // NB: currently, not doing anything is equivalent to a merge
+                                _ds.deleteCA_(k.soid(), matchingLocalBranch, t);
+                            } else {
+                                _bd.deleteBranch_(conflict, _nvc.getLocalVersion_(conflict), false,
+                                        t);
+                            }
                             t.commit_();
                         } finally {
                             t.end_();

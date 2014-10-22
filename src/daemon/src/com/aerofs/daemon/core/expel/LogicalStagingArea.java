@@ -8,8 +8,8 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ContentVersionControl;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -27,10 +27,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -87,7 +85,7 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
     private final CleanupScheduler _sas;
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
-    private final NativeVersionControl _nvc;
+    private final ContentVersionControl _cvc;
     private final PrefixVersionControl _pvc;
     private final LogicalStagingAreaDatabase _sadb;
     private final IMapSIndex2SID _sidx2sid;
@@ -96,14 +94,14 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
 
     @Inject
     public LogicalStagingArea(DirectoryService ds, IPhysicalStorage ps,
-            NativeVersionControl nvc, PrefixVersionControl pvc, LogicalStagingAreaDatabase sadb,
+            ContentVersionControl cvc, PrefixVersionControl pvc, LogicalStagingAreaDatabase sadb,
             CoreScheduler sched, IMapSIndex2SID sidx2sid,
             StoreDeletionOperators storeDeletionOperators, TransManager tm)
     {
         _sas = new CleanupScheduler(this, sched);
         _ds = ds;
         _ps = ps;
-        _nvc = nvc;
+        _cvc = cvc;
         _pvc = pvc;
         _sadb = sadb;
         _sidx2sid = sidx2sid;
@@ -249,15 +247,15 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
     /**
      * Determine the history path of an object.
      *
-     * If the object is not explictly staged, recursively check ancestors for explicit staging,
+     * If the object is not explicitly staged, recursively check ancestors for explicit staging,
      * in bottom-up fashion. Take the history path of the first (innermost) ancestor that is
-     * explictly staged and append the relative path between this ancestor and the object of
+     * explicitly staged and append the relative path between this ancestor and the object of
      * interest to form the actual history path.
      *
      * NB: this methods performs NO metadatabase lookups, instead relying only on the input Path.
      *
      * @return
-     *      - null if the object is not staged (explictly or implictly)
+     *      - null if the object is not staged (explicitly or implicitly)
      *      - empty if the innermost staged folder is marked to not keep history
      *      - otherwise, join(innermost history path, child path)
      */
@@ -424,7 +422,7 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
 
             return _ds.hasChildren_(oa.soid());
         case ANCHOR:
-            // anchor should have been scrubed separately
+            // anchor should have been scrubbed separately
             // see AdmittedToExpelledAdjuster and StoreDeleter
             break;
         default:
@@ -438,24 +436,24 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
      */
     private void cleanupFile_(OA oa, Path historyPath, Trans t) throws SQLException, IOException
     {
-        _ps.scrub_(oa.soid(), historyPath, t);
+        SOID soid = oa.soid();
+        _ps.scrub_(soid, historyPath, t);
 
-        SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
         // if the entire store is staged it's counter-productive to cleanup objects one by one
-        if (!isStoreStaged_(socid.sidx())) {
+        if (!isStoreStaged_(soid.sidx())) {
             for (KIndex kidx : oa.casNoExpulsionCheck().keySet()) {
-                _ds.deleteCA_(oa.soid(), kidx, t);
+                _ds.deleteCA_(soid, kidx, t);
             }
-            _nvc.moveAllContentTicksToKML_(oa.soid(), t);
+            _cvc.fileExpelled_(soid, t);
         }
 
-        _pvc.deleteAllPrefixVersions_(socid.soid(), t);
+        _pvc.deleteAllPrefixVersions_(soid, t);
     }
 
     /**
-     * @return whether an object is *explictly* staged
+     * @return whether an object is *explicitly* staged
      *
-     * An object can also be implicitly staged if any of its ancestors is explictly staged.
+     * An object can also be implicitly staged if any of its ancestors is explicitly staged.
      */
     private boolean isStaged_(SOID soid)  throws SQLException
     {

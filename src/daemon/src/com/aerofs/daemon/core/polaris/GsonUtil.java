@@ -5,9 +5,11 @@
 package com.aerofs.daemon.core.polaris;
 
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.ContentHash;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -28,6 +30,13 @@ public class GsonUtil
             .registerTypeAdapter(OID.class, (JsonDeserializer<OID>)(elem, type, cxt) -> {
                 try {
                     return new OID(elem.getAsString());
+                } catch (ExFormatError e) {
+                    throw new JsonParseException(e);
+                }
+            })
+            .registerTypeAdapter(ContentHash.class, (JsonDeserializer<ContentHash>)(elem, type, cxt) -> {
+                try {
+                    return new ContentHash(BaseUtil.hexDecode(elem.getAsString()));
                 } catch (ExFormatError e) {
                     throw new JsonParseException(e);
                 }

@@ -1,31 +1,21 @@
 package com.aerofs.daemon.core.expel;
 
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.List;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
-import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -50,9 +40,6 @@ public class Expulsion
     private static final Logger l = Loggers.getLogger(Expulsion.class);
     private DirectoryService _ds;
     private IExpulsionDatabase _exdb;
-    private ICollectorSequenceDatabase _csdb;
-    private NativeVersionControl _nvc;
-    private MapSIndex2Store _sidx2s;
     private AdmittedToAdmittedAdjuster _adjA2A;
     private AdmittedToExpelledAdjuster _adjA2E;
     private ExpelledToAdmittedAdjuster _adjE2A;
@@ -69,8 +56,7 @@ public class Expulsion
     @Inject
     public void inject_(DirectoryService ds, IExpulsionDatabase exdb, LogicalStagingArea sa,
             ExpelledToExpelledAdjuster adjE2E, ExpelledToAdmittedAdjuster adjE2A,
-            AdmittedToExpelledAdjuster adjA2E, AdmittedToAdmittedAdjuster adjA2A,
-            NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s)
+            AdmittedToExpelledAdjuster adjA2E, AdmittedToAdmittedAdjuster adjA2A)
     {
         _adjE2E = adjE2E;
         _adjE2A = adjE2A;
@@ -78,9 +64,6 @@ public class Expulsion
         _adjA2A = adjA2A;
         _ds = ds;
         _exdb = exdb;
-        _nvc = nvc;
-        _csdb = csdb;
-        _sidx2s = sidx2s;
         _sa = sa;
     }
 
@@ -206,54 +189,5 @@ public class Expulsion
     public IDBIterator<SOID> getExpelledObjects_() throws SQLException
     {
         return _exdb.getExpelledObjects_();
-    }
-
-    // Because huge amount of files may be admitted at once, we batch store operations for these
-    // files at the end of the transaction.
-    private class StoresWithAdmittedFiles extends AbstractTransListener
-    {
-        HashSet<SIndex> _sidxs = Sets.newHashSet();
-
-        void add_(SIndex sidx)
-        {
-            _sidxs.add(sidx);
-        }
-
-        @Override
-        public void committing_(Trans t) throws SQLException
-        {
-            for (SIndex sidx : _sidxs) {
-                _sidx2s.get_(sidx).resetCollectorFiltersForAllDevices_(t);
-            }
-        }
-    }
-
-    private final TransLocal<StoresWithAdmittedFiles> _tlaf =
-            new TransLocal<StoresWithAdmittedFiles>() {
-                @Override
-                protected StoresWithAdmittedFiles initialValue(Trans t)
-                {
-                    StoresWithAdmittedFiles swaf = new StoresWithAdmittedFiles();
-                    t.addListener_(swaf);
-                    return swaf;
-                }
-            };
-
-    /**
-     * called when a file is admitted from the expelled state
-     */
-    void fileAdmitted_(SOID soid, Trans t) throws SQLException
-    {
-        assert _ds.getOA_(soid).isFile();
-
-        SOCID socid = new SOCID(soid, CID.CONTENT);
-
-        // Ignore if the content doesn't have KML version. Strictly speaking this is not needed
-        // because the collector automatically skips objects with zero KML in the collector-sequence
-        // table.
-        if (_nvc.getKMLVersion_(socid).isZero_()) return;
-
-        _csdb.insertCS_(socid, t);
-        _tlaf.get(t).add_(soid.sidx());
     }
 }

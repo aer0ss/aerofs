@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.expel;
 
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
@@ -8,31 +9,56 @@ import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
+import java.sql.SQLException;
+import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final ImmigrantDetector _imd;
-    private final Expulsion _expulsion;
+    private final ICollectorSequenceDatabase _csdb;
+    private final NativeVersionControl _nvc;
+    private final MapSIndex2Store _sidx2s;
+    private final ChangeEpochDatabase _cedb;
+    private final RemoteContentDatabase _rcdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
 
     @Inject
-    public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, ImmigrantDetector imd,
-            DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa)
+    public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
+            DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
+            NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
+            ChangeEpochDatabase cedb, RemoteContentDatabase rcdb)
     {
         _sc = sc;
-        _expulsion = expulsion;
         _imd = imd;
         _ds = ds;
         _ps = ps;
         _sa = sa;
+        _nvc = nvc;
+        _csdb = csdb;
+        _sidx2s = sidx2s;
+        _cedb = cedb;
+        _rcdb = rcdb;
     }
 
     @Override
@@ -67,7 +93,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 switch (oa.type()) {
                 case FILE:
                     _imd.detectAndPerformImmigration_(oa, op, t);
-                    _expulsion.fileAdmitted_(oa.soid(), t);
+                    fileAdmitted_(oa.soid(), t);
                     return null;
                 case DIR:
                     _ps.newFolder_(path).create_(op, t);
@@ -88,5 +114,60 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 }
             }
         });
+    }
+
+    // Because huge amount of files may be admitted at once, we batch store operations for these
+    // files at the end of the transaction.
+    private class StoresWithAdmittedFiles extends AbstractTransListener
+    {
+        Set<SIndex> _sidxs = Sets.newHashSet();
+
+        void add_(SIndex sidx)
+        {
+            _sidxs.add(sidx);
+        }
+
+        @Override
+        public void committing_(Trans t) throws SQLException
+        {
+            for (SIndex sidx : _sidxs) {
+                _sidx2s.get_(sidx).resetCollectorFiltersForAllDevices_(t);
+            }
+        }
+    }
+
+    private final TransLocal<StoresWithAdmittedFiles> _tlaf =
+            new TransLocal<StoresWithAdmittedFiles>() {
+                @Override
+                protected StoresWithAdmittedFiles initialValue(Trans t)
+                {
+                    StoresWithAdmittedFiles swaf = new StoresWithAdmittedFiles();
+                    t.addListener_(swaf);
+                    return swaf;
+                }
+            };
+
+    /**
+     * called when a file is admitted from the expelled state
+     */
+    private void fileAdmitted_(SOID soid, Trans t) throws SQLException
+    {
+        checkArgument(_ds.getOA_(soid).isFile());
+
+        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+            if (_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) {
+                // TODO(phoenix): BF adjustment (when BF brought back)
+                _sidx2s.get_(soid.sidx()).contentFetcher().schedule_(soid.oid(), t);
+            }
+        } else {
+            SOCID socid = new SOCID(soid, CID.CONTENT);
+
+            // Ignore if the content doesn't have KML version. Strictly speaking this is not needed
+            // because the collector automatically skips objects with zero KML
+            if (_nvc.getKMLVersion_(socid).isZero_()) return;
+
+            _csdb.insertCS_(socid, t);
+            _tlaf.get(t).add_(soid.sidx());
+        }
     }
 }

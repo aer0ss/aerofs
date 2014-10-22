@@ -28,7 +28,7 @@ public class LocalChange
 
     // update
     public Long localVersion;
-    public String contentHash;
-    public Long contentSize;
-    public Long contentMtime;
+    public String hash;
+    public Long size;
+    public Long mtime;
 }

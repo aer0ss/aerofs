@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 
@@ -270,5 +271,19 @@ public class Version
             if (didMax == null || didMax.compareTo(did) < 0) didMax = did;
         }
         return didMax;
+    }
+
+    private static final DID CENTRAL = new DID(UniqueID.ZERO);
+
+    public Long unwrapCentral()
+    {
+        if (_map.size() != 1) return null;
+        Tick t = _map.get(CENTRAL);
+        return t != null ? t.getLong() : null;
+    }
+
+    public static Version wrapCentral(Long v)
+    {
+        return Version.of(CENTRAL, v != null ? v : -1);
     }
 }

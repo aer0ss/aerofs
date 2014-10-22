@@ -1,8 +1,13 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.*;
+import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.BranchDeleter;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -21,20 +26,24 @@ import com.google.inject.Inject;
 public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 {
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final NativeVersionControl _nvc;
     private final TransManager _tm;
     private final VersionUpdater _vu;
     private final BranchDeleter _bd;
+    private final ChangeEpochDatabase _cedb;
 
     @Inject
     public HdDeleteBranch(VersionUpdater vu, TransManager tm, NativeVersionControl nvc,
-            DirectoryService ds, BranchDeleter bd)
+            ChangeEpochDatabase cedb, DirectoryService ds, IPhysicalStorage ps, BranchDeleter bd)
     {
         _vu = vu;
         _tm = tm;
         _nvc = nvc;
         _ds = ds;
+        _ps = ps;
         _bd = bd;
+        _cedb = cedb;
     }
 
     @Override
@@ -48,6 +57,22 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
         // we need write_object permission as branch deletion is equivalent
         // to updating content on other devices
         SOID soid = _ds.resolveFollowAnchorThrows_(ev._path);
+
+        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+            OA oa = _ds.getOAThrows_(soid);
+            CA ca = oa.caThrows(ev._kidx);
+            l.info("delete branch {} {} {}", ev._kidx, ca.length(), ca.mtime());
+            Trans t = _tm.begin_();
+            try {
+                // TODO(phoenix): update base version of MASTER CA?
+                _ds.deleteCA_(soid, ev._kidx, t);
+                _ps.newFile_(_ds.resolve_(soid), ev._kidx).delete_(PhysicalOp.APPLY, t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+            return;
+        }
 
         SOCKID kBranch = new SOCKID(soid, CID.CONTENT, ev._kidx);
         Version vBranch = _nvc.getLocalVersion_(kBranch);

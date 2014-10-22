@@ -14,6 +14,9 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.To;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;
@@ -81,18 +84,45 @@ class AsyncDownload extends Download
 
     private final Map<DID, Exception> _did2e = Maps.newHashMap();
 
+    public static class RemoteChangeChecker
+    {
+        private final NativeVersionControl _nvc;
+        private final ChangeEpochDatabase _cedb;
+        private final CentralVersionDatabase _cvdb;
+        private final RemoteContentDatabase _rcdb;
+
+        @Inject
+        public RemoteChangeChecker(ChangeEpochDatabase cedb, RemoteContentDatabase rcdb,
+                CentralVersionDatabase cvdb, NativeVersionControl nvc)
+        {
+            _nvc = nvc;
+            _cedb = cedb;
+            _cvdb = cvdb;
+            _rcdb = rcdb;
+        }
+
+        boolean hasRemoteChanges_(SOCID socid) throws SQLException
+        {
+            if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
+                Long v = _cvdb.getVersion_(socid.sidx(), socid.oid());
+                return _rcdb.hasRemoteChanges_(socid.sidx(), socid.oid(), v != null ? v : 0);
+            } else {
+                return !_nvc.getKMLVersion_(socid).isZero_();
+            }
+        }
+    }
 
     public static class Factory extends Download.Factory
     {
-        private final NativeVersionControl _nvc;
+        private final RemoteChangeChecker _changes;
 
         @Inject
         public Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 GetComponentRequest gcc, GetComponentResponse gcr, To.Factory factTo,
-                NativeVersionControl nvc, DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid)
+                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid, RemoteChangeChecker changes)
         {
             super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid);
-            _nvc = nvc;
+            _changes = changes;
         }
 
         AsyncDownload create_(SOCID socid, Set<DID> dids, IDownloadCompletionListener listener,
@@ -161,7 +191,7 @@ class AsyncDownload extends Download
 
                 notifyListeners_(listener -> listener.onPartialDownloadSuccess_(_socid, replier));
 
-                if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
+                if (!_f._changes.hasRemoteChanges_(_socid)) return replier;
 
                 l.debug("kml > 0 for {}. dl again", _socid);
 

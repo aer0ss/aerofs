@@ -6,6 +6,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.Tick;
@@ -17,6 +19,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -27,20 +30,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
 {
     private final DirectoryService _ds;
 
+    private final ChangeEpochDatabase _cedb;
     private final NativeVersionControl _nvc;
     private final UserAndDeviceNames _udn;
+    private final RemoteContentDatabase _rcdb;
 
     @Inject
-    public HdGetAttr(DirectoryService ds, NativeVersionControl nvc,
-            UserAndDeviceNames udn)
+    public HdGetAttr(DirectoryService ds, ChangeEpochDatabase cedb, NativeVersionControl nvc,
+            RemoteContentDatabase rcdb, UserAndDeviceNames udn)
     {
         _ds = ds;
         _nvc = nvc;
         _udn = udn;
+        _cedb = cedb;
+        _rcdb = rcdb;
     }
 
     @Override
@@ -98,20 +107,23 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         }
     }
 
+    private static final String UNKNOWN_DEVICE = "(unknown device)";
+
     /**
      * @return a populated Peer for the device with DID {@paramref did}.
      */
     Peer peer(DID did) throws Exception
     {
+        if (did == null) return new Peer(UserID.UNKNOWN, UNKNOWN_DEVICE);
         if (did.equals(Cfg.did())) return new Peer(Cfg.user(), "this computer");
         String device = "";
         UserID user = _udn.getDeviceOwnerNullable_(did);
         if (user == null) {
-            user = UserID.fromInternal("(unknown user)");
+            user = UserID.UNKNOWN;
         } else if (user.equals(Cfg.user())) {
             device = _udn.getDeviceNameNullable_(did);
             // TODO: fix name resolution... (e.g. do in the background)
-            if (device == null) device = "(unknown device)";
+            if (device == null) device = UNKNOWN_DEVICE;
         }
         return new Peer(user, device);
     }
@@ -122,6 +134,18 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
     private Map<KIndex, List<PBPeer>> divergence(SOID soid, Set<KIndex> branches) throws Exception
     {
         if (branches.size() < 2) return null;
+        Map<KIndex, List<PBPeer>> editors = Maps.newHashMap();
+
+        // TODO(phoenix)
+        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+            checkState(branches.size() == 2);
+            // when a conflict branch is present it MUST be the last downloaded version
+            // therefore it is still present in the remote content db, from which the
+            // originator can be extracted
+            editors.put(KIndex.MASTER.increment(),
+                    ImmutableList.of(peer(_rcdb.getOriginator_(soid)).toPB()));
+            return editors;
+        }
 
         Version vMin = null;
         Map<KIndex, Version> versions = Maps.newHashMap();
@@ -135,7 +159,6 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
             }
         }
 
-        Map<KIndex, List<PBPeer>> editors = Maps.newHashMap();
         for (KIndex kidx : branches) {
             List<PBPeer> l = Lists.newArrayList();
             for (Peer p : contributors(versions.get(kidx), vMin)) l.add(p.toPB());

@@ -8,8 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -55,7 +53,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
     @Test
     public void shouldDownload() throws Exception
     {
-        when(nvc.getKMLVersion_(socid)).thenReturn(Version.empty());
+        when(changes.hasRemoteChanges_(socid)).thenReturn(false);
 
         mockReplies(socid, did1);
 
@@ -75,9 +73,9 @@ public class TestAsyncDownload extends AbstractDownloadTest
     public void shouldTrySecondDeviceWhenKMLsLeft() throws Exception
     {
         mockReplies(socid, did1, did2);
-        when(nvc.getKMLVersion_(socid))
-                .thenReturn(Version.of(did2, new Tick(42)))
-                .thenReturn(Version.empty());
+        when(changes.hasRemoteChanges_(socid))
+                .thenReturn(true)
+                .thenReturn(false);
 
         asyncdl(socid)
                 .do_();
@@ -99,19 +97,13 @@ public class TestAsyncDownload extends AbstractDownloadTest
     @Test
     public void shouldTrySecondDeviceWhenFirstFails() throws Exception
     {
-        when(nvc.getKMLVersion_(socid)).thenReturn(Version.empty());
+        when(changes.hasRemoteChanges_(socid)).thenReturn(false);
 
         mockReplies(socid, did1, did2);
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                doNothing().when(gcr)
-                        .processResponse_(eq(socid), anyDM(), anyDC());
-                throw new Exception();
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr)
+                    .processResponse_(eq(socid), anyDM(), anyDC());
+            throw new Exception();
         }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         asyncdl(socid)
@@ -133,7 +125,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
     {
         mockReplies(socid, did1, did2, did3);
 
-        when(nvc.getKMLVersion_(socid)).thenReturn(Version.of(did2, new Tick(42)));
+        when(changes.hasRemoteChanges_(socid)).thenReturn(true);
 
         asyncdl(socid)
                 .do_();

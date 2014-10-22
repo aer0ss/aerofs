@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -15,12 +16,16 @@ import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
@@ -53,6 +58,7 @@ import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_COMPLE
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.META_REQUEST;
 import static com.aerofs.defects.Defects.newMetric;
+import static com.google.common.base.Preconditions.checkState;
 
 // TODO NAK for this and other primitives
 
@@ -77,12 +83,16 @@ public class GetComponentRequest
     private CfgLocalUser _cfgLocalUser;
     private OutboundEventLogger _oel;
     private TransManager _tm;
+    private ChangeEpochDatabase _cedb;
+    private CentralVersionDatabase _cvdb;
+    private ContentChangesDatabase _ccdb;
 
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, ComponentContentSender contentSender, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
+            ChangeEpochDatabase cedb, CentralVersionDatabase cvdb, ContentChangesDatabase ccdb,
             TransManager tm)
     {
         _trl = trl;
@@ -100,6 +110,9 @@ public class GetComponentRequest
         _sid2sidx = sid2sidx;
         _cfgLocalUser = cfgLocalUser;
         _tm = tm;
+        _cedb = cedb;
+        _cvdb = cvdb;
+        _ccdb = ccdb;
     }
 
     /**
@@ -119,15 +132,21 @@ public class GetComponentRequest
                 .newBuilder()
                 .setStoreId(_sidx2sid.getThrows_(socid.sidx()).toPB())
                 .setObjectId(socid.oid().toPB())
-                .setComId(socid.cid().getInt())
-                .setLocalVersion(_nvc.getAllLocalVersions_(socid).toPB_());
+                .setComId(socid.cid().getInt());
 
-        if (socid.cid().equals(CID.CONTENT)) {
+        if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
+            checkState(socid.cid().isContent());
+            bd.setLocalVersion(Version.wrapCentral(_cvdb.getVersion_(socid.sidx(), socid.oid())).toPB_());
+        } else {
+            bd.setLocalVersion(_nvc.getAllLocalVersions_(socid).toPB_());
+        }
+
+        if (socid.cid().isContent()) {
             setIncrementalDownloadInfo_(socid, bd);
         }
 
-        PBCore request = CoreProtocolUtil.newRequest(Type.GET_COMPONENT_REQUEST).setGetComponentRequest(
-                bd).build();
+        PBCore request = CoreProtocolUtil.newRequest(Type.GET_COMPONENT_REQUEST)
+                .setGetComponentRequest(bd).build();
 
         return _rpc.issueRequest_(src, request, tk, "gcc " + socid + " " + src);
     }
@@ -205,7 +224,14 @@ public class GetComponentRequest
     {
         if (socid.cid().isMeta()) return KIndex.MASTER;
         OA oa = _ds.getOANullable_(socid.soid());
-        if (oa == null) return KIndex.MASTER;
+        if (oa == null || oa.caMasterNullable() == null) return KIndex.MASTER;
+        if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
+            checkState(oa.cas().size() <= 2);
+            // serve conflict branch preferentially
+            //  - it cannot have local changes
+            //  - it always dominates the base version from which the local MASTER diverged
+            return new KIndex(oa.cas().size() - 1);
+        }
         for (KIndex kidx : oa.cas().keySet()) {
             Version v = _nvc.getLocalVersion_(new SOCKID(socid, kidx));
             if (!v.isDominatedBy_(vRemote)) return kidx;
@@ -252,10 +278,29 @@ public class GetComponentRequest
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
-        Version vLocal = _nvc.getLocalVersion_(k);
-        if (vLocal.isDominatedBy_(vRemote)) {
-            l.debug("{} r {} >= l {}", msg.did(), vRemote, vLocal);
-            throw new ExNoComponentWithSpecifiedVersion();
+        Long rcv = vRemote.unwrapCentral();
+
+        Version vLocal;
+        if (rcv != null) {
+            if (_cedb.getChangeEpoch_(sidx) == null) throw new ExProtocolError();
+            checkState(k.cid().isContent());
+            Long lcv = _cvdb.getVersion_(sidx, k.oid());
+            if (lcv == null || lcv < rcv) {
+                l.debug("{} {} r {} >= {} l", msg.did(), k, rcv, lcv);
+                throw new ExNoComponentWithSpecifiedVersion();
+            }
+            // NB: only MASTER can have local changes
+            if (k.kidx().isMaster() && _ccdb.hasChange_(sidx, k.oid())) {
+                l.debug("{} {} has local change", msg.did(), k);
+                throw new ExUpdateInProgress();
+            }
+            vLocal = Version.wrapCentral(lcv);
+        } else {
+            vLocal = _nvc.getLocalVersion_(k);
+            if (vLocal.isDominatedBy_(vRemote)) {
+                l.debug("{} r {} >= l {}", msg.did(), vRemote, vLocal);
+                throw new ExNoComponentWithSpecifiedVersion();
+            }
         }
         sendResponse_(msg, k, vLocal);
     }

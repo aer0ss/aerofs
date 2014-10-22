@@ -57,7 +57,6 @@ public class TestHashQueue extends AbstractTest
     @Mock CoreScheduler sched;
     @Mock DirectoryService ds;
     @Mock VersionUpdater vu;
-    @Mock NativeVersionControl nvc;
     @Mock TransManager tm;
     @InjectMocks HashQueue hq;
 
@@ -267,25 +266,6 @@ public class TestHashQueue extends AbstractTest
         trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
         ev.get();
         when(f.wasModifiedSince(42L, 0L)).thenReturn(true);
-        ev.get().handle_();
-
-        verifyZeroInteractions(_defect);
-        verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
-        verifyZeroInteractions(vu);
-    }
-
-    @Test
-    public void shouldAbortOnContentVersionUpdate() throws Exception
-    {
-        when(ds.getCAHash_(sokid)).thenReturn(EMPTY_HASH);
-
-        InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
-        Future<AbstractEBSelfHandling> ev = whenHashed();
-
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
-        ev.get();
-        trans(t -> hq.localVersionAdded_(new SOCKID(sokid, CID.CONTENT),
-                Version.of(DID.generate(), new Tick(1L)), t));
         ev.get().handle_();
 
         verifyZeroInteractions(_defect);

@@ -6,10 +6,10 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;
+import com.aerofs.daemon.core.transfers.download.AsyncDownload.RemoteChangeChecker;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
@@ -51,7 +51,7 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock Downloads dls;
     @Mock GetComponentRequest gcc;
     @Mock GetComponentResponse gcr;
-    @Mock NativeVersionControl nvc;
+    @Mock RemoteChangeChecker changes;
     @Mock DownloadDeadlockResolver ddr;
     @Mock IMapSIndex2SID sidx2sid;
 
@@ -86,7 +86,7 @@ public class AbstractDownloadTest extends AbstractTest
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
         factTo = new To.Factory(mock(Devices.class), mock(MapSIndex2Store.class));
-        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, nvc, ddr, sidx2sid);
+        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes);
     }
 
 

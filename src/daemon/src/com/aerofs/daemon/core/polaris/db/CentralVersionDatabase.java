@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.polaris.db;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
@@ -31,6 +30,18 @@ import static com.google.common.base.Preconditions.checkState;
  * each contributing device had its own tick space. A the mighty Polaris descended upon
  * us, it became possible to adopt a much simpler scalar version number, where ticks
  * are issued by the central server.
+ *
+ * The versions in this table track changes to the *content* of an object, not to its
+ * metadata. The precise semantic depend on the object type.
+ *
+ * For folders, the version is bumped every time the (name -> child) mapping changes,
+ * i.e. when children are added, removed or renamed.
+ *
+ * For files, the version is bumped every time the size or content hash changes.
+ * Timestamp-only change do NOT cause version bump.
+ *
+ * NB: in neither case does a change to the object's own name cause a version bump.
+ * Such a change would result in the version of the parent folder being bumped.
  */
 public class CentralVersionDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
@@ -72,7 +83,6 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
             DBUtil.insert(T_VERSION, C_VERSION_SIDX, C_VERSION_OID, C_VERSION_TICK));
     public void setVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
-        Loggers.getLogger(CentralVersionDatabase.class).info("set {} {} {}", sidx, oid, version);
         // FIXME: update count may not be trustworthy
         checkState(exec(_pswSetVersion, ps -> {
             ps.setLong(1, version);
@@ -85,5 +95,16 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
             ps.setLong(3, version);
             return (ps.executeUpdate() == 1);
         }));
+    }
+
+    private final PreparedStatementWrapper _pswDeleteVersion = new PreparedStatementWrapper(
+            DBUtil.deleteWhereEquals(T_VERSION, C_VERSION_SIDX, C_VERSION_OID));
+    public boolean deleteVersion_(SIndex sidx, OID oid, Trans t) throws SQLException
+    {
+        return exec(_pswDeleteVersion, ps -> {
+            ps.setInt(1, sidx.getInt());
+            ps.setBytes(2, oid.getBytes());
+            return ps.executeUpdate() == 1;
+        });
     }
 }

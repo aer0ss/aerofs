@@ -26,6 +26,8 @@ import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -108,12 +110,18 @@ public class InMemoryDS
         } catch (SQLException e) { throw new AssertionError(); }
         ChangeFetchScheduler.Factory factCFS = mock(ChangeFetchScheduler.Factory.class);
         when(factCFS.create(any(SIndex.class))).thenReturn(mock(ChangeFetchScheduler.class));
-        SubmissionScheduler.Factory<MetaChangeSubmitter> factCSS = mock(SubmissionScheduler.Factory.class);
-        when(factCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
+        SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS
+                = mock(SubmissionScheduler.Factory.class);
+        when(factMCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
+        SubmissionScheduler.Factory<ContentChangeSubmitter> factCCSS
+                = mock(SubmissionScheduler.Factory.class);
+        when(factCCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
+        ContentFetcher.Factory factCF = mock(ContentFetcher.Factory.class);
+        when(factCF.create_(any(SIndex.class))).thenReturn(mock(ContentFetcher.class));
 
-        Store.Factory factStore  = new Store.Factory(usePolaris, factSF, factCollector,
+        Store.Factory factStore  = new Store.Factory(factSF, factCollector,
                 mock(AntiEntropy.class), mock(Devices.class), mock(IPulledDeviceDatabase.class),
-                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factCSS);
+                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF);
         stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
 
         ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);

@@ -182,7 +182,7 @@ public class Collector implements IDumpStatMisc
         });
     }
 
-    public void restart_()
+    private void restart_()
     {
         // add all db filters to cs to force the current iteration to run a full cycle
         // NB: we can safely fully reset the CS filter queue because the DB always contains the

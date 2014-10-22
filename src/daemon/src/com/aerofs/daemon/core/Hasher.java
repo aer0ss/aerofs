@@ -148,6 +148,7 @@ public class Hasher
         }
     }
 
+    // NB: not reached on phoenix path so safe to use NativeVersionControl directly
     /**
      * Returns hash of the specified SOKID.
      *
@@ -309,18 +310,14 @@ public class Hasher
 
         final long len = pf.getLength_();
         final long mtime = pf.getLastModificationOrCurrentTime_();
-        IAborter aborter = new IAborter() {
-            @Override
-            public void checkAbortion() throws ExAborted
-            {
-                try {
-                    if (pf.wasModifiedSince(mtime, len)) {
-                        pf.onUnexpectedModification_(mtime);
-                        throw new ExAborted(FILE_MODIFIED_MSG);
-                    }
-                } catch (IOException e) {
-                    throw new ExAborted(e);
+        IAborter aborter = () -> {
+            try {
+                if (pf.wasModifiedSince(mtime, len)) {
+                    pf.onUnexpectedModification_(mtime);
+                    throw new ExAborted(FILE_MODIFIED_MSG);
                 }
+            } catch (IOException e) {
+                throw new ExAborted(e);
             }
         };
 
@@ -342,11 +339,8 @@ public class Hasher
         SOCKID k = new SOCKID(sokid.soid(), CID.CONTENT, sokid.kidx());
         PrepareToComputeHashResult res = prepareToComputeHash_(k);
 
-        InputStream in = res._pf.newInputStream_();
-        try {
+        try (InputStream in = res._pf.newInputStream_()) {
             h = computeHashImpl(in, res._fileLen, res._aborter);
-        } finally {
-            in.close();
         }
         checkState(h != null);
         return h;

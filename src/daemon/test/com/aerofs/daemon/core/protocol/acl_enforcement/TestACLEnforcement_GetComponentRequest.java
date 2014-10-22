@@ -18,8 +18,6 @@ import com.aerofs.proto.Core.PBCore;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 
@@ -52,6 +50,8 @@ public class TestACLEnforcement_GetComponentRequest extends AbstractTest
         when(caller._nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(Version.empty());
         when(caller._nvc.getLocalVersion_(any(SOCKID.class))).thenReturn(Version.empty());
         when(replier._ds.isPresent_(new SOCKID(_socid))).thenReturn(true);
+        when(caller._cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
+        when(replier._cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
     }
 
     @Test
@@ -133,16 +133,10 @@ public class TestACLEnforcement_GetComponentRequest extends AbstractTest
     {
         when(caller._rpc.issueRequest_(any(DID.class), any(PBCore.class), any(Token.class),
                 anyString()))
-                .thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        PBCore pb = (PBCore)invocation.getArguments()[1];
-                        replier._gcc.processRequest_(newDigestedMessage(caller.user(), pb));
-                        return null;
-                    }
+                .thenAnswer(invocation -> {
+                    PBCore pb = (PBCore)invocation.getArguments()[1];
+                    replier._gcc.processRequest_(newDigestedMessage(caller.user(), pb));
+                    return null;
                 });
     }
 

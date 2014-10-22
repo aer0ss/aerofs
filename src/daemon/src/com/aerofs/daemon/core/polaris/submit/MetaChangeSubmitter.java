@@ -58,8 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
  * This class handles protocol encoding/decoding and DB cleanup after successful submission.
  *
  * For now each change is submitted in its own HTTP request but in the future the /batch route
- * should be used to reduce the number of round-trips. This is not viable for now because said
- * route does not currently provide sufficient information in its response.
+ * should be used to reduce the number of round-trips.
  */
 public class MetaChangeSubmitter implements Submitter
 {

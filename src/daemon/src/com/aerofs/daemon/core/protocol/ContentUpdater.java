@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -23,6 +24,10 @@ import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -76,11 +81,17 @@ public class ContentUpdater
     private final Hasher _hasher;
     private final ComputeHash _computeHash;
     private final ReceiveAndApplyUpdate _raau;
+    private final ChangeEpochDatabase _cedb;
+    private final CentralVersionDatabase _cvdb;
+    private final ContentChangesDatabase _ccdb;
+    private final RemoteContentDatabase _rcdb;
 
     @Inject
     public ContentUpdater(TransManager tm, DirectoryService ds, IPhysicalStorage ps,
             IncomingStreams iss, MapAlias2Target a2t, LocalACL lacl, NativeVersionControl nvc,
-            BranchDeleter bd, Hasher hasher, ComputeHash computeHash, ReceiveAndApplyUpdate raau)
+            BranchDeleter bd, Hasher hasher, ComputeHash computeHash, ReceiveAndApplyUpdate raau,
+            ChangeEpochDatabase cedb, CentralVersionDatabase cvdb, ContentChangesDatabase ccdb,
+            RemoteContentDatabase rcdb)
     {
         _tm = tm;
         _ds = ds;
@@ -93,6 +104,10 @@ public class ContentUpdater
         _hasher = hasher;
         _computeHash = computeHash;
         _raau = raau;
+        _cedb = cedb;
+        _cvdb = cvdb;
+        _ccdb = ccdb;
+        _rcdb = rcdb;
     }
 
     void processContentResponse_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
@@ -159,10 +174,10 @@ public class ContentUpdater
         Trans t = _tm.begin_();
         Throwable rollbackCause = null;
         try {
+            updateVersion_(new SOCKID(targetBranch, CID.CONTENT), vRemote, cr, t);
             if (prefix != null) {
                 _raau.apply_(targetBranch, msg.pb().getGetComponentResponse(), prefix, h, t);
             }
-            updateVersion_(new SOCKID(targetBranch, CID.CONTENT), vRemote, cr, t);
             t.commit_();
         } catch (Exception | Error e) {
             rollbackCause = e;
@@ -246,6 +261,43 @@ public class ContentUpdater
 
         final PBGetComponentResponse response = msg.pb().getGetComponentResponse();
         final @Nullable ContentHash hRemote;
+        if (response.hasHashLength()) {
+            l.debug("hash included");
+            if (msg.streamKey() != null) {
+                hRemote = readContentHashFromStream(msg.streamKey(), msg.is(),
+                        response.getHashLength(), tk);
+            } else {
+                hRemote = readContentHashFromDatagram(msg.is(), response.getHashLength());
+            }
+        } else {
+            hRemote = null;
+        }
+
+        Long rcv = vRemote.unwrapCentral();
+        boolean usePolaris = _cedb.getChangeEpoch_(soid.sidx()) != null;
+
+        if (rcv != null) {
+            if (!usePolaris) throw new ExAborted("incompatible versioning");
+            if (!response.hasHashLength()) throw new ExProtocolError();
+
+            Long lcv = _cvdb.getVersion_(soid.sidx(), soid.oid());
+            if (lcv != null && lcv >= rcv) {
+                l.info("local {} >= {} remote", lcv, rcv);
+                return null;
+            }
+            KIndex target = KIndex.MASTER;
+            SortedMap<KIndex, CA> cas = remoteOA.cas();
+            // TODO(phoenix): merge if local change && remote hash == local hash
+            if (cas.size() > 1 || _ccdb.hasChange_(soid.sidx(), soid.oid())) {
+                checkState(cas.size() == 2);
+                target = KIndex.MASTER.increment();
+            }
+            return new CausalityResult(target, vRemote, kidcsDel, hRemote,
+                    Version.wrapCentral(lcv), false);
+        } else if (usePolaris) {
+            throw new ExAborted("incompatible versioning");
+        }
+
         if (response.hasIsContentSame() && response.getIsContentSame()) {
             // requested remote version has same content as the MASTER version we had when we made
             // the request -> add version to MASTER without any file I/O
@@ -261,18 +313,8 @@ public class ContentUpdater
             }
             return new CausalityResult(KIndex.MASTER, vRemote.sub_(vMaster), kidcsDel, null,
                     vMaster, true);
-        } else if (response.hasHashLength()) {
-            l.debug("hash included");
-
-            if (msg.streamKey() != null) {
-                hRemote = readContentHashFromStream(msg.streamKey(), msg.is(),
-                        response.getHashLength(), tk);
-            } else {
-                hRemote = readContentHashFromDatagram(msg.is(), response.getHashLength());
-            }
-        } else {
+        } else if (hRemote == null) {
             l.debug("hash not present");
-            hRemote = null;
         }
 
         Version vAddLocal = Version.copyOf(vRemote);
@@ -443,6 +485,18 @@ public class ContentUpdater
     public void updateVersion_(SOCKID k, Version vRemote, CausalityResult res, Trans t)
             throws SQLException, IOException, ExNotFound, ExAborted
     {
+        Long rcv = vRemote.unwrapCentral();
+        if (rcv != null) {
+            // TODO(phoenix): del branch if needed
+            checkState(res._kidcsDel.isEmpty());
+            Long lcv = _cvdb.getVersion_(k.sidx(), k.oid());
+            if (lcv != null && rcv < lcv) throw new ExAborted(k + " version changed");
+            l.debug("{} version {} -> {}", k, lcv, rcv);
+            _cvdb.setVersion_(k.sidx(), k.oid(), rcv, t);
+            _rcdb.deleteUpToVersion_(k.sidx(), k.oid(), rcv, t);
+            return;
+        }
+
         // delete branches
         for (KIndex kidxDel : res._kidcsDel) {
             // guaranteed by computeCausalityForContent()'s logic

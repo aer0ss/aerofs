@@ -34,12 +34,6 @@ public class CA
         return "l " + _len + " mt " + _mtime;
     }
 
-    // the content length may not be accurate since when the file is off cache,
-    // it's the length on the remote device when the metadata was downloaded, or
-    // the local length when it's evicted, depending on which happened last;
-    // if it's in cache, new lengths made by file writes via FSI is not propagated
-    // to ObjectAttr until ComMonitor.endWrite() is called.
-    //
     public long length()
     {
         return _len;
