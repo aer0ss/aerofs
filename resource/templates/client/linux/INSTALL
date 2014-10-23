@@ -6,7 +6,6 @@ Prior to running AeroFS, please make sure that you have the following
 packages installed:
 
 * coreutils
-* default-jre
 * procps
 
 =================
