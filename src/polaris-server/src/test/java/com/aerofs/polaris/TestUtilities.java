@@ -2,7 +2,7 @@ package com.aerofs.polaris;
 
 import com.aerofs.baseline.auth.SecurityContexts;
 import com.aerofs.baseline.http.Headers;
-import com.aerofs.baseline.ids.Identifiers;
+import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.MoveChild;

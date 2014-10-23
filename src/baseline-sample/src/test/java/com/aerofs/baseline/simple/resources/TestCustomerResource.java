@@ -1,10 +1,10 @@
 package com.aerofs.baseline.simple.resources;
 
-import com.aerofs.baseline.ids.Identifiers;
 import com.aerofs.baseline.simple.ServerConfiguration;
 import com.aerofs.baseline.simple.SimpleResource;
 import com.aerofs.baseline.simple.Utilities;
 import com.aerofs.baseline.simple.api.Customer;
+import com.aerofs.ids.core.Identifiers;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.Rule;

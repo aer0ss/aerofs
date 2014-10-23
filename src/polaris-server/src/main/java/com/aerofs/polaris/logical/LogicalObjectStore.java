@@ -1,6 +1,6 @@
 package com.aerofs.polaris.logical;
 
-import com.aerofs.baseline.ids.Identifiers;
+import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.operation.InsertChild;

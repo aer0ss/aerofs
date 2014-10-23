@@ -1,0 +1,12 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':aero-ids')
+    compile 'javax.validation:validation-api:1.1.0.Final'
+}

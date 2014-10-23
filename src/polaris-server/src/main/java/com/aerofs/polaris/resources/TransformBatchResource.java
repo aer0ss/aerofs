@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
@@ -44,7 +45,7 @@ public final class TransformBatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public TransformBatchResult submitBatch(@Context final AeroPrincipal principal, final TransformBatch batch) {
+    public TransformBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final TransformBatch batch) {
         final TransformBatchResult batchResult = new TransformBatchResult(batch.operations.size());
 
         TransformBatchOperation operation = null;
@@ -67,11 +68,11 @@ public final class TransformBatchResource {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
             Throwable cause = DBIExceptions.findRootCause(e);
             TransformBatchOperationResult result = getBatchOperationErrorResult(cause);
-            LOGGER.warn("fail transform batch operation {} err:{}", operation, e.getMessage());
+            LOGGER.warn("fail transform batch operation {}", operation, e);
             batchResult.results.add(result);
         } catch (Exception e) {
             TransformBatchOperationResult result = getBatchOperationErrorResult(e);
-            LOGGER.warn("fail transform batch operation {} err:{}", operation, e.getMessage());
+            LOGGER.warn("fail transform batch operation {}", operation, e);
             batchResult.results.add(result);
         }
 

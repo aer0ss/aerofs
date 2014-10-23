@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,6 +24,7 @@ public abstract class Operation {
     @JsonIgnore
     private static final String TYPE_FIELD_NAME = "type";
 
+    @NotNull
     @JsonProperty(TYPE_FIELD_NAME)
     public final OperationType type;
 

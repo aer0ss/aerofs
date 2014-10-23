@@ -1,6 +1,6 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.ids.Identifiers;
+import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.PolarisResource;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.operation.AppliedTransforms;

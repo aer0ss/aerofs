@@ -5,7 +5,6 @@ import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.baseline.simple.SimpleConfiguration;
 import com.aerofs.baseline.simple.api.Customer;
 import com.aerofs.baseline.simple.db.Customers;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Preconditions;
 import org.skife.jdbi.v2.DBI;
@@ -33,7 +32,7 @@ import javax.ws.rs.core.MediaType;
 @Path("/customers")
 public final class CustomersResource {
 
-    private static final Timer CUSTOMER_CREATION_TIMER = MetricRegistries.getRegistry().timer(MetricRegistry.name("simple", "customer", "new"));
+    private static final Timer CUSTOMER_CREATION_TIMER = MetricRegistries.getRegistry().timer(MetricRegistries.name("simple", "customer", "new"));
 
     private final DBI dbi;
     private final SimpleConfiguration configuration;

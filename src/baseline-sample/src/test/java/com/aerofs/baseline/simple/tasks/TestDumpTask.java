@@ -1,11 +1,10 @@
 package com.aerofs.baseline.simple.tasks;
 
-import com.aerofs.baseline.ids.Identifiers;
 import com.aerofs.baseline.simple.ServerConfiguration;
 import com.aerofs.baseline.simple.SimpleResource;
 import com.aerofs.baseline.simple.Utilities;
 import com.aerofs.baseline.simple.api.Customer;
-import com.fasterxml.jackson.core.JsonParseException;
+import com.aerofs.ids.core.Identifiers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;

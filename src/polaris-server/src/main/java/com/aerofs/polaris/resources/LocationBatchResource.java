@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
@@ -42,7 +43,7 @@ public final class LocationBatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LocationBatchResult submitBatch(@Context final AeroPrincipal principal, final LocationBatch batch) {
+    public LocationBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final LocationBatch batch) {
         final LocationBatchResult batchResult = new LocationBatchResult(batch.operations.size());
 
         LocationBatchOperation operation = null;
@@ -77,11 +78,11 @@ public final class LocationBatchResource {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
             Throwable cause = DBIExceptions.findRootCause(e);
             LocationBatchOperationResult result = getBatchOperationErrorResult(cause);
-            LOGGER.warn("fail location batch operation {} err:{}", operation, e.getMessage());
+            LOGGER.warn("fail location batch operation {}", operation, e);
             batchResult.results.add(result);
         } catch (Exception e) {
             LocationBatchOperationResult result = getBatchOperationErrorResult(e);
-            LOGGER.warn("fail location batch operation {} err:{}", operation, e.getMessage());
+            LOGGER.warn("fail location batch operation {}", operation, e);
             batchResult.results.add(result);
         }
 

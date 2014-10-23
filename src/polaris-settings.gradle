@@ -1,3 +1,14 @@
 rootProject.name = 'polaris'
 
-include 'baseline', 'baseline-test', 'baseline-sample', 'polaris-api', 'polaris-server'
+include 'aero-ids',
+        'aero-ids-validation',
+        'baseline',
+        'baseline-test',
+        'baseline-sample',
+        'overload',
+        'overload-driver',
+        'baseline-throughput-server',
+        'baseline-throughput-client',
+        'polaris-api',
+        'polaris-server',
+        'polaris-throughput-client'

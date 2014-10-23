@@ -11,7 +11,6 @@ import com.aerofs.baseline.simple.resources.CustomersResource;
 import com.aerofs.baseline.simple.resources.InvalidCustomerExceptionMapper;
 import com.aerofs.baseline.simple.tasks.DumpTask;
 import org.flywaydb.core.Flyway;
-import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;

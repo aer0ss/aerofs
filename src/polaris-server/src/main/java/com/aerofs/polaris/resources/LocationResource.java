@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.auth.AeroPrincipal;
-import com.aerofs.baseline.ids.Identifier;
+import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
@@ -12,6 +12,7 @@ import com.aerofs.polaris.logical.Transactional;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -36,10 +37,10 @@ public final class LocationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> getLocationsForContent(
-            @Context AeroPrincipal principal,
-            @PathParam("oid") @Identifier final String oid,
+            @Context @NotNull AeroPrincipal principal,
+            @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
-            @PathParam("did") @Identifier final String did) throws AccessException {
+            @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.READ);
 
         return objectStore.inTransaction(new Transactional<List<String>>() {
@@ -53,10 +54,10 @@ public final class LocationResource {
 
     @POST
     public void markContentAtLocation(
-            @Context AeroPrincipal principal,
-            @PathParam("oid") @Identifier final String oid,
+            @Context @NotNull AeroPrincipal principal,
+            @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
-            @PathParam("did") @Identifier final String did) throws AccessException {
+            @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
 
         objectStore.inTransaction(new Transactional<Object>() {
@@ -71,10 +72,10 @@ public final class LocationResource {
 
     @DELETE
     public void unmarkContentAtLocation(
-            @Context AeroPrincipal principal,
-            @PathParam("oid") @Identifier final String oid,
+            @Context @NotNull AeroPrincipal principal,
+            @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
-            @PathParam("did") @Identifier final String did) throws AccessException {
+            @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
 
         objectStore.inTransaction(new Transactional<Object>() {

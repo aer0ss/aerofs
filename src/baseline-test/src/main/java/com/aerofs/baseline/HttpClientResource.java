@@ -3,6 +3,7 @@ package com.aerofs.baseline;
 import com.google.common.base.Charsets;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.CloseableHttpPipeliningClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public final class HttpClientResource extends ExternalResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientResource.class);
 
-    private final CloseableHttpAsyncClient httpClient = HttpAsyncClients.createDefault();
+    private final CloseableHttpPipeliningClient httpClient = HttpAsyncClients.createPipelining();
 
     @Override
     protected void before() throws Throwable {
@@ -34,7 +35,7 @@ public final class HttpClientResource extends ExternalResource {
         }
     }
 
-    public CloseableHttpAsyncClient getClient() {
+    public CloseableHttpPipeliningClient getClient() {
         return httpClient;
     }
 

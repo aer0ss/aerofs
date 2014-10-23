@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.auth.AeroPrincipal;
-import com.aerofs.baseline.ids.Identifier;
+import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -15,6 +15,7 @@ import com.aerofs.polaris.logical.Transactional;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -43,8 +44,8 @@ public final class TransformsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     public AppliedTransforms getTransformsSince(
-            @Context AeroPrincipal principal,
-            @PathParam("oid") @Identifier final String oid,
+            @Context @NotNull AeroPrincipal principal,
+            @PathParam("oid") @NotNull @Identifier final String oid,
             @QueryParam("since") @Min(-1) final long since,
             @QueryParam("count") @Min(1) int resultCount) throws AccessException {
         accessManager.checkAccess(principal.getUser(), oid, Access.READ);

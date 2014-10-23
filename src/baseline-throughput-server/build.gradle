@@ -1,0 +1,32 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':baseline')
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.aerofs.baseline.throughput.server.Server',
+                'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
+        )
+    }
+}
+
+task dist(type: Zip, description: "Assembles a zipfile containing everything required to run the baseline throughput test server", dependsOn: jar) {
+    classifier 'dist'
+    from configurations.runtime
+    from jar
+    from 'src/dist'
+    into "throughput-server"
+}
+
+artifacts {
+    archives dist
+}
