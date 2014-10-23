@@ -144,10 +144,23 @@ how our templates inherit the top nav */
   color: @link-hover-color;
 }
 
+.nav-padding {
+  padding: 4px 0 2px 15px;
+}
+
+.left-nav ul {
+  list-style-type: none;
+  margin-bottom: 9px;
+  padding-left: 0;
+  li {
+    .nav-padding();
+  }
+}
+
 .nav-header {
+  .nav-padding();
   font-weight: 400;
   font-size: .9em;
-  padding: 4px 0 2px 15px;
   background: #EEE;
   color: #999;
   text-shadow: 0 1px 0 rgba(255,255,255, 0.5);
@@ -167,12 +180,6 @@ how our templates inherit the top nav */
 .nav > li > a:hover,
 .nav > li > a:focus {
   background-color: inherit;
-}
-
-.left-nav ul {
-  list-style-type: none;
-  padding-left: 0;
-  margin-bottom: 9px;
 }
 
 // Override Bootstrap's grey background defined for .nav > li > a:hover/focus
