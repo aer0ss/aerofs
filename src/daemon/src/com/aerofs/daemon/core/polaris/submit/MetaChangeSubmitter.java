@@ -12,9 +12,13 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.polaris.api.Ack;
+import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.api.LogicalObject;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.api.UpdatedObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
@@ -32,11 +36,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonParseException;
 import com.google.inject.Inject;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -62,7 +61,7 @@ import static com.google.common.base.Preconditions.checkState;
  * should be used to reduce the number of round-trips. This is not viable for now because said
  * route does not currently provide sufficient information in its response.
  */
-public class MetaChangeSubmitter
+public class MetaChangeSubmitter implements Submitter
 {
     private final static Logger l = Loggers.getLogger(MetaChangeSubmitter.class);
 
@@ -75,17 +74,6 @@ public class MetaChangeSubmitter
     private final CentralVersionDatabase _cvdb;
     private final DirectoryService _ds;
     private final TransManager _tm;
-
-    private final static Gson _gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .registerTypeAdapter(UniqueID.class, (JsonDeserializer<UniqueID>)(elem, type, cxt) -> {
-                try {
-                    return UniqueID.fromStringFormal(elem.getAsString());
-                } catch (ExFormatError e) {
-                    throw new JsonParseException(e);
-                }
-            })
-            .create();
 
     @Inject
     public MetaChangeSubmitter(PolarisClient client, MetaChangesDatabase mcdb,
@@ -102,6 +90,12 @@ public class MetaChangeSubmitter
         _a2t = a2t;
         _ds = ds;
         _tm = tm;
+    }
+
+    @Override
+    public String name()
+    {
+        return "meta-submit";
     }
 
     /**
@@ -126,6 +120,7 @@ public class MetaChangeSubmitter
      *
      * TODO: batch multiple changes in a single request
      */
+    @Override
     public void submit_(SIndex sidx, AsyncTaskCallback cb) throws SQLException
     {
         // get next meta change from queue
@@ -190,29 +185,11 @@ public class MetaChangeSubmitter
     {
         FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
                 "/objects/" + rootOID2SID(c.sidx, oid).toStringFormal(),
-                Unpooled.wrappedBuffer(BaseUtil.string2utf(_gson.toJson(change))));
+                Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(change))));
         req.headers().add(Names.CONTENT_TYPE, "application/json");
         req.headers().add(Names.TRANSFER_ENCODING, "chunked");
 
         _client.send(req, cb, r -> handle_(c, change, r));
-    }
-
-    private static class Ack
-    {
-        List<UpdatedObject> updated;
-    }
-
-    private static class UpdatedObject
-    {
-        public Long transformTimestamp;
-        public LogicalObject object;
-    }
-
-    private static class LogicalObject
-    {
-        public UniqueID oid;
-        //unused: ObjectType objectType;
-        public Long version;
     }
 
     private boolean handle_(MetaChange c, LocalChange change, FullHttpResponse resp)
@@ -233,7 +210,7 @@ public class MetaChangeSubmitter
 
     private boolean onSuccess_(MetaChange c, LocalChange change, String body) throws Exception
     {
-        Ack ack = _gson.fromJson(body, Ack.class);
+        Ack ack = GsonUtil.GSON.fromJson(body, Ack.class);
 
         Trans t = _tm.begin_();
         try {

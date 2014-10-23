@@ -6,11 +6,10 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
@@ -21,11 +20,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.oauth.OAuthVerificationHandler.UnexpectedResponse;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonParseException;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -58,24 +52,6 @@ public class ChangeFetcher
     private final IMapSID2SIndex _sid2sidx;
     private final ChangeEpochDatabase _cedb;
     private final TransManager _tm;
-
-    private final static Gson _gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .registerTypeAdapter(UniqueID.class, (JsonDeserializer<UniqueID>)(elem, type, cxt) -> {
-                        try {
-                            return UniqueID.fromStringFormal(elem.getAsString());
-                        } catch (ExFormatError e) {
-                            throw new JsonParseException(e);
-                        }
-                    })
-            .registerTypeAdapter(OID.class, (JsonDeserializer<OID>)(elem, type, cxt) -> {
-                try {
-                    return new OID(elem.getAsString());
-                } catch (ExFormatError e) {
-                    throw new JsonParseException(e);
-                }
-            })
-            .create();
 
     @Inject
     public ChangeFetcher(PolarisClient client, ChangeEpochDatabase cedb,
@@ -134,7 +110,7 @@ public class ChangeFetcher
         }
 
         SIndex sidx = _sid2sidx.getNullable_(sid);
-        Changes c = _gson.fromJson(content, Changes.class);
+        Changes c = GsonUtil.GSON.fromJson(content, Changes.class);
 
         if (sidx == null || c.transforms == null || c.transforms.isEmpty()) {
             return false;
