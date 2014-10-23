@@ -12,6 +12,7 @@
 @navheight: 50px;
 @videoheight: 150px;
 @signupformbuttonwidth: 160px;
+@navindex: 500;
 
 /* Mixin */
 // Default font size and weight
@@ -25,6 +26,7 @@ body {
   font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'san-serif';
   font-size: 16px;
   color: #777; 
+  padding-top: @navheight;
   h1 {
     font: 300 48px/70px 'Open Sans';
     letter-spacing: -2px;
@@ -166,12 +168,26 @@ body {
 }
 
 /* Navbar-related styling */
+.wrapper {
+  width: 100%;
+}
+.main-navigation {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: @navindex;
+}
+.main-navigation, .submenu {
+  box-shadow: 0px 0px 4px rgba(0,0,0,.5);
+}
 .navbar {
-  background: transparent;
+  background: white;
   border-color: transparent;
   border: none;
   border-radius: 0;
   margin-bottom: 0;
+  margin-right: 0;
+  z-index: @navindex;
 
   .btn {
     margin: 8px 0 8px 15px;
@@ -203,12 +219,13 @@ body {
 }
 .submenu {
   height: @navheight;
-  background: @haze;
+  background: @ltblue;
   position: absolute;
   top: @navheight;
   left: 0;
   width: 100%;
   display: none;
+  z-index: @navindex - 1;
   ul {
     display: none;
     padding: 0;
