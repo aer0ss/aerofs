@@ -315,7 +315,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             throw new ExNotSetup();
         } else {
             try {
-                new File(Cfg.absRTRoot(), LibParam.IGNORE_DB_TAMPERING).createNewFile();
+                InjectableFile f = _factFile.create(Cfg.absRTRoot(), LibParam.IGNORE_DB_TAMPERING);
+                if (!f.exists()) f.createNewFile();
             } catch (IOException e) {
                 throw new ExUIMessage(L.product() + " could not ignore database tampering."
                         + S.MANUAL_REINSTALL);
@@ -384,25 +385,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         if (_firstStart) {
             // start the monitor thread
-            ThreadUtil.startDaemonThread("dm", new Runnable() {
-                @Override
-                public void run()
-                {
-                    thdMonitor(proc);
-                }
-            });
+            ThreadUtil.startDaemonThread("dm", () -> thdMonitor(proc));
 
             // Shutdown hook to ensure that the daemon is stopped when this program quits. When
             // we exit through the GUI, a daemon monitor stop is called as well. This is okay -
             // we can call stop multiple times and nothing bad will happen. This shutdown hook is
             // just here as a safety net.
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    stopIgnoreException();
-                }
-            }));
+            Runtime.getRuntime().addShutdownHook(new Thread(this::stopIgnoreException));
         }
 
         _firstStart = false;
@@ -429,17 +418,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         l.error("daemon died {}: {}", exitCode, getMessage(exitCode));
 
-        ThreadUtil.startDaemonThread("dm-death", new Runnable() {
-            @Override
-            public void run()
-            {
-                // wait so that the daemon.log sent along the defect will
-                // contain the lines logged right before the death.
-                ThreadUtil.sleepUninterruptable(5 * C.SEC);
+        ThreadUtil.startDaemonThread("dm-death", () -> {
+            // wait so that the daemon.log sent along the defect will
+            // contain the lines logged right before the death.
+            ThreadUtil.sleepUninterruptable(5 * C.SEC);
 
-                _defectDeath.setMessage("daemon died: " + getMessage(exitCode))
-                        .sendAsync();
-            }
+            _defectDeath.setMessage("daemon died: " + getMessage(exitCode))
+                    .sendAsync();
         });
     }
 
@@ -550,7 +535,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
                     // CoreProgressWatcher should kill the daemon if it gets stuck so we don't need
                     // to do it here anymore. However, we still do regular heartbeat checks to log
-                    // occurences of busy daemons
+                    // occurrences of busy daemons
                     tryHeartBeat();
                 } catch (SocketException e) {
                     l.warn("socket closed");

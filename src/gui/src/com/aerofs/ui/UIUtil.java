@@ -15,6 +15,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -43,7 +44,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -261,7 +261,7 @@ public class UIUtil
             return false;
         } catch (Exception e) {
             logAndShowLaunchError(e);
-            System.exit(0);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
         return true;
     }

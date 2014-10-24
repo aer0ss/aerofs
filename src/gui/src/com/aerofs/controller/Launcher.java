@@ -165,15 +165,11 @@ public class Launcher
                 UIGlobals.analytics().track(SimpleEvents.SIGN_IN);
             }
 
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    // delete the socket so another instance can run while we're sending the event
-                    destroySingletonSocket();
-                    // Shutdown the scheduler.
-                    UIGlobals.scheduler().shutdown();
-                }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                // delete the socket so another instance can run while we're sending the event
+                destroySingletonSocket();
+                // Shutdown the scheduler.
+                UIGlobals.scheduler().shutdown();
             }));
 
             // Re-install the shell extension if it was updated
