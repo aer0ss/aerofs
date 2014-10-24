@@ -523,8 +523,12 @@ def test_python(args):
     print colored("Python tests passed", Colors.GREEN)
 
 def test_js(args):
+    # Generate minified CSS/JS for JS tests
+    subprocess.check_call(["make"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
+    # Prepare node modules
     SHELOB_DIR = os.path.join(GIT_ROOT, "src", "web", "jstest", "shelob")
     subprocess.check_call(["npm", "install"], cwd=SHELOB_DIR)
+    # Run unit test suites
     KARMA_EXECUTABLE = os.path.join(SHELOB_DIR, "node_modules", "karma", "bin", "karma")
     subprocess.check_call([KARMA_EXECUTABLE, "start", "karma.conf.unit.js"], cwd=SHELOB_DIR)
     subprocess.check_call([KARMA_EXECUTABLE, "start", "karma.conf.e2e.js"], cwd=SHELOB_DIR)
