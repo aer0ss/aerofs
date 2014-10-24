@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber.ProbeException;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
@@ -18,8 +19,10 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -81,10 +84,20 @@ public class FlatLinkedStorage extends LinkedStorage
         super.init_();
 
         // only recreate users/shared dirs if the default root anchor exists
-        // this is to avoid conflicts with RootAnchorPoller in the GUI
+        // this is to avoid conflicts with SanityPoller in the GUI
         if (_usersDir.getParentFile().exists()) {
             _usersDir.ensureDirExists();
             _sharedDir.ensureDirExists();
+
+            // Probe the default abs root under which stores will be auto-joined.
+            // If we don't enforce a restriction here, then auto-join will just silently fail,
+            // causing an apparent no-sync that the user will blame us for.
+            try {
+                new FileSystemProber(_factFile)
+                        .probe(Util.join(_usersDir.getParent(), LibParam.AUXROOT_NAME + ".ts"));
+            } catch (ProbeException e) {
+                ExitCode.FILESYSTEM_PROBE_FAILED.exit();
+            }
         }
     }
 
