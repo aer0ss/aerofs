@@ -18,6 +18,7 @@ class common (
     }
 
     include common::logs
+    include motd
 
     apt::source { "aerofs":
         location    => "http://apt.aerofs.com/ubuntu/${repo}",
