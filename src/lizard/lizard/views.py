@@ -10,7 +10,7 @@ import itsdangerous
 from itsdangerous import TimestampSigner
 import markupsafe
 
-from lizard import analytics_client, db, login_manager
+from lizard import analytics_client, db, login_manager, csrf
 from . import appliance, emails, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
@@ -63,13 +63,14 @@ def logout():
     flash(u"You have logged out successfully", 'success')
     return redirect(url_for(".index"))
 
+@csrf.exempt
 @blueprint.route("/request_signup", methods=["GET", "POST"])
 def signup_request_page():
     """
     GET /request_signup - shows form for signing up
     POST /request_signup
     """
-    form = forms.SignupForm()
+    form = forms.SignupForm(csrf_enabled=False)
     if form.validate_on_submit():
         # If email already in Admin table, noop (but return success).
         # We don't want to leak that an account bound to an email exists by
