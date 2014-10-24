@@ -24,6 +24,12 @@ evaluationDependsOn(':src/lib')
 dependencies {
     compile name: 'smack'
     compile name: 'smackx'
+    compile name: 'netty-buffer-4.1.0.Beta3'
+    compile name: 'netty-codec-4.1.0.Beta3'
+    compile name: 'netty-codec-http-4.1.0.Beta3'
+    compile name: 'netty-common-4.1.0.Beta3'
+    compile name: 'netty-handler-4.1.0.Beta3'
+    compile name: 'netty-transport-4.1.0.Beta3'
     compile 'com.amazonaws:aws-java-sdk:1.1.5'
     compile 'org.apache.tika:tika-core:1.4'
     compile project(':src/libjingle.binding')
