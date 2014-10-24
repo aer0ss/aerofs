@@ -557,6 +557,7 @@ def package_clients(args):
     mode_arg = {
             "PUBLIC": "-Dmode=PUBLIC",
             "PRIVATE": "-Dmode=PRIVATE",
+            "CI": "-Dmode=CI",
     }[args.mode]
     signed_arg = "-Dsigned=TRUE" if args.signed else "-Dsigned=FALSE"
     cmdline = ["ant"] + [mode_arg, signed_arg] + ["package_clients"]
@@ -694,7 +695,7 @@ def main():
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
     parser.add_argument("--bin", action='store', default=os.environ["USER"].upper())
     parser.add_argument("--format", action='append', choices=['ova', 'qcow2', 'raw', 'vdi'])
-    parser.add_argument("--mode", action='store', choices=['PUBLIC', 'PRIVATE'])
+    parser.add_argument("--mode", action='store', choices=['PUBLIC', 'PRIVATE', 'CI'])
     parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
