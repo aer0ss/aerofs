@@ -604,7 +604,7 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
             ]
     print "Would call:"
     print " ".join(quote_arg(c) for c in cmdline)
-    #subprocess.check_call(cmdline, cwd=GIT_ROOT)
+    subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 @requires_one_of('syncdet_case', 'syncdet_scenario')
 def test_system(args):
