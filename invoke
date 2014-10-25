@@ -524,6 +524,8 @@ def test_python(args):
 
 def test_js(args):
     # Generate minified CSS/JS for JS tests
+    # Clean first to ensure output folder creation
+    subprocess.check_call(["make", "clean"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
     subprocess.check_call(["make"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
     # Prepare node modules
     SHELOB_DIR = os.path.join(GIT_ROOT, "src", "web", "jstest", "shelob")
