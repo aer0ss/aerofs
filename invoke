@@ -602,8 +602,8 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_sp",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_ritual",
             ]
-    print "Would call:"
-    print " ".join(quote_arg(c) for c in cmdline)
+    print "Calling:"
+    print " ".join(quote_arg(str(c)) for c in cmdline)
     subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 @requires_one_of('syncdet_case', 'syncdet_scenario')
@@ -670,7 +670,7 @@ def reconstitute_command_line(executable, args, incomplete_commands):
     if args.syncdet_case:
         for case in args.syncdet_case:
             cmdline.extend(["--syncdet-case", case])
-    cmdline.extend(["--syncdet-case-timeout", args.syncdet_case_timeout])
+    cmdline.extend(["--syncdet-case-timeout", str(args.syncdet_case_timeout)])
     cmdline.extend(["--syncdet-config", args.syncdet_config])
     cmdline.extend(["--syncdet-executable", args.syncdet_executable])
     if args.syncdet_extra_args:
@@ -679,7 +679,7 @@ def reconstitute_command_line(executable, args, incomplete_commands):
     if args.syncdet_scenario:
         for scenario in args.syncdet_scenario:
             cmdline.extend(["--syncdet-scenario", scenario])
-    cmdline.extend(["--syncdet-sync-timeout", args.syncdet_sync_timeout])
+    cmdline.extend(["--syncdet-sync-timeout", str(args.syncdet_sync_timeout)])
     cmdline.extend(["--syncdet-transport", args.syncdet_transport])
     cmdline.extend(["--target-os", args.target_os])
     if args.team_city:
