@@ -45,7 +45,6 @@ Vagrant.configure("2") do |config|
              puppet.options = "--verbose --debug"
              puppet.facter = {
                  "my_ssh_key" => %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip(),
-                 # "unified_ip" => %x(resolveip -s unified.syncfs.com).strip(),
                  "agent_vagrant_ssh_key" => %x(curl -s http://newci.arrowfs.org/agent_vagrant_rsa.pub | cut -d ' ' -f 2).strip(),
              }
           end

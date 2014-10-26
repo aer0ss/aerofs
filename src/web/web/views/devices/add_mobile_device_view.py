@@ -45,7 +45,7 @@ def get_mobile_access_code(request):
     An image/png response with the qrcode if format is 'qrcode', or a text/plain response with the blob of text
     that the user must copy/paste into the mobile app.
 
-    Example: GET https://unified.syncfs.com/devices/get_mobile_access_code?format=qrcode
+    Example: GET https://share.syncfs.com/devices/get_mobile_access_code?format=qrcode
     """
     if is_mobile_disabled(request.registry.settings):
         raise Forbidden("mobile is disabled, cannot generate access codes")

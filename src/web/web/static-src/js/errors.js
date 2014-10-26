@@ -9,7 +9,7 @@ $(document).ready(function(){
                 (strReferrer.indexOf("msn.co")>0)||
                 (strReferrer.indexOf("yahoo.co")>0)
                 );
-    var ownReferral = ((strReferrer.indexOf("unified.syncfs.com")>=0) ||
+    var ownReferral = ((strReferrer.indexOf("share.syncfs.com")>=0) ||
         (strReferrer.indexOf("aerofs.com")) >=0);
     if (strReferrer.length === 0) {
         $('#no-referrer').show();

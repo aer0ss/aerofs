@@ -12,7 +12,7 @@ from pyvirtualdisplay import Display
 display = Display(visible=0, size=(1024, 768))
 display.start()
 
-APP_HOST = "unified.syncfs.com"
+APP_HOST = "share.syncfs.com"
 AEROFS_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LICENSE_FILE = os.path.join(AEROFS_ROOT_DIR, "packaging", "bakery", "development", "test.license")
 ADMIN_USER = 'admin@syncfs.com'

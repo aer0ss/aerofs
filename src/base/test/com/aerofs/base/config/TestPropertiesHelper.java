@@ -148,12 +148,12 @@ public class TestPropertiesHelper
     {
         Properties raw = new Properties();
 
-        raw.setProperty("base.host.unified", "unified.syncfs.com");
+        raw.setProperty("base.host.unified", "share.syncfs.com");
         raw.setProperty("base.sp.url", "https://${base.host.unified}:4433/sp");
 
         Properties parsed = _propertiesHelper.parseProperties(raw);
 
-        assertEquals(parsed.get("base.sp.url"), "https://unified.syncfs.com:4433/sp");
+        assertEquals(parsed.get("base.sp.url"), "https://share.syncfs.com:4433/sp");
     }
 
     @Test

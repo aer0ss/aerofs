@@ -50,7 +50,7 @@ Third-party CSS files live in static/css. Only compiled files live in static/css
 
 Excepting shelob-related files, JS files written or edited by us live in static-src/js/. Third-party JS files live in static/js. Files in static/js/compiled are compiled; please don't edit them.
 
-Currently, to get Mako changes to show up on https://unified.syncfs.com you have to run `sudo service uwsgi stop && sudo service uwsgi start` on Vagrant. Sorry about that. There might be a Pyramid mode that will help the site notice when template files change and refresh itself for you. TODO: Further research required.
+Currently, to get Mako changes to show up on https://share.syncfs.com you have to run `sudo service uwsgi stop && sudo service uwsgi start` on Vagrant. Sorry about that. There might be a Pyramid mode that will help the site notice when template files change and refresh itself for you. TODO: Further research required.
 
 Many places in the codebase currently have inline styles or stylesheets. This is not great. Please move these out into their own Less files, then include the compiled CSS equivalents (`filename.min.css`) in the page(s) that need them. (Less is a superset of CSS, so you can do this without changing any of the markup--though it's probably worthwhile to sanity-check it at the same time as the move.)
 

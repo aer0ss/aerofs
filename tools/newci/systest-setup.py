@@ -51,16 +51,16 @@ ini_config.read(os.path.join(file_root, "../../src/web/development/modes/private
 DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_ROOT = '~/syncdet'
-DEFAULT_HOST = 'unified.syncfs.com'
+DEFAULT_HOST = 'share.syncfs.com'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 ARCHIVE_DIR = '~/archive'
 
 # CI Server Connection Settings
-CODE_URL = "http://unified.syncfs.com:21337/get_code"
+CODE_URL = "http://share.syncfs.com:21337/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
-CI_SP_URL = "https://unified.syncfs.com:4433/sp"
+CI_SP_URL = "https://share.syncfs.com:4433/sp"
 CI_SP_VERSION = ini_config.getint('app:main', 'sp.version')
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 

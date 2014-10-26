@@ -254,7 +254,7 @@ You'll need to install some dependencies, then run `make watch` and hopefully ne
 
 ## Sign up accounts in local prod
 
-Go to the URL `https://unified.syncfs.com` to create the first admin account.
+Go to the URL `https://share.syncfs.com` to create the first admin account.
 
 Or, you can use the signup script:
 

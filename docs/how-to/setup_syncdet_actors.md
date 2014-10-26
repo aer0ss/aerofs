@@ -64,7 +64,7 @@ Overwrite the file `/etc/syncdet/config.yaml` with the following content:
 actor_defaults:
   aero_userid: {aero_user_id}
   aero_password: {aero_password}
-  aero_host: unified.syncfs.com
+  aero_host: share.syncfs.com
   login: aerofstest
   root: ~/syncdet
   rsh: ssh

@@ -33,13 +33,6 @@ class syncdet-packages {
         provider => "pip"
     }
 
-#     # propagate local prod IPs from host
-#     host { "unified.syncfs.com":
-#         ensure => present,
-#         target => "/etc/hosts",
-#         ip => $::unified_ip
-#     }
-
     file{"/home/aerofstest":
         ensure => directory,
         owner => "aerofstest",

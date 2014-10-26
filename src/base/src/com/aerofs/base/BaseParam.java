@@ -234,7 +234,7 @@ public class BaseParam
          */
         public static final URL                 PUBLIC_EVENT_URL =
                 getUrlProperty(                 "base.audit.public.url",
-                                                "https://unified.syncfs.com/audit/event");
+                                                "https://share.syncfs.com/audit/event");
 
         /**
          * Connection timeout in milliseconds.

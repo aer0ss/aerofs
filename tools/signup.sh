@@ -12,9 +12,9 @@ PasswdDefault=uiuiui
 Passwd=$PasswdDefault
 
 CurlOutput="-o /dev/null"
-WebHostDefault=unified.syncfs.com
+WebHostDefault=share.syncfs.com
 WebHost=$WebHostDefault
-DbHostDefault=unified.syncfs.com
+DbHostDefault=share.syncfs.com
 DbHost=$DbHostDefault
 DbUser=vagrant
 DbKey=~/.vagrant.d/insecure_private_key

@@ -8,7 +8,7 @@
 #   sp_version  Match the protocol version of SP; currently 21.
 #
 [appliance]
-hostname=unified.syncfs.com
+hostname=share.syncfs.com
 
 # Client block
 #   Information about the client, i.e. the OAuth client app
