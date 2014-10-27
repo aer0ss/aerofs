@@ -34,7 +34,7 @@ public class S
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
             SETUP_DEV_ALIAS          = "Computer name",
             SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
-            SETUP_INSTALL_MESSAGE    = "Completing installation",
+            SETUP_INSTALL_MESSAGE    = "Setting up",
             SETUP_ERR_RATE_LIMIT     = "Rate limit exceeded.  Wait a minute before trying again.",
             SETUP_ERR_SECOND_FACTOR  = "Incorrect second factor provided",
             SETUP_SIGNIN_MESSAGE     = "Signing in",
