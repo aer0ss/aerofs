@@ -18,6 +18,7 @@
 // Default font size and weight
 .standardtext {
     font: 400 16px/24px 'Open Sans';
+    color: #878787;
 }
 /* Mixin: Inside a div have an image vertically and horizontally centered
    Height determines the height of the image
@@ -115,6 +116,18 @@ body {
     padding: @navheight 0;
   }
 
+  dl {
+    dt {
+      color: black;
+    }
+    dd + dt {
+      margin-top: 1em;
+    }
+    dd {
+      margin-left: 12px;
+    }
+  }
+
   /* form styles */
   .form label, .form input, .form textarea {
     font: 400 18px/30px 'Open Sans'; }
@@ -171,7 +184,12 @@ body {
 
   .btn {
     .standardtext();
-    height: 38px;
+    &:not(.btn-lg) {
+      height: 38px;
+    }
+    &:not(.btn-default) {
+      color: white;
+    }
   }
 
   /* killall Bootstrap rounded corners */
@@ -470,6 +488,13 @@ body {
             border-bottom: 1pt solid @darkblue;
         }
     }
+}
+
+.developers {
+  .how-it-works li {
+    .standardtext();
+    height: 241px / 3;
+  }
 }
 
 /* Applies to col-sm, but not smaller or larger*/

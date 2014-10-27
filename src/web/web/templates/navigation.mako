@@ -20,111 +20,12 @@
     <%self:_side_bar/>
 </%def>
 
-<%def name="product_side_bar()">
-    <%self:_side_bar>
-        <%def name="menu_title()">Product</%def>
-        <%def name="main_items()">
-            <%self:product_items highlight_current_item="True"/>
-        </%def>
-    </%self:_side_bar>
-</%def>
-
-<%def name="solutions_side_bar()">
-    <%self:_side_bar>
-        <%def name="menu_title()">Solutions</%def>
-        <%def name="main_items()">
-            <%self:solutions_items highlight_current_item="True"/>
-        </%def>
-    </%self:_side_bar>
-</%def>
-
-<%def name="security_side_bar()">
-    <%self:_side_bar>
-        <%def name="menu_title()">Security</%def>
-        <%def name="main_items()">
-            <%self:security_items highlight_current_item="True"/>
-        </%def>
-    </%self:_side_bar>
-</%def>
-
-## This side bar doesn't come with the "Next Steps" marketing plugs.
-<%def name="developers_side_bar()">
-    <%self:_side_bar>
-        <%def name="exclude_next_steps_items()"></%def>
-        <%def name="menu_title()">Developer Home</%def>
-        <%def name="main_items()">
-            <%self:_developers_items highlight_current_item="True"/>
-        </%def>
-    </%self:_side_bar>
-
-    ${caller.body()}
-
-    <div class="alert alert-info">
-        API access is available for the AeroFS <strong>Private Cloud only</strong>.
-        <a href="${request.route_path('developers_signup')}">Click here</a>
-        to request a developer license for free.
-    </div>
-</%def>
-
 <%def name="api_doc_url()">/docs/api</%def>
 
 <%!
     def sub_item(text):
         return '<span style="margin-left: 12px; font-size: 95%">' + text + '</span>'
 %>
-
-<%def name="product_items(highlight_current_item=False)">
-    <%
-        items = [
-            ('Overview', 'product_overview'),
-            (sub_item('Low-cost Scalability'), 'product_low_cost_scalability'),
-            (sub_item('Security & Control'), 'product_security_and_control'),
-            (sub_item('Simple Experience'), 'product_simple_experience'),
-            (sub_item('Flexible Storage'), 'product_flexible_storage'),
-            ('Deployment Options', 'product_deployment_options'),
-            (sub_item('Private Cloud'), 'product_deployment_private_cloud'),
-        ]
-    %>
-    ${_render_items(items, highlight_current_item)}
-</%def>
-
-<%def name="solutions_items(highlight_current_item=False)">
-    <%
-        items = [
-            ('Overview', 'solutions_overview'),
-            (sub_item('Transfer Large Files'), 'solutions_transfer_large_files'),
-            (sub_item('Share Securely'), 'solutions_secure_file_sharing'),
-            (sub_item('Server Replacement'), 'solutions_server_replacement'),
-            (sub_item('Data Recovery'), 'solutions_data_recovery'),
-            ('Compliance & DLP', 'solutions_data_protection_policy')
-        ]
-    %>
-    ${_render_items(items, highlight_current_item)}
-</%def>
-
-<%def name="security_items(highlight_current_item=False)">
-    <%
-        items = [
-            ('Security & Control', 'security_overview'),
-            ('Technical Details', 'security_spec')
-        ]
-    %>
-    ${_render_items(items, highlight_current_item)}
-</%def>
-
-<%def name="_developers_items(highlight_current_item=False)">
-    <%
-        items = [
-            ('Overview', 'developers_overview'),
-            ('Getting Started', 'developers_getting_started'),
-            ('Consistency Policies', 'developers_consistency'),
-            ('Publish Your App', 'developers_publish'),
-##            ('Security Guide', 'developers_security'),
-        ]
-    %>
-    ${_render_items(items, highlight_current_item)}
-    <li><a href="${api_doc_url()}">API Reference</a></li>
-</%def>
 
 ## @items a list of tuples of (title, route).
 <%def name="_render_items(items, highlight_current_item)">

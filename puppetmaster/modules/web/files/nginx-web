@@ -72,8 +72,11 @@ server {
         try_files $uri $uri/ @uwsgi;
     }
     location @uwsgi {
-        # redirect /developer to /developers
-        rewrite /developer(/.*)?$ /developers$1 permanent;
+        # redirect /developer pages to /developers
+        rewrite /developer(s?/?)$ /developers/ permanent;
+        # redirect old marketing pages to equivalent static marketing pages
+        rewrite /business_usage /business/ permanent;
+        rewrite /personal_usage /personal/ permanent;
 
         # proxies to Pyramid, the python server serving the AeroFS website.
         uwsgi_pass 127.0.0.1:8080;
