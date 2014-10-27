@@ -201,19 +201,22 @@ public class CLISetup
         _model.setDeviceName(cli.askText(S.SETUP_DEV_ALIAS, _model.getDeviceName()));
     }
 
-    private void getS3Config(CLI cli, S3Config options) throws ExNoConsole
+    private void getS3Config(CLI cli, S3Config cfg) throws ExNoConsole
     {
-        while (options._bucketID == null || options._bucketID.isEmpty()) {
-            options._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
+        while (cfg._endpoint == null || cfg._endpoint.isEmpty()) {
+            cfg._endpoint = cli.askText(S.SETUP_S3_ENDPOINT, LibParam.DEFAULT_S3_ENDPOINT);
         }
-        while (options._accessKey == null || options._accessKey.isEmpty()) {
-            options._accessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
+        while (cfg._bucketID == null || cfg._bucketID.isEmpty()) {
+            cfg._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
         }
-        while (options._secretKey == null || options._secretKey.isEmpty()) {
-            options._secretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
+        while (cfg._accessKey == null || cfg._accessKey.isEmpty()) {
+            cfg._accessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
         }
-        while (options._passphrase == null || options._passphrase.length() == 0) {
-            options._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
+        while (cfg._secretKey == null || cfg._secretKey.isEmpty()) {
+            cfg._secretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
+        }
+        while (cfg._passphrase == null || cfg._passphrase.length() == 0) {
+            cfg._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
                     S.SETUP_S3_ENCRYPTION_PASSWORD));
         }
     }

@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.S;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
@@ -35,7 +36,8 @@ public class PageS3Storage extends AbstractSetupWorkPage
 {
     private S3DataEncryptionPasswordVerifier _verifier;
 
-    private Text        _txtBucketID;
+    private Text        _txtEndpoint;
+    private Text        _txtBucketName;
     private Text        _txtAccessKey;
     private Text        _txtSecretKey;
     private Text        _txtPass1;
@@ -48,7 +50,8 @@ public class PageS3Storage extends AbstractSetupWorkPage
     private Button      _btnInstall;
     private Button      _btnBack;
 
-    static final String AMAZON_S3_URL = "http://aws.amazon.com/s3";
+    static final String BLOCK_STORAGE_HELP_URL =
+            "https://support.aerofs.com/hc/en-us/articles/201439474";
 
     public PageS3Storage(Composite parent)
     {
@@ -62,12 +65,9 @@ public class PageS3Storage extends AbstractSetupWorkPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        Label lblConfigDesc = new Label(content, SWT.WRAP);
-        lblConfigDesc.setText(S.SETUP_S3_CONFIG_DESC);
-
-        Link lnkAmazon = new Link(content, SWT.NONE);
-        lnkAmazon.setText(S.SETUP_S3_AMAZON_LINK);
-        lnkAmazon.addSelectionListener(createUrlLaunchListener(AMAZON_S3_URL));
+        Link lnkAmazon = new Link(content, SWT.WRAP);
+        lnkAmazon.setText(S.SETUP_S3_CONFIG_DESC);
+        lnkAmazon.addSelectionListener(createUrlLaunchListener(BLOCK_STORAGE_HELP_URL));
 
         Composite compConfig = createConfigurationComposite(content);
 
@@ -78,7 +78,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
 
         ModifyListener onInputChanged = createListenerToValidateInput();
 
-        _txtBucketID.addModifyListener(onInputChanged);
+        _txtBucketName.addModifyListener(onInputChanged);
         _txtAccessKey.addModifyListener(onInputChanged);
         _txtSecretKey.addModifyListener(onInputChanged);
         _txtPass1.addModifyListener(onInputChanged);
@@ -90,7 +90,6 @@ public class PageS3Storage extends AbstractSetupWorkPage
         layout.verticalSpacing = 0;
         content.setLayout(layout);
 
-        lblConfigDesc.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         lnkAmazon.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         compConfig.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         lblPassDesc.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -103,20 +102,25 @@ public class PageS3Storage extends AbstractSetupWorkPage
     {
         Composite compConfig = new Composite(parent, SWT.NONE);
 
-        Label lblBucketID = new Label(compConfig, SWT.NONE);
-        lblBucketID.setText(S.SETUP_S3_BUCKET_NAME_GUI);
+        // Endpoint
+        Label lblEndpoint = new Label(compConfig, SWT.NONE);
+        lblEndpoint.setText(S.SETUP_S3_ENDPOINT_GUI);
+        _txtEndpoint = new Text(compConfig, SWT.BORDER);
 
-        _txtBucketID = new Text(compConfig, SWT.BORDER);
-        _txtBucketID.setFocus();
+        // Bucket name
+        Label lblBucketName = new Label(compConfig, SWT.NONE);
+        lblBucketName.setText(S.SETUP_S3_BUCKET_NAME_GUI);
+        _txtBucketName = new Text(compConfig, SWT.BORDER);
+        _txtBucketName.setFocus();
 
+        // Access key
         Label lblAccessKey = new Label(compConfig, SWT.NONE);
         lblAccessKey.setText(S.SETUP_S3_ACCESS_KEY_GUI);
-
         _txtAccessKey = new Text(compConfig, SWT.BORDER);
 
+        // Secret key
         Label lblSecretKey = new Label(compConfig, SWT.NONE);
         lblSecretKey.setText(S.SETUP_S3_SECRET_KEY_GUI);
-
         _txtSecretKey = new Text(compConfig, SWT.BORDER);
 
         GridLayout layout = new GridLayout(2, true);
@@ -125,8 +129,10 @@ public class PageS3Storage extends AbstractSetupWorkPage
         layout.verticalSpacing = 5;
         compConfig.setLayout(layout);
 
-        lblBucketID.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-        _txtBucketID.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        lblEndpoint.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+        _txtEndpoint.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        lblBucketName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+        _txtBucketName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         lblAccessKey.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
         _txtAccessKey.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         lblSecretKey.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
@@ -199,7 +205,9 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void readFromModel(SetupModel model)
     {
-        _txtBucketID.setText(Objects.firstNonNull(model._s3Config._bucketID, ""));
+        _txtEndpoint.setText(Objects.firstNonNull(model._s3Config._endpoint,
+                LibParam.DEFAULT_S3_ENDPOINT));
+        _txtBucketName.setText(Objects.firstNonNull(model._s3Config._bucketID, ""));
         _txtAccessKey.setText(Objects.firstNonNull(model._s3Config._accessKey, ""));
         _txtSecretKey.setText(Objects.firstNonNull(model._s3Config._secretKey, ""));
         // do not load the passphrase
@@ -210,7 +218,8 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void writeToModel(SetupModel model)
     {
-        model._s3Config._bucketID = _txtBucketID.getText().trim();
+        model._s3Config._endpoint = _txtEndpoint.getText().trim();
+        model._s3Config._bucketID = _txtBucketName.getText().trim();
         model._s3Config._accessKey = _txtAccessKey.getText();
         model._s3Config._secretKey = _txtSecretKey.getText();
         model._s3Config._passphrase = _txtPass1.getText();
@@ -231,9 +240,8 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected @Nonnull Control[] getControls()
     {
-        return new Control[] {
-                _txtBucketID, _txtAccessKey, _txtSecretKey, _txtPass1, _txtPass2,
-                _btnBack, _btnInstall
+        return new Control[] {_txtEndpoint, _txtBucketName, _txtAccessKey, _txtSecretKey, _txtPass1,
+                _txtPass2, _btnBack, _btnInstall
         };
     }
 
@@ -253,7 +261,8 @@ public class PageS3Storage extends AbstractSetupWorkPage
     protected boolean isInputValid()
     {
         return isPassphraseValid()
-                && !_txtBucketID.getText().isEmpty()
+                && !_txtEndpoint.getText().trim().isEmpty()
+                && !_txtBucketName.getText().trim().isEmpty()
                 && !_txtAccessKey.getText().isEmpty()
                 && !_txtSecretKey.getText().isEmpty();
     }

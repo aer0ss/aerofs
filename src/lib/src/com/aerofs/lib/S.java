@@ -43,7 +43,7 @@ public class S
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",
             SETUP_STORAGE_LOCAL      = "On this computer",
-            SETUP_STORAGE_S3         = "On Amazon S3",
+            SETUP_STORAGE_S3         = "On Amazon S3 or OpenStack Swift",
 
             // used in setup local storage screen
             ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
@@ -61,21 +61,22 @@ public class S
             SETUP_BTN_INSTALL        = "Install",
 
             // used in setup S3 storage screen
-            SETUP_S3_CONFIG_DESC     = "If you do not have an Amazon S3 bucket, you may create " +
-                    "one at",
-            SETUP_S3_AMAZON_LINK     = "<a>http://aws.amazon.com/s3</a>.",
+            SETUP_S3_CONFIG_DESC     = "AeroFS supports Amazon S3 and OpenStack Swift. Check out " +
+                    "<a>this article</a> for setup instructions.",
             SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
                     "used to encrypt your data before sending it to S3:",
-            SETUP_S3_BUCKET_NAME_GUI = "S3 Bucket Name:",
-            SETUP_S3_ACCESS_KEY_GUI  = "S3 Access Key:",
-            SETUP_S3_SECRET_KEY_GUI  = "S3 Secret Key:",
+            SETUP_S3_ENDPOINT_GUI    = "Endpoint:",
+            SETUP_S3_BUCKET_NAME_GUI = "Bucket Name:",
+            SETUP_S3_ACCESS_KEY_GUI  = "Access Key:",
+            SETUP_S3_SECRET_KEY_GUI  = "Secret Key:",
             SETUP_S3_ENC_PASSWD_GUI  = "Encryption Passphrase:",
             SETUP_S3_CONF_PASSWD     = "Confirm Passphrase:",
 
-            SETUP_S3_BUCKET_NAME     = "S3 bucket name",
-            SETUP_S3_ACCESS_KEY      = "S3 access key",
-            SETUP_S3_SECRET_KEY      = "S3 secret key",
-            S3_ENCRYPTION_PASSWORD   = "S3 data encryption passphrase",
+            SETUP_S3_ENDPOINT        = "Endpoint",
+            SETUP_S3_BUCKET_NAME     = "Bucket name",
+            SETUP_S3_ACCESS_KEY      = "Access key",
+            SETUP_S3_SECRET_KEY      = "Secret key",
+            S3_ENCRYPTION_PASSWORD   = "Data encryption passphrase",
             SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to S3)",
             SETUP_NOT_ADMIN          = "This account is not an administrator account for the " +
@@ -168,8 +169,6 @@ public class S
 
             // preferences dialog
             FILE_OPEN_FAIL = "The file couldn't be opened.",
-            CONFLICT_OPEN_FAIL = FILE_OPEN_FAIL +
-                " Please use the [Save As...] button to save and view it.",
             REPORT_A_PROBLEM = "Report a Problem",
             DEFAULT_DIALOG_TITLE = L.product(),
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
@@ -205,7 +204,7 @@ public class S
             INVITING = "Inviting...",
             LINKED_DESCRIPTION = "Store files on the local disk",
             LOCAL_DESCRIPTION = "Store compressed files on the local disk",
-            S3_DESCRIPTION = "Store files on Amazon S3",
+            S3_DESCRIPTION = "Store files on Amazon S3 or OpenStack Swift",
             USERS_DIR = "users",
             SHARED_DIR = "shared",
             URL_ROLES = "https://support.aerofs.com/entries/22831810",

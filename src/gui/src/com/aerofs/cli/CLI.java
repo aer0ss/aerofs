@@ -278,18 +278,14 @@ public class CLI implements IUI {
     {
         final OutArg<String> ret = new OutArg<String>();
 
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                while (true) {
-                    _out.print(msg + (def != null ? " [" + def + "]" : "" ) + ": ");
-                    ret.set(readLine());
-                    if (ret.get() == null || !ret.get().isEmpty()) break;
-                    if (def != null) {
-                        ret.set(def);
-                        break;
-                    }
+        exec(() -> {
+            while (true) {
+                _out.print(msg + (def != null ? " [" + def + "]" : "" ) + ": ");
+                ret.set(readLine());
+                if (ret.get() == null || !ret.get().isEmpty()) break;
+                if (def != null) {
+                    ret.set(def);
+                    break;
                 }
             }
         });
@@ -310,14 +306,7 @@ public class CLI implements IUI {
 
     public void scheduleLaunch(final String rtRoot)
     {
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                UIUtil.launch(rtRoot, null, null);
-            }
-        });
+        asyncExec(() -> UIUtil.launch(rtRoot, null, null));
     }
 
     public void enterMainLoop_()
@@ -444,17 +433,12 @@ public class CLI implements IUI {
     {
         if (_timedExecThreadStarted.compareAndSet(false, true)) return;
 
-        ThreadUtil.startDaemonThread("cli-exec", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (true) {
-                    try {
-                        asyncExec(_dq.take()._runnable);
-                    } catch (InterruptedException e) {
-                        SystemUtil.fatal(e);
-                    }
+        ThreadUtil.startDaemonThread("cli-exec", () -> {
+            while (true) {
+                try {
+                    asyncExec(_dq.take()._runnable);
+                } catch (InterruptedException e) {
+                    SystemUtil.fatal(e);
                 }
             }
         });
@@ -480,8 +464,8 @@ public class CLI implements IUI {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                 show(MessageType.WARN, S.BAD_CREDENTIAL_CAP);
             } catch (Exception e) {
-                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + ErrorMessages.e2msgDeprecated(
-                        e));
+                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " +
+                        ErrorMessages.e2msgDeprecated(e));
             }
         }
     }

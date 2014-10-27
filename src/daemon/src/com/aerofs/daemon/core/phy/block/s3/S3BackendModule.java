@@ -17,6 +17,8 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
+import javax.annotation.Nullable;
+
 public class S3BackendModule extends AbstractBackendModule
 {
     @Override
@@ -42,8 +44,13 @@ public class S3BackendModule extends AbstractBackendModule
     }
 
     @Provides
-    public AmazonS3 provideS3Client(AWSCredentials creds)
+    public AmazonS3 provideS3Client(AWSCredentials creds, CfgDatabase db)
     {
-        return new AmazonS3Client(creds);
+        AmazonS3 s3 = new AmazonS3Client(creds);
+        // Null testing is for old Team Servers that don't have the endpoint field populated.
+        // The default end point is S3 US East region.
+        @Nullable String endpoint = db.getNullable(CfgDatabase.Key.S3_ENDPOINT);
+        if (endpoint != null) s3.setEndpoint(endpoint);
+        return s3;
     }
 }

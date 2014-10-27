@@ -94,6 +94,11 @@ public class LibParam extends BaseParam
     private static final String SEED_FILE_NAME = ".aerofs.seed";
 
     /**
+     * Default endpoint for the Team Server S3 storage type.
+     */
+    public static final String DEFAULT_S3_ENDPOINT = "https://s3.amazonaws.com";
+
+    /**
      * In case user reinstall with a different user account we don't want seed files to be used
      * as it would potentially break sharing (since SID is derived from the OID of the original
      * dir being shared) and may lead to unexpected migration

@@ -6,6 +6,7 @@ package com.aerofs.controller;
 
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgRestService;
@@ -142,6 +143,7 @@ public class SetupModel
     // handles the setup for using S3 storage
     public static class S3Config
     {
+        public String _endpoint;
         public String _bucketID;
         public String _accessKey;
         public String _secretKey;
@@ -165,7 +167,7 @@ public class SetupModel
     private String          _devAlias;
     public boolean          _isLocal;
     public LocalOptions     _localOptions;
-    public S3Config _s3Config;
+    public S3Config         _s3Config;
 
     private SPBlockingClient _sp;
 

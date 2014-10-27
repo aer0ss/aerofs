@@ -299,6 +299,7 @@ public class Setup
         map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         map.put(Key.REST_SERVICE, Boolean.toString(apiAccess));
         if (s3config != null) {
+            map.put(Key.S3_ENDPOINT, s3config._endpoint);
             map.put(Key.S3_BUCKET_ID, s3config._bucketID);
             map.put(Key.S3_ACCESS_KEY, s3config._accessKey);
             map.put(Key.S3_SECRET_KEY, s3config._secretKey);

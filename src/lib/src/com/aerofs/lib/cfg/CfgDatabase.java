@@ -90,6 +90,7 @@ public class CfgDatabase
 
         // Config for S3
         S3_DIR("s3_dir", null),
+        S3_ENDPOINT("s3_endpoint", null),
         S3_ACCESS_KEY("s3_access_key", null),
         S3_SECRET_KEY("s3_secret_key", null),
         S3_BUCKET_ID("s3_bucket_id", null),

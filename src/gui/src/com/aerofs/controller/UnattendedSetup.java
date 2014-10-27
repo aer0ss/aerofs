@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 
@@ -51,11 +52,8 @@ public class UnattendedSetup
             throws IOException
     {
         Properties props = new Properties();
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream(_setupFile));
-        try {
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(_setupFile))) {
             props.load(in);
-        } finally {
-            in.close();
         }
 
         model.setUserID(props.getProperty(PROP_USERID));
@@ -68,6 +66,7 @@ public class UnattendedSetup
 
         String s3BucketId = props.getProperty(Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
+            model._s3Config._endpoint = props.getProperty(Key.S3_ENDPOINT.keyString(), LibParam.DEFAULT_S3_ENDPOINT);
             model._s3Config._bucketID = s3BucketId;
             model._s3Config._accessKey = props.getProperty(Key.S3_ACCESS_KEY.keyString());
             model._s3Config._secretKey = props.getProperty(Key.S3_SECRET_KEY.keyString());
