@@ -19,7 +19,7 @@ def show_welcome_image_and_set_cookie(request):
     If they haven't, returns true, and sets the cookie so the user
     won't see it next time. Else, returns false."""
     if 'aerofs_welcome_seen' not in request.session and 'aerofs_welcome_seen' not in request.cookies:
-        request.response.set_cookie('aerofs_welcome_seen','true')
+        request.response.set_cookie('aerofs_welcome_seen','true', max_age=60*60*24*365)
         return True
     else:
         return False
