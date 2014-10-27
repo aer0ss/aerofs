@@ -34,7 +34,7 @@ public class S
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
             SETUP_DEV_ALIAS          = "Computer name",
             SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
-            SETUP_INSTALL_MESSAGE    = "Performing magic",
+            SETUP_INSTALL_MESSAGE    = "Completing installation",
             SETUP_ERR_RATE_LIMIT     = "Rate limit exceeded.  Wait a minute before trying again.",
             SETUP_ERR_SECOND_FACTOR  = "Incorrect second factor provided",
             SETUP_SIGNIN_MESSAGE     = "Signing in",
@@ -187,7 +187,7 @@ public class S
                 " account and quit the program?" +
                 " The computer will no longer stay in sync, but will keep files it currently has.",
             INVITATION_CODE_NOT_FOUND = "Invitation code not found",
-            CHECKING_FOR_DINOSAURS = "Checking for dinosaurs...",
+            CHECKING_FOR_DINOSAURS = "Checking for updates...",
             PRE_SETUP_UPDATE_CHECK_FAILED = L.product() + " couldn't" +
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.product() + " again.",
