@@ -15,35 +15,29 @@ import com.google.inject.Inject;
 
 import java.sql.SQLException;
 
-/**
- * triggers:
- *    - startup
- *    - local change (batched, rate-limited)
- *    - ACL change (WRITE bit) TODO
- */
-public class MetaChangeSubmissionScheduler
+public class SubmissionScheduler<T extends Submitter>
 {
-    public static class Factory
+    public static class Factory<T extends Submitter>
     {
         private final CoreScheduler _sched;
         private final VersionUpdater _vu;
-        private final MetaChangeSubmitter _submitter;
+        private final T _submitter;
 
         @Inject
-        public Factory(CoreScheduler sched, VersionUpdater vu, MetaChangeSubmitter submitter)
+        public Factory(CoreScheduler sched, VersionUpdater vu, T submitter)
         {
             _sched = sched;
             _vu = vu;
             _submitter = submitter;
         }
 
-        public MetaChangeSubmissionScheduler create(SIndex sidx)
+        public SubmissionScheduler<T> create(SIndex sidx)
         {
-            return new MetaChangeSubmissionScheduler(this, sidx);
+            return new SubmissionScheduler<>(this, sidx);
         }
     }
 
-    private final Factory _f;
+    private final Factory<T> _f;
     private final SIndex _sidx;
     private final AsyncWorkScheduler _sched;
 
@@ -62,24 +56,34 @@ public class MetaChangeSubmissionScheduler
         }
     };
 
-    private MetaChangeSubmissionScheduler(Factory f, SIndex sidx)
+    private SubmissionScheduler(Factory<T> f, SIndex sidx)
     {
         _f = f;
         _sidx = sidx;
-        _sched = new AsyncWorkScheduler("submit[" +  _sidx + "]", _f._sched, cb -> {
-           try {
+        _sched = new AsyncWorkScheduler(name(), _f._sched, cb -> {
+            try {
                _f._submitter.submit_(_sidx, cb);
-           } catch (SQLException e) {
-               cb.onFailure_(e);
-           }
+            } catch (SQLException e) {
+                cb.onFailure_(e);
+            }
         });
 
-        _f._vu.addListener_((soid, t) -> _tlSubmit.get(t));
+        _f._vu.addListener_((soid, t) -> startOnCommit_(t));
+    }
+
+    private String name()
+    {
+        return _f._submitter.name() + "[" +  _sidx + "]";
     }
 
     public void start_()
     {
         _sched.schedule_();
+    }
+
+    public void startOnCommit_(Trans t)
+    {
+        _tlSubmit.get(t);
     }
 
     public void stop_()

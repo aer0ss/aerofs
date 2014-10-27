@@ -5,6 +5,8 @@
 package com.aerofs.daemon.core.polaris.db;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -16,6 +18,7 @@ import com.google.inject.Inject;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -47,12 +50,23 @@ import static com.google.common.base.Preconditions.checkState;
  * {@link com.aerofs.daemon.core.polaris.db.MetaChangesDatabase}
  * {@link com.aerofs.daemon.core.polaris.db.MetaBufferDatabase}
  */
-public class RemoteLinkDatabase extends AbstractDatabase
+public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
     @Inject
-    public RemoteLinkDatabase(CoreDBCW dbcw)
+    public RemoteLinkDatabase(CoreDBCW dbcw, StoreDeletionOperators sdo)
     {
         super(dbcw.get());
+        sdo.addImmediate_(this);
+    }
+
+    @Override
+    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
+    {
+        if (!_dbcw.tableExists(T_REMOTE_LINK)) return;
+        try (Statement s = c().createStatement()) {
+            s.executeUpdate("delete from " + T_REMOTE_LINK + " where " + C_REMOTE_LINK_SIDX + "=" +
+                    sidx.getInt());
+        }
     }
 
     public static class RemoteLink

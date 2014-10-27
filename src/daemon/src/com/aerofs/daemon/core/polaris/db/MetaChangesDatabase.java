@@ -5,7 +5,9 @@
 package com.aerofs.daemon.core.polaris.db;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
@@ -14,7 +16,6 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.ParameterizedStatement;
-import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -29,12 +30,15 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  *
  */
-public class MetaChangesDatabase extends AbstractDatabase implements IStoreDeletionOperator
+public class MetaChangesDatabase extends AbstractDatabase
+        implements IStoreCreationOperator, IStoreDeletionOperator
 {
     @Inject
-    public MetaChangesDatabase(CoreDBCW dbcw, StoreDeletionOperators sdo)
+    public MetaChangesDatabase(CoreDBCW dbcw, StoreCreationOperators sco,
+            StoreDeletionOperators sdo)
     {
         super(dbcw.get());
+        sco.add_(this);
         sdo.addImmediate_(this);
     }
 
@@ -43,8 +47,10 @@ public class MetaChangesDatabase extends AbstractDatabase implements IStoreDelet
         return T_META_CHANGE + "_" + sidx.getInt();
     }
 
-    public void createStore_(SIndex sidx, Trans t) throws SQLException
+    @Override
+    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException
     {
+        if (!usePolaris) return;
         try (Statement s = c().createStatement()) {
             s.executeUpdate("create table " + tableName(sidx) + "("
                     + C_META_CHANGE_IDX + _dbcw.longType() + " primary key " + _dbcw.autoIncrement() + ","

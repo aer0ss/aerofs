@@ -8,7 +8,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.AntiEntropy;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
@@ -18,7 +17,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
@@ -28,10 +26,12 @@ import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
-import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmissionScheduler;
+import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
+import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.Store;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -72,14 +72,16 @@ public class InMemoryDS
     public final Stores stores;
     public final StoreCreator sc;
     public final DirectoryServiceImpl ds = new DirectoryServiceImpl();
+    public final StoreCreationOperators sco = new StoreCreationOperators();
     public final StoreDeletionOperators sdo = new StoreDeletionOperators();
 
+    @SuppressWarnings("unchecked")
     public InMemoryDS(CoreDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
     {
         sm = new SIDMap(new SIDDatabase(dbcw));
         MetaDatabase mdb = new MetaDatabase(dbcw);
         StoreDatabase sdb = new StoreDatabase(dbcw);
-        MetaChangesDatabase mcdb = new MetaChangesDatabase(dbcw, sdo);
+        MetaChangesDatabase mcdb = new MetaChangesDatabase(dbcw, sco, sdo);
         ChangeEpochDatabase cedb = new ChangeEpochDatabase(dbcw);
         TransManager tm = mock(TransManager.class);
         StoreHierarchy sh;
@@ -94,8 +96,7 @@ public class InMemoryDS
             resolver = new SingleuserPathResolver.Factory((SingleuserStoreHierarchy)sh, sm, sm);
         }
 
-        sc = new StoreCreator(mock(NativeVersionControl.class), mock(ImmigrantVersionControl.class),
-                mdb, sm, sh, ps, mock(LogicalStagingArea.class), mcdb, usePolaris);
+        sc = new StoreCreator(mdb, sm, sh, ps, mock(LogicalStagingArea.class), sco, usePolaris);
 
         SenderFilters.Factory factSF = mock(SenderFilters.Factory.class);
         try {
@@ -107,8 +108,8 @@ public class InMemoryDS
         } catch (SQLException e) { throw new AssertionError(); }
         ChangeFetchScheduler.Factory factCFS = mock(ChangeFetchScheduler.Factory.class);
         when(factCFS.create(any(SIndex.class))).thenReturn(mock(ChangeFetchScheduler.class));
-        MetaChangeSubmissionScheduler.Factory factCSS = mock(MetaChangeSubmissionScheduler.Factory.class);
-        when(factCSS.create(any(SIndex.class))).thenReturn(mock(MetaChangeSubmissionScheduler.class));
+        SubmissionScheduler.Factory<MetaChangeSubmitter> factCSS = mock(SubmissionScheduler.Factory.class);
+        when(factCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
 
         Store.Factory factStore  = new Store.Factory(usePolaris, factSF, factCollector,
                 mock(AntiEntropy.class), mock(Devices.class), mock(IPulledDeviceDatabase.class),

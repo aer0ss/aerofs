@@ -2,7 +2,9 @@ package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AbstractVersionControl;
+import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
@@ -12,6 +14,7 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
 import com.google.inject.Inject;
@@ -29,6 +32,7 @@ import org.slf4j.Logger;
 // TODO: caching
 
 public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTickRow>
+    implements IStoreCreationOperator
 {
     private static Logger l = Loggers.getLogger(ImmigrantVersionControl.class);
 
@@ -37,12 +41,20 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
 
     @Inject
     public ImmigrantVersionControl(IImmigrantVersionDatabase ivdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva, StoreDeletionOperators sdn,
+            TransLocalVersionAssistant tlva, StoreCreationOperators sco, StoreDeletionOperators sdn,
             MapSIndex2Contributors sidx2contrib)
     {
         super(ivdb, cfgLocalDID, tlva, sdn);
         _ivdb = ivdb;
         _sidx2contrib = sidx2contrib;
+        sco.add_(this);
+    }
+
+    @Override
+    public void createStore_(SIndex sidx, boolean usePolaris, Trans t)
+            throws SQLException
+    {
+        if (!usePolaris) restoreStore_(sidx, t);
     }
 
     public void createLocalImmigrantVersions_(SOCID socid, Version v, Trans t)

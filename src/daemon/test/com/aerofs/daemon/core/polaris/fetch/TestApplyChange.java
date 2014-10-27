@@ -73,23 +73,25 @@ public class TestApplyChange extends AbstractBaseTest
         @Override public boolean get() { return true; }
     };
     final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(mock(InjectableDriver.class), usePolaris);
-    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(dbcw.getCoreDBCW());
-    final MetaBufferDatabase mbdb = new MetaBufferDatabase(dbcw.getCoreDBCW());
-    final CentralVersionDatabase cvdb = new CentralVersionDatabase(dbcw.getCoreDBCW());
+
+    final UserID user = UserID.fromInternal("foo@bar.baz");
+    final SID rootSID = SID.rootSID(user);
+
+    final IPhysicalStorage ps = mock(IPhysicalStorage.class);
+
+    final InMemoryDS mds = new InMemoryDS(dbcw.getCoreDBCW(), usePolaris, ps, user);
+
+    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(dbcw.getCoreDBCW(), mds.sdo);
+    final MetaBufferDatabase mbdb = new MetaBufferDatabase(dbcw.getCoreDBCW(), mds.sdo);
+    final CentralVersionDatabase cvdb = new CentralVersionDatabase(dbcw.getCoreDBCW(), mds.sdo);
     final AliasDatabase adb = new AliasDatabase(dbcw.getCoreDBCW());
 
     final MapAlias2Target a2t = new MapAlias2Target(adb);
     final MetaChangesDatabase mcdb = mock(MetaChangesDatabase.class);
     final MetaChangeSubmitter submitter = mock(MetaChangeSubmitter.class);
 
-    final UserID user = UserID.fromInternal("foo@bar.baz");
-    final SID rootSID = SID.rootSID(user);
-
-    final IPhysicalStorage ps = mock(IPhysicalStorage.class);
     final Expulsion expulsion = mock(Expulsion.class);
     final Trans t = mock(Trans.class);
-
-    final InMemoryDS mds = new InMemoryDS(dbcw.getCoreDBCW(), usePolaris, ps, user);
 
     final DirectoryServiceImpl ds = spy(mds.ds);
     IPhysicalFolder pf = mock(IPhysicalFolder.class);

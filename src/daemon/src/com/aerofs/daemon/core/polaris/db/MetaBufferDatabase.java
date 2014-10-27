@@ -6,12 +6,13 @@ package com.aerofs.daemon.core.polaris.db;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
-import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -19,6 +20,7 @@ import com.google.inject.Inject;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -41,12 +43,23 @@ import static com.google.common.base.Preconditions.checkState;
  * defer application of the change to the local tree until sufficient information has been
  * received from Polaris to unambiguously resolve false and true name conflicts.
  */
-public class MetaBufferDatabase extends AbstractDatabase
+public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
     @Inject
-    public MetaBufferDatabase(CoreDBCW dbcw)
+    public MetaBufferDatabase(CoreDBCW dbcw, StoreDeletionOperators sdo)
     {
         super(dbcw.get());
+        sdo.addImmediate_(this);
+    }
+
+    @Override
+    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
+    {
+        if (!_dbcw.tableExists(T_META_BUFFER)) return;
+        try (Statement s = c().createStatement()) {
+            s.executeUpdate("delete from " + T_META_BUFFER
+                    + " where " + C_META_BUFFER_SIDX + "=" + sidx.getInt());
+        }
     }
 
     private final PreparedStatementWrapper _pswInsert = new PreparedStatementWrapper(

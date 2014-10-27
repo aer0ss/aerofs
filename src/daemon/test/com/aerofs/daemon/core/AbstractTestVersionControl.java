@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -30,6 +31,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
     private AbstractVersionControl<E> vc;
     @Mock VersionAssistant va;
     @Mock TransLocalVersionAssistant tlva;
+    @Mock StoreCreationOperators sco;
     @Mock StoreDeletionOperators sdo;
 
     @Mock protected CfgLocalDID cfgLocalDID;

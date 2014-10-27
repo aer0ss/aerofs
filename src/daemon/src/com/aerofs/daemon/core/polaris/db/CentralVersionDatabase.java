@@ -6,6 +6,8 @@ package com.aerofs.daemon.core.polaris.db;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -17,6 +19,7 @@ import com.google.inject.Inject;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -29,12 +32,23 @@ import static com.google.common.base.Preconditions.checkState;
  * us, it became possible to adopt a much simpler scalar version number, where ticks
  * are issued by the central server.
  */
-public class CentralVersionDatabase extends AbstractDatabase
+public class CentralVersionDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
     @Inject
-    public CentralVersionDatabase(CoreDBCW dbcw)
+    public CentralVersionDatabase(CoreDBCW dbcw, StoreDeletionOperators sdo)
     {
         super(dbcw.get());
+        sdo.addImmediate_(this);
+    }
+
+    @Override
+    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
+    {
+        if (!_dbcw.tableExists(T_VERSION)) return;
+        try (Statement s = c().createStatement()) {
+            s.executeUpdate("delete from " + T_VERSION
+                    + " where " + C_VERSION_SIDX + "=" + sidx.getInt());
+        }
     }
 
     private final PreparedStatementWrapper _pswGetVersion = new PreparedStatementWrapper(

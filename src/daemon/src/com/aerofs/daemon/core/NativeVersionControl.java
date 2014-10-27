@@ -9,11 +9,14 @@ import java.util.SortedMap;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -41,6 +44,7 @@ import static com.google.common.base.Preconditions.checkState;
 // TODO: caching
 
 public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
+    implements IStoreCreationOperator
 {
     private static Logger l = Loggers.getLogger(NativeVersionControl.class);
 
@@ -48,6 +52,13 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     private final ICollectorSequenceDatabase _csdb;
     private final MapAlias2Target _alias2target;
     private final MapSIndex2Contributors _sidx2contrib;
+
+    @Override
+    public void createStore_(SIndex sidx, boolean usePolaris, Trans t)
+            throws SQLException
+    {
+        if (!usePolaris) restoreStore_(sidx, t);
+    }
 
     public static interface IVersionControlListener
     {
@@ -59,13 +70,15 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     @Inject
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
-            StoreDeletionOperators sdo, MapSIndex2Contributors sidx2contrib)
+            StoreCreationOperators sco, StoreDeletionOperators sdo,
+            MapSIndex2Contributors sidx2contrib)
     {
         super(nvdb, cfgLocalDID, tlva, sdo);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;
         _sidx2contrib = sidx2contrib;
+        sco.add_(this);
     }
 
     public void addListener_(IVersionControlListener listener)

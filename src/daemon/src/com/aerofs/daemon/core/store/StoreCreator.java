@@ -1,13 +1,10 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
@@ -25,27 +22,23 @@ public class StoreCreator
 
     private final StoreHierarchy _ss;
     private final IPhysicalStorage _ps;
-    private final NativeVersionControl _nvc;
-    private final ImmigrantVersionControl _ivc;
     private final IMetaDatabase _mdb;
     private final IMapSID2SIndex _sid2sidx;
     private final LogicalStagingArea _sa;
-    private final MetaChangesDatabase _mcdb;
+    private final StoreCreationOperators _sco;
     private final CfgUsePolaris _usePolaris;
 
     @Inject
-    public StoreCreator(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
+    public StoreCreator(IMetaDatabase mdb,
             IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa,
-            MetaChangesDatabase mcdb, CfgUsePolaris usePolaris)
+            StoreCreationOperators sco, CfgUsePolaris usePolaris)
     {
         _ss = ss;
-        _nvc = nvc;
-        _ivc = ivc;
         _mdb = mdb;
         _sid2sidx = sid2sidx;
         _ps = ps;
         _sa = sa;
-        _mcdb = mcdb;
+        _sco = sco;
         _usePolaris = usePolaris;
     }
 
@@ -107,12 +100,7 @@ public class StoreCreator
         // TODO: ACL-controlled central/distrib store assignment and version conversion
         boolean usePolaris = _usePolaris.get();
 
-        if (usePolaris) {
-            _mcdb.createStore_(sidx, t);
-        } else {
-            _nvc.restoreStore_(sidx, t);
-            _ivc.restoreStore_(sidx, t);
-        }
+        _sco.runAll_(sidx, usePolaris, t);
         _ps.createStore_(sidx, sid, name, t);
         _ss.add_(sidx, name, usePolaris, t);
 
