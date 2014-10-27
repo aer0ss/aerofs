@@ -1,48 +1,107 @@
 @import "includes/bootstrap/variables.less";
 @import "includes/aerofs-variables.less";
 
-@top-padding: 30px;
+@padding-unit: 6px;
+@top-padding: @padding-unit * 4;
+@navindex: 500;
+@navheight: 50px;
+@lightgray: #bbb;
+
+h1 {
+  padding-top: @top-padding;
+  padding-bottom: @top-padding * 2;
+}
+
+.logo img {
+  height: @navheight;
+  padding: @padding-unit 0 0 0;
+  display: block;
+}
+
+.btn {
+  &:not(.btn-default) {
+    color: white !important;
+  }
+}
+
+/* killall Bootstrap rounded corners */
+.btn, input, .form-control, .navbar {
+  border-radius: 0;
+}
 
 .python {
   display: none;
 }
 
-.nav-list {
-  padding-top: @top-padding;
-}
-
-.nav-node {
-  font-weight: bold;
-  a {
-    color: @gray-dark;
+#left-nav {
+  height: 100%;
+  padding: 0 @padding-unit;
+  overflow-y: auto;
+  top: 0;
+  left: 0;
+  z-index: @navindex;
+  ul {
+    list-style-type: none;
+    padding: 0;
+    li > a {
+      padding: 0 0 @padding-unit 0;
+    }
   }
-}
-
-.nav-subnode {
-  margin-left: 15px;
-
-  a {
-    color: #bbb;
+  .nav-node {
+    padding-top: @top-padding;
   }
-}
+  .nav-node + .nav-node {
+    padding-top: @padding-unit * 2;
+  }
+  .nav-node:last-of-type {
+    padding-bottom: @top-padding * 3;
+  }
 
-.active a {
-  color: @brand-primary;
+  ul li {
+    font-weight: bold;
+    a {
+      color: white;
+    }
+  }
+
+  ul li ul li {
+    font-weight: normal;
+    margin-left: @padding-unit * 2;
+
+    a {
+      color: @lightgray;
+    }
+  }
+  ul .active {
+    a {
+      color: @brand-primary;
+    }
+    ul {
+      a {
+        color: @lightgray;
+      }
+      .active a {
+        color: @brand-primary;
+      }
+    }
+  }
 }
 
 .methods {
-  margin-left: 50% !important;
-  width: 50% !important;
-  background: @gray-dark;
+  padding-top: @top-padding;
 }
 
-.method {
-  // the width value is determined empirically without mathmatical calculations.
-  width: 195% !important;
-  margin-left: -100%;
+.example, #left-nav {
+    background: @gray-dark;
+  }
 
-  padding-top: 50px;
-  padding-left: 2.5%;
+.example {
+  padding: @top-padding + @padding-unit * 2 @padding-unit * 2 @top-padding @top-padding;
+}
+
+.description {
+  padding-right: @padding-unit * 2;
+  padding-top: @top-padding;
 }
 
 .method::first-of-type, .method:first-of-type {
@@ -62,14 +121,6 @@ pre {
   color: rgb(218, 228, 242);
   text-shadow: rgba(0, 0, 0, 0.701961) 0px 1px 0px;
 
-}
-
-.description {
-  padding-right: 10px;
-}
-
-.example {
-  padding: 47px 10px 0px 20px;
 }
 
 // The block below is adapted from .dt-horizontal in bootstrap.css, to apply
@@ -157,39 +208,4 @@ em.status_code {
 
   padding: 2px 4px;
   background-color: #f7f7f9;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
-}
-
-.affix-top {
-  float: left;
-}
-
-.affix {
-  position: fixed;
-  top: 0;
-  left: 20px;
-}
-
-#left-nav {
-  width: 200px;
-}
-
-@media only screen and (min-width:951px) {
-  #main-body {
-    border-left: 1px solid silver;
-    margin-left: 200px;
-  }
-}
-
-@media only screen and (max-width:950px) {
-  #left-nav {
-    visibility: hidden;
-    width: 0;
-  }
-
-  #main-body {
-    margin-left: 0;
-  }
 }
