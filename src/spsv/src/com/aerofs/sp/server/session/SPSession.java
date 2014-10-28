@@ -130,16 +130,16 @@ public class SPSession
 
     @Nonnull
     @Override
-    public User getAuthenticatedUserLegacyProvenance()
-            throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException,
-            ExSecondFactorSetupRequired
+    public User getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup group)
+            throws ExNotAuthenticated, SQLException, ExSecondFactorRequired,
+            ExSecondFactorSetupRequired, ExNotFound
     {
         User user = getUserNullable();
         if (user == null) {
             l.info("not authenticated: session " + session().getId());
             throw new ExNotAuthenticated();
         } else {
-            User.checkProvenance(user, getAuthenticatedProvenances(), ProvenanceGroup.LEGACY);
+            User.checkProvenance(user, getAuthenticatedProvenances(), group);
             return user;
         }
     }

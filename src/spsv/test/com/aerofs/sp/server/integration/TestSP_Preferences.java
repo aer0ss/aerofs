@@ -9,6 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +35,10 @@ public class TestSP_Preferences extends AbstractSPTest
         Device device = saveDevice(USER_1);
         sqlTrans.commit();
 
-        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(),
+        service.setUserPreferences(session
+                        .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
+                        .id()
+                        .getString(),
                 "   first ", " last   ", device.id().toPB(), "  device names  ").get();
         GetUserPreferencesReply reply = service.getUserPreferences(device.id().toPB()).get();
 
@@ -47,7 +51,10 @@ public class TestSP_Preferences extends AbstractSPTest
     public void shouldThrowIfDeviceDoesntExistWhenSettingName()
             throws Exception
     {
-        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(),
+        service.setUserPreferences(session
+                        .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
+                        .id()
+                        .getString(),
                 "first", "last", new DID(UniqueID.generate()).toPB(), "device").get();
     }
 

@@ -77,7 +77,7 @@ public class MockSession implements ISession
     }
 
     @Override
-    public @Nonnull User getAuthenticatedUserLegacyProvenance()
+    public @Nonnull User getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup group)
             throws ExNotAuthenticated, ExSecondFactorRequired, ExNotFound, SQLException
     {
         if (_user == null) throw new ExNotAuthenticated();

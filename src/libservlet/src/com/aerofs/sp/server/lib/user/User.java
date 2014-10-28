@@ -736,6 +736,7 @@ public class User
      * @param group The context-specific provenance group
      * @return the list of acceptable provenances for that context for this user
      */
+    @SuppressWarnings("fallthrough")
     public ImmutableList<Provenance> sufficientProvenances(ProvenanceGroup group)
             throws SQLException, ExNotFound
     {
@@ -743,6 +744,9 @@ public class User
         TwoFactorEnforcementLevel level = getOrganization().getTwoFactorEnforcementLevel();
         switch (group) {
         case LEGACY:
+            builder.add(Provenance.CERTIFICATE);
+            //fall-through intentional - INTERACTIVE is LEGACY without CERTIFICATE
+        case INTERACTIVE:
             switch (level) {
                 case DISALLOWED:
                     // Basic is always sufficient for organizations with 2FA disallowed
@@ -764,7 +768,6 @@ public class User
                     // Should never be reached
                     Preconditions.checkState(false, "Invalid 2fa enforcement level {}", level);
             }
-            builder.add(Provenance.CERTIFICATE);
             break;
         case TWO_FACTOR_SETUP:
             // Two factor setup will ignore the MANDATORY enforcement level, but only for the
@@ -796,14 +799,19 @@ public class User
         return builder.build();
     }
 
+    @SuppressWarnings("fallthrough")
     public static void checkProvenance(User user,
             ImmutableList<Provenance> authenticatedProvenances, ProvenanceGroup provenanceGroup)
             throws ExNotAuthenticated, ExSecondFactorRequired, SQLException, ExNotFound,
             ExSecondFactorSetupRequired
     {
         switch (provenanceGroup) {
+        // fallthrough is intentional.  The same logic can currently handle answering the question
+        // "which exception should I throw?" for all three cases.
         case LEGACY:
-            ImmutableList<Provenance> sufficient = user.sufficientProvenances(ProvenanceGroup.LEGACY);
+        case TWO_FACTOR_SETUP:
+        case INTERACTIVE:
+            ImmutableList<Provenance> sufficient = user.sufficientProvenances(provenanceGroup);
             for (Provenance authedProvenance : authenticatedProvenances) {
                 if (sufficient.contains(authedProvenance)) {
                     l.info("{} included provenance {} which is sufficient for {}",

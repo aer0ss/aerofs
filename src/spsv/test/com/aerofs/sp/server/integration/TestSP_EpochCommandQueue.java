@@ -13,6 +13,7 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Assert;
@@ -31,19 +32,31 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     private void updateUserName()
             throws Exception
     {
-        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), "New First", "New Last", null, null);
+        service.setUserPreferences(session
+                .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
+                .id()
+                .getString(),
+                "New First", "New Last", null, null);
     }
 
     private void updateDeviceName()
             throws Exception
     {
-        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), null, null, _device.id().toPB(), "New Test Device");
+        service.setUserPreferences(session
+                .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
+                .id()
+                .getString(),
+                null, null, _device.id().toPB(), "New Test Device");
     }
 
     private void updateUserAndDeviceName()
             throws Exception
     {
-        service.setUserPreferences(session.getAuthenticatedUserLegacyProvenance().id().getString(), "New First", "New Last", _device.id().toPB(), "New Test Device");
+        service.setUserPreferences(session
+                .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
+                .id()
+                .getString(),
+                "New First", "New Last", _device.id().toPB(), "New Test Device");
     }
 
     //

@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.user.User;
 
 import java.util.Collections;
@@ -88,7 +89,9 @@ public class AbstractSPFolderTest extends AbstractSPTest
 
     protected void joinSharedFolderImpl(User sharee, SID sid, boolean ext) throws Exception
     {
-        User oldUser = session.isAuthenticated() ? session.getAuthenticatedUserLegacyProvenance() : null;
+        User oldUser = session.isAuthenticated() ?
+                session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY) :
+                null;
 
         setSession(sharee);
         service.joinSharedFolder(sid.toPB(), ext);
@@ -98,7 +101,9 @@ public class AbstractSPFolderTest extends AbstractSPTest
 
     protected void leaveSharedFolder(User sharee, SID sid) throws Exception
     {
-        User oldUser = session.isAuthenticated() ? session.getAuthenticatedUserLegacyProvenance() : null;
+        User oldUser = session.isAuthenticated() ?
+                session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY) :
+                null;
 
         setSession(sharee);
         service.leaveSharedFolder(sid.toPB());
