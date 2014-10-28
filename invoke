@@ -77,6 +77,7 @@ SRC_GUI = os.path.join(GIT_ROOT, "src", "gui")
 PROTOC = "/usr/local/bin/protoc"
 BUILD_DIR = os.path.join(GIT_ROOT, "out.shell")
 ANT_BUILD_DIR = os.path.join(GIT_ROOT, "out.ant")
+ANT_PACKAGE_DIR = os.path.join(ANT_BUILD_DIR, "packages")
 GRADLE_BUILD_DIR = os.path.join(GIT_ROOT, "out.gradle")
 DEFAULT_SYNCDET_REPO_ROOT = os.path.join(os.path.dirname(GIT_ROOT), "syncdet")
 DEFAULT_SYNCDET_PY = os.path.join(DEFAULT_SYNCDET_REPO_ROOT, "syncdet.py")
@@ -554,17 +555,30 @@ def build_client(args):
     print "Calling ant to build clients"
     subprocess.check_call([ "ant", "build_client"], cwd=GIT_ROOT)
 
+def compute_next_version(args):
+    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', args.mode, signed_arg ]
+    output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
+    return output
+
 @required_args('mode', 'signed')
 def package_clients(args):
-    print "calling ant to package clients"
-    mode_arg = {
-            "PUBLIC": "-Dmode=PUBLIC",
-            "PRIVATE": "-Dmode=PRIVATE",
-            "CI": "-Dmode=CI",
-    }[args.mode]
-    signed_arg = "-Dsigned=TRUE" if args.signed else "-Dsigned=FALSE"
-    cmdline = ["ant"] + [mode_arg, signed_arg] + ["package_clients"]
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
+    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
+    version = args.release_version or compute_next_version(args)
+    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
+    for product in products:
+        cmdline = [ BOOTSTRAP_ENTRY,
+                "package",
+                args.mode,
+                product,
+                version,
+                signed_arg,
+                "--build-all"]
+        # Default (no value) is obfuscated.  Explicitly saying --obfuscate
+        # obfuscates.  Only saying --unobfuscated disables obfuscation.
+        if args.obfuscated == False:
+            cmdline.append("--no-obfuscate")
+        subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 @required_args('mode')
 def deploy_clients(args):
@@ -703,6 +717,8 @@ def main():
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
     parser.add_argument("--unsigned", action='store_const', dest='signed', const=False)
+    parser.add_argument("--obfuscated", action='store_const', dest='obfuscated', const=True)
+    parser.add_argument("--unobfuscated", action='store_const', dest='obfuscated', const=False)
     parser.add_argument("--syncdet-case", action='append')
     parser.add_argument("--syncdet-case-timeout", action='store', type=int, default=180)
     parser.add_argument("--syncdet-config", action='store', default='/etc/syncdet/config.yaml')
