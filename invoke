@@ -56,6 +56,7 @@
 
 
 import argparse
+from collections import namedtuple
 import ctypes # for 32/64 bit detection
 import datetime
 import functools
@@ -538,6 +539,34 @@ def test_js(args):
     subprocess.check_call([KARMA_EXECUTABLE, "start", "karma.conf.e2e.js"], cwd=SHELOB_DIR)
     print colored("JS tests passed.", Colors.GREEN)
 
+def prepare_syncdet(args):
+    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER"]
+    platforms = ["win", "osx", "linux"]
+    Info = namedtuple('Info', ['prefix', 'extension', 'platform', 'product'])
+    infos = [
+            Info(platform="win", prefix="AeroFSInstall", extension="exe", product="CLIENT"),
+            Info(platform="win", prefix="AeroFSTeamServerInstall", extension="exe", product="TEAM_SERVER"),
+            Info(platform="osx", prefix="aerofs-osx", extension="zip", product="CLIENT"),
+            Info(platform="osx", prefix="aerofsts-osx", extension="zip", product="TEAM_SERVER"),
+            Info(platform="linux", prefix="aerofs-installer", extension="tgz", product="CLIENT"),
+            Info(platform="linux", prefix="aerofsts-installer", extension="tgz", product="TEAM_SERVER"),
+            ]
+    infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
+    source_dir = ANT_PACKAGE_DIR
+    dest_dir = os.path.join(GIT_ROOT, "syncdet_test")
+    for info in infos_to_copy:
+        dest_filename = ".".join([info.prefix, info.extension])
+        dest_filepath = os.path.join(dest_dir, dest_filename)
+        source_filenames = [f for f in os.listdir(ANT_PACKAGE_DIR) if f.startswith(info.prefix) and f.endswith(info.extension)]
+        if len(source_filenames) == 1:
+            source_filepath = os.path.join(source_dir, source_filenames[0])
+            print "copying {} to {}".format(source_filepath, dest_filepath)
+            shutil.copyfile(source_filepath, dest_filepath)
+        elif len(source_filenames) == 0:
+            print "skipping missing {}".format(dest_filename)
+        else:
+            print "skipping ambigous {} - options {}".format(dest_filename, source_filenames)
+
 @required_args('product', 'mode', 'target_os', 'approot')
 def setupenv(args):
     command = [ os.path.join(TOOLS_DIR, "populate", "populate"),
@@ -660,6 +689,7 @@ commands = {
     "markdown_watch": markdown_watch,
     "package_clients": package_clients,
     "package_servers": package_servers,
+    "prepare_syncdet": prepare_syncdet,
     "proto": proto,
     "setupenv": setupenv,
     "test_js": test_js,
