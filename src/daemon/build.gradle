@@ -4,6 +4,11 @@
 
 archivesBaseName = 'aerofs-daemon'
 
+test {
+    // Daemon tests can be parallelized safely.
+    maxParallelForks = 8
+}
+
 sourceSets {
     main {
         java {
