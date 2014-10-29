@@ -13,13 +13,11 @@ sourceSets {
     main {
         java {
             srcDir 'src'
-            exclude 'com/aerofs/sv**'
         }
     }
     test {
         java {
             srcDir 'test'
-            exclude 'com/aerofs/sv**'
         }
     }
 }

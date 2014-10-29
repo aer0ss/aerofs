@@ -33,7 +33,6 @@ PACKAGES= \
 	sp \
 	sparta \
 	stun \
-	sv \
 	verification \
 	verkehr \
 	web \

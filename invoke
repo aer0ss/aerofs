@@ -112,7 +112,6 @@ PROTO_MAPPINGS = {
                             os.path.join(SRC_LIB, "src", "proto", "ritual_notifications.proto"),
                             os.path.join(SRC_LIB, "src", "proto", "ritual.proto"),
                             os.path.join(SRC_LIB, "src", "proto", "sp_notifications.proto"),
-                            os.path.join(SRC_LIB, "src", "proto", "sv.proto"),
                           ],
             },
         os.path.join(SRC_DAEMON, "gen"):
