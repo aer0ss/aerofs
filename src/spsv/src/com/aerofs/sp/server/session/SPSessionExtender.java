@@ -15,8 +15,8 @@ public class SPSessionExtender
 
     public void extendSession(String sessionID)
     {
-        // One year, in seconds (not milliseconds - that's why we divide by 1000).
-        final int MAX_INACTIVE_INTERVAL = (int) ((C.YEAR / C.SEC) / 1000);
+        // One year, in seconds
+        final int MAX_INACTIVE_INTERVAL = (int) (C.YEAR / C.SEC);
 
         HttpSession session = _sessionTracker.getSession(sessionID);
 

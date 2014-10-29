@@ -7,7 +7,7 @@ package com.aerofs.sp.server.lib.session;
 import javax.servlet.http.HttpSession;
 
 /**
- * Thread local objects are used to hold session data because each invividual tomcat request is
+ * Thread local objects are used to hold session data because each individual tomcat request is
  * guaranteed by tomcat to be processed in its own thread.
  */
 public class ThreadLocalHttpSessionProvider implements IHttpSessionProvider
