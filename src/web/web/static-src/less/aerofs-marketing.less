@@ -14,10 +14,45 @@
 @signupformbuttonwidth: 160px;
 @navindex: 500;
 
-/* Mixin */
+/* Mixins */
 // Default font size and weight
 .standardtext {
     font: 400 16px/24px 'Open Sans';
+}
+/* Mixin: Inside a div have an image vertically and horizontally centered
+   Height determines the height of the image
+   Multiplier determines padding amount as a function of height */
+.absolute-center(@height, @multiplier: 3) {
+  height: @height * @multiplier;
+  width: 100%;
+  position: relative;
+  img {
+    height: @height;
+    width: auto;
+    margin: auto;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+  }
+}
+/* Mixin: used for signup button and free trial button */
+.gold-button {
+    background-color: @gold;
+    border-color: darken(@gold, 20%);
+    color: #000;
+    font-weight: 600;
+    &:hover {
+        background-color: lighten(@gold, 5%);
+    }
+    &:active {
+        border-color: @gold;
+        background-color: darken(@gold, 10%);
+    }
+}
+/* Mixin */
+.link-with-arrow {
+  &:after {
+        content: ' »'
+    }
 }
 
 /* Default styles for elements on entire marketing site */
@@ -143,28 +178,6 @@ body {
   .btn, input, .form-control {
     border-radius: 0;
   }
-}
-
-/* Mixin: used for signup button and free trial button */
-.gold-button {
-    background-color: @gold;
-    border-color: darken(@gold, 20%);
-    color: #000;
-    font-weight: 600;
-    &:hover {
-        background-color: lighten(@gold, 5%);
-    }
-    &:active {
-        border-color: @gold;
-        background-color: darken(@gold, 10%);
-    }
-}
-
-/* Mixin */
-.link-with-arrow {
-  &:after {
-        content: ' »'
-    }
 }
 
 /* Navbar-related styling */
@@ -362,15 +375,13 @@ body {
     }
 }
 
-/* Special styling for private mobileiron section*/
-.mobileiron {
+/* Special styling for private mobileiron and cloud sections */
+.mobileiron, .cloud {
     padding-top: @navheight;
     padding-bottom: 0;
     overflow: hidden;
     .wrapper {
         background: @oatmeal;
-    }
-    .container {
     }
 
     img {
@@ -379,39 +390,18 @@ body {
     }
     .img-wrapper {
         background-color: @blue;
-        background: url('../../images/mobileiron-devices.png') no-repeat center;
         width: 983px;
         height: 545px;
         position: absolute;
         top: -@navheight;
         left: 60px;
+        background: url('../../images/mobileiron-devices.png') no-repeat center;
     }
 }
-
-
 /* Special styling for private cloud frontpage section*/
 .cloud {
-    padding-top: @navheight;
-    padding-bottom: 0;
-    overflow: hidden;
-    .wrapper {
-        background: @oatmeal;
-    }
-    .container {
-    }
-
-    img {
-        margin-top: -@navheight;
-        -webkit-mask-image:-webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
-    }
     .img-wrapper {
-        background-color: @blue;
         background: url('../../images/private_cloud_img_large.png') no-repeat center;
-        width: 983px;
-        height: 545px;
-        position: absolute;
-        top: -@navheight;
-        left: 60px;
     }
 }
 
@@ -499,6 +489,10 @@ body {
     }
 }
 
+.blurb-logo {
+  .absolute-center(100px, 1.5);
+}
+
 /* Special styles for press summary and customer testimonials sections */
 .reviews {
     background: @oatmeal;
@@ -508,15 +502,8 @@ body {
 }
 .customers {
   .blurb-logo {
-        width: 100%;
-        height: 130px;
         background: @darkoats;
-        text-align: center;
-        margin: 1em auto;
-        img {
-            width: 150px;
-            margin-top: 45px;
-        }
+        .absolute-center(40px);
     }
 
     .caption h4 {
@@ -528,15 +515,10 @@ body {
         }
     }
 }
-.blurb-logo {
-    width: 100px;
-    height: auto;
-    margin: 0 auto;
-    display: block;
-    background: none;
-    img {
-        width: 100%;
-    }
+
+/* Special blurb logo for about page*/
+.the-team .blurb-logo, .investors .blurb-logo {
+    .absolute-center(120px, 1);
 }
 
 /* Special styles for customer stats section */
