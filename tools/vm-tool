@@ -85,7 +85,7 @@ function _package()
 
 function _package_clients()
 {
-    do_in $AEROFS_ROOT ant package_unobfuscated_installers -Dmode=PRIVATE
+    do_in $AEROFS_ROOT ./invoke --mode PRIVATE --unsigned --unobfuscated build_client package_clients
 }
 
 # -----------------------------------------------------------
