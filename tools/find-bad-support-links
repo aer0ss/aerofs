@@ -1,0 +1,32 @@
+#!/bin/bash
+cd $(dirname $0)/..
+listing=$(ag -i https...support.aerofs.com.*[0-9]+ | egrep -o 'https?://[^ ]+[0-9]+')
+
+function oops_in()
+{
+    if grep -qi "oops" $@
+    then
+        # code if found
+        return 0
+    else
+        # code if not found
+        return 1
+    fi
+}
+
+for article in $listing
+do
+    echo Checking $article
+    code=$(curl -sL -w "%{http_code}" "$article" -o /tmp/support-article)
+
+    # Zendesk doesn't 404 when things don't exist (uh wat) so we have to check the string contents.
+    # Blargh.
+    if [ "$code" != 200 ] || oops_in /tmp/support-article
+    then
+        echo
+        echo "BAD Article: $article"
+        echo
+    else
+        echo "200 OK"
+    fi
+done

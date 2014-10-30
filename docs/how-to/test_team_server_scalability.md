@@ -19,7 +19,7 @@ This whole process is pretty dependent on the web signup flow. If anything chang
 
 Create appliance EC2 image following the steps here:
 
-https://support.aerofs.com/entries/26208024-Launching-your-AeroFS-Appliance-in-Amazon-EC2
+https://support.aerofs.com/entries/26208024
 
 **Useful tips while creating appliance EC2 image.**
 

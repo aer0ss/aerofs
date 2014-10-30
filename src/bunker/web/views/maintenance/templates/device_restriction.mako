@@ -13,7 +13,7 @@
 <p>The <strong>AeroFS Private Cloud Device Authorization Subsystem </strong>
 grants IT administrators fine-grained control over which users and devices on
 their network are permitted to run AeroFS desktop clients.
-<a href="https://support.aerofs.com/hc/en-us/articles/202951950" target="_blank">Read more</a>.</p>
+<a href="https://support.aerofs.com/hc/en-us/articles/202157674" target="_blank">Read more</a>.</p>
 
 <p>This subsystem should not be confused with AeroFS'
 end-to-end encryption and private certificate authority, which is always
