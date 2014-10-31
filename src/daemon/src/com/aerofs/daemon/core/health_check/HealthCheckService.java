@@ -120,8 +120,8 @@ public final class HealthCheckService implements IStartable
     {
         l.info("scheduling health checks");
 
-        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_coreProgressWatcher, CPWConstants.INTERVAL), CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_deadlockDetector, DLDConstants.INTERVAL), DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
-        _healthCheckExecutor.scheduleAtFixedRate(new ServiceRunner(_diagnosticsDumper, DDConstants.INTERVAL), DDConstants.INITIAL_DELAY, DDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleWithFixedDelay(new ServiceRunner(_coreProgressWatcher, CPWConstants.INTERVAL), CPWConstants.INITIAL_DELAY, CPWConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleWithFixedDelay(new ServiceRunner(_deadlockDetector, DLDConstants.INTERVAL), DLDConstants.INITIAL_DELAY, DLDConstants.INTERVAL, MILLISECONDS);
+        _healthCheckExecutor.scheduleWithFixedDelay(new ServiceRunner(_diagnosticsDumper, DDConstants.INTERVAL), DDConstants.INITIAL_DELAY, DDConstants.INTERVAL, MILLISECONDS);
     }
 }

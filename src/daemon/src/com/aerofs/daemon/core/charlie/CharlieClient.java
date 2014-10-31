@@ -79,7 +79,7 @@ public class CharlieClient
             return;
         }
 
-        checkpointExecutor.scheduleAtFixedRate(new Runnable()
+        checkpointExecutor.scheduleWithFixedDelay(new Runnable()
         {
             @Override
             public void run()
