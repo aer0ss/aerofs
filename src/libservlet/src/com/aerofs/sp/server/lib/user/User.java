@@ -761,8 +761,11 @@ public class User
                     }
                     break;
                 case MANDATORY:
-                    // Require two-factor
-                    builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+                    // Require two-factor for all actions.
+                    // Only allow 2FA to be sufficient if the user has it enabled.
+                    if (shouldEnforceTwoFactor()) {
+                        builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
+                    }
                     break;
                 default:
                     // Should never be reached
@@ -822,17 +825,17 @@ public class User
             l.info("{} lacks provenance to satisfy {}; has {}, needs one of {}",
                     user.id(), provenanceGroup, authenticatedProvenances, sufficient);
             // The session lacks an acceptable provenance.  Throw a suitable exception.
-            if (authenticatedProvenances.contains(Provenance.BASIC) &&
-                    sufficient.contains(Provenance.BASIC_PLUS_SECOND_FACTOR) &&
-                    !sufficient.contains(Provenance.BASIC)) {
+            if (authenticatedProvenances.contains(Provenance.BASIC)) {
                 if (user.getOrganization().getTwoFactorEnforcementLevel() ==
                         TwoFactorEnforcementLevel.MANDATORY && !user.shouldEnforceTwoFactor()) {
                     throw new ExSecondFactorSetupRequired();
                 }
-                throw new ExSecondFactorRequired();
-            } else {
-                throw new ExNotAuthenticated();
+                if (sufficient.contains(Provenance.BASIC_PLUS_SECOND_FACTOR) &&
+                    !sufficient.contains(Provenance.BASIC)) {
+                    throw new ExSecondFactorRequired();
+                }
             }
+            throw new ExNotAuthenticated();
         default:
             // Should never be reached, but privilege systems should fail closed.
             throw new ExNotAuthenticated();
