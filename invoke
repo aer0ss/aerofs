@@ -658,6 +658,7 @@ commands = {
     "prepare_syncdet": prepare_syncdet,
     "proto": proto,
     "setupenv": setupenv,
+    "syncdet": syncdet,
     "test_js": test_js,
     "test_python": test_python,
     "test_system": test_system,
