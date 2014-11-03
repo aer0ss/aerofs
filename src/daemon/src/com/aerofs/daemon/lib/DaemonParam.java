@@ -100,16 +100,11 @@ public class DaemonParam
     // re-hashing large prefixes synchronously would introduce large delays in RPCs.
     // These delays would lead the transport to abort transfers before it actually
     // has a chance to start which would lead to persistent no-sync for large files
-    // when a transfer is interrupted at a late enough point
+    // when a transfer is interrupted at a late enough point.
     //
-    // To avoid this we restrict rehashing to small prefixes. This is not great as
-    // it reduces the effectiveness of content hashes wrt prevention of spurious
-    // transfers upon mtime-only changes and large files, which is especially important
-    // for large files. This is a "short-term" (famous last words, I know) solution.
+    // see SUPPORT-1602 for evidence of this happening in the wild.
     //
-    // see SUPPORT-1602 for more details
-    // TODO: investigate alternative solutions, e.g.:
-    //   * async rehash
-    //   * incremental hash with internal state supplied by sender
-    public static final long PREFIX_REHASH_MAX_LENGTH = 4 * C.MB;
+    // To avoid this issue, we restrict pipelined hashing to small prefixes and hash
+    // the whole file after the download is complete.
+    public static final long PREFIX_REHASH_MAX_LENGTH = 16 * C.KB;
 }

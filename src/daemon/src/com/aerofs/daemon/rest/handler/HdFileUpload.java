@@ -70,7 +70,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
         // to avoid prefix clashes, generate a unique upload ID if none given
         UploadID uploadId = ev._ulid.isValid() ? ev._ulid : UploadID.generate();
-        IPhysicalPrefix pf = _ps.newPrefix_(new SOCKID(oa.soid(), CID.CONTENT, KIndex.MASTER),
+        IPhysicalPrefix pf = _ps.newPrefix_(new SOKID(oa.soid(), KIndex.MASTER),
                 uploadId.toStringFormal());
 
         if (ev._range != null) {
@@ -298,7 +298,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             throws SQLException, IOException, ExNoResource
     {
         // sigh....................................................................................
-        // ideally we should not neeed that (if BlockPrefix performed incremental chunking)
+        // ideally we should not need that (if BlockPrefix performed incremental chunking)
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "prepare");
         pf.prepare_(tk);
 

@@ -32,11 +32,9 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.base.id.UniqueID;
@@ -196,8 +194,7 @@ public class TestBlockStorage extends AbstractBlockTest
             byte[] content, boolean wasPresent, long mtime)
             throws Exception
     {
-        SOCKID sockid = new SOCKID(sokid, CID.CONTENT);
-        IPhysicalPrefix prefix = bs.newPrefix_(sockid, null);
+        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
         IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
 
         OutputStream out = prefix.newOutputStream_(false);
@@ -859,7 +856,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldSplitLargeInputIntoBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT), null);
+        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
         OutputStream out = prefix.newOutputStream_(false);
 
         ByteStreams.copy(new DevCtr(4 * LibParam.FILE_BLOCK_SIZE + 1), out);
@@ -873,7 +870,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldAvoidStoringAlreadyStoredBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT), null);
+        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
         OutputStream out = prefix.newOutputStream_(false);
 
         ByteStreams.copy(new DevZero(4 * LibParam.FILE_BLOCK_SIZE + 1), out);

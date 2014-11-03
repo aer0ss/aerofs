@@ -43,7 +43,6 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -158,9 +157,9 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope)
+    public IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope)
     {
-        String fileName = makeFileName(k.sokid()) + (scope != null ? "-" + scope : "");
+        String fileName = makeFileName(k) + (scope != null ? "-" + scope : "");
         return new BlockPrefix(this, k, _fileFactory.create(_prefixDir, fileName));
     }
 
@@ -187,7 +186,7 @@ class BlockStorage implements IPhysicalStorage
         final BlockPrefix from = (BlockPrefix)prefix;
         final BlockFile to = (BlockFile)file;
 
-        checkArgument(from._sockid.sokid().equals(to._sokid),
+        checkArgument(from._sokid.equals(to._sokid),
                 "tried to move prefix %s to storage loc for %s", from, to);
         assert from._hash != null;
         long length = prefix.getLength_();
@@ -463,9 +462,9 @@ class BlockStorage implements IPhysicalStorage
     {
         ContentBlockHash h;
         try {
-            l.debug(">>> preparing prefix for {}", prefix._sockid);
+            l.debug(">>> preparing prefix for {}", prefix._sokid);
             h = new Chunker(prefix._f, tk, _bsb).splitAndStore();
-            l.debug("<<< done preparing prefix for {}", prefix._sockid);
+            l.debug("<<< done preparing prefix for {}", prefix._sokid);
         } catch (Exception e) {
             throw new IOException(e);
         }

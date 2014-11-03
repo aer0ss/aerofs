@@ -171,9 +171,9 @@ public class GetComponentRequest
         if (oa == null) return;
         assert oa.isFile();
 
-        SOCKID branch = new SOCKID(socid, KIndex.MASTER);
+        SOKID branch = new SOKID(socid.soid(), KIndex.MASTER);
 
-        ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch.sokid()) : null;
+        ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch) : null;
         if (h != null) {
             bd.setHashContent(h.toPB());
             l.info("advertise hash in gcc {} {}", socid, h);

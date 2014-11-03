@@ -265,7 +265,7 @@ public class Hasher
         }
     }
 
-    private static interface IAborter
+    public static interface IAborter
     {
         // the implementer can throw at any time to abort hash computation
         void checkAbortion() throws ExAborted;

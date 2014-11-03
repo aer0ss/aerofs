@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.ComputeHash;
 import com.aerofs.daemon.core.protocol.ContentUpdater;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;
@@ -32,6 +33,7 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
 {
     // For GetComponentReply
     public final DirectoryService _ds = mock(DirectoryService.class);
+    public final IPhysicalStorage _ps = mock(IPhysicalStorage.class);
     public final IncomingStreams _iss = mock(IncomingStreams.class);
     public final MetaDiff _mdiff = mock(MetaDiff.class);
     public final Aliasing _al = mock(Aliasing.class);
@@ -49,7 +51,7 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
 
     public final MetaUpdater _mu = new MetaUpdater();
     public final ContentUpdater _cu =
-            new ContentUpdater(_tm, _ds, _iss, _a2t, _lacl, _nvc, _bd, _hasher, _computeHash, _raau);
+            new ContentUpdater(_tm, _ds, _ps, _iss, _a2t, _lacl, _nvc, _bd, _hasher, _computeHash, _raau);
     public final GetComponentResponse _gcr =
             new GetComponentResponse(_mu, _cu, _iss);
 

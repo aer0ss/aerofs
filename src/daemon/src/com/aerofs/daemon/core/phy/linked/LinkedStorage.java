@@ -35,7 +35,6 @@ import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -159,11 +158,11 @@ public class LinkedStorage implements IPhysicalStorage
 
 
     @Override
-    public IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope) throws SQLException
+    public IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope) throws SQLException
     {
-        String filePath = auxFilePath(k.sokid(), AuxFolder.PREFIX)
+        String filePath = auxFilePath(k, AuxFolder.PREFIX)
                 + (scope != null ? "-" + scope : "");
-        return new LinkedPrefix(this, k.sokid(), LinkedPath.auxiliary(null, filePath));
+        return new LinkedPrefix(this, k, LinkedPath.auxiliary(null, filePath));
     }
 
     @Override

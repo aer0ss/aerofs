@@ -33,6 +33,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.id.SOKID;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 
@@ -108,8 +109,8 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         if (oa.isDirOrAnchor()) throw new ExNotFile(ev._dest);
 
         boolean wasPresent = (oa.caMasterNullable() != null);
-        SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
-        IPhysicalPrefix pp = _ps.newPrefix_(sockid, null);
+        SOKID sokid = new SOKID(soid, KIndex.MASTER);
+        IPhysicalPrefix pp = _ps.newPrefix_(sokid, null);
 
         ContentHash h = null;
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file");
@@ -144,7 +145,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             // Values might have changed while the core lock was released
             oa = _ds.getOA_(soid);
             ResolvedPath path = _ds.resolve_(oa);
-            IPhysicalFile pf = _ps.newFile_(path, sockid.kidx());
+            IPhysicalFile pf = _ps.newFile_(path, sokid.kidx());
 
             // move prefix to persistent storage
             long length = pp.getLength_();
@@ -152,10 +153,10 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 
             // update CA
             if (!wasPresent) _ds.createCA_(soid, KIndex.MASTER, t);
-            _ds.setCA_(sockid.sokid(), length, mtime, h, t);
+            _ds.setCA_(sokid, length, mtime, h, t);
 
             // increment version number after local update
-            _vu.update_(sockid, t);
+            _vu.update_(new SOCKID(sokid, CID.CONTENT), t);
 
             t.commit_();
         } finally {

@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 
 import java.io.FileInputStream;
@@ -21,14 +21,14 @@ import java.io.OutputStream;
 class BlockPrefix implements IPhysicalPrefix
 {
     private final BlockStorage _s;
-    final SOCKID _sockid;
+    final SOKID _sokid;
     final InjectableFile _f;
     ContentBlockHash _hash;
 
-    BlockPrefix(BlockStorage s, SOCKID sockid, InjectableFile f)
+    BlockPrefix(BlockStorage s, SOKID sokid, InjectableFile f)
     {
         _s = s;
-        _sockid = sockid;
+        _sokid = sokid;
         _f = f;
     }
 

@@ -21,6 +21,8 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.object.BranchDeleter;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -65,6 +67,7 @@ public class ContentUpdater
 
     private final TransManager _tm;
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final IncomingStreams _iss;
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
@@ -75,12 +78,13 @@ public class ContentUpdater
     private final ReceiveAndApplyUpdate _raau;
 
     @Inject
-    public ContentUpdater(TransManager tm, DirectoryService ds, IncomingStreams iss,
-            MapAlias2Target a2t, LocalACL lacl, NativeVersionControl nvc, BranchDeleter bd,
-            Hasher hasher, ComputeHash computeHash, ReceiveAndApplyUpdate raau)
+    public ContentUpdater(TransManager tm, DirectoryService ds, IPhysicalStorage ps,
+            IncomingStreams iss, MapAlias2Target a2t, LocalACL lacl, NativeVersionControl nvc,
+            BranchDeleter bd, Hasher hasher, ComputeHash computeHash, ReceiveAndApplyUpdate raau)
     {
         _tm = tm;
         _ds = ds;
+        _ps = ps;
         _iss = iss;
         _a2t = a2t;
         _lacl = lacl;
@@ -117,7 +121,7 @@ public class ContentUpdater
 
         // This is the branch to which the update should be applied, as determined by
         // ReceiveAndApplyUpdate#computeCausalityForContent_
-        SOCKID targetBranch = new SOCKID(socid, cr._kidx);
+        SOKID targetBranch = new SOKID(socid.soid(), cr._kidx);
 
         /////////////////////////////////////////
         // apply update
@@ -126,45 +130,47 @@ public class ContentUpdater
         // It may be the case that it's not new but all the local ticks
         // have been replaced by remote ticks.
 
-        Trans t = null;
-        Throwable rollbackCause = null;
+        // TODO merge/delete branches (variable kidcs), including their prefix files, that
+        // are dominated by the new version
 
-        try {
-            // TODO merge/delete branches (variable kidcs), including their prefix files, that
-            // are dominated by the new version
+        IPhysicalPrefix prefix = null;
+        ContentHash h;
+        // TODO: allow copying from other files with same hash and from sync history
+        KIndex localBranchWithMatchingContent = cr._hash == null ? null :
+                findBranchWithMatchingContent_(socid.soid(), cr._hash);
 
-            KIndex localBranchWithMatchingContent = cr._hash == null ? null :
-                    findBranchWithMatchingContent_(socid.soid(), cr._hash);
+        if (cr._avoidContentIO || (localBranchWithMatchingContent != null &&
+                                            localBranchWithMatchingContent.equals(cr._kidx))) {
+            l.debug("content already there, avoid I/O altogether");
+            // no point doing any file I/O...
 
-            if (cr._avoidContentIO || (localBranchWithMatchingContent != null &&
-                                                localBranchWithMatchingContent.equals(cr._kidx))) {
-                l.debug("content already there, avoid I/O altogether");
-                // no point doing any file I/O...
-
-                // close the stream, we're not going to read from it
-                if (msg.streamKey() != null) {
-                    _iss.end_(msg.streamKey());
-                }
-
-                // TODO:FIXME ugh that's retarded, this code needs some serious refactoring
-                t = _tm.begin_();
-            } else {
-                t = _raau.applyContent_(msg, targetBranch, vRemote, cr._hash,
-                        localBranchWithMatchingContent, cxt.token());
+            // close the stream, we're not going to read from it
+            if (msg.streamKey() != null) {
+                _iss.end_(msg.streamKey());
             }
 
-            updateVersion_(targetBranch, vRemote, cr, t);
+            h = cr._hash;
+        } else {
+            prefix = _ps.newPrefix_(targetBranch, null);
+            h = _raau.download_(prefix, msg, targetBranch, vRemote, cr._hash,
+                    localBranchWithMatchingContent, cxt.token());
+        }
 
+        Trans t = _tm.begin_();
+        Throwable rollbackCause = null;
+        try {
+            if (prefix != null) {
+                _raau.apply_(targetBranch, msg.pb().getGetComponentResponse(), prefix, h, t);
+            }
+            updateVersion_(new SOCKID(targetBranch, CID.CONTENT), vRemote, cr, t);
             t.commit_();
-            l.info("{} ok {}", msg.ep(), socid);
-
-            // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception | Error e) {
             rollbackCause = e;
             throw e;
         } finally {
-            if (t != null) t.end_(rollbackCause);
+            t.end_(rollbackCause);
         }
+        l.info("{} ok {}", msg.ep(), socid);
     }
 
     /**

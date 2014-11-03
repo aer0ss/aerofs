@@ -11,7 +11,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.ImmutableCollection;
@@ -29,7 +28,7 @@ public interface IPhysicalStorage extends IStartable
 
     IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException;
 
-    IPhysicalPrefix newPrefix_(SOCKID k, @Nullable String scope) throws SQLException;
+    IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope) throws SQLException;
 
     /**
      * Move the completely downloaded prefix in place of the file.

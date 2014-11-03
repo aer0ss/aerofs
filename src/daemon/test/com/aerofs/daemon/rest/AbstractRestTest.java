@@ -63,8 +63,8 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.TokenVerificationClient;
@@ -405,7 +405,7 @@ public class AbstractRestTest extends AbstractTest
         om.inject_(vu, ds, expulsion);
         om = spy(om);
 
-        when(ps.newPrefix_(any(SOCKID.class), anyString())).thenReturn(pf);
+        when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(pf);
 
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);
