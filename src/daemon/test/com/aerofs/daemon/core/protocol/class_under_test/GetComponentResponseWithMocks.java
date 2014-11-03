@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.ComputeHash;
 import com.aerofs.daemon.core.protocol.ContentUpdater;
@@ -23,8 +24,15 @@ import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.MetaUpdater;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.lib.id.SOKID;
 
+import java.sql.SQLException;
+
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class contains a NewUpdates object with its supporting mock objects
@@ -58,5 +66,8 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public GetComponentResponseWithMocks()
     {
         _mu.inject_(_tm, _ds, _nvc, _mdiff, _al, _a2t, _lacl, _emd, _oc, _om, _sc, _vu);
+        try {
+            when(_ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(mock(IPhysicalPrefix.class));
+        } catch (SQLException e) { fail(); }
     }
 }
