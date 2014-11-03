@@ -13,6 +13,9 @@ OUTPUT_DIR=$HERE/build/$NAME
 OPT=$OUTPUT_DIR/opt/$NAME
 DEBIAN=$OUTPUT_DIR/DEBIAN
 
+# First, make sure all of the web assets that we'll be using exist
+pushd $HERE/../src/web/web && make clean && make && popd
+
 # FIXME (AG): create a temporary source dir with a copy
 # of all the bunker files to avoid any symlink issues
 
