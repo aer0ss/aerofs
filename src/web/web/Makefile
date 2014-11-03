@@ -21,7 +21,9 @@ FILES_IN_JS = $(wildcard $(SRC)/$(JS)/*.js)
 FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_JS)))
 
 # A couple resources go in external folders, with special file paths.
-EXTERNAL_ASSETS_OUT = $(MARKETING_DEST)/styles/css/compiled/style.css $(MARKETING_DEST)/js/recruiting.js
+EXTERNAL_ASSETS_OUT = $(MARKETING_DEST)/styles/css/compiled/style.css \
+	$(MARKETING_DEST)/styles/css/compiled/syntax.min.css \
+	$(MARKETING_DEST)/js/recruiting.js
 
 # Compile the final targets
 all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT)
@@ -56,6 +58,10 @@ $(MARKETING_DEST)/js/recruiting.js: $(DEST)/js/compiled/recruiting.js
 	cp $? $@
 
 $(MARKETING_DEST)/styles/css/compiled/style.css: $(DEST)/css/compiled/aerofs-marketing.css
+	mkdir -p $(MARKETING_DEST)/styles/css/compiled
+	cp $? $@
+
+$(MARKETING_DEST)/styles/css/compiled/syntax.min.css: $(DEST)/css/compiled/syntax.min.css
 	mkdir -p $(MARKETING_DEST)/styles/css/compiled
 	cp $? $@
 
