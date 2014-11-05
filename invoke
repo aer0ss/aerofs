@@ -347,6 +347,9 @@ def proto_java(output_dir, includes, protos):
                     line = f.readline()
                     if line == "":
                         break
+		    line = line.strip(' \t')
+		    if line == "\n":
+			continue
                     # 1) Suppress all warnings in generated protobuf files, so we can compile with -Werror
                     if line.startswith("public final class "):
                         line = '@SuppressWarnings("all") ' + line
@@ -366,7 +369,7 @@ def proto_java(output_dir, includes, protos):
                     line = line.replace("super.addAll(",
                                         "Builder.addAll(")
                     # Write the new line out to the replacement file
-                    print >>g, line
+                    g.write(line)
                 # Commit g over f
                 #print "Will replace {} with {}".format(path, g.name)
                 os.rename(g.name, path)
