@@ -84,7 +84,7 @@ def log_in_user(request, login_func, stay_signed_in=False, **kw_args):
 
     # Log in using the login_func provided
     second_factor_needed = False
-    userid, second_factor_needed = login_func(request, sp, **kw_args)
+    userid, second_factor_needed, second_factor_setup_needed = login_func(request, sp, **kw_args)
 
     if stay_signed_in:
         log.debug("Extending session")
@@ -93,4 +93,4 @@ def log_in_user(request, login_func, stay_signed_in=False, **kw_args):
     # Save the cookies in the session, for reuse in future requests
     request.session['sp_cookies'] = con._session.cookies
 
-    return remember(request, userid), second_factor_needed
+    return remember(request, userid), second_factor_needed, second_factor_setup_needed

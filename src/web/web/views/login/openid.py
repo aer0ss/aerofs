@@ -30,9 +30,10 @@ def _sp_openid_get_session_attrs(request, sp_rpc_stub, **kw_args):
         raise ExceptionReply('Authentication error')
     userid = attrs.userId
     need_second_factor = attrs.HasField('need_second_factor') and attrs.need_second_factor
+    need_second_factor_setup = attrs.HasField('need_second_factor_setup') and attrs.need_second_factor_setup
     log.debug('OpenID login succeeded for {}{}'.format(userid,
         ", need second factor" if need_second_factor else ""))
-    return userid, need_second_factor
+    return userid, need_second_factor, need_second_factor_setup
 
 def _begin_sp_auth(request):
     """

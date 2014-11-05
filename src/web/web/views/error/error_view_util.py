@@ -30,6 +30,8 @@ def force_login(request):
         if isinstance(request.hack_sp_exception, ExceptionReply):
             if request.hack_sp_exception.get_type_name() == "SECOND_FACTOR_REQUIRED":
                 login_route = 'login_second_factor'
+            if request.hack_sp_exception.get_type_name() == "SECOND_FACTOR_SETUP_REQUIRED":
+                login_route = 'two_factor_intro'
 
     # path_qs: the request path without host but with query string
     #

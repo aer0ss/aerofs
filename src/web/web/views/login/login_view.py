@@ -47,7 +47,7 @@ def _do_login(request):
     stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
     try:
         try:
-            headers, second_factor_required = log_in_user(request, _sp_cred_signin, userid=userid,
+            headers, second_factor_required, second_factor_setup_required = log_in_user(request, _sp_cred_signin, userid=userid,
                     password=password, stay_signed_in=stay_signed_in)
             return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
@@ -151,7 +151,7 @@ def login_for_tests_json_view(request):
         userid = request.params[URL_PARAM_EMAIL]
         password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
         try:
-            headers, second_factor_needed = log_in_user(request, _sp_cred_signin, userid=userid, password=password)
+            headers, second_factor_needed, second_factor_setup_needed = log_in_user(request, _sp_cred_signin, userid=userid, password=password)
             request.response.headerlist.extend(headers)
             return {'ok': True}
         except ExceptionReply as e:
@@ -260,9 +260,10 @@ def _sp_cred_signin(request, sp_rpc_stub, **kw_args):
         raise TypeError("credentials require encoding")
     result = sp_rpc_stub.credential_sign_in(userid, password)
     need_second_factor = result.HasField('need_second_factor') and result.need_second_factor
+    need_second_factor_setup = result.HasField('need_second_factor_setup') and result.need_second_factor_setup
     log.debug('Credential login succeeded for {}{}'.format(userid,
         ", need second factor" if need_second_factor else ""))
-    return userid, need_second_factor
+    return userid, need_second_factor, need_second_factor_setup
 
 @view_config(
     route_name='logout',
