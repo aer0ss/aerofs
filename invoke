@@ -562,8 +562,9 @@ def package_clients(args):
     version = args.release_version or compute_next_version(args)
     products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
     # clean packaging dir
-    for package in os.listdir(ANT_PACKAGE_DIR):
-        os.remove(os.path.join(ANT_PACKAGE_DIR, package))
+    if os.path.exists(ANT_PACKAGE_DIR):
+        for package in os.listdir(ANT_PACKAGE_DIR):
+            os.remove(os.path.join(ANT_PACKAGE_DIR, package))
     for product in products:
         cmdline = [ BOOTSTRAP_ENTRY,
                 "package",
