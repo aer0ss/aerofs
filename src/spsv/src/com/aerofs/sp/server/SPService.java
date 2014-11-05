@@ -1782,7 +1782,16 @@ public class SPService implements ISPService
         user.throwIfNotAdmin();
         Organization org = user.getOrganization();
         TwoFactorEnforcementLevel level = TwoFactorEnforcementLevel.fromPB(pblevel);
+        TwoFactorEnforcementLevel oldLevel = org.getTwoFactorEnforcementLevel();
         org.setTwoFactorEnforcementLevel(level);
+        if (!oldLevel.equals(level)) {
+            _auditClient.event(AuditTopic.ORGANIZATION, "org.2fa.level")
+                    .embed("caller", new AuditCaller(user.id()))
+                    .embed("org", org.id().toTeamServerUserID())
+                    .embed("old_level", oldLevel.toString())
+                    .embed("new_level", level.toString())
+                    .publish();
+        }
         _sqlTrans.commit();
 
         return createVoidReply();

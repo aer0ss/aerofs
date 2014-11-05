@@ -44,7 +44,8 @@ public class AuditClient
         FILE,
         USER,
         SHARING,
-        DEVICE
+        DEVICE,
+        ORGANIZATION
     }
 
     /**
