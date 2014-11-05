@@ -3,26 +3,62 @@
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
-<h2 class="page-block">Organization settings</h2>
+<h2>Organization settings</h2>
 
 <form id="org-settings" class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">
     ${self.csrf.token_input()}
 
-    <div class="page-block form-group">
+    <div class="form-group">
         <label for="organization_name" class="col-sm-3 control-label">Organization name:</label>
         <div class="col-sm-6">
             <input type="text" id="organization_name" class="form-control" name="organization_name"
                 value="${organization_name}">
         </div>
     </div>
+    <div class="form-group">
+        <label for="tfa-setting" class="col-sm-3 control-label">Two-factor authentication:</label>
+        <div class="col-sm-9">
+            <div class="radio">
+              <label>
+                <input type="radio" name="tfa-setting" id="tfa-setting-mandatory" value="2"
+                %if tfa_level == 2:
+                    checked
+                %endif
+                >
+                Mandatory
+                <p class="help-block">All users must use two-factor authentication.
+                <strong>Users will not be able to use the AeroFS web panel nor set up new devices until they set up their phone as a second authentication factor.</strong></p>
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="tfa-setting" id="tfa-setting-optin" value="1"
+                %if tfa_level == 1:
+                    checked
+                %endif
+                >
+                Opt-in
+                <p class="help-block">Users can choose to use two-factor authentication
+                with their AeroFS account.</p>
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="tfa-setting" id="tfa-setting-disallowed" value="0"
+                %if tfa_level == 0:
+                    checked
+                %endif
+                >
+                Disabled
+                <p class="help-block">Users cannot use two-factor authentication for their AeroFS
+                    account. <strong>You should only choose this option if you are using a separate
+                    multiple-factor authentication system with AeroFS.</strong></p>
+              </label>
+            </div>
+        </div>
+    </div>
 
-    <div
-            %if show_quota_options:
-                class="page-block"
-            %else:
-                class="hidden"
-            %endif
-            >
+    %if show_quota_options:
         <div class="form-group">
             <div class="col-sm-6 col-sm-offset-3">
                 <div class="checkbox">
@@ -49,9 +85,9 @@
               <span class="add-on">GB per user</span>
             </div>
         </div>
-    </div>
+    %endif
 
-    <div class="page-block form-group">
+    <div class="form-group">
         <div class="col-sm-6 col-sm-offset-3">
             <button class="btn btn-primary" id="update-button">Update</button>
         </div>
@@ -63,7 +99,7 @@
 
 ## Include subscription management only for public deployment
 %if not is_private_deployment(request.registry.settings):
-
+    <hr>
     <div class="page-block">
         %if has_customer_id:
             <p><a href="${request.route_path('manage_subscription')}">

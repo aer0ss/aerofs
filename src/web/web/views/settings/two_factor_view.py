@@ -6,22 +6,24 @@ from io import BytesIO
 from aerofs_common.exception import ExceptionReply
 from pyramid.httpexceptions import HTTPFound
 from pyramid.response import Response
+from pyramid.renderers import render_to_response
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 import qrcode
 
 from web.util import get_rpc_stub, flash_error, flash_success
 from web.cryptobox import crypto_box, crypto_box_open
+from aerofs_sp.gen.sp_pb2 import MANDATORY
 
 log = logging.getLogger(__name__)
 
 _URL_PARAM_CODE = "code"
 _FORM_PARAM_BOXED_SECRET = "boxed_secret"
 
+
 @view_config(
     route_name='two_factor_intro',
     permission='two_factor_setup',
-    renderer='two_factor_intro.mako',
     request_method='GET',
 )
 def two_factor_intro(request):
@@ -33,9 +35,16 @@ def two_factor_intro(request):
     except Exception as e:
         # Silence exceptions; warning is opportunistic
         pass
-    return {
-            "enforcing": tfa_enforcing,
-    }
+    is_mandatory = sp.get_two_factor_setup_enforcement().level == MANDATORY
+    if is_mandatory and not tfa_enforcing:
+        template = 'mandatory_two_factor_intro.mako'
+    else:
+        template = 'two_factor_intro.mako'
+
+    return render_to_response(template, {
+            "two_factor_enforced": tfa_enforcing,
+            "mandatory_tfa": is_mandatory
+        }, request=request)
 
 @view_config(
     route_name='two_factor_setup',
@@ -50,7 +59,6 @@ def two_factor_setup_get(request):
 @view_config(
     route_name='two_factor_setup',
     permission='two_factor_setup',
-    renderer='two_factor_setup.mako',
     request_method='POST',
 )
 def two_factor_setup_post(request):
@@ -118,13 +126,19 @@ def two_factor_setup_post(request):
     # random and will be fine for this purpose.
     secret_blob = crypto_box(request, shared_secret)
 
-    return {
+    is_mandatory = sp.get_two_factor_setup_enforcement().level == MANDATORY
+    if is_mandatory:
+        template = 'mandatory_two_factor_setup.mako'
+    else:
+        template = 'two_factor_setup.mako'
+
+    return render_to_response(template, {
         'secret': secret,
         'secret_blob': base64.b64encode(secret_blob),
         'totpauth_url': url,
         'url_param_code': _URL_PARAM_CODE,
         'qr_image_data': qr_image_data
-    }
+    }, request=request)
 
 @view_config(
     route_name='two_factor_disable',
@@ -161,6 +175,7 @@ def two_factor_settings(request):
     return {
         'two_factor_enforced': two_factor_enforced,
         'backup_codes': backup_codes,
+        "mandatory_tfa": sp.get_two_factor_setup_enforcement().level == MANDATORY
     }
 
 @view_config(

@@ -61,6 +61,7 @@ def org_settings(request):
 
     return {
         'organization_name': reply.organization_name,
+        'tfa_level': reply.level,
         'has_customer_id': stripe_data.customer_id,
         'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
         'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
@@ -72,19 +73,21 @@ def org_settings(request):
 
 def _update_org_settings(request, sp):
     sp.set_org_preferences(request.params['organization_name'].strip(), None)
+    sp.set_two_factor_setup_enforcement(int(request.params['tfa-setting']))
 
-    if not 'enable_quota' in request.params:
-        sp.remove_quota()
-    else:
-        try:
-            quota = long(request.params['quota'])
-            if quota < 0:
-                flash_error(request, "Please input a positive number for quota")
+    if str2bool(request.registry.settings.get('show_quota_options', False)):
+        if not 'enable_quota' in request.params:
+            sp.remove_quota()
+        else:
+            try:
+                quota = long(request.params['quota'])
+                if quota < 0:
+                    flash_error(request, "Please input a positive number for quota")
+                    return
+            except ValueError:
+                flash_error(request, "Please input a valid quota number")
                 return
-        except ValueError:
-            flash_error(request, "Please input a valid quota number")
-            return
-        sp.set_quota(_gb2bytes(quota))
+            sp.set_quota(_gb2bytes(quota))
 
     flash_success(request, "Organization settings have been updated.")
 
