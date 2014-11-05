@@ -530,10 +530,8 @@ def prepare_syncdet(args):
             source_filepath = os.path.join(source_dir, source_filenames[0])
             print "copying {} to {}".format(source_filepath, dest_filepath)
             shutil.copyfile(source_filepath, dest_filepath)
-        elif len(source_filenames) == 0:
-            print "skipping missing {}".format(dest_filename)
         else:
-            print "skipping ambigous {} - options {}".format(dest_filename, source_filenames)
+            raise ValueError(colored("ambigous {} - options {}".format(dest_filename, source_filenames), Colors.RED))
 
 @required_args('product', 'mode', 'target_os', 'approot')
 def setupenv(args):
@@ -563,6 +561,9 @@ def package_clients(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
     version = args.release_version or compute_next_version(args)
     products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
+    # clean packaging dir
+    for package in os.listdir(ANT_PACKAGE_DIR):
+        os.remove(os.path.join(ANT_PACKAGE_DIR, package))
     for product in products:
         cmdline = [ BOOTSTRAP_ENTRY,
                 "package",
