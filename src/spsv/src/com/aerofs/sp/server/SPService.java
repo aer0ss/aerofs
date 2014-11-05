@@ -1701,6 +1701,10 @@ public class SPService implements ISPService
                 _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.TWO_FACTOR_SETUP);
         if (requester.shouldEnforceTwoFactor()) {
             requester.disableTwoFactorEnforcement();
+            _auditClient.event(AuditTopic.USER, "user.2fa.disable")
+                    .embed("caller", new AuditCaller(requester.id()))
+                    .embed("user", requester.id())
+                    .publish();
             _twoFactorEmailer.sendTwoFactorDisabledEmail(
                     requester.id().getString(), requester.getFullName()._first);
         }
@@ -1749,10 +1753,18 @@ public class SPService implements ISPService
                 // (they have just proven that they possess the proper code)
                 _session.setSecondFactorAuthDate(System.currentTimeMillis());
                 target.enableTwoFactorEnforcement();
+                _auditClient.event(AuditTopic.USER, "user.2fa.enable")
+                        .embed("caller", new AuditCaller(requester.id()))
+                        .embed("user", target.id())
+                        .publish();
                 _twoFactorEmailer.sendTwoFactorEnabledEmail(target.id().getString(),
                         target.getFullName()._first);
             } else {
                 target.disableTwoFactorEnforcement();
+                _auditClient.event(AuditTopic.USER, "user.2fa.disable")
+                        .embed("caller", new AuditCaller(requester.id()))
+                        .embed("user", target.id())
+                        .publish();
                 _twoFactorEmailer.sendTwoFactorDisabledEmail(target.id().getString(),
                         target.getFullName()._first);
             }

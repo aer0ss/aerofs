@@ -527,6 +527,9 @@ public class UsersResource extends AbstractSpartaResource
         User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, user);
         user.disableTwoFactorEnforcement();
+        audit(caller, auth, AuditTopic.USER, "user.2fa.disable")
+                .add("user", user.id())
+                .publish();
         _twoFactorEmailer.sendTwoFactorDisabledEmail(user.id().getString(),
                 user.getFullName()._first);
         return Response.noContent().build();
