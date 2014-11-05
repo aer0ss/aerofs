@@ -38,6 +38,22 @@
     </div>
 </div>
 
+%if can_has_tfa:
+<div class="row">
+    <hr>
+    <div class="col-sm-12">
+        <h4>Two-factor authentication</h4>
+        % if two_factor_enforced:
+        <p>Status: On |
+        <a href="${request.route_path('two_factor_settings')}">Edit &raquo;</a></p>
+        % else:
+        <p>Status: Off |
+        <a href="${request.route_path('two_factor_intro')}">Set up &raquo;</a></p>
+        % endif
+    </div>
+</div>
+%endif
+
 <div class="row">
     <hr>
     <div class="col-sm-12">
@@ -50,20 +66,6 @@
         <a href="#" id="delete-account">
             Delete your account
         </a>
-    </div>
-</div>
-
-<div class="row">
-    <hr>
-    <div class="col-sm-12">
-        <h4>Two-factor authentication</h4>
-        % if two_factor_enforced:
-        <p>Status: On</p>
-        <a href="${request.route_path('two_factor_settings')}">Edit &raquo;</a>
-        % else:
-        <p>Status: Off</p>
-        <a href="${request.route_path('two_factor_intro')}">Set up &raquo;</a>
-        % endif
     </div>
 </div>
 

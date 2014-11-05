@@ -16,12 +16,14 @@ log = logging.getLogger(__name__)
 def settings(request):
     sp = get_rpc_stub(request)
     reply = sp.get_user_preferences(None)
+    can_has_tfa = sp.get_two_factor_setup_enforcement().level > 0
     return {
         'first_name': reply.first_name,
         'last_name': reply.last_name,
         'signup_date': reply.signup_date,
         'userid': authenticated_userid(request),
         'two_factor_enforced': reply.two_factor_enforced,
+        'can_has_tfa': can_has_tfa
     }
 
 @view_config(
