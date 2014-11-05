@@ -34,7 +34,7 @@ class HdTestPauseOrResumeLinker extends AbstractHdIMC<EITestPauseOrResumeLinker>
         _hdMightDelete.setDisabled(ev._pause);
 
         if (!ev._pause) {
-            _linker.fullScan();
+            _linker.fullScan_();
         }
     }
 }

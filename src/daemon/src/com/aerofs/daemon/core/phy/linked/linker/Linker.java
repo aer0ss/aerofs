@@ -124,21 +124,21 @@ public class Linker implements ILinker, IListener
         _notifier.removeRootWatch_(root);
     }
 
-    void fullScan()
+    void fullScan_()
     {
-        scan(() -> {});
+        scan_(() -> {});
     }
 
     @Override
-    public void scan(final ScanCompletionCallback callback)
+    public void scan_(final ScanCompletionCallback callback)
     {
-        _sched.schedule(new AbstractEBSelfHandling() {
+        _sched.schedule_(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 scan_(Lists.newArrayList(_lrm.getAllRoots_()), callback);
             }
-        }, 0);
+        });
     }
 
     private void scan_(final List<LinkerRoot> roots, final ScanCompletionCallback callback)

@@ -21,7 +21,7 @@ public interface ILinker extends IStartable
     public void restoreRoot_(SID sid, String absPath, Trans t)
             throws SQLException, IOException;
 
-    public void scan(ScanCompletionCallback callback);
+    public void scan_(ScanCompletionCallback callback);
 
     boolean isFirstScanInProgress_(SID sid);
 
@@ -49,15 +49,15 @@ public interface ILinker extends IStartable
         public boolean isFirstScanInProgress_(SID sid) { return false; }
 
         @Override
-        public void scan(final ScanCompletionCallback callback)
+        public void scan_(final ScanCompletionCallback callback)
         {
-            _sched.schedule(new AbstractEBSelfHandling() {
+            _sched.schedule_(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {
                     callback.done_();
                 }
-            }, 0);
+            });
         }
     }
 }

@@ -6,18 +6,17 @@ package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgRootSID;
@@ -25,8 +24,8 @@ import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.cfg.RootDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +36,7 @@ import java.sql.SQLException;
 import java.util.Map.Entry;
 
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class is in charge of all logic that needs to be run only once: on the first launch of the
@@ -57,8 +57,9 @@ public class FirstLaunch
     private final AccessibleStores _as;
     private final ScanProgressReporter _spr;
     private final ILinker _linker;
-    private final CoreScheduler _sched;
+    private final CoreQueue _q;
     private final StoreCreator _sc;
+    private final IMapSID2SIndex _sid2sidx;
     private final TransManager _tm;
 
     /**
@@ -82,18 +83,19 @@ public class FirstLaunch
     }
 
     @Inject
-    public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreScheduler sched, AccessibleStores as,
+    public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreQueue q, AccessibleStores as,
             ScanProgressReporter spr, CfgAbsRoots absRoots, CfgStorageType storageType,
-            CfgRootSID rootSID, StoreCreator sc, TransManager tm)
+            CfgRootSID rootSID, StoreCreator sc, IMapSID2SIndex sid2sidx, TransManager tm)
     {
         _as = as;
         _spr = spr;
         _linker = linker;
-        _sched = sched;
+        _q = q;
         _cfgDB = cfgDB;
         _cfgRootSID = rootSID;
         _cfgAbsRoots = absRoots;
         _cfgStorageType = storageType;
+        _sid2sidx = sid2sidx;
         _sc = sc;
         _tm = tm;
     }
@@ -117,7 +119,7 @@ public class FirstLaunch
 
         // NB: fetchAccessibleStore needs to be performed from a Core thread in case the SP sign-in
         // fails as it causes a Ritual notification to be sent
-        _sched.schedule(new AbstractEBSelfHandling() {
+        checkState(_q.enqueue(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
@@ -137,7 +139,7 @@ public class FirstLaunch
                 };
 
                 if (!L.isMultiuser()) {
-                    createUserRootStore_();
+                    createUserRootStoreIfNeeded_();
                 }
 
                 l.info("start indexing");
@@ -148,12 +150,12 @@ public class FirstLaunch
                 if (_cfgStorageType.get() == StorageType.LINKED) {
                     fetchAccessibleStores_();
                     restoreRoots_();
-                    _linker.scan(cb);
+                    _linker.scan_(cb);
                 } else {
                     cb.done_();
                 }
             }
-        }, 0);
+        }, Prio.HI));
 
         return true;
     }
@@ -164,9 +166,10 @@ public class FirstLaunch
         _spr.onFirstLaunchCompletion_();
     }
 
-    private void createUserRootStore_()
+    private void createUserRootStoreIfNeeded_()
     {
         try {
+            if (_sid2sidx.getNullable_(_cfgRootSID.get()) != null) return;
             Trans t = _tm.begin_();
             try {
                 _sc.createRootStore_(_cfgRootSID.get(), "", t);
