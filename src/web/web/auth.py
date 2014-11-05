@@ -5,12 +5,17 @@
 # a request is made, it is not a problem.
 #
 import logging
+
 from pyramid.security import authenticated_userid
+from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import ADMIN
+
 from util import get_rpc_stub
 
 GROUP_ID_ADMINS = 'group:admins'
 GROUP_ID_USERS = 'group:users'
+GROUP_ID_TWO_FACTOR_LOGIN = 'group:two_factor_login'
+GROUP_ID_TWO_FACTOR_SETUP = 'group:two_factor_setup'
 
 log = logging.getLogger(__name__)
 
@@ -45,18 +50,43 @@ def get_principals(authed_userid, request):
     try:
         level = get_rpc_stub(request).get_authorization_level().level
     except Exception as e:
-        # SP may throw an exception here.  We return no additional principals.
-        # The pyramid view may be okay with anonymous viewing, or it may require
-        # a valid user session.  If the latter, it might want to know what kind
-        # of failure this was, so it can give a useful redirect to either /login
-        # or /login_second_factor or whatnot.
-
-        # Since there appears to be no way to cleanly pass this along for just
-        # the duration of the request, we do a messy thing and stick the
-        # exception in the request object so we can access it later if needed.
+        # SP will return two particular types of exceptions for certain workflows:
+        #
+        #   - ExSecondFactorSetupRequired is thrown if the user has successfully
+        #     provided their BASIC authentication (usually username/password),
+        #     has not set up 2FA, but their organization has MANDATORY 2FA
+        #     enforcement
+        #   - ExSecondFactorRequired is thrown if the user has successfully
+        #     provided their BASIC authentication, has enabled 2FA, but has
+        #     not provided their second factor yet.
+        #
+        # In these cases, the user session contains a limited permission that
+        # will allow them to resolve the situation - in the first case, by
+        # setting up two-factor auth, and in the second case, by providing
+        # their second factor or a backup code.
+        #
+        # The type of exception received may provide a useful piece of
+        # information, like which page we should redirect the user to next if
+        # they have insufficient permission to access the requested page.
+        #
+        # Since there appears to be no way to cleanly pass this exception along
+        # for just the duration of the request, we do a messy thing and stick
+        # the exception in the request object so we can access it later if
+        # needed.
         log.warn('invalid SP session')
         request.hack_sp_exception = e
+        if isinstance(request.hack_sp_exception, ExceptionReply):
+            if request.hack_sp_exception.get_type_name() == "SECOND_FACTOR_SETUP_REQUIRED":
+                # SP guarantees they have proven BASIC, and should be able to set up 2FA
+                return [GROUP_ID_TWO_FACTOR_SETUP]
+            if request.hack_sp_exception.get_type_name() == "SECOND_FACTOR_REQUIRED":
+                # SP guarantees they have proven BASIC, and should be able to provide 2FA
+                return [GROUP_ID_TWO_FACTOR_LOGIN]
+        # If the exception wasn't one of these two special exceptions, assume no perms.
         return []
 
     request.session[_SESSION_KEY_IS_ADMIN] = level == ADMIN
-    return [GROUP_ID_ADMINS if level == ADMIN else GROUP_ID_USERS]
+    principals = [ GROUP_ID_TWO_FACTOR_LOGIN, GROUP_ID_TWO_FACTOR_SETUP, GROUP_ID_USERS ]
+    if level == ADMIN:
+        principals.append(GROUP_ID_ADMINS)
+    return principals

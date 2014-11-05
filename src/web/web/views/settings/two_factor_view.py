@@ -20,7 +20,7 @@ _FORM_PARAM_BOXED_SECRET = "boxed_secret"
 
 @view_config(
     route_name='two_factor_intro',
-    permission='user',
+    permission='two_factor_setup',
     renderer='two_factor_intro.mako',
     request_method='GET',
 )
@@ -39,7 +39,7 @@ def two_factor_intro(request):
 
 @view_config(
     route_name='two_factor_setup',
-    permission='user',
+    permission='two_factor_setup',
     request_method='GET',
 )
 def two_factor_setup_get(request):
@@ -49,7 +49,7 @@ def two_factor_setup_get(request):
 
 @view_config(
     route_name='two_factor_setup',
-    permission='user',
+    permission='two_factor_setup',
     renderer='two_factor_setup.mako',
     request_method='POST',
 )

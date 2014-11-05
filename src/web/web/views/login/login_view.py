@@ -167,7 +167,7 @@ def login_for_tests_json_view(request):
 
 @view_config(
     route_name='login_second_factor',
-    permission=NO_PERMISSION_REQUIRED,
+    permission='two_factor_login',
     renderer='login_second_factor.mako',
     request_method='GET',
 )
@@ -181,7 +181,7 @@ def login_second_factor_get(request):
 
 @view_config(
     route_name='login_second_factor',
-    permission=NO_PERMISSION_REQUIRED,
+    permission='two_factor_login',
     renderer='login_second_factor.mako',
     request_method='POST',
 )
@@ -210,7 +210,7 @@ def login_second_factor_post(request):
 
 @view_config(
     route_name='login_backup_code',
-    permission=NO_PERMISSION_REQUIRED,
+    permission='two_factor_login',
     renderer='login_backup_code.mako',
     request_method='GET',
 )
@@ -224,7 +224,7 @@ def login_backup_code_get(request):
 
 @view_config(
     route_name='login_backup_code',
-    permission=NO_PERMISSION_REQUIRED,
+    permission='two_factor_login',
     renderer='login_backup_code.mako',
     request_method='POST',
 )
