@@ -461,8 +461,9 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
+        User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         User user = _factUser.createFromExternalID(userID);
-        throwIfSessionUserIsNotOrAdminOf(user);
+        checkUserIsOrAdministers(requester, user);
 
         if (firstName != null || lastName != null) {
             if (firstName == null || lastName == null) {
@@ -628,8 +629,9 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
+        User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         User user = _factUser.createFromExternalID(userID);
-        throwIfSessionUserIsNotOrAdminOf(user);
+        checkUserIsOrAdministers(requester, user);
 
         User sessionUser = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
@@ -647,8 +649,9 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
+        User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         User user = _factUser.createFromExternalID(userID);
-        throwIfSessionUserIsNotOrAdminOf(user);
+        checkUserIsOrAdministers(requester, user);
 
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
         for (Device device : user.getDevices()) {
@@ -668,26 +671,23 @@ public class SPService implements ISPService
      * @throws ExNoPerm if the session user is not {@code user} nor the admin of the {@code user}'s
      * organization
      */
-    private void throwIfSessionUserIsNotOrAdminOf(User user)
-            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired,
-            ExSecondFactorSetupRequired
+    private void checkUserIsOrAdministers(User sessionUser, User target)
+            throws SQLException, ExNotFound, ExNoPerm
     {
-        User currentUser = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-
-        if (user.equals(currentUser)) return;
+        if (target.equals(sessionUser)) return;
 
         // if the current user is different from the specified user, the current user must be
         // an admin of the organization the specified user belongs to.
-        currentUser.throwIfNotAdmin();
+        sessionUser.throwIfNotAdmin();
 
         // TODO (WW) use this string for all ExNoPerm's?
         String noPermMsg = "you don't have permission to perform this action";
 
         // Throw early if the specified user doesn't exist rather than relying on the following
         // below. This is to prevent attacker from testing user existance.
-        if (!user.exists()) throw new ExNoPerm(noPermMsg);
+        if (!target.exists()) throw new ExNoPerm(noPermMsg);
 
-        if (!user.belongsTo(currentUser.getOrganization())) {
+        if (!target.belongsTo(sessionUser.getOrganization())) {
             throw new ExNoPerm(noPermMsg);
         }
     }
@@ -1729,7 +1729,7 @@ public class SPService implements ISPService
                     ProvenanceGroup.INTERACTIVE);
         }
         User target = (userId != null) ? _factUser.createFromExternalID(userId) : requester;
-        throwIfSessionUserIsNotOrAdminOf(target);
+        checkUserIsOrAdministers(requester, target);
         // Noop happily unless there's actually a state change happening
         if (enforce != target.shouldEnforceTwoFactor()) {
             if (enforce) {
@@ -2264,7 +2264,7 @@ public class SPService implements ISPService
 
         if (admin.equals(user)) throw new ExNoPerm("You can't remove yourself from an organization");
 
-        throwIfSessionUserIsNotOrAdminOf(user);
+        checkUserIsOrAdministers(admin, user);
 
         Organization newOrg = _factOrg.save();
         user.setOrganization(newOrg, AuthorizationLevel.ADMIN);
@@ -3070,7 +3070,7 @@ public class SPService implements ISPService
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         Device device = _factDevice.create(deviceId);
-        throwIfSessionUserIsNotOrAdminOf(device.getOwner());
+        checkUserIsOrAdministers(user, device.getOwner());
 
         // TODO (WW) print session user in log headers
         l.info("{} unlinks {}, erase {}, session user {}", user, device.id().toStringFormal(),
