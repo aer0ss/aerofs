@@ -42,7 +42,9 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
     
 will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
 
-## Install JDK 8
+## Install JDK 6 & 8
+
+[JDK 6 for OSX](http://support.apple.com/kb/DL1572) (necessary only if your OS X doesn't have JDK 6)
 
 [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
