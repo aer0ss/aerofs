@@ -9,6 +9,7 @@ from web import util
 from web.oauth import flash_error_for_bifrost_response, delete_all_tokens, delete_delegated_tokens
 from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool, is_restricted_external_sharing_enabled
+from web.auth import is_admin
 from web.views.payment import stripe_util
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
@@ -92,7 +93,7 @@ def json_list_org_users(request):
 @view_config(
     route_name = 'json.invite_user',
     renderer = 'json',
-    permission = 'admin',
+    permission = 'user',
     request_method = 'POST'
 )
 def json_invite_user(request):
@@ -114,7 +115,8 @@ def json_invite_user(request):
             PBException.ALREADY_INVITED:
                 _("The user has already been invited to your organization."),
             PBException.NO_STRIPE_CUSTOMER_ID:
-                _("Payment is required to invite more users.")
+                _("Payment is required to invite more users. You can enable paymet by going to your organization's Settings.") if is_admin(request) else
+                _("Payment is required to invite more users. Please ask your organization admin to enable payments.")
         }
     )
 

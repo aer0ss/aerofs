@@ -2114,8 +2114,6 @@ public class SPService implements ISPService
 
         l.info("{} sends organization invite to {}", inviter, invitee);
 
-        inviter.throwIfNotAdmin();
-
         InvitationEmailer emailer;
         if (!invitee.exists()) {
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
