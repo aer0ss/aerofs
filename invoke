@@ -343,13 +343,30 @@ def proto_java(output_dir, includes, protos):
         print "Postprocessing generated {}".format(path)
         with open(path) as f:
             with tempfile.NamedTemporaryFile(dir=os.path.dirname(path), delete=False) as g:
+                pkg = None
                 while True:
                     line = f.readline()
                     if line == "":
                         break
+
+                    # minify: strip leading and trailing spaces
                     line = line.strip(' \t')
-                    if line == "\n":
+
+                    # minify: strip multiline comments
+                    if line.startswith("/*"):
+                        line = line[2:]
+                        idx = line.find("*/")
+                        while line != "" and idx == -1:
+                            line = f.readline()
+                            idx = line.find("*/")
+                        if idx == -1:
+                            break
+                        line = line[idx+2:]
+
+                    # minify: skip empty lines
+                    if line == "\n" or line.startswith("//"):
                         continue
+
                     # 1) Suppress all warnings in generated protobuf files, so we can compile with -Werror
                     if line.startswith("public final class "):
                         line = '@SuppressWarnings("all") ' + line
@@ -358,18 +375,43 @@ def proto_java(output_dir, includes, protos):
                     line = line.replace("com.google.protobuf.GeneratedMessageLite.Builder builder",
                                         "com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder")
 
-                    # 3) Fix for the "value of the local variable mutable_bitField0_ is not
-                    # used" warning
-                    # Note: the compiler is smart enough to optimize away the dummy if
-                    # statement.  I (GS) checked.
-                    line = line.replace("int mutable_bifField0_ = 0;",
-                                        "int mutable_bitField0_ = 0; if (mutable_bitField0_ == 1) {}")
-
-                    # 4) Fix warning about use of "super" in static methods
+                    # 3) Fix warning about use of "super" in static methods
                     line = line.replace("super.addAll(",
                                         "Builder.addAll(")
+
+                    # minify: simplify fully-qualified names
+                    if pkg:
+                        line = line.replace("com.google.protobuf.", "")
+                        line = line.replace("com.google.common.util.concurrent.Futures.", "")
+                        line = line.replace("com.google.common.util.concurrent.", "")
+                        line = line.replace("java.lang.", "")
+                        line = line.replace("java.util.concurrent.", "")
+                        line = line.replace("java.util.", "")
+                        line = line.replace("java.io.IOException", "IOException")
+                        line = line.replace(pkg, "")
+
+                    # minify: shrink common variable names
+                    line = line.replace("bitField0_", "b0_")
+                    line = line.replace("memoizedIsInitialized", "mii")
+                    line = line.replace("memoizedSerializedSize", "mss")
+                    line = line.replace("parsedMessage", "pm")
+                    line = line.replace("extensionRegistry", "er")
+                    line = line.replace("builder", "bd")
+
                     # Write the new line out to the replacement file
                     g.write(line)
+
+                    # detect package name and add import statements for minification
+                    if not pkg and line.startswith("package ") and line.endswith(";\n"):
+                        pkg = line[8:-2] + "."
+                        print "detected package {}".format(pkg)
+                        g.write("import com.google.protobuf.*;\n")
+                        g.write("import com.google.common.util.concurrent.*;\n")
+                        g.write("import static com.google.common.util.concurrent.Futures.*;\n")
+                        g.write("import java.util.*;\n")
+                        g.write("import java.util.concurrent.*;\n")
+                        g.write("import java.io.IOException;\n")
+
                 # Commit g over f
                 #print "Will replace {} with {}".format(path, g.name)
                 os.rename(g.name, path)
