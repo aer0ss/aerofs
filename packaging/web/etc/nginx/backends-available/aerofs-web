@@ -4,6 +4,11 @@
     location /docs {
         alias /opt/web/docs/;
     }
+    # Installers do not belong to the web package, but are provided at a
+    # well-known path for integration/linking.
+    location /static/installers {
+        alias /opt/repackaging/installers/modified;
+    }
     location / {
         # This is where the marketing
         alias /opt/staticweb/_site/;

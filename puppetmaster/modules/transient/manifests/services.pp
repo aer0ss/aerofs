@@ -103,12 +103,6 @@ class transient::services {
         uwsgi_port => 8081,
     }
 
-    file{ "/opt/web/web/static/installers":
-        ensure  => link,
-        target  => "/opt/repackaging/installers/modified",
-        require => Package["aerofs-repackaging"],
-    }
-
     # --------------
     # Sanity
     # --------------
