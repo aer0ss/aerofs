@@ -3,7 +3,6 @@
 <%inherit file="base_layout.mako"/>
 
 <%namespace name="navigation" file="navigation.mako"/>
-<%namespace name="sign_up_forms" file="sign_up_forms.mako"/>
 
 <style type="text/css">
     ## TODO (WW) move it to base_layout.mako?
@@ -28,14 +27,6 @@
     <li class="dropdown hidden-lg hidden-md pull-right"><span class="glyphicon glyphicon-th-list"></span> Menu
         <ul class="dropdown-menu">
             <li><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
-            <li><a href="${request.route_path('pricing')}">Sign up</a></li>
-            <li class="divider"></li>
-            <li><a href="${request.route_path('product_overview')}">Product</a></li>
-            <li><a href="${request.route_path('solutions_overview')}">Solutions</a></li>
-            <li><a href="${request.route_path('personal_usage')}">Personal</a></li>
-            <li><a href="${request.route_path('business_usage')}">Business</a></li>
-            <li><a href="${request.route_path('security_overview')}">Security</a></li>
-            <li><a href="${request.route_path('pricing')}">Pricing</a></li>
             <li class="divider"></li>
             <li><a href="mailto:business@aerofs.com">
                 business@aerofs.com</a></li>
@@ -47,54 +38,12 @@
 <%block name="top_navigation_bar_desktop">
     <%
         if not request.matched_route:
-            sign_up_button = True
             sign_in_button = True
         else:
             route_name = request.matched_route.name
-            sign_up_button = route_name != 'marketing_home'
             sign_in_button = route_name != 'login'
     %>
-    <li class="dropdown hidden-xs hidden-sm">
-        <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
-                href="${request.route_path('product_overview')}">
-            <p>Product</p>
-        </a>
-        <ul class="dropdown-menu top-nav-dropdown">
-            <div class="visible-lg"><%navigation:product_items/></div>
-        </ul>
-    </li>
 
-    <li class="dropdown hidden-xs hidden-sm">
-        <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
-                href="${request.route_path('solutions_overview')}">
-            <p>Solutions</p>
-        </a>
-        <ul class="dropdown-menu top-nav-dropdown">
-            <%navigation:solutions_items/>
-        </ul>
-    </li>
-
-    <li class="hidden-xs hidden-sm"><a href="${request.route_path('personal_usage')}">Personal</a></li>
-    <li class="hidden-xs hidden-sm"><a href="${request.route_path('business_usage')}">Business</a></li>
-
-    <li class="dropdown hidden-xs hidden-sm">
-        <a class="dropdown-toggle link-with-dropdown" data-toggle="dropdown"
-                href="${request.route_path('security_overview')}">
-            <p>Security</p>
-        </a>
-        <ul class="dropdown-menu top-nav-dropdown">
-            <%navigation:security_items/>
-        </ul>
-    </li>
-
-    <li class="hidden-xs hidden-sm"><a href="${request.route_path('pricing')}">Pricing</a></li>
-    %if sign_up_button:
-        <li class="pull-right hidden-xs hidden-sm">
-            <a class="btn btn-default" id="nav-btn-sign-up" href="${request.route_path('pricing')}">
-                Sign up
-            </a>
-        </li>
-    %endif
     %if sign_in_button:
         <li class="pull-right hidden-xs hidden-sm"><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
     %endif
@@ -117,15 +66,14 @@
             <div class="row">
                 <div class="col-sm-12" id="footer-span">
                     <ul class="list-inline">
-                        <li><a href="${request.route_path('about')}">About</a></li>
-                        <li><a href="${request.route_path('press')}">Press</a></li>
-                        <li><a href="http://blog.aerofs.com">Blog</a></li>
-                        <li><a href="http://www.twitter.com/aerofs">Twitter</a></li>
-                        <li><a href="${request.route_path('careers')}">Careers</a></li>
-                        <li><a href="${request.route_path('terms')}">Terms</a></li>
-                        <li><a href="http://support.aerofs.com">Support</a></li>
-                        <li><a href="${request.route_path('resources')}">Resources</a></li>
-                        <li><a href="${request.route_path('developers_overview')}">Developers</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/pricing">Pricing</a></li>
+                        <li><a href="/press">Press</a></li>
+                        <li><a href="/careers">Careers</a></li>
+                        <li><a href="/terms/#tos">Terms</a></li>
+                        <li><a href="https://support.aerofs.com">Support</a></li>
+                        <li><a href="https://blog.aerofs.com">Blog</a></li>
+                        <li><a href="https://www.twitter.com/aerofs">Twitter</a></li>
 
                         <li class="pull-right">&copy; Air Computing Inc. 2014</li>
                     </ul>
@@ -136,7 +84,6 @@
 </%block>
 
 <%block name="layout_scripts">
-    <%sign_up_forms:scripts/>
     <script>
         $(document).ready(function() {
             ## Bootstrap doesn't follow the link of an menu item if the item is
@@ -164,5 +111,3 @@
 
 ## Main body
 ${next.body()}
-
-<%sign_up_forms:modals/>
