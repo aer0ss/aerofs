@@ -8,7 +8,7 @@ WebOb==1.4
 analytics-python==0.4.4
 iptools==0.6.1
 mock==1.0.1
-protobuf==2.5.0
+protobuf==2.6.0
 pycrypto==2.6.1
 pyramid==1.5.1
 pyramid-beaker==0.8

@@ -4,7 +4,6 @@
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/printer.h>
-#include <google/protobuf/stubs/strutil.h>
 
 #include "util.h"
 #include "common/common.h"
