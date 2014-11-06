@@ -15,7 +15,13 @@ public class CfgEnabledTransports
 
     public boolean isJingleEnabled()
     {
-        return Cfg.useJingle() && PrivateDeploymentConfig.isHybridDeployment();
+        // Conditions for jingle to be enabled:
+        //  1. No "nostun" flag.
+        //  2. Must be HC deployment.
+        //  3. Must not be a kiwi.ki user (see https://aerofs.atlassian.net/browse/ENG-2190).
+        return Cfg.useJingle() &&
+                PrivateDeploymentConfig.isHybridDeployment() &&
+                !Cfg.user().getString().endsWith("@kiwi.ki");
     }
 
     public boolean isZephyrEnabled()
