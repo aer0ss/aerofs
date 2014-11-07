@@ -14,6 +14,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ClientOptions;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
@@ -47,6 +48,12 @@ public class S3BackendModule extends AbstractBackendModule
     public AmazonS3 provideS3Client(AWSCredentials creds, CfgDatabase db)
     {
         AmazonS3 s3 = new AmazonS3Client(creds);
+
+        // Use path-style (http://host.com/bucket) rather than virtual-host-style
+        // (http://bucket.host.com) for privately deployed S3 compatible systems
+        // e.g. OpenStack Swift.
+        s3.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+
         // Null testing is for old Team Servers that don't have the endpoint field populated.
         // The default end point is S3 US East region.
         @Nullable String endpoint = db.getNullable(CfgDatabase.Key.S3_ENDPOINT);
