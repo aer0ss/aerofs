@@ -18,6 +18,8 @@ sourceSets {
             // Include SP's flyway db migration scripts
             srcDir '../spsv/resources/sp'
             include 'db/**'
+            srcDir 'resources'
+            include 'logback.xml'
         }
     }
     test {

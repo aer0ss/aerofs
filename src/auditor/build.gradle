@@ -9,6 +9,10 @@ sourceSets {
         java {
             srcDir 'src'
         }
+        resources {
+            srcDir 'resources'
+            include 'logback.xml'
+        }
     }
     test {
         java {

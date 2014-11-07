@@ -13,6 +13,7 @@ sourceSets {
             // Include flyway db migration scripts
             srcDir 'resources'
             include 'db/**'
+            include 'logback.xml'
         }
     }
     test {

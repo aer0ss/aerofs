@@ -16,6 +16,10 @@ sourceSets {
             srcDir 'src'
             exclude 'com/aerofs/zephyr/client/**' 
         }
+        resources {
+            srcDir 'resources'
+            include 'logback.xml'
+        }
     }
     client {
         java {
