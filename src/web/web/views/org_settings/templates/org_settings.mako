@@ -78,7 +78,7 @@
 
         <p>Your organization is currently on the free AeroFS plan.
             For $10/user/month, you will enjoy <strong>unlimited</strong> users.
-            <a href="${request.route_path('pricing')}" target="_blank">View pricing.</a>
+            <a href="/pricing" target="_blank">View pricing.</a>
         </p>
         <p style="margin-top: 20px">
             <a class="btn btn-primary" href="#" onclick="upgrade(); return false;">Upgrade</a>
@@ -95,7 +95,7 @@
             <%def name="description()">
                 <p>
                     You are upgrading to a paid plan of $10/user/month.<br>
-                    <a href="${request.route_path('pricing')}" target="_blank">More info on plans</a>.
+                    <a href="/pricing" target="_blank">More info on plans</a>.
                 </p>
 
                 <%credit_card_modal:default_description/>

@@ -15,11 +15,6 @@
     ><a href="${request.route_path(link[0])}">${link[1]}</a></li>
 </%def>
 
-## This method generates a side bar with only the Next Steps section.
-<%def name="minimal_side_bar()">
-    <%self:_side_bar/>
-</%def>
-
 <%def name="api_doc_url()">/docs/api</%def>
 
 <%!
@@ -39,54 +34,4 @@
             %endif
         </li>
     %endfor
-</%def>
-
-## Define exclude_next_steps_items in the caller to hide the "Next steps" block
-<%def name="_side_bar()">
-    %if not hasattr(caller, 'exclude_next_steps_items'):
-        <div class="accordion side-bar-accordion" id="left-side-bar0">
-            <div class="accordion-group">
-                <div class="accordion-heading">
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#left-side-bar0" href="#collapse0">
-                        Next Steps <span class="accordion-down-arrow">&nbsp; &#x25BE;</span>
-                    </a>
-                </div>
-                <div id="collapse0" class="accordion-body collapse in">
-                    <div class="accordion-inner">
-                        <ul class="nav nav-list left-nav">
-                            <li>
-                                <a class="sign-up-text-highlight" href="${request.route_path('pricing')}">
-                                    <span class="glyphicon glyphicon-circle-arrow-right"></span> Sign Up Now</a>
-                            </li>
-                            <li>
-                                <a href="${request.route_path('demo_videos')}">
-                                    <span class="glyphicon glyphicon-film"></span> Watch Demos
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    %endif
-
-    ## Generate the main menu only if main_items() is defined
-    %if hasattr(caller, 'main_items'):
-        <div class="accordion side-bar-accordion" id="left-side-bar1">
-            <div class="accordion-group">
-                <div class="accordion-heading">
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#left-side-bar1" href="#collapse1">
-                        ${caller.menu_title()} <span class="accordion-down-arrow">&nbsp; &#x25BE;</span><br>
-                    </a>
-                </div>
-                <div id="collapse1" class="accordion-body collapse in">
-                    <div class="accordion-inner">
-                        <ul class="nav nav-list left-nav">
-                            ${caller.main_items()}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    %endif
 </%def>

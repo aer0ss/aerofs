@@ -7,7 +7,7 @@
         ## TOOD (WW) this should points to the public Web site rather than a marketing page
         ## inside the private deployment. Add a static path that points to the public Web
         ## site.
-        <a href="${request.route_path("team_server")}">Learn more about Team Server</a>.
+        <a href="https://www.aerofs.com/team-server/">Learn more about Team Server</a>.
     </p>
 </div>
 <div class="page-block">
