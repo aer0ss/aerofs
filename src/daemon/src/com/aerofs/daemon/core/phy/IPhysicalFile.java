@@ -53,4 +53,6 @@ public interface IPhysicalFile extends IPhysicalObject
             throws IOException, SQLException;
 
     void onUnexpectedModification_(long expectedMtime) throws IOException;
+
+    void prepareForAccessWithoutCoreLock_() throws SQLException;
 }

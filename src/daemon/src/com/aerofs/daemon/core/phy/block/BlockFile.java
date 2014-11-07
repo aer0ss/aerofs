@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Date;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 
@@ -32,6 +33,7 @@ class BlockFile implements IPhysicalFile
     private final BlockStorage _s;
     final SOKID _sokid;
     final Path _path;
+    private FileInfo _info;
 
     BlockFile(BlockStorage s, SOKID sokid, Path path)
     {
@@ -46,11 +48,22 @@ class BlockFile implements IPhysicalFile
         return "BlockFile(" + _sokid + "," + _path + ")";
     }
 
+    private FileInfo info_() throws SQLException
+    {
+        return _info != null ? _info : _s.getFileInfoNullable_(_sokid);
+    }
+
+    @Override
+    public void prepareForAccessWithoutCoreLock_() throws SQLException
+    {
+        _info = info_();
+    }
+
     @Override
     public long getLength_()
     {
         try {
-            return _s.getFileInfo_(_sokid)._length;
+            return checkNotNull(info_())._length;
         } catch (SQLException e) {
             l.warn("Failed to determine length of {}", _sokid, e);
             return 0;
@@ -61,7 +74,7 @@ class BlockFile implements IPhysicalFile
     public long getLastModificationOrCurrentTime_() throws IOException
     {
         try {
-            return _s.getFileInfo_(_sokid)._mtime;
+            return checkNotNull(info_())._mtime;
         } catch (SQLException e) {
             l.warn("Failed to determine mtime", e);
             return new Date().getTime();
@@ -85,7 +98,7 @@ class BlockFile implements IPhysicalFile
     public boolean exists_()
     {
         try {
-            return _s.getFileInfo_(_sokid).exists();
+            return checkNotNull(info_()).exists();
         } catch (SQLException e) {
             l.warn("Failed to determine existence of {}", _sokid, e);
             return false;
@@ -102,7 +115,7 @@ class BlockFile implements IPhysicalFile
     public InputStream newInputStream_() throws IOException
     {
         try {
-            FileInfo info = _s.getFileInfoNullable_(_sokid);
+            FileInfo info = info_();
             if (!FileInfo.exists(info)) throw new ExFileNotFound(_path);
             return _s.readChunks(info._chunks);
         } catch (SQLException e) {

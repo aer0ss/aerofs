@@ -254,6 +254,9 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     }
 
     @Override
+    public void prepareForAccessWithoutCoreLock_() {}
+
+    @Override
     public boolean exists_()
     {
         return _f.exists();

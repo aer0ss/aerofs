@@ -81,6 +81,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
         ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
 
         IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
+        pf.prepareForAccessWithoutCoreLock_();
 
         // Deletions take ~6s to register in the VFS which leaves a sizable window where files
         // remain listed but their content is gone.
