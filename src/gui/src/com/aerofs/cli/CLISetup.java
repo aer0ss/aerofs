@@ -17,8 +17,10 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
@@ -67,6 +69,16 @@ public class CLISetup
 
         cli.progress(S.SETUP_SIGNIN_MESSAGE);
         _model.doSignIn();
+
+        if (_model.getNeedSecondFactorSetup()) {
+            throw new ExUIMessage(
+                    "Your administrator requires that you enable two-factor authentication on" +
+                            " your account before setting up new devices.\n" +
+                    "Please set up two-factor authentication at:\n" +
+                            "\n" + WWW.TWO_FACTOR_SETUP_URL + "\n" +
+                            "\nThen, try setting up again."
+            );
+        }
 
         if (_model.getNeedSecondFactor()) {
             cli.show(MessageType.INFO,

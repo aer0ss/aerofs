@@ -115,6 +115,8 @@ public class BaseParam
 
         public static final String TOS_URL = MARKETING_HOST_URL+ "/terms#privacy";
 
+        public static final String TWO_FACTOR_SETUP_URL = DASHBOARD_HOST_URL + "/settings/two_factor_authentication/intro";
+
         public static final String RECERTIFY_SUPPORT_URL = "https://support.aerofs.com/hc/articles/201439354";
 
         public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");

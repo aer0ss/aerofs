@@ -63,7 +63,11 @@ public abstract class SignInActor
                 // legacy call:
                 reply = sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
             }
-            model.setNeedSecondFactor(reply.getNeedSecondFactor());
+            // We need to prompt for the second factor if the user has enabled it,
+            // or if they must based on org mandate
+            model.setNeedSecondFactor(reply.getNeedSecondFactor()
+                    || reply.getNeedSecondFactorSetup());
+            model.setNeedSecondFactorSetup(reply.getNeedSecondFactorSetup());
             model.setClient(sp);
         }
     }
@@ -133,7 +137,11 @@ public abstract class SignInActor
 
                 _model.setUserID(session.getUserId());
                 _model.setClient(_spclient);
-                _model.setNeedSecondFactor(session.getNeedSecondFactor());
+                _model.setNeedSecondFactorSetup(session.getNeedSecondFactorSetup());
+                // We need to prompt for the second factor if the user has enabled it,
+                // or if they must based on org mandate
+                _model.setNeedSecondFactor(session.getNeedSecondFactor()
+                        || session.getNeedSecondFactorSetup());
                 return;
             }
             throw new ExTimeout("Timed out waiting for authentication.");

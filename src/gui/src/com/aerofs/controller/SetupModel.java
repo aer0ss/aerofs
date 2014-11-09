@@ -107,6 +107,10 @@ public class SetupModel
     public void setNeedSecondFactor(boolean needed)
                                             { _needSecondFactor = needed; }
 
+    public boolean getNeedSecondFactorSetup() { return _needSecondFactorSetup; }
+    public void setNeedSecondFactorSetup(boolean needed)
+                                            { _needSecondFactorSetup = needed; }
+
     public String getUsername()             { return _username; }
     public UserID getUserID() throws ExEmptyEmailAddress
                                             { return UserID.fromExternal(_username); }
@@ -160,6 +164,7 @@ public class SetupModel
     private String          _username;
     private String          _password;
     private boolean         _needSecondFactor;
+    private boolean         _needSecondFactorSetup;
     private int             _secondFactorCode;
 
     private boolean         _apiAccess;
