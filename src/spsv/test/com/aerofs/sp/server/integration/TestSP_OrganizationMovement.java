@@ -132,23 +132,6 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void inviteToOrganization_shouldThrowExNoPermIfUserIsNotAdmin()
-            throws Exception
-    {
-        setSession(USER_1);
-
-        // set USER_1 as non-admin
-        sqlTrans.begin();
-        USER_1.setOrganization(USER_2.getOrganization(), AuthorizationLevel.USER);
-        sqlTrans.commit();
-
-        try {
-            service.inviteToOrganization(USER_2.id().getString());
-            fail();
-        } catch (ExNoPerm e) {}
-    }
-
-    @Test
     public void inviteToOrganization_shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
             throws Exception
     {

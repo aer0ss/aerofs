@@ -115,7 +115,7 @@ def json_invite_user(request):
             PBException.ALREADY_INVITED:
                 _("The user has already been invited to your organization."),
             PBException.NO_STRIPE_CUSTOMER_ID:
-                _("Payment is required to invite more users. You can enable paymet by going to your organization's Settings.") if is_admin(request) else
+                _("Payment is required to invite more users. You can enable payment by going to your organization's Settings.") if is_admin(request) else
                 _("Payment is required to invite more users. Please ask your organization admin to enable payments.")
         }
     )
