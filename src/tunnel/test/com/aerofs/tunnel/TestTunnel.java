@@ -16,8 +16,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -111,13 +109,7 @@ public class TestTunnel extends AbstractBaseTest
         ChannelFuture cf = new TunnelClient("127.0.0.1", port, user, did,
                 clientChannelFactory,
                 clientSslEngineFactory,
-                new ChannelPipelineFactory() {
-                    @Override
-                    public ChannelPipeline getPipeline() throws Exception
-                    {
-                        return Channels.pipeline(clientVirtualConnections.handler);
-                    }
-                },
+                () -> Channels.pipeline(clientVirtualConnections.handler),
                 timer).connect();
         Channel c = cf.getChannel();
         cf.awaitUninterruptibly();
@@ -255,10 +247,12 @@ public class TestTunnel extends AbstractBaseTest
         Future<Boolean> writable = serverVirtualConnections.interestChanged(v.server);
         v.client.setReadable(false).awaitUninterruptibly();
         assertFalse(writable.get());
+        assertFalse(v.client.isReadable());
 
         writable = serverVirtualConnections.interestChanged(v.server);
         v.client.setReadable(true);
         assertTrue(writable.get());
+        assertTrue(v.client.isReadable());
     }
 
     @Test
@@ -270,10 +264,12 @@ public class TestTunnel extends AbstractBaseTest
         Future<Boolean> writable = clientVirtualConnections.interestChanged(v.client);
         v.server.setReadable(false).awaitUninterruptibly();
         assertFalse(writable.get());
+        assertFalse(v.server.isReadable());
 
         writable = clientVirtualConnections.interestChanged(v.client);
         v.server.setReadable(true);
         assertTrue(writable.get());
+        assertTrue(v.server.isReadable());
     }
 
     @Test

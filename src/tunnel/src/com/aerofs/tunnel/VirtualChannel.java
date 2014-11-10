@@ -187,6 +187,7 @@ public class VirtualChannel extends AbstractChannel
         int prev = getInterestOps();
         setInterestOpsNow(ops);
         if (prev != getInterestOps()) {
+            l.debug("tunnel {} {}", (ops & OP_WRITE) == 0 ? "resume" : "suspend", this);
             Channels.fireChannelInterestChanged(this);
         }
     }
@@ -207,6 +208,10 @@ public class VirtualChannel extends AbstractChannel
 
     private void onInterestChanged(int ops, ChannelFuture future)
     {
-        _tunnel.onInterestChanged(this, ops, future);
+        int prev = super.getInterestOps();
+        setInterestOpsNow(ops);
+        if (prev != super.getInterestOps()) {
+            _tunnel.onInterestChanged(this, ops, future);
+        }
     }
 }

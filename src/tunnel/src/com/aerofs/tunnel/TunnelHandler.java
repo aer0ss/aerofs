@@ -189,12 +189,10 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             break;
         case MSG_SUSPEND:
             // mark channel as not writable
-            l.debug("tunnel suspend {}", this);
             client.fireInterestChanged(client.getInterestOps() | Channel.OP_WRITE);
             break;
         case MSG_RESUME:
             // mark channel as  writable
-            l.debug("tunnel resume {}", this);
             client.fireInterestChanged(client.getInterestOps() & ~Channel.OP_WRITE);
             break;
         case MSG_PAYLOAD:
@@ -353,7 +351,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     }
 
     /**
-     * Helper class to auto-fragment large palyoads
+     * Helper class to auto-fragment large payloads
      */
     private static class Fragmenter implements ChunkedInput
     {
