@@ -162,7 +162,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                         iface,
                         iface.getInetAddresses(),
                         iface.getInterfaceAddresses(),
-                        e
+                        LogUtil.suppress(e.getCause(), java.net.SocketException.class)
                 );
             }
         }
