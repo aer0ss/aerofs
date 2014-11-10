@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
     box.vm.provider :virtualbox do |vb|
       vb.gui = false
       vb.customize ["modifyvm", :id, "--name", "lucid32"]
-      vb.customize ["modifyvm", :id, "--memory", "512"]
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
     end
     box.vm.provision "shell", inline: '/vagrant/provision.sh'
   end

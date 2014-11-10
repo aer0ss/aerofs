@@ -14,13 +14,13 @@ JDK7 for Ubuntu 12.04 depends on many libraries that are newer than those versio
 Simplest workaround appears to be for us to manually download the Oracle
 official JDK7 packages and use those to bootstrap JDK8.
 
-http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html#javasejdk
+http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
 
-Java SE 7u67 was the latest JDK7 at the time this was written.
+Java SE 7u71 was the latest JDK7 at the time this was written.
 Download the Linux x86 and Linux x64 .tar.gz packages and place them in a folder shared with the buildboxes:
 
-    mv jdk-7u67-linux-i586.tar.gz ~/repos/aerofs/tools/vagrant/build32
-    mv jdk-7u67-linux-x64.tar.gz ~/repos/aerofs/tools/vagrant/build64
+    mv jdk-7u71-linux-i586.tar.gz ~/repos/aerofs/tools/vagrant/build32
+    mv jdk-7u71-linux-x64.tar.gz ~/repos/aerofs/tools/vagrant/build64
 
 ## Building
 
@@ -42,7 +42,11 @@ From within the VM:
         hg clone --pull http://hg.openjdk.java.net/jdk8u/jdk8u openjdk8u
         cd openjdk8u
         bash get_source.sh
-        bash ./make/scripts/hgforest.sh update -c jdk8u20-b15
+        bash ./make/scripts/hgforest.sh update -c jdk8u40-b13
+
+ - Apply patch that remove the AI\_CANONNAME hint from calls to getaddrinfo
+   to avoid unnecessary (and slow) reverse DNS lookup with older versions
+   of glib as described in a [bug report](https://sourceware.org/bugzilla/show_bug.cgi?id=15218)
 
   - Configure and build JDK8
 
@@ -60,7 +64,8 @@ From within the VM:
 
         cd build/
         # cd all the way down to the j2sdk-image folder, then:
-        find . | grep \.so$ | xargs strip
+        find . | grep '\.so$' | xargs strip
+        find . | grep '\.diz' | xargs rm
         strip jre/bin/*
 
   - Trim the jdk image using our jdk-trim scripts:
