@@ -217,7 +217,7 @@
 
 <%def name="render_user_invite()">
     <div class="well">
-    <p><strong>Invite a coworker to AeroFS:</p>
+    <p><strong>Invite a coworker to AeroFS:</strong></p>
     <form id="inviteCoworker" class="form">
         <input type="text" class="form-control" id="invite_coworker_email" placeHolder="Email address"/><br/>
         <button id="invite_coworker_submit" class="btn btn-primary" type="submit">Send Invite</button>
