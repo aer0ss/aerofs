@@ -13,9 +13,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
@@ -32,7 +30,6 @@ import java.util.concurrent.TimeUnit;
  * a channel-connected notifier. When the connect is successful, call notifier.channelConnected()
  * so the channel instance can be cached for reuse.
  */
-@org.jboss.netty.channel.ChannelHandler.Sharable
 public class ReconnectingClientHandler extends SimpleChannelHandler
 {
     private static final Logger l = Loggers.getLogger(ReconnectingClientHandler.class);
@@ -51,11 +48,11 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
      * To reconnect, this handler expects the 'bootstrap' object to contain an option called
      * 'remoteAddress' that contains the remote socket address.
      */
-    public ReconnectingClientHandler(ClientBootstrap bootstrap, IConnectNotifier notifier)
+    public ReconnectingClientHandler(Timer timer, ClientBootstrap bootstrap, IConnectNotifier notifier)
     {
         _bootstrap = bootstrap;
         _notifier = notifier;
-        _timer = new HashedWheelTimer();
+        _timer = timer;
     }
 
     @Override
@@ -133,21 +130,17 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
     {
         long delay = getNextDelay();
         l.info("Queuing reconnect to {} in {} ms", getRemoteAddress(), delay);
-        _timer.newTimeout(new TimerTask() {
-            @Override
-            public void run(Timeout timeout) throws Exception
-            {
-                if (_quiescent) {
-                    l.info("Shutdown requested, not trying to reconnect.");
-                } else {
-                    l.info("Attempting to reconnect...");
-                    _bootstrap.connect();
-                }
+        _timer.newTimeout(timeout -> {
+            if (_quiescent) {
+                l.info("Shutdown requested, not trying to reconnect.");
+            } else {
+                l.info("Attempting to reconnect...");
+                _bootstrap.connect();
             }
         }, delay, TimeUnit.MILLISECONDS);
     }
 
     private ClientBootstrap     _bootstrap;
     private IConnectNotifier    _notifier;
-    private HashedWheelTimer    _timer;
+    private Timer _timer;
 }

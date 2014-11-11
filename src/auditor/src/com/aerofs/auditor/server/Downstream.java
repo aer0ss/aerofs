@@ -6,6 +6,7 @@ package com.aerofs.auditor.server;
 
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -16,11 +17,11 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +73,7 @@ public class Downstream
     {
         NewLineDelimitedStream()
         {
+            final Timer timer = TimerUtil.getGlobalTimer();
             final ClientBootstrap   bootstrap;
             ChannelFactory          factory;
             InetSocketAddress       addr;
@@ -86,22 +88,18 @@ public class Downstream
             bootstrap.setOption("keepAlive", true);
             bootstrap.setOption("tcpNoDelay", true);
             bootstrap.setOption("remoteAddress", addr);
-            bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-                @Override
-                public ChannelPipeline getPipeline() throws Exception
-                {
-                    ChannelPipeline pipeline = Channels.pipeline();
+            bootstrap.setPipelineFactory(() -> {
+                ChannelPipeline pipeline = Channels.pipeline();
 
-                    if (Audit.CHANNEL_SSL) {
-                        SslHandler ssl = new SslHandler(getSSLEngineFactory().getSSLEngine());
-                        pipeline.addLast("ssl", ssl);
-                        pipeline.addLast("ssl-handshake", new SslHandshake(ssl));
-                    }
-                    pipeline.addLast("clientHandler",
-                            new ReconnectingClientHandler(bootstrap, NewLineDelimitedStream.this));
-
-                    return pipeline;
+                if (Audit.CHANNEL_SSL) {
+                    SslHandler ssl = new SslHandler(getSSLEngineFactory().getSSLEngine());
+                    pipeline.addLast("ssl", ssl);
+                    pipeline.addLast("ssl-handshake", new SslHandshake(ssl));
                 }
+                pipeline.addLast("clientHandler",
+                        new ReconnectingClientHandler(timer, bootstrap, NewLineDelimitedStream.this));
+
+                return pipeline;
             });
 
             l.info("Creating channel for {}", addr.toString());
