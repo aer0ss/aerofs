@@ -8,6 +8,7 @@ TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 # List of known packages that can be built in alphabetical order.
 PACKAGES= \
 	auditor \
+	baseline-throughput-server \
 	bifrost \
 	bootstrap \
 	bunker \
@@ -26,6 +27,7 @@ PACKAGES= \
 	log-collection \
 	middleman \
 	pagerduty \
+	polaris \
 	repackaging \
 	rocklog \
 	sanity \

@@ -102,7 +102,6 @@
           <option name="KEEP_SIMPLE_BLOCKS_IN_ONE_LINE" value="true" />
           <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
           <option name="ARRAY_INITIALIZER_WRAP" value="1" />
-          <option name="WRAP_COMMENTS" value="true" />
           <option name="DOWHILE_BRACE_FORCE" value="3" />
           <option name="WHILE_BRACE_FORCE" value="3" />
           <option name="FIELD_ANNOTATION_WRAP" value="0" />
@@ -160,4 +159,3 @@
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
   </component>
 </project>
-

@@ -12,6 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="rest-api" />
     <orderEntry type="module" module-name="libjingle.binding" />
@@ -28,8 +29,6 @@
     <orderEntry type="library" scope="TEST" name="mailapi" level="project" />
     <orderEntry type="module" module-name="bifrost" scope="TEST" />
     <orderEntry type="module" module-name="havre" scope="TEST" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="netty-4.1" level="project" />
   </component>
 </module>
-

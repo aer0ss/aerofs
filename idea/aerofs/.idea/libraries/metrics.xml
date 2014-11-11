@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="metrics">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/common/lib/metrics-core-2.2.0.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

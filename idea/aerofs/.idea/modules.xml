@@ -2,8 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../src/aero-ids/aero-ids.iml" filepath="$PROJECT_DIR$/../../src/aero-ids/aero-ids.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/aero-ids-validation/aero-ids-validation.iml" filepath="$PROJECT_DIR$/../../src/aero-ids-validation/aero-ids-validation.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/auditor/auditor.iml" filepath="$PROJECT_DIR$/../../src/auditor/auditor.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/baseline/baseline.iml" filepath="$PROJECT_DIR$/../../src/baseline/baseline.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-sample/baseline-sample.iml" filepath="$PROJECT_DIR$/../../src/baseline-sample/baseline-sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-test/baseline-test.iml" filepath="$PROJECT_DIR$/../../src/baseline-test/baseline-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-throughput-client/baseline-throughput-client.iml" filepath="$PROJECT_DIR$/../../src/baseline-throughput-client/baseline-throughput-client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-throughput-server/baseline-throughput-server.iml" filepath="$PROJECT_DIR$/../../src/baseline-throughput-server/baseline-throughput-server.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bifrost/bifrost.iml" filepath="$PROJECT_DIR$/../../src/bifrost/bifrost.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" filepath="$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/command/command.iml" filepath="$PROJECT_DIR$/../../src/command/command.iml" />
@@ -15,6 +22,11 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libservlet/libservlet.iml" filepath="$PROJECT_DIR$/../../src/libservlet/libservlet.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/oauth-verify/oauth-verify.iml" filepath="$PROJECT_DIR$/../../src/oauth-verify/oauth-verify.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/overload/overload.iml" filepath="$PROJECT_DIR$/../../src/overload/overload.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/overload-driver/overload-driver.iml" filepath="$PROJECT_DIR$/../../src/overload-driver/overload-driver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/polaris/polaris.iml" filepath="$PROJECT_DIR$/../../src/polaris/polaris.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/polaris-api/polaris-api.iml" filepath="$PROJECT_DIR$/../../src/polaris-api/polaris-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/polaris-throughput-client/polaris-throughput-client.iml" filepath="$PROJECT_DIR$/../../src/polaris-throughput-client/polaris-throughput-client.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/rest-api/rest-api.iml" filepath="$PROJECT_DIR$/../../src/rest-api/rest-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/restless/restless.iml" filepath="$PROJECT_DIR$/../../src/restless/restless.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/sparta/sparta.iml" filepath="$PROJECT_DIR$/../../src/sparta/sparta.iml" />
@@ -27,4 +39,3 @@
     </modules>
   </component>
 </project>
-

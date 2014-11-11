@@ -35,8 +35,7 @@ dependencies {
     // but for some reason, the verkehr rest client's dep on jackson-databind doesn't get propagated,
     // so I'm adding it explicitly here to make things work.
     runtime 'com.fasterxml.jackson.core:jackson-databind:2.2.1'
-    testCompile name:'rest-assured-1.8.1'
-    testCompile restAssuredDependencies
+    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
     testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
 }
 

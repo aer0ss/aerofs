@@ -3,6 +3,7 @@ env
 out.md
 out.ant
 out.gradle
+out.shell
 out.idea
 out.shell
 workspace.xml

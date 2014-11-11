@@ -24,10 +24,8 @@ sourceSets {
 }
 
 dependencies {
-    // logback
     compile 'ch.qos.logback:logback-core:1.1.0'
     compile 'ch.qos.logback:logback-classic:1.1.0'
-    // inheirited from restless
     compile project(':src/restless')
 }
 

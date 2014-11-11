@@ -10,14 +10,11 @@
       <excludeFolder url="file://$MODULE_DIR$/user" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="libservlet" />
-    <orderEntry type="library" name="metrics" level="project" />
-    <orderEntry type="library" name="commons-codec" level="project" />
-    <orderEntry type="library" name="json-simple" level="project" />
-    <orderEntry type="library" name="bouncycastle" level="project" />
-    <orderEntry type="library" scope="TEST" name="jetty" level="project" />
-    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="libservlet" />
+    <orderEntry type="library" name="json-simple:1.1.1" level="project" />
+    <orderEntry type="library" name="commons-codec:1.6" level="project" />
+    <orderEntry type="library" scope="TEST" name="rest-assured:2.3.4" level="project" />
+    <orderEntry type="library" scope="TEST" name="jetty:6.1.14" level="project" />
   </component>
 </module>
-

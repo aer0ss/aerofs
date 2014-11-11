@@ -1,14 +1,12 @@
-apply plugin: 'java'
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
 
-sourceCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
+// commons-cli has a horrible API that requires you to call static methods on an instance
+compileJava.options.compilerArgs << '-Xlint:-static'
 
 dependencies {
-    compile project(':overload-driver')
-    compile 'com.google.guava:guava:17.0'
+    compile project(':src/overload-driver')
     runtime 'ch.qos.logback:logback-core:1.1.2'
     runtime 'ch.qos.logback:logback-classic:1.1.2'
 }
@@ -20,16 +18,4 @@ jar {
                 'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
         )
     }
-}
-
-task dist(type: Zip, description: "Assembles a zipfile containing everything required to run the baseline throughput test client", dependsOn: jar) {
-    classifier 'dist'
-    from configurations.runtime
-    from jar
-    from 'src/dist'
-    into "throughput-client"
-}
-
-artifacts {
-    archives dist
 }

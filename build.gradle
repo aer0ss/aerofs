@@ -15,18 +15,6 @@ ext {
     // to locate shared libraries
     sharedLibrarySearchPathVariable = ''
 
-    // manual dependency specifcation for our custom version of rest-assured-1.8.1
-    restAssuredDependencies = [
-            'commons-codec:commons-codec:1.6',
-            'org.apache.commons:commons-lang3:3.1',
-            'commons-logging:commons-logging:1.1.1',
-            'org.codehaus.groovy:groovy-all:2.1.2',
-            'org.apache.httpcomponents:httpclient:4.2.1',
-            'org.apache.httpcomponents:httpcore:4.2.1',
-            'org.apache.httpcomponents:httpmime:4.2.1',
-            'org.ccil.cowan.tagsoup:tagsoup:1.2.1'
-    ]
-
     // manual dependency specifcation for our custom version of jedis
     jedisDependencies = [
             'org.apache.commons:commons-pool2:2.0'
@@ -87,20 +75,14 @@ subprojects {
     configurations.all {
         resolutionStrategy {
 
-            // force specific versions of libraries
-            force 'com.yammer.dropwizard:dropwizard-core:0.6.2',
-                  'com.fasterxml.jackson.core:jackson-annotations:2.2.1',
-                  'org.bouncycastle:bcprov-jdk15on:1.50',
-                  'org.bouncycastle:bcpkix-jdk15on:1.50'
-
             // force a specific version of the following groups of libraries
             eachDependency { DependencyResolveDetails details ->
                 if (details.requested.group.contains('com.fasterxml.jackson')) {
-                    details.useVersion '2.1.2'
+                    details.useVersion '2.4.1'
                 }
 
                 if (details.requested.group == 'org.slf4j') {
-                    details.useVersion '1.7.5'
+                    details.useVersion '1.7.7'
                 }
 
                 if (details.requested.group == 'ch.qos.logback') {
@@ -116,6 +98,7 @@ subprojects {
         }
 
         mavenLocal()
+        jcenter()
 
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
         maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
@@ -142,7 +125,7 @@ subprojects {
 
         ignoreFailures = true
         environment sharedLibrarySearchPathVariable, "${libraryPath}"
-        jvmArgs "-Djava.library.path=${libraryPath}"
+        systemProperties.put "java.library.path", "${libraryPath}"
         systemProperties.put "junit.mysqlSpSchemaPath", "${rootDir}/src/spsv/resources/sp/db/migration"
         maxHeapSize '512m'
         exclude '**/Abstract*Test*'

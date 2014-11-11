@@ -28,6 +28,7 @@ public abstract class Utilities {
      * Return a rest-assured configuration that correctly
      * serializes and deserializes camel-case json fields.
      */
+    @SuppressWarnings("rawtypes")
     public static RestAssuredConfig newRestAssuredConfig() {
         return RestAssured
                 .config()

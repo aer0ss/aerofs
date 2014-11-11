@@ -1,13 +1,11 @@
-apply plugin: 'java'
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
 
-sourceCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
+archivesBaseName = 'aerofs-baseline-throughput-server'
 
 dependencies {
-    compile project(':baseline')
+    compile project(':src/baseline')
 }
 
 jar {
@@ -17,16 +15,4 @@ jar {
                 'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
         )
     }
-}
-
-task dist(type: Zip, description: "Assembles a zipfile containing everything required to run the baseline throughput test server", dependsOn: jar) {
-    classifier 'dist'
-    from configurations.runtime
-    from jar
-    from 'src/dist'
-    into "throughput-server"
-}
-
-artifacts {
-    archives dist
 }

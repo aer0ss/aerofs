@@ -10,21 +10,21 @@
       <excludeFolder url="file://$MODULE_DIR$/user" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="lib" exported="" />
     <orderEntry type="module" module-name="verkehr" exported="" />
-    <orderEntry type="library" exported="" name="servlet-2.5" level="project" />
     <orderEntry type="library" exported="" name="jedis" level="project" />
+    <orderEntry type="library" exported="" name="bcpkix-jdk15on:1.51" level="project" />
+    <orderEntry type="library" exported="" name="bcprov-jdk15on:1.51" level="project" />
+    <orderEntry type="library" exported="" name="servlet-api:2.5" level="project" />
+    <orderEntry type="library" exported="" name="flyway-core:2.2.1" level="project" />
     <orderEntry type="library" exported="" name="mysql-connector" level="project" />
     <orderEntry type="library" exported="" name="protobuf-format" level="project" />
     <orderEntry type="library" exported="" name="javamail" level="project" />
     <orderEntry type="library" exported="" name="commons-lang" level="project" />
-    <orderEntry type="library" exported="" name="bouncycastle" level="project" />
-    <orderEntry type="library" exported="" name="flyway-core-2.2.1" level="project" />
     <orderEntry type="library" exported="" name="dyuproject-openid-1.1" level="project" />
     <orderEntry type="library" exported="" name="scrypt-1.4.0" level="project" />
     <orderEntry type="library" exported="" name="unboundid-ldapsdk-se" level="project" />
-    <orderEntry type="library" scope="TEST" name="subethasmtp-3.1.7" level="project" />
-    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" scope="TEST" name="subethasmtp:3.1.7" level="project" />
   </component>
 </module>
-

@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="metrics-core:3.0.2" type="repository">
+    <properties maven-id="com.codahale.metrics:metrics-core:3.0.2" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/codahale/metrics/metrics-core/3.0.2/metrics-core-3.0.2.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/codahale/metrics/metrics-core/3.0.2/metrics-core-3.0.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/codahale/metrics/metrics-core/3.0.2/metrics-core-3.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

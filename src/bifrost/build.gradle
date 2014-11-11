@@ -33,12 +33,11 @@ dependencies {
     compile 'org.apache.tomcat:tomcat-dbcp:7.0.37'
     compile 'commons-net-3.3:commons-net-3.3:3.3'
     compile 'com.lambdaworks:scrypt:1.4.0'
-    compile 'org.flywaydb:flyway-core:2.2.1'
+    compile 'com.googlecode.flyway:flyway-core:2.2.1'
     compile project(':src/lib')
     compile project(':src/restless')
     runtime 'mysql:mysql-connector-java:5.1.20'
-    testCompile name:'rest-assured-1.8.1'
-    testCompile restAssuredDependencies
+    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
     testCompile project(':src/lib').sourceSets.test.runtimeClasspath
 }
 

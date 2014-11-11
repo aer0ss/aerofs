@@ -32,13 +32,14 @@ public final class Client extends OverloadDriver {
     @Override
     protected HttpRequestProvider newConfiguredRequestProvider(CommandLine commandLine) throws IllegalArgumentException {
         String mode = commandLine.getOptionValue("mode");
-        if (mode.equals("GET")) {
+        switch (mode) {
+        case "GET":
             return newGetRequestProvider();
-        } else if (mode.equals("JSON")) {
+        case "JSON":
             return newJsonRequestProvider();
-        } else if (mode.equals("POLL")) {
+        case "POLL":
             return newPollingRequestProvider();
-        } else {
+        default:
             throw new IllegalArgumentException("unrecognized mode " + mode);
         }
     }

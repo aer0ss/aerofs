@@ -7,16 +7,15 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="restless" exported="" />
     <orderEntry type="module" module-name="lib" exported="" />
     <orderEntry type="library" exported="" name="mysql-connector" level="project" />
     <orderEntry type="library" exported="" name="tomcat-dbcp" level="project" />
     <orderEntry type="library" exported="" name="hibernate" level="project" />
     <orderEntry type="library" exported="" name="apisecure" level="project" />
-    <orderEntry type="library" exported="" name="flyway-core-2.2.1" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="rest-assured" level="project" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="commons-net-3.3" level="project" />
+    <orderEntry type="library" exported="" name="flyway-core:2.2.1" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="rest-assured:2.3.4" level="project" />
   </component>
 </module>
-

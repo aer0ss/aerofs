@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="jetty:6.1.14" type="repository">
+    <properties maven-id="org.mortbay.jetty:jetty:6.1.14" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/mortbay/jetty/jetty/6.1.14/jetty-6.1.14.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/mortbay/jetty/jetty-util/6.1.14/jetty-util-6.1.14.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/mortbay/jetty/servlet-api-2.5/6.1.14/servlet-api-2.5-6.1.14.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/mortbay/jetty/jetty/6.1.14/jetty-6.1.14-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

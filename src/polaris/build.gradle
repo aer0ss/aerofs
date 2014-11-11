@@ -1,0 +1,25 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-polaris'
+
+dependencies {
+    compile project(':src/baseline')
+    compile project(':src/polaris-api')
+    compile 'org.flywaydb:flyway-core:3.0'
+    runtime 'mysql:mysql-connector-java:5.1.32'
+    testCompile project(':src/baseline-test')
+    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
+    testCompile "org.mockito:mockito-core:1.10.+"
+    testRuntime 'com.h2database:h2:1.4.181'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.aerofs.polaris.Polaris',
+                'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
+        )
+    }
+}

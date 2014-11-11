@@ -1,16 +1,11 @@
-apply plugin: 'java'
-
-sourceCompatibility = 1.7
-
-repositories {
-    jcenter()
-    mavenCentral()
-}
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
 
 dependencies {
-    compile project(':aero-ids')
-    compile project(':polaris-api')
-    compile project(':overload-driver')
+    compile project(':src/aero-ids')
+    compile project(':src/polaris-api')
+    compile project(':src/overload-driver')
     runtime 'ch.qos.logback:logback-core:1.1.2'
     runtime 'ch.qos.logback:logback-classic:1.1.2'
 }
@@ -22,16 +17,4 @@ jar {
                 'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
         )
     }
-}
-
-task dist(type: Zip, description: "Assembles a zipfile containing everything required to run the polaris throughput test client", dependsOn: jar) {
-    classifier 'dist'
-    from configurations.runtime
-    from jar
-    from 'src/dist'
-    into "polaris-throughput-client"
-}
-
-artifacts {
-    archives dist
 }

@@ -7,15 +7,13 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="restless" />
     <orderEntry type="module" module-name="oauth-verify" />
     <orderEntry type="module" module-name="rest-api" />
     <orderEntry type="module" module-name="libservlet" />
-    <orderEntry type="library" name="flyway-core-2.2.1" level="project" />
-    <orderEntry type="library" name="tomcat-jdbc" level="project" />
     <orderEntry type="module" module-name="bifrost" scope="TEST" />
-    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
-    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="rest-assured:2.3.4" level="project" />
+    <orderEntry type="library" name="tomcat-jdbc:7.0.50" level="project" />
   </component>
 </module>
-

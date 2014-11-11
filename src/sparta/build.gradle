@@ -33,7 +33,7 @@ evaluationDependsOn(':src/libservlet')
 evaluationDependsOn(':src/bifrost')
 
 dependencies {
-    compile 'org.flywaydb:flyway-core:2.2.1'
+    compile 'com.googlecode.flyway:flyway-core:2.2.1'
     compile 'org.apache.tomcat:tomcat-jdbc:7.0.50'
     compile project(':src/restless')
     compile project(':src/rest-api')

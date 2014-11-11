@@ -1,2 +1,0 @@
-servlet-api-<ver>.jar is used _only_ so that IDEs can compile spsv when they don't have built-in Java EE support
-IT SHOULD NOT BE PACKAGED WITH THE WAR! APP SERVERS WILL HAVE THEIR OWN VERSION OF servlet-api.jar

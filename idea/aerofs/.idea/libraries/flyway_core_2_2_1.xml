@@ -1,9 +1,14 @@
 <component name="libraryTable">
-  <library name="flyway-core-2.2.1">
+  <library name="flyway-core:2.2.1" type="repository">
+    <properties maven-id="com.googlecode.flyway:flyway-core:2.2.1" />
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/flyway-core-2.2.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/googlecode/flyway/flyway-core/2.2.1/flyway-core-2.2.1.jar!/" />
     </CLASSES>
-    <JAVADOC />
-    <SOURCES />
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/googlecode/flyway/flyway-core/2.2.1/flyway-core-2.2.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/googlecode/flyway/flyway-core/2.2.1/flyway-core-2.2.1-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="tomcat-dbcp:8.0.11" type="repository">
+    <properties maven-id="org.apache.tomcat:tomcat-dbcp:8.0.11" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/tomcat/tomcat-dbcp/8.0.11/tomcat-dbcp-8.0.11.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/tomcat/tomcat-juli/8.0.11/tomcat-juli-8.0.11.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/tomcat/tomcat-dbcp/8.0.11/tomcat-dbcp-8.0.11-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

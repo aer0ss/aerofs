@@ -12,7 +12,8 @@
     <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="module" module-name="oauth-verify" />
     <orderEntry type="library" name="logback" level="project" />
-    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="library" name="logback-classic:1.1.2" level="project" />
+    <orderEntry type="library" name="logback-core:1.1.2" level="project" />
+    <orderEntry type="library" scope="TEST" name="rest-assured:2.3.4" level="project" />
   </component>
 </module>
-

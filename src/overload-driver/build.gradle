@@ -1,12 +1,11 @@
-apply plugin: 'java'
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
 
-sourceCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
+// commons-cli has a horrible API that requires you to call static methods on an instance
+compileJava.options.compilerArgs << '-Xlint:-static'
 
 dependencies {
-    compile project(':overload')
+    compile project(':src/overload')
     compile 'commons-cli:commons-cli:1.2'
 }

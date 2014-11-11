@@ -1,12 +1,8 @@
-apply plugin: 'java'
-
-sourceCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
 
 dependencies {
-    compile project(':aero-ids')
+    compile project(':src/aero-ids')
     compile 'javax.validation:validation-api:1.1.0.Final'
 }
