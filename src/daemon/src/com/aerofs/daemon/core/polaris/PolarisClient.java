@@ -54,6 +54,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -96,7 +97,8 @@ public class PolarisClient
     public PolarisClient(CoreExecutor executor, CfgLocalDID localDID, CfgLocalUser localUser,
             ClientSSLEngineFactory sslEngineFactory)
     {
-        this(URI.create("http://polaris.aerofs.com:9999"), executor,
+        this(URI.create(getStringProperty("daemon.polaris.url", "http://polaris.aerofs.com:9999")),
+                executor,
                 new Auth(localUser.get(), localDID.get()), sslEngineFactory);
     }
 
@@ -113,17 +115,16 @@ public class PolarisClient
             @Override
             public void initChannel(SocketChannel ch)
             {
-                // TODO: enable SSL when Polaris instance is behind nginx
-                //try {
+                try {
                     ch.pipeline().addLast(
                             new IdleStateHandler(0, 0, 5),
-                            //new SslHandler(sslEngineFactory.getSSLEngine()),
+                            new SslHandler(sslEngineFactory.getSSLEngine()),
                             new HttpClientCodec(),
                             new HttpObjectAggregator(256 * C.KB),
                             new Handler());
-                //} catch (IOException | GeneralSecurityException e) {
-                //    throw new RuntimeException(e);
-                //}
+                } catch (IOException | GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
@@ -217,6 +218,8 @@ public class PolarisClient
         final SettableFuture<FullHttpResponse> f = SettableFuture.create();
 
         _auth.apply(req.headers());
+        req.headers().add(Names.HOST, _endpoint.getHost());
+        req.setUri(_endpoint.getPath() + req.uri());
 
         Channel c = _channel.get();
         if (c != null && c.isActive()) {

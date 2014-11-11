@@ -54,6 +54,7 @@ updater.installer.url=https://dsy5cjk52fz4a.cloudfront.net
 gui.tray.enable_defect_dialogue=true
 
 daemon.oauth.url=https://api.aerofs.com:4433/auth/tokeninfo
+daemon.polaris.url=https://polaris.aerofs.com:9999
 
 # Empty string here means "don't override the default"
 lib.anchor.default_location_windows=

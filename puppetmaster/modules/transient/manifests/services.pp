@@ -93,6 +93,12 @@ class transient::services {
 
     include bifrost
 
+    #--------------
+    # (WIP) Polaris
+    #--------------
+
+    include polaris
+
     # --------------
     # Admin Panel
     # --------------
@@ -155,6 +161,11 @@ class transient::services {
 
     file {"/opt/sanity/probes/sparta.sh":
         source => "puppet:///modules/transient/probes/sparta.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/polaris.sh":
+        source => "puppet:///modules/transient/probes/polaris.sh",
         require => Package["aerofs-sanity"],
     }
 

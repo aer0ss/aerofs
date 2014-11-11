@@ -80,14 +80,22 @@ service redis-aof start 1>/dev/null 2>/dev/null
 # and restores tables that existed when the dump-file was created. This will cause
 # problems when Flyway makes non-idempotent changes to such tables.
 echo ">>> Clearing flyway-managed databases..."
-for db in bifrost aerofs_sp
+for db in bifrost aerofs_sp polaris
 do
     echo ">>>   Drop $db..."
-    echo "drop database \`$db\`; " | mysql
+    echo "drop database if exists \`$db\`; " | mysql
 done
 
 echo ">>> Restoring mysql database..."
 mysql < aerofs-db-backup/mysql.dump
+
+# As a compromise between CI and packaging complexity, we ship polaris
+# in the private cloud appliance. It is running but clients do not
+# attempt to talk to it and nginx doesn't proxy requests to it.
+# To preserve maximum schema flexibility we explictly drop the polaris
+# db from backups.
+# TODO: remove this when polaris schema is stable
+echo "drop database if exists \`polaris\`; " | mysql
 
 echo ">>> Restoring CA files..."
 service ca-server stop 1>/dev/null 2>/dev/null || true

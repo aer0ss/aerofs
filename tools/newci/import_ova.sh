@@ -80,6 +80,9 @@ sudo cp external.properties /opt/config/properties/
 
 curl --insecure --request POST --data "$license_data" http://localhost:5434/set_license_file
 
+sudo ln -s /etc/nginx/backends-available/aerofs-polaris /etc/nginx/backends-enabled/aerofs-polaris
+sudo nginx -s reload
+
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/apply-config.tasks
 sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/set-configuration-initialized.tasks
 
