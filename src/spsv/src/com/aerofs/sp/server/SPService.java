@@ -1802,7 +1802,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.TWO_FACTOR_SETUP);
         Organization org = user.getOrganization();
         TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
         _sqlTrans.commit();
