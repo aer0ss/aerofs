@@ -55,7 +55,7 @@ def _is_ascii(string):
     # detect non-ascii strings.
     try:
         string.encode("ascii")
-    except UnicodeEncodeError:
+    except UnicodeDecodeError:
         return False
     else:
         return True
