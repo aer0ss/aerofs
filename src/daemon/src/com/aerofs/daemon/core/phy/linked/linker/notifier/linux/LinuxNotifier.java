@@ -115,18 +115,21 @@ public class LinuxNotifier implements INotifier, INotifyListener
      */
     private synchronized File getWatchPath(int watch_id)
     {
-        return getWatchPath(getParentTrace(watch_id));
+        List<Integer> t = getParentTrace(watch_id);
+        return t == null ? new File("/invalid") : getWatchPath(t);
     }
 
-    private synchronized List<Integer> getParentTrace(int watch_id)
+    private synchronized @Nullable List<Integer> getParentTrace(int watch_id)
     {
         assert(watch_id > 0);
         // Walk up the parent tree to the root node, storing watches along the way
         List<Integer> parentTrace = new ArrayList<Integer>();
         int next_id = watch_id;
-        while(next_id != WATCH_ID_ROOT) {
+        while (next_id != WATCH_ID_ROOT) {
             parentTrace.add(0, next_id);
-            next_id = _watches.get(next_id)._parentWatchId;
+            LinuxINotifyWatch w = _watches.get(next_id);
+            if (w == null) return null;
+            next_id = w._parentWatchId;
         }
         return parentTrace;
     }
@@ -259,8 +262,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
             throws JNotifyException
     {
         if (l.isDebugEnabled()) {
-            l.debug("removeWatchRecursively( id=" + watch._watchId + ", path=" +
-                    getWatchPath(watch._watchId).getAbsolutePath() + ")" );
+            l.debug("removeWatchRecursively( id={}, path={})", watch._watchId,
+                    getWatchPath(watch._watchId).getAbsolutePath());
         }
         for(LinuxINotifyWatch child : watch._children) {
             removeWatchRecursively(child);
@@ -275,7 +278,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
             //
             // However, JNotify does not properly propagate errno up when produced by
             // remove_watch(), so we work around this here.  TODO: patch this upstream
-            l.warn("removeWatch threw: " + e.getErrorCode() + e.getMessage());
+            l.warn("removeWatch threw: {} {}", e.getErrorCode(), e.getMessage());
             if (e.getErrorCode() != JNotifyException.ERROR_UNSPECIFIED) {
                 throw e;
             }
@@ -284,8 +287,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
             _deletedAckPending.add(watch._watchId);
         }
         if (l.isDebugEnabled()) {
-            l.debug("Removed watch " + watch._watchId + " on path "
-                   + getWatchPath(watch._watchId).getAbsolutePath());
+            l.debug("Removed watch {} on path {}", watch._watchId,
+                    getWatchPath(watch._watchId).getAbsolutePath());
         }
     }
 
@@ -344,7 +347,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         // kernel stop sending us events associated with this ID (because the folder is no longer
         // present or no longer under the root anchor) and we should ignore any that do arrive.
         if (_deletedAckPending.contains(id)) {
-            l.debug("inotify: got event for watch " + id + " pending deletion, ignoring");
+            l.debug("inotify: got event for watch {} pending deletion, ignoring", id);
         } else {
             // Check if we need to handle an unwatching deferred from a previous event.
             if ( Util.test(_prevActionMask, IN_ISDIR) &&
@@ -359,8 +362,9 @@ public class LinuxNotifier implements INotifier, INotifyListener
                     // MOVED_FROM event.  We should just update the path associated with the
                     // appropriate watch.
                     if (l.isDebugEnabled()) {
-                        l.debug("Saw a move from " + getWatchPath(_prevActionId) + "/" +
-                                _prevName + " to " + getWatchPath(id) + "/" + name);
+                        l.debug("Saw a move from {}/{} to {}/{}",
+                                getWatchPath(_prevActionId), _prevName,
+                                getWatchPath(id), name);
                     }
                     LinuxINotifyWatch oldParent = _watches.get(_prevActionId);
                     LinuxINotifyWatch newParent = _watches.get(id);
@@ -377,7 +381,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                         // folder, then on its children, but a move happens before we can place
                         // the child watch.  In this case, thisWatch is null.  We'll add the watch
                         // down below.
-                        l.debug("No old watch on " + name + " , guess we lost a race recently.");
+                        l.debug("No old watch on {}, guess we lost a race recently.", name);
                     } else {
                         // Remove the watch from its former parent's child list
                         oldParent._children.remove(thisWatch);
@@ -414,7 +418,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         // IN_IGNORED.  This is the kernel's acknowledgement and promise not to send any more
         // events associated with this inode/watch id (unless you inotify_add_watch() it again).
         if (Util.test(mask, IN_IGNORED)) {
-            l.debug("inotify: IN_IGNORED watch id " + id + " removed by kernel.");
+            l.debug("inotify: IN_IGNORED watch id {} removed by kernel.", id);
             LinuxINotifyWatch removedWatch = _watches.get(id);
             // We should never lose a watch we don't think we have.
             assert(removedWatch != null);
@@ -493,7 +497,12 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
     private List<IEvent> buildMightCreateOrMightDelete(String name, int id, int mask) throws JNotifyException
     {
+        // If any of the parent watches has been removed the trace will be null
+        // This has been seen in CI when racy deletion/re-creation of the same file
+        // caused an IN_ATTRIB to be received for a freshly removed watch id
         List<Integer> dirParentTrace = getParentTrace(id);
+        if (dirParentTrace == null) return Collections.emptyList();
+
         LinkerRoot root = _id2root.get(dirParentTrace.get(0));
 
         // avoid race condition between FS notification and root removal
