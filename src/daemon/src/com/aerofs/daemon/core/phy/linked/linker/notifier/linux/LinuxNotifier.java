@@ -327,6 +327,11 @@ public class LinuxNotifier implements INotifier, INotifyListener
     {
         logEvent(name, id, mask);
 
+        if (id < 0) {
+            l.warn("invalid wd {} {} {}", name, id, mask);
+            return;
+        }
+
         if (Linker.isInternalFile(name)) return;
 
         List<IEvent> events = buildCoreEventList(name, id, mask, cookie);
@@ -476,22 +481,22 @@ public class LinuxNotifier implements INotifier, INotifyListener
     {
         // Log the event.
         if (Util.test(mask, IN_CREATE)) {
-            l.debug("inotify: IN_CREATE " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_CREATE {}, {}, {}", name, id, mask);
         }
         if (Util.test(mask, IN_MODIFY)) {
-            l.debug("inotify: IN_MODIFY " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MODIFY {}, {}, {}", name, id, mask);
         }
         if (Util.test(mask, IN_MOVED_TO)) {
-            l.debug("inotify: IN_MOVED_TO " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MOVED_TO {}, {}, {}", name, id, mask);
         }
         if (Util.test(mask, IN_ATTRIB)) {
-            l.debug("inotify: IN_ATTRIB " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_ATTRIB {}, {}, {}", name, id, mask);
         }
         if (Util.test(mask, IN_DELETE)) {
-            l.debug("inotify: IN_DELETE " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_DELETE {}, {}, {}", name, id, mask);
         }
         if (Util.test(mask, IN_MOVED_FROM)) {
-            l.debug("inotify: IN_MOVED_FROM " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MOVED_FROM {}, {}, {}", name, id, mask);
         }
     }
 
