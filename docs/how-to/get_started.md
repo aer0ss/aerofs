@@ -104,7 +104,7 @@ Note: Do not use `sudo` for the following command. You should not need it if the
     
     ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
     
-    pip install protobuf requests pyyaml
+    pip install virtualenv protobuf requests pyyaml
 
     npm install -g less minifier uglify-js
 
