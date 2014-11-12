@@ -81,6 +81,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         _channelGroup = channelGroup;
     }
 
+    static long READ_TIMEOUT = 10;
+    static long WRITE_TIMEOUT = 30;
+    static TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
+
     private static final String COOKIE_ROUTE = "route";
     private static final String HEADER_ROUTE =  "Route";
     private static final String HEADER_CONSISTENCY = "Endpoint-Consistency";
@@ -168,7 +172,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         return _endpoints.connect(_principal, did, strictConsistency && did != null, version,
                 Channels.pipeline(
-                        new IdleStateHandler(_timer, 10, 30, 0, TimeUnit.SECONDS),
+                        new IdleStateHandler(_timer, READ_TIMEOUT, WRITE_TIMEOUT, 0, TIMEOUT_UNIT),
                         new HttpClientCodec(),
                         new HttpResponseProxyHandler()
                 ));
@@ -339,14 +343,30 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             l.info("upstream channel closed {} {} {}", cse.getChannel(),
                     _upstream.isReadable(), _upstream.isWritable());
 
+            // avoid forwarding any response Netty may still deliver
+            ctx.getPipeline().remove(this);
+
             // NB: only close downstream if there were missing responses
             // otherwise it is safe to keep downstream open and pick a new
             // upstream to service the next request
             if (_downstream.isConnected() && _expectedResponses.get() > 0) {
-                _downstream.close();
+                cleanDownstreamClose();
             }
-            // avoid forwarding any response Netty may stil deliver
-            ctx.getPipeline().remove(this);
+        }
+
+        private void cleanDownstreamClose()
+        {
+            // If a partial response was written we have no choice but to abruptly close the
+            // connection. Otherwise we can do slightly better by returning a 502 for each
+            // pipelined request.
+            if (!_streamingChunks.get()) {
+                // if no response body was being streamed, send a 504 for each pipelined requests
+                do {
+                    sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
+                } while (_expectedResponses.decrementAndGet() > 0);
+            }
+            _downstream.write(ChannelBuffers.EMPTY_BUFFER)
+                    .addListener(ChannelFutureNotifier.CLOSE);
         }
 
         @Override
@@ -360,16 +380,13 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                     // This makes the timeout effectively a random number between 10s and 20s
                     if (_closeIfIdle.compareAndSet(false, true)) return;
 
+                    l.info("close idle upstream {}", _upstream);
+                    // avoid forwarding any response Netty may still deliver
+                    ctx.getPipeline().remove(this);
+                    cleanDownstreamClose();
                     // close connection if requests remain unanswered for too long
                     // to prevent bad state buildup
                     _upstream.close();
-                    if (_streamingChunks.get()) {
-                        _downstream.close();
-                    } else {
-                        sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
-                        _downstream.write(ChannelBuffers.EMPTY_BUFFER)
-                                .addListener(ChannelFutureNotifier.CLOSE);
-                    }
                 } else {
                     _closeIfIdle.set(false);
                 }

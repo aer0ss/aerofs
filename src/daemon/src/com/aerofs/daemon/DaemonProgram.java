@@ -135,7 +135,12 @@ public class DaemonProgram implements IProgram
         // throws a fit
         if (new CfgRestService().isEnabled()) {
             injCore.getInstance(RestService.class).start();
-            injCore.getInstance(RestTunnelClient.class).start();
+            RestTunnelClient rc = injCore.getInstance(RestTunnelClient.class);
+            rc.start();
+
+            // try to cleanly sever tunnel connection on exit to prevent the gateway
+            // from directing requests into a dead connection
+            Runtime.getRuntime().addShutdownHook(new Thread(rc::stop));
         }
 
         return d;
