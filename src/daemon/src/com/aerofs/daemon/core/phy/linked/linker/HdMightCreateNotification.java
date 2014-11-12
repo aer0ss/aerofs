@@ -11,7 +11,7 @@ class HdMightCreateNotification implements IEventHandler<EIMightCreateNotificati
     @Override
     public void handle_(EIMightCreateNotification ev, Prio prio)
     {
-        if (!_disabled) ev._root.mightCreate_(ev._absPath);
+        if (!_disabled) ev._root.mightCreate_(ev._absPath, ev._rescan);
     }
 
     public void setDisabled(boolean disabled)

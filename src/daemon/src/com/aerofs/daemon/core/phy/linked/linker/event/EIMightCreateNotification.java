@@ -9,10 +9,18 @@ public class EIMightCreateNotification implements IEvent
 {
     public final LinkerRoot _root;
     public final String _absPath;
+    public final RescanSubtree _rescan;
 
-    public EIMightCreateNotification(LinkerRoot root, String absPath)
+    public enum RescanSubtree
+    {
+        DEFAULT,
+        FORCE
+    }
+
+    public EIMightCreateNotification(LinkerRoot root, String absPath, RescanSubtree rescan)
     {
         _root = checkNotNull(root);
         _absPath = checkNotNull(absPath);
+        _rescan = rescan;
     }
 }

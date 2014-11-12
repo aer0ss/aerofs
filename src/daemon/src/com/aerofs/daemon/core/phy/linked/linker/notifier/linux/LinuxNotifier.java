@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.phy.linked.linker.Linker;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
 import com.aerofs.lib.SystemUtil;
@@ -13,7 +14,6 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.swig.driver.Driver;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.contentobjects.jnotify.JNotifyException;
@@ -24,8 +24,6 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +90,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
     @Override
     public int addRootWatch_(LinkerRoot root) throws IOException
     {
-        int id = addWatchRecursively(root.absRootAnchor(), WATCH_ID_ROOT, null);
+        int id = addWatchRecursively(root.absRootAnchor(), WATCH_ID_ROOT);
         l.info("addroot {} {}", root, id);
         if (id == -1) throw new IOException("unable to add root watch for " + root);
         _id2root.put(id, root);
@@ -149,10 +147,9 @@ public class LinuxNotifier implements INotifier, INotifyListener
      * @param name the name of the folder to add a watch on (this should have no path separators)
      * @param parent the watch id of the watch on the directory under which this watch is
      *               placed, or WATCH_ID_ROOT if this is the root anchor
-     * @param pathList a list of path for which watch were added (output arg, if not null)
      * @throws JNotifyException
      */
-    private int addWatchRecursively(String name, int parent, @Nullable List<String> pathList)
+    private int addWatchRecursively(String name, int parent)
             throws JNotifyException
     {
         File dir;
@@ -176,7 +173,6 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 watch_id = _jn.linux_addWatch(dir.getAbsolutePath(), MASK);
                 assert(watch_id != WATCH_ID_ROOT);
                 l.debug("watch id {}: {}", watch_id, dir.getAbsolutePath());
-                if (pathList != null) pathList.add(dir.getAbsolutePath());
                 LinuxINotifyWatch newWatch = new LinuxINotifyWatch(watch_id, name, parent);
                 // We may already have a watch set up on this folder.  If the path of the
                 // existing watch and the path of the new watch are identical,
@@ -239,7 +235,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
             // actually care about the FID, we just pass null (which is correctly handled by Driver)
             if (Driver.getFid(null, child.getPath(), null) == Driver.GETFID_DIR) {
                 try {
-                    addWatchRecursively(childname, watch_id, pathList);
+                    addWatchRecursively(childname, watch_id);
                 } catch (JNotifyException e) {
                     // See above.
                     if (e.getErrorCode() != JNotifyException.ERROR_NO_SUCH_FILE_OR_DIRECTORY) {
@@ -327,6 +323,28 @@ public class LinuxNotifier implements INotifier, INotifyListener
     {
         logEvent(name, id, mask);
 
+        // Handle event queue overflow.
+        // If we get a notification with IN_Q_OVERFLOW set, that means we were way too slow at
+        // handling file notifications, and the kernel queue overflowed.
+        // This means we lost notifications, and could have missed folders that we need to add
+        // watches on as well.
+        // The only thing we can do to regain a full, accurate state of the world is cancel all
+        // watches, re-add the root watch (recursively), and then do a full rescan.
+        // We have to do it in this order, or else we may lose events between the watch setup and
+        // the rescan.
+        // Additionally, we may still get notifications that the worker thread has read into an
+        // internal buffer until all the watch cancellations are acknowledged.
+        // As a bonus, JNotify is a piece of crap that has no way to stop its internal runLoop
+        // thread. This means that if we try to destroy the object, we will leak threads.  And
+        // they'll be trying to read file descriptors that may get reused.  FML.
+        // TODO: (DF) patch jnotify to stop the runloop cleanly
+
+        // In the meantime, it's easier to just abort the daemon and start over.
+        if (Util.test(mask, IN_Q_OVERFLOW)) {
+            SystemUtil.fatal(
+                    "inotify event queue overflowed; aborting to regain a consistent state");
+        }
+
         if (id < 0) {
             l.warn("invalid wd {} {} {}", name, id, mask);
             return;
@@ -334,20 +352,19 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
         if (Linker.isInternalFile(name)) return;
 
-        List<IEvent> events = buildCoreEventList(name, id, mask, cookie);
+        IEvent event = buildCoreEventList(name, id, mask, cookie);
 
         // we need to do the enqueueing without holding the object lock as some core threads
         // may add new roots as part of a transaction and that would cause a deadlock...
-        if (events != null) {
-            for (IEvent ev : events) _cq.enqueueBlocking(ev, Linker.PRIO);
-            l.debug("enqueued {} events", events.size());
+        if (event != null) {
+            _cq.enqueueBlocking(event, Linker.PRIO);
         }
     }
 
-    private synchronized List<IEvent> buildCoreEventList(String name, int id, int mask, int cookie)
+    private synchronized IEvent buildCoreEventList(String name, int id, int mask, int cookie)
             throws JNotifyException
     {
-        List<IEvent> events = null;
+        IEvent event = null;
 
         // if an ID is present in _deletedAckPending, we have already requested that the
         // kernel stop sending us events associated with this ID (because the folder is no longer
@@ -415,7 +432,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 }
             }
 
-            events = buildMightCreateOrMightDelete(name, id, mask);
+            event = buildMightCreateOrMightDelete(name, id, mask);
         }
 
         // Handle watch termination.
@@ -448,34 +465,12 @@ public class LinuxNotifier implements INotifier, INotifyListener
             _deletedAckPending.remove(Integer.valueOf(id));
         }
 
-        // Handle event queue overflow.
-        // If we get a notification with IN_Q_OVERFLOW set, that means we were way too slow at
-        // handling file notifications, and the kernel queue overflowed.
-        // This means we lost notifications, and could have missed folders that we need to add
-        // watches on as well.
-        // The only thing we can do to regain a full, accurate state of the world is cancel all
-        // watches, re-add the root watch (recursively), and then do a full rescan.
-        // We have to do it in this order, or else we may lose events between the watch setup and
-        // the rescan.
-        // Additionally, we may still get notifications that the worker thread has read into an
-        // internal buffer until all the watch cancellations are acknowledged.
-        // As a bonus, JNotify is a piece of crap that has no way to stop its internal runLoop
-        // thread. This means that if we try to destroy the object, we will leak threads.  And
-        // they'll be trying to read file descriptors that may get reused.  FML.
-        // TODO: (DF) patch jnotify to stop the runloop cleanly
-
-        // In the meantime, it's easier to just abort the daemon and start over.
-        if (Util.test(mask, IN_Q_OVERFLOW)) {
-            SystemUtil.fatal(
-                    "inotify event queue overflowed; aborting to regain a consistent state");
-        }
-
         _prevActionId = id;
         _prevCookie = cookie;
         _prevActionMask = mask;
         _prevName = name;
 
-        return events;
+        return event;
     }
 
     private void logEvent(String name, int id, int mask)
@@ -501,18 +496,21 @@ public class LinuxNotifier implements INotifier, INotifyListener
         }
     }
 
-    private List<IEvent> buildMightCreateOrMightDelete(String name, int id, int mask) throws JNotifyException
+    private IEvent buildMightCreateOrMightDelete(String name, int id, int mask) throws JNotifyException
     {
         // If any of the parent watches has been removed the trace will be null
         // This has been seen in CI when racy deletion/re-creation of the same file
         // caused an IN_ATTRIB to be received for a freshly removed watch id
         List<Integer> dirParentTrace = getParentTrace(id);
-        if (dirParentTrace == null) return Collections.emptyList();
+        if (dirParentTrace == null) {
+            l.info("missing parent watch {} {} {}", name, id, mask);
+            return null;
+        }
 
         LinkerRoot root = _id2root.get(dirParentTrace.get(0));
 
         // avoid race condition between FS notification and root removal
-        if (root == null) return Collections.emptyList();
+        if (root == null) return null;
 
         File dir = getWatchPath(dirParentTrace);
 
@@ -524,15 +522,15 @@ public class LinuxNotifier implements INotifier, INotifyListener
             // itself, rather than children of the root anchor.
             File affectedFile = new File(dir, name);
 
-            List<String> addedWatches = Lists.newLinkedList();
+            boolean watchesAdded = false;
             // If the event is for a created or moved folder, we should register a new
             // recursive watch - it might have children we haven't seen yet.
             if (Util.test(mask, IN_ISDIR) && Util.test(mask, (IN_CREATE | IN_MOVED_TO))) {
-                addWatchRecursively(name, id, addedWatches);
+                watchesAdded = addWatchRecursively(name, id) != -1;
             }
 
             // Here's the terrible, horrible, no good, very bad truth about the Linux notifier:
-            // Because we have to manually re-implement recursive watching on top of the severly
+            // Because we have to manually re-implement recursive watching on top of the severely
             // limited inotify interface we cannot simply post a MCN event for a folder if we
             // added watches under it.
             //
@@ -554,21 +552,14 @@ public class LinuxNotifier implements INotifier, INotifyListener
             // NB: Such cases are reliably reproduced by syncdet stress tests creating large
             // folder hierarchies.
             //
-            // One solution would be to indicate in the MCN that it new watches were added and
-            // that even if the scanner already picked up some of the object, chances are it
-            // missed some of them and a rescan is needed.
-            //
-            // Another approach, which happens to be the one we've taken, is to emit a MCN for
-            // every watch added to ensure the folders are picked up. This was chosen because
-            // it more closely mirrors the behavior of the Windows notifiers and avoids leaking
-            // more platform-specific behaviors into the Scanner.
-            return mightCreate(root, !addedWatches.isEmpty() ? addedWatches
-                    : Collections.singleton(affectedFile.getAbsolutePath()));
+            // To avoid that, we indicate in the MCN that a recursive scan of the entire subtree
+            // is needed whenever new watches were added and.
+            return mightCreate(root, affectedFile.getAbsolutePath(),
+                    watchesAdded ? RescanSubtree.FORCE : RescanSubtree.DEFAULT);
         } else if (Util.test(mask, (IN_DELETE | IN_MOVED_FROM ))) {
             // These two cases constitute all instances in which a file or folder disappeared.
             File vanishedFile = new File(dir, name);
-            return Collections.singletonList(
-                    mightDelete(root, vanishedFile.getAbsolutePath()));
+            return mightDelete(root, vanishedFile.getAbsolutePath());
             // Ordinarily, we'd want to test mask for IN_MOVED_FROM and IN_ISDIR here, and if
             // the event was a MOVED_FROM on a directory, then we'd want to unwatch it and all
             // of its children which may no longer be under our root anchor.
@@ -585,23 +576,12 @@ public class LinuxNotifier implements INotifier, INotifyListener
         return null;
     }
 
-    private List<IEvent> mightCreate(LinkerRoot root, Collection<String> paths)
-    {
-        // TODO: reduce core lock contention by enqueuing the events in a batch.
-        // Alternatively create a new batch-create notification with smarter logic
-        // to reduce the load on core queue and automatically discard events for
-        // children of a path that causes a rescan.
-        List<IEvent> l = Lists.newArrayListWithCapacity(paths.size());
-        for (String path : paths) l.add(mightCreate(root, path));
-        return l;
-    }
-
-    private IEvent mightCreate(LinkerRoot root, String path)
+    private IEvent mightCreate(LinkerRoot root, String path, RescanSubtree rescanSubtree)
     {
         if (l.isDebugEnabled()) {
             l.debug("mightCreate(" + ObfuscatingFormatters.obfuscatePath(path) + ")");
         }
-        return new EIMightCreateNotification(root, path);
+        return new EIMightCreateNotification(root, path, rescanSubtree);
     }
 
     private IEvent mightDelete(LinkerRoot root, String path)

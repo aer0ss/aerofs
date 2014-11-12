@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.phy.linked.linker.notifier.windows;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.IEvent;
@@ -73,7 +74,7 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
 
     private IEvent mightCreate(LinkerRoot lr, String root, String name)
     {
-        return new EIMightCreateNotification(lr, Util.join(root, name));
+        return new EIMightCreateNotification(lr, Util.join(root, name), RescanSubtree.DEFAULT);
     }
 
     private IEvent mightDelete(LinkerRoot lr, String root, String name)

@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber.FileSystemProperty;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -177,6 +178,11 @@ public class LinkerRoot
 
     public void mightCreate_(String absPath)
     {
+        mightCreate_(absPath, RescanSubtree.DEFAULT);
+    }
+
+    public void mightCreate_(String absPath, RescanSubtree rescanSubtree)
+    {
         if (_removed) {
             l.info("ignored MCN for unlinked root {}", absPath);
             return;
@@ -188,26 +194,18 @@ public class LinkerRoot
             try {
                 res = _f._mc.mightCreate_(pc, _f._globalBuffer, _og, t);
                 t.commit_();
-            } catch (ExFileNotFound e) {
+            } catch (ExFileNotFound|ExFileNoPerm|ExNotFound e) {
                 // We may get a not found exception if a file was created and deleted or moved very
                 // soon thereafter, and we didn't get around to checking it out until it was already
                 // gone. We simply ignore the error in this situation to avoid frequent rescans
                 // and thus cpu hogging when editors create and delete/move temporary files.
-                l.warn("ignored by MCN: " + Util.e(e, ExFileNotFound.class));
-                return;
-            } catch (ExFileNoPerm e) {
-                // We can also safely ignore files which we have no permission to access.
-                // It's not like we can sync them anyway.
-                l.warn("ignored by MCN: " + Util.e(e, ExFileNoPerm.class));
-                return;
-            } catch (ExNotFound e) {
-                // Same conditon as for ExFileNotFound exception
-                l.warn("ignored by MCN: " + Util.e(e, ExNotFound.class));
+                l.warn("ignored by MCN: {} {}", e.getClass().getName(), e.getMessage());
                 return;
             } finally {
                 t.end_();
             }
-            if (res == Result.NEW_OR_REPLACED_FOLDER) {
+            if (res == Result.NEW_OR_REPLACED_FOLDER
+                    || (res == Result.EXISTING_FOLDER && rescanSubtree == RescanSubtree.FORCE)) {
                 // We need to scan subdirectories of new folders because they could have data
                 // placed in them faster than we can register a watch on Linux.
                 _ssq.scanImmediately_(Collections.singleton(pc._absPath), true);

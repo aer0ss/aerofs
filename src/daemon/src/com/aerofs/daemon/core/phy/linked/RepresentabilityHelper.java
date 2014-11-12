@@ -19,6 +19,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.FID;
@@ -261,7 +262,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     }
 
     /**
-     * Attemps to perform an operation (create, move, ...) on a given destination object
+     * Attempts to perform an operation (create, move, ...) on a given destination object
      * and work around filesystem limitations as required by converting
      *
      * @pre destination is expected NOT to exist
@@ -273,7 +274,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             l.debug("op on nro");
             op.run_();
             if (dest._path.virtual != null) _tlNotify.get(t).add(dest._path.virtual.sid());
-        } else if (isContextuallyNonRepresentable_(dest)) {
+        } else if (isContextuallyNonRepresentable_(dest, t)) {
             l.info("make cnro eagerly {}", dest);
             markNonRepresentable_(dest, t);
             op.run_();
@@ -293,26 +294,44 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
      *
      * @pre destination is expected NOT to exist
      */
-    private boolean isContextuallyNonRepresentable_(AbstractLinkedObject dest)
+    private boolean isContextuallyNonRepresentable_(AbstractLinkedObject dest, Trans t)
             throws SQLException, IOException
     {
         if (!dest._f.exists()) return false;
 
         // dest exists: does it correspond to a known object?
         try {
+            OA oa = null;
             SOID soid = soidAtPath_(dest._path.physical);
 
-            // race condition: we want scanner to pick up file before we overwrite it
-            if (soid == null) {
-                l.warn("dest already exists {}", dest);
-                throw new DestinationAlreadyExistsException();
+            // fid reuse from expelled object should not lead to cNRO creation
+            if (soid != null) {
+                oa = _ds.getOANullable_(soid);
+                // see LogicalStagingArea and DirectoryServiceImpl#getOANullable_
+                if (oa == null || oa.isExpelled()) {
+                    l.info("{} -> {} expelled", dest._path.physical, soid);
+                    _ds.unsetFID_(soid, t);
+                    soid = null;
+                }
             }
 
-            // existing object: we have a path conflict
-            if (!soid.equals(dest.soid())) {
-                l.info("cnro {} {} {}", dest._path.physical, soid, dest.soid());
+            // race condition: we want scanner to pick up file before we overwrite it
+            if (soid != null) {
+                if (soid.equals(dest.soid())) {
+                    return false;
+                }
+
+                // race condition: if the potentially conflicting object was moved, wait for
+                // the scanner to react before considering cNRO creation
+                Path p = _ds.resolve_(checkNotNull(oa));
+                if (_lrm.isPhysicallyEquivalent_(dest._path.virtual, p)) {
+                    l.info("cnro {} {} {}", soid, dest.soid(), dest._path.physical);
+                    return true;
+                }
             }
-            return !soid.equals(dest.soid());
+
+            l.warn("dest already exists {} {}", dest, soid);
+            throw new DestinationAlreadyExistsException();
         } catch (NoFIDException e) {
             // lack of perm, os-specific file or other weirdness: treat as NRO
             l.warn("could not determine fid for {}", dest);

@@ -8,6 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
@@ -90,6 +91,6 @@ public class TestHdMightCreateNotification extends AbstractTest
     private void callHandle() throws Exception
     {
         mcn.handle_(new EIMightCreateNotification(factLR.create_(rootSID, absRootAnchor),
-                Util.join(absRootAnchor, "test")), Prio.LO);
+                Util.join(absRootAnchor, "test"), RescanSubtree.DEFAULT), Prio.LO);
     }
 }
