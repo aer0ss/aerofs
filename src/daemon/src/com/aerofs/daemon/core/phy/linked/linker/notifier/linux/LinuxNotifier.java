@@ -340,6 +340,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         // may add new roots as part of a transaction and that would cause a deadlock...
         if (events != null) {
             for (IEvent ev : events) _cq.enqueueBlocking(ev, Linker.PRIO);
+            l.debug("enqueued {} events", events.size());
         }
     }
 

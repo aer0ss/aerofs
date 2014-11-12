@@ -23,7 +23,7 @@ public abstract class SystemUtil
 
     /**
      * This class defines custom process exit codes and corresponding user friendly error messages.
-     * By convension, these codes should be in the range of 1 to 127 inclusive.
+     * By convention, these codes should be in the range of 1 to 127 inclusive.
      */
     public static enum ExitCode
     {
@@ -266,20 +266,14 @@ public abstract class SystemUtil
 
     public static void setDefaultUncaughtExceptionHandler()
     {
-        Thread.setDefaultUncaughtExceptionHandler(
-                new Thread.UncaughtExceptionHandler() {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e)
-                    {
-                        newDefectWithLogs("system.uncaught_exception")
-                                .setMessage("uncaught exception from " +
-                                        t.getName() + " . program exists now.")
-                                .setException(e)
-                                .sendSyncIgnoreErrors();
-                        // must abort the process as the abnormal thread can no longer run properly
-                        fatal(e);
-                    }
-                }
-            );
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            newDefectWithLogs("system.uncaught_exception")
+                    .setMessage("uncaught exception from " +
+                            t.getName() + " . program exists now.")
+                    .setException(e)
+                    .sendSyncIgnoreErrors();
+            // must abort the process as the abnormal thread can no longer run properly
+            fatal(e);
+        });
     }
 }

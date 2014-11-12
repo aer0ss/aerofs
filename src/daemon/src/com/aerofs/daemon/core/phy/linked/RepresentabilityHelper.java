@@ -309,6 +309,9 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             }
 
             // existing object: we have a path conflict
+            if (!soid.equals(dest.soid())) {
+                l.info("cnro {} {} {}", dest._path.physical, soid, dest.soid());
+            }
             return !soid.equals(dest.soid());
         } catch (NoFIDException e) {
             // lack of perm, os-specific file or other weirdness: treat as NRO
