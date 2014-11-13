@@ -43,7 +43,7 @@ public class S
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",
             SETUP_STORAGE_LOCAL      = "On this computer",
-            SETUP_STORAGE_S3         = "On Amazon S3 or OpenStack Swift",
+            SETUP_STORAGE_S3         = "On S3-compatible storage (Amazon S3, OpenStack Swift, Cloudian)",
 
             // used in setup local storage screen
             ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
@@ -61,8 +61,8 @@ public class S
             SETUP_BTN_INSTALL        = "Install",
 
             // used in setup S3 storage screen
-            SETUP_S3_CONFIG_DESC     = "AeroFS supports Amazon S3 and OpenStack Swift. Check out " +
-                    "<a>this article</a> for setup instructions.",
+            SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as " +
+                    "Amazon S3, OpenStack Swift, and Cloudian. <a>Learn more</a>.",
             SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
                     "used to encrypt your data before sending it to S3:",
             SETUP_S3_ENDPOINT_GUI    = "Endpoint:",
