@@ -219,12 +219,12 @@
 
     <script>
         $(document).ready(function() {
-            $('#verify-modal-email-input').on('shown', function() {
+            $('#verify-modal-email-input').on('shown.bs.modal', function() {
                 $('#verification-to-email').focus();
                 setEnabled($('#send-verification-code-button'), true);
             });
 
-            $('#verify-modal-code-input').on('shown', function() {
+            $('#verify-modal-code-input').on('shown.bs.modal', function() {
                 $('#verification-code').focus();
                 setEnabled($('#continue-button'), true);
             });

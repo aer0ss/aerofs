@@ -61,7 +61,7 @@ function hideAllMessages() {
 // hide messages when a modal pops up
 // hide all other modals when a modal is about to show
 $(document).ready(function() {
-    $('div.modal').on('shown', hideAllMessages);
+    $('div.modal').on('shown.bs.modal', hideAllMessages);
     // Using hideAllModals here triggers an edge case for modal dialogs with
     // tooltips. jQuery's impl. of tooltip means that a show event will be
     // triggered for the modal dialog, and using hideAllModals will cause the
