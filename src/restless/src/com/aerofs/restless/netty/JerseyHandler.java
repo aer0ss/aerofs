@@ -142,8 +142,8 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     private static InBoundHeaders getHeaders(final HttpRequest request)
     {
         InBoundHeaders headers = new InBoundHeaders();
-        for (String name : request.headers().names()) {
-            headers.put(name, request.headers().getAll(name));
+        for (String name : request.getHeaderNames()) {
+            headers.put(name, request.getHeaders(name));
         }
         return headers;
     }

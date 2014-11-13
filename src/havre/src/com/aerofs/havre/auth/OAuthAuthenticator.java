@@ -31,8 +31,9 @@ public class OAuthAuthenticator implements Authenticator
     public AuthenticatedPrincipal authenticate(HttpRequest request)
             throws UnauthorizedUserException
     {
+
         // reject requests with more than one Authorization header
-        List<String> authHeaders = request.headers().getAll(Names.AUTHORIZATION);
+        List<String> authHeaders = request.getHeaders(Names.AUTHORIZATION);
         String authHeader = authHeaders != null && authHeaders.size() == 1 ?
                 authHeaders.get(0) : null;
 

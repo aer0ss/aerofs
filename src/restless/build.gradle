@@ -29,7 +29,7 @@ dependencies {
     compile 'com.sun.jersey:jersey-server:1.17.1'
     compile 'com.sun.jersey:jersey-guice:1.17.1'
     // Netty
-    compile 'org.jboss.netty:netty:3.9.5'
+    compile 'org.jboss.netty:netty:3.6.5'
     // Gson
     compile 'com.google.code.gson:gson:2.2.2'
     // Guava

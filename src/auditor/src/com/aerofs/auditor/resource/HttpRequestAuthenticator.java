@@ -80,12 +80,12 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
         HttpRequest req = (HttpRequest)e.getMessage();
 
         try {
-            if (_submitter == null && Boolean.parseBoolean(req.headers().get(HEADER_AUTH_REQ))) {
+            if (_submitter == null && Boolean.parseBoolean(req.getHeader(HEADER_AUTH_REQ))) {
                 _submitter = throwIfInvalidCreds(req);
             }
             if (_submitter != null) {
-                req.headers().set(HEADER_AUTH_USERID, _submitter.userId);
-                req.headers().set(HEADER_AUTH_DEVICE, _submitter.deviceId);
+                req.setHeader(HEADER_AUTH_USERID, _submitter.userId);
+                req.setHeader(HEADER_AUTH_DEVICE, _submitter.deviceId);
             }
         } catch (Exception ex) {
             HttpResponseStatus status = (ex instanceof ExBadCredential) ?
@@ -104,10 +104,10 @@ public class HttpRequestAuthenticator extends SimpleChannelHandler
     private VerifiedSubmitter throwIfInvalidCreds(HttpRequest req)
             throws ExBadCredential, IOException, ExFormatError
     {
-        String verifyVal = req.headers().get(HEADER_VERIFY);
-        String dNameVal = req.headers().get(HEADER_DNAME);
-        String userIdVal = req.headers().get(AuditClient.HEADER_UID);
-        String deviceIdVal = req.headers().get(AuditClient.HEADER_DID);
+        String verifyVal = req.getHeader(HEADER_VERIFY);
+        String dNameVal = req.getHeader(HEADER_DNAME);
+        String userIdVal = req.getHeader(AuditClient.HEADER_UID);
+        String deviceIdVal = req.getHeader(AuditClient.HEADER_DID);
         l.debug("Auth required, checking header fields");
 
         // Header-content preconditions. You must supply authorization, Verify, and DName.

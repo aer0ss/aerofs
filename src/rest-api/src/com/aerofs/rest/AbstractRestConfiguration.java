@@ -8,7 +8,6 @@ import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Configuration;
 import com.google.common.base.Joiner;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -22,22 +21,21 @@ public abstract class AbstractRestConfiguration implements Configuration
     @Override
     public void addGlobalHeaders(HttpRequest request, HttpResponse response)
     {
-        HttpHeaders h = response.headers();
-        if (!h.contains(Names.CACHE_CONTROL)) {
+        if (!response.containsHeader(Names.CACHE_CONTROL)) {
             // If the response is successful, cache for 3 minutes, otherwise do not cache
             int code = response.getStatus().getCode();
             int maxAge = (code >= 200 && code < 300) ? 3 * 60 : 0;
-            h.set(Names.CACHE_CONTROL, getCacheControl(maxAge));
+            response.setHeader(Names.CACHE_CONTROL, getCacheControl(maxAge));
         }
 
         /*
          * CORS: allow requests from any origin, allow any method, mark all request headers
          * as "allowed", and instruct the browser to expose all response headers.
          */
-        h.set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        h.set(Names.ACCESS_CONTROL_ALLOW_METHODS, "GET,PUT,POST,PATCH,DELETE,HEAD,OPTIONS");
-        h.set(Names.ACCESS_CONTROL_ALLOW_HEADERS, Joiner.on(',').join(request.headers().names()));
-        h.set(Names.ACCESS_CONTROL_EXPOSE_HEADERS, Joiner.on(',').join(h.names()));
+        response.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        response.setHeader(Names.ACCESS_CONTROL_ALLOW_METHODS, "GET,PUT,POST,PATCH,DELETE,HEAD,OPTIONS");
+        response.setHeader(Names.ACCESS_CONTROL_ALLOW_HEADERS, Joiner.on(',').join(request.getHeaderNames()));
+        response.setHeader(Names.ACCESS_CONTROL_EXPOSE_HEADERS, Joiner.on(',').join(response.getHeaderNames()));
     }
 
     /**

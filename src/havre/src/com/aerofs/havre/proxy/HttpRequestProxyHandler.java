@@ -93,7 +93,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     private static Map<String, String> getCookies(HttpRequest r)
     {
         Map<String, String> m = Maps.newHashMap();
-        String cookie = r.headers().get(Names.COOKIE);
+        String cookie = r.getHeader(Names.COOKIE);
         if (cookie != null) {
             for (Cookie c : new CookieDecoder().decode(cookie)) m.put(c.getName(), c.getValue());
         }
@@ -128,9 +128,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
 
             // remove gateway-specific header
-            req.headers().remove(Names.COOKIE);
-            req.headers().remove(HEADER_ROUTE);
-            req.headers().remove(HEADER_CONSISTENCY);
+            req.removeHeader(Names.COOKIE);
+            req.removeHeader(HEADER_ROUTE);
+            req.removeHeader(HEADER_CONSISTENCY);
 
             _upstream.write(message);
         } else {
@@ -160,7 +160,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         // The Route header overrides any cookie and enforces strict consistency
         boolean strictConsistency;
-        DID did = parseDID(req.headers().get(HEADER_ROUTE));
+        DID did = parseDID(req.getHeader(HEADER_ROUTE));
         if (did != null) {
             strictConsistency = true;
         } else {
@@ -180,7 +180,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
     private static boolean shouldEnforceStrictConsistency(HttpRequest r)
     {
-        String flag = r.headers().get(HEADER_CONSISTENCY);
+        String flag = r.getHeader(HEADER_CONSISTENCY);
         return flag != null && "strict".equalsIgnoreCase(flag);
     }
 
@@ -188,11 +188,11 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     {
         if (downstream.isConnected()) {
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
-            response.headers().set(Names.CONTENT_LENGTH, 0);
-            response.headers().set(Names.CACHE_CONTROL, Values.NO_CACHE + "," + Values.NO_TRANSFORM);
-            response.headers().set(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            response.setHeader(Names.CONTENT_LENGTH, 0);
+            response.setHeader(Names.CACHE_CONTROL, Values.NO_CACHE + "," + Values.NO_TRANSFORM);
+            response.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
             if (status == HttpResponseStatus.UNAUTHORIZED) {
-                response.headers().set(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
+                response.setHeader(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
             }
             // reset server id cookie
             addCookie(response, COOKIE_ROUTE, "");
@@ -246,7 +246,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         cookie.setPath("/");
         cookie.setSecure(true);
         encoder.addCookie(cookie);
-        response.headers().add(Names.SET_COOKIE, encoder.encode());
+        response.addHeader(Names.SET_COOKIE, encoder.encode());
     }
 
     private class HttpResponseProxyHandler extends IdleStateAwareChannelHandler
@@ -281,7 +281,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 addCookie(response, COOKIE_ROUTE, _endpoints.device(upstream).toStringFormal());
 
                 // add list of alternate routes for flexible failure handling
-                response.headers().set(HEADER_ALT_ROUTES, join(_endpoints.alternateDevices(upstream)));
+                response.setHeader(HEADER_ALT_ROUTES, join(_endpoints.alternateDevices(upstream)));
 
                 // do not count 1xx provisional responses
                 if (status < 100 || status >= 200) updateExpectations(response);
