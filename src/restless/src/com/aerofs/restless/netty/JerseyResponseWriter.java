@@ -57,7 +57,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
         _request = request;
         _config = config;
 
-        _location = "https://" + request.getHeader(Names.HOST) + "/";
+        _location = "https://" + request.headers().get(Names.HOST) + "/";
         _keepAlive = HttpHeaders.isKeepAlive(request);
 
         _trailer = new ChannelFutureListener() {
@@ -87,7 +87,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             for (Object value : header.getValue()) {
                 values.add(ContainerResponse.getHeaderValue(value));
             }
-            r.setHeader(header.getKey(), values);
+            r.headers().set(header.getKey(), values);
             values.clear();
         }
 
@@ -97,19 +97,19 @@ class JerseyResponseWriter implements ContainerResponseWriter
         // entity-less responses should have a truly empty body which means
         // no chunked transfer encoding (otherwise we get an empty trailing
         // chunk which confuses many HTTP parsers)
-        if (entity == null) r.setHeader(Names.CONTENT_LENGTH, "0");
+        if (entity == null) r.headers().set(Names.CONTENT_LENGTH, "0");
 
-        if (r.getHeader(Names.CONTENT_LENGTH) == null) {
+        if (r.headers().get(Names.CONTENT_LENGTH) == null) {
             // if no explicit Content-Length is set, use chunked transfer-encoding
             // -> can stream content of unknown length on a persistent connection
             r.setChunked(true);
-            r.setHeader(Names.TRANSFER_ENCODING, Values.CHUNKED);
+            r.headers().set(Names.TRANSFER_ENCODING, Values.CHUNKED);
         }
 
         // rewrite Location: header if needed
-        String location = r.getHeader(Names.LOCATION);
+        String location = r.headers().get(Names.LOCATION);
         if (location != null && location.startsWith(Service.DUMMY_LOCATION)) {
-            r.setHeader(Names.LOCATION, location.replace(Service.DUMMY_LOCATION, _location));
+            r.headers().set(Names.LOCATION, location.replace(Service.DUMMY_LOCATION, _location));
         }
 
         // write response status and headers

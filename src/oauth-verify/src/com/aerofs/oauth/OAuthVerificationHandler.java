@@ -145,8 +145,8 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
         encoder.addParam("access_token", req.accessToken);
         HttpRequest http = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET,
                 encoder.toString());
-        http.setHeader(Names.HOST, _host);
-        http.setHeader(Names.AUTHORIZATION, req.auth);
+        http.headers().set(Names.HOST, _host);
+        http.headers().set(Names.AUTHORIZATION, req.auth);
 
         _requests.add(req);
         me.getFuture().addListener(cf -> {
