@@ -2,7 +2,7 @@
 ## the other pages.
 <%def name="marketing_links()">
     <li class="marketing-link"><a href="http://support.aerofs.com" target="_blank">Support</a></li>
-    <li class="marketing-link"><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
+    <li class="marketing-link"><a href="http://www.aerofs.com/blog" target="_blank">Blog</a></li>
 </%def>
 
 ## Render a link menu for navigation bars
