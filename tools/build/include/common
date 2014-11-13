@@ -71,8 +71,8 @@ readonly CLIENT_LINUX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/linux"
 readonly CLIENT_OSX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/osx"
 readonly CLIENT_LINUX_SHARED_TEMPLATES_DIR="${CLIENT_LINUX_TEMPLATES_DIR}/shared"
 
-# local build directory (where ant will put stuff)
-readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
+# local build directory (where gradle will put stuff)
+readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.gradle"
 
 # local root release directory and release dirs for each platform
 # avoid putting scratch stuff in any of these directories because they are packaged into the installer

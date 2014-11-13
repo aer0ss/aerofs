@@ -50,9 +50,8 @@ SRC_GUI = os.path.join(GIT_ROOT, "src", "gui")
 
 PROTOC = "/usr/local/bin/protoc"
 BUILD_DIR = os.path.join(GIT_ROOT, "out.shell")
-ANT_BUILD_DIR = os.path.join(GIT_ROOT, "out.ant")
-ANT_PACKAGE_DIR = os.path.join(ANT_BUILD_DIR, "packages")
 GRADLE_BUILD_DIR = os.path.join(GIT_ROOT, "out.gradle")
+PACKAGE_DIR = os.path.join(GRADLE_BUILD_DIR, "packages")
 DEFAULT_SYNCDET_REPO_ROOT = os.path.join(os.path.dirname(GIT_ROOT), "syncdet")
 DEFAULT_SYNCDET_PY = os.path.join(DEFAULT_SYNCDET_REPO_ROOT, "syncdet.py")
 
@@ -97,7 +96,6 @@ PROTO_MAPPINGS = {
                 "protos": [ os.path.join(SRC_DAEMON, "src", "proto", "core.proto"),
                             os.path.join(SRC_DAEMON, "src", "proto", "limit.proto"),
                             os.path.join(SRC_DAEMON, "src", "proto", "transport.proto"),
-                            os.path.join(SRC_DAEMON, "src", "proto", "tap.proto"),
                           ],
             },
         os.path.join(SRC_GUI, "gen"):
@@ -158,7 +156,6 @@ PROTO_MAPPINGS = {
                             os.path.join(SRC_LIB, "src", "proto", "path_status.proto"),
                             os.path.join(SRC_LIB, "src", "proto", "ritual.proto"),
                             os.path.join(SRC_DAEMON, "src", "proto", "transport.proto"),
-                            os.path.join(SRC_DAEMON, "src", "proto", "tap.proto"),
                             ],
             },
         # ObjC protobufs
@@ -463,9 +460,6 @@ def clean(args):
     if os.path.isdir(BUILD_DIR):
         print "removing {}".format(BUILD_DIR)
         shutil.rmtree(BUILD_DIR)
-    if os.path.isdir(ANT_BUILD_DIR):
-        print "removing {}".format(ANT_BUILD_DIR)
-        shutil.rmtree(ANT_BUILD_DIR)
     if os.path.isdir(GRADLE_BUILD_DIR):
         print "removing {}".format(GRADLE_BUILD_DIR)
         shutil.rmtree(GRADLE_BUILD_DIR)
@@ -562,12 +556,12 @@ def prepare_syncdet(args):
             Info(platform="linux", prefix="aerofsts-installer", extension="tgz", product="TEAM_SERVER"),
             ]
     infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
-    source_dir = ANT_PACKAGE_DIR
+    source_dir = PACKAGE_DIR
     dest_dir = os.path.join(GIT_ROOT, "syncdet_test")
     for info in infos_to_copy:
         dest_filename = ".".join([info.prefix, info.extension])
         dest_filepath = os.path.join(dest_dir, dest_filename)
-        source_filenames = [f for f in os.listdir(ANT_PACKAGE_DIR) if f.startswith(info.prefix) and f.endswith(info.extension)]
+        source_filenames = [f for f in os.listdir(PACKAGE_DIR) if f.startswith(info.prefix) and f.endswith(info.extension)]
         if len(source_filenames) == 1:
             source_filepath = os.path.join(source_dir, source_filenames[0])
             print "copying {} to {}".format(source_filepath, dest_filepath)
@@ -589,8 +583,8 @@ def setupenv(args):
 # A stopgap solution for now to allow invoke to be the global entry point.
 # In the long future, we should build the client code with gradle too.
 def build_client(args):
-    print "Calling ant to build clients"
-    subprocess.check_call([ "ant", "build_client"], cwd=GIT_ROOT)
+    subprocess.check_call([ "gradle", "src/desktop:dist"], cwd=GIT_ROOT)
+    print colored("Client built.", Colors.GREEN)
 
 def compute_next_version(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
@@ -604,9 +598,9 @@ def package_clients(args):
     version = args.release_version or compute_next_version(args)
     products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
     # clean packaging dir
-    if os.path.exists(ANT_PACKAGE_DIR):
-        for package in os.listdir(ANT_PACKAGE_DIR):
-            os.remove(os.path.join(ANT_PACKAGE_DIR, package))
+    if os.path.exists(PACKAGE_DIR):
+        for package in os.listdir(PACKAGE_DIR):
+            os.remove(os.path.join(PACKAGE_DIR, package))
     for product in products:
         cmdline = [ BOOTSTRAP_ENTRY,
                 "package",

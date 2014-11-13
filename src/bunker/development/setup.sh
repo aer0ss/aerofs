@@ -12,7 +12,7 @@ mkdir -p state
 mkdir -p flags && touch flags/configuration-initialized-flag
 
 # Create the version file if none exists
-PACKAGES_DIR="$SRC_ROOT/../out.ant/packages"
+PACKAGES_DIR="$SRC_ROOT/../out.gradle/packages"
 VERSION_FILE="$PACKAGES_DIR/current.ver"
 
 if [[ ! -f "$VERSION_FILE" ]]; then

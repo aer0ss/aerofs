@@ -69,9 +69,14 @@ function copy_resources_to_local_release_directories() {
 
     mkdir -p "${local_BIN}"
 
-    # the /* is necessary with GNU cp to copy the contents of bin, rather than
-    # bin itself
-    cp -R "${BUILD_OUTPUT_DIR}/bin"/* "${local_BIN}"
+    # extract fragmented gradle-built jars for merging into a single jar
+    # TODO: avoid doing that twice (client and TS)
+    pushd ${local_BIN}
+    for jar in ${BUILD_OUTPUT_DIR}/desktop/dist/aerofs-*.jar ; do
+        echo "Extracting $jar"
+        jar xf "$jar" com
+    done
+    popd
 
     # remove unnecessary files
     # TODO (WW) make sure files to be removed are at correct locations. See the

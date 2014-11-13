@@ -39,7 +39,9 @@ dependencies {
     compile 'org.apache.tika:tika-core:1.4'
     compile project(':src/libjingle.binding')
     compile project(':src/lib')
+    compile project(':src/oauth-verify')
     compile project(':src/rest-api')
+    compile project(':src/restless')
     compile project(':src/tunnel')
     compile project(path: ':src/zephyr', configuration: 'client')
     compile project(path: ':src/verkehr', configuration: 'wireClient')
