@@ -46,4 +46,4 @@ then
 fi
 
 cd "$MODE_ROOT"
-~/bunker-env/bin/pserve development.ini
+~/.aerofs-bunker-env/bin/pserve development.ini

@@ -4,7 +4,7 @@ set -e -u
 cd $(dirname "${BASH_SOURCE[0]}")
 DEV_ROOT=$(pwd)
 SRC_ROOT="$DEV_ROOT"/../..
-ENV="$HOME/bunker-env"
+ENV="$HOME/.aerofs-bunker-env"
 
 # Create a directory and touch a flag that's needed to serve bunker locally
 # because bunker assumes the web server is running on the appliance
