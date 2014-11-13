@@ -24,25 +24,42 @@ import java.util.Map;
 import com.aerofs.base.Loggers;
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.HttpMethod;
+import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLoggingConfiguration;
 import com.amazonaws.services.s3.model.BucketNotificationConfiguration;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.amazonaws.services.s3.model.BucketTaggingConfiguration;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.BucketWebsiteConfiguration;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectResult;
+import com.amazonaws.services.s3.model.CopyPartRequest;
+import com.amazonaws.services.s3.model.CopyPartResult;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.DeleteBucketCrossOriginConfigurationRequest;
+import com.amazonaws.services.s3.model.DeleteBucketLifecycleConfigurationRequest;
+import com.amazonaws.services.s3.model.DeleteBucketPolicyRequest;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
+import com.amazonaws.services.s3.model.DeleteBucketTaggingConfigurationRequest;
+import com.amazonaws.services.s3.model.DeleteBucketWebsiteConfigurationRequest;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.DeleteVersionRequest;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
+import com.amazonaws.services.s3.model.GetBucketAclRequest;
 import com.amazonaws.services.s3.model.GetBucketLocationRequest;
+import com.amazonaws.services.s3.model.GetBucketPolicyRequest;
+import com.amazonaws.services.s3.model.GetBucketWebsiteConfigurationRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListBucketsRequest;
@@ -55,8 +72,16 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.Owner;
 import com.amazonaws.services.s3.model.PartListing;
 import com.amazonaws.services.s3.model.Region;
+import com.amazonaws.services.s3.model.RestoreObjectRequest;
+import com.amazonaws.services.s3.model.SetBucketAclRequest;
+import com.amazonaws.services.s3.model.SetBucketCrossOriginConfigurationRequest;
+import com.amazonaws.services.s3.model.SetBucketLifecycleConfigurationRequest;
 import com.amazonaws.services.s3.model.SetBucketLoggingConfigurationRequest;
+import com.amazonaws.services.s3.model.SetBucketNotificationConfigurationRequest;
+import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
+import com.amazonaws.services.s3.model.SetBucketTaggingConfigurationRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
+import com.amazonaws.services.s3.model.SetBucketWebsiteConfigurationRequest;
 import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -384,9 +409,26 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public void setRegion(com.amazonaws.regions.Region region)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setS3ClientOptions(S3ClientOptions s3ClientOptions)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void
             changeObjectStorageClass(String bucketName, String key, StorageClass newStorageClass)
-                    throws AmazonClientException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setObjectRedirectLocation(String s, String s2, String s3)
     {
         throw new UnsupportedOperationException();
     }
@@ -560,6 +602,18 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public void setBucketAcl(SetBucketAclRequest setBucketAclRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AccessControlList getBucketAcl(GetBucketAclRequest getBucketAclRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setBucketAcl(String bucketName, AccessControlList acl)
             throws AmazonClientException
     {
@@ -614,6 +668,12 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public CopyPartResult copyPart(CopyPartRequest copyPartRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void deleteObject(String bucketName, String key) throws AmazonClientException
     {
         throw new UnsupportedOperationException();
@@ -621,6 +681,12 @@ public class FakeS3Client implements AmazonS3
 
     @Override
     public void deleteObject(DeleteObjectRequest deleteObjectRequest) throws AmazonClientException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public DeleteObjectsResult deleteObjects(DeleteObjectsRequest deleteObjectsRequest)
     {
         throw new UnsupportedOperationException();
     }
@@ -670,8 +736,114 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketLifecycleConfiguration(String s,
+            BucketLifecycleConfiguration bucketLifecycleConfiguration)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketLifecycleConfiguration(
+            SetBucketLifecycleConfigurationRequest setBucketLifecycleConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketLifecycleConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketLifecycleConfiguration(
+            DeleteBucketLifecycleConfigurationRequest deleteBucketLifecycleConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BucketCrossOriginConfiguration getBucketCrossOriginConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketCrossOriginConfiguration(String s,
+            BucketCrossOriginConfiguration bucketCrossOriginConfiguration)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketCrossOriginConfiguration(
+            SetBucketCrossOriginConfigurationRequest setBucketCrossOriginConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketCrossOriginConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketCrossOriginConfiguration(
+            DeleteBucketCrossOriginConfigurationRequest deleteBucketCrossOriginConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BucketTaggingConfiguration getBucketTaggingConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketTaggingConfiguration(String s,
+            BucketTaggingConfiguration bucketTaggingConfiguration)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketTaggingConfiguration(
+            SetBucketTaggingConfigurationRequest setBucketTaggingConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketTaggingConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketTaggingConfiguration(
+            DeleteBucketTaggingConfigurationRequest deleteBucketTaggingConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BucketNotificationConfiguration getBucketNotificationConfiguration(String bucketName)
             throws AmazonClientException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketNotificationConfiguration(
+            SetBucketNotificationConfigurationRequest setBucketNotificationConfigurationRequest)
     {
         throw new UnsupportedOperationException();
     }
@@ -685,7 +857,53 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public BucketWebsiteConfiguration getBucketWebsiteConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BucketWebsiteConfiguration getBucketWebsiteConfiguration(
+            GetBucketWebsiteConfigurationRequest getBucketWebsiteConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketWebsiteConfiguration(String s,
+            BucketWebsiteConfiguration bucketWebsiteConfiguration)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setBucketWebsiteConfiguration(
+            SetBucketWebsiteConfigurationRequest setBucketWebsiteConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketWebsiteConfiguration(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketWebsiteConfiguration(
+            DeleteBucketWebsiteConfigurationRequest deleteBucketWebsiteConfigurationRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BucketPolicy getBucketPolicy(String bucketName) throws AmazonClientException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BucketPolicy getBucketPolicy(GetBucketPolicyRequest getBucketPolicyRequest)
     {
         throw new UnsupportedOperationException();
     }
@@ -697,7 +915,19 @@ public class FakeS3Client implements AmazonS3
     }
 
     @Override
+    public void setBucketPolicy(SetBucketPolicyRequest setBucketPolicyRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void deleteBucketPolicy(String bucketName) throws AmazonClientException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteBucketPolicy(DeleteBucketPolicyRequest deleteBucketPolicyRequest)
     {
         throw new UnsupportedOperationException();
     }
@@ -765,6 +995,36 @@ public class FakeS3Client implements AmazonS3
 
     @Override
     public S3ResponseMetadata getCachedResponseMetadata(AmazonWebServiceRequest request)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void restoreObject(RestoreObjectRequest restoreObjectRequest)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void restoreObject(String s, String s2, int i)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void enableRequesterPays(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void disableRequesterPays(String s)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isRequesterPaysEnabled(String s)
     {
         throw new UnsupportedOperationException();
     }
