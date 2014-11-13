@@ -4,7 +4,7 @@ set -e -u
 cd $(dirname "${BASH_SOURCE[0]}")
 DEV_ROOT=$(pwd)
 SRC_ROOT="$DEV_ROOT"/../..
-ENV="$HOME/web-env"
+ENV="$HOME/.aerofs-web-env"
 
 # Create virtualenv
 virtualenv "$ENV"
