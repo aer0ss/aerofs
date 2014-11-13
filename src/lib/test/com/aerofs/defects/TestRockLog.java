@@ -63,26 +63,21 @@ public class TestRockLog extends AbstractTest
     @SuppressWarnings("unchecked")
     public void shouldMakeWellFormedRequest() throws Exception
     {
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request) throws Exception
-            {
-                // Decode the request
-                assertEquals("/defects", request.getUri());
-                assertEquals(HttpMethod.POST, request.getMethod());
-                assertEquals("application/json", request.getHeader("Content-Type"));
+        _server.setRequestProcessor(request -> {
+            // Decode the request
+            assertEquals("/defects", request.getUri());
+            assertEquals(HttpMethod.POST, request.getMethod());
+            assertEquals("application/json", request.headers().get("Content-Type"));
 
-                String json = request.getContent().toString(Charset.forName("ISO-8859-1"));
-                Map<String, Object> map = (Map<String, Object>)new Gson().fromJson(json, Map.class);
+            String json = request.getContent().toString(Charset.forName("ISO-8859-1"));
+            Map<String, Object> map = (Map<String, Object>)new Gson().fromJson(json, Map.class);
 
-                // Check that everything was sent correctly
-                assertEquals(DEFECT_NAME, map.get("name"));
-                assertEquals(DEFECT_MESSAGE, map.get("@message"));
+            // Check that everything was sent correctly
+            assertEquals(DEFECT_NAME, map.get("name"));
+            assertEquals(DEFECT_MESSAGE, map.get("@message"));
 
-                // Send a success response
-                return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
-            }
+            // Send a success response
+            return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
         });
 
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
