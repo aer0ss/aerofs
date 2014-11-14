@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.jingle;
 
+import com.aerofs.base.net.NettyUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -21,7 +22,7 @@ final class SendEvent
     SendEvent(MessageEvent event)
     {
         channelBuffer = (ChannelBuffer) event.getMessage();
-        bytes = getByteArray(channelBuffer);
+        bytes = NettyUtil.toByteArray(channelBuffer);
         channelBuffer.readerIndex(0); // reset the reader index, since we've just read all bytes.
         writeFuture = checkNotNull(event.getFuture());
         channel = event.getChannel();
@@ -59,19 +60,5 @@ final class SendEvent
     Channel getChannel()
     {
         return channel;
-    }
-
-    /**
-     * Gets a byte array out of a ChannelBuffer, avoiding memory copy if possible
-     */
-    private static byte[] getByteArray(ChannelBuffer buffer)
-    {
-        if (buffer.hasArray()) {
-            return buffer.array();
-        } else {
-            byte[] bytes = new byte[buffer.readableBytes()];
-            buffer.readBytes(bytes);
-            return bytes;
-        }
     }
 }

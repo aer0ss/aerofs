@@ -8,6 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.proto.Common.CNameVerificationInfo;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -130,8 +131,8 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             l.debug("received handshake");
 
             // De-serialize the handshake message
-            byte[] message = ((ChannelBuffer) e.getMessage()).array();
-            CNameVerificationInfo verificationInfo = CNameVerificationInfo.parseFrom(message);
+            CNameVerificationInfo verificationInfo = CNameVerificationInfo
+                    .parseFrom(NettyUtil.toByteArray(((ChannelBuffer)e.getMessage())));
 
             // Compute the expected cname
             UserID user = UserID.fromInternalThrowIfNotNormalized(verificationInfo.getUser());

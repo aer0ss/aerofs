@@ -33,7 +33,7 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
     {
         try {
             ChannelBuffer cb = (ChannelBuffer)e.getMessage();
-            byte[] message = toByteArray(cb);
+            byte[] message = NettyUtil.toByteArray(cb);
             final Channel channel = e.getChannel();
 
             final SettableFuture<?> next = SettableFuture.create();
@@ -75,17 +75,5 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
         l.warn("exception caught", e.getCause());
         // Close the connection when an exception is raised
         e.getChannel().close();
-    }
-
-    private static byte[] toByteArray(ChannelBuffer cb)
-    {
-        if (cb.hasArray() && cb.arrayOffset() == 0 &&
-                cb.readerIndex() == 0 && cb.writerIndex() == cb.array().length) {
-            return cb.array();
-        } else {
-            byte[] array = new byte[cb.readableBytes()];
-            cb.getBytes(cb.readerIndex(), array);
-            return array;
-        }
     }
 }

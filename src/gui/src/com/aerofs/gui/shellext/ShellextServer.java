@@ -2,6 +2,7 @@ package com.aerofs.gui.shellext;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -91,7 +92,7 @@ class ShellextServer
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
         {
             try {
-                byte[] message = ((ChannelBuffer) e.getMessage()).array();
+                byte[] message = NettyUtil.toByteArray((ChannelBuffer)e.getMessage());
                 _service.react(message);
             } catch (Exception ex) {
                 l.warn("ShellextServerHandler: Exception " + Util.e(ex));

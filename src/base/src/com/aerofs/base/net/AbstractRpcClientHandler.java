@@ -154,8 +154,7 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
             throw new ChannelException("Received an unexpected RPC reply");
         }
 
-        ChannelBuffer buf = (ChannelBuffer) e.getMessage();
-        readFuture.set(buf.array());
+        readFuture.set(NettyUtil.toByteArray((ChannelBuffer)e.getMessage()));
     }
 
     @Override

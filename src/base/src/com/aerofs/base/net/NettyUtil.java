@@ -4,6 +4,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.handler.ssl.NotSslRecordException;
 import org.jboss.netty.channel.ChannelState;
 
@@ -62,5 +63,17 @@ public class NettyUtil
             return INTEREST_OPS;
         }
         throw new IllegalArgumentException("could not parse state: " + state + " val: " + value);
+    }
+
+    public static byte[] toByteArray(ChannelBuffer cb)
+    {
+        if (cb.hasArray() && cb.arrayOffset() == 0 &&
+                cb.readerIndex() == 0 && cb.writerIndex() == cb.array().length) {
+            return cb.array();
+        } else {
+            byte[] array = new byte[cb.readableBytes()];
+            cb.getBytes(cb.readerIndex(), array);
+            return array;
+        }
     }
 }

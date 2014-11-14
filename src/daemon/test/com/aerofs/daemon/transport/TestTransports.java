@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -112,8 +113,8 @@ public final class TestTransports
         this.transport3 = new TransportResource(transportType, mockCA, zephyrAddress);
     }
 
-    @Before
-    public void initMocks()
+    @BeforeClass
+    public static void initMocks()
     {
         MockDefects.init();
     }

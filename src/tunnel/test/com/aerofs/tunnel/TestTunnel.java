@@ -7,6 +7,7 @@ package com.aerofs.tunnel;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -129,7 +130,7 @@ public class TestTunnel extends AbstractBaseTest
 
     static void assertBufferEquals(byte[] expected, ChannelBuffer actual)
     {
-        assertArrayEquals(expected, actual.readBytes(actual.readableBytes()).array());
+        assertArrayEquals(expected, NettyUtil.toByteArray(actual));
     }
 
     @Test

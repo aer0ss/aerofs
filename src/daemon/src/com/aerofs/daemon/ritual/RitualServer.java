@@ -3,6 +3,7 @@ package com.aerofs.daemon.ritual;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -86,7 +87,7 @@ public class RitualServer
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
         {
             try {
-                byte[] message = ((ChannelBuffer) e.getMessage()).array();
+                byte[] message = NettyUtil.toByteArray((ChannelBuffer)e.getMessage());
 
                 final Channel channel = e.getChannel();
 

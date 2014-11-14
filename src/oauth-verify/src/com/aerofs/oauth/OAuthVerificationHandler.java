@@ -3,6 +3,7 @@ package com.aerofs.oauth;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.net.NettyUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.SettableFuture;
@@ -112,7 +113,7 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent me)
     {
         HttpResponse msg = (HttpResponse)me.getMessage();
-        String content = BaseUtil.utf2string(msg.getContent().array());
+        String content = BaseUtil.utf2string(NettyUtil.toByteArray(msg.getContent()));
 
         l.debug("response {}", content);
 
