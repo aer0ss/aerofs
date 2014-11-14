@@ -242,10 +242,10 @@ public class CompInviteUsers extends Composite
         setStatusText(S.INVITING);
         setInProgress(true);
 
-        FutureCallback<Object> callback = new FutureCallback<Object>()
+        FutureCallback<Void> callback = new FutureCallback<Void>()
         {
             @Override
-            public void onSuccess(Object o)
+            public void onSuccess(Void v)
             {
                 getShell().close();
 
