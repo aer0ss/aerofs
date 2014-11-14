@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
     renderer='404.mako'
 )
 def not_found_view(request):
-    request.response_status = 404
+    request.response.status = 404
     return {}
 
 
@@ -36,6 +36,6 @@ def forbidden_view(request):
 def exception_view(context, request):
     log.error("default handling for general exception:", exc_info=context)
 
-    request.response_status = 500
+    request.response.status = 500
     return {}
 
