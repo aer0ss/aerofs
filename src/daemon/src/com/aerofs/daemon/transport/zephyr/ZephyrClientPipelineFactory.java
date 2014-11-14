@@ -120,9 +120,19 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast("zephyr-protocol", zephyrProtocolHandler);
 
         // ssl
-        CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
         pipeline.addLast("standinssl", newStandInSslHandler(zephyrProtocolHandler));
+
+        // framing
+        pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());
+        pipeline.addLast("length-encoder", BootstrapFactoryUtil.newLengthFieldPrepender());
+
+        // cname handshake
+        CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
         pipeline.addLast("cname", verificationHandler);
+
+        // core-protocol-version
+        pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
+        pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
 
         // set up the cname listener
         CNameVerifiedHandler verifiedHandler = newCNameVerifiedHandler();
@@ -130,14 +140,6 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         verificationHandler.setListener(verifiedHandler);
 
         pipeline.addLast("timeout-handler", newConnectTimeoutHandler(zephyrHandshakeTimeout, timer));
-
-        // framing
-        pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());
-        pipeline.addLast("length-encoder", BootstrapFactoryUtil.newLengthFieldPrepender());
-
-        // core-protocol-version
-        pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
-        pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
 
         // set up the main send/recv message handler
         pipeline.addLast(MESSAGE_HANDLER_NAME, newMessageHandler());

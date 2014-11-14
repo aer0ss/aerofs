@@ -4,6 +4,7 @@ import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 import java.util.Arrays;
@@ -36,7 +37,8 @@ final class ZephyrRegistrationDecoder extends FrameDecoder
         int assignedZid = buffer.readInt();
 
         ctx.getChannel().getPipeline().remove(this);
+        Channels.fireMessageReceived(channel, new Registration(assignedZid));
 
-        return new Registration(assignedZid);
+        return buffer.readable() ? buffer : null;
     }
 }
