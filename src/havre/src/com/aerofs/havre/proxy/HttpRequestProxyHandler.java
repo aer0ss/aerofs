@@ -364,9 +364,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 do {
                     sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } while (_expectedResponses.decrementAndGet() > 0);
+            } else {
+                _downstream.write(ChannelBuffers.EMPTY_BUFFER)
+                        .addListener(ChannelFutureNotifier.CLOSE);
             }
-            _downstream.write(ChannelBuffers.EMPTY_BUFFER)
-                    .addListener(ChannelFutureNotifier.CLOSE);
         }
 
         @Override
