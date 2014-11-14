@@ -189,6 +189,8 @@ public final class TransportResource extends ExternalResource
         serverSocketChannelFactory.releaseExternalResources();
 
         linkStateService.markLinksDown();
+
+        timer.stop();
     }
 
     //

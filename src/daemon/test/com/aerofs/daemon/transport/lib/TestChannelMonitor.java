@@ -4,23 +4,23 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.DefaultChannelFuture;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,25 +39,41 @@ public class TestChannelMonitor extends AbstractTest
     DID did;
     ChannelDirectory directory;
     ChannelFuture lastFuture;
-    Timer timer;
+
+    // one does not simply spy on a HashedWheelTimer directly
+    // it used to work in the past but since netty 3.9.5 it causes calls to newTimeout to hang
+    Timer timer = spy(new Timer() {
+        Timer t = new HashedWheelTimer();
+
+        @Override
+        public Timeout newTimeout(TimerTask timerTask, long l, TimeUnit timeUnit)
+        {
+            return t.newTimeout(timerTask, l, timeUnit);
+        }
+
+        @Override
+        public Set<Timeout> stop()
+        {
+            return t.stop();
+        }
+    });
 
     @Before
     public void setup() throws Exception
     {
         did = new DID("91200100000000000000000000000456");
         directory = spy(new ChannelDirectory(mock(ITransport.class), mock(IUnicastConnector.class)));
-        timer = spy(TimerUtil.getGlobalTimer());
 
-        doAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                lastFuture = new DefaultChannelFuture(mock(Channel.class), true);
-                return lastFuture;
-            }
+        doAnswer(invocation -> {
+            lastFuture = new DefaultChannelFuture(mock(Channel.class), true);
+            return lastFuture;
         }).when(directory).chooseActiveChannel(any(DID.class));
+    }
+
+    @After
+    public void tearDown()
+    {
+        timer.stop();
     }
 
     @Test

@@ -127,14 +127,7 @@ public final class TestTransports
         zephyr = new ZephyrServer(zephyrAddress.getHostName(), (short) zephyrAddress.getPort(), new com.aerofs.zephyr.server.core.Dispatcher());
         zephyr.init();
 
-        Thread zephyrRunner = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                zephyr.start();
-            }
-        });
+        Thread zephyrRunner = new Thread(zephyr::start);
         zephyrRunner.setName("zephyr");
         zephyrRunner.start();
 

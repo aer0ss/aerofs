@@ -5,7 +5,6 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.C;
-import com.aerofs.base.TimerUtil;
 import com.aerofs.testlib.LoggerSetup;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -26,7 +25,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +45,7 @@ public final class TestConnectTimeoutHandler
     @Before
     public void setup()
     {
-        timer = spy(TimerUtil.getGlobalTimer());
+        timer = mock(Timer.class);
         timeout = mock(Timeout.class);
         ctx = mock(ChannelHandlerContext.class);
         channel = mock(Channel.class);
