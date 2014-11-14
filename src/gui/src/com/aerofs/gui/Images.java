@@ -64,6 +64,9 @@ public class Images {
 
     public static final String IMG_SETUP = "setup.png";
 
+    public static final String ICON_USER = "user.png";
+    public static final String ICON_GROUP = "group.png";
+
     private static final Map<String, Image> s_imgs = new HashMap<String, Image>();
 
     // delay (ms) between each spinner frame

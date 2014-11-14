@@ -1,4 +1,4 @@
-package com.aerofs.gui.sharing;
+package com.aerofs.gui.sharing.invitee;
 
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Shell;

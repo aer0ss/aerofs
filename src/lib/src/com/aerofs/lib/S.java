@@ -83,6 +83,10 @@ public class S
                     "organization. Only administrator accounts can be used to install a Team " +
                     "Server.",
 
+            // Invite user dialog
+            INVITE_INVITE_AS         = "Invite as",
+            INVITE_PERSONAL_NOTE     = "Personal note (optional):",
+
             RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 
             GUI_LOADING              = "Loading...",
@@ -191,7 +195,7 @@ public class S
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.product() + " again.",
             // use trailing spaces to force right margins
-            TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
+            TYPE_EMAIL_ADDRESSES = "Share this folder with:",
             INVITATION_WAS_SENT = "Invited successfully.",
             CLI_NAME = L.productUnixName() + "-cli",
             SH_NAME = L.productUnixName()  + "-sh",

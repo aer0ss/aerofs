@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class is an utility class for individual UI exception handlers
@@ -33,7 +34,7 @@ public class SharingRulesExceptionHandlers
     /**
      * @return true iff this set of handlers can handle {@paramref e}
      */
-    public static boolean canHandle(Exception e)
+    public static boolean canHandle(Throwable e)
     {
         return e instanceof ExSharingRulesError || e instanceof ExSharingRulesWarning;
     }
@@ -42,7 +43,7 @@ public class SharingRulesExceptionHandlers
      * @pre {@code canHandle(e)} is true
      * @return true iff we should suppress the warning and retry the operation.
      */
-    public static boolean promptUserToSuppressWarning(Shell shell, Exception e)
+    public static boolean promptUserToSuppressWarning(Shell shell, Throwable e)
     {
         checkArgument(canHandle(e));
         if (e instanceof ExSharingRulesError) {
@@ -50,7 +51,7 @@ public class SharingRulesExceptionHandlers
         } else if (e instanceof ExSharingRulesWarning) {
             return handleWarning(shell, (ExSharingRulesWarning)e);
         } else {
-            checkArgument(false);
+            checkState(false);
             return false; // should not be reachable
         }
     }

@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.sharing.DlgInviteUsers;
+import com.aerofs.gui.sharing.invitee.DlgInviteUsers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
@@ -49,7 +49,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 import static com.aerofs.defects.Defects.newDefectWithLogs;
-import static com.aerofs.gui.sharing.DlgInviteUsers.getLabelByPath;
+import static com.aerofs.gui.sharing.invitee.DlgInviteUsers.getLabelByPath;
 
 public class GUIUtil
 {

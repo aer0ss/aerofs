@@ -5,7 +5,7 @@ import java.util.Collections;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
-import com.aerofs.gui.sharing.CompInviteUsers;
+import com.aerofs.gui.sharing.invitee.CompInviteUsers;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.UserID;
@@ -81,7 +81,7 @@ public class CmdInvite extends AbstractShellCommand<ShProgram>
         SubjectPermissions srp = new SubjectPermissions(UserID.fromExternal(cl.getArgs()[1]),
                 fromString(role));
 
-        String name = path.getElemCount() == 0 ? "unkown folder" :
+        String name = path.getElemCount() == 0 ? "unknown folder" :
                 path.getElem(path.getElemCount() - 1);
         String note = CompInviteUsers.getDefaultInvitationNote(name, Cfg.user().getString());
 

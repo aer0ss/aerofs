@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.sharing.invitee.DlgInviteUsers;
 import com.aerofs.gui.sharing.members.CompUserList;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -27,7 +28,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
-import static com.aerofs.gui.sharing.DlgInviteUsers.getLabelByName;
+import static com.aerofs.gui.sharing.invitee.DlgInviteUsers.getLabelByName;
 
 /**
  * The member user list in the Manage Shared Folder dialog
