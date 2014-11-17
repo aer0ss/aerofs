@@ -111,6 +111,11 @@ service SPService {
     // invite by calling the below rpc (AcceptOrganizationInvitation). At that point the user will
     // be moved in the new organization.
     //
+    // Note that there are currently two use cases for this call:
+    // 1. Transferring an existing user from one organization(likely their own) to another (HC).
+    // 2. Inviting a non-user to create an AeroFS account, and we'll put that user in the same
+    //    organization as their inviter.
+    //
     // Required Auth Level: admin
     //
     // Throws:
@@ -118,10 +123,8 @@ service SPService {
     //   ExAlreadyExist if the email address is already a member of that organization.
     //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
     //                  accepted the invitation.
-    //   ExEmailSendingFailed if we were unable to send the email.
     //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
     // Stripe customer ID.
-    //   ExEmailNotVerified if the user's email hasn't been verified
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
     // Accept an organization invitation and move the caller into that organization. Makes
@@ -134,7 +137,6 @@ service SPService {
     //   ExNotFound if the user does not have a pending invitation for the specified organization.
     //   ExBadArgs if the user is already a member of the target organization.
     //   ExNoAdminForNonEmptyTeam if the organization would have no admins but non-admin members.
-    //   ExEmailNotVerified if the user's email hasn't been verified
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
 
@@ -184,7 +186,6 @@ service SPService {
     //   ExCannotInviteSelf if the sharer appears in the list of sharees
     //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
     //     Stripe customer ID.
-    //   ExEmailNotVerified if the user's email hasn't been verified
     //
     // Exceptions from shared folder rules.
     rpc ShareFolder(ShareFolderCall) returns(Void);
@@ -201,7 +202,6 @@ service SPService {
     // Throws:
     //   ExNotFound if the shared folder code wasn't found
     //   ExNoPerm if the user was not invited to the shared folder
-    //   ExEmailNotVerified if the user's email hasn't been verified
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
     // Ignore an invite to a shared folder.
@@ -430,9 +430,6 @@ service SPService {
     //
     // Throws:
     //   ExDeviceIDAlreadyExist if the device ID already exists
-    //   ExEmailNotVerified if the user's email hasn't been verified. We do it to avoid
-    //   security complications on Team Servers, such as inviting users from the Team Server
-    //   desktop app.
     rpc RegisterTeamServerDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
 
