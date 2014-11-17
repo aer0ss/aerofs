@@ -18,6 +18,7 @@ import com.aerofs.lib.event.Prio;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -76,13 +77,22 @@ public final class TestTCPUnicast
 
         localDevice = new UnicastTCPDevice(CHANNEL_CONNECT_TIMEOUT, random, secureRandom, mockCA, new UnicastTransportListener());
         otherDevice = new UnicastTCPDevice(CHANNEL_CONNECT_TIMEOUT, random, secureRandom, mockCA, new UnicastTransportListener());
-        when(localDevice.addressResolver.resolve(otherDevice.did)).thenReturn(otherDevice.listeningAddress);
-        when(otherDevice.addressResolver.resolve(localDevice.did)).thenReturn(localDevice.listeningAddress);
 
         localDevice.start(ChannelFactories.newServerChannelFactory(), ChannelFactories.newClientChannelFactory());
         otherDevice.start(ChannelFactories.newServerChannelFactory(), ChannelFactories.newClientChannelFactory());
+        when(localDevice.addressResolver.resolve(otherDevice.did))
+                .thenReturn(otherDevice.unicast.getListeningAddress());
+        when(otherDevice.addressResolver.resolve(localDevice.did))
+                .thenReturn(localDevice.unicast.getListeningAddress());
 
         l.info("local:{} remote:{}", localDevice.did, otherDevice.did);
+    }
+
+    @After
+    public void tearDown()
+    {
+        localDevice.stop();
+        otherDevice.stop();
     }
 
     // returns the Channel used to send the pack to the remote peer
@@ -504,18 +514,13 @@ public final class TestTCPUnicast
 
         // create and start a thread that'll send packets as fast as possible
         final AtomicBoolean keepWriting = new AtomicBoolean(true);
-        Thread senderThread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while(keepWriting.get()) {
-                    try {
-                        localChannel.write(TransportProtocolUtil.newDatagramPayload(TEST_DATA));
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
+        Thread senderThread = new Thread(() -> {
+            while(keepWriting.get()) {
+                try {
+                    localChannel.write(TransportProtocolUtil.newDatagramPayload(TEST_DATA));
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    break;
                 }
             }
         });

@@ -245,14 +245,7 @@ class SignalThread extends Thread
     {
         assertSignalThread();
 
-        post(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                stream.delete();
-            }
-        });
+        post(stream::delete);
     }
 
     @Override

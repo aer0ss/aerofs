@@ -67,44 +67,39 @@ public final class TransportReader
 
     private void createAndStartIncomingTransportEventReader()
     {
-        outgoingEventQueueReader = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (running) {
-                    try {
-                        OutArg<Prio> outArg = new OutArg<Prio>(null);
-                        IEvent event = outgoingEventSink.tryDequeue(outArg); // FIXME (AG): _have_ to use tryDequeue because dequeue is uninterruptible (WTF)
-                        if (event == null) {
-                            continue;
-                        }
+        outgoingEventQueueReader = new Thread(() -> {
+            while (running) {
+                try {
+                    OutArg<Prio> outArg = new OutArg<Prio>(null);
+                    IEvent event = outgoingEventSink.tryDequeue(outArg); // FIXME (AG): _have_ to use tryDequeue because dequeue is uninterruptible (WTF)
+                    if (event == null) {
+                        continue;
+                    }
 
-                        l.trace("handling event type:{}", event.getClass().getSimpleName());
+                    l.trace("handling event type:{}", event.getClass().getSimpleName());
 
-                        if (event instanceof EIStoreAvailability) {
-                            handleStoreAvailability((EIStoreAvailability)event);
-                        } else if (event instanceof EIUnicastMessage) {
-                            handleUnicastMessage((EIUnicastMessage)event);
-                        } else if (event instanceof EIStreamBegun) {
-                            handleNewIncomingStream((EIStreamBegun)event);
-                        } else if (event instanceof EIChunk) {
-                            handleIncomingStreamChunk((EIChunk) event);
-                        } else {
-                            l.warn("ignore transport event of type:{}", event.getClass().getSimpleName());
-                        }
-                    } catch (Throwable t) {
-                        if (Thread.interrupted()) {
-                            l.warn("thread interrupted - checking if reader stopped");
-                            checkState(!running, "thread interrupted, but stop() was not called");
-                            break;
-                        } else {
-                            throw new IllegalStateException("incoming transport event reader caught err", t);
-                        }
+                    if (event instanceof EIStoreAvailability) {
+                        handleStoreAvailability((EIStoreAvailability)event);
+                    } else if (event instanceof EIUnicastMessage) {
+                        handleUnicastMessage((EIUnicastMessage)event);
+                    } else if (event instanceof EIStreamBegun) {
+                        handleNewIncomingStream((EIStreamBegun)event);
+                    } else if (event instanceof EIChunk) {
+                        handleIncomingStreamChunk((EIChunk) event);
+                    } else {
+                        l.warn("ignore transport event of type:{}", event.getClass().getSimpleName());
+                    }
+                } catch (Throwable t) {
+                    if (Thread.interrupted()) {
+                        l.warn("thread interrupted - checking if reader stopped");
+                        checkState(!running, "thread interrupted, but stop() was not called");
+                        break;
+                    } else {
+                        throw new IllegalStateException("incoming transport event reader caught err", t);
                     }
                 }
-
             }
+
         });
 
         outgoingEventQueueReader.setName(readerName);

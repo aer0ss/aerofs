@@ -7,7 +7,6 @@ package com.aerofs.daemon.link;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -172,14 +171,8 @@ public class LinkStateService
         final Set<NetworkInterface> removed = Sets.newHashSet(previous);
         removed.removeAll(current);
 
-        _notifier.notifyOnOtherThreads(new IListenerVisitor<ILinkStateListener>()
-        {
-            @Override
-            public void visit(ILinkStateListener listener)
-            {
-                listener.onLinkStateChanged(previous, current, copyOf(added), copyOf(removed));
-            }
-        });
+        _notifier.notifyOnOtherThreads(
+                listener -> listener.onLinkStateChanged(previous, current, copyOf(added), copyOf(removed)));
 
         _ifaces = current;
     }
@@ -192,41 +185,36 @@ public class LinkStateService
 
         l.info("start lss thd");
 
-        startDaemonThread("lss", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                // Check link state, then wait for interface change, and then repeat on interface
-                // changes. If waiting failed or not supported, fall back to polling.
-                //
-                // BUGBUG There is a small probability that we might lose change notifications
-                // between two consecutive calls to waitForNetworkInterfaceChange(). A proper fix is
-                // to use asynchronous callbacks. But calling back from C to Java is not straight-
-                // forward (see libjingle-binding implementation).
-                //
-                // We didn't implement Driver.waitForNetworkInterfaceChange for UNIX OSes, assuming
-                // getActiveInterfaces doesn't take too long or too much CPU on these OSes.
-                // Otherwise, we should implement this method.
-                //
-                // noinspection InfiniteLoopStatement
-                while (true) {
-                    if (!_markedDown) {
-                        checkLinkState();
-                    }
-
-                    // FIXME (AG): this is inefficient, especially on Windows
-                    // In JDK 6 I noticed that enumerating the network interfaces can
-                    // take a long time, especially on Windows. We switched to an
-                    // alternate Windows-only API to be notified of interface changes,
-                    // but noticed that the daemon sometimes didn't get any notifications
-                    // of network changes. this led to weird bugs where a laptop
-                    // would resume from sleep but AeroFS would still be offline. I
-                    // considered other alternatives, but the lowest-cost starting option
-                    // was to try polling again, and see if the JDK8 implementation
-                    // was faster
-                    ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
+        startDaemonThread("lss", () -> {
+            // Check link state, then wait for interface change, and then repeat on interface
+            // changes. If waiting failed or not supported, fall back to polling.
+            //
+            // BUGBUG There is a small probability that we might lose change notifications
+            // between two consecutive calls to waitForNetworkInterfaceChange(). A proper fix is
+            // to use asynchronous callbacks. But calling back from C to Java is not straight-
+            // forward (see libjingle-binding implementation).
+            //
+            // We didn't implement Driver.waitForNetworkInterfaceChange for UNIX OSes, assuming
+            // getActiveInterfaces doesn't take too long or too much CPU on these OSes.
+            // Otherwise, we should implement this method.
+            //
+            // noinspection InfiniteLoopStatement
+            while (true) {
+                if (!_markedDown) {
+                    checkLinkState();
                 }
+
+                // FIXME (AG): this is inefficient, especially on Windows
+                // In JDK 6 I noticed that enumerating the network interfaces can
+                // take a long time, especially on Windows. We switched to an
+                // alternate Windows-only API to be notified of interface changes,
+                // but noticed that the daemon sometimes didn't get any notifications
+                // of network changes. this led to weird bugs where a laptop
+                // would resume from sleep but AeroFS would still be offline. I
+                // considered other alternatives, but the lowest-cost starting option
+                // was to try polling again, and see if the JDK8 implementation
+                // was faster
+                ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
             }
         });
     }

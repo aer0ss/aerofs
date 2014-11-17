@@ -51,7 +51,6 @@ public final class UnicastTCPDevice
     public LinkStateService linkStateService = new LinkStateService();
     public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
     public UserID userID;
-    public InetSocketAddress listeningAddress; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
     public IAddressResolver addressResolver; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
     public SemaphoreTriggeringListener unicastListener;
     public Unicast unicast;
@@ -83,7 +82,6 @@ public final class UnicastTCPDevice
         unicastListener = spy(new SemaphoreTriggeringListener());
 
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org", random.nextInt(10)));
-        listeningAddress = new InetSocketAddress(random.nextInt(30000) + 10000);
 
         TransportStats transportStats = new TransportStats();
         StreamManager streamManager = new StreamManager();
@@ -126,8 +124,14 @@ public final class UnicastTCPDevice
         ClientBootstrap clientBootstrap = tcpBootstrapFactory.newClientBootstrap(clientSocketChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
-        unicast.start(listeningAddress);
+        unicast.start(new InetSocketAddress(0));
         linkStateService.markLinksUp();
         transportReader.start();
+    }
+
+    public void stop()
+    {
+        transportReader.stop();
+        unicast.stop();
     }
 }

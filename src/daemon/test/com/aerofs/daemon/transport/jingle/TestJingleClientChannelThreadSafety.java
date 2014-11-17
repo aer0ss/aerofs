@@ -20,7 +20,6 @@ import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.DefaultChannelPipeline;
 import org.jboss.netty.channel.MessageEvent;
@@ -153,16 +152,10 @@ public final class TestJingleClientChannelThreadSafety
         jingleDevice.signalThread.setUnicastListener(listener);
 
         jingleDevice.clientBootstrap = new ClientBootstrap(new JingleClientChannelFactory(DaemonParam.DEFAULT_CONNECT_TIMEOUT, timer, jingleDevice.signalThread, jingleDevice.channelWorker));
-        jingleDevice.clientBootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-                    throws Exception
-            {
-                ChannelPipeline pipeline = new DefaultChannelPipeline();
-                pipeline.addLast("racer", handler);
-                return pipeline;
-            }
+        jingleDevice.clientBootstrap.setPipelineFactory(() -> {
+            ChannelPipeline pipeline = new DefaultChannelPipeline();
+            pipeline.addLast("racer", handler);
+            return pipeline;
         });
 
         jingleDevice.serverBootstrap = new ServerBootstrap(new JingleServerChannelFactory(jingleDevice.signalThread, jingleDevice.channelWorker));
@@ -206,19 +199,14 @@ public final class TestJingleClientChannelThreadSafety
                         .connect(new JingleAddress(remotedid, new Jid(JabberID.did2BareJid(remotedid, ARROWFS_ORG))))
                         .getChannel();
 
-        sendingThread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while(running.get()) {
-                    try {
-                        channel.onIncomingMessage(remotedid, new byte[] {0});
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        l.warn("interrupted while simulating incoming messages");
-                        break;
-                    }
+        sendingThread = new Thread(() -> {
+            while(running.get()) {
+                try {
+                    channel.onIncomingMessage(remotedid, new byte[] {0});
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    l.warn("interrupted while simulating incoming messages");
+                    break;
                 }
             }
         });
@@ -226,14 +214,7 @@ public final class TestJingleClientChannelThreadSafety
 
         Thread.sleep(WAIT_UNTIL_CLOSE_TIME);
 
-        closingThread = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                channel.close();
-            }
-        });
+        closingThread = new Thread(channel::close);
         closingThread.start();
 
         channel.getCloseFuture().awaitUninterruptibly();
