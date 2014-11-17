@@ -4,6 +4,7 @@ out.md
 out.ant
 out.gradle
 out.idea
+out.shell
 workspace.xml
 dump.rdb
 syncdet_test/.idea/
