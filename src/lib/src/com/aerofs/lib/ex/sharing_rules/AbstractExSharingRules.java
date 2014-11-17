@@ -38,11 +38,6 @@ public abstract class AbstractExSharingRules extends AbstractExWirable
         // NB: in the future this Type enum will be replaced by user-defined exceptions
         public static enum Type
         {
-            ERROR_CANNOT_GRANT_WRITE_ACCESS(SHARING_EXTERNAL_TITLE,
-                    "Internal users cannot be granted write access to externally shared folders.\n\n"
-                    + "This folder is shared with the following external users:\n"
-                    + "\n{}"
-            ),
             WARNING_EXTERNAL_SHARING(SHARING_EXTERNAL_TITLE,
                     "You are about to share this folder with external users.\n\n"
                     + "Internal users will lose write access to it.\n\n"
@@ -52,7 +47,12 @@ public abstract class AbstractExSharingRules extends AbstractExWirable
             WARNING_DOWNGRADE(SHARING_EXTERNAL_TITLE,
                     "This folder is shared with the following external users:\n"
                     + "\n{}\n\n"
-                    + "To avoid accidental data leaks, internal Owners are downgraded to Managers."
+                    + "To avoid accidental data leaks, internal Owners are downgraded to Managers, "
+                    + "and internal Editors to Viewers."
+            ),
+            WARNING_NO_EXTERNAL_OWNERS(SHARING_EXTERNAL_TITLE,
+                    "External Users cannot manage or own a shared folder.\n\n"
+                    + "To avoid accidental data leaks, external Owners are downgraded to Editors."
             );
 
             private final String title;

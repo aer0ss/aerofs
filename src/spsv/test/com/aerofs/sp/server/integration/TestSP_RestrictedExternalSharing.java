@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -131,40 +132,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         shareFolder(internalSharer, sid, org.getTeamServerUser(), Permissions.allOf());
     }
 
-    // There should be no warnings or errors when external users invite either external or internal
-    // users as viewers or owners
-    @Test
-    public void shouldAllowFolderCreatorAsExternalUserToAddViewersAndOwner()
-            throws Exception
-    {
-        shareFolder(externalUser1, sid, internalUser2, Permissions.allOf());
-        shareFolder(externalUser1, sid, externalUser3, Permissions.allOf(Permission.WRITE,
-                Permission.MANAGE));
-    }
-
-    // There should be no warnings or errors when external users invite either external or internal
-    // users as viewers or owners
-    @Test
-    public void shouldAllowSharerAsExternalUserToAddViewersAndOwner()
-            throws Exception
-    {
-        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
-                Permission.WRITE, Permission.MANAGE));
-        joinSharedFolder(externalUser1, sid);
-
-        shareFolder(externalUser1, sid, externalUser2, Permissions.allOf(Permission.WRITE,
-                Permission.MANAGE));
-        shareFolder(externalUser1, sid, externalUser3, Permissions.allOf());
-        try {
-            shareFolder(externalUser1, sid, internalUser1, Permissions.allOf(Permission.WRITE,
-                    Permission.MANAGE));
-        } catch (ExSharingRulesWarning e) {
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            sqlTrans.rollback();
-        }
-        shareFolder(externalUser1, sid, internalUser2, Permissions.allOf());
-    }
-
     @Test
     public void shouldDisallowFolderCreaterAsExternalUserToAddEditors()
             throws Exception
@@ -179,14 +146,16 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldAllowSharerAsExternalUserToAddExternalEditor()
+    public void shouldNotAllowExternalUserAsOwner()
             throws Exception
     {
-        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
-                Permission.WRITE, Permission.MANAGE));
-        joinSharedFolder(externalUser1, sid);
-
-        shareFolder(externalUser1, sid, externalUser2, Permissions.allOf(Permission.WRITE));
+        try {
+            shareFolder(internalSharer, sid, externalUser1, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
+            fail();
+        } catch (ExSharingRulesWarning e) {
+            assertEquals(Type.WARNING_EXTERNAL_SHARING, e.descriptions().get(0).type);
+            assertEquals(1, e.descriptions().get(0).users.size());
+        }
     }
 
     @Test
@@ -360,23 +329,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 Permission.WRITE, Permission.MANAGE));
         shareFolder(internalSharer, sid, internalUser1, Permissions.allOf());
 
-        try {
-            updateACL(externalUser1, Permissions.allOf(Permission.WRITE));
-            fail();
-        } catch (ExSharingRulesWarning e) {
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(2, e.descriptions().get(0).users.size());
-            sqlTrans.rollback();
-        }
-
-        try {
-            updateACL(externalUser2, Permissions.allOf(Permission.WRITE));
-            fail();
-        } catch (ExSharingRulesWarning e) {
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(2, e.descriptions().get(0).users.size());
-            sqlTrans.rollback();
-        }
+        updateACL(externalUser1, Permissions.allOf(Permission.WRITE));
+        updateACL(externalUser2, Permissions.allOf(Permission.WRITE));
 
         try {
             updateACL(internalUser1, Permissions.allOf(Permission.WRITE));
@@ -439,8 +393,7 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         }
 
         try {
-            shareFolder(internalSharer, sid, externalUser2, Permissions.allOf(Permission.WRITE,
-                    Permission.MANAGE));
+            shareFolder(internalSharer, sid, externalUser2, Permissions.allOf(Permission.WRITE));
             fail();
             // When adding an external user as an owner, the system should throw the "adding
             // external user" warning rather than the "owner can share externally" warning
@@ -468,8 +421,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
             fail();
         } catch (ExSharingRulesWarning e) {
             assertEquals(1, e.descriptions().size());
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(2, e.descriptions().get(0).users.size());
+            assertEquals(Type.WARNING_NO_EXTERNAL_OWNERS, e.descriptions().get(0).type);
+            assertEquals(1, e.descriptions().get(0).users.size());
             sqlTrans.rollback();
         }
 
@@ -478,8 +431,8 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
             fail();
         } catch (ExSharingRulesWarning e) {
             assertEquals(1, e.descriptions().size());
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(2, e.descriptions().get(0).users.size());
+            assertEquals(Type.WARNING_NO_EXTERNAL_OWNERS, e.descriptions().get(0).type);
+            assertEquals(1, e.descriptions().get(0).users.size());
             sqlTrans.rollback();
         }
 
@@ -490,6 +443,13 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
             assertEquals(1, e.descriptions().size());
             assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
             assertEquals(2, e.descriptions().get(0).users.size());
+            sqlTrans.rollback();
+        }
+
+        try {
+            shareFolderSuppressWarnings(externalUser1, sid, internalUser2, Permissions.allOf());
+            fail();
+        } catch (ExNoPerm e) {
             sqlTrans.rollback();
         }
     }

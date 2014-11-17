@@ -2490,7 +2490,7 @@ public class SPService implements ISPService
             sf.throwIfNoPrivilegeToChangeACL(user);
 
             ISharingRules rules = _sharingRules.create(user);
-            role = rules.onUpdatingACL(sf, user, role);
+            role = rules.onUpdatingACL(sf, subject, role);
 
             ImmutableCollection<UserID> affectedUsers = sf.setPermissions(subject, role);
             if (!suppressWarnings) rules.throwIfAnyWarningTriggered();

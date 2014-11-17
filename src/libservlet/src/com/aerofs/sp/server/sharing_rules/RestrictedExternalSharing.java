@@ -33,13 +33,17 @@ import java.util.List;
  *
  *  high-level rule:
  *      internal users may not write to externally shared folders
+ *      external users may not manage shared folders
  *
  *  user-visible behavior:
- *      - internal users see a warning when inviting an external users
+ *      - internal users see a warning when inviting an external user
  *      - internal users lose write access to folder as soon as an external user is invited
- *      - attempts to invite an internal user as EDITOR (i.e. WRITE, no MANAGE) will fail
+ *      - attempts to invite an internal user as EDITOR (i.e. WRITE, no MANAGE) will warn
+ *        that the actual permission granted will be VIEWER only
  *      - attempts to invite an internal user as OWNER (i.e. WRITE and MANAGE) will warn
  *        that the actual permission granted will be MANAGE only
+ *      - attempts to invite an external user as OWNER (i.e. WRITE and MANAGE) will warn
+ *        that the actual permission granted will be EDITOR only
  *
  * NB: this class is a short term solution
  *
@@ -65,30 +69,35 @@ public class RestrictedExternalSharing implements ISharingRules
     public Permissions onUpdatingACL(SharedFolder sf, User sharee, Permissions newPermissions)
             throws Exception
     {
-        Permissions oldPermissions = sf.getPermissionsNullable(sharee);
         ImmutableCollection<UserID> externalMembers = getExternalUsers(sf);
 
         boolean isExternalFolder = !externalMembers.isEmpty();
-        boolean isExternalUser = !_f._authenticator.isInternalUser(sharee.id());
+        boolean isExternalSharee = !_f._authenticator.isInternalUser(sharee.id());
 
-        if (oldPermissions == null && isExternalUser) {
-            if (_f._authenticator.isInternalUser(_sharer.id())) {
-                _warnings.add(new DetailedDescription(Type.WARNING_EXTERNAL_SHARING,
-                        getFullNames(ImmutableList.of(sharee.id()))));
-            }
+        if (isExternalSharee && !externalMembers.contains(sharee.id())) {
+            // adding an external user
+            _warnings.add(new DetailedDescription(Type.WARNING_EXTERNAL_SHARING,
+                    getFullNames(ImmutableList.of(sharee.id()))));
 
             if (!isExternalFolder) revokeWritePermissionForInternalUsers(sf, _sharer);
         }
 
         // prevent granting write access to an externally shared folder to internal users
         if (isExternalFolder
-                && !isExternalUser
+                && !isExternalSharee
                 && !sharee.isWhitelisted()
                 && newPermissions.covers(Permission.WRITE))
         {
             _warnings.add(new DetailedDescription(Type.WARNING_DOWNGRADE,
                     getFullNames(externalMembers)));
             return newPermissions.minus(Permission.WRITE);
+        }
+        if (isExternalSharee
+                && newPermissions.covers(Permission.MANAGE))
+        {
+            _warnings.add(new DetailedDescription(Type.WARNING_NO_EXTERNAL_OWNERS,
+                    getFullNames(ImmutableList.of(sharee.id()))));
+            return newPermissions.minus(Permission.MANAGE);
         }
 
         return newPermissions;
