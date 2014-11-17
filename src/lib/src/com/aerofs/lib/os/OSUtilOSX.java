@@ -177,7 +177,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         return result.get().trim();
     }
 
-    private int _shellextPort;
+    private File _socketFile;
 
     /*
      * Returns the checksum of the currently installed shell extension
@@ -250,8 +250,8 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         l.debug("Restarting the Finder");
         SystemUtil.execForeground("killall", "Finder");
 
-        if (_shellextPort > 0) {
-            startShellExtension(_shellextPort);
+        if (_socketFile != null) {
+            startShellExtension(_socketFile);
         }
 
         try {
@@ -262,11 +262,11 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     }
 
     @Override
-    public void startShellExtension(final int port)
+    public void startShellExtension(File socketFile)
     {
         // Save the port we used so that if this attempt to start the shell extension fails because
         // it's not installed, we can retry to start it after installShellExtension()
-        _shellextPort = port;
+        _socketFile = socketFile;
 
         if (!isShellExtensionInstalled()) {
             l.warn("Finder Extension not found - not launching");
@@ -275,7 +275,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 
         try {
             SystemUtil.execBackground(FINDEREXT_DIR + "/Contents/Resources/finder_inject",
-                    Integer.toString(port));
+                    _socketFile.getAbsolutePath());
         } catch (IOException e) {
             l.warn("Unable to launch Finder extension " + Util.e(e));
         }

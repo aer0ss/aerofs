@@ -15,9 +15,9 @@ import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
+import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -283,7 +283,7 @@ public class Launcher
         }
 
         new CommandNotificationSubscriber(
-                ChannelFactories.getClientChannelFactory(),
+                NioChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),
                 Cfg.did(),
                 new InfoCollector(),

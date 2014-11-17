@@ -56,8 +56,8 @@ import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
-import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
-import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
+import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
+import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
 import static com.google.common.base.Preconditions.checkArgument;
 

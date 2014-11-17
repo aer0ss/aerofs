@@ -5,6 +5,8 @@
 #include <regex>
 #include <fstream>
 #include <shlobj.h>
+#include <Lmcons.h>
+#include <tchar.h>
 
 #include "AeroSocket.h"
 #include "logger.h"
@@ -15,6 +17,8 @@
 
 #define DELAY_BEFORE_CONNECTION_RETRY 2000 // milliseconds
 #define OVERLAY_CACHE_SIZE_LIMIT 10000 // max number of path for which overlay state is cached
+#define PIPE_NAMESPACE L"\\\\.\\pipe\\"
+#define SOCKET_FILE_NAME_SUFFIX L"_shellext_single" // No shellext for TS. Can hardcode single.
 
 AeroFSShellExtension _instance;
 
@@ -23,7 +27,7 @@ AeroFSShellExtension::AeroFSShellExtension()
 	m_cache(new OverlayCache(OVERLAY_CACHE_SIZE_LIMIT)),
 	m_rootAnchor(),
 	m_lastConnectionAttempt(0),
-	m_port(0)
+	m_fileName()
 {
 	InitializeCriticalSection(&m_cs);
 }
@@ -39,7 +43,7 @@ We should not do heavy de-initilization in the destructor
 */
 void AeroFSShellExtension::cleanup()
 {
-	m_socket->forceDisconnect();
+	m_socket->disconnect();
 }
 
 AeroFSShellExtension* AeroFSShellExtension::instance()
@@ -62,8 +66,8 @@ bool AeroFSShellExtension::isConnectedToGUI()
 	if (m_socket->isConnected() && m_rootAnchor.length() > 0) {
 		return true;
 	}
-
 	EnterCriticalSection(&m_cs);
+
 	// If the socket is disconnected, try to reconnect if we haven't already tried in the last X ms
 	if (!m_socket->isConnected() && GetTickCount() - m_lastConnectionAttempt > DELAY_BEFORE_CONNECTION_RETRY) {
 		reconnect();
@@ -75,13 +79,12 @@ bool AeroFSShellExtension::isConnectedToGUI()
 
 void AeroFSShellExtension::reconnect()
 {
-	if (!m_port) {
-		m_port = readPortNumber();
+	if (m_fileName.empty()) {
+		m_fileName = getSocketFileName();
 	}
-
-	INFO_LOG("Trying to connect on port " << m_port);
+	INFO_LOG("Trying to connect to shellext file: " << m_fileName.c_str());
 	m_lastConnectionAttempt = GetTickCount();
-	m_socket->connect(m_port);
+	m_socket->connect(m_fileName);
 }
 
 /**
@@ -192,7 +195,6 @@ Overlay AeroFSShellExtension::overlay(const std::wstring& path)
 		ShellextCall call;
 		call.set_type(ShellextCall_Type_GET_PATH_STATUS);
 		call.mutable_get_path_status()->set_path(narrow(path));
-
 		m_socket->sendMessage(call);
 
 		status = O_None;
@@ -300,8 +302,8 @@ void AeroFSShellExtension::showSyncStatusDialog(const std::wstring& path)
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_SYNC_STATUS);
 	call.mutable_sync_status()->set_path(narrow(path.c_str()));
-
 	m_socket->sendMessage(call);
+	INFO_LOG("SyncStatusDialog shown");
 }
 
 void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
@@ -309,8 +311,8 @@ void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_VERSION_HISTORY);
 	call.mutable_version_history()->set_path(narrow(path.c_str()));
-
 	m_socket->sendMessage(call);
+	INFO_LOG("VersionHistoryDialog shown");
 }
 
 void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
@@ -318,8 +320,8 @@ void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_SHARE_FOLDER);
 	call.mutable_share_folder()->set_path(narrow(path.c_str()));
-
 	m_socket->sendMessage(call);
+	INFO_LOG("ShareFolderDialog shown");
 }
 
 void AeroFSShellExtension::showConflictResolutionDialog(const std::wstring& path)
@@ -327,8 +329,8 @@ void AeroFSShellExtension::showConflictResolutionDialog(const std::wstring& path
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_CONFLICT_RESOLUTION);
 	call.mutable_conflict_resolution()->set_path(narrow(path.c_str()));
-
 	m_socket->sendMessage(call);
+	INFO_LOG("ConflictResolutionDialog shown");
 }
 
 void AeroFSShellExtension::sendGreeting()
@@ -336,51 +338,28 @@ void AeroFSShellExtension::sendGreeting()
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_GREETING);
 	call.mutable_greeting()->set_protocol_version(PROTOCOL_VERSION);
-
 	m_socket->sendMessage(call);
+	INFO_LOG("Initial greeting sent");
 }
 
 /**
-Reads the GUI server port from C:\Users\[username]\AppData\Roaming\AeroFS\pb
-In case of error, returns GUIPORT_DEFAULT
+Get the GUI server socket file name.
 */
-unsigned short AeroFSShellExtension::readPortNumber()
+wstring AeroFSShellExtension::getSocketFileName()
 {
-	// Get the path to C:\Users\[username]\AppData\Local on Windows Vista, 7, and up
-	// Get the path to C:\Documents and Settings\[username]\Local Settings\Application Data on Windows XP.
-	wchar_t buf[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
-	std::wstring path(buf);
+	tstring file_name;
+	DWORD username_len = UNLEN + 1;
+	TCHAR username[UNLEN+1] = {_T('\0')};
 
-	if (path.empty()) {
-		ERROR_LOG("SHGetFolderPath failed. Using default port");
-		return GUIPORT_DEFAULT;
+	if (!GetUserName(username, &username_len)) {
+		// Shouldn't ever get here.
+		ERROR_LOG("GetUserName failed. Err code: " << GetLastError());
+		exit(1);
 	}
-
-	// Open the pb file
-
-	path += L"\\AeroFS\\pb";
-	HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) {
-		ERROR_LOG("Could not open " << path << ". Using default port");
-		return GUIPORT_DEFAULT;
-    }
-
-	// Read the port number
-
-	char strPort[10] = {0};
-	DWORD bytesRead = 0;
-	ReadFile(hFile, strPort, sizeof(strPort) - 1, &bytesRead, NULL);
-	CloseHandle(hFile);
-
-	int port = atoi(strPort);
-
-	if (port <= 0 || port > 65535 - GUIPORT_OFFSET) {
-		ERROR_LOG("Invalid port number. Using default port");
-		return GUIPORT_DEFAULT;
-	}
-
-	return port + GUIPORT_OFFSET;
+	file_name.append(PIPE_NAMESPACE);
+	file_name.append(username, username_len - 1);
+	file_name.append(SOCKET_FILE_NAME_SUFFIX);
+	return file_name;
 }
 
 //////////////////////////////////////////
@@ -411,7 +390,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 // Adds entries to the system registry.
 STDAPI DllRegisterServer(void)
 {
-	DEBUG_LOG(" ========== REG SERVER ===========");
+	DEBUG_LOG(" ========== REG SERVER  ===========");
 	HRESULT hr = _instance.DllRegisterServer(FALSE);
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	return hr;

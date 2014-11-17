@@ -78,14 +78,10 @@ public class IndexingPoller
             public void onSuccess(Common.Void aVoid)
             {
                 l.info("indexing done");
-                GUI.get().asyncExec(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        _isIndexingDone = true;
-                        for (IIndexingCompletionListener listener : _listeners) {
-                            listener.onIndexingDone();
-                        }
+                GUI.get().asyncExec(() -> {
+                    _isIndexingDone = true;
+                    for (IIndexingCompletionListener listener : _listeners) {
+                        listener.onIndexingDone();
                     }
                 });
             }

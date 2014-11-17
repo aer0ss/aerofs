@@ -7,12 +7,10 @@ package com.aerofs.base.net;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.google.common.base.Preconditions;
-import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
@@ -21,7 +19,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.TimeUnit;
 
@@ -36,9 +33,6 @@ public abstract class AbstractNettyReconnectingClient
     private static final int MAX_RETRY_DELAY = 60;
 
     protected final Timer _timer;
-    private final ClientBootstrap _bootstrap;
-    private final String _host;
-    private final int _port;
 
     private volatile Channel _channel;
     private volatile boolean _running;
@@ -57,40 +51,21 @@ public abstract class AbstractNettyReconnectingClient
         }
     };
 
-    private final ChannelFutureListener onDisconnect = new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture cf) throws Exception
-        {
-            if (_closeRequested) {
-                l.info("{} closed", AbstractNettyReconnectingClient.this);
-                _running = false;
-            } else {
-                scheduleReconnect(selfOrClosedChannelException(cf.getCause()));
-            }
+    private final ChannelFutureListener onDisconnect = cf -> {
+        if (_closeRequested) {
+            l.info("{} closed", AbstractNettyReconnectingClient.this);
+            _running = false;
+        } else {
+            scheduleReconnect(selfOrClosedChannelException(cf.getCause()));
         }
     };
 
-    protected AbstractNettyReconnectingClient(String host, int port, Timer timer,
-            ClientSocketChannelFactory channelFactory)
+    protected AbstractNettyReconnectingClient(Timer timer)
     {
         _timer = timer;
-        _host = host;
-        _port = port;
-        _bootstrap = new ClientBootstrap(channelFactory);
     }
 
-    protected abstract ChannelPipelineFactory pipelineFactory();
-
-    /**
-     * Start client without auto-reconnection
-     */
-    public ChannelFuture connect()
-    {
-        _bootstrap.setPipelineFactory(pipelineFactory());
-        // NB: create a new InetSocketAddress on every connection, otherwise failure to resolve
-        // DNS on the first connection will prevent any future connection form ever succeeding
-        return _bootstrap.connect(new InetSocketAddress(_host, _port));
-    }
+    protected abstract ChannelFuture connect();
 
     /**
      * Start client with auto-reconnection
@@ -152,4 +127,6 @@ public abstract class AbstractNettyReconnectingClient
     {
         return t == null ? new ClosedChannelException() : t;
     }
+
+    protected abstract ChannelPipelineFactory pipelineFactory();
 }

@@ -199,6 +199,7 @@ def generate_yaml(args, username, actor_data):
         if details != {}:
             d['details'] = details
         d['address'] = str(addresses.pop())
+        d['os'] = actor.get('os')
         if args.multiuser:
             assert isinstance(username, list)
             d['aero_userid'] = username.pop()

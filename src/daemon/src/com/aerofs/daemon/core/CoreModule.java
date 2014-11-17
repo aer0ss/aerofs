@@ -33,8 +33,8 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
@@ -61,7 +61,7 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
-import com.aerofs.lib.ChannelFactories;
+import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -148,13 +148,13 @@ public class CoreModule extends AbstractModule
     @Provides
     public ServerSocketChannelFactory provideServerSocketChannelFactory()
     {
-        return ChannelFactories.getServerChannelFactory();
+        return NioChannelFactories.getServerChannelFactory();
     }
 
     @Provides
     public ClientSocketChannelFactory provideClientSocketChannelFactory()
     {
-        return ChannelFactories.getClientChannelFactory();
+        return NioChannelFactories.getClientChannelFactory();
     }
 
     @Provides

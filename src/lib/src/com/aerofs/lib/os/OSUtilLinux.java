@@ -1,16 +1,6 @@
 
 package com.aerofs.lib.os;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.RootAnchor;
@@ -23,6 +13,16 @@ import com.aerofs.lib.os.OSUtil.Icon;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OSUtilLinux extends AbstractOSUtilLinuxOSX
 {
@@ -248,7 +248,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     }
 
     @Override
-    public void startShellExtension(int port)
+    public void startShellExtension(File shellExtSocketFile)
     {
         // Shell extensions not yet implemented on Linux
     }

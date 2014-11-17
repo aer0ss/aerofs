@@ -7,17 +7,15 @@ import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.tray.Progresses;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
+import com.aerofs.lib.nativesocket.RitualSocketFile;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.ritual.RitualClient;
 import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.ui.IDaemonMonitor.Factory;
 import com.aerofs.ui.update.Updater;
-
-import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
-import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 
 /**
  * Global access points for all the singleton classes used in the Java UI. (both GUI & CLI)
@@ -30,13 +28,13 @@ import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 public final class UIGlobals
 {
     private static RitualClientProvider s_ritualProvider =
-            new RitualClientProvider(getClientChannelFactory());
+            new RitualClientProvider(new RitualSocketFile());
     private static ShellextService s_shellext;
 
     // N.B. constructing RNC requires the Cfg port base file to be ready. Thus it is not constructed
     // when the class is initialized.
     private static final Lazy<RitualNotificationClient> s_rnc = new Lazy<>(() ->
-                    new RitualNotificationClient(new RitualNotificationSystemConfiguration()));
+                    new RitualNotificationClient(new RitualNotificationSocketFile()));
 
     // N.B. depends on RNC, thus it's not constructed when the class is initialized
     // FIXME (AT): TransferState is meant for just GUI, not CLI
@@ -57,7 +55,7 @@ public final class UIGlobals
     public static void initialize_(boolean createShellextService, LaunchArgs launchArgs)
     {
         if (createShellextService) {
-            s_shellext = new ShellextService(getServerChannelFactory(), s_ritualProvider);
+            s_shellext = new ShellextService(s_ritualProvider);
         }
         _idm = new Factory(launchArgs);
     }
@@ -84,9 +82,15 @@ public final class UIGlobals
 
     public static IRitualClientProvider ritualClientProvider() { return s_ritualProvider; }
 
-    public static RitualBlockingClient ritual() { return s_ritualProvider.getBlockingClient(); }
+    public static RitualBlockingClient ritual()
+    {
+        return s_ritualProvider.getBlockingClient();
+    }
 
-    public static RitualClient ritualNonBlocking() { return s_ritualProvider.getNonBlockingClient(); }
+    public static RitualClient ritualNonBlocking()
+    {
+        return s_ritualProvider.getNonBlockingClient();
+    }
 
     public static Analytics analytics() { return s_analytics; }
 }

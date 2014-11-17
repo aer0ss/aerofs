@@ -520,4 +520,10 @@ CpuUsage getCpuUsage()
     return retval;
 }
 
+int getUserUid()
+{
+    // Dummy function. Never used.
+    return 0;
+}
+
 }  // namespace Driver

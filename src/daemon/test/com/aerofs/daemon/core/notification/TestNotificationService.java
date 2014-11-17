@@ -11,7 +11,8 @@ import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.ritual_notification.MockRNSConfiguration;
+import com.aerofs.lib.nativesocket.NativeSocketAuthenticatorFactory;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,13 +21,14 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Properties;
 
-import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestNotificationService
 {
@@ -43,7 +45,7 @@ public class TestNotificationService
 
     @Rule public TemporaryFolder _approotFolder;
 
-    MockRNSConfiguration _config;
+    @Mock RitualNotificationSocketFile _ritualNotificationSocketFile;
     RitualNotificationServer rns;
 
     NotificationService _service; // SUT
@@ -56,11 +58,17 @@ public class TestNotificationService
         _approotFolder = new TemporaryFolder();
         _approotFolder.create();
 
+        TemporaryFolder rnsSockFolder = new TemporaryFolder();
+        rnsSockFolder.create();
+        File tempRnsSocketFile = rnsSockFolder.newFile("temp_rns_TNS.sock");
+
         AppRoot.set(_approotFolder.getRoot().getAbsolutePath());
         ConfigurationProperties.setProperties(new Properties());
 
-        _config = new MockRNSConfiguration();
-        rns = spy(new RitualNotificationServer(getServerChannelFactory(), _config));
+        when(_ritualNotificationSocketFile.get()).thenReturn(tempRnsSocketFile);
+
+        rns = spy(new RitualNotificationServer(_ritualNotificationSocketFile,
+                NativeSocketAuthenticatorFactory.create()));
 
         _service = new NotificationService(sched, rns, dls, downloadNotifier, uls, uploadNotifier,
                 badCredentialNotifier, conflictNotifier, pathStatusNotifier,

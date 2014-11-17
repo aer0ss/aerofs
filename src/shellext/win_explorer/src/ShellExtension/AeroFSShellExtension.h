@@ -15,6 +15,17 @@
 #include <memory>
 #include <set>
 
+using std::wstring;
+using std::shared_ptr;
+using std::string;
+
+#ifdef _UNICODE
+	typedef std::wstring tstring;
+#else
+	typedef std::string tstring;
+#endif
+
+
 class AeroSocket;
 class OverlayCache;
 
@@ -59,7 +70,7 @@ public:
 	static AeroFSShellExtension* instance();
 
 private:
-	unsigned short readPortNumber();
+	wstring getSocketFileName();
 	void reconnect();
 	void setRootAnchor(const std::string& path);
 	void setUserId(const std::string& user);
@@ -71,10 +82,10 @@ private:
 
 private:
 	CRITICAL_SECTION m_cs;
-	std::shared_ptr<AeroSocket> m_socket;
-	std::shared_ptr<OverlayCache> m_cache;
-	std::wstring m_rootAnchor;
-	std::wstring m_userId;
+	shared_ptr<AeroSocket> m_socket;
+	shared_ptr<OverlayCache> m_cache;
+	wstring m_rootAnchor;
+	wstring m_userId;
 	unsigned long m_lastConnectionAttempt;
-	unsigned short m_port;
+	tstring m_fileName;
 };

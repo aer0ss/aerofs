@@ -9,12 +9,12 @@ import com.aerofs.base.id.SID;
 import com.aerofs.cli.CLI;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.nativesocket.RitualSocketFile;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
 import com.aerofs.proto.Ritual.PBSharedFolder;
@@ -45,8 +45,7 @@ public class ShProgram implements IProgram, ICallback
     private static final String PROG = L.productUnixName() + "-sh";
 
     private final RitualClientProvider _ritualProvider =
-            new RitualClientProvider(ChannelFactories.getClientChannelFactory());
-
+            new RitualClientProvider(new RitualSocketFile());
     private Path _pwd;
     private SPBlockingClient _sp;
     private ElapsedTimer _spRenewalTimer;

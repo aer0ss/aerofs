@@ -1,10 +1,10 @@
 import os
 import sys
-import shutil
 
 from syncdet import case
 from safetynet import param
 from lib.app.cfg import get_cfg
+from lib import aero_shutil as shutil
 
 def rollback_installation():
     user_data_path = case.user_data_folder_path()

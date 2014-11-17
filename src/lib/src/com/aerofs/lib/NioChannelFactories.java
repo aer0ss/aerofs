@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
-public class ChannelFactories
+public class NioChannelFactories
 {
     private static final AtomicInteger THREAD_ID_COUNTER = new AtomicInteger(0);
 

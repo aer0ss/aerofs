@@ -131,6 +131,9 @@ struct CpuUsage {
  */
 CpuUsage getCpuUsage();
 
+/**
+ * Retuns the effective user id of the user running AeroFS.
+ */
+int getUserUid();
 }
-
 #endif //AEROFS_DRIVER_H_

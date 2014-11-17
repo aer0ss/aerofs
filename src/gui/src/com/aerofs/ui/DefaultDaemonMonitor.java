@@ -24,7 +24,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.Cfg.PortType;
+import com.aerofs.lib.cfg.Cfg.NativeSocketType;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExIndexing;
@@ -38,8 +38,11 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
 import com.aerofs.ui.IUI.MessageType;
+import com.flipkart.phantom.netty.wnp.WinNamedPipeSocketWrapper;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+import org.newsclub.net.unix.AFUNIXSocket;
+import org.newsclub.net.unix.NativeSocketAddress;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -497,7 +500,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         for (long attempts = Math.max(1, timeoutMs / retryInterval); attempts > 0; attempts--) {
             try {
-                return new Socket(LibParam.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+                File socketFile =
+                        new File(Cfg.nativeSocketFilePath(NativeSocketType.RITUAL_NOTIFICATION));
+                // FIXME: Add wrapper for this.
+                Socket sock = OSUtil.isWindows() ? new WinNamedPipeSocketWrapper() :
+                        AFUNIXSocket.newInstance();
+                sock.connect(new NativeSocketAddress(socketFile));
+                return sock;
             } catch (IOException io) {
                 l.debug("Error connecting to notification service", LogUtil.suppress(io));
                 ThreadUtil.sleepUninterruptable(retryInterval);

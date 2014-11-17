@@ -34,6 +34,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.cfg.CfgRestService;
+import com.aerofs.lib.nativesocket.NativeSocketAuthenticatorFactory;
+import com.aerofs.lib.nativesocket.NativeSocketModule;
+import com.aerofs.lib.nativesocket.RitualSocketFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.proto.Common.PBException.Type;
@@ -44,13 +47,12 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
 
-import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
-
 public class DaemonProgram implements IProgram
 {
     private static final Logger l = Loggers.getLogger(DaemonProgram.class);
 
-    private final RitualServer _ritual = new RitualServer(getServerChannelFactory());
+    private RitualServer _ritual =
+            new RitualServer(new RitualSocketFile(), NativeSocketAuthenticatorFactory.create());
 
     public DaemonProgram()
     {
@@ -95,7 +97,9 @@ public class DaemonProgram implements IProgram
 
         // need to start Ritual server before Core.init_ to send ExUpdating during DPUT
         boolean ritualEarlyStart = Cfg.hasPendingDPUT();
-        if (ritualEarlyStart) _ritual.start_();
+        if (ritualEarlyStart) {
+            _ritual.start_();
+        }
 
         daemon.init_();
 
@@ -104,7 +108,9 @@ public class DaemonProgram implements IProgram
         // if no DPUT is to be performed, delay Ritual start
         // this is especially important on the first launch as we don't want to mislead
         // the UI into thinking indexing is in progress before the daemon is properly started
-        if (!ritualEarlyStart) _ritual.start_();
+        if (!ritualEarlyStart) {
+            _ritual.start_();
+        }
 
         l.error("daemon main thread halted");
 
@@ -125,7 +131,7 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), getMultiplicityModule(),
-                new CoreModule(), getStorageModule(), new RestModule());
+                new CoreModule(), getStorageModule(), new RestModule(), new NativeSocketModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 

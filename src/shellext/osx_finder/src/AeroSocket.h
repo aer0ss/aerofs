@@ -4,11 +4,11 @@
 
 @interface AeroSocket : NSObject<AsyncSocketDelegate> {
 @private
-    AsyncSocket* socket;
-    UInt16 port;
+    AsyncSocket* asyncSocket;
+    NSString* sockFile;
 }
 
--(void) connectToServerOnPort:(UInt16)port;
+-(void) connectToServerOnSocket:(NSString*)sockFile;
 -(void) sendMessage:(ShellextCall*)call;
 -(BOOL) isConnected;
 -(void) disconnect;

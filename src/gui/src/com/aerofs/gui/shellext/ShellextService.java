@@ -7,8 +7,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.Cfg.NativeSocketType;
+import com.aerofs.lib.nativesocket.NativeSocketAuthenticatorFactory;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
@@ -18,13 +19,13 @@ import com.aerofs.proto.Shellext.RootAnchorNotification;
 import com.aerofs.proto.Shellext.ShellextCall;
 import com.aerofs.proto.Shellext.ShellextNotification;
 import com.aerofs.proto.Shellext.ShellextNotification.Type;
+import com.aerofs.ritual.RitualClientProvider;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
-
 import java.nio.channels.ClosedChannelException;
+import java.io.File;
 import java.util.List;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -33,9 +34,7 @@ public class ShellextService
 {
     private static final Logger l = Loggers.getLogger(ShellextService.class);
 
-    private final ServerSocketChannelFactory _serverChannelFactory;
     private final RitualClientProvider _ritualProvider;
-
     private ShellextServer _server;
 
     /**
@@ -44,28 +43,22 @@ public class ShellextService
      */
     private final static int PROTOCOL_VERSION = 5;
 
-
-    public ShellextService(ServerSocketChannelFactory serverChannelFactory, RitualClientProvider ritualProvider)
+    public ShellextService(RitualClientProvider ritualProvider)
     {
-        _serverChannelFactory = serverChannelFactory;
         _ritualProvider = ritualProvider;
     }
 
     public void start_()
     {
         if (_server == null) {
-            _server = new ShellextServer(Cfg.port(Cfg.PortType.UI), _serverChannelFactory, this);
+            File socketFile = new File(Cfg.nativeSocketFilePath(NativeSocketType.SHELLEXT));
+            _server = new ShellextServer(this, socketFile,
+                    NativeSocketAuthenticatorFactory.create());
             _server.start_();
 
             new PathStatusNotificationForwarder(this);
-
-            OSUtil.get().startShellExtension(getPort());
+            OSUtil.get().startShellExtension(socketFile);
         }
-    }
-
-    public int getPort()
-    {
-        return _server.getPort();
     }
 
     /**

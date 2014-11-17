@@ -9,7 +9,7 @@ import org.jboss.netty.util.Timer;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
+import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 
 public class RestTunnelClient extends TunnelClient
 {

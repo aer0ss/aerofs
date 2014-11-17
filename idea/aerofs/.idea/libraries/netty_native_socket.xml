@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="netty-native-socket">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/netty-native-socket.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

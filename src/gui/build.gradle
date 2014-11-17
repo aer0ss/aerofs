@@ -27,6 +27,8 @@ dependencies {
     compile name: 'org.eclipse.core.commands_3.5.0.I20090525-2000'
     compile name: 'org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100'
     compile name: 'swt-4'
+    compile name: 'netty-native-socket'
+    compile name: 'junixsocket-1.3'
     compile project(':src/lib')
     compile project(path: ':src/verkehr', configuration: 'wireClient')
     testCompile project(path: ':src/lib', configuration: 'testutil')

@@ -10,6 +10,10 @@
 #import  "../../common/common.h"
 #import "AeroSidebarIcon.h"
 
+// The part of file path after the HOME dir.
+NSString * const DEFAULT_RTROOT = @"Library/Application Support/AeroFS";
+NSString * const DEFAULT_SOCKET_NAME_SUFFIX = @"_ritual_single";
+
 static Overlay overlayForStatus(PBPathStatus* status)
 {
     // temporary states (Upload/Download) take precedence over potentially long-lasting ones
@@ -59,14 +63,13 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     //TODO: Use [NSBundle mainBundle] to get info about the executable we're being loaded into, and check if it's the right Finder version
 
     NSAppleEventDescriptor* desc = [[NSAppleEventDescriptor alloc] initWithAEDescNoCopy: event];
-    int portNumber = [[desc descriptorForKeyword:PORT_KEYWORD] int32Value];
-
-    if (portNumber <=0) {
-        NSLog(@"Warning: AeroFS didn't specify which port it's listening to, using default.");
-        portNumber = GUIPORT_DEFAULT;
+    NSString *socketFile = [[desc descriptorForKeyword: SOCK] stringValue];
+    if (socketFile == nil) {
+        NSLog(@"Warning: AeroFS didn't specify which native socket file it's listening to, using default.");
+        socketFile = [NSString stringWithFormat:@"%@/%@%@", NSHomeDirectory(), NSUserName(), DEFAULT_SOCKET_NAME_SUFFIX];
     }
 
-    [[AeroFinderExt instance] reconnect:portNumber];
+    [[AeroFinderExt instance] reconnect:socketFile];
 
     return noErr;
 }
@@ -109,11 +112,11 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     return self;
 }
 
--(void) reconnect:(UInt16)port
+-(void) reconnect:(NSString*)sockFile
 {
-    NSLog(@"AeroFS: Trying to connect to the server on port %u...", port);
+    NSLog(@"AeroFS: Trying to connect to the server on sock file: %@...", sockFile);
     [self clearCache];
-    [socket connectToServerOnPort:port];
+    [socket connectToServerOnSocket:sockFile];
 }
 
 /**

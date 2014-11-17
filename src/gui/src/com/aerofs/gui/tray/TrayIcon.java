@@ -19,12 +19,12 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
@@ -134,8 +134,7 @@ public class TrayIcon implements ITrayMenuListener
             // with its colors inverted.
             if (OSUtil.isOSX()) _ti.setHighlightImage(Images.getTrayIcon("tray_inverted"));
         }
-
-        _rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
+        _rnc = new RitualNotificationClient(new RitualNotificationSocketFile());
 
         addOnlineStatusListener();
         UIGlobals.progresses().addListener(_progressListener);

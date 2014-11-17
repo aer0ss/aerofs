@@ -5,11 +5,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
+import com.aerofs.lib.nativesocket.NativeSocketHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
@@ -18,12 +19,14 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.newsclub.net.unix.NativeSocketAddress;
 import org.slf4j.Logger;
 
-import java.net.InetSocketAddress;
+import java.io.File;
+import java.io.IOException;
+import java.net.SocketException;
 
 /**
  * This is the class that handles communication with the shell extension.
@@ -35,43 +38,30 @@ import java.net.InetSocketAddress;
 class ShellextServer
 {
     private final static Logger l = Loggers.getLogger(ShellextServer.class);
-    private final int _port;
-    private final ServerSocketChannelFactory _serverChannelFactory;
     private final ShellextService _service;
 
-    protected ShellextServer(int port, ServerSocketChannelFactory serverChannelFactory, ShellextService service)
-    {
-        _port = port;
-        _serverChannelFactory = serverChannelFactory;
-        _service = service;
-    }
+    private final File _socketFile;
+    private final ServerBootstrap _bootstrap;
 
-    protected int getPort()
+    protected ShellextServer(ShellextService service, File socketFile,
+            final AbstractNativeSocketPeerAuthenticator authenticator)
     {
-        return _port;
+        _service = service;
+        _socketFile = socketFile;
+        ChannelPipelineFactory _pipelineFactory = () -> (Channels.pipeline(
+                authenticator,
+                new LengthFieldBasedFrameDecoder(C.MB, 0, C.INTEGER_SIZE, 0, C.INTEGER_SIZE),
+                new LengthFieldPrepender(C.INTEGER_SIZE),
+                new ShellextServerHandler()));
+        _bootstrap = NativeSocketHelper.createServerBootstrap(_socketFile, _pipelineFactory);
     }
 
     private final ChannelGroup _clients = new DefaultChannelGroup();
 
-    private final ChannelPipelineFactory _factory = new ChannelPipelineFactory() {
-        @Override
-        public ChannelPipeline getPipeline() throws Exception
-        {
-            return Channels.pipeline(
-                    new LengthFieldBasedFrameDecoder(C.MB, 0, C.INTEGER_SIZE, 0, C.INTEGER_SIZE),
-                    new LengthFieldPrepender(C.INTEGER_SIZE),
-                    new ShellextServerHandler()
-            );
-        }
-    };
-
     protected void start_()
     {
-        ServerBootstrap bootstrap = new ServerBootstrap(_serverChannelFactory);
-        bootstrap.setPipelineFactory(_factory);
-        bootstrap.bind(new InetSocketAddress(LibParam.LOCALHOST_ADDR, _port));
-
-        l.info("ShellextServer started on port " + _port);
+        _bootstrap.bind(new NativeSocketAddress(_socketFile));
+        l.info("Shellext server bound to {}", _socketFile);
     }
 
     protected void send(byte[] bytes)
@@ -83,6 +73,7 @@ class ShellextServer
     {
         @Override
         public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
+            throws SocketException
         {
             l.info("shell extension connected");
             _clients.add(ctx.getChannel());

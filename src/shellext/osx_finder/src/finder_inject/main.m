@@ -13,10 +13,10 @@ int main(int argc, char *argv[])
             // but there's no reason not to try to inject it anyway, so let's go ahead and try
         }
 
-        // Get the port number from the command line
-        int portNumber = 0;
+        // Get the socket file path from the command line
+        NSString *socketFile;
         if (argc>=2) {
-            portNumber = atoi(argv[1]);
+            socketFile = [NSString stringWithUTF8String: argv[1]];
         }
 
         // Create an Apple Event targeting the Finder
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
         // Now send our own 'aeroload' event with the portnumber
         NSAppleEventDescriptor* aeroLoad = [NSAppleEventDescriptor appleEventWithEventClass:INJECT_EVENT_CLASS eventID:INJECT_EVENT_ID targetDescriptor:finder returnID:kAutoGenerateReturnID transactionID:kAnyTransactionID];
-        [aeroLoad setParamDescriptor:[NSAppleEventDescriptor descriptorWithInt32:portNumber] forKeyword:PORT_KEYWORD];
+        [aeroLoad setParamDescriptor:[NSAppleEventDescriptor descriptorWithString: socketFile] forKeyword: SOCK];
         AESendMessage([aeroLoad aeDesc], NULL, kAENoReply | kAENeverInteract | kAEDontRecord, kAEDefaultTimeout);
 
     }

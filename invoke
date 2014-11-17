@@ -566,6 +566,7 @@ def prepare_syncdet(args):
             source_filepath = os.path.join(source_dir, source_filenames[0])
             print "copying {} to {}".format(source_filepath, dest_filepath)
             shutil.copyfile(source_filepath, dest_filepath)
+            os.chmod(dest_filepath, 0700)
         else:
             raise ValueError(colored("ambigous {} - options {}".format(dest_filename, source_filenames), Colors.RED))
 

@@ -27,7 +27,51 @@
 		</dict>
 		<key>Resources/finder_inject</key>
 		<data>
-		ftt3XDnnIOXhALmfaOyV5pBfpRA=
+		6bIvY9pYn6SybYYVUKVhRevs5xg=
+		</data>
+		<key>Resources/in_sync_overlay.icns</key>
+		<data>
+		n1+Exv2CUsQMBZ7sTu8tbG+MVPc=
+		</data>
+		<key>Resources/out_of_sync_overlay.icns</key>
+		<data>
+		LkSF7Z/fCEq/xMICnIvK9AvRVIk=
+		</data>
+		<key>Resources/sidebar.tiff</key>
+		<data>
+		Nzb4puvSN/PPWTA/qDo4cv+rnQc=
+		</data>
+		<key>Resources/upload_overlay.icns</key>
+		<data>
+		PVYUyWl/ci/KF1AKx49yI2f4AJc=
+		</data>
+	</dict>
+	<key>files2</key>
+	<dict>
+		<key>Resources/AeroFSFinderExtension.sdef</key>
+		<data>
+		QpAVGvqv8BNt7KWtGA5yRST5BE4=
+		</data>
+		<key>Resources/conflict_overlay.icns</key>
+		<data>
+		BV//kA46A+hlC7NEzaczpr4p4dI=
+		</data>
+		<key>Resources/download_overlay.icns</key>
+		<data>
+		ERwPL5ZcZdyVr1GdqFX9w6eV//c=
+		</data>
+		<key>Resources/en.lproj/InfoPlist.strings</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			MiLKDDnrUKr4EmuvhS5VQwxHGK8=
+			</data>
+			<key>optional</key>
+			<true/>
+		</dict>
+		<key>Resources/finder_inject</key>
+		<data>
+		6bIvY9pYn6SybYYVUKVhRevs5xg=
 		</data>
 		<key>Resources/in_sync_overlay.icns</key>
 		<data>
@@ -66,6 +110,80 @@
 		</dict>
 		<key>^version.plist$</key>
 		<true/>
+	</dict>
+	<key>rules2</key>
+	<dict>
+		<key>.*\.dSYM($|/)</key>
+		<dict>
+			<key>weight</key>
+			<real>11</real>
+		</dict>
+		<key>^(.*/)?\.DS_Store$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>2000</real>
+		</dict>
+		<key>^(Frameworks|SharedFrameworks|PlugIns|Plug-ins|XPCServices|Helpers|MacOS|Library/(Automator|Spotlight|LoginItems))/</key>
+		<dict>
+			<key>nested</key>
+			<true/>
+			<key>weight</key>
+			<real>10</real>
+		</dict>
+		<key>^.*</key>
+		<true/>
+		<key>^Info\.plist$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^PkgInfo$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^Resources/</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^Resources/.*\.lproj/</key>
+		<dict>
+			<key>optional</key>
+			<true/>
+			<key>weight</key>
+			<real>1000</real>
+		</dict>
+		<key>^Resources/.*\.lproj/locversion.plist$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>1100</real>
+		</dict>
+		<key>^[^/]+$</key>
+		<dict>
+			<key>nested</key>
+			<true/>
+			<key>weight</key>
+			<real>10</real>
+		</dict>
+		<key>^embedded\.provisionprofile$</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^version\.plist$</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
 	</dict>
 </dict>
 </plist>

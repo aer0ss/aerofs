@@ -4,12 +4,12 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
 
@@ -21,7 +21,6 @@ public class CmdTransfers extends AbstractShellCommand<ShProgram>
 {
     @Override
     public void execute(final ShellCommandRunner<ShProgram> s, CommandLine cl)
-            throws Exception
     {
         boolean debug = false;
         for (String arg : cl.getArgs()) {
@@ -31,7 +30,8 @@ public class CmdTransfers extends AbstractShellCommand<ShProgram>
         }
 
         final boolean debugFinal = debug;
-        RitualNotificationClient rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
+        RitualNotificationClient rnc =
+                new RitualNotificationClient(new RitualNotificationSocketFile());
         rnc.addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)

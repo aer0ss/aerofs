@@ -30,9 +30,9 @@ if [ $? -ne 0 ] ; then
 fi
 
 echo "Moving to resource/client..."
-rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
+rm -rf $thisdir/../../../../resource/client/shellext/osx/AeroFSFinderExtension.osax
 # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-cp -a $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
+cp -a $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/shellext/osx
 
 echo
 echo "SUCCESS."

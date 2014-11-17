@@ -1,11 +1,12 @@
 #import "AeroSocket.h"
 #import "../gen/Shellext.pb.h"
 #import "AeroFinderExt.h"
+#import <sys/un.h>
+#import <sys/socket.h>
 
 #define NO_TIMEOUT               -1
 #define DEFAULT_TIMEOUT           3  // seconds
 #define MAX_MESSAGE_LENGTH        1*1024*1024 // 1 MB
-#define LOCALHOST                 @"127.0.0.1"
 
 // Private definitions:
 
@@ -31,17 +32,25 @@ static BOOL shouldReconnectIfDisconnected = NO;
     [self disconnect];
 }
 
--(void) connectToServerOnPort:(UInt16) thePort
+-(void) connectToServerOnSocket:(NSString*) theSockFile
 {
-    port = thePort;
+    sockFile = theSockFile;
     [self reconnect];
 }
 
 -(void) reconnect
 {
     [self disconnect];
-    socket = [[AsyncSocket alloc] initWithDelegate:self];
-    [socket connectToHost:LOCALHOST onPort:port withTimeout:DEFAULT_TIMEOUT error:nil];
+    asyncSocket = [[AsyncSocket alloc] initWithDelegate:self];
+
+    // struct to specify unix domain socket as socket type and socket file.
+    struct sockaddr_un local;
+    local.sun_family = AF_UNIX;
+    strcpy(local.sun_path, [sockFile fileSystemRepresentation]);
+    local.sun_len =  SUN_LEN(&local);
+    NSData *addrData = [NSData dataWithBytes:&local length:sizeof(struct sockaddr_un)];
+    [asyncSocket connectToAddress:addrData withTimeout:DEFAULT_TIMEOUT error:nil];
+
     [self listenForMessage];
 }
 
@@ -52,9 +61,9 @@ static BOOL shouldReconnectIfDisconnected = NO;
 -(void) disconnect
 {
     shouldReconnectIfDisconnected = NO;
-    [socket setDelegate:nil];
-    [socket disconnect];
-    socket = nil;
+    [asyncSocket setDelegate:nil];
+    [asyncSocket disconnect];
+    asyncSocket = nil;
 }
 
 /**
@@ -67,7 +76,7 @@ static BOOL shouldReconnectIfDisconnected = NO;
     uint32_t size = htonl([msg length]);
     NSMutableData* data = [NSMutableData dataWithBytes: &size length:sizeof(uint32_t)];
     [data appendData:msg];
-    [socket writeData:data withTimeout:3 tag:0];
+    [asyncSocket writeData:data withTimeout:3 tag:0];
 }
 
 -(void) onSocketDidDisconnect:(AsyncSocket *)sock
@@ -84,7 +93,7 @@ static BOOL shouldReconnectIfDisconnected = NO;
 
 -(BOOL) isConnected
 {
-    return [socket isConnected];
+    return [asyncSocket isConnected];
 }
 
 /**
@@ -93,12 +102,12 @@ static BOOL shouldReconnectIfDisconnected = NO;
  */
 -(void) listenForMessage
 {
-    [socket readDataToLength:sizeof(uint32_t) withTimeout:NO_TIMEOUT tag:kReadingLength];
+    [asyncSocket readDataToLength:sizeof(uint32_t) withTimeout:NO_TIMEOUT tag:kReadingLength];
 }
 
--(void) onSocket:(AsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)portNumber
+-(void) onSocketDidConnect:(AsyncSocket *)sock
 {
-    NSLog(@"AeroFS: Connection successful on port %u.", portNumber);
+    NSLog(@"AeroFS: Connection successful on socket file: %@.", sockFile);
     shouldReconnectIfDisconnected = YES;
     [[AeroFinderExt instance] sendGreeting];
 }
@@ -107,7 +116,7 @@ static BOOL shouldReconnectIfDisconnected = NO;
  Called by AsyncSocket when we received data
  tag is a value from the ReadingState enum that tells in which state we are of the reading process
 */
--(void) onSocket:(AsyncSocket*)sock didReadData:(NSData*)data withTag:(long)tag
+-(void) onSocket:(AsyncSocket *)sock didReadData:(NSData*)data withTag:(long)tag
 {
     uint32_t length;
 
@@ -122,7 +131,7 @@ static BOOL shouldReconnectIfDisconnected = NO;
                 [self disconnect];
                 break;
             }
-            [socket readDataToLength:length withTimeout:NO_TIMEOUT tag:kReadingData];
+            [asyncSocket readDataToLength:length withTimeout:NO_TIMEOUT tag:kReadingData];
             break;
 
         case kReadingData:

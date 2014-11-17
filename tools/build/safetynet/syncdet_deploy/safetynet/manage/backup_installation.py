@@ -1,9 +1,9 @@
 import os
 import sys
-import shutil
 
 from syncdet import case
 from lib.app.cfg import get_cfg
+from lib import aero_shutil as shutil
 from safetynet import param
 
 def backup_installation():

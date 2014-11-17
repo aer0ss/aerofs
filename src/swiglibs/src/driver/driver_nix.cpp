@@ -18,6 +18,8 @@
 #include <signal.h>
 #include <memory>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 #include <sys/resource.h> // for getrusage()
 
 #include "../logger.h"
@@ -166,6 +168,11 @@ CpuUsage getCpuUsage()
     retval.kernel_time = (usage.ru_stime.tv_sec * NSEC_PER_SEC) + (usage.ru_stime.tv_usec * NSEC_PER_USEC);
     retval.user_time = (usage.ru_utime.tv_sec * NSEC_PER_SEC) + (usage.ru_utime.tv_usec * NSEC_PER_USEC);
     return retval;
+}
+
+int getUserUid()
+{
+    return geteuid();
 }
 
 }//namespace Driver

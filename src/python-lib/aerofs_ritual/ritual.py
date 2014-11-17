@@ -19,7 +19,6 @@ import time
 
 import connection
 from aerofs_common import exception, convert, param
-from cygpathtools import cygpath_to_winpath
 from gen import ritual_pb2
 from gen.common_pb2 import WRITE, MANAGE, PBException, PBPermissions, PBSubjectPermissions
 
@@ -45,18 +44,20 @@ def _convert_acl(acl):
     return srps
 
 # This will try to connect once, and throw an exception if it fails
-def _connect(rpc_host_addr, rpc_host_port):
-    conn = connection.SyncConnectionService(rpc_host_addr, rpc_host_port)
+def _connect(socket_file):
+    conn = connection.SyncConnectionService(socket_file)
     ritual_service = ritual_pb2.RitualServiceRpcStub(conn)
     return _RitualServiceWrapper(ritual_service)
 
 
 # This will try to connect over and over until it succeeds
-def connect(rpc_host_addr, rpc_host_port, max_attempts=600):
+def connect(socket_file, max_attempts=600):
     for _ in xrange(max_attempts):
         try:
-            return _connect(rpc_host_addr, rpc_host_port)
-        except socket.error as e:
+            return _connect(socket_file)
+        # If daemon side pipe is not ready yet, on *nix platforms we get
+        # socket.error, on Win platforms IOError.
+        except (socket.error, IOError) as e:
             last = e
             time.sleep(param.POLLING_INTERVAL)
     raise last
@@ -426,8 +427,7 @@ class _RitualServiceWrapper(object):
         tmp = tempfile.NamedTemporaryFile()
         with tmp.file as f:
             f.write(content.encode('utf-8'))
-        tmpfile = cygpath_to_winpath(tmp.name) if 'cygwin' in sys.platform.lower() else tmp.name
-        self.import_pbpath(pbpath, tmpfile)
+        self.import_pbpath(pbpath, tmp.name)
 
     def wait_file_with_content(self, path, content):
         self.wait_pbpath_with_content(convert.absolute_to_pbpath(path), content)

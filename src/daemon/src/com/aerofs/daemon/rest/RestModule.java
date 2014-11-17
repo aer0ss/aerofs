@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
-import com.aerofs.lib.ChannelFactories;
+import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.aerofs.oauth.TokenVerifier;
@@ -13,7 +13,7 @@ import org.jboss.netty.util.Timer;
 
 import java.net.URI;
 
-import static com.aerofs.base.config.ConfigurationProperties.*;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class RestModule extends AbstractModule
 {
@@ -47,7 +47,7 @@ public class RestModule extends AbstractModule
                     URI.create(getStringProperty("daemon.oauth.url", "https://api.aerofs.com:4433/auth/tokeninfo")),
                     timer,
                     cacert,
-                    ChannelFactories.getClientChannelFactory()
+                    NioChannelFactories.getClientChannelFactory()
             );
         }
         return verifier;

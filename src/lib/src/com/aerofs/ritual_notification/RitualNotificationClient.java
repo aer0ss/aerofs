@@ -4,13 +4,16 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.net.AbstractNettyReconnectingClient;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.nativesocket.NativeSocketHelper;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.RitualNotifications.PBNotification;
+import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -20,8 +23,10 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.protobuf.ProtobufDecoder;
+import org.newsclub.net.unix.NativeSocketAddress;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
@@ -33,11 +38,14 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
 
     private final Executor _executor = sameThreadExecutor();
     private final Notifier<IRitualNotificationListener> _listeners = Notifier.create();
+    private final File _rnsSocketFile;
+    private final ClientBootstrap _bootstrap;
 
-    public RitualNotificationClient(RitualNotificationSystemConfiguration config)
+    public RitualNotificationClient(RitualNotificationSocketFile rnsf)
     {
-        super(config.host(), config.port(), TimerUtil.getGlobalTimer(),
-                ChannelFactories.getClientChannelFactory());
+        super(TimerUtil.getGlobalTimer());
+        _rnsSocketFile = rnsf.get();
+        _bootstrap = NativeSocketHelper.createClientBootstrap(pipelineFactory());
     }
 
     /**
@@ -52,6 +60,12 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
     public void removeListener(IRitualNotificationListener l)
     {
         _listeners.removeListener(l);
+    }
+
+    @Override
+    protected ChannelFuture connect()
+    {
+        return _bootstrap.connect(new NativeSocketAddress(_rnsSocketFile));
     }
 
     @Override

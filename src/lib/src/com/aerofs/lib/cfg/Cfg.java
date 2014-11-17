@@ -22,6 +22,8 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.os.OSUtil;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -63,6 +65,24 @@ public class Cfg
         UI_SINGLETON,
         RITUAL
     }
+
+    public static enum NativeSocketType {
+        RITUAL ("ritual"),
+        RITUAL_NOTIFICATION ("rns"),
+        SHELLEXT ("shellext");
+
+        private String fileName;
+
+        NativeSocketType(String fileName)
+        {
+            this.fileName = fileName;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+    }
+
 
     private static String _absRTRoot;
     private static DID _did;
@@ -430,6 +450,20 @@ public class Cfg
     {
         Preconditions.checkState(_portbase != 0);
         return _portbase + type.ordinal();
+    }
+
+    public static String nativeSocketFilePath(NativeSocketType type)
+    {
+        Preconditions.checkState(_absRTRoot != null);
+        // The NativeSocket file name is a combination of the the user name of the user running
+        // AeroFS + what the socket is for(ritual/RNS/shellext) + the client type(TS or Single).
+        // This helps us create unique socket file names per user per client type.
+        String clientType = L.isMultiuser() ? "ts" : "single";
+        String userName = System.getProperty("user.name");
+        String completeFileName = Joiner.on("_").join(userName, type.getFileName(), clientType);
+
+        return OSUtil.isWindows() ? Util.join("\\\\.\\pipe", completeFileName) :
+                Util.join(_absRTRoot, completeFileName);
     }
 
     public static boolean lotsOfLog(String rtRoot)

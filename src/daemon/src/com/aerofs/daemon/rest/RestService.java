@@ -5,21 +5,21 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.net.ISslHandlerFactory;
-import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.rest.providers.FactoryReaderProvider;
-import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
-import com.aerofs.rest.providers.ParamExceptionMapper;
-import com.aerofs.rest.providers.JsonExceptionMapper;
-import com.aerofs.rest.providers.OAuthProvider;
-import com.aerofs.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.daemon.rest.resources.ChildrenResource;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.aerofs.daemon.rest.resources.FoldersResource;
 import com.aerofs.daemon.rest.resources.VersionResource;
-import com.aerofs.lib.ChannelFactories;
+import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.rest.providers.FactoryReaderProvider;
+import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
+import com.aerofs.rest.providers.JsonExceptionMapper;
+import com.aerofs.rest.providers.OAuthProvider;
+import com.aerofs.rest.providers.ParamExceptionMapper;
+import com.aerofs.rest.providers.RuntimeExceptionMapper;
 import com.aerofs.restless.Service;
+import com.aerofs.restless.Version;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -66,7 +66,7 @@ public class RestService extends Service
     @Override
     protected ServerSocketChannelFactory getServerSocketFactory()
     {
-        return ChannelFactories.getServerChannelFactory();
+        return NioChannelFactories.getServerChannelFactory();
     }
 
     @Override

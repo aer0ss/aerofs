@@ -23,6 +23,8 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
     protected AbstractOSUtilLinuxOSX()
     {
         loadLibrary("aerofsd");
+        loadLibrary("junixsocket");
+
         _pi = ProgressIndicators.get();  // sigh, this should be injected
     }
 
@@ -123,5 +125,11 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         }
 
         return StrSubstitutor.replace(path, System.getenv());
+    }
+
+    @Override
+    public int getUserUid()
+    {
+        return Driver.getUserUid();
     }
 }

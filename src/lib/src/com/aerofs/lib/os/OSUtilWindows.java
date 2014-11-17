@@ -261,6 +261,13 @@ public class OSUtilWindows implements IOSUtil
         return result.getAbsolutePath();
     }
 
+    // For Windows platforms, this function is never called.
+    @Override
+    public int getUserUid()
+    {
+        return Driver.getUserUid();
+    }
+
     @Override
     public String getFileSystemType(String path, OutArg<Boolean> remote)
         throws IOException
@@ -328,7 +335,7 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
-    public void startShellExtension(int port)
+    public void startShellExtension(File shellExtSocketFile)
     {
         // Shell extensions are installed by the installer and patcher on Windows
     }

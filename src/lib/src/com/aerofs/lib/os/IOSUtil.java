@@ -1,5 +1,6 @@
 package com.aerofs.lib.os;
 
+import java.io.File;
 import java.io.IOException;
 
 import com.aerofs.lib.OutArg;
@@ -91,9 +92,9 @@ public interface IOSUtil
     /**
      * Called once the GUI protobuf server is up and running, to tell the shell
      * extension to connect.
-     * @param port The port number that the shell extension should connect to
+     * @param shellExtSocketFile Socket file that the shell extension should connect to
      */
-    void startShellExtension(int port);
+    void startShellExtension(File shellExtSocketFile);
 
     /**
      *  @param exclusive whether to avoid overwriting preexisting files
@@ -137,4 +138,6 @@ public interface IOSUtil
      * constant across versions.
      */
     String getIconPath(Icon icon);
+
+    int getUserUid();
 }

@@ -601,6 +601,7 @@
 				DSTROOT = $SOURCE_ROOT/build/;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "src/FinderExtension-Prefix.pch";
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				HEADER_SEARCH_PATHS = "../../3rd_party/protobuf-objc";
 				INFOPLIST_FILE = src/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/ScriptingAdditions/";
@@ -621,6 +622,7 @@
 				DSTROOT = $SOURCE_ROOT/build/;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "src/FinderExtension-Prefix.pch";
+				GCC_WARN_UNUSED_FUNCTION = YES;
 				HEADER_SEARCH_PATHS = "../../3rd_party/protobuf-objc";
 				INFOPLIST_FILE = src/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/ScriptingAdditions/";

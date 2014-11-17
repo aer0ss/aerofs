@@ -1,58 +1,53 @@
 package com.aerofs.ritual_notification;
 
-import com.aerofs.base.net.AddressResolverHandler;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.BlockIncomingMessagesHandler;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.MagicPrepender;
+import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
+import com.aerofs.lib.nativesocket.NativeSocketHelper;
+import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
+import com.google.inject.Inject;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.codec.protobuf.ProtobufEncoder;
+import org.newsclub.net.unix.NativeSocketAddress;
+import org.slf4j.Logger;
 
-import javax.inject.Inject;
-
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import java.io.File;
+import java.io.IOException;
 
 public class RitualNotificationServer
 {
+    private static final Logger l = Loggers.getLogger(RitualNotificationServer.class);
+
     private final RitualNotifier _ritualNotifier = new RitualNotifier();
+    private final File _rnsSocketFile;
     private final ServerBootstrap _bootstrap;
     private Channel _channel;
-    private final RitualNotificationSystemConfiguration _config;
 
     @Inject
-    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory,
-            RitualNotificationSystemConfiguration config)
+    public RitualNotificationServer(RitualNotificationSocketFile rnsf,
+            final AbstractNativeSocketPeerAuthenticator authenticator)
     {
-        ServerBootstrap bootstrap = new ServerBootstrap(serverSocketChannelFactory);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-                    throws Exception
-            {
-                return Channels.pipeline(
-                        new AddressResolverHandler(newSingleThreadExecutor()),
-                        new MagicPrepender(LibParam.RITUAL_NOTIFICATION_MAGIC),
-                        new BlockIncomingMessagesHandler(),
-                        new LengthFieldPrepender(4),
-                        new ProtobufEncoder(),
-                        _ritualNotifier);
-            }
-        });
-        bootstrap.setOption("SO_REUSEADDR", true);
-
-        this._bootstrap = bootstrap;
-        this._config = config;
+        _rnsSocketFile = rnsf.get();
+        ChannelPipelineFactory _pipelineFactory = () -> (Channels.pipeline(
+                authenticator,
+                new MagicPrepender(LibParam.RITUAL_NOTIFICATION_MAGIC),
+                new BlockIncomingMessagesHandler(),
+                new LengthFieldPrepender(4),
+                new ProtobufEncoder(),
+                _ritualNotifier));
+        _bootstrap = NativeSocketHelper.createServerBootstrap(_rnsSocketFile, _pipelineFactory);
     }
 
     public void start_()
     {
-        _channel = _bootstrap.bind(_config.getAddress()); // resolves inline
+        _channel = _bootstrap.bind(new NativeSocketAddress(_rnsSocketFile));
+        l.info("Ritual Notification server bound to {}", _rnsSocketFile);
     }
 
     public void stop_()

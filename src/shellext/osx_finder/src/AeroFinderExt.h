@@ -9,34 +9,34 @@
 @class AeroSidebarIcon;
 
 typedef enum {
-    NONE,
-    OUT_SYNC,
-    IN_SYNC,
-    DOWNLOADING,
-    UPLOADING,
-    CONFLICT,
+	NONE,
+	OUT_SYNC,
+	IN_SYNC,
+	DOWNLOADING,
+	UPLOADING,
+	CONFLICT,
 
-    OverlayCount
+	OverlayCount
 } Overlay;
 
 // flags are bitwise OR'ed
 typedef enum {
-    RootAnchor = 1 << 0,
-    Directory  = 1 << 1
+	RootAnchor = 1 << 0,
+	Directory  = 1 << 1
 } PathFlag;
 
 @interface AeroFinderExt : NSObject <AeroEvictionDelegate> {
 @private
-    AeroSocket* socket;
-    AeroOverlay* overlay;
-    AeroContextMenu* contextMenu;
-    AeroSidebarIcon* sidebarIcon;
-    NSString* rootAnchor;
-    NSString* userId;
-    AeroOverlayCache* statusCache;
+	AeroSocket* socket;
+	AeroOverlay* overlay;
+	AeroContextMenu* contextMenu;
+	AeroSidebarIcon* sidebarIcon;
+	NSString* rootAnchor;
+	NSString* userId;
+	AeroOverlayCache* statusCache;
 
-    NSTimer* refreshTimer;
-    NSTimeInterval lastRefreshTime;
+	NSTimer* refreshTimer;
+	NSTimeInterval lastRefreshTime;
 }
 
 @property (readonly) AeroOverlay* overlay;
@@ -47,7 +47,7 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 
 + (AeroFinderExt*)instance;
 - (id)init;
-- (void)reconnect:(UInt16)port;
+- (void)reconnect:(NSString*)sockFile;
 - (BOOL)isUnderRootAnchor:(NSString*)path;
 - (int)flagsForPath:(NSString*)path;
 - (BOOL)shouldModifyFinder;
