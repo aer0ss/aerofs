@@ -5,13 +5,11 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
-import com.google.common.io.InputSupplier;
+import com.google.common.io.ByteSource;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +23,7 @@ public class TestChunker extends AbstractBlockTest
 {
     @Mock IBlockStorageBackend bsb;
 
-    private static abstract class StreamSupplier implements InputSupplier<InputStream>
+    private static abstract class StreamSupplier extends ByteSource
     {
         protected final long _length;
 
@@ -53,7 +51,7 @@ public class TestChunker extends AbstractBlockTest
         StreamSupplier(long size) { _length = size; }
 
         @Override
-        public InputStream getInput() throws IOException
+        public InputStream openStream() throws IOException
         {
             return new Stream(this);
         }
@@ -96,15 +94,9 @@ public class TestChunker extends AbstractBlockTest
     public void setUp() throws Exception
     {
         // no encoding is performed by the mock backend
-        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                Object[] args = invocation.getArguments();
-                return new EncoderWrapping((OutputStream)args[0], null);
-            }
+        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            return new EncoderWrapping((OutputStream)args[0], null);
         });
     }
 
