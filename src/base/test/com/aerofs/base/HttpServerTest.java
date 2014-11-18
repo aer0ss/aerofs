@@ -8,8 +8,6 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -150,14 +148,7 @@ public class HttpServerTest extends AbstractIdleService
 
         private void writeAndClose(Channel channel, HttpResponse response)
         {
-            channel.write(response).addListener(new ChannelFutureListener()
-            {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception
-                {
-                    future.getChannel().close();
-                }
-            });
+            channel.write(response).addListener(future -> future.getChannel().close());
         }
     }
 }

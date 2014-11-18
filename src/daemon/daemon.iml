@@ -21,14 +21,13 @@
     <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="module" module-name="restless" />
     <orderEntry type="module" module-name="oauth-verify" />
+    <orderEntry type="library" name="aws" level="project" />
+    <orderEntry type="library" name="netty-all:4.1.0.Beta3" level="project" />
     <orderEntry type="library" name="smack" level="project" />
-    <orderEntry type="library" name="jul-to-slf4j" level="project" />
-    <orderEntry type="library" name="jersey-1.17.1" level="project" />
     <orderEntry type="library" name="tika-core-1.4" level="project" />
     <orderEntry type="library" scope="TEST" name="hibernate" level="project" />
     <orderEntry type="library" scope="TEST" name="mailapi" level="project" />
     <orderEntry type="module" module-name="bifrost" scope="TEST" />
     <orderEntry type="module" module-name="havre" scope="TEST" />
-    <orderEntry type="library" name="netty-4.1" level="project" />
   </component>
 </module>

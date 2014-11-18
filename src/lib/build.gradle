@@ -27,7 +27,7 @@ dependencies {
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'
     compile name: 'sqlite-jdbc'
-    compile name: 'commons-lang-2.6'
+    compile 'commons-lang:commons-lang:2.6'
     compile 'ch.qos.logback:logback-core:1.1.0'
     compile 'ch.qos.logback:logback-classic:1.1.0'
     compile project(':src/base')

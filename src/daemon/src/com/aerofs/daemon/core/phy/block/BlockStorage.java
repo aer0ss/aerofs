@@ -21,7 +21,6 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
@@ -482,7 +481,7 @@ class BlockStorage implements IPhysicalStorage
 
         Chunker(InjectableFile f, Token tk, IBlockStorageBackend bsb)
         {
-            super(Files.newInputStreamSupplier(f.getImplementation()), f.getLengthOrZeroIfNotFile(),
+            super(Files.asByteSource(f.getImplementation()), f.getLengthOrZeroIfNotFile(),
                     bsb);
             _tk = tk;
         }

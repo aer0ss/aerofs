@@ -10,11 +10,11 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="javax.inject" level="project" />
-    <orderEntry type="library" exported="" name="jsr305" level="project" />
-    <orderEntry type="library" exported="" name="guava" level="project" />
+    <orderEntry type="library" exported="" name="jsr305:3.0.0" level="project" />
+    <orderEntry type="library" exported="" name="guava:17.0" level="project" />
     <orderEntry type="library" exported="" name="netty" level="project" />
     <orderEntry type="library" exported="" name="protobuf" level="project" />
-    <orderEntry type="library" exported="" name="slf4j-api" level="project" />
+    <orderEntry type="library" exported="" name="slf4j-api:1.7.7" level="project" />
     <orderEntry type="library" exported="" name="prettytime" level="project" />
     <orderEntry type="library" exported="" name="gson" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit:4.11" level="project" />

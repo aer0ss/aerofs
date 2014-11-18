@@ -6,13 +6,11 @@ package com.aerofs.base.analytics;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.HttpServerTest;
-import com.aerofs.base.HttpServerTest.RequestProcessor;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
@@ -42,7 +40,8 @@ public class TestMixpanelAPI
     public void setUp()
     {
         _server = new HttpServerTest(TEST_PORT);
-        _server.startAndWait();
+        _server.startAsync();
+        _server.awaitRunning();
     }
 
     @After
@@ -57,30 +56,24 @@ public class TestMixpanelAPI
         final MixpanelAPI mixpanelAPI = new MixpanelAPI(TEST_TOKEN, TEST_API_ENDPOINT);
 
         // Setup the server to check that the client's request is well formed
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request)
-                    throws Exception
-            {
-                // Decode the request
-                assertTrue(request.getUri().startsWith("/?data="));
-                String base64 = request.getUri().substring("/?data=".length());
-                String json = new String(Base64.decode(base64), Charsets.UTF_8);
-                Map<?, ?> map = new Gson().fromJson(json, Map.class);
-                Map<?, ?> properties = (Map<?, ?>) map.get("properties");
+        _server.setRequestProcessor(request -> {
+            // Decode the request
+            assertTrue(request.getUri().startsWith("/?data="));
+            String base64 = request.getUri().substring("/?data=".length());
+            String json = new String(Base64.decode(base64), Charsets.UTF_8);
+            Map<?, ?> map = new Gson().fromJson(json, Map.class);
+            Map<?, ?> properties = (Map<?, ?>) map.get("properties");
 
-                // Check that everything was sent correctly
-                assertEquals(TEST_EVENT, map.get("event"));
-                assertEquals(TEST_USER, properties.get("distinct_id"));
-                assertEquals(TEST_TOKEN, properties.get("token"));
-                assertEquals("world", properties.get("hello"));
+            // Check that everything was sent correctly
+            assertEquals(TEST_EVENT, map.get("event"));
+            assertEquals(TEST_USER, properties.get("distinct_id"));
+            assertEquals(TEST_TOKEN, properties.get("token"));
+            assertEquals("world", properties.get("hello"));
 
-                // Send a success response
-                HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
-                response.setContent(ChannelBuffers.copiedBuffer("1", Charsets.UTF_8));
-                return response;
-            }
+            // Send a success response
+            HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
+            response.setContent(ChannelBuffers.copiedBuffer("1", Charsets.UTF_8));
+            return response;
         });
 
         // Send the request to the server
@@ -96,16 +89,10 @@ public class TestMixpanelAPI
 
         // Setup the server so that it will respond with a page with the character "0" - Mixpanel's
         // way of indicating failures
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request)
-                    throws Exception
-            {
-                HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
-                response.setContent(ChannelBuffers.copiedBuffer("0", Charsets.UTF_8));
-                return response;
-            }
+        _server.setRequestProcessor(request -> {
+            HttpResponse response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK);
+            response.setContent(ChannelBuffers.copiedBuffer("0", Charsets.UTF_8));
+            return response;
         });
 
         // Try to track an event and ensure we report a failure

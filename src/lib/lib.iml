@@ -14,9 +14,9 @@
     <orderEntry type="library" exported="" name="guice" level="project" />
     <orderEntry type="library" exported="" name="guice-multibindings" level="project" />
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
-    <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="sqlite-jdbc" level="project" />
-    <orderEntry type="library" exported="" name="logback" level="project" />
+    <orderEntry type="library" exported="" name="logback-classic:1.1.2" level="project" />
+    <orderEntry type="library" exported="" name="logback-core:1.1.2" level="project" />
     <orderEntry type="library" exported="" name="commons-lang" level="project" />
   </component>
 </module>

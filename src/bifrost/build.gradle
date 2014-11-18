@@ -31,7 +31,7 @@ dependencies {
     compile 'org.hibernate:hibernate-core:4.1.9.Final'
     compile 'org.hibernate:hibernate-validator:4.3.0.Final'
     compile 'org.apache.tomcat:tomcat-dbcp:7.0.37'
-    compile 'commons-net-3.3:commons-net-3.3:3.3'
+    compile 'commons-net:commons-net:3.3'
     compile 'com.lambdaworks:scrypt:1.4.0'
     compile 'com.googlecode.flyway:flyway-core:2.2.1'
     compile project(':src/lib')

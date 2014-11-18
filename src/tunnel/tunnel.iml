@@ -9,7 +9,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="base" />
-    <orderEntry type="library" scope="TEST" name="logback" level="project" />
+    <orderEntry type="library" scope="TEST" name="logback-classic:1.1.2" level="project" />
+    <orderEntry type="library" scope="TEST" name="logback-core:1.1.2" level="project" />
   </component>
 </module>
-

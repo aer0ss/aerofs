@@ -18,7 +18,7 @@
     <orderEntry type="library" exported="" name="bcprov-jdk15on:1.51" level="project" />
     <orderEntry type="library" exported="" name="servlet-api:2.5" level="project" />
     <orderEntry type="library" exported="" name="flyway-core:2.2.1" level="project" />
-    <orderEntry type="library" exported="" name="mysql-connector" level="project" />
+    <orderEntry type="library" exported="" name="mysql-connector-java:5.1.32" level="project" />
     <orderEntry type="library" exported="" name="protobuf-format" level="project" />
     <orderEntry type="library" exported="" name="javamail" level="project" />
     <orderEntry type="library" exported="" name="commons-lang" level="project" />

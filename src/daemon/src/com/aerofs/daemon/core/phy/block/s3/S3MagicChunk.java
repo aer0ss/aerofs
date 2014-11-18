@@ -16,8 +16,8 @@ import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.amazonaws.AmazonServiceException;
+import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.InputSupplier;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -165,10 +165,8 @@ class S3MagicChunk implements IBlockStorageInitable
 
     private void uploadMagicChunk() throws IOException
     {
-        InputSupplier<? extends InputStream> input =
-                ByteStreams.newInputStreamSupplier(MAGIC);
         long length = MAGIC.length;
-        AbstractChunker upload = new AbstractChunker(input, length, _bsb) {
+        AbstractChunker upload = new AbstractChunker(ByteSource.wrap(MAGIC), length, _bsb) {
             @Override
             protected StorageState prePutBlock_(Block block) throws SQLException
             {

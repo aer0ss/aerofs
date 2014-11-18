@@ -10,8 +10,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="restless" exported="" />
     <orderEntry type="module" module-name="lib" exported="" />
-    <orderEntry type="library" exported="" name="mysql-connector" level="project" />
-    <orderEntry type="library" exported="" name="tomcat-dbcp" level="project" />
+    <orderEntry type="library" exported="" name="mysql-connector-java:5.1.32" level="project" />
+    <orderEntry type="library" exported="" name="tomcat-dbcp:8.0.11" level="project" />
     <orderEntry type="library" exported="" name="hibernate" level="project" />
     <orderEntry type="library" exported="" name="apisecure" level="project" />
     <orderEntry type="library" exported="" name="commons-net-3.3" level="project" />

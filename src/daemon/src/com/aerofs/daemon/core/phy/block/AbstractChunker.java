@@ -13,8 +13,7 @@ import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ResettableFileInputStream;
 import com.google.common.base.Preconditions;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.InputSupplier;
+import com.google.common.io.ByteSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,13 +30,13 @@ import java.sql.SQLException;
  */
 public abstract class AbstractChunker
 {
-    private final InputSupplier<? extends InputStream> _input;
+    private final ByteSource _input;
     private final long _length;
     private final IBlockStorageBackend _bsb;
 
     private boolean _skipEmpty = true;
 
-    public AbstractChunker(InputSupplier<? extends InputStream> input, long length,
+    public AbstractChunker(ByteSource input, long length,
             IBlockStorageBackend bsb)
     {
         Preconditions.checkArgument(length >= 0);
@@ -168,15 +167,14 @@ public abstract class AbstractChunker
 
     private ContentBlockHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
     {
-        InputSupplier<? extends InputStream> input
-                = ByteStreams.slice(_input, index * LibParam.FILE_BLOCK_SIZE, LibParam.FILE_BLOCK_SIZE);
+        ByteSource input = _input.slice(index * LibParam.FILE_BLOCK_SIZE, LibParam.FILE_BLOCK_SIZE);
 
         // read a chunk of input into a buffer, perform any backend-specific encoding and
         // compute any metadata (hash, length, ...) required for the actual write
         Block block = new Block();
         try (IEncodingBuffer buffer = makeEncodingBuffer(blockSize)) {
             try (OutputStream out = wrapOutputStream(block, buffer.encoderOutput())) {
-                ByteStreams.copy(input, out);
+                input.copyTo(out);
             }
             // write chunk into persistent storage, keyed by content hash
             StorageState blockState = prePutBlock_(block);

@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jul-to-slf4j">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/jul-to-slf4j-1.7.4.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

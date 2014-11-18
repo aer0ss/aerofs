@@ -12,11 +12,10 @@
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="library" name="growlbindings" level="project" />
     <orderEntry type="library" name="swt" level="project" />
-    <orderEntry type="library" name="commons-cli" level="project" />
+    <orderEntry type="library" name="commons-cli:1.2" level="project" />
     <orderEntry type="library" name="org.eclipse.jface" level="project" />
     <orderEntry type="library" name="org.eclipse.core.commands" level="project" />
     <orderEntry type="library" name="jline2-git" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
-

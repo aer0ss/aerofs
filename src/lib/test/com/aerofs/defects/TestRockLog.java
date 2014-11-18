@@ -5,15 +5,12 @@
 package com.aerofs.defects;
 
 import com.aerofs.base.HttpServerTest;
-import com.aerofs.base.HttpServerTest.RequestProcessor;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
 import org.junit.Before;
@@ -50,7 +47,8 @@ public class TestRockLog extends AbstractTest
         // by nginx, not Java, in HC. So we don't actually improve coverage by running a https
         // server in this test.
         _server = new HttpServerTest(TEST_PORT);
-        _server.startAndWait();
+        _server.startAsync();
+        _server.awaitRunning();
     }
 
     @After
@@ -91,15 +89,8 @@ public class TestRockLog extends AbstractTest
     @Test
     public void testReportServerFailure() throws ExecutionException, InterruptedException
     {
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request) throws Exception
-            {
-                // Return a 500 response
-                return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-            }
-        });
+        _server.setRequestProcessor(
+                request -> new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR));
 
         com.aerofs.defects.RockLog rockLog = new com.aerofs.defects.RockLog(TEST_URL, new Gson());
         Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
@@ -113,15 +104,8 @@ public class TestRockLog extends AbstractTest
     public void shouldNotDieWhenSubmittingManyRequests()
             throws Exception
     {
-        _server.setRequestProcessor(new RequestProcessor()
-        {
-            @Override
-            public HttpResponse process(HttpRequest request) throws Exception
-            {
-                // Return a 504 response
-                return new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.GATEWAY_TIMEOUT);
-            }
-        });
+        _server.setRequestProcessor(
+                request -> new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.GATEWAY_TIMEOUT));
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
 
         for (int i = 0; i < 1000; i++) {
