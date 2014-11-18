@@ -321,6 +321,8 @@ def dashboard():
     return render_template("dashboard.html",
             current_license=licenses.first(),
             appliance_version=appliance.latest_appliance_version(),
+            mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
+            mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
             )
 
 @blueprint.route("/administrators", methods=["GET"])
