@@ -26,7 +26,7 @@ import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
  * Do not add code to this class if it's not used by the Android client too.
  *
  * NB: Properties that are to be read from props must appear in subclasses of BaseParam, because
- * BaseParam's static intializers will run before setPropertySource is called.
+ * BaseParam's static initializers will run before setPropertySource is called.
  */
 public class BaseParam
 {
@@ -113,6 +113,8 @@ public class BaseParam
 
         public static final String DOWNLOAD_URL = DASHBOARD_HOST_URL + "/download";
 
+        public static final String ORG_SETTINGS_URL = DASHBOARD_HOST_URL + "/org/settings";
+
         public static final String TOS_URL = MARKETING_HOST_URL+ "/terms#privacy";
 
         public static final String TWO_FACTOR_SETUP_URL = DASHBOARD_HOST_URL + "/settings/two_factor_authentication/intro";
@@ -120,13 +122,6 @@ public class BaseParam
         public static final String RECERTIFY_SUPPORT_URL = "https://support.aerofs.com/hc/articles/201439354";
 
         public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");
-    }
-
-    public static class SV
-    {
-        public static final long
-                CONNECT_TIMEOUT = 1 * C.MIN,
-                READ_TIMEOUT = 30 * C.SEC;
     }
 
     public static class SP

@@ -83,9 +83,9 @@ public class S
                     "organization. Only administrator accounts can be used to install a Team " +
                     "Server.",
 
-            // Invite user dialog
-            INVITE_INVITE_AS         = "Invite as",
-            INVITE_PERSONAL_NOTE     = "Personal note (optional):",
+            // Share folder / invite user to shared folder dialog
+            SHARE_INVITE_AS          = "Invite as",
+            SHARE_PERSONAL_NOTE      = "Personal note (optional):",
 
             RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 
@@ -176,6 +176,14 @@ public class S
             REPORT_A_PROBLEM = "Report a Problem",
             DEFAULT_DIALOG_TITLE = L.product(),
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
+
+            // invite user to AeroFS dialog
+            INVITE_TITLE             = "Invite Coworkers to " + L.product(),
+            INVITE_LBL_INVITE        = L.product() + " is better with coworkers! Email them an " +
+                    "invitation.\n\n" +
+                    "Email address to invite:",
+            INVITE_BTN_INVITE        = "Invite",
+            INVITE_STATUS_INVITING   = "Inviting...",
 
             IMPORTANT_UPDATE_DOWNLOADED =
                 "An important update has been downloaded for " + L.product() + ".",

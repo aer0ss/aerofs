@@ -127,10 +127,10 @@ public class CompInviteUsers extends Composite
         _lblInvitees.setText(S.TYPE_EMAIL_ADDRESSES);
         _txtInvitees.setFocus();
         _txtInvitees.addModifyListener(e -> _btnOK.setEnabled(_adapter.isInputValid()));
-        _lblRoles.setText(S.INVITE_INVITE_AS);
+        _lblRoles.setText(S.SHARE_INVITE_AS);
         _cmbRoles.selectRole(Permissions.EDITOR);
         _cmbRoles.setAlignment(SWT.CENTER);
-        _lblNote.setText(S.INVITE_PERSONAL_NOTE);
+        _lblNote.setText(S.SHARE_PERSONAL_NOTE);
         _btnOK.setText(IDialogConstants.OK_LABEL);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
 
@@ -199,10 +199,10 @@ public class CompInviteUsers extends Composite
         rolesLayout.spacing = 5;
         _cmpRoles.setLayout(rolesLayout);
 
-        GridLayout statusLayout = new GridLayout(3, false);
-        statusLayout.marginWidth = 0;
-        statusLayout.marginHeight = 0;
-        _cmpBottom.setLayout(statusLayout);
+        GridLayout bottomLayout = new GridLayout(3, false);
+        bottomLayout.marginWidth = 0;
+        bottomLayout.marginHeight = 0;
+        _cmpBottom.setLayout(bottomLayout);
         _cmpSpin.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         _lblStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         _cmpButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));

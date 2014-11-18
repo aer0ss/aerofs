@@ -100,8 +100,6 @@ public class ErrorMessages
      */
     static private ErrorMessage[] _commonMessages = new ErrorMessage[] {
             new ErrorMessage(ExNoConsole.class, "No console is availabble for user input."),
-//            new ErrorMessage(ExEmailNotVerified.class, "Please verify your email address first." +
-//                    " If you haven't received verification email. ")
     };
 
     /**

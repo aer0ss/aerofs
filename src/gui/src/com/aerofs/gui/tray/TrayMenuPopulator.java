@@ -11,6 +11,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.invite.DlgInvite;
 import com.aerofs.gui.misc.DlgAbout;
 import com.aerofs.gui.misc.DlgDefect;
 import com.aerofs.gui.transport_diagnostics.DlgTransportDiagnostics;
@@ -32,6 +33,8 @@ public class TrayMenuPopulator
             = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
     private static final ClickEvent EXIT_CLICKED
             = new ClickEvent(Action.EXIT, Source.TASKBAR);
+    private static final ClickEvent INVITE_COWORKER_CLICKED
+            = new ClickEvent(Action.INVITE_COWORKER_MENU, Source.TASKBAR);
 
     private final Menu _rootMenu;
 
@@ -179,6 +182,18 @@ public class TrayMenuPopulator
     public void addPreferencesMenuItem(AbstractListener listener)
     {
         addMenuItem(S.PREFERENCES + "...", listener);
+    }
+
+    public void addInviteCoworkerMenuItem()
+    {
+        addMenuItem(S.INVITE_TITLE + "...", new AbstractListener(INVITE_COWORKER_CLICKED)
+        {
+            @Override
+            protected void handleEventImpl(Event event)
+            {
+                new DlgInvite(GUI.get().sh()).openDialog();
+            }
+        });
     }
 
     public void dispose()

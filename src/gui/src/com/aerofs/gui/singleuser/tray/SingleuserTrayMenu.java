@@ -108,6 +108,9 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         addOpenFolderMenuItem(trayMenuPopulator);
         trayMenuPopulator.addMenuSeparator();
 
+        trayMenuPopulator.addInviteCoworkerMenuItem();
+        trayMenuPopulator.addMenuSeparator();
+
         if (!_enabled) {
             // Launching
             trayMenuPopulator.addLaunchingMenuItem();

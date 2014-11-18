@@ -67,6 +67,9 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
             populator.addMenuSeparator();
         }
 
+        populator.addInviteCoworkerMenuItem();
+        populator.addMenuSeparator();
+
         // Manage Team online
         addManageTeamMenuItem(populator);
         populator.addMenuSeparator();

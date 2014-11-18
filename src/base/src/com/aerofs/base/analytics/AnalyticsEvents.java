@@ -200,6 +200,10 @@ public class AnalyticsEvents
             RESOLVE_CONFLICTS("Resolve Conflicts"),
             MANAGE_ORGANIZATION("Manage Organization"),
             RESOLVE_UNSYNCABLE_FILES("Resolve Unsyncable Files"),
+            INVITE_COWORKER_MENU("Invite Coworker Menu"),
+            INVITE_COWORKER("Invite Coworker"),
+            INVITE_COWORKER_SUCCEEDED("Invite Coworker Succeeded"),
+            INVITE_COWORKER_FAILED("Invite Coworker Failed"),
             ;
 
             private final String _name;
@@ -214,6 +218,7 @@ public class AnalyticsEvents
         public enum Source
         {
             TASKBAR("taskbar"),
+            DESKTOP_GUI("desktop_gui"),
             // SHELLEXT("shellext"),  // <-- not used yet, just as an example
             ;
 
