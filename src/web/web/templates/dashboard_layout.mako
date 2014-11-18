@@ -218,28 +218,28 @@
 <%def name="render_user_invite()">
     <div class="well">
     <p><strong>Invite a coworker to AeroFS:</strong></p>
-    <form id="inviteCoworker" class="form">
-        <input type="text" class="form-control" id="invite_coworker_email" placeHolder="Email address"/><br/>
-        <button id="invite_coworker_submit" class="btn btn-primary" type="submit">Send Invite</button>
+    <form id="invite-coworker" class="form">
+        <input type="text" class="form-control" id="invite-coworker-email" placeHolder="Email address"/><br/>
+        <button id="invite-coworker-submit" class="btn btn-primary" type="submit">Send Invite</button>
     </form>
     </div>
 </%def>
 
 <%block name="layout_scripts">
-    <script>
-        $("#inviteCoworker").submit(function() {
-            var email_address = $('#invite_coworker_email').val();
+    <script type="text/javascript">
+        $("#invite-coworker").submit(function() {
+            var emailAddress = $('#invite-coworker-email').val();
             jQuery.ajax({
                 'type': 'POST',
                 'url': '/users/invite',
                 'contentType': 'application/json',
-                'data': JSON.stringify({'user': email_address}),
+                'data': JSON.stringify({'user': emailAddress}),
                 'dataType': 'json',
                 'error': showErrorMessageFromResponse,
                 'success': function (data, textStatus, xhr) {
                         if (xhr.status == 200) {
-                            showSuccessMessage(email_address + ' successfully invited');
-                            $('#invite_coworker_email').val('');
+                            showSuccessMessage('Successfully invited ' + emailAddress);
+                            $('#invite-coworker-email').val('');
                         }
                 }
             });

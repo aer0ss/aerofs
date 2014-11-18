@@ -5,7 +5,7 @@
 
 <h2 class="page-block">Organization settings</h2>
 
-<form class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">
+<form id="org-settings" class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">
     ${self.csrf.token_input()}
 
     <div class="page-block form-group">
@@ -120,7 +120,7 @@
             updateQuotaUI();
             $('#enable_quota').click(updateQuotaUI);
 
-            $("form").submit(function() {
+            $("#org-settings").submit(function() {
                 $("#update-button").prop("disabled", true);
                 return true;
             });
