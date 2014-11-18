@@ -56,20 +56,21 @@
 
 <%block name="scripts">
     <script>
-
+        // workaround because IE 8 doesn't have Date.now()
+        Date.now = Date.now || function() { return +new Date; };
         var countdownTimer;
         var expirationDate;
 
         function getQRCode() {
             ## Create a new image
             var img = $('<img/>');
-            img.attr('src', "${qrcode_url}");
+            img.attr('src', '${qrcode_url}');
             img.error(function () {
                 showErrorMessageUnsafe(getInternalErrorText());
                 console.log("failed to load: " + $(this).attr('src'));
             });
 
-            expirationDate = Date.now() + 3 * 60 * 1000
+            expirationDate = Date.now() + 3 * 60 * 1000;
             var countdown = $('<p>Valid for <span id="timer">03:00</span></p>');
 
             $('#result').empty();
