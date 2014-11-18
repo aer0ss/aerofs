@@ -12,6 +12,7 @@ import com.aerofs.lib.ExternalSorter;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -218,12 +219,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     CleanerScheduler _cleanerScheduler;
     long _spaceDelta;
-
-    // sigh, can't use PowerMock in the daemon due to OSUtil so we have to use this
-    // stupid wrapper to be able to test the cleaner...
-    static class TimeSource {
-        long getTime() { return System.currentTimeMillis(); }
-    }
 
     private final TimeSource _ts;
 

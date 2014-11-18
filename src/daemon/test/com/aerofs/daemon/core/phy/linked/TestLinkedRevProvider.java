@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 public class TestLinkedRevProvider extends AbstractTest
 {
-    @Mock LinkedRevProvider.TimeSource ts;
+    @Mock TimeSource ts;
     @Mock private CfgAbsRoots cfgAbsRoots;
 
     @Rule

@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.injectable.TimeSource;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
@@ -38,11 +39,13 @@ class RecentExceptions
     private final long _interval;
     private final File _rexFile;
     private final Map<String, Long> _exceptions = Maps.newHashMap(); // protected by 'this'
+    private final TimeSource _timeSource;
 
-    public RecentExceptions(String programName, String rtroot, long interval)
+    public RecentExceptions(String programName, String rtroot, long interval, TimeSource timeSource)
     {
         _rexFile = new File(rtroot, programName + "-" + LibParam.RECENT_EXCEPTIONS);
         _interval = interval;
+        _timeSource = timeSource;
 
         loadFromFiles();
     }
@@ -68,7 +71,7 @@ class RecentExceptions
         try {
             String checksum = Exceptions.getChecksum(t);
             Long timestamp = _exceptions.get(checksum);
-            return (timestamp != null && System.currentTimeMillis() - timestamp < _interval);
+            return (timestamp != null && _timeSource.getTime() - timestamp < _interval);
         } catch (Throwable e) {
             l.warn("rex is recent failed: ", e);
             return false;
@@ -81,7 +84,7 @@ class RecentExceptions
     public synchronized void add(Throwable t)
     {
         try {
-            _exceptions.put(Exceptions.getChecksum(t), System.currentTimeMillis());
+            _exceptions.put(Exceptions.getChecksum(t), _timeSource.getTime());
 
             // Remove older entries
             Set<Entry<String, Long>> entries = _exceptions.entrySet();

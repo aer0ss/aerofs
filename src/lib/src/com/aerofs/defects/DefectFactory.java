@@ -7,6 +7,7 @@ package com.aerofs.defects;
 import com.aerofs.base.id.UserID;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;
 import com.google.gson.Gson;
@@ -128,7 +129,7 @@ public class DefectFactory
         );
 
         RecentExceptions recentExceptions = new RecentExceptions(programName, rtroot,
-                RecentExceptions.DEFAULT_INTERVAL);
+                RecentExceptions.DEFAULT_INTERVAL, new TimeSource());
         RockLog rockLog;
         DryadClient dryad;
 

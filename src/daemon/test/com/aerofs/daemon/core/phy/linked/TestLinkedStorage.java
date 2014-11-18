@@ -29,6 +29,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -171,7 +172,7 @@ public class TestLinkedStorage extends AbstractTest
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh, stores, sidx2sid,
                 cfgAbsRoots, cfgStoragePolicy, il, null, mock(LinkedStagingArea.class),
-                new LinkedRevProvider(lrm, factFile, new LinkedRevProvider.TimeSource()),
+                new LinkedRevProvider(lrm, factFile, new TimeSource()),
                 mock(CoreScheduler.class));
 
         tm = new TransManager(new Trans.Factory(dbcw));

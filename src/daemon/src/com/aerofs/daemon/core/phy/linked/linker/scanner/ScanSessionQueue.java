@@ -10,9 +10,9 @@ import com.aerofs.defects.Defect;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.injectable.InjectableSystem;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
@@ -114,14 +114,14 @@ public class ScanSessionQueue implements IDumpStatMisc
     {
         private final CoreScheduler _sched;
         private final ScanSession.Factory _factSS;
-        private final InjectableSystem _sys;
+        private final TimeSource _timeSource;
 
         @Inject
-        public Factory(CoreScheduler sched, ScanSession.Factory factSS, InjectableSystem sys)
+        public Factory(CoreScheduler sched, ScanSession.Factory factSS, TimeSource timeSource)
         {
             _sched = sched;
             _factSS = factSS;
-            _sys = sys;
+            _timeSource = timeSource;
         }
 
         public ScanSessionQueue create_(LinkerRoot root)
@@ -204,7 +204,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         // one is.
 
         TimeKey tkOld = _path2time.get(pk);
-        long time = _f._sys.currentTimeMillis() + millisecondDelay;
+        long time = _f._timeSource.getTime() + millisecondDelay;
 
         boolean replace = tkOld != null && tkOld._time > time;
         if (replace) {
@@ -281,7 +281,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
         while (!_root.wasRemoved() && !_time2path.isEmpty()) {
             TimeKey tk = _time2path.firstKey();
-            long now = _f._sys.currentTimeMillis();
+            long now = _f._timeSource.getTime();
             if (tk._time > now) {
                 // Reset _ongoing first so schedule_() won't be an no-op.
                 _ongoing = false;

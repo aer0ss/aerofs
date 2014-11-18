@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.lib.injectable.InjectableSystem;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +14,7 @@ public class TestScanSessionQueue extends AbstractTest
 {
     @Mock CoreScheduler sched;
     @Mock ScanSession.Factory factSS;
-    @Mock InjectableSystem sys;
+    @Mock TimeSource timeSource;
 
     @InjectMocks ScanSessionQueue ssq;
 
@@ -23,7 +23,7 @@ public class TestScanSessionQueue extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        when(sys.currentTimeMillis()).thenReturn(START);
+        when(timeSource.getTime()).thenReturn(START);
     }
 
     @Test
