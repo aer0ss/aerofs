@@ -18,7 +18,6 @@ import com.jayway.restassured.builder.RequestSpecBuilder;
 import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
-import com.jayway.restassured.mapper.factory.Jackson2ObjectMapperFactory;
 import com.jayway.restassured.response.ValidatableResponse;
 import com.jayway.restassured.specification.RequestSpecification;
 
@@ -40,15 +39,11 @@ public abstract class TestUtilities {
                 .objectMapperConfig(ObjectMapperConfig
                         .objectMapperConfig()
                         .defaultObjectMapperType(ObjectMapperType.JACKSON_2)
-                        .jackson2ObjectMapperFactory(
-                                new Jackson2ObjectMapperFactory() {
-                                    @Override
-                                    public ObjectMapper create(Class aClass, String s) {
-                                        ObjectMapper mapper = new ObjectMapper();
-                                        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
-                                        return mapper;
-                                    }
-                                }));
+                        .jackson2ObjectMapperFactory((aClass, s) -> {
+                            ObjectMapper mapper = new ObjectMapper();
+                            mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+                            return mapper;
+                        }));
     }
 
     public static RequestSpecification newVerifiedAeroUserSpecification(String device, String user) {
