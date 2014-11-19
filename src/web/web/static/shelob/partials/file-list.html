@@ -2,7 +2,7 @@
   <div id="actions"
     ng-hide="share || !(fsLocation.currentFolder || fsLocation.isSingleObject)">
     <span aero-file-upload class="btn btn-primary" id="upload-file"
-      ng-class="{'disabled': error.status == 503}"></span>
+      ng-hide="isOldIE" ng-class="{'disabled': error.status == 503 }"></span>
     <button type="button" class="btn btn-default" id="new-folder"
       ng-click="newFolder.hidden=false"
       ng-class="{'disabled': error.status == 503}">New Folder</button>

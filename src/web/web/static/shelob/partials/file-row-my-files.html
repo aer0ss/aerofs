@@ -55,9 +55,10 @@
                     <li><a
                        ng-click="startRename(object)"
                        class="edit action action-rename"><span class="glyphicon glyphicon-pencil"></span> Rename</a></li>
-                    <li><a
+                    <li ng-hide="isOldIE"><a
                        ng-click="startMove(object)"
-                       class="redo action action-move"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
+                       class="redo action action-move"
+                       ng-class="{'disabled': isOldIE }"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
                     <li><a ng-href="/shared_folders" ng-show="object.is_shared"
                        class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage Sharing</a></li>
                     <li class="divider"></li>

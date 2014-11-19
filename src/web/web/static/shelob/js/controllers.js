@@ -37,6 +37,12 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     // See if linksharing has been turned off
     $scope.enableLinksharing = enableLinksharing;
+    // See if this is being requested in IE 8 or lower
+    if ($('html').is('.ie6, .ie7, .ie8')) {
+        $scope.isOldIE = true;
+    } else {
+        $scope.isOldIE = false;
+    }
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
     $scope.requestHeaders = {};
@@ -379,7 +385,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             } else {
                 showErrorMessageUnsafe(getInternalErrorText());
             }
-        }).finally(function() {
+        })["finally"](function() {
             // after success or failure
             object.edit = false;
         });
@@ -485,7 +491,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // It should attempt to perform the delete action and update the view.
     //
     $scope.submitDelete = function(object) {
-        API.delete('/' + object.type + 's/' + object.id).then(function(response) {
+        API['delete']('/' + object.type + 's/' + object.id).then(function(response) {
             _remove_by_id(object.id);
         }, function(response) {
             // failed to delete

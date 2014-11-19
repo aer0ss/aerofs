@@ -8,11 +8,15 @@
 ## N.B. Match this file's content with Lizard's base.html
 ##
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<!--[if lt IE 7 ]> <html class="ie6" lang="en"> <![endif]-->
+<!--[if IE 7 ]>    <html class="ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]>    <html class="ie8" lang="en"> <![endif]-->
+<!--[if IE 9 ]>    <html class="ie9" lang="en"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="" lang="en"> <!--<![endif]-->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="${request.session.get_csrf_token()}" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <title>
         ## See http://moz.com/learn/seo/title-tag for info on title tags
@@ -84,9 +88,14 @@
 
     <%block name="css"/>
 
-    ## Le HTML5 shim, for IE6-8 support of HTML5 elements
+    ## Shims for IE6-8 support of HTML5 elements and @media selectors
     <!--[if lt IE 9]>
-        <script src="${request.static_path('web:static/js/html5.js')}"></script>
+      <script src="${request.static_path('web:static/js/html5shiv.min.js')}"></script>
+      <script src="${request.static_path('web:static/js/respond.min.js')}"></script>
+      <script type="text/javascript">
+        // workaround because IE 8 doesn't have Date.now()
+        Date.now = Date.now || function() { return +new Date; };
+      </script>
     <![endif]-->
 
     <%block name="tracking_codes">

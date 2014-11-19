@@ -1,12 +1,30 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "My Files" %>
 
-<div ng-app="shelobApp" id="shelobApp">
+<div xmlns:ng="http://angularjs.org" id="ngApp" ng-app="shelobApp">
 <div ng-view></div>
 </div>
 
 ## if you modify the list of scripts, make sure to update jstest/shelob/e2e/index.html
 <%block name="scripts">
+    <!--[if lt IE 9]>
+        <script src="${request.static_path('web:static/js/json3.min.js')}"></script>
+        <script type="text/javascript">
+            // have to disable file upload in Internet Explorer manually
+            // timeout is because otherwise BS3's JS will wipe out your handiwork >:P
+            window.setTimeout(function(){
+            $('.disabled').each(function(index){
+                $(this).css('cursor', 'not-allowed');
+                $(this).attr('disabled', 'true');
+            });
+            $('.disabled input').each(function(index){
+                $(this).css('class', 'disabled');
+                $(this).css('cursor', 'not-allowed');
+                $(this).attr('disabled', 'true');
+            });
+        }, 500);
+        </script>
+    <![endif]-->
     <%! from web.util import is_private_deployment, is_linksharing_enabled %>
     <script type="text/javascript">
         %if is_linksharing_enabled(request.registry.settings):

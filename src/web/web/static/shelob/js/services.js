@@ -38,7 +38,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
                 })
                 .error(function (data, status) {
                     token.reject({data: data, status: status});
-                }).finally(OutstandingRequestsCounter.pop);
+                })["finally"](OutstandingRequestsCounter.pop);
         }
         return $q.when(token.promise);
     },
@@ -61,7 +61,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
                 .error(function (data, status) {
                     token.reject({data: data, status: status});
                 })
-                .finally(function() {
+                ["finally"](function() {
                     outstandingNewTokenRequest = false;
                     OutstandingRequestsCounter.pop();
                 });
@@ -120,7 +120,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                             // this could be a 401 error
                             deferred.reject({data: response, status: status});
                         }
-                    }).finally(OutstandingRequestCounter.pop);
+                    })["finally"](OutstandingRequestCounter.pop);
             };
 
             // get an OAuth token and make call
@@ -245,7 +245,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             //   the object passed to the failure callback has 'data' and 'status' attributes
             //
             get: _get,
-            delete: _delete,
+            'delete': _delete,
             head: _head,
             put: _put,
             post: _post,

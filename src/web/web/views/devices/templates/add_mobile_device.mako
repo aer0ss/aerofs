@@ -56,8 +56,6 @@
 
 <%block name="scripts">
     <script>
-        // workaround because IE 8 doesn't have Date.now()
-        Date.now = Date.now || function() { return +new Date; };
         var countdownTimer;
         var expirationDate;
 
