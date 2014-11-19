@@ -19,11 +19,9 @@
     <orderEntry type="library" exported="" name="servlet-api:2.5" level="project" />
     <orderEntry type="library" exported="" name="flyway-core:2.2.1" level="project" />
     <orderEntry type="library" exported="" name="mysql-connector-java:5.1.32" level="project" />
-    <orderEntry type="library" exported="" name="protobuf-format" level="project" />
-    <orderEntry type="library" exported="" name="javamail" level="project" />
-    <orderEntry type="library" exported="" name="commons-lang" level="project" />
+    <orderEntry type="library" exported="" name="javamail:1.4.2" level="project" />
     <orderEntry type="library" exported="" name="dyuproject-openid-1.1" level="project" />
-    <orderEntry type="library" exported="" name="scrypt-1.4.0" level="project" />
+    <orderEntry type="library" exported="" name="scrypt:1.4.0" level="project" />
     <orderEntry type="library" exported="" name="unboundid-ldapsdk-se" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="subethasmtp:3.1.7" level="project" />
   </component>

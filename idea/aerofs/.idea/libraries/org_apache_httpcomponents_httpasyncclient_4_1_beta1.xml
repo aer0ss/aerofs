@@ -10,8 +10,6 @@
       <root url="jar://$MAVEN_REPOSITORY$/commons-codec/commons-codec/1.6/commons-codec-1.6.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/apache/httpcomponents/httpasyncclient/4.1-beta1/httpasyncclient-4.1-beta1-sources.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

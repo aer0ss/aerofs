@@ -784,7 +784,7 @@ public class JsonFormat {
 
         /**
          * If the next token is a string, consume it, unescape it as a
-         * {@link com.googlecode.protobuf.format.ByteString}, and return it. Otherwise, throw a
+         * {@link com.google.protobuf.ByteString}, and return it. Otherwise, throw a
          * {@link ParseException}.
          */
         public ByteString consumeByteString() throws ParseException {
@@ -1208,9 +1208,8 @@ public class JsonFormat {
 
     /**
      * Un-escape a byte sequence as escaped using
-     * {@link #escapeBytes(com.googlecode.protobuf.format.ByteString)}. Two-digit hex escapes (starting with
+     * {@link #escapeBytes(com.google.protobuf.ByteString)}. Two-digit hex escapes (starting with
      * "\x") are also recognized.
-     * @throws ExFormatError
      */
     private static ByteString unescapeBytes(CharSequence input) throws InvalidEscapeSequence {
         try {

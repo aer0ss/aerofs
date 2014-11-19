@@ -14,7 +14,7 @@
     <orderEntry type="library" exported="" name="tomcat-dbcp:8.0.11" level="project" />
     <orderEntry type="library" exported="" name="hibernate" level="project" />
     <orderEntry type="library" exported="" name="apisecure" level="project" />
-    <orderEntry type="library" exported="" name="commons-net-3.3" level="project" />
+    <orderEntry type="library" exported="" name="commons-net:3.3" level="project" />
     <orderEntry type="library" exported="" name="flyway-core:2.2.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="rest-assured:2.3.4" level="project" />
   </component>

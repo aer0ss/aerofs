@@ -1,7 +1,8 @@
 <component name="libraryTable">
-  <library name="scrypt-1.4.0">
+  <library name="scrypt:1.4.0" type="repository">
+    <properties maven-id="com.lambdaworks:scrypt:1.4.0" />
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/scrypt-1.4.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/lambdaworks/scrypt/1.4.0/scrypt-1.4.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

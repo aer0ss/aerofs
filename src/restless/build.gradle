@@ -31,7 +31,7 @@ dependencies {
     // Netty
     compile 'io.netty:netty:3.9.5'
     // Gson
-    compile 'com.google.code.gson:gson:2.2.2'
+    compile 'com.google.code.gson:gson:2.2.4'
     // Guava
     compile 'com.google.guava:guava:17.0'
     // SLF4J

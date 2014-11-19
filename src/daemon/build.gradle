@@ -49,7 +49,7 @@ dependencies {
     testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
     testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
     testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
-    testCompile 'javax.mail:mailapi:1.5.0'
+    testCompile 'javax.mail:mail:1.4.2'
     testCompile project(':src/bifrost').sourceSets.test.runtimeClasspath
     testCompile project(':src/havre').sourceSets.test.runtimeClasspath
     testCompile project(':src/lib').sourceSets.test.runtimeClasspath

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="prettytime:2.1.3.Final" type="repository">
+    <properties maven-id="org.ocpsoft.prettytime:prettytime:2.1.3.Final" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/ocpsoft/prettytime/prettytime/2.1.3.Final/prettytime-2.1.3.Final.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
