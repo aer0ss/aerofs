@@ -13,7 +13,8 @@ public abstract class ServerConfiguration {
 
     static {
         APP.setHost("localhost");
-        APP.setPort((short) 9999);
+        APP.setPort((short)9999);
+        APP.setDirectMemoryBacked(false);
         APP.setMaxAcceptQueueSize(10);
         APP.setNumNetworkThreads(2);
     }
@@ -22,7 +23,8 @@ public abstract class ServerConfiguration {
 
     static {
         ADMIN.setHost("localhost");
-        ADMIN.setPort((short) 8888);
+        ADMIN.setPort((short)8888);
+        ADMIN.setDirectMemoryBacked(false);
         ADMIN.setMaxAcceptQueueSize(10);
         ADMIN.setNumNetworkThreads(2);
     }
