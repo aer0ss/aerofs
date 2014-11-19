@@ -4,7 +4,6 @@
 
 ext {
     clientResourcesDir = "${rootDir}/resource/client"
-    commonResourcesDir = "${rootDir}/resource/common"
     serverResourcesDir = "${rootDir}/resource/server"
 
     // declare, but do not define the directories in which
@@ -94,7 +93,7 @@ subprojects {
 
     repositories {
         flatDir {
-            dirs "${clientResourcesDir}/all/lib", "${commonResourcesDir}/lib", "${commonResourcesDir}/lib.test", "${serverResourcesDir}/lib", clientOSDependentResourcesDirs
+            dirs "${clientResourcesDir}/all/lib", "${serverResourcesDir}/lib", clientOSDependentResourcesDirs
         }
 
         mavenLocal()

@@ -69,12 +69,19 @@ function copy_resources_to_local_release_directories() {
 
     mkdir -p "${local_BIN}"
 
-    # extract fragmented gradle-built jars for merging into a single jar
+    # piggy-back on gradle dist output to build aerofs.jar and fetch deps
     # TODO: avoid doing that twice (client and TS)
     pushd ${local_BIN}
-    for jar in ${BUILD_OUTPUT_DIR}/desktop/dist/aerofs-*.jar ; do
-        echo "Extracting $jar"
-        jar xf "$jar" com
+    for jar in ${BUILD_OUTPUT_DIR}/desktop/dist/*.jar ; do
+        if [[ $jar == */aerofs-*.jar ]] ; then
+            # extract fragmented gradle-built jars for merging into a single jar
+            echo "Extracting $jar"
+            jar xf "$jar" com
+        else
+            # copy gradle-resolved deps
+            echo "Copying $jar"
+            cp "$jar" "${local_ALL_PLATFORMS_RELEASE_LIB}"
+        fi
     done
     popd
 
@@ -90,36 +97,22 @@ function copy_resources_to_local_release_directories() {
         rm -rf "${local_BIN}/com/aerofs/tools"
     fi
 
+    # remove platform-specific gradle-resolved deps
+    # they will be resolved appropriately for each packkage later on
+    rm -r "${local_ALL_PLATFORMS_RELEASE_LIB}/swt-4.jar"
+
     #------------------------------------------------------
     # copy platform-specific and platform-independent resources/libraries
     #------------------------------------------------------
 
-    # common, platform-independent jars _only_ (resources are copied below)
-    local local_COMMON_RESOURCES_DIR_JARDIRS=$( ls -d "${COMMON_RESOURCES_DIR}"/lib* | xargs -n1 basename )
-    local_COMMON_RESOURCES_DIR_JARDIRS=${local_COMMON_RESOURCES_DIR_JARDIRS/lib.test/} # exclude the lib.test dir
-    for local_JARDIR in $local_COMMON_RESOURCES_DIR_JARDIRS
-    do
-        cp -R "${COMMON_RESOURCES_DIR}/${local_JARDIR}"/* "${local_ALL_PLATFORMS_RELEASE_LIB}"
-    done
-
-    # client, platform-independent resources (includes jars as well as other resources)
+    # client, platform-independent resources
     local local_CLIENT_RESOURCES_DIR_CONTENTS=$( ls -d "$CLIENT_ALL_PLATFORMS_RESOURCES_DIR"/* | xargs -n1 basename )
-    local_CLIENT_RESOURCES_DIR_CONTENTS=${local_CLIENT_RESOURCES_DIR_CONTENTS/lib.s3/} # exclude the lib.s3 dir
     for local_CONTENT in $local_CLIENT_RESOURCES_DIR_CONTENTS
     do
-        if [[ $local_CONTENT == lib* ]]; then
-            cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/${local_CONTENT}"/* "${local_ALL_PLATFORMS_RELEASE_LIB}"
-        else
+        if [[ $local_CONTENT != lib* ]]; then
             cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/${local_CONTENT}" "${AEROFS_RELEASE_DIR}"
         fi
     done
-
-    # copy S3 jars if necessary
-    cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/* "${AEROFS_RELEASE_LINUX_SHARED_DIR}/lib/" # linux (always)
-    if is_team_server ; then
-        cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_OSX_DIR}/lib/" # osx (only for ts)
-        cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_WIN_DIR}/lib/" # win (only for ts)
-    fi
 
     # platform-specific resources and jars native libs
     cp -R "${CLIENT_OSX_RESOURCES_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}/"

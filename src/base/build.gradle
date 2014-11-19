@@ -21,7 +21,7 @@ dependencies {
     compile 'javax.inject:javax.inject:1'
     compile 'com.google.code.findbugs:jsr305:2.0.1'
     compile 'com.google.guava:guava:17.0'
-    compile 'io.netty:netty:3.9.5'
+    compile 'io.netty:netty:3.9.5.Final'
     compile 'com.google.protobuf:protobuf-java:2.6.0'
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'org.slf4j:jcl-over-slf4j:1.7.7'

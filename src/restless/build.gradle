@@ -27,9 +27,11 @@ dependencies {
     // Jersey
     compile 'com.sun.jersey:jersey-core:1.17.1'
     compile 'com.sun.jersey:jersey-server:1.17.1'
-    compile 'com.sun.jersey:jersey-guice:1.17.1'
+    compile ('com.sun.jersey.contribs:jersey-guice:1.17.1') {
+        transitive = false
+    }
     // Netty
-    compile 'io.netty:netty:3.9.5'
+    compile 'io.netty:netty:3.9.5.Final'
     // Gson
     compile 'com.google.code.gson:gson:2.2.4'
     // Guava
