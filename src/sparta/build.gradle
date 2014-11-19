@@ -14,13 +14,6 @@ sourceSets {
         java {
             srcDir 'src'
         }
-        resources {
-            // Include SP's flyway db migration scripts
-            srcDir '../spsv/resources/sp'
-            include 'db/**'
-            srcDir 'resources'
-            include 'logback.xml'
-        }
     }
     test {
         java {
@@ -39,6 +32,7 @@ dependencies {
     compile project(':src/rest-api')
     compile project(':src/libservlet')
     compile project(':src/oauth-verify')
+    runtime project(':src/spdb')
     // FIXME: libservlet deps on verkehr as:
     //   compile project(path: ':src/verkehr', configuration: 'restClient')
     // but for some reason, the verkehr rest client's dep on jackson-databind doesn't get propagated,
@@ -50,6 +44,8 @@ dependencies {
 }
 
 jar {
+    // DO NOT add to resources sourceSet to avoid polluting tests
+    from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.sp.sparta.Sparta',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),

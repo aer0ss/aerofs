@@ -35,10 +35,6 @@ done
 
 # Jars and dependency jars
 cp -R "$BASEDIR"/out.gradle/spsv/dist/* "$INSTALL/lib/"
-# DB migrations, if applicable
-if [ -d $RESOURCES/db ] ; then
-    cp -a "$RESOURCES"/db "$INSTALL/classes/"
-fi
 
 # Add configuration properties if not deploying to public or CI (mild hack)
 if [ "$BIN" != "PUBLIC" -a "$BIN" != "CI" ] ; then

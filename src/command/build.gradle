@@ -9,10 +9,6 @@ sourceSets {
         java {
             srcDir 'src'
         }
-        resources {
-            srcDir 'resources'
-            include 'logback.xml'
-        }
     }
 }
 
@@ -23,6 +19,8 @@ dependencies {
 }
 
 jar {
+    // DO NOT add to resources sourceSet to avoid polluting tests
+    from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.command.server.CommandServer',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),

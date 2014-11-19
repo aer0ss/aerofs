@@ -16,10 +16,6 @@ sourceSets {
             srcDir 'src'
             exclude 'com/aerofs/zephyr/client/**' 
         }
-        resources {
-            srcDir 'resources'
-            include 'logback.xml'
-        }
     }
     client {
         java {
@@ -46,6 +42,8 @@ artifacts {
 }
 
 jar {
+    // DO NOT add to resources sourceSet to avoid polluting tests
+    from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.zephyr.server.Zephyr',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),

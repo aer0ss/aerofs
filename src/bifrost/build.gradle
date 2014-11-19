@@ -13,7 +13,6 @@ sourceSets {
             // Include flyway db migration scripts
             srcDir 'resources'
             include 'db/**'
-            include 'logback.xml'
         }
     }
     test {
@@ -42,6 +41,8 @@ dependencies {
 }
 
 jar {
+    // DO NOT add to resources sourceSet to avoid polluting tests
+    from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.bifrost.server.Bifrost',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
