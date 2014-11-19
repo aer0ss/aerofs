@@ -88,6 +88,7 @@ import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
+import com.jayway.restassured.config.SSLConfig;
 import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hamcrest.BaseMatcher;
@@ -294,7 +295,6 @@ public class AbstractRestTest extends AbstractTest
 
         ca = TempCert.generateCA();
         client = TempCert.generateDaemon(user, did, ca);
-        RestAssured.keystore(ca.keyStore, TempCert.KS_PASSWD);
 
         cacert = mock(CfgCACertificateProvider.class);
         when(cacert.getCert()).thenReturn(ca.cert);
@@ -335,6 +335,9 @@ public class AbstractRestTest extends AbstractTest
         ConfigurationProperties.setProperties(prop);
 
         RestAssured.config = RestAssuredConfig.config()
+                .sslConfig(SSLConfig.sslConfig().with()
+                        .keystore(ca.keyStore, TempCert.KS_PASSWD)
+                        .allowAllHostnames())
                 .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
                         .gsonObjectMapperFactory(new GOMF()));
     }
