@@ -285,7 +285,7 @@ function make_osx_packages() {
         # the secrets are available already anyway.
         SECURE_VOLUME="/Volumes/aerofskeys"
         OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
-        OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/windows/passphrase.txt"
+        OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/keychain_passphrase.txt"
         security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
@@ -352,7 +352,17 @@ $BUILD_LINUX_UPDATE_TGZS && make_linux_update_tgz i386 &
 $BUILD_LINUX_UPDATE_TGZS && make_linux_update_tgz amd64 &
 $BUILD_WINDOWS_EXE && make_windows_installers &
 $BUILD_OSX_PACKAGES && make_osx_packages &
-wait
-create_release_version_file
 
+# Check that all the background tasks completed successfully
+FAIL=0
+for job in $(jobs -p)
+do
+    wait $job || let "FAIL+=1"
+done
+if [ "$FAIL" != "0" ] ; then
+    echo "$FAIL of the packaging tasks failed."
+    exit $FAIL
+fi
+
+create_release_version_file
 exit 0
