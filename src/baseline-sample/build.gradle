@@ -23,3 +23,11 @@ jar {
         )
     }
 }
+
+// reduce netty buffer pool size
+test {
+    systemProperties.put "io.netty.leakDetectionLevel", "paranoid"
+    systemProperties.put "io.netty.allocator.numHeapArenas", 1
+    systemProperties.put "io.netty.allocator.numDirectArenas", 1
+    systemProperties.put "io.netty.allocator.maxOrder", 4
+}
