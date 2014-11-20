@@ -96,17 +96,7 @@ subprojects {
             dirs "${clientResourcesDir}/all/lib", "${serverResourcesDir}/lib", clientOSDependentResourcesDirs
         }
 
-        mavenLocal()
-        jcenter()
-
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/codehaus-snapshots/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/google-api-client-libraries/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/thirdparty/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/releases/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/OpenConext/' }
-        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' }
+        maven { url 'http://repos.arrowfs.org/artifactory/libs-release/' }
     }
 
     //-------------------------------------------------------------------------
