@@ -73,7 +73,7 @@ function copy_resources_to_local_release_directories() {
     # TODO: avoid doing that twice (client and TS)
     pushd ${local_BIN}
     for jar in ${BUILD_OUTPUT_DIR}/desktop/dist/*.jar ; do
-        if [[ $jar == */aerofs-*.jar ]] ; then
+        if [[ ${jar##*/} == aerofs-*.jar ]] ; then
             # extract fragmented gradle-built jars for merging into a single jar
             echo "Extracting $jar"
             jar xf "$jar" com
@@ -99,7 +99,7 @@ function copy_resources_to_local_release_directories() {
 
     # remove platform-specific gradle-resolved deps
     # they will be resolved appropriately for each packkage later on
-    rm -r "${local_ALL_PLATFORMS_RELEASE_LIB}/swt-4.jar"
+    rm -f "${local_ALL_PLATFORMS_RELEASE_LIB}/swt-4.jar"
 
     #------------------------------------------------------
     # copy platform-specific and platform-independent resources/libraries
