@@ -2,7 +2,6 @@ package com.aerofs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
@@ -33,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TimeZone;
 
 public class Main
 {
@@ -61,18 +61,15 @@ public class Main
             LogUtil.setLevel(logLevel);
             LogUtil.enableFileLogging(rtRoot + "/" + prog + ".log");
 
+            final Date start = new Date();
+
             // Uncomment this for easier debugging
 //            LogUtil.enableConsoleLogging();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    DateFormat format = new SimpleDateFormat("yyyyMMdd");
-                    String strDate = format.format(new Date());
-                    l.debug("TERMINATED " + strDate);
-                }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                DateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss,SSS'Z'");
+                f.setTimeZone(TimeZone.getTimeZone("UTC"));
+                l.debug("TERMINATED [{} / {}]", f.format(start), f.format(new Date()));
             }));
 
         } catch (Exception e) {
@@ -93,7 +90,7 @@ public class Main
         l.info("{}", getProgramBanner(rtRoot, prog));
 
         if (Cfg.useProfiler()) {
-            l.debug("profiler: " + Cfg.profilerStartingThreshold());
+            l.debug("profiler: {}", Cfg.profilerStartingThreshold());
         }
     }
 
@@ -144,8 +141,7 @@ public class Main
             fieldSysPath.set(null, null); // force sys_paths to re-evaluate java.library.path
         } catch (Exception e) {
             // ignored
-            l.warn("The property java.library.path could not be set to "
-                    + appRoot + " - " + Util.e(e));
+            l.warn("The property java.library.path could not be set to {} - {}",appRoot, Util.e(e));
         }
 
         // First things first, initialize the configuration subsystem.
@@ -206,7 +202,7 @@ public class Main
         } catch (Throwable e) {
             String message = "failed in main(): " + Util.e(e);
             System.err.println(message);
-            l.error("l.error: " + message, e);
+            l.error("{}" + message, e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
