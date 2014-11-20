@@ -1,11 +1,13 @@
 package com.aerofs.cli;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -15,6 +17,7 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.IOError;
@@ -26,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CLI implements IUI {
+    private static final Logger l = Loggers.getLogger(CLI.class);
 
     private static class ExecEntry {
         final Runnable _runnable;
@@ -72,9 +76,9 @@ public class CLI implements IUI {
     }
 
     private final Thread _thd;
-    private final LinkedList<ExecEntry> _execs = new LinkedList<ExecEntry>();
+    private final LinkedList<ExecEntry> _execs = new LinkedList<>();
     private final PrintStream _out = System.out;
-    private final DelayQueue<DelayedRunnable> _dq = new DelayQueue<DelayedRunnable>();
+    private final DelayQueue<DelayedRunnable> _dq = new DelayQueue<>();
     private final AtomicBoolean _timedExecThreadStarted = new AtomicBoolean(false);
 
     /**
@@ -93,32 +97,21 @@ public class CLI implements IUI {
     @Override
     public void show(final MessageType mt, final String msg)
     {
-        exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _out.println(mt2hdr(mt) + msg);
-            }
-        });
+        exec(() -> _out.println(mt2hdr(mt) + msg));
     }
 
     @Override
     public void confirm(final MessageType mt, final String msg) throws ExNoConsole
     {
-        final OutArg<Boolean> noConsole = new OutArg<Boolean>(false);
+        final OutArg<Boolean> noConsole = new OutArg<>(false);
 
-        exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _out.println(mt2hdr(mt) + msg);
-                _out.println("[Press ENTER to continue]");
-                String line;
-                line = readLine();
-                if (line == null) noConsole.set(true);
-            }
+        exec(() -> {
+            l.debug("waiting for confirmation: {}", msg);
+            _out.println(mt2hdr(mt) + msg);
+            _out.println("[Press ENTER to continue]");
+            String line;
+            line = readLine();
+            if (line == null) noConsole.set(true);
         });
 
         if (noConsole.get()) {
@@ -131,13 +124,7 @@ public class CLI implements IUI {
     public IWaiter showWait(final String title, String msg)
     {
         show(MessageType.INFO, msg);
-        return new IWaiter() {
-            @Override
-            public void done()
-            {
-                show(MessageType.INFO, title + " done");
-            }
-        };
+        return () -> show(MessageType.INFO, title + " done");
     }
 
     @Override
@@ -149,13 +136,7 @@ public class CLI implements IUI {
     private static String getLabelString(String label, int key)
     {
         assert key < label.length();
-        StringBuilder sb = new StringBuilder();
-        sb.append(label.substring(0, key));
-        sb.append('[');
-        sb.append(label.charAt(key));
-        sb.append(']');
-        sb.append(label.substring(key + 1));
-        return sb.toString();
+        return label.substring(0, key) + '[' + label.charAt(key) + ']' + label.substring(key + 1);
     }
 
     /**
@@ -188,38 +169,35 @@ public class CLI implements IUI {
     public boolean ask(final MessageType mt, final String msg, final String yesLabel,
             final String noLabel) throws ExNoConsole
     {
-        final OutArg<Boolean> ret = new OutArg<Boolean>();
+        final OutArg<Boolean> ret = new OutArg<>();
 
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                int yesKey = 0;
-                int noKey = 0;
-                while (noLabel.charAt(noKey) == yesLabel.charAt(yesKey)) { noKey++; }
+        exec(() -> {
+            l.debug("waiting for [{} / {}] choice: {}", yesLabel, noLabel, msg);
+            int yesKey = 0;
+            int noKey = 0;
+            while (noLabel.charAt(noKey) == yesLabel.charAt(yesKey)) { noKey++; }
 
-                while (true) {
-                    _out.print(mt2hdr(mt) + msg + "\n" +
-                            getLabelString(yesLabel, yesKey) + " / " +
-                            getLabelString(noLabel, noKey) + ": ");
+            while (true) {
+                _out.print(mt2hdr(mt) + msg + "\n" +
+                        getLabelString(yesLabel, yesKey) + " / " +
+                        getLabelString(noLabel, noKey) + ": ");
 
-                    String line = readLine();
-                    if (line == null) {
-                        // leave ret as null
-                        return;
-                    }
+                String line = readLine();
+                if (line == null) {
+                    // leave ret as null
+                    return;
+                }
 
-                    if (line.length() != 1) continue;
-                    char ch = Character.toLowerCase(line.charAt(0));
-                    char y = Character.toLowerCase(yesLabel.charAt(yesKey));
-                    char n = Character.toLowerCase(noLabel.charAt(noKey));
-                    if (ch == y) {
-                        ret.set(true);
-                        break;
-                    } else if (ch == n) {
-                        ret.set(false);
-                        break;
-                    }
+                if (line.length() != 1) continue;
+                char ch = Character.toLowerCase(line.charAt(0));
+                char y = Character.toLowerCase(yesLabel.charAt(yesKey));
+                char n = Character.toLowerCase(noLabel.charAt(noKey));
+                if (ch == y) {
+                    ret.set(true);
+                    break;
+                } else if (ch == n) {
+                    ret.set(false);
+                    break;
                 }
             }
         });
@@ -246,18 +224,15 @@ public class CLI implements IUI {
 
     public char[] askPasswd(final String msg) throws ExNoConsole
     {
-        final OutArg<char[]> ret = new OutArg<char[]>();
+        final OutArg<char[]> ret = new OutArg<>();
 
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                while (true) {
-                    _out.print(msg + ": ");
-                    ret.set(readPasswd());
-                    if (ret.get() == null || ret.get().length > 0) {
-                        break;
-                    }
+        exec(() -> {
+            l.debug("waiting for password: {}", msg);
+            while (true) {
+                _out.print(msg + ": ");
+                ret.set(readPasswd());
+                if (ret.get() == null || ret.get().length > 0) {
+                    break;
                 }
             }
         });
@@ -276,9 +251,10 @@ public class CLI implements IUI {
     public String askText(final String msg, final String def)
         throws ExNoConsole
     {
-        final OutArg<String> ret = new OutArg<String>();
+        final OutArg<String> ret = new OutArg<>();
 
         exec(() -> {
+            l.debug("waiting for data: {}", msg);
             while (true) {
                 _out.print(msg + (def != null ? " [" + def + "]" : "" ) + ": ");
                 ret.set(readLine());
@@ -311,6 +287,7 @@ public class CLI implements IUI {
 
     public void enterMainLoop_()
     {
+        l.debug("enter cli loop");
         while (true) {
             ExecEntry ee;
             synchronized (_execs) {
@@ -448,7 +425,7 @@ public class CLI implements IUI {
     public void shutdown()
     {
         UIGlobals.dm().stopIgnoreException();
-        System.exit(0);
+        ExitCode.NORMAL_EXIT.exit();
     }
 
     @Override

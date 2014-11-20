@@ -230,7 +230,7 @@ public class Main
             }
         }
 
-        if (Cfg.inited()) l.warn(Cfg.user() + " " + Cfg.did().toStringFormal());
+        if (Cfg.inited()) l.warn("{} {}", Cfg.user(), Cfg.did().toStringFormal());
     }
 
     private static void launchProgram(String rtRoot, String prog, String ... progArgs)

@@ -3,6 +3,7 @@ package com.aerofs.gui.setup;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.IViewNotifier.Type;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.ui.IUINotificationListener;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.update.Updater.Status;
@@ -11,9 +12,7 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.layout.GridData;
@@ -81,12 +80,8 @@ public class DlgPreSetupUpdateCheck extends Shell
         button.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         button.setText(IDialogConstants.CANCEL_LABEL);
 
-        addListener(SWT.Traverse, new Listener() {
-            @Override
-            public void handleEvent(Event event)
-            {
-                if (event.detail == SWT.TRAVERSE_ESCAPE) cancel();
-            }
+        addListener(SWT.Traverse, event -> {
+            if (event.detail == SWT.TRAVERSE_ESCAPE) cancel();
         });
 
         UIGlobals.notifier().addListener(Type.UPDATE, _updateListener);
@@ -103,9 +98,10 @@ public class DlgPreSetupUpdateCheck extends Shell
     private void cancel()
     {
         l.warn("user canceled");
-        System.exit(1);
+        ExitCode.FAIL_TO_LAUNCH.exit("user canceled");
     }
 
+    @Override
     public void open()
     {
         layout();
@@ -126,13 +122,9 @@ public class DlgPreSetupUpdateCheck extends Shell
         // Disable the check that prevents subclassing of SWT components
     }
 
-    private final IUINotificationListener _updateListener = new IUINotificationListener() {
-        @Override
-        public void onNotificationReceived(Object notification)
-        {
-            UpdaterNotification n = (UpdaterNotification)notification;
-            setUpdateStatus(n.status, n.progress);
-        }
+    private final IUINotificationListener _updateListener = notification -> {
+        UpdaterNotification n = (UpdaterNotification)notification;
+        setUpdateStatus(n.status, n.progress);
     };
 
     private void setUpdateStatus(Status us, int percent)
@@ -155,7 +147,7 @@ public class DlgPreSetupUpdateCheck extends Shell
             break;
         case ERROR:
             GUI.get().show(this, MessageType.WARN, S.PRE_SETUP_UPDATE_CHECK_FAILED);
-            System.exit(1);
+            ExitCode.FAIL_TO_LAUNCH.exit();
             break;
         case APPLY:
             UIGlobals.updater().execUpdateFromMenu();

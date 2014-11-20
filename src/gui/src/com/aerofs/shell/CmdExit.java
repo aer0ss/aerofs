@@ -1,6 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import org.apache.commons.cli.CommandLine;
 
 // templated because ShProgram cannot deal properly with commands with different templated types
@@ -15,7 +16,7 @@ public class CmdExit<S> extends AbstractShellCommand<S>
 
     static void exitShell()
     {
-        System.exit(0);
+        ExitCode.NORMAL_EXIT.exit();
     }
 
     @Override

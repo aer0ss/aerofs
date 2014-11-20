@@ -94,7 +94,7 @@ public class ShProgram implements IProgram, ICallback
         // releaseExternalResources() on Netty's channel factory inside RitualClientProvider.
         // But because this call can hang if a channel isn't closed or someone might forget to
         // call it, it's just safer to call SystemUtil.exit()
-        System.exit(0);
+        ExitCode.NORMAL_EXIT.exit();
     }
 
     public RitualBlockingClient getRitualClient_()

@@ -108,44 +108,39 @@ public class CLIRootAnchorUpdater
 
     /**
      * @return True if the rootAnchorAbsPath was updated successfully in the CfgDatabase, False
-     * if the path entered is invalid or an error occured while updating the DB. Null if there is
+     * if the path entered is invalid or an error occurred while updating the DB. Null if there is
      * no console.
      */
     private Boolean replaceRootAnchor()
     {
-        final OutArg<Boolean> ret = new OutArg<Boolean>();
-        _cli.exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _cli.out().print("Enter the new " + L.product() + " folder location: ");
-                String rootPath = readLine();
-                if (rootPath == null) return; // leave ret as null
+        final OutArg<Boolean> ret = new OutArg<>();
+        _cli.exec(() -> {
+            _cli.out().print("Enter the new " + L.product() + " folder location: ");
+            String rootPath = readLine();
+            if (rootPath == null) return; // leave ret as null
 
-                String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath, _sid);
+            String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath, _sid);
 
-                try {
-                    RootAnchorUtil.checkNewRootAnchor(_oldAbsPath, newRootPath);
-                } catch (Exception e) {
-                    _cli.show(MessageType.WARN, ErrorMessages.e2msgDeprecated(e) +
-                            ". Please select a different folder.\n");
-                    ret.set(false);
-                    return;
-                }
+            try {
+                RootAnchorUtil.checkNewRootAnchor(_oldAbsPath, newRootPath);
+            } catch (Exception e) {
+                _cli.show(MessageType.WARN, ErrorMessages.e2msgDeprecated(e) +
+                        ". Please select a different folder.\n");
+                ret.set(false);
+                return;
+            }
 
-                try {
-                    RootAnchorUtil.updateAbsRootCfg(_sid, newRootPath);
-                    Cfg.init_(Cfg.absRTRoot(), false);
-                    _cli.show(MessageType.INFO, L.product() +
-                            "' new location was updated succesfully!");
-                    ret.set(true);
-                } catch (Exception e) {
-                    _cli.show(MessageType.ERROR, "An error occured while applying " +
-                            "the new location for the " + L.product() +
-                            " folder " + ErrorMessages.e2msgDeprecated(e));
-                    ret.set(false);
-                }
+            try {
+                RootAnchorUtil.updateAbsRootCfg(_sid, newRootPath);
+                Cfg.init_(Cfg.absRTRoot(), false);
+                _cli.show(MessageType.INFO, L.product() +
+                        "' new location was updated succesfully!");
+                ret.set(true);
+            } catch (Exception e) {
+                _cli.show(MessageType.ERROR, "An error occured while applying " +
+                        "the new location for the " + L.product() +
+                        " folder " + ErrorMessages.e2msgDeprecated(e));
+                ret.set(false);
             }
         });
         return ret.get();

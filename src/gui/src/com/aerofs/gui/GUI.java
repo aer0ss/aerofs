@@ -19,6 +19,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.IOSUtil;
@@ -31,14 +32,10 @@ import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.slf4j.Logger;
@@ -104,14 +101,7 @@ public class GUI implements IUI
             // grief and confusion.
             // This adds the listener to block the events from closing AeroFS, thus preventing
             // users accidentally killing SWT with Cmd+Q shortcut
-            _disp.addListener(SWT.Close, new Listener()
-            {
-                @Override
-                public void handleEvent(Event event)
-                {
-                    event.doit = false;
-                }
-            });
+            _disp.addListener(SWT.Close, event -> event.doit = false);
         }
 
         // the grand grand parent shell for all other shells
@@ -125,27 +115,7 @@ public class GUI implements IUI
 
     public void scheduleLaunch(final String rtRoot)
     {
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run() {
-                UIUtil.launch(rtRoot, new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                preLaunch();
-                            }
-                        }, new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                postLaunch();
-                            }
-                        });
-            }
-        });
+        asyncExec(() -> UIUtil.launch(rtRoot, this::preLaunch, this::postLaunch));
     }
 
     private void preLaunch()
@@ -188,19 +158,15 @@ public class GUI implements IUI
     {
         UI.get().notify(IUI.MessageType.INFO,
                 "Install " + OSUtil.get().getShellExtensionName() + "?",
-                "Please click here if you would like to install the " +
-                        OSUtil.get().getShellExtensionName() + ".", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    OSUtil.get().installShellExtension(false);
-                } catch (Exception e) {
-                    reportShellExtInstallFailed(e);
-                }
-            }
-        });
+                "Please click here if you would like to install the "
+                        + OSUtil.get().getShellExtensionName() + ".",
+                () -> {
+                    try {
+                        OSUtil.get().installShellExtension(false);
+                    } catch (Exception e) {
+                        reportShellExtInstallFailed(e);
+                    }
+                });
     }
 
     private void reportShellExtInstallFailed(Exception e)
@@ -260,13 +226,7 @@ public class GUI implements IUI
     public void showImpl(@Nullable final Shell sh, final boolean sheet,
             final MessageType mt, final String msg)
     {
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                new AeroFSMessageBox(sh, sheet, msg, mt2it(mt)).open();
-            }
-        });
+        exec(() -> new AeroFSMessageBox(sh, sheet, msg, mt2it(mt)).open());
     }
 
     private static class Wait extends AeroFSDialog implements IWaiter
@@ -297,12 +257,9 @@ public class GUI implements IUI
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, true, 1, 1));
 
             // prevent user from closing by pressing ESC
-            shell.addListener(SWT.Traverse, new Listener() {
-                @Override
-                public void handleEvent(Event e) {
-                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
-                        e.doit = false;
-                    }
+            shell.addListener(SWT.Traverse, e -> {
+                if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                    e.doit = false;
                 }
             });
         }
@@ -310,13 +267,7 @@ public class GUI implements IUI
         @Override
         public void done()
         {
-            GUI.get().asyncExec(new Runnable() {
-                @Override
-                public void run()
-                {
-                    closeDialog();
-                }
-            });
+            GUI.get().asyncExec(Wait.this::closeDialog);
         }
     }
 
@@ -325,15 +276,10 @@ public class GUI implements IUI
     {
         final SettableFuture<IWaiter> w = SettableFuture.create();
 
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Wait dlg = new Wait(_sh, title, msg);
-                w.set(dlg);
-                dlg.openDialog();
-            }
+        asyncExec(() -> {
+            Wait dlg = new Wait(_sh, title, msg);
+            w.set(dlg);
+            dlg.openDialog();
         });
 
         try {
@@ -473,15 +419,10 @@ public class GUI implements IUI
             final ButtonType buttonType, final boolean allowDismiss)
     {
         final InOutArg<Boolean> yes = new InOutArg<Boolean>(false);
-        exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                AeroFSMessageBox amb = new AeroFSMessageBox(sh, sheet, msg, mt2it(mt),
-                        buttonType, yesLabel, noLabel, allowDismiss);
-                yes.set(amb.open() == IDialogConstants.OK_ID);
-            }
+        exec(() -> {
+            AeroFSMessageBox amb = new AeroFSMessageBox(sh, sheet, msg, mt2it(mt),
+                    buttonType, yesLabel, noLabel, allowDismiss);
+            yes.set(amb.open() == IDialogConstants.OK_ID);
         });
         return yes.get();
     }
@@ -498,17 +439,12 @@ public class GUI implements IUI
             final long duration)
     {
         final InOutArg<Boolean> yes = new InOutArg<Boolean>(false);
-        exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                final AeroFSTimedMessageBox atmb = new AeroFSTimedMessageBox(sh, sheet,
-                        mt2it(mt), format, ButtonType.OKAY_CANCEL, yesLabel, noLabel, duration);
-                // update periodically the label to show the remaining time.
-                atmb.startTimer();
-                yes.set(atmb.open() == IDialogConstants.OK_ID);
-            }
+        exec(() -> {
+            final AeroFSTimedMessageBox atmb = new AeroFSTimedMessageBox(sh, sheet,
+                    mt2it(mt), format, ButtonType.OKAY_CANCEL, yesLabel, noLabel, duration);
+            // update periodically the label to show the remaining time.
+            atmb.startTimer();
+            yes.set(atmb.open() == IDialogConstants.OK_ID);
         });
         return yes.get();
     }
@@ -540,13 +476,9 @@ public class GUI implements IUI
                 }
 
                 final Exception e2 = e1;
-                safeAsyncExec(w, new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        if (e2 == null) worker.okay();
-                        else worker.error(e2);
-                    }
+                safeAsyncExec(w, () -> {
+                    if (e2 == null) worker.okay();
+                    else worker.error(e2);
                 });
             }
         };
@@ -653,13 +585,8 @@ public class GUI implements IUI
     public void notify(final MessageType mt, final String title, final String msg,
             final Runnable onClick)
     {
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if (_st != null) _st.getBalloons().add(mt, title, msg, onClick);
-            }
+        asyncExec(() -> {
+            if (_st != null) _st.getBalloons().add(mt, title, msg, onClick);
         });
     }
 
@@ -668,13 +595,8 @@ public class GUI implements IUI
     {
         final InOutArg<Boolean> ret = new InOutArg<Boolean>(false);
 
-        exec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if (_st != null) ret.set(_st.getBalloons().hasVisibleBalloon());
-            }
+        exec(() -> {
+            if (_st != null) ret.set(_st.getBalloons().hasVisibleBalloon());
         });
 
         return ret.get();
@@ -683,16 +605,13 @@ public class GUI implements IUI
     @Override
     public void shutdown()
     {
-        exec(new Runnable() {
-            @Override
-            public void run() {
-                if (st() != null) st().dispose();
+        exec(() -> {
+            if (st() != null) st().dispose();
 
-                if (UIGlobals.dm() != null) UIGlobals.dm().stopIgnoreException();
-            }
+            if (UIGlobals.dm() != null) UIGlobals.dm().stopIgnoreException();
         });
 
-        System.exit(0);
+        ExitCode.NORMAL_EXIT.exit();
     }
 
     @Override
@@ -714,17 +633,13 @@ public class GUI implements IUI
         boolean open = _openShells != 0;
 
         // for debugging only. TODO remove it
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                for (Shell shell : _open) {
-                    if (shell.isDisposed() || !shell.isVisible()) {
-                        newDefectWithLogs("gui.is_open")
-                                .setMessage("closed shells in _open: " + shell + ": "
-                                        + shell.isDisposed())
-                                .sendAsync();
-                    }
+        exec(() -> {
+            for (Shell shell : _open) {
+                if (shell.isDisposed() || !shell.isVisible()) {
+                    newDefectWithLogs("gui.is_open")
+                            .setMessage(
+                                    "closed shells in _open: " + shell + ": " + shell.isDisposed())
+                            .sendAsync();
                 }
             }
         });
@@ -762,28 +677,23 @@ public class GUI implements IUI
                     .sendAsync();
         }
 
-        shell.addDisposeListener(new DisposeListener()
-        {
-            @Override
-            public void widgetDisposed(DisposeEvent e)
-            {
-                _openShells--;
-                l.info("dispose " + _openShells);
+        shell.addDisposeListener(e -> {
+            _openShells--;
+            l.info("dispose " + _openShells);
 
-                if (!_open.remove(shell)) {
-                    newDefectWithLogs("gui.register_shell")
-                            .setMessage("re-unregister shell: " + shell)
-                            .sendAsync();
-                }
+            if (!_open.remove(shell)) {
+                newDefectWithLogs("gui.register_shell")
+                        .setMessage("re-unregister shell: " + shell)
+                        .sendAsync();
+            }
 
-                if (_open.size() != _openShells) {
-                    String shs = "";
-                    for (Shell sh : _open) shs += " " + sh;
+            if (_open.size() != _openShells) {
+                String shs = "";
+                for (Shell sh : _open) shs += " " + sh;
 
-                    newDefectWithLogs("gui.register_shell")
-                            .setMessage("_open != open: " + _openShells + " == " + shs)
-                            .sendAsync();
-                }
+                newDefectWithLogs("gui.register_shell")
+                        .setMessage("_open != open: " + _openShells + " == " + shs)
+                        .sendAsync();
             }
         });
     }

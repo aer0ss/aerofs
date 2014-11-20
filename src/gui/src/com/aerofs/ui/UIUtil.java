@@ -170,10 +170,10 @@ public class UIUtil
             }
         } catch (ExLaunchAborted e) {
             // User clicked on cancel, exit without error messages
-            System.exit(0);
+            ExitCode.NORMAL_EXIT.exit();
         } catch (Exception e) {
             logAndShowLaunchError(e);
-            System.exit(0);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
 
@@ -184,7 +184,7 @@ public class UIUtil
         } catch (Exception e) {
             UI.get().show(MessageType.ERROR, e.getLocalizedMessage() != null ? e.getLocalizedMessage()
                     : "Sorry, an internal error happened, preventing " + L.product() + " to launch");
-            System.exit(0);
+            ExitCode.FATAL_ERROR.exit();
             return false;
         }
     }
@@ -224,7 +224,7 @@ public class UIUtil
                     "\"" + e._newRtrootPath + "\"\n\n";
             ErrorMessages.show(e, message);
 
-            System.exit(0);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         } catch (ExFailedToReloadCfg e) {
             // this is similar to the message on Main.main() when Cfg fails to load
             newDefectWithLogs("rtroot_migration.reload_cfg")
@@ -235,7 +235,7 @@ public class UIUtil
             String message = L.product() + " is unable to launch.";
             ErrorMessages.show(e, message);
 
-            System.exit(0);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
 
