@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="org.eclipse.core.commands">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../approot/lib/org.eclipse.core.commands_3.5.0.I20090525-2000.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/org.eclipse.core.commands_3.5.0.I20090525-2000.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

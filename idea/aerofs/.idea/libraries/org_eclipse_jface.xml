@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="org.eclipse.jface">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../approot/lib/org.eclipse.jface_3.5.1.M20090826-0800.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/org.eclipse.jface_3.5.1.M20090826-0800.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

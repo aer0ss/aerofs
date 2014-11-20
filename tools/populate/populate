@@ -38,14 +38,6 @@ function copy_labeling_resources() {
 }
 
 function copy_os_specific_resources() {
-    mkdir -p "$APPROOT/lib"
-
-    # copy over all the common client resources (includes platform-independent icons/libs)
-    # FIXME (AG): should I not copy over the test libraries?
-
-    cp -R "$COMMON_RESOURCES_DIR/lib"*/*.jar "$APPROOT"/lib/
-    cp -R "$CLIENT_RESOURCES_DIR/all/lib"*/*.jar "$APPROOT"/lib/ # lib directories
-
     for resource in $( ls "$CLIENT_RESOURCES_DIR/all/" ) # non-lib directories
     do
         if [[ $resource != lib* ]]
@@ -54,10 +46,7 @@ function copy_os_specific_resources() {
         fi
     done
 
-    # copy over the os-specific resources
-    # IMPORTANT: must come _after_ the common copy above, so that os-specific resources
-    # can overwrite the identically-named platform-independent ones
-    # FIXME (AG): Yeah. I don't like it
+    # copy JRE and native libs
     case "$OS" in
         win)         OS_RESOURCES_DIR="win"           ;;
         osx)         OS_RESOURCES_DIR="osx"           ;;
@@ -66,6 +55,10 @@ function copy_os_specific_resources() {
         *)       echo "unsupported OS: $OS" && exit 1 ;;
     esac
     cp -R "$CLIENT_RESOURCES_DIR/$OS_RESOURCES_DIR/"* "$APPROOT"/
+
+    # symlink lib/ dir to gradle dist output
+    rm -rf "$APPROOT/lib"
+    ln -s ../out.gradle/desktop/dist $APPROOT/lib
 
     if [[ "$LABELING" == "CLIENT" ]] && [[ "$OS" == "win" || "$OS" == "osx" ]]
     then
