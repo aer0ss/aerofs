@@ -2,6 +2,7 @@ package com.aerofs.sp.server.session;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpSession;
@@ -38,6 +39,20 @@ public class SPSessionInvalidator
                     l.info("Invalidate: " + userID + " " + sessionID);
                     session.invalidate();
                 }
+            }
+        }
+    }
+
+    public void invalidateSecondFactor(UserID userid)
+    {
+        for (String sessId : _userTracker.sessionsForUser(userid)) {
+            HttpSession tomcatSession = _sessionTracker.getSession(sessId);
+            if (tomcatSession != null) {
+                // we don't need the User.Factory for this access, so we null it out because
+                // we can't actually cleanly inject this
+                // we do need an IHttpSessionProvider that returns this particular tomcatSession
+                SPSession session = new SPSession(null, () -> tomcatSession);
+                session.dropSecondFactorAuthDate();
             }
         }
     }

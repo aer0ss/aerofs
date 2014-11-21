@@ -106,6 +106,12 @@ public class SPSession
     }
 
     @Override
+    public void dropSecondFactorAuthDate()
+    {
+        session().removeAttribute(SESS_ATTR_SECOND_FACTOR_AUTH_DATE);
+    }
+
+    @Override
     public boolean isAuthenticated()
     {
         return getAuthenticatedProvenances().size() > 0;

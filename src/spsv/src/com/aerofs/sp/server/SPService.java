@@ -1701,6 +1701,7 @@ public class SPService implements ISPService
                 _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.TWO_FACTOR_SETUP);
         if (requester.shouldEnforceTwoFactor()) {
             requester.disableTwoFactorEnforcement();
+            _sessionInvalidator.invalidateSecondFactor(requester.id());
             _auditClient.event(AuditTopic.USER, "user.2fa.disable")
                     .embed("caller", new AuditCaller(requester.id()))
                     .embed("user", requester.id())
@@ -1761,6 +1762,7 @@ public class SPService implements ISPService
                         target.getFullName()._first);
             } else {
                 target.disableTwoFactorEnforcement();
+                _sessionInvalidator.invalidateSecondFactor(target.id());
                 _auditClient.event(AuditTopic.USER, "user.2fa.disable")
                         .embed("caller", new AuditCaller(requester.id()))
                         .embed("user", target.id())

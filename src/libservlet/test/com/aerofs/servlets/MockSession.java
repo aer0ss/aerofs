@@ -52,6 +52,12 @@ public class MockSession implements ISession
     }
 
     @Override
+    public void dropSecondFactorAuthDate()
+    {
+        secondFactorAuthDate = null;
+    }
+
+    @Override
     public boolean isAuthenticated()
     {
         return getAuthenticatedProvenances().size() > 0;

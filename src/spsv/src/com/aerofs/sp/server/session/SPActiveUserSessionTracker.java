@@ -53,6 +53,11 @@ public class SPActiveUserSessionTracker
         }
     }
 
+    public synchronized Set<String> sessionsForUser(UserID userid)
+    {
+        return _userMap.get(userid.getString());
+    }
+
     /**
      * Remove all sessions belonging to a given user.
      */

@@ -65,6 +65,8 @@ public interface ISession
 
     void setCertificateAuthDate(long timestamp);
 
+    void dropSecondFactorAuthDate();
+
     /**
      * @return True if the current session is authenticated, False otherwise.
      */
