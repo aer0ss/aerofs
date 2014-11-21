@@ -5,6 +5,7 @@
 package com.aerofs.audit.client;
 
 import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -86,7 +87,7 @@ public class AuditorFactory
                     conn.setConnectTimeout(Audit.CONN_TIMEOUT);
                     conn.setReadTimeout(Audit.READ_TIMEOUT);
                     conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
-                    conn.setSSLSocketFactory(getSocketFactory());
+                    conn.setSSLSocketFactory(socketFactory.get());
                     conn.addRequestProperty(AuditClient.HEADER_UID, Cfg.user().getString());
                     conn.addRequestProperty(AuditClient.HEADER_DID, Cfg.did().toStringFormal());
                     conn.setDoOutput(true);
@@ -95,20 +96,8 @@ public class AuditorFactory
                     return conn;
                 }
 
-                // A simple, safe double-checked lock to lazy-initialize the socketFactory.
-                // Note that this can throw IOException on initialization...
-                SSLSocketFactory getSocketFactory() throws IOException
-                {
-                    SSLSocketFactory result = socketFactory;
-                    if (result == null) {
-                        synchronized(this) {
-                            result = socketFactory;
-                            if (result == null) socketFactory = result = createSocketFactory();
-                        }
-                    }
-                    return result;
-                }
-                private volatile SSLSocketFactory socketFactory = null;
+                private final LazyChecked<SSLSocketFactory, IOException> socketFactory =
+                        new LazyChecked<>(AuditorFactory::createSocketFactory);
             };
         }
 

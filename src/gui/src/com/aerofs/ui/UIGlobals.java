@@ -1,7 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.LaunchArgs;
-import com.aerofs.base.AtomicInitializer;
+import com.aerofs.base.Lazy;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
@@ -15,8 +15,6 @@ import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.ui.IDaemonMonitor.Factory;
 import com.aerofs.ui.update.Updater;
-
-import javax.annotation.Nonnull;
 
 import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
@@ -35,33 +33,15 @@ public final class UIGlobals
             new RitualClientProvider(getClientChannelFactory());
     private static ShellextService s_shellext;
 
-    // N.B. constructing RNC rquires the Cfg port base file to be ready. Thus it is not constructed
+    // N.B. constructing RNC requires the Cfg port base file to be ready. Thus it is not constructed
     // when the class is initialized.
-    private static final AtomicInitializer<RitualNotificationClient> s_rnc =
-            new AtomicInitializer<RitualNotificationClient>()
-            {
-                @Nonnull
-                @Override
-                protected RitualNotificationClient create()
-                {
-                    return new RitualNotificationClient(
-                            new RitualNotificationSystemConfiguration());
-                }
-            };
+    private static final Lazy<RitualNotificationClient> s_rnc = new Lazy<>(() ->
+                    new RitualNotificationClient(new RitualNotificationSystemConfiguration()));
 
     // N.B. depends on RNC, thus it's not constructed when the class is initialized
     // FIXME (AT): TransferState is meant for just GUI, not CLI
     // should be moved to TransferTrayMenuSection
-    private static final AtomicInitializer<TransferState> s_ts =
-            new AtomicInitializer<TransferState>()
-            {
-                @Nonnull
-                @Override
-                protected TransferState create()
-                {
-                    return new TransferState(rnc());
-                }
-            };
+    private static final Lazy<TransferState> s_ts = new Lazy<>(() -> new TransferState(rnc()));
 
     private static final Updater s_updater = Updater.getInstance_();
     private static final UINotifier s_notifier = new UINotifier();

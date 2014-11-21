@@ -1,12 +1,11 @@
 package com.aerofs.gui;
 
-import com.aerofs.base.AtomicInitializer;
+import com.aerofs.base.Lazy;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.os.OSUtilOSX;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
@@ -67,7 +66,7 @@ public class Images {
     public static final String ICON_USER = "user.png";
     public static final String ICON_GROUP = "group.png";
 
-    private static final Map<String, Image> s_imgs = new HashMap<String, Image>();
+    private static final Map<String, Image> s_imgs = new HashMap<>();
 
     // delay (ms) between each spinner frame
     private static final int SPINNER_DELAY = 100;
@@ -278,75 +277,69 @@ public class Images {
         return sb.toString();
     }
 
-    private static final AtomicInitializer<Boolean> _isHDPI = new AtomicInitializer<Boolean>()
-    {
-        @Nonnull
-        @Override
-        protected Boolean create()
-        {
-            // we only support HDPI for Retina Display on OS-X
-            if (!OSUtil.isOSX()) return Boolean.FALSE;
+    private static final Lazy<Boolean> _isHDPI = new Lazy<>(() -> {
+        // we only support HDPI for Retina Display on OS-X
+        if (!OSUtil.isOSX()) return Boolean.FALSE;
 
+        /**
+         * Here be dragons. (AT)
+         *
+         * At the time of writing, there are no good methods to detect a high-DPI display:
+         * - SWT:Device.getDPI() reports (72, 72) on both MacBook Pro and MacBook Pro with
+         *   Retina display. It simply doesn't work.
+         * - Google search revealed that the only other Java method is via AWT, and we've
+         *   already decided to not bundle AWT with the custom JRE we ship with the OS-X client.
+         * - Apple's stance on the subject is to encourage developers to write DPI-aware code
+         *   instead of explicitly check for HDPI.
+         * - The standard method to detect HDPI display in Objective-C is to check for
+         *   [[NSScreen mainScreen] backingScaleFactor].
+         * - [[NSScreen mainScreen] backingScaleFactor] is exposed through SWT internal classes,
+         *   so the current implementation is to access the variable through SWT instead of
+         *   using native driver code.
+         *
+         * Note, there are couple problems with the current implementation:
+         * - It uses a SWT internal class which is only shipped with the cocoa version of SWT.
+         *   That means:
+         *   * we have to use reflection so the code compiles on all platforms, and reflection
+         *     is not robust nor future-proof.
+         *   * since the class we used is an internal class, it may not be shipped in future
+         *     versions of SWT.
+         * - It detects HDPI using [[NSScreen mainScreen] backingScaleFactor]. While this is
+         *   the standard way to detect HDPI displays; it is not officially supported by Apple.
+         *   Remember, Apple want developers to write DPI-aware code, not specifically check
+         *   for HDPI displays.
+         *
+         * Nevertheless, I decided to implement this because of the following reasons:
+         * - We have received a large number of requests from users. Users don't care if the
+         *   detection is not robust or future-proof; they just want it to work.
+         * - This code is written specifically to deal with certain hardware, and hardware
+         *   and their API will most definitely change over time. So robust code is innately
+         *   impossible because we can't control nor predict how hardware and their API will
+         *   change.
+         *   * there may be better API in the future
+         *   * even if there's a supported API now, it will certainly become unsupported in the
+         *     near future because hardware changes fast.
+         *   * the concept of HDPI may change. It could become obsolete as soon as the next
+         *     hardware vendor come up with a shinier word, or its definition may change.
+         */
+        try {
             /**
-             * Here be dragons. (AT)
-             *
-             * At the time of writing, there are no good methods to detect a high-DPI display:
-             * - SWT:Device.getDPI() reports (72, 72) on both MacBook Pro and MacBook Pro with
-             *   Retina display. It simply doesn't work.
-             * - Google search revealed that the only other Java method is via AWT, and we've
-             *   already decided to not bundle AWT with the custom JRE we ship with the OS-X client.
-             * - Apple's stance on the subject is to encourage developers to write DPI-aware code
-             *   instead of explicitly check for HDPI.
-             * - The standard method to detect HDPI display in Objective-C is to check for
-             *   [[NSScreen mainScreen] backingScaleFactor].
-             * - [[NSScreen mainScreen] backingScaleFactor] is exposed through SWT internal classes,
-             *   so the current implementation is to access the variable through SWT instead of
-             *   using native driver code.
-             *
-             * Note, there are couple problems with the current implementation:
-             * - It uses a SWT internal class which is only shipped with the cocoa version of SWT.
-             *   That means:
-             *   * we have to use reflection so the code compiles on all platforms, and reflection
-             *     is not robust nor future-proof.
-             *   * since the class we used is an internal class, it may not be shipped in future
-             *     versions of SWT.
-             * - It detects HDPI using [[NSScreen mainScreen] backingScaleFactor]. While this is
-             *   the standard way to detect HDPI displays; it is not officially supported by Apple.
-             *   Remember, Apple want developers to write DPI-aware code, not specifically check
-             *   for HDPI displays.
-             *
-             * Nevertheless, I decided to implement this because of the following reasons:
-             * - We have received a large number of requests from users. Users don't care if the
-             *   detection is not robust or future-proof; they just want it to work.
-             * - This code is written specifically to deal with certain hardware, and hardware
-             *   and their API will most definitely change over time. So robust code is innately
-             *   impossible because we can't control nor predict how hardware and their API will
-             *   change.
-             *   * there may be better API in the future
-             *   * even if there's a supported API now, it will certainly become unsupported in the
-             *     near future because hardware changes fast.
-             *   * the concept of HDPI may change. It could become obsolete as soon as the next
-             *     hardware vendor come up with a shinier word, or its definition may change.
+             * The following block of code is equivalent to:
+             *   return org.eclipse.swt.internal.cocoa.NSScreen.mainScreen().backingScaleFactor
+             *           == 2.0
+             * only with reflection.
              */
-            try {
-                /**
-                 * The following block of code is equivalent to:
-                 *   return org.eclipse.swt.internal.cocoa.NSScreen.mainScreen().backingScaleFactor
-                 *           == 2.0
-                 * only with reflection.
-                 */
-                Class<?> nsScreen = Class.forName("org.eclipse.swt.internal.cocoa.NSScreen");
-                Object mainScreen = nsScreen.getMethod("mainScreen").invoke(null);
-                Object backingScaleFactor = nsScreen.getMethod("backingScaleFactor")
-                        .invoke(mainScreen);
-                return (Double) backingScaleFactor == 2.0;
-            } catch (Exception e) {
-                Loggers.getLogger(Images.class)
-                        .error("failed to check whether the main display is HDPI or not.");
-                return Boolean.TRUE;
-            }
+            Class<?> nsScreen = Class.forName("org.eclipse.swt.internal.cocoa.NSScreen");
+            Object mainScreen = nsScreen.getMethod("mainScreen").invoke(null);
+            Object backingScaleFactor = nsScreen.getMethod("backingScaleFactor")
+                    .invoke(mainScreen);
+            return (Double) backingScaleFactor == 2.0;
+        } catch (Exception e) {
+            Loggers.getLogger(Images.class)
+                    .error("failed to check whether the main display is HDPI or not.");
+            return Boolean.TRUE;
         }
-    };
+    });
 
     public static Image getTrayIcon(String iconName)
     {
