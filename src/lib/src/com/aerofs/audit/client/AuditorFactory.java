@@ -82,18 +82,33 @@ public class AuditorFactory
                 {
                     HttpsURLConnection conn = (HttpsURLConnection)url.openConnection();
 
-                    conn.setUseCaches(true);
+                    conn.setUseCaches(false);
                     conn.setConnectTimeout(Audit.CONN_TIMEOUT);
                     conn.setReadTimeout(Audit.READ_TIMEOUT);
                     conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
-                    conn.setDoOutput(true);
-                    conn.setSSLSocketFactory(createSocketFactory());
+                    conn.setSSLSocketFactory(getSocketFactory());
                     conn.addRequestProperty(AuditClient.HEADER_UID, Cfg.user().getString());
                     conn.addRequestProperty(AuditClient.HEADER_DID, Cfg.did().toStringFormal());
+                    conn.setDoOutput(true);
                     conn.connect();
 
                     return conn;
                 }
+
+                // A simple, safe double-checked lock to lazy-initialize the socketFactory.
+                // Note that this can throw IOException on initialization...
+                SSLSocketFactory getSocketFactory() throws IOException
+                {
+                    SSLSocketFactory result = socketFactory;
+                    if (result == null) {
+                        synchronized(this) {
+                            result = socketFactory;
+                            if (result == null) socketFactory = result = createSocketFactory();
+                        }
+                    }
+                    return result;
+                }
+                private volatile SSLSocketFactory socketFactory = null;
             };
         }
 
@@ -103,11 +118,7 @@ public class AuditorFactory
     private static IAuditorClient clientDisabled()
     {
         l.info("Audit service is disabled");
-        return new IAuditorClient()
-        {
-            @Override
-            public void submit(String content) throws IOException { }
-        };
+        return content -> { };
     }
 
     private static SSLSocketFactory createSocketFactory() throws IOException

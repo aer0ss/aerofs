@@ -9,12 +9,16 @@ import com.aerofs.lib.log.LogUtil;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 
+/**
+ * This client submits auditable events to the Auditor server (the AeroFS component) using an HttpURLConnection.
+ */
 abstract class AuditHttpClient implements IAuditorClient
 {
     private static final Logger l = Loggers.getLogger(AuditHttpClient.class);
@@ -35,51 +39,50 @@ abstract class AuditHttpClient implements IAuditorClient
     public void submit(String content) throws IOException
     {
         int contentLength = content.length();
+        l.debug("audit submit {} bytes", contentLength);
 
-        HttpURLConnection conn = null;
+        HttpURLConnection conn = getConnection(_svcUrl);
         try {
-            l.debug("audit submit {} bytes", contentLength);
-
-            conn = getConnection(_svcUrl);
             submitEvent(conn, content);
-            readResponse(conn);
         } catch (IOException e) {
             l.warn("audit submit err {}", LogUtil.suppress(e));
             throw e;
-        } finally {
-            if (conn != null) {
-                l.debug("audit client disconnect");
-                conn.disconnect();
-            }
         }
     }
 
     /**
-     * Return an appropriate connection instance for the requested type.
+     * Subtypes must return an appropriate connection instance (https/http).
      */
     abstract HttpURLConnection getConnection(URL url) throws IOException;
 
+    /**
+     * Submit an event, block for the response, and then close the streams so the HTTP(s) socket
+     * can be reused by the underlying implementation.
+     */
     private static void submitEvent(HttpURLConnection conn, String content) throws IOException
     {
-        OutputStream httpStream = null;
+        OutputStream os = null;
+        InputStream is = null;
         try {
-            httpStream = conn.getOutputStream();
-            httpStream.write(content.getBytes("UTF-8"));
+            os = conn.getOutputStream();
+            os.write(content.getBytes("UTF-8"));
+
+            int code = conn.getResponseCode();
+            if (code != HTTP_OK) {
+                l.warn("event submission response " + code);
+                throw new IOException("event submission failed:" + code);
+            }
+
+            // close the input / error stream explicitly to allow socket reuse...
+            // Dear HttpURLconnection: you SUCK.
+            is = conn.getInputStream();
+        } catch (IOException e) {
+            if (conn.getErrorStream() != null) { conn.getErrorStream().close(); }
+            throw e;
         } finally {
-            if (httpStream != null) httpStream.close();
+            if (os != null) os.close();
+            if (is != null) is.close();
         }
-    }
-
-    private static void readResponse(HttpURLConnection conn) throws IOException
-    {
-        l.debug("read response");
-
-        int code = conn.getResponseCode();
-        if (code != HTTP_OK) {
-            l.warn("event submission response " + code);
-            throw new IOException("event submission failed:" + code);
-        }
-        // TODO: we currently don't even bother checking for response body, because we don't care
     }
 
     private URL _svcUrl;

@@ -17,6 +17,7 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,7 +39,7 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
     // ReconnectingClientHandler instances.
     private static final long   EXP_WAIT_COEFF = 2L;
     private static final long   MIN_WAIT_TIME = C.SEC / 4;
-    static final long   MAX_WAIT_TIME = 60 * C.SEC;
+    static final long           MAX_WAIT_TIME = 60 * C.SEC;
     private static long         _interval = MIN_WAIT_TIME;
     private static boolean      _quiescent = false;
 
@@ -80,7 +81,7 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
         l.warn("Channel {} caught exception", ctx.getChannel(),
-                LogUtil.suppress(e.getCause(), java.net.SocketException.class));
+                LogUtil.suppress(e.getCause(), java.net.SocketException.class, ClosedChannelException.class));
         ctx.getChannel().close();
     }
 

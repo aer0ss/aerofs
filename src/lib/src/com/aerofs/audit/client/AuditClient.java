@@ -6,6 +6,7 @@ package com.aerofs.audit.client;
 
 import com.aerofs.base.NoObfuscation;
 import com.aerofs.lib.log.LogUtil;
+import com.google.common.collect.Maps;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -104,6 +105,7 @@ public class AuditClient
 
         /**
          * Publish an event to the audit service. Suppress any connection or transmission errors.
+         * Allow the implementation to reuse sockets.
          */
         public void publish()
         {
@@ -119,6 +121,7 @@ public class AuditClient
          * If the event cannot be delivered, throw an exception.
          */
         public abstract void publishBlocking() throws IOException;
+
         /**
          * Return the marshalled payload data without submitting to the auditor.
          */
@@ -150,14 +153,15 @@ public class AuditClient
         @Override
         public void publishBlocking() throws IOException
         {
-            l.debug("pub {}", getPayload());
-            _client.submit(getPayload());
+            String payload = getPayload();
+            l.debug("pub {}", payload);
+            _client.submit(payload);
         }
 
         @Override
         public String getPayload() { return _gson.toJson(_map); }
 
-        private Map<String, Object> _map = new HashMap<String, Object>();
+        private Map<String, Object> _map = Maps.newHashMap();
     }
 
     // An instance of this dummy class is used to short-circuit the marshalling work if auditing

@@ -245,7 +245,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 try {
                     reportEvents_();
                 } catch (Throwable t) {
-                    // having auditing cause a dameon crash loop is unacceptable
+                    // having auditing cause a daemon crash loop is unacceptable
                     l.error("unhandled exception in caer", t);
                     newDefectWithLogs("audit.client.schedule_report")
                             .setMessage("fail post events from caer to auditor")
@@ -416,7 +416,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
             TCB tcb = tk.pseudoPause_("audit reporting");
             try {
                 for (AuditableEvent event : eventBatch.reportableEvents) {
-                    l.trace("report {} to auditor", event);
                     event.publishBlocking();
                 }
             } finally {
