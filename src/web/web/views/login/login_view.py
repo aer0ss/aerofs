@@ -267,7 +267,7 @@ def _sp_cred_signin(request, sp_rpc_stub, **kw_args):
 
 @view_config(
     route_name='logout',
-    permission='user'
+    permission=NO_PERMISSION_REQUIRED
 )
 def logout_view(request):
     return HTTPFound(
