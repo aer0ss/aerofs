@@ -49,7 +49,7 @@ def _do_login(request):
         try:
             headers, second_factor_required, second_factor_setup_required = log_in_user(request, _sp_cred_signin, userid=userid,
                     password=password, stay_signed_in=stay_signed_in)
-            return redirect_to_next_page(request, headers, DEFAULT_DASHBOARD_NEXT)
+            return redirect_to_next_page(request, headers, second_factor_required, second_factor_setup_required, DEFAULT_DASHBOARD_NEXT)
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
                 log.warn(userid + " attempts to login w/ bad password")

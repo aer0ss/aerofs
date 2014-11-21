@@ -49,7 +49,7 @@ def resolve_next_url(request, default_route):
 
     return request.host_url + next_url
 
-def redirect_to_next_page(request, headers, default_route):
+def redirect_to_next_page(request, headers, second_factor_required, second_factor_setup_required, default_route):
     """
     Resolve the next URL from the request and redirect to the URL, or redirect to
     a two-factor auth page, if additional authentication is needed.
@@ -60,7 +60,12 @@ def redirect_to_next_page(request, headers, default_route):
     @param headers: the headers remember() returns
     @return: an HTTPFound object that the caller should return to the system.
     """
-    redirect = resolve_next_url(request, default_route)
+    if second_factor_setup_required:
+        redirect = request.route_path('two_factor_intro')
+    elif second_factor_required:
+        redirect = request.route_path('login_second_factor', _query={"next":request.params.get(URL_PARAM_NEXT)})
+    else:
+        redirect = resolve_next_url(request, default_route)
     log.debug("login redirect to {}".format(redirect))
     return HTTPFound(location=redirect, headers=headers)
 
