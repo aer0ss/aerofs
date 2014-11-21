@@ -6,6 +6,6 @@
 compileJava.options.compilerArgs << '-Xlint:-static'
 
 dependencies {
-    compile project(':src/overload')
     compile 'commons-cli:commons-cli:1.2'
+    compile project(':src/overload')
 }

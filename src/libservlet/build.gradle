@@ -10,33 +10,60 @@ sourceSets {
             srcDirs 'src', 'gen'
         }
     }
+    testutil {
+        java {
+            srcDir 'test'
+            include 'com/aerofs/servlets/MockSession.java'
+            include 'com/aerofs/servlets/SecUtilHelper.java'
+            include 'com/aerofs/servlets/lib/db/*.java'
+            exclude 'com/aerofs/servlets/lib/db/Test*.java'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+    }
     test {
         java {
-            srcDirs 'test'
+            srcDir 'test'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
         }
     }
 }
 
-evaluationDependsOn(':src/lib')
+configurations {
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    testutil.extendsFrom testutilCompile
+
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom testCompile, testutilRuntime
+}
 
 dependencies {
-    compile 'javax.servlet:servlet-api:2.5'
-    compile 'mysql:mysql-connector-java:5.1.20'
+    compile 'com.googlecode.flyway:flyway-core:2.2.+'
+    compile 'com.lambdaworks:scrypt:1.4.+'
     compile 'javax.mail:mail:1.4.2'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.50'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.50'
-    compile 'com.googlecode.flyway:flyway-core:2.2.1'
-    compile 'com.lambdaworks:scrypt:1.4.0'
+    compile 'javax.servlet:servlet-api:2.5'
+    compile 'mysql:mysql-connector-java:5.1.+'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.50+'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.50+'
     compile name: 'dyuproject-openid-1.1'
     compile name: 'unboundid-ldapsdk-se'
     compile name: 'jedis-2.2.5'
     compile jedisDependencies
     compile project(':src/lib')
-    // I suspect there's something wrong with the following dep.
-    // Running `gradle -q :src/libservlet:dependencies`
-    // appears to indicate no inheirited deps from src/verkehr, even though the
-    // rest client totally runtime-depends on jackson-databind.
     compile project(path: ':src/verkehr', configuration: 'restClient')
-    testCompile 'org.subethamail:subethasmtp:3.1.7'
-    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+    testutilCompile 'org.subethamail:subethasmtp:3.1.+'
+    testutilCompile project(path: ':src/lib', configuration: 'testutil')
+}
+
+task testutilJar(type: Jar) {
+    baseName 'aerofs-libservlet-testutil'
+    from sourceSets.testutil.output
+}
+
+artifacts {
+    testutil testutilJar
+    archives testutilJar
 }

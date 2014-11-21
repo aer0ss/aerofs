@@ -4,9 +4,6 @@
 
 archivesBaseName = 'aerofs-desktop'
 
-evaluationDependsOn(':src/daemon')
-evaluationDependsOn(':src/gui')
-
 dependencies {
     compile project(':src/daemon')
     compile project(':src/gui')

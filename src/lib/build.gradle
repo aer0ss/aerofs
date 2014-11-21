@@ -10,29 +10,59 @@ sourceSets {
             srcDirs 'src', 'gen'
         }
     }
+    testutil {
+        java {
+            srcDir 'test'
+            include 'com/aerofs/testlib/**'
+            include 'com/aerofs/defects/MockDefects.java'
+            include 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+    }
     test {
         java {
-            srcDirs 'test'
+            srcDir 'test'
+            exclude 'com/aerofs/testlib/**'
+            exclude 'com/aerofs/defects/MockDefects.java'
+            exclude 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
         }
     }
 }
 
-// FIXME (AG): it's unclear whether I still need this
-// I believe I might because I don't have a configuration artifact
-evaluationDependsOn(':src/base')
+configurations {
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    testutil.extendsFrom testutilCompile
+
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom(testCompile, testutilRuntime)
+}
+
+compileJava.dependsOn(':generateAllProtoClasses')
 
 dependencies {
+    compile 'ch.qos.logback:logback-core:1.1.+'
+    compile 'ch.qos.logback:logback-classic:1.1.+'
+    compile 'commons-lang:commons-lang:2.6'
     compile name: 'aerofsd'
     compile name: 'aerofsjn'
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'
     compile name: 'sqlite-jdbc'
-    compile 'commons-lang:commons-lang:2.6'
-    compile 'ch.qos.logback:logback-core:1.1.0'
-    compile 'ch.qos.logback:logback-classic:1.1.0'
     compile project(':src/base')
-    // http://gradle.1045684.n5.nabble.com/Subproject-test-source-depends-on-another-subproject-s-test-binaries-td4621181.html
-    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+    testutilCompile project(path:':src/base', configuration:'testutil')
 }
 
-compileJava.dependsOn(':generateAllProtoClasses')
+task testutilJar(type: Jar) {
+    baseName 'aerofs-lib-testutil'
+    from sourceSets.testutil.output
+}
+
+artifacts {
+    testutil testutilJar
+    archives testutilJar
+}

@@ -2,8 +2,10 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.base;
+package com.aerofs.testlib;
 
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.google.common.util.concurrent.AbstractIdleService;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -66,14 +68,14 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * N.B. it only support content up to the size {@link #MAX_CONTENT_LENGTH}
  *
  */
-public class HttpServerTest extends AbstractIdleService
+public class SimpleHttpServer extends AbstractIdleService
 {
     public interface RequestProcessor
     {
         public HttpResponse process(HttpRequest request) throws Exception;
     }
 
-    private static final Logger l = Loggers.getLogger(HttpServerTest.class);
+    private static final Logger l = Loggers.getLogger(SimpleHttpServer.class);
     private static final int MAX_CONTENT_LENGTH = 2 * C.MB;
 
     private final ChannelFactory _factory = new NioServerSocketChannelFactory(
@@ -85,7 +87,7 @@ public class HttpServerTest extends AbstractIdleService
     /**
      * Constructs a new HTTP server listening to 'port'
      */
-    public HttpServerTest(int port)
+    public SimpleHttpServer(int port)
     {
         _address = new InetSocketAddress("localhost", port);
     }

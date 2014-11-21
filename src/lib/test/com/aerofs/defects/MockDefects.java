@@ -5,6 +5,10 @@
 package com.aerofs.defects;
 
 import com.aerofs.base.id.UserID;
+import com.aerofs.defects.AutoDefect;
+import com.aerofs.defects.DefectFactory;
+import com.aerofs.defects.Defects;
+import com.aerofs.defects.DryadClient;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;

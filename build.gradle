@@ -77,15 +77,23 @@ subprojects {
             // force a specific version of the following groups of libraries
             eachDependency { DependencyResolveDetails details ->
                 if (details.requested.group.contains('com.fasterxml.jackson')) {
-                    details.useVersion '2.4.1'
+                    details.useVersion '2.4.+'
+                }
+
+                if (details.requested.group.contains('com.codahale.metrics')) {
+                    details.useVersion '3.0.+'
+                }
+
+                if (details.requested.group.contains('com.google.guava')) {
+                    details.useVersion '17.+'
                 }
 
                 if (details.requested.group == 'org.slf4j') {
-                    details.useVersion '1.7.7'
+                    details.useVersion '1.7.+'
                 }
 
                 if (details.requested.group == 'ch.qos.logback') {
-                    details.useVersion '1.1.2'
+                    details.useVersion '1.1.+'
                 }
             }
         }

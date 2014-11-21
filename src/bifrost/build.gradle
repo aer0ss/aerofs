@@ -10,41 +10,70 @@ sourceSets {
             srcDir 'src'
         }
         resources {
-            // Include flyway db migration scripts
             srcDir 'resources'
-            include 'db/**'
+            include 'db/**' // flyway db migration scripts
+        }
+    }
+    testutil {
+        java {
+            srcDir 'test'
+            include 'com/aerofs/bifrost/server/BifrostTest.java'
+            include 'com/aerofs/bifrost/server/Mock*'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
         }
     }
     test {
         java {
             srcDir 'test'
+            exclude 'com/aerofs/bifrost/server/BifrostTest.java'
+            exclude 'com/aerofs/bifrost/server/Mock*'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
         }
     }
 }
 
-evaluationDependsOn(':src/lib')
+configurations {
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    testutil.extendsFrom testutilCompile
+
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom(testCompile, testutilRuntime)
+}
 
 dependencies {
+    compile 'com.googlecode.flyway:flyway-core:2.2.+'
+    compile 'com.lambdaworks:scrypt:1.4.+'
     compile 'commons-codec:commons-codec:1.4'
-    compile 'commons-validator:commons-validator:1.4.0'
+    compile 'commons-net:commons-net:3.3'
+    compile 'commons-validator:commons-validator:1.4.+'
+    compile 'org.apache.tomcat:tomcat-dbcp:7.0.+'
     compile 'org.hibernate:hibernate-core:4.1.9.Final'
     compile 'org.hibernate:hibernate-validator:4.3.0.Final'
-    compile 'org.apache.tomcat:tomcat-dbcp:7.0.37'
-    compile 'commons-net:commons-net:3.3'
-    compile 'com.lambdaworks:scrypt:1.4.0'
-    compile 'com.googlecode.flyway:flyway-core:2.2.1'
     compile project(':src/lib')
     compile project(':src/restless')
-    runtime 'mysql:mysql-connector-java:5.1.20'
-    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
-    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+    runtime 'mysql:mysql-connector-java:5.1.+'
+    testutilCompile 'com.jayway.restassured:rest-assured:2.3.+'
+    testutilCompile project(path: ':src/lib', configuration: 'testutil')
 }
 
 jar {
-    // DO NOT add to resources sourceSet to avoid polluting tests
     from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.bifrost.server.Bifrost',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
     )
+}
+
+task testutilJar(type: Jar) {
+    baseName 'aerofs-bifrost-testutil'
+    from sourceSets.testutil.output
+}
+
+artifacts {
+    testutil testutilJar
+    archives testutilJar
 }

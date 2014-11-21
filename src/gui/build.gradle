@@ -17,20 +17,17 @@ sourceSets {
     }
 }
 
-evaluationDependsOn(':src/verkehr')
-evaluationDependsOn(':src/lib')
+compileJava.dependsOn(':generateAllProtoClasses')
 
 dependencies {
-    compile project(':src/lib')
-    compile project(path: ':src/verkehr', configuration: 'wireClient')
-    compile name: 'growlbindings-1.4'
-    compile name: 'swt-4'
     compile 'commons-cli:commons-cli:1.2'
+    compile name: 'growlbindings-1.4'
+    compile name: 'jline2-git'
     compile name: 'org.eclipse.jface_3.5.1.M20090826-0800'
     compile name: 'org.eclipse.core.commands_3.5.0.I20090525-2000'
     compile name: 'org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100'
-    compile name: 'jline2-git'
-    testCompile project(':src/lib').sourceSets.test.runtimeClasspath
+    compile name: 'swt-4'
+    compile project(':src/lib')
+    compile project(path: ':src/verkehr', configuration: 'wireClient')
+    testCompile project(path: ':src/lib', configuration: 'testutil')
 }
-
-compileJava.dependsOn(':generateAllProtoClasses')

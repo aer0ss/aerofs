@@ -6,9 +6,9 @@
 compileJava.options.compilerArgs << '-Xlint:-static'
 
 dependencies {
+    runtime 'ch.qos.logback:logback-core:1.1.+'
+    runtime 'ch.qos.logback:logback-classic:1.1.+'
     compile project(':src/overload-driver')
-    runtime 'ch.qos.logback:logback-core:1.1.2'
-    runtime 'ch.qos.logback:logback-classic:1.1.2'
 }
 
 jar {

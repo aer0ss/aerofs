@@ -2,38 +2,132 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
+// generated jar has the name 'aerofs-base'-<version>.jar
 archivesBaseName = 'aerofs-base'
 
+// NOTE:
+//
+// the java plugin defines two sourceSets:
+// main
+// test
+//
+// you should think of a sourceSet as a group of files that are
+// compiled and executed together
+
+// define source sets
 sourceSets {
+    // main code (aka. everything that makes up aerofs-base)
     main {
         java {
             srcDirs 'src', 'gen'
         }
     }
+
+    // we define a small test lib that contains
+    // some helper classes and utilities that we'll
+    // use in other projects. it *depends* on
+    // the main sourceSet
+    testutil {
+        java {
+            srcDir 'test'
+            exclude 'com/aerofs/base/**'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+        resources {
+            srcDir 'test'
+            include '**/logback-test.xml'
+        }
+    }
+
+    // finally, we define a source set for the unittests
+    // it *depends* on the testutil sourceSet
     test {
         java {
             srcDir 'test'
+            exclude 'com/aerofs/base/testlib/**'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
         }
     }
 }
 
-dependencies {
-    compile 'javax.inject:javax.inject:1'
-    compile 'com.google.code.findbugs:jsr305:2.0.1'
-    compile 'com.google.guava:guava:17.0'
-    compile 'io.netty:netty:3.9.5.Final'
-    compile 'com.google.protobuf:protobuf-java:2.6.0'
-    compile 'org.slf4j:slf4j-api:1.7.7'
-    compile 'org.slf4j:jcl-over-slf4j:1.7.7'
-    compile 'org.slf4j:jul-to-slf4j:1.7.7'
-    compile 'org.ocpsoft.prettytime:prettytime:2.1.3.Final'
-    compile 'com.google.code.gson:gson:2.2.4'
-    testCompile 'junit:junit:4.11'
-    testCompile 'org.hamcrest:hamcrest-all:1.3'
-    testCompile "org.mockito:mockito-core:1.10.+"
-    testCompile 'org.objenesis:objenesis:1.0'
-    testCompile 'org.bouncycastle:bcprov-jdk15on:1.50+'
-    testCompile 'org.bouncycastle:bcpkix-jdk15on:1.50+'
+// NOTE:
+//
+// the java plugin defines two 4 configurations:
+// compile
+// runtime
+// archives
+// default (set to runtime)
+//
+// the best way to think about it, is that configurations are simply
+// groups of dependencies. configurations can extend other configurations
+// and this *include* their dependencies (in other words, dependencies
+// are transitive)
+//
+// moreover, for each new sourceSet defined above, the java plugin automatically
+// adds the following configurations:
+// <sourceSet>Compile
+// <sourceSet>Runtime
+
+configurations {
+    // define a testutil configuration
+    // contains common test code that is shared among aerofs projects
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    // it's kinda annoying to refer to this configuration
+    // from other projects as testutilCompile, so I'll create a
+    // proxy configuration called 'testutil' for that purpose
+    testutil.extendsFrom testutilCompile
+
+    // state that the test configuration depends on testutil
+    // contains only the unit tests
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom(testCompile, testutilRuntime)
 }
 
+// start off by ensuring that the protobuf classes are built before any of the java code
 compileJava.dependsOn(':generateAllProtoClasses')
+
+// specify dependencies for our configurations
+dependencies {
+    compile 'com.google.code.findbugs:jsr305:2.0.+'
+    compile 'com.google.code.gson:gson:2.2.+'
+    compile 'com.google.guava:guava:17.+'
+    compile 'com.google.protobuf:protobuf-java:2.6.+'
+    compile 'io.netty:netty:3.9.5.Final'
+    compile 'javax.inject:javax.inject:1'
+    compile 'org.ocpsoft.prettytime:prettytime:2.1.3.Final'
+    compile 'org.slf4j:slf4j-api:1.7.+'
+    compile 'org.slf4j:jcl-over-slf4j:1.7.+'
+    compile 'org.slf4j:jul-to-slf4j:1.7.+'
+    testutilCompile 'junit:junit:4.11'
+    testutilCompile 'org.hamcrest:hamcrest-all:1.3'
+    testutilCompile 'org.bouncycastle:bcprov-jdk15on:1.50+'
+    testutilCompile 'org.bouncycastle:bcpkix-jdk15on:1.50+'
+    testutilCompile "org.mockito:mockito-core:1.10.+"
+    testRuntime 'ch.qos.logback:logback-core:1.1.+'
+    testRuntime 'ch.qos.logback:logback-classic:1.1.+'
+}
+
+// NOTE:
+//
+// a jar is *not* built automatically for us when
+// we define a sourceSet. we have to manually build
+// one and include it in the list of outputs
+// this project builds and exports
+
+// we build a jar that includes the testutil code
+task testutilJar(type: Jar) {
+    baseName 'aerofs-base-testutil'
+    from sourceSets.testutil.output
+}
+
+// export this jar whenever "build" is called
+// also, whenever a sibling project depends on the testutil
+// configuration we'll give them the jar built by the testutilJar task
+artifacts {
+    testutil testutilJar
+    archives testutilJar
+}

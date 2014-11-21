@@ -5,7 +5,7 @@
 package com.aerofs.base.analytics;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.HttpServerTest;
+import com.aerofs.testlib.SimpleHttpServer;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
@@ -34,12 +34,12 @@ public class TestMixpanelAPI
     private static final String TEST_EVENT = "test event";
     private static final String TEST_USER = "test_user";
 
-    HttpServerTest _server;
+    SimpleHttpServer _server;
 
     @Before
     public void setUp()
     {
-        _server = new HttpServerTest(TEST_PORT);
+        _server = new SimpleHttpServer(TEST_PORT);
         _server.startAsync();
         _server.awaitRunning();
     }

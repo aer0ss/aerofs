@@ -4,7 +4,7 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.HttpServerTest;
+import com.aerofs.testlib.SimpleHttpServer;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -37,7 +37,7 @@ public class TestRockLog extends AbstractTest
     @Mock InjectableCfg _cfg;
     Executor _executor = MoreExecutors.sameThreadExecutor();
 
-    HttpServerTest _server;
+    SimpleHttpServer _server;
 
     @Before
     public void setUp()
@@ -46,7 +46,7 @@ public class TestRockLog extends AbstractTest
         // https server for test purpose. The main reason for that is the SSL handshakes are handled
         // by nginx, not Java, in HC. So we don't actually improve coverage by running a https
         // server in this test.
-        _server = new HttpServerTest(TEST_PORT);
+        _server = new SimpleHttpServer(TEST_PORT);
         _server.startAsync();
         _server.awaitRunning();
     }

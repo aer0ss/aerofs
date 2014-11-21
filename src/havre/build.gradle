@@ -17,19 +17,16 @@ sourceSets {
     }
 }
 
-evaluationDependsOn(':src/base')
-
 dependencies {
+    compile 'ch.qos.logback:logback-core:1.1.+'
+    compile 'ch.qos.logback:logback-classic:1.1.+'
     compile project(':src/tunnel')
     compile project(':src/oauth-verify')
-    compile 'ch.qos.logback:logback-core:1.1.0'
-    compile 'ch.qos.logback:logback-classic:1.1.0'
     testCompile 'com.jayway.restassured:rest-assured:2.3.+'
-    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+    testCompile project(path: ':src/base', configuration: 'testutil')
 }
 
 jar {
-    // DO NOT add to resources sourceSet to avoid polluting tests
     from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.havre.Havre',

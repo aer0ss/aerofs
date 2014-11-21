@@ -17,9 +17,8 @@ sourceSets {
     }
 }
 
-evaluationDependsOn(':src/bifrost')
-
 dependencies {
     compile project(':src/base')
-    testCompile project(':src/bifrost').sourceSets.test.runtimeClasspath
+    testCompile project(path: ':src/bifrost', configuration: 'testutil')
+    testRuntime project(':src/bifrost')
 }

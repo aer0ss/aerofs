@@ -4,12 +4,6 @@
 
 archivesBaseName = 'aerofs-zephyr'
 
-// NOTE: there is no relationship between a configuration and a sourceset
-// http://stackoverflow.com/questions/5144325/gradle-test-dependency
-configurations {
-    client
-}
-
 sourceSets {
     main {
         java {
@@ -25,24 +19,29 @@ sourceSets {
     }
 }
 
+configurations {
+    client.extendsFrom clientCompile
+}
+
+compileJava.dependsOn(':generateAllProtoClasses')
+compileClientJava.dependsOn(':generateAllProtoClasses')
+
 dependencies {
     compile project(':src/lib')
     clientCompile project(':src/lib')
 }
 
-compileClientJava.dependsOn(':generateAllProtoClasses')
-
 task clientJar(type: Jar) {
     baseName 'aerofs-zephyr-client'
-    from sourceSets.client.output 
+    from sourceSets.client.output
 }
 
 artifacts {
     client clientJar
+    archives clientJar
 }
 
 jar {
-    // DO NOT add to resources sourceSet to avoid polluting tests
     from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.zephyr.server.Zephyr',

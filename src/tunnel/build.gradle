@@ -17,9 +17,9 @@ sourceSets {
     }
 }
 
-evaluationDependsOn(':src/base')
-
 dependencies {
     compile project(':src/base')
-    testCompile project(':src/base').sourceSets.test.runtimeClasspath
+    testCompile project(path: ':src/base', configuration: 'testutil')
+    testRuntime 'ch.qos.logback:logback-core:1.1.+'
+    testRuntime 'ch.qos.logback:logback-classic:1.1.+'
 }

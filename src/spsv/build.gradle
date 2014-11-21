@@ -22,22 +22,18 @@ sourceSets {
     }
 }
 
-evaluationDependsOn(':src/libservlet')
+//evaluationDependsOn(':src/libservlet')
 
 dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1'
     compile 'commons-codec:commons-codec:1.6'
-    compile 'org.mortbay.jetty:jetty:6.1.14'
+    compile 'org.mortbay.jetty:jetty:6.1.+'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
-    runtime project(':src/spdb')
-    // FIXME: libservlet deps on verkehr as:
-    //   compile project(path: ':src/verkehr', configuration: 'restClient')
-    // but for some reason, the verkehr rest client's dep on jackson-databind doesn't get propagated,
-    // so I'm adding it explicitly here to make things work.
-    runtime 'com.fasterxml.jackson.core:jackson-databind:2.2.1'
     testCompile 'com.jayway.restassured:rest-assured:2.3.+'
-    testCompile project(':src/libservlet').sourceSets.test.runtimeClasspath
+    testCompile project(path: ':src/lib', configuration: 'testutil')
+    testCompile project(path: ':src/libservlet', configuration: 'testutil')
+    runtime project(':src/spdb')
 }
 
 jar {

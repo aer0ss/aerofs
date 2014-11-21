@@ -20,26 +20,18 @@ sourceSets {
 }
 
 dependencies {
+    compile 'com.google.code.findbugs:jsr305:3.0.+'
+    compile 'com.google.code.gson:gson:2.2.+'
+    compile 'com.google.guava:guava:17.+'
+    compile 'com.sun.jersey:jersey-core:1.17.1'
+    compile 'com.sun.jersey:jersey-server:1.17.1'
+    compile ('com.sun.jersey.contribs:jersey-guice:1.17.1') { transitive = false }
+    compile 'io.netty:netty:3.9.5.Final'
+    compile 'javax.inject:javax.inject:1'
+    compile 'org.slf4j:slf4j-api:1.7.+'
+    compile 'org.slf4j:jcl-over-slf4j:1.7.+'
+    compile 'org.slf4j:jul-to-slf4j:1.7.+'
     // Guice injection depends at runtime on javax.inject, but to make for
     // simpler dependency inheritance, just make it a compile-time dep
     compile name: 'guice-aerofs'
-    compile 'javax.inject:javax.inject:1'
-    // Jersey
-    compile 'com.sun.jersey:jersey-core:1.17.1'
-    compile 'com.sun.jersey:jersey-server:1.17.1'
-    compile ('com.sun.jersey.contribs:jersey-guice:1.17.1') {
-        transitive = false
-    }
-    // Netty
-    compile 'io.netty:netty:3.9.5.Final'
-    // Gson
-    compile 'com.google.code.gson:gson:2.2.4'
-    // Guava
-    compile 'com.google.guava:guava:17.0'
-    // SLF4J
-    compile 'org.slf4j:slf4j-api:1.7.5'
-    compile 'org.slf4j:jcl-over-slf4j:1.7.5'
-    compile 'org.slf4j:jul-to-slf4j:1.7.5'
-    // JSR305 (aka @Nonnull)
-    compile 'com.google.code.findbugs:jsr305:2.0.1'
 }
