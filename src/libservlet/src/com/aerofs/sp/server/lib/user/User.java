@@ -335,34 +335,6 @@ public class User
         return peerDevices;
     }
 
-    /**
-     * Peer devices are all devices that you sync with, including your own devices, for a given
-     * shared folder.
-     */
-    public Collection<Device> getPeerDevices(SharedFolder sharedFolder)
-            throws SQLException, ExFormatError
-    {
-        Collection<User> peerUsers = sharedFolder.getJoinedUsers();
-        List<Device> peerDevices = Lists.newLinkedList();
-
-        for (User peerUser : peerUsers) {
-            Collection<Device> userDevices = peerUser.getDevices();
-
-            for (Device userDevice : userDevices) {
-                peerDevices.add(userDevice);
-            }
-        }
-
-        // If we're haven't already, add our devices.
-        if (!peerUsers.contains(this)) {
-            for (Device device : getDevices()) {
-                peerDevices.add(device);
-            }
-        }
-
-        return peerDevices;
-    }
-
     public ImmutableList<Device> getDevices()
             throws SQLException, ExFormatError
     {
