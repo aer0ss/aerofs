@@ -62,7 +62,7 @@ def login_submit(request):
         return HTTPFound(location=request.route_path('login'))
 
     headers = remember(request, 'fakeuser')
-    return redirect_to_next_page(request, headers, _DEFAULT_NEXT)
+    return redirect_to_next_page(request, headers, False, False, _DEFAULT_NEXT)
 
 
 @view_config(
