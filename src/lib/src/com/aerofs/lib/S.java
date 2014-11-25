@@ -213,7 +213,7 @@ public class S
             SHARED_DIR = "shared",
             URL_ROLES = "https://support.aerofs.com/entries/22831810",
 
-            MOBILE_AND_WEB_ACCESS = "mobile and Web access",
+            MOBILE_AND_WEB_ACCESS = "mobile and web access",
             URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?
                     "https://support.aerofs.com/entries/29044194" :
                     "https://support.aerofs.com/entries/28215600",
