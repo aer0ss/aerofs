@@ -37,13 +37,14 @@ public class S
             SETUP_INSTALL_MESSAGE    = "Setting up",
             SETUP_ERR_RATE_LIMIT     = "Rate limit exceeded.  Wait a minute before trying again.",
             SETUP_ERR_SECOND_FACTOR  = "Incorrect second factor provided",
+            SETUP_ERR_SECOND_FACTOR_SETUP = "First, set up your second factor.",
             SETUP_SIGNIN_MESSAGE     = "Signing in",
             SETUP_REGISTERING_MESSAGE = "Registering new device",
 
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",
             SETUP_STORAGE_LOCAL      = "On this computer",
-            SETUP_STORAGE_S3         = "On S3-compatible storage (Amazon S3, OpenStack Swift, Cloudian)",
+            SETUP_STORAGE_S3         = "On S3-compatible storage\n(Amazon S3, OpenStack Swift, Cloudian)",
 
             // used in setup local storage screen
             ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :

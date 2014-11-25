@@ -210,7 +210,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
         _txtBucketName.setText(Objects.firstNonNull(model._s3Config._bucketID, ""));
         _txtAccessKey.setText(Objects.firstNonNull(model._s3Config._accessKey, ""));
         _txtSecretKey.setText(Objects.firstNonNull(model._s3Config._secretKey, ""));
-        // do not load the passphrase
+        // do not load the pass-phrase
 
         validateInput();
     }

@@ -62,8 +62,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
          */
         if (_page != null) _page.dispose();
         _page = page;
-        _page.initPage();
         _page.setModel(_model);
+        _page.initPage();
 
         getShell().layout();
     }

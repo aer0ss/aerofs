@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.CompSpin;
@@ -16,6 +17,7 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.SecondFactorPrompt;
+import com.aerofs.gui.SecondFactorPrompt.SecondFactorSetup;
 import com.aerofs.lib.S;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -52,7 +54,9 @@ public class SingleUserDlgSecondFactor extends AeroFSJFaceDialog
     {
         Composite body = new Composite(parent, SWT.NONE);
 
-        _prompt = new SecondFactorPrompt(parent)
+        SecondFactorSetup needed = _model.getNeedSecondFactorSetup() ? SecondFactorSetup.NEEDED :
+                SecondFactorSetup.OKAY;
+        _prompt = new SecondFactorPrompt(parent, needed)
         {
             @Override
             protected void onTextChange()
@@ -155,6 +159,7 @@ public class SingleUserDlgSecondFactor extends AeroFSJFaceDialog
     private static String formatExceptionMessage(Exception e)
     {
         if (e instanceof ExSecondFactorRequired) return "Incorrect authentication code.";
+        else if (e instanceof ExSecondFactorSetupRequired) return "Set up your second factor first.";
         else if (e instanceof ExRateLimitExceeded) return "Too many incorrect tries.";
         else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
         else return S.SETUP_DEFAULT_SIGNIN_ERROR;

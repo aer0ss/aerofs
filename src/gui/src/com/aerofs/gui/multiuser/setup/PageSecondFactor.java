@@ -7,15 +7,15 @@ package com.aerofs.gui.multiuser.setup;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.SecondFactorPrompt;
+import com.aerofs.gui.SecondFactorPrompt.SecondFactorSetup;
 import com.aerofs.lib.S;
-import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -41,7 +41,9 @@ public class PageSecondFactor extends AbstractSetupWorkPage
     protected Composite createContent(Composite parent)
     {
         if (_prompt == null) {
-            _prompt = new SecondFactorPrompt(parent)
+            SecondFactorSetup needSetup = _model.getNeedSecondFactorSetup() ?
+                    SecondFactorSetup.NEEDED : SecondFactorSetup.OKAY;
+            _prompt = new SecondFactorPrompt(parent, needSetup)
             {
                 @Override
                 protected void onTextChange()
@@ -51,22 +53,6 @@ public class PageSecondFactor extends AbstractSetupWorkPage
             };
         }
         return _prompt.content();
-    }
-
-    private GridData createMessageLayoutData()
-    {
-        GridData layoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1);
-        layoutData.heightHint = 30;
-        return layoutData;
-    }
-
-    private GridData createTextBoxLayoutData()
-    {
-        GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
-        if (OSUtil.isOSX()) {
-            layoutData.horizontalIndent = 2;
-        }
-        return layoutData;
     }
 
     @Override
@@ -158,6 +144,7 @@ public class PageSecondFactor extends AbstractSetupWorkPage
     {
         return new ErrorMessage[] {
                 new ErrorMessage(ExSecondFactorRequired.class, S.SETUP_ERR_SECOND_FACTOR),
+                new ErrorMessage(ExSecondFactorSetupRequired.class, S.SETUP_ERR_SECOND_FACTOR_SETUP),
                 new ErrorMessage(ExRateLimitExceeded.class, S.SETUP_ERR_RATE_LIMIT),
                 new ErrorMessage(ExTimeout.class, "Connection timed out."),
         };

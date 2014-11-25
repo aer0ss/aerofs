@@ -4,6 +4,7 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.lib.os.OSUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -12,6 +13,7 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -21,17 +23,37 @@ public abstract class SecondFactorPrompt
     private Text _txtAuthCode;
     private Composite _content;
 
-    public SecondFactorPrompt(Composite parent)
+    // An enum to show whether we need to tell the user to take care of setting up the
+    public static enum SecondFactorSetup {
+        NEEDED,
+        OKAY,
+    }
+
+    public SecondFactorPrompt(Composite parent, SecondFactorSetup setupNeeded)
     {
         _content = new Composite(parent, SWT.NONE);
-        // Add some things to content
-        // Label:
-        // Two Factor Authentication required.
-        // Enter 6-digit authentication code below.
-        // Authentication code: _______
-        Label lblMessage = new Label(_content, SWT.NONE);
-        lblMessage.setText("Two Factor Authentication required.\n" +
-                "Enter 6-digit authentication code below.");
+
+        Label lblMessage = null;
+        switch (setupNeeded) {
+        case NEEDED:
+            Label lblAdmonition = new Label(_content, SWT.NONE);
+            lblAdmonition.setText("Your administrator requires that you\n" +
+                                  "set up two-factor authentication.");
+            lblAdmonition.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
+            Button btnSetupTwoFactor = GUIUtil.createButton(_content, SWT.NONE);
+            btnSetupTwoFactor.setText("Set Up Two-Factor Authentication");
+            btnSetupTwoFactor.addSelectionListener(
+                    GUIUtil.createUrlLaunchListener(WWW.TWO_FACTOR_SETUP_URL));
+            btnSetupTwoFactor.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
+            lblMessage = new Label(_content, SWT.NONE);
+            lblMessage.setText("Then, enter your 6-digit authentication code below.");
+            break;
+        case OKAY:
+            lblMessage = new Label(_content, SWT.NONE);
+            lblMessage.setText("Two Factor Authentication required.\n" +
+                    "Enter 6-digit authentication code below.");
+            break;
+        }
 
         Label lblCode = new Label(_content, SWT.NONE);
         lblCode.setText("Authentication code:");

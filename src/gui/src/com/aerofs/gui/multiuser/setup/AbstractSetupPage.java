@@ -44,7 +44,6 @@ public abstract class AbstractSetupPage extends Composite
     public void setModel(SetupModel model)
     {
         _model = model;
-        readFromModel(model);
     }
 
     // subclass should override this to update the UI state based on the model
@@ -72,6 +71,8 @@ public abstract class AbstractSetupPage extends Composite
 
         header.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         body.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        readFromModel(_model);
     }
 
     protected Composite createHeader(Composite parent)
