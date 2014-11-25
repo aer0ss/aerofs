@@ -1,5 +1,6 @@
 package com.aerofs.gui.shellext;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.gui.GUIUtil;
@@ -23,6 +24,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -224,7 +226,8 @@ public class ShellextService
             @Override
             public void onFailure(Throwable throwable)
             {
-                l.warn("ss overview fetch for shellext: " + Util.e(throwable));
+                l.warn("ss overview fetch for shellext: {}", BaseLogUtil.suppress(throwable,
+                        ClosedChannelException.class));
                 // TODO: send clear cache? retry?
             }
         });
