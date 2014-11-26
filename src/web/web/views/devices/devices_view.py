@@ -208,12 +208,12 @@ def get_devices_for_user(request, user):
     request_method='POST'
 )
 def json_rename_device(request):
-    user = authenticated_userid(request)
     device_id = _get_device_id_from_request(request, 'rename')
     device_name = request.json_body['device_name']
+    device_owner = request.json_body['device_owner']
 
     sp = get_rpc_stub(request)
-    sp.set_user_preferences(user, None, None, device_id, device_name)
+    sp.set_user_preferences(device_owner, None, None, device_id, device_name)
     return HTTPNoContent()
 
 

@@ -26,7 +26,8 @@ sarumanControllers.controller('DevicesController', ['$scope', '$rootScope', '$lo
             device.name = device.newName;
             $http.post(deviceRenameURL, {
                 device_id: device.id,
-                device_name: device.name
+                device_name: device.name,
+                device_owner: currentUserEmail
             }).success(function(){
                 $log.info("Device name changed to " + device.name + ".");
                 device.changingName = false;
