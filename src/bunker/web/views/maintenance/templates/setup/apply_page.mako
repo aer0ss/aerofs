@@ -102,7 +102,7 @@ ${common.render_previous_button()}
                     }
                 }
             });
-            $('#${progress_modal.id()}').on('hidden', function() {
+            $('#${progress_modal.id()}').on('hidden.bs.modal', function() {
                 ## Stop countdown
                 window.clearInterval(countDownInterval);
             });

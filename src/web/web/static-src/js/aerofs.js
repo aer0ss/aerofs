@@ -67,7 +67,7 @@ $(document).ready(function() {
     // triggered for the modal dialog, and using hideAllModals will cause the
     // modal dialog itself to close when any tooltips are to be shown.
     // This case occurs on the shared folder members dialog.
-    $('div.modal').on('show', hideAllModalsExceptThis);
+    $('div.modal').on('show.bs.modal', hideAllModalsExceptThis);
 });
 
 function fadeOutErrorMessage() {

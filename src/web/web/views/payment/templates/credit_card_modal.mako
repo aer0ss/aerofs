@@ -81,7 +81,7 @@
         $(document).ready(function() {
             Stripe.setPublishableKey('${stripe_publishable_key}');
 
-            $("#credit-card-modal").on("shown", function() {
+            $("#credit-card-modal").on("shown.bs.tab", function() {
                 $("#card-number").focus();
             });
 

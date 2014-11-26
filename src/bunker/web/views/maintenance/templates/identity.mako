@@ -287,6 +287,7 @@
             <div class="help-block">
                 An optional LDAP query fragment that will be included in the user search.
                 This is not commonly used.
+            </div>
         </div>
     </div>
 
@@ -451,7 +452,7 @@
                 function() {
                     var $successModal = $('#success-modal');
                     $successModal.modal('show');
-                    $successModal.on('hidden', function() {
+                    $successModal.on('hidden.bs.modal', function() {
                         ## this page has states, and the states are set when
                         ## the app server generates the page. The state may
                         ## change after we restart the service, so we ask the
