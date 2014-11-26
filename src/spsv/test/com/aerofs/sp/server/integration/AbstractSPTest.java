@@ -189,7 +189,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             mock(CertificateAuthenticator.class);
     @Spy protected RequestRemoteAddress remoteAddress = mock(RequestRemoteAddress.class);
 
-    @Spy AsyncEmailSender asyncEmailSender = AsyncEmailSender.create();
+    // use a mock instead of a spy lest the box happen to have a local mail relay running.
+    @Mock AsyncEmailSender asyncEmailSender;
 
     @Mock protected InvitationEmailer.Factory factEmailer;
 
