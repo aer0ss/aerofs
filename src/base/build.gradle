@@ -19,7 +19,7 @@ sourceSets {
     // main code (aka. everything that makes up aerofs-base)
     main {
         java {
-            srcDirs 'src', 'gen'
+            srcDirs 'gen', 'src/main/java'
         }
     }
 
@@ -29,14 +29,13 @@ sourceSets {
     // the main sourceSet
     testutil {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             exclude 'com/aerofs/base/**'
             compileClasspath += main.output
             runtimeClasspath += main.output
         }
         resources {
-            srcDir 'test'
-            include '**/logback-test.xml'
+            include 'logback-test.xml'
         }
     }
 
@@ -44,7 +43,7 @@ sourceSets {
     // it *depends* on the testutil sourceSet
     test {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             exclude 'com/aerofs/base/testlib/**'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output
