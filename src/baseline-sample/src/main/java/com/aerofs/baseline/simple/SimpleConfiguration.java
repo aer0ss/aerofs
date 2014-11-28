@@ -50,7 +50,7 @@ public final class SimpleConfiguration extends Configuration {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + Objects.hashCode(maxSeats, database);
+        return Objects.hashCode(super.hashCode(), maxSeats, database);
     }
 
     @Override
@@ -58,8 +58,8 @@ public final class SimpleConfiguration extends Configuration {
         return Objects
                 .toStringHelper(this)
                 .add("maxSeats", getMaxSeats())
-                .add("app", getApp())
                 .add("admin", getAdmin())
+                .add("service", getService())
                 .add("logging", getLogging())
                 .add("database", getDatabase())
                 .toString();

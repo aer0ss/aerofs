@@ -1,7 +1,9 @@
 package com.aerofs.polaris;
 
-import com.aerofs.baseline.Environment;
+import com.aerofs.baseline.AdminEnvironment;
+import com.aerofs.baseline.LifecycleManager;
 import com.aerofs.baseline.Service;
+import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
@@ -29,11 +31,15 @@ public final class Polaris extends Service<PolarisConfiguration> {
         polaris.run(args);
     }
 
+    public Polaris() {
+        super("polaris");
+    }
+
     @Override
-    public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
+    public void init(PolarisConfiguration configuration, LifecycleManager lifecycle, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
-        DataSource dataSource = DataSources.newManagedDataSource(database, environment);
+        DataSource dataSource = DataSources.newManagedDataSource(database, lifecycle);
 
         // setup the database
         Flyway flyway = new Flyway();
@@ -45,25 +51,25 @@ public final class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
-        // setup the api-object deserializer
-        Operation.registerDeserializer(environment.getObjectMapper());
-
         // setup the object store
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
 
         // register the task that dumps the object tree
-        registerTask(new TreeTask(logicalObjectStore, environment.getObjectMapper()));
+        admin.addTask(new TreeTask(logicalObjectStore, admin.getMapper()));
 
         // register singleton providers
-        addProvider(new DBIBinder(dbi));
-        addProvider(new DBIExceptionMapper());
-        addProvider(new PolarisExceptionMapper());
-        addProvider(new LogicalObjectStoreBinder(logicalObjectStore));
-        addProvider(new SPAccessManagerBinder());
+        service.addProvider(new DBIBinder(dbi));
+        service.addProvider(new DBIExceptionMapper());
+        service.addProvider(new PolarisExceptionMapper());
+        service.addProvider(new LogicalObjectStoreBinder(logicalObjectStore));
+        service.addProvider(new SPAccessManagerBinder());
+
+        // setup the api-object deserializer
+        Operation.registerDeserializer(service.getMapper());
 
         // register root resources
-        addResource(BatchResource.class);
-        addResource(ObjectsResource.class);
-        addResource(TransformsResource.class);
+        service.addResource(BatchResource.class);
+        service.addResource(ObjectsResource.class);
+        service.addResource(TransformsResource.class);
     }
 }

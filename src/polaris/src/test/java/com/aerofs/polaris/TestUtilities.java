@@ -139,7 +139,7 @@ public abstract class TestUtilities {
     public static InputStream getTreeAsStream(String root) {
         return given()
                     .queryParam("root", root)
-                    .queryParam(com.aerofs.baseline.Constants.JSON_PRETTY_PRINTING_QUERY_PARAMETER)
+                    .queryParam(com.aerofs.baseline.Constants.JSON_TASK_ENTITY_RESPONSE_PRETTY_PRINTING_QUERY_PARAMETER)
                     .post(ServerConfiguration.TREE_URL)
                     .then()
                     .assertThat()

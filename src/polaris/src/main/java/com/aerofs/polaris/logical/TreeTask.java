@@ -1,6 +1,6 @@
 package com.aerofs.polaris.logical;
 
-import com.aerofs.baseline.Task;
+import com.aerofs.baseline.admin.Task;
 import com.aerofs.baseline.admin.TasksResource;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.types.Child;

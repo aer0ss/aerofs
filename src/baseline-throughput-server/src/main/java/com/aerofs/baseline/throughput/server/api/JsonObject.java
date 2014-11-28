@@ -1,4 +1,4 @@
-package com.aerofs.baseline.throughput.server;
+package com.aerofs.baseline.throughput.server.api;
 
 import com.google.common.base.Objects;
 import org.hibernate.validator.constraints.NotBlank;

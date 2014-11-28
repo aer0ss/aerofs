@@ -2,7 +2,6 @@ package com.aerofs.baseline;
 
 import com.google.common.base.Charsets;
 import org.apache.http.entity.BasicHttpEntity;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.CloseableHttpPipeliningClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.junit.rules.ExternalResource;

@@ -79,7 +79,7 @@ public abstract class Utilities {
     }
 
     public static String getCustomerURL() {
-        return String.format("http://%s:%s/customers/{customer}", ServerConfiguration.APP.getHost(), ServerConfiguration.APP.getPort());
+        return String.format("http://%s:%s/customers/{customer}", ServerConfiguration.SERVICE.getHost(), ServerConfiguration.SERVICE.getPort());
     }
 
     private Utilities() {

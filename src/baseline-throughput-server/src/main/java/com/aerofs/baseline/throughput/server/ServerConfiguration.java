@@ -7,5 +7,5 @@ import com.aerofs.baseline.config.Configuration;
  * Does not define any additional configuration blocks over baseline.
  */
 public final class ServerConfiguration extends Configuration {
-
+    // no extra configuration
 }

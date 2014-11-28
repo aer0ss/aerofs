@@ -1,12 +1,12 @@
-app:
-  host: 0.0.0.0
-  port: 9999
-  maxAcceptQueueSize: 1024
-  numNetworkThreads: 2
-
 admin:
   host: 0.0.0.0
   port: 8888
+  numNetworkThreads: 2
+
+service:
+  host: 0.0.0.0
+  port: 9999
+  maxAcceptQueueSize: 1024
   numNetworkThreads: 2
 
 logging:

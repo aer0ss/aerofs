@@ -1,4 +1,4 @@
-package com.aerofs.baseline.throughput.server;
+package com.aerofs.baseline.throughput.server.resources;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;

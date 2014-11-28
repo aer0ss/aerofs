@@ -55,7 +55,7 @@ public final class PolarisConfiguration extends Configuration {
         return Objects
                 .toStringHelper(this)
                 .add("maxReturnedTransforms", getMaxReturnedTransforms())
-                .add("app", getApp())
+                .add("app", getService())
                 .add("admin", getAdmin())
                 .add("logging", getLogging())
                 .add("database", getDatabase())

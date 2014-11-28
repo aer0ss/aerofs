@@ -1,10 +1,10 @@
-app:
-  host: 0.0.0.0
-  port: 9999
-
 admin:
   host: localhost
   port: 8888
+
+service:
+  host: 0.0.0.0
+  port: 9999
 
 database:
   username: polaris

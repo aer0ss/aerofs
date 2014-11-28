@@ -1,6 +1,6 @@
 package com.aerofs.baseline.simple.tasks;
 
-import com.aerofs.baseline.Task;
+import com.aerofs.baseline.admin.Task;
 import com.aerofs.baseline.admin.TasksResource;
 import com.aerofs.baseline.simple.api.Customer;
 import com.aerofs.baseline.simple.db.Customers;

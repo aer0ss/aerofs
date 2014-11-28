@@ -1,4 +1,6 @@
-package com.aerofs.baseline.throughput.server;
+package com.aerofs.baseline.throughput.server.resources;
+
+import com.aerofs.baseline.throughput.server.api.JsonObject;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
