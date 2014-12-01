@@ -13,6 +13,10 @@
     %endif
 </%def>
 
+<%block name="tracking_codes">
+    <script>window.analytics = false;</script>
+</%block>
+
 <%block name="top_navigation_bar_desktop">
     <li class="pull-right"><a href="${request.route_path('dashboard_home')}" class="btn">
         %if is_admin(request):
