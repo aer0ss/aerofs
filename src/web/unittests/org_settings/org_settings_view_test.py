@@ -27,17 +27,18 @@ class OrgSettingsViewTest(TestBase):
         self.sp_rpc_stub.remove_quota = Mock()
 
     def test_set(self):
-        from web.views.org_settings.org_settings_view import org_settings
+        from web.views.org_settings.org_settings_view import org_settings_post
 
         org_name = u'test'
         request = self._create_request({
-            "organization_name": org_name
+            "organization_name": org_name,
+            'quota': 0,
+            'tfa-setting': '1',
         })
         request.method = 'POST'
 
-        org_settings(request)
+        org_settings_post(request)
 
-        self.sp_rpc_stub.get_org_preferences.assert_called_once_with()
         self.sp_rpc_stub.set_org_preferences.assert_called_once_with(org_name, None)
 
     def test_get(self):
@@ -63,39 +64,40 @@ class OrgSettingsViewTest(TestBase):
         self.assertEqual(ret['quota'], 9)
 
     def test_remove_quota(self):
-        from web.views.org_settings.org_settings_view import org_settings
-        org_settings(self._create_quota_setting_request(False, '123'))
+        from web.views.org_settings.org_settings_view import org_settings_post
+        org_settings_post(self._create_quota_setting_request(False, '123'))
         self.sp_rpc_stub.remove_quota.assert_called_once_with()
         self.assertFalse(self.sp_rpc_stub.set_quota.called)
 
     def test_set_quota_should_handle_whitespace(self):
-        from web.views.org_settings.org_settings_view import org_settings
-        org_settings(self._create_quota_setting_request(True, '  123\n'))
+        from web.views.org_settings.org_settings_view import org_settings_post
+        org_settings_post(self._create_quota_setting_request(True, '  123\n'))
         self.sp_rpc_stub.set_quota.assert_called_once_with(123 * _GB)
         self.assertFalse(self.sp_rpc_stub.remove_quota.called)
 
     def test_set_quota_should_handle_zero_quota(self):
-        from web.views.org_settings.org_settings_view import org_settings
-        org_settings(self._create_quota_setting_request(True, '0'))
+        from web.views.org_settings.org_settings_view import org_settings_post
+        org_settings_post(self._create_quota_setting_request(True, '0'))
         self.sp_rpc_stub.set_quota.assert_called_once_with(0)
         self.assertFalse(self.sp_rpc_stub.remove_quota.called)
 
     def test_set_quota_should_not_proceed_with_negative(self):
-        from web.views.org_settings.org_settings_view import org_settings
-        org_settings(self._create_quota_setting_request(True, '-123'))
+        from web.views.org_settings.org_settings_view import org_settings_post
+        org_settings_post(self._create_quota_setting_request(True, '-123'))
         self.assertFalse(self.sp_rpc_stub.set_quota.called)
         self.assertFalse(self.sp_rpc_stub.remove_quota.called)
 
     def test_set_quota_should_not_proceed_with_invalid_input(self):
-        from web.views.org_settings.org_settings_view import org_settings
-        org_settings(self._create_quota_setting_request(True, '12.34'))
+        from web.views.org_settings.org_settings_view import org_settings_post
+        org_settings_post(self._create_quota_setting_request(True, '12.34'))
         self.assertFalse(self.sp_rpc_stub.set_quota.called)
         self.assertFalse(self.sp_rpc_stub.remove_quota.called)
 
     def _create_quota_setting_request(self, enable_quota, quota):
         request = self._create_request({
             "organization_name": 'hoho',
-            'quota': quota
+            'quota': quota,
+            'tfa-setting': '1',
         })
         if enable_quota:
             request.params['enable_quota'] = True
