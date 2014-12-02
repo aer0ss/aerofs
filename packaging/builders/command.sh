@@ -1,12 +1,12 @@
 #!/bin/bash
 set -ue
 
-RESOURCES=../src/command/resources
+RESOURCES=../src/command/src/dist
 SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CONFIG="$RESOURCES/command.yml $RESOURCES/logback.xml"
-JAVA_ARGS="-XX:+AggressiveOpts -XX:+UseFastAccessorMethods -Dlogback.configurationFile=./logback.xml"
-SERVICE_ARGS="command.yml 2>> /var/log/command/command.err.log"
+CONFIG="$RESOURCES/command.yml"
+JAVA_ARGS="-cp . -XX:MaxDirectMemorySize=256m -XX:+AggressiveOpts -XX:+UseFastAccessorMethods"
+SERVICE_ARGS="command.yml"
 
 "$SCRIPT_DIR"/generators/generate_service_deb_template.sh command "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 

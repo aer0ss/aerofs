@@ -1,0 +1,27 @@
+admin:
+  host: 0.0.0.0
+  port: 9021
+
+service:
+  host: 0.0.0.0
+  port: 9020
+  maxAcceptQueueSize: 20
+
+redis:
+  host: sp.aerofs.com
+  port: 6379
+
+verkehr:
+  host: verkehr.aerofs.com
+  port: 25234
+  certFile: /etc/ssl/certs/AeroFS_CA.pem
+
+logging:
+  level: INFO
+
+  console:
+    enabled: false
+
+  file:
+    enabled: true
+    logfile: /var/log/command/command.log
