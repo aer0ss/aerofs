@@ -8,7 +8,6 @@
 ## if you modify the list of scripts, make sure to update jstest/shelob/e2e/index.html
 <%block name="scripts">
     <!--[if lt IE 9]>
-        <script src="${request.static_path('web:static/js/json3.min.js')}"></script>
         <script type="text/javascript">
             // have to disable file upload in Internet Explorer manually
             // timeout is because otherwise BS3's JS will wipe out your handiwork >:P

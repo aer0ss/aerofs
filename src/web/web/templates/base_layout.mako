@@ -92,10 +92,8 @@
     <!--[if lt IE 9]>
       <script src="${request.static_path('web:static/js/html5shiv.min.js')}"></script>
       <script src="${request.static_path('web:static/js/respond.min.js')}"></script>
-      <script type="text/javascript">
-        // workaround because IE 8 doesn't have Date.now()
-        Date.now = Date.now || function() { return +new Date; };
-      </script>
+      <script src="${request.static_path('web:static/js/json3.min.js')}"></script>
+      <script src="${request.static_path('web:static/js/compiled/polyfills.js')}"></script>
     <![endif]-->
 
     <%block name="tracking_codes">

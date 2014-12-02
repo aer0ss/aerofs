@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="${request.static_path('web:static/shadowfax/css/shadowfax.css')}">
 </%block>
 
-<div ng-app="shadowfaxApp">
+<div xmlns:ng="http://angularjs.org" id="ngApp" ng-app="shadowfaxApp">
     <div ng-controller="SharedFoldersController">
         <div class="row">
             <div class="col-sm-12">
@@ -16,14 +16,19 @@
                 <div class="my-table">
                     <div class="my-table-head row">
                         <div class="col-sm-3 hidden-xs">Folder</div>
-                        <div class="col-sm-3 hidden-xs">Owners</div>
-                        <div class="col-sm-4 hidden-xs">Viewers and Editors</div>
+                        <!-- We hide the owner and viewer columns in IE 8 and earlier
+                        because the member lists don't render in those browsers. -->
+                        <div class="col-sm-3 hidden-xs" ng-hide="isOldIE">Owners</div>
+                        <div class="col-sm-4 hidden-xs" ng-hide="isOldIE">Viewers and Editors</div>
                     </div>
                     <div class="my-table-body">
+                        <div ng-hide="folders.length > 0" ng-cloak class="my-row row">
+                            <div class="col-xs-12" ng-cloak>No shared folders.</div>
+                        </div>
                         <div ng-repeat="folder in folders" class="my-row row">
                             <div class="col-sm-3 col-xs-12" ng-cloak><strong class="visible-xs">{{folder.name}}</strong><span class="hidden-xs">{{folder.name}}</span></div>
-                            <div class="col-sm-3 col-xs-4" ng-cloak><strong class="visible-xs">Owners: </strong>{{folder.people|byRole:"Owner"|myMembers}}</div>
-                            <div class="col-sm-4 col-xs-4" ng-cloak><strong class="visible-xs">Members: </strong>{{folder.people|byRole:"Member"|myMembers}}</div>
+                            <div class="col-sm-3 col-xs-4" ng-cloak><strong class="visible-xs">Owners: </strong><span ng-bind="folder.people | byRole:'Owner' | myMembers"></span></div>
+                            <div class="col-sm-4 col-xs-4" ng-cloak><strong class="visible-xs">Members: </strong><span ng-bind="folder.people | byRole:'Member' | myMembers"></span></div>
 
                             <div class="col-sm-2 col-xs-4" id="folder-{{folder.spinnerID}}">
                                 <span class="folder-spinner pull-left">&nbsp;</span>

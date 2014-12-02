@@ -4,6 +4,8 @@ shadowfaxControllers.controller('SharedFoldersController',
     ['$scope', '$rootScope', '$log', '$modal', '$http',
     function($scope, $rootScope, $log, $modal, $http){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
+        // See if this is being requested in IE 8 or lower
+        $scope.isOldIE = $('html').is('.ie6, .ie7, .ie8');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
 
         var getData = function() {
@@ -58,6 +60,8 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.is_privileged = $scope.folder.is_privileged;
               $scope.error = false;
               $scope.canAdminister = canAdminister || false;
+              // See if this is being requested in IE 8 or lower
+              $scope.isOldIE = $('html').is('.ie6, .ie7, .ie8');
 
               $scope.newMember = function(){
                 return {
@@ -72,10 +76,14 @@ shadowfaxControllers.controller('SharedFoldersController',
               /* Spinner stuff */
               initializeSpinners();
               function startModalSpinner() {
-                startSpinner($('#modal-spinner'), 3);
+                if (!isOldIE) {
+                    startSpinner($('#modal-spinner'), 3);
+                }
               }
               function stopModalSpinner() {
-                stopSpinner($('#modal-spinner'));
+                if (!isOldIE) {
+                    stopSpinner($('#modal-spinner'));
+                }
               }
 
               /* Convert string descriptor of role to
@@ -132,10 +140,9 @@ shadowfaxControllers.controller('SharedFoldersController',
 
               $scope.inviteMembers = function (invitees, inviteeRole) {
                 startModalSpinner();
-                var email_list = $.trim(invitees).split(/\s*[,;\s]\s*/).filter(
-                        function(item){
-                            return item.indexOf('@') != -1;
-                        });
+                var email_list = $.trim(invitees).split(/\s*[,;\s]\s*/).filter(function(item){
+                    return item.split("").indexOf('@') != -1;
+                });
                 var permissions = _get_json_permissions(inviteeRole);
                 for (var i = 0; i < email_list.length; i++) {
                     _make_member_request(email_list[i], permissions);
@@ -234,13 +241,14 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }
             ).success(function(){
                 $log.info("You have rejoined folder " + folder.name);
-                for (var i = 0; i < $scope.folders.length; i++) {
+                for (var i = 0; i < $scope.leftFolders.length; i++) {
                     if ($scope.leftFolders[i].sid === folder.sid){
                         $scope.folders.push($scope.leftFolders[i]);
                         $scope.leftFolders.splice(i,1);
                         break;
                     }
                 }
+                spinner.stop();
             }).error(function(data, status){
                 showErrorMessageWith(data, status);
                 spinner.stop();
