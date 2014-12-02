@@ -1,7 +1,10 @@
 import logging
 import base64
+
+from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
+
 from web.util import flash_error, flash_success, get_rpc_stub, str2bool
 from web.views.payment.stripe_util \
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
@@ -40,14 +43,11 @@ def start_subscription(request):
 @view_config(
     route_name='org_settings',
     renderer='org_settings.mako',
-    permission='admin'
+    permission='admin',
+    request_method='GET',
 )
 def org_settings(request):
     sp = get_rpc_stub(request)
-
-    # Only POST requests can modify state. See README.security.txt
-    if request.method == 'POST':
-        _update_org_settings(request, sp)
 
     reply = sp.get_org_preferences()
 
@@ -69,6 +69,16 @@ def org_settings(request):
         'quota_enabled': quota_enabled,
         'quota': quota
     }
+
+@view_config(
+    route_name='org_settings',
+    permission='admin',
+    request_method='POST',
+)
+def org_settings_post(request):
+    sp = get_rpc_stub(request)
+    _update_org_settings(request, sp)
+    return HTTPFound(location=request.route_path('org_settings'))
 
 
 def _update_org_settings(request, sp):
