@@ -164,6 +164,7 @@ def generate_yaml(args, username, actor_data):
     actor_defaults['root'] = args.root
     actor_defaults['aero_host'] = args.host
     actor_defaults['archive_dir'] = ARCHIVE_DIR
+    actor_defaults['aero_flags'] = args.flags
     if not args.multiuser:
         assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username
@@ -245,6 +246,8 @@ def main():
         help="AeroFS userid")
     parser.add_argument('--build-id', default=None, type=int,
         help="Teamcity build ID")
+    parser.add_argument('--flag', action='append', dest='flags',
+        help="Optional rtroot flag file. Multiple values can be passed.")
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
