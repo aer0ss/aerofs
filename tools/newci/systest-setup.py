@@ -246,7 +246,7 @@ def main():
         help="AeroFS userid")
     parser.add_argument('--build-id', default=None, type=int,
         help="Teamcity build ID")
-    parser.add_argument('--flag', action='append', dest='flags',
+    parser.add_argument('--flag', action='append', dest='flags', default=[],
         help="Optional rtroot flag file. Multiple values can be passed.")
     args = parser.parse_args()
 
