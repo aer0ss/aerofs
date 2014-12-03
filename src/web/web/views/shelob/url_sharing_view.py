@@ -118,6 +118,7 @@ def get_url(request):
 @view_config(
         route_name='get_url_info',
         renderer='json',
+        http_cache = 0,
         permission=NO_PERMISSION_REQUIRED,
 )
 def get_url_info(request):
@@ -265,6 +266,7 @@ def remove_url_password(request):
 @view_config(
         route_name='list_urls_for_store',
         renderer='json',
+        http_cache = 0,
         permission='user',
         request_method='GET',
 )

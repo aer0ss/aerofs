@@ -101,6 +101,7 @@ def _shared_folders(request, page_heading, data_url, has_pagination=False, can_a
 @view_config(
     route_name = 'json.get_my_shared_folders',
     renderer = 'json',
+    http_cache = 0,
     permission = 'user'
 )
 def json_get_my_shared_folders(request):
@@ -133,6 +134,7 @@ def _has_permission(folder, user, permission):
 @view_config(
     route_name = 'json.get_user_shared_folders',
     renderer = 'json',
+    http_cache = 0,
     permission = 'user'
 )
 def json_get_user_shared_folders(request, is_me=False):
@@ -153,6 +155,7 @@ def json_get_user_shared_folders(request, is_me=False):
 @view_config(
     route_name = 'json.get_org_shared_folders',
     renderer = 'json',
+    http_cache = 0,
     permission = 'admin'
 )
 def json_get_org_shared_folders(request):

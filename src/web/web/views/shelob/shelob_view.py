@@ -33,6 +33,7 @@ _oauth_token = {}
 @view_config(
     route_name='json_token',
     permission='user',
+    http_cache = 0,
     renderer='json',
     request_method='GET',
 )
@@ -50,6 +51,7 @@ def json_token(request):
 @view_config(
     route_name='json_new_token',
     permission='user',
+    http_cache = 0,
     renderer='json',
     request_method='GET',
 )

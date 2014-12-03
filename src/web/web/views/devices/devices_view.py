@@ -166,6 +166,7 @@ def _jsonable_device_mobile(device):
 @view_config(
     route_name='json.get_devices',
     renderer='json',
+    http_cache = 0,
     permission='user',
     request_method='GET'
 )

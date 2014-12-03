@@ -38,6 +38,7 @@ def org_users(request):
 @view_config(
     route_name = 'json.list_org_invitees',
     renderer = 'json',
+    http_cache = 0,
     permission = 'admin'
 )
 def json_list_org_invitees(request):
@@ -52,6 +53,7 @@ def json_list_org_invitees(request):
 @view_config(
     route_name = 'json.list_org_users',
     renderer = 'json',
+    http_cache = 0,
     permission = 'admin'
 )
 def json_list_org_users(request):
