@@ -61,7 +61,7 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.error = false;
               $scope.canAdminister = canAdminister || false;
               // See if this is being requested in IE 8 or lower
-              $scope.isOldIE = $('html').is('.ie6, .ie7, .ie8');
+              var isOldIE = $('html').is('.ie6, .ie7, .ie8');
 
               $scope.newMember = function(){
                 return {
