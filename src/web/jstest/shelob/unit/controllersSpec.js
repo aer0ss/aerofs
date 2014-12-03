@@ -46,7 +46,15 @@ describe('Shelob Controllers', function() {
             routeParams = jasmine.createSpy('routeParams');
             routeParams.oid = 'root';
             modal = jasmine.createSpy('modal');
-
+            // mock for IE-version-checking JQuery call
+            // because oh my god wtf karma
+            $ = function(blah) {
+                return {
+                    is: function(selector) {
+                        return false;
+                    }
+                };
+            };
             modalObject = {
                 result: {then: jasmine.createSpy('modalObject.result.then')}
             };

@@ -38,11 +38,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // See if linksharing has been turned off
     $scope.enableLinksharing = enableLinksharing;
     // See if this is being requested in IE 8 or lower
-    if ($('html').is('.ie6, .ie7, .ie8')) {
-        $scope.isOldIE = true;
-    } else {
-        $scope.isOldIE = false;
-    }
+    $scope.isOldIE = $('html').is('.ie6, .ie7, .ie8');
     // Headers for request, in case user isn't logged in
     // and requests a linkshare page
     $scope.requestHeaders = {};
