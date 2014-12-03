@@ -2,17 +2,24 @@
 set -e -x
 
 function DieUsage {
-    echo Usage: $0 [ova file] [adapter] >&2
-    echo Example: $0 aerofs-private-deployment.ova eth0 >&2
+    echo "Usage: $0 <ova file> <adapter> [backup file]" >&2
+    echo "Example: $0 aerofs-private-deployment.ova eth0" >&2
     exit 1
 }
 
-[[ $# -eq 2 ]] || DieUsage
+[[ $# -eq 2 ]] || [[ $# -eq 3 ]] || DieUsage
 
 aerofs_root="$(dirname $0)"/../..
 
 ovapath="$1"
 shortadpt="$2"
+
+if [ $# -eq 3 ] ; then
+    backup="$3"
+else
+    backup=""
+fi
+
 properties_file="$aerofs_root/packaging/bakery/development/config/external.properties"
 license_file="$aerofs_root/packaging/bakery/development/test.license"
 vmname="ci-servers"
@@ -73,12 +80,26 @@ license_data=$(cat "$license_file" | python -c 'import sys,urllib,base64; print 
 
 echo Provisioning everything else...
 scp -P $fwport $SSH_OPTS "$properties_file" ubuntu@localhost:external.properties
+
+if [ -n "$backup" ] ; then
+    echo Restoring from backup...
+    scp -P $fwport $SSH_OPTS "$backup" ubuntu@localhost:/opt/bootstrap/public/aerofs-db-backup.tar.gz
+    restore="sudo aerofs-bootstrap-taskfile /opt/bootstrap/tasks/db-restore.tasks"
+    mark_restored='curl -X POST --data "key=restored_from_backup&value=true" http://localhost:5434/set'
+else
+    restore=""
+    mark_restored=""
+fi
+
 ssh -p $fwport $SSH_OPTS ubuntu@localhost <<EOSSH
 
 set -ex
 sudo cp external.properties /opt/config/properties/
 
-curl --insecure --request POST --data "$license_data" http://localhost:5434/set_license_file
+curl --request POST --data "$license_data" http://localhost:5434/set_license_file
+
+$restore
+$mark_restored
 
 sudo ln -s /etc/nginx/backends-available/aerofs-polaris /etc/nginx/backends-enabled/aerofs-polaris
 sudo nginx -s reload
