@@ -8,6 +8,7 @@ import com.aerofs.baseline.throughput.server.resources.ChunkedUploadResource;
 import com.aerofs.baseline.throughput.server.resources.JsonParsingResource;
 import com.aerofs.baseline.throughput.server.resources.LongPollingResource;
 import com.aerofs.baseline.throughput.server.resources.SimpleGetResource;
+import com.aerofs.baseline.throughput.server.resources.SimplePostResource;
 
 public final class Server extends Service<ServerConfiguration> {
 
@@ -23,6 +24,7 @@ public final class Server extends Service<ServerConfiguration> {
     @Override
     public void init(ServerConfiguration configuration, LifecycleManager lifecycle, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
         service.addResource(SimpleGetResource.class);
+        service.addResource(SimplePostResource.class);
         service.addResource(ChunkedUploadResource.class);
         service.addResource(JsonParsingResource.class);
         service.addResource(LongPollingResource.class);
