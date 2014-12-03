@@ -7,7 +7,6 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
         $scope.userFoldersURL = userFoldersURL;
         $scope.userDevicesURL = userDevicesURL;
         $rootScope.isPrivate = isPrivate;
-
         var getUsersData = function(message){
             $log.info(message);
             $http.get(userDataURL, {
@@ -146,7 +145,7 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
             });
         };
 
-        $scope.delete = function(user) {
+        $scope["delete"] = function(user) {
             var deleteUserModalCtrl = function ($scope, $modalInstance, user, users) {
                 $scope.user = user;
                 $scope.users = users;

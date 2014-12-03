@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
 </%block>
 
-<div ng-app="striderApp">
+<div xmlns:ng="http://angularjs.org" id="ngApp" ng-app="striderApp">
     <div class="row">
         <div class="col-sm-12">
             <div ng-controller="UsersController">
