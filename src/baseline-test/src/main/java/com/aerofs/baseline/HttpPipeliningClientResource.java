@@ -1,6 +1,6 @@
 package com.aerofs.baseline;
 
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.CloseableHttpPipeliningClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public final class HttpClientResource extends ExternalResource {
+public final class HttpPipeliningClientResource extends ExternalResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientResource.class);
 
-    private final CloseableHttpAsyncClient httpClient = HttpAsyncClients.custom().setMaxConnPerRoute(1).setMaxConnTotal(1).build();
+    private final CloseableHttpPipeliningClient httpClient = HttpAsyncClients.createPipelining();
 
     @Override
     protected void before() throws Throwable {
@@ -28,7 +28,7 @@ public final class HttpClientResource extends ExternalResource {
         }
     }
 
-    public CloseableHttpAsyncClient getClient() {
+    public CloseableHttpPipeliningClient getClient() {
         return httpClient;
     }
 }
