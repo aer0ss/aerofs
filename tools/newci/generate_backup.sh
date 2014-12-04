@@ -29,7 +29,7 @@ EOSSH
 
 mkdir -p $BACKUPS/commits
 
-echo Downloading backup file for $commit...
 commit="$(git rev-parse HEAD)"
+echo Downloading backup file for $commit...
 scp -P $fwport $SSH_OPTS ubuntu@localhost:/opt/bootstrap/public/aerofs-db-backup.tar.gz $BACKUPS/commits/$commit.tar.gz
 
