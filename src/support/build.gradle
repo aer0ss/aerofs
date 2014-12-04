@@ -18,25 +18,8 @@ dependencies {
     compile project(':src/libservlet')
 }
 
-task DeactivateUserJar(type: Jar) {
-    baseName = 'aerofs-support-deactivate-user'
+jar {
     manifest.attributes(
-        'Main-Class': 'com.aerofs.support.tools.DeactivateUser',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
     )
-    from sourceSets.main.output
-}
-
-task GetHashedPasswordJar(type: Jar) {
-    baseName = 'aerofs-support-get-hashed-password'
-    manifest.attributes(
-        'Main-Class': 'com.aerofs.support.tools.GetHashedPassword',
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
-    )
-    from sourceSets.main.output
-}
-
-artifacts {
-    archives GetHashedPasswordJar
-    archives DeactivateUserJar
 }

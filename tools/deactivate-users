@@ -17,8 +17,6 @@ cd $(dirname $0)/..
 
 echo ">> Building supporting Java code..."
 gradle src/support:build src/support:dist
-# FIXME (MP) not sure of the nice way to do this in gradle land. Do it manually for now.
-cp out.gradle/support/libs/aerofs-*.jar out.gradle/support/dist
 
 echo ">> Populate CA certificate..."
 cp resource/common/mode/public/cacert.pem out.gradle/support/dist
@@ -29,7 +27,7 @@ cd out.gradle/support/dist
 for user_id in $user_ids
 do
     echo ">>> Get hash for $user_id"
-    h=$(java -jar aerofs-support-get-hashed-password.jar "$user_id" "__deleted_by_support__")
+    h=$(java -cp aerofs-support.jar com.aerofs.support.tools.GetHashedPassword "$user_id" "__deleted_by_support__")
     normal=$(normalize $user_id)
     declare hash_$normal="$h"
 done
@@ -60,7 +58,7 @@ echo ">> Performing deactivation..."
 for user_id in $user_ids
 do
     echo ">>> Deactivate $user_id"
-    java -jar aerofs-support-deactivate-user.jar "$user_id" "__deleted_by_support__" || true
+    java -cp aerofs-support.jar com.aerofs.support.tools.DeactivateUser "$user_id" "__deleted_by_support__" || true
 done
 
 echo ">> Done."
