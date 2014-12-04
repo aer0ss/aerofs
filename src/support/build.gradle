@@ -1,0 +1,42 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2014.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-support'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+dependencies {
+    compile project(':src/base')
+    compile project(':src/lib')
+    compile project(':src/libservlet')
+}
+
+task DeactivateUserJar(type: Jar) {
+    baseName = 'aerofs-support-deactivate-user'
+    manifest.attributes(
+        'Main-Class': 'com.aerofs.support.tools.DeactivateUser',
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
+    from sourceSets.main.output
+}
+
+task GetHashedPasswordJar(type: Jar) {
+    baseName = 'aerofs-support-get-hashed-password'
+    manifest.attributes(
+        'Main-Class': 'com.aerofs.support.tools.GetHashedPassword',
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
+    from sourceSets.main.output
+}
+
+artifacts {
+    archives GetHashedPasswordJar
+    archives DeactivateUserJar
+}

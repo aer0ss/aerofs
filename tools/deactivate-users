@@ -9,29 +9,30 @@ fi
 
 function normalize()
 {
-    echo $@ | sed 's/@/_/g' | sed 's/\./_/g' | sed 's/-/_/g'
+    echo $@ | sed 's/@/_/g' | sed 's/\./_/g' | sed 's/-/_/g' | sed 's/+/_/g'
 }
 
 user_ids=$@
 cd $(dirname $0)/..
 
 echo ">> Building supporting Java code..."
-ant package_support -Dmode=PUBLIC 1>/dev/null 2>/dev/null
+gradle src/support:build src/support:dist
+# FIXME (MP) not sure of the nice way to do this in gradle land. Do it manually for now.
+cp out.gradle/support/libs/aerofs-*.jar out.gradle/support/dist
 
 echo ">> Populate CA certificate..."
-cp resource/common/mode/public/cacert.pem out.ant/artifacts/deactivate-user
+cp resource/common/mode/public/cacert.pem out.gradle/support/dist
 
 echo ">> Acquiring new password hashes..."
-cd out.ant/artifacts/get-hashed-password
+cd out.gradle/support/dist
 
 for user_id in $user_ids
 do
     echo ">>> Get hash for $user_id"
-    h=$(java -jar get-hashed-password.jar "$user_id" "__deleted_by_support__")
+    h=$(java -jar aerofs-support-get-hashed-password.jar "$user_id" "__deleted_by_support__")
     normal=$(normalize $user_id)
     declare hash_$normal="$h"
 done
-cd ../../..
 
 echo ">> Run the following commands on sp.aerofs.com as root."
 echo ">> N.B. this will disable the user's second factor! (required for deactivation)"
@@ -56,12 +57,10 @@ then
 fi
 
 echo ">> Performing deactivation..."
-cd out.ant/artifacts/deactivate-user
 for user_id in $user_ids
 do
     echo ">>> Deactivate $user_id"
-    java -jar deactivate-user.jar "$user_id" "__deleted_by_support__" || true
+    java -jar aerofs-support-deactivate-user.jar "$user_id" "__deleted_by_support__" || true
 done
-cd ../../..
 
 echo ">> Done."
