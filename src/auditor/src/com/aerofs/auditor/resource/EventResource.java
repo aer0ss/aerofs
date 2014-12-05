@@ -74,7 +74,7 @@ public class EventResource
         }
 
         String parsed = _gson.toJson(contents);
-        l.info("R: {}", parsed);
+        l.debug("R: {}", parsed);
 
         try {
             ChannelFuture future = _auditChannel.doSend(parsed);

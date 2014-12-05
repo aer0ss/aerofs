@@ -88,7 +88,7 @@ public class ReconnectingClientHandler extends SimpleChannelHandler
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
-        l.info("ignoring unhandled recv {}", e.getMessage().getClass().getSimpleName());
+        l.debug("ignoring unhandled recv {}", e.getMessage().getClass().getSimpleName());
     }
 
     /**
