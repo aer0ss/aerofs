@@ -12,7 +12,9 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import com.google.common.base.Optional;
 
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<Connection>
@@ -34,6 +36,14 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         PoolProperties p = new PoolProperties();
         p.setUrl(getStringProperty("sparta.db.url", "jdbc:mysql://localhost/aerofs_sp"));
         p.setUsername(getStringProperty("sparta.db.user", "aerofs_sp"));
+
+        // Password is present in PC.
+        // Password is not present in HC.
+        Optional<String> password = getOptionalStringProperty("sparta.db.password");
+        if (password.isPresent()) {
+            p.setPassword(password.get());
+        }
+
         p.setDriverClassName(getStringProperty("sparta.db.driverClass", "com.mysql.jdbc.Driver"));
         p.setTestWhileIdle(false);
         p.setTestOnBorrow(true);
@@ -48,6 +58,7 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         p.setConnectionProperties(
                 "cachePrepStmts=true; autoReconnect=true; " +
                 "useUnicode=true; characterEncoding=utf8;");
+
         return new DataSource(p);
     }
 
