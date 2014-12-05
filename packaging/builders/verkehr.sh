@@ -10,7 +10,7 @@ CONFIG="$RESOURCES/verkehr.yml"
 #-XX:+UseBiasedLocking -XX:+UseStringCache -XX:+OptimizeStringConcat
 #XXX (AG): add this to enable SSL debugging
 #   -Djavax.net.debug=all
-JAVA_ARGS="-Xmx1536m"
+JAVA_ARGS="-cp . -XX:MaxDirectMemorySize=1024m -Xmx1536m"
 SERVICE_ARGS="verkehr.yml"
 
 "$SCRIPT_DIR"/generators/generate_service_deb_template.sh verkehr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
