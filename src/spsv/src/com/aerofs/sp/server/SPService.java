@@ -558,7 +558,6 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
 
@@ -3821,7 +3820,7 @@ public class SPService implements ISPService
     }
 
     // To avoid DoS attacks, do not permit listUsers queries to exceed 1000 returned results
-    private static final int ABSOLUTE_MAX_RESULTS = 1000;
+    public static final int ABSOLUTE_MAX_RESULTS = 1000;
 
     static private void throwOnInvalidMaxResults(int maxResults) throws ExBadArgs
     {

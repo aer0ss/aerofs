@@ -247,12 +247,14 @@ service SPService {
     // Required Auth Level: user or admin (see above)
     rpc SetUserPreferences(SetUserPreferencesCall) returns (Void);
 
-    // List members of the current organization
+    // List members of the session user's organization
     //
-    // Required Auth Level: admin
+    // Required Auth Level: user
     //
     // Throws:
-    //   ExNoPerm if the user does not have admin privileges
+    //   ExNotFound         if the caller is not found
+    //   ExNotAuthenticated if the caller is not authenticated
+    //   ExBadArgs          if either maxResults or offset is invalid
     rpc ListOrganizationMembers(ListOrganizationMembersCall) returns(ListOrganizationMembersReply);
 
 

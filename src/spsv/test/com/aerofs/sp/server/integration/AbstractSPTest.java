@@ -359,11 +359,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
      *
      * N.B. SQL transaction is required for this method:
      *
-     *      _sqlTrans.begin();
+     *      sqlTrans.begin();
      *      ...
      *      User u = saveUser();
      *      ...
-     *      _sqlTrans.commit();
+     *      sqlTrans.commit();
      */
     protected User saveUser()
             throws Exception
