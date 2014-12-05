@@ -356,7 +356,7 @@ def json_add_shared_folder_perm(request):
     sp = get_rpc_stub(request)
 
     exception2error(sp.share_folder, (folder_name, store_id, [subject_permissions], None,
-                                      None, suppress_warnings, []),
+                                      None, suppress_warnings),
                                       _add_shared_folder_rules_errors({
         # TODO (WW) change to ALREADY_MEMBER?
         # See also org_users_view.py:json_invite_user()
