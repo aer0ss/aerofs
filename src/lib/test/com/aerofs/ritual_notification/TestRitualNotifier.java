@@ -40,7 +40,7 @@ public class TestRitualNotifier extends AbstractTest
     {
         TemporaryFolder tempRnsFolder = new TemporaryFolder();
         tempRnsFolder.create();
-        File tmpRnsSocketFile = tempRnsFolder.newFile("temp_rns_TNS.sock");
+        File tmpRnsSocketFile = tempRnsFolder.newFile("temp_rns_TRN.sock");
         when(_ritualNotificationSocketFile.get()).thenReturn(tmpRnsSocketFile);
         _rns = new RitualNotificationServer(_ritualNotificationSocketFile,
                 NativeSocketAuthenticatorFactory.create());
