@@ -55,7 +55,7 @@ public final class Polaris extends Service<PolarisConfiguration> {
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
 
         // register the task that dumps the object tree
-        admin.addTask(new TreeTask(logicalObjectStore, admin.getMapper()));
+        admin.registerTask(new TreeTask(logicalObjectStore, admin.getMapper()));
 
         // register singleton providers
         service.addProvider(new DBIBinder(dbi));

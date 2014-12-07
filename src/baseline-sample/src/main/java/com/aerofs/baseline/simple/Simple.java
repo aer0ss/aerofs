@@ -43,7 +43,7 @@ public final class Simple extends Service<SimpleConfiguration> {
         DBI dbi = DBIInstances.newDBI(dataSource);
 
         // register the task that dumps the list of customers
-        admin.addTask(new DumpTask(dbi, admin.getMapper()));
+        admin.registerTask(new DumpTask(dbi, admin.getMapper()));
 
         // register singleton providers
         service.addProvider(new DBIBinder(dbi));
