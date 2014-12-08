@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Retrace an obfuscated stack trace to its original form using the map file corresponding
 # to the specified version number.
