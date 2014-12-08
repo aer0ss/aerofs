@@ -18,7 +18,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -40,12 +39,6 @@ public class InviteModel
     private final ListeningExecutorService              _executor;
 
     private List<Invitee>                               _invitees = emptyList();
-
-    // TODO (AT): In retrospect, it may be simpler to simply let the GUI keep track of the last
-    //   query task instead of keeping track of it here. The advantage being that cancelling is
-    //   guaranteed to be done on the GUI thread so we don't have to worry about concurrency. Also
-    //   the GUI can ensure that the query task field is reset whenever it completes.
-    private @Nullable ListenableFuture<List<Invitee>>   _lastQueryTask = null;
 
     public InviteModel(InjectableCfg cfg, InjectableSPBlockingClientFactory spClientFactory,
             IRitualClientProvider ritualProvider, ListeningExecutorService executor)
@@ -72,25 +65,13 @@ public class InviteModel
                 .getFirstName());
     }
 
-    /**
-     * the future will throw Exception if the callback was invoked after the query have gone stale.
-     */
+    // the future will throw CancellationException if the task was cancelled
     public ListenableFuture<List<Invitee>> query(String query)
     {
-        if (_lastQueryTask != null) {
-            // N.B. we don't reset _lastQueryTask on completion. Therefore, we will keep a reference
-            // of the last query task object until the GC collects the model.
-            // This approach also means that we will invoke cancel on tasks that may have already
-            // finished; this is okay.
-            _lastQueryTask.cancel(true);
-            _lastQueryTask = null;
-        }
-
         if (isBlank(query) || _invitees.isEmpty()) {
             return immediateFuture(emptyList());
         } else {
-            _lastQueryTask = _executor.submit(() -> queryImpl(query));
-            return _lastQueryTask;
+            return _executor.submit(() -> queryImpl(query));
         }
     }
 
@@ -98,8 +79,7 @@ public class InviteModel
     private List<Invitee> queryImpl(String query)
     {
         return _invitees.stream()
-                .filter(invitee -> invitee._shortText.toLowerCase()
-                        .startsWith(query.toLowerCase()))
+                .filter(invitee -> invitee._shortText.toLowerCase().startsWith(query.toLowerCase()))
                 .limit(6)
                 .collect(toList());
     }
@@ -114,8 +94,8 @@ public class InviteModel
                     .map(invitee -> new SubjectPermissions((UserID)invitee._value, permissions))
                     .map(SubjectPermissions::toPB)
                     .collect(toList());
-            _ritualProvider.getBlockingClient().shareFolder(path.toPB(), pbsps, note,
-                    suppressSharedFolderRulesWarnings);
+            _ritualProvider.getBlockingClient()
+                    .shareFolder(path.toPB(), pbsps, note, suppressSharedFolderRulesWarnings);
             return null;
         });
     }

@@ -11,6 +11,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.sharing.invitee.InviteModel.Invitee;
 import com.aerofs.gui.sharing.invitee.InviteModel.InviteeType;
 import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -48,6 +49,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.util.concurrent.Futures.addCallback;
+import static com.google.common.util.concurrent.Futures.immediateCancelledFuture;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyList;
@@ -139,6 +141,7 @@ public class InviteeTextAdapter
     private final TableViewerColumn _column;
 
     private List<Invitee> _suggestions = emptyList();
+    private ListenableFuture<List<Invitee>> _lastQueryTask = immediateCancelledFuture();
 
     public InviteeTextAdapter(InviteModel model, StyledText text)
     {
@@ -191,27 +194,31 @@ public class InviteeTextAdapter
         // installInfoListeners();
 
         // Query the model for suggestions when the text is modified
-        // It is necessary to let the model know whenever the text is modified so ongoing query
-        // tasks are cancelled.
-        _text.addModifyListener(event -> addCallback(_model.query(getPendingText()),
-                new FutureCallback<List<Invitee>>()
-                {
-                    @Override
-                    public void onSuccess(List<Invitee> invitees)
-                    {
-                        setSuggestions(invitees);
-                    }
+        _text.addModifyListener(event -> {
+            if (!_lastQueryTask.isDone()) {
+                _lastQueryTask.cancel(true);
+            }
 
-                    @Override
-                    public void onFailure(Throwable throwable)
-                    {
-                        if (throwable instanceof CancellationException) {
-                            // expected, likely the query has gone stale
-                        } else {
-                            l.warn("Failed to query for suggestions.", throwable);
-                        }
+            _lastQueryTask = _model.query(getPendingText());
+
+            addCallback(_lastQueryTask, new FutureCallback<List<Invitee>>() {
+                @Override
+                public void onSuccess(List<Invitee> suggestions)
+                {
+                    setSuggestions(suggestions);
+                }
+
+                @Override
+                public void onFailure(Throwable t)
+                {
+                    if (t instanceof CancellationException) {
+                        // expected
+                    } else {
+                        l.warn("Failed to query for suggestions: {}", t.getMessage());
                     }
-                }, new GUIExecutor(_text)));
+                }
+            }, new GUIExecutor(_text));
+        });
 
         // forward DefaultSelection to the table first
         _text.addListener(SWT.DefaultSelection, e -> {
