@@ -4,13 +4,6 @@ This article describes how to set up SyncDET actor VMs on your development compu
 Set up Linux actors
 ---
 
-Copy the sample yaml file in the syncdet repo to /etc/syncdet
-
-*TODO (JG): remove the code in the Vagrantfile that attempts to read /etc/syncdet/config.yaml and stop worrying about this. If we really want to generate yaml files automatically, let's generate one from scratch instead of assuming you already have one and trying to modify it.*
-
-    $ sudo mkdir /etc/syncdet
-    $ sudo cp ~/repos/syncdet/config.yaml.sample /etc/syncdet
-
 Go to the vagrant foler:
 
     $ cd ~/repos/aerofs/tools/vagrant/syncdet_linux
@@ -40,20 +33,20 @@ If you are not in the office's physical LAN, you can still download the box by e
 Vagrant will create the VMs in the `~/.vagrant.d` directory. If you want to store them in 
 another place, you may simply symlink `~/.vagrant.d` to any other place you want to use.
 
+By default, Linux actors have hostonly IPs of the form: 192.168.50.1x
+Where `x` is the actor index (0 to `CLIENT_COUNT`-1)
+
 Set up Windows actors
 ---
 
-[ *Running Windows actors on development computers are not officially supported and are likely to fail.* ]
-
 The steps are identical to setting up Linux actors, except that:
 
-- Install the vagrant-windows plugin before running `vagrant up`:
-  - Check out the source code at [https://github.com/WinRb/vagrant-windows](https://github.com/WinRb/vagrant-windows).
-  - Follow instructions in the section *Installing Vagrant-Windows From Source* of README.md to install the plugin. Ignore the rest of the README.
 - use the `syncdet_win` folder instead of `syncdet_linux`
 - use `WCLIENT_COUNT` in place of `CLIENT_COUNT`
 - use `WBRIDGE_COUNT` in place of `BRIDGE_COUNT`
 
+By default the Windows actors have hostonly IPs of the form: 192.168.50.11x
+Where `x` is the actor index (0 to `WCLIENT_COUNT`-1)
 
 Configure SyncDET to use the actors
 ---
@@ -74,6 +67,8 @@ actors:
 ```
 
 Replace `{aero_user_id}` and `{aero_password}` with an account in your local prod, and `{username}` is the output of `whoami` on the host computer.
+
+NB: mDNS is not supported by Windows actor and is sometimes flaky even with Linux actors. You may want to refer to actors by their hostonly IP instead.
 
 SSH access
 ---

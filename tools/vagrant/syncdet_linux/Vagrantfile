@@ -17,16 +17,6 @@ end
 name = %x( whoami ).strip()
 host_base = "#{name}-vagrant-"
 
-config_file = YAML::load_file("/etc/syncdet/config.yaml")
-config_file["actors"] = []
-NUMBER_OF_AGENTS.times do |index|
-  host = host_base + "#{index}"
-  config_file["actors"] << {"address" => "#{host}.local", "details" => {"ci_client" => false}}
-end
-File.open("config.yaml", "w") do |f|
-    YAML.dump(config_file, f)
-end
-
 Vagrant.configure("2") do |config|
   NUMBER_OF_AGENTS.times do |index|
       host = host_base + "#{index}"

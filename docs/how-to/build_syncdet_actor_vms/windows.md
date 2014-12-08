@@ -9,6 +9,7 @@ It would be ideal if tests cover both 64-bit and 32-bit Windows.
 - 1024MB RAM
 - 40GB VMDK virtual drive
 - Disable Widows Firewall
+- Disable Windows Update as vagrant does not take kindly to the long wait at start/stop time and the gratuitous reboots
 - Disable UAC to avoid needless troubles (type "uac" in the start menu to find the settings)
 
 
