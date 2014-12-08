@@ -56,6 +56,7 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static java.util.Collections.emptyList;
 
@@ -76,15 +77,6 @@ public class CompUserList extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompUserList.class);
 
-    public interface ILoadListener
-    {
-        // this method is called within the GUI thread
-        // N.B. local user permissions may be null, e.g. Team Server
-        void loaded(int memberCount, @Nullable Permissions localUserPermissions);
-    }
-
-    private ILoadListener _listener;
-
     private final TableViewer _tv;
 
     private final TableColumn _tcSubject;
@@ -97,13 +89,20 @@ public class CompUserList extends Composite
      * In general, these 3 states need to stay in sync and should all be updated at the same time
      * on the UI thread via one of the setState() methods.
      *
+     * These states are public for others to read. They should not be mutated by any other objects.
+     *
      * The content of _members can be accessed and updated directly, but it should be done on the
      * UI thread to avoid a race against the UI thread.
      */
-    // _members is cached because we want to look up a member by user ID in setRole().
-    private List<SharedFolderMember> _members = emptyList();
-    private Permissions _localUserPermissions;
-    private Path _path;
+    public List<SharedFolderMember> _members = emptyList();
+    public @Nullable Permissions _localUserPermissions;
+    public @Nullable Path _path;
+
+    public interface StateChangedListener
+    {
+        void onStateChanged();
+    }
+    private StateChangedListener _stateChangedListener;
 
     public CompUserList(Composite parent)
     {
@@ -205,10 +204,22 @@ public class CompUserList extends Composite
         layout(new Control[]{_tv.getTable()});
     }
 
-    /**
-     * @pre must be called from UI thread and members must not be null.
-     */
-    private void setState(List<SharedFolderMember> members, Permissions localUserPermissions, Path path)
+    // pre: must be called from UI thread and members must not be null.
+    private void setState(List<SharedFolderMember> members, Permissions localUserPermissions,
+            Path path)
+    {
+        setStateImpl(members, members, localUserPermissions, path);
+    }
+
+    // pre: must be called from the UI thread
+    private void setState(String errorMessage)
+    {
+        setStateImpl(newArrayList(errorMessage), emptyList(), null, null);
+    }
+
+    // pre: must be called from the UI thread and members must not be null
+    private void setStateImpl(Object input, List<SharedFolderMember> members,
+            @Nullable Permissions localUserPermissions, @Nullable Path path)
     {
         checkState(GUI.get().isUIThread());
         checkNotNull(members);
@@ -219,35 +230,21 @@ public class CompUserList extends Composite
 
         // N.B. this establishes a tight binding; if the data in _members is updated, the changes
         // will be visible after _tv refreshes.
-        _tv.setInput(_members);
+        _tv.setInput(input);
+
+        notifyStateChangedListener();
     }
 
-    /**
-     * @pre must be called from UI thread.
-     */
-    private void setState(String errorMessage)
+    public void setStateChangedListener(@Nullable StateChangedListener listener)
     {
-        checkState(GUI.get().isUIThread());
-
-        _members.clear();
-        _localUserPermissions = null;
-        _path = null;
-
-        _tv.setInput(new String[] { errorMessage } );
+        _stateChangedListener = listener;
     }
 
-    public void setLoadListener(@Nullable ILoadListener listener)
+    private void notifyStateChangedListener()
     {
-        _listener = listener;
-    }
-
-    /**
-     * N.B. the value will be fetched from the current state
-     * @pre must be invoked from the UI thread and the current state must have members
-     */
-    private void notifyLoadListener()
-    {
-        if (_listener != null) _listener.loaded(_members.size(), _localUserPermissions);
+        if (_stateChangedListener != null) {
+            _stateChangedListener.onStateChanged();
+        }
     }
 
     /**
@@ -335,7 +332,6 @@ public class CompUserList extends Composite
             public void okay()
             {
                 setState(_newMembers, _newLocalUserPermissions, path);
-                notifyLoadListener();
 
                 layoutTableColumns();
             }
@@ -344,7 +340,6 @@ public class CompUserList extends Composite
             public void error(Exception e)
             {
                 setState("");
-                notifyLoadListener();
 
                 ErrorMessages.show(getShell(), e, "Failed to retrieve user list.",
                         new ErrorMessage(ExNoPerm.class,
@@ -404,7 +399,7 @@ public class CompUserList extends Composite
 
                     _tv.refresh();
 
-                    notifyLoadListener();
+                    notifyStateChangedListener();
                 }
             }
 

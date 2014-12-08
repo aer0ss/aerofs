@@ -105,13 +105,12 @@ class MemberList extends Composite
      */
     private void refreshAsync()
     {
-        _userList.setLoadListener((membersCount, localUserPermissions) -> {
+        _userList.setStateChangedListener(() -> {
             // gray out invite button when not admin, except on Team Server where
             // the ACL check is slightly more complicated...
             // FIXME: TS needs effective ACL
-            _iAmAdmin = L.isMultiuser() ||
-                (localUserPermissions != null
-                        && localUserPermissions.covers(Permission.MANAGE));
+            _iAmAdmin = L.isMultiuser() || (_userList._localUserPermissions != null
+                    && _userList._localUserPermissions.covers(Permission.MANAGE));
             _btnInvite.setEnabled(_iAmAdmin);
         });
         _userList.load(_path);
