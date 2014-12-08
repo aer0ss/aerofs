@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing.members;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.sp.common.SharedFolderState;
 import com.swtdesigner.SWTResourceManager;
@@ -44,5 +45,45 @@ public class SharingLabelProvider extends ColumnLabelProvider
     {
         return element instanceof SharedFolderMember
                 && ((SharedFolderMember)element)._state == SharedFolderState.PENDING;
+    }
+
+    public static class SubjectLabelProvider extends SharingLabelProvider
+    {
+        @Override
+        public String getText(Object element)
+        {
+            if (element instanceof Exception) {
+                return ((Exception) element).getMessage();
+            } else if (element instanceof SharedFolderMember) {
+                return ((SharedFolderMember)element).getLabel();
+            } else {
+                return element.toString();
+            }
+        }
+    }
+
+    public static class RoleLabelProvider extends SharingLabelProvider
+    {
+        @Override
+        public String getText(Object element)
+        {
+            if (element instanceof SharedFolderMember) {
+                return ((SharedFolderMember)element)._permissions.roleName();
+            } else {
+                return "";
+            }
+        }
+    }
+
+    public static class ArrowLabelProvider extends SharingLabelProvider
+    {
+        @Override
+        public String getText(Object element)
+        {
+            return element instanceof SharedFolderMember
+                    && RoleMenu.hasContextMenu((SharedFolderMember)element)
+                    ? GUIUtil.TRIANGLE_DOWNWARD
+                    : "";
+        }
     }
 }
