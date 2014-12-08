@@ -5,11 +5,9 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.ArrowLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.RoleLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.SubjectLabelProvider;
@@ -21,6 +19,7 @@ import com.aerofs.proto.Ritual;
 import com.aerofs.proto.Sp;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBSharedFolderState;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
@@ -47,7 +46,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Optional;
 
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
@@ -64,14 +62,8 @@ import static java.util.Collections.emptyList;
  * SharedFolder and ACL are terms that are closely related: SharedFolder is the product feature to
  * meet the business requirements, whereas ACL is the implementation detail to facilitate syncing.
  *
- * A key decision to adding support for showing pending users is that we want to keep ACL as is,
- * the bare minimum information required to facilitate syncing. Thus the pending user information
- * was not propagated to ACLSynchronizers via GetACL. Instead, it was exposed via the
- * ListUserSharedFolders call on SP.
- *
- * Previously, CompUserList only talks to the daemon. It obtains and updates shared folder info
- * from the daemon in the form of ACLs & SubjectRolePairs, which does not contain pending users.
- * Thus, CompUserList now queries SP directly for shared folder information.
+ * For the most part, the GUI client will talk to SP to do any shared folder-related operations.
+ * The daemon will then discover any ACL changes from ACLSynchronizer.
  */
 public class CompUserList extends Composite
 {
@@ -96,7 +88,7 @@ public class CompUserList extends Composite
      */
     public List<SharedFolderMember> _members = emptyList();
     public @Nullable Permissions _localUserPermissions;
-    public @Nullable Path _path;
+    public @Nullable SID _sid;
 
     public interface StateChangedListener
     {
@@ -176,7 +168,7 @@ public class CompUserList extends Composite
 
                 RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserPermissions, member);
                 menu.setRoleChangeListener(
-                        permissions -> setRole(_path, member, permissions, false));
+                        permissions -> setRole(_sid, member, permissions, false));
                 menu.open();
             }
         });
@@ -206,9 +198,9 @@ public class CompUserList extends Composite
 
     // pre: must be called from UI thread and members must not be null.
     private void setState(List<SharedFolderMember> members, Permissions localUserPermissions,
-            Path path)
+            SID sid)
     {
-        setStateImpl(members, members, localUserPermissions, path);
+        setStateImpl(members, members, localUserPermissions, sid);
     }
 
     // pre: must be called from the UI thread
@@ -219,14 +211,14 @@ public class CompUserList extends Composite
 
     // pre: must be called from the UI thread and members must not be null
     private void setStateImpl(Object input, List<SharedFolderMember> members,
-            @Nullable Permissions localUserPermissions, @Nullable Path path)
+            @Nullable Permissions localUserPermissions, @Nullable SID sid)
     {
         checkState(GUI.get().isUIThread());
         checkNotNull(members);
 
         _members = members;
         _localUserPermissions = localUserPermissions;
-        _path = path;
+        _sid = sid;
 
         // N.B. this establishes a tight binding; if the data in _members is updated, the changes
         // will be visible after _tv refreshes.
@@ -248,8 +240,6 @@ public class CompUserList extends Composite
     }
 
     /**
-     * {@paramref path} must be passed in because _path can change while the worker does work
-     *
      * @pre must be invoked from the UI thread.
      */
     public void load(final Path path)
@@ -262,6 +252,7 @@ public class CompUserList extends Composite
         {
             List<SharedFolderMember> _newMembers = emptyList();
             Permissions _newLocalUserPermissions;
+            SID _newSID;
 
             @Override
             public void run()
@@ -270,30 +261,29 @@ public class CompUserList extends Composite
                 if (path == null) return;
 
                 CfgLocalUser localUser = new CfgLocalUser();
-                SID sid = getStoreID(path);
-                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(sid);
+                _newSID = getStoreID(path);
+                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(_newSID);
 
                 _newMembers = createListFromPBAndFilterLeftMembers(new Factory(localUser),
                         pbFolder);
 
                 // N.B. the local user may not be a member, e.g. Team Server
-                Optional<SharedFolderMember> localUserAsMember = _newMembers.stream()
+                _newLocalUserPermissions = _newMembers.stream()
                         .filter(SharedFolderMember::isLocalUser)
-                        .findAny();
-                if (localUserAsMember.isPresent()) {
-                    _newLocalUserPermissions = localUserAsMember.get()._permissions;
-                }
+                        .findAny()
+                        .map(member -> member._permissions)
+                        .orElse(null);
             }
 
-            // makes a ritual call to retrieve the list of shared folders and their sids and
-            // find the sid for the given path.
+            // makes a ritual call to determine the SID for a given path to a shared folder.
             private SID getStoreID(Path path) throws Exception
             {
                 Ritual.ListSharedFoldersReply reply = UIGlobals.ritual().listSharedFolders();
 
                 for (Ritual.PBSharedFolder folder : reply.getSharedFolderList()) {
-                    if (path.equals(Path.fromPB(folder.getPath())))
-                    return new SID(folder.getStoreId());
+                    if (path.equals(Path.fromPB(folder.getPath()))) {
+                        return new SID(folder.getStoreId());
+                    }
                 }
 
                 throw new ExBadArgs("Invalid shared folder.");
@@ -331,7 +321,7 @@ public class CompUserList extends Composite
             @Override
             public void okay()
             {
-                setState(_newMembers, _newLocalUserPermissions, path);
+                setState(_newMembers, _newLocalUserPermissions, _newSID);
 
                 layoutTableColumns();
             }
@@ -352,10 +342,10 @@ public class CompUserList extends Composite
     }
 
     /**
-     * {@paramref path} needs to be passed in because _path can change while ISWTWorker does work
+     * {@paramref sid} needs to be passed in because _sid can change while ISWTWorker does work
      */
-    private void setRole(final Path path, final SharedFolderMember member, final Permissions permissions,
-            final boolean suppressSharedFolderRulesWarnings)
+    private void setRole(final SID sid, final SharedFolderMember member,
+            final Permissions permissions, final boolean suppressSharedFolderRulesWarnings)
     {
         final Table table = _tv.getTable();
         table.setEnabled(false);
@@ -368,18 +358,14 @@ public class CompUserList extends Composite
             public void run()
                     throws Exception
             {
-                if (member instanceof User) {
-                    UserID subject = ((User)member)._userID;
+                SPBlockingClient sp = newMutualAuthClientFactory().create().signInRemote();
 
-                    if (permissions == null) {
-                        UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
-                    } else {
-                        UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), permissions.toPB(),
-                                suppressSharedFolderRulesWarnings);
-                    }
+                if (permissions == null) {
+                    sp.deleteACL(sid.toPB(), member.getSubject());
+                } else {
+                    sp.updateACL(sid.toPB(), member.getSubject(), permissions.toPB(),
+                            suppressSharedFolderRulesWarnings);
                 }
-
-                // TODO (AT): implement updating role for a Group
             }
 
             @Override
@@ -414,7 +400,7 @@ public class CompUserList extends Composite
 
                 if (canHandle(e)) {
                     if (promptUserToSuppressWarning(getShell(), e)) {
-                        setRole(path, member, permissions, true);
+                        setRole(sid, member, permissions, true);
                     }
                 } else {
                     String message = permissions == null ? "Failed to remove the user." :

@@ -33,8 +33,8 @@ public class SharingLabelProvider extends ColumnLabelProvider
     @Override
     public String getToolTipText(Object element)
     {
-        if (element instanceof User) {
-            return ((User)element)._userID.getString() +
+        if (element instanceof SharedFolderMember) {
+            return ((SharedFolderMember)element).getDescription() +
                     (isPendingUser(element) ? "\nThis user hasn't accepted the invitation yet." : "");
         } else {
             return "";
@@ -43,8 +43,9 @@ public class SharingLabelProvider extends ColumnLabelProvider
 
     private boolean isPendingUser(Object element)
     {
-        return element instanceof SharedFolderMember
-                && ((SharedFolderMember)element)._state == SharedFolderState.PENDING;
+        // check for users because we don't count pending groups
+        return element instanceof User
+                && ((User)element)._state == SharedFolderState.PENDING;
     }
 
     public static class SubjectLabelProvider extends SharingLabelProvider

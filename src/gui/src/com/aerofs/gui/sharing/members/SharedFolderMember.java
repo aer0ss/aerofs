@@ -31,7 +31,15 @@ public abstract class SharedFolderMember
     }
 
     public abstract boolean isLocalUser();
+
+    // string used for protobuf serialization
+    public abstract String getSubject();
+
+    // a short text to identify the member
     public abstract String getLabel();
+
+    // a long text to describe the member in detail
+    public abstract String getDescription();
 
     static class User extends SharedFolderMember
     {
@@ -61,11 +69,23 @@ public abstract class SharedFolderMember
         }
 
         @Override
+        public String getSubject()
+        {
+            return _userID.getString();
+        }
+
+        @Override
         public String getLabel()
         {
-            return  isLocalUser() ? "me" :
-                    hasName() ? getName() :
-                            _userID.getString();
+            return  isLocalUser() ? "me"
+                    : hasName() ? getName()
+                    : _userID.getString();
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _userID.getString();
         }
 
         protected boolean hasName()
@@ -103,7 +123,7 @@ public abstract class SharedFolderMember
             _localUser = localUser;
         }
 
-        public SharedFolderMember fromPB(PBUserPermissionsAndState urs)
+        public User fromPB(PBUserPermissionsAndState urs)
                 throws ExBadArgs
         {
             String firstname = urs.getUser().getFirstName();

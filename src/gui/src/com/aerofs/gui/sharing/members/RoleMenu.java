@@ -65,8 +65,7 @@ public class RoleMenu
                 public void widgetSelected(SelectionEvent e)
                 {
                     if (GUI.get().ask(_menu.getShell(), MessageType.QUESTION,
-                            // The text should be consistent with the text in shared_folders.mako
-                            "Are you sure you want to remove " + ((User) member)._userID +
+                            "Are you sure you want to remove " + member.getDescription() +
                                     " from the shared folder?\n" +
                                     "\n" +
                                     "This will delete the folder from the person's computers." +
