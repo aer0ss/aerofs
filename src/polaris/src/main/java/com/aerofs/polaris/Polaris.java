@@ -13,13 +13,13 @@ import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.dao.ObjectTypeArgument;
 import com.aerofs.polaris.dao.TransformTypeArgument;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import com.aerofs.polaris.logical.LogicalObjectStoreBinder;
-import com.aerofs.polaris.logical.TreeTask;
+import com.aerofs.polaris.logical.TreeCommand;
 import com.aerofs.polaris.resources.BatchResource;
 import com.aerofs.polaris.resources.ObjectsResource;
 import com.aerofs.polaris.resources.TransformsResource;
 import com.aerofs.polaris.sp.SPAccessManagerBinder;
 import org.flywaydb.core.Flyway;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;
@@ -54,15 +54,29 @@ public final class Polaris extends Service<PolarisConfiguration> {
         // setup the object store
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
 
-        // register the task that dumps the object tree
-        admin.registerTask(new TreeTask(logicalObjectStore, admin.getMapper()));
+        // configure the injector
+        admin.addProvider(new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bind(logicalObjectStore).to(LogicalObjectStore.class);
+            }
+        });
+
+        service.addProvider(new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bind(logicalObjectStore).to(LogicalObjectStore.class);
+            }
+        });
 
         // register singleton providers
         service.addProvider(new DBIBinder(dbi));
         service.addProvider(new DBIExceptionMapper());
         service.addProvider(new PolarisExceptionMapper());
-        service.addProvider(new LogicalObjectStoreBinder(logicalObjectStore));
         service.addProvider(new SPAccessManagerBinder());
+
+        // register the task that dumps the object tree
+        admin.registerCommand("tree", TreeCommand.class);
 
         // setup the api-object deserializer
         Operation.registerDeserializer(service.getMapper());

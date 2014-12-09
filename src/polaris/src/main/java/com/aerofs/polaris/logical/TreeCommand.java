@@ -1,7 +1,7 @@
 package com.aerofs.polaris.logical;
 
-import com.aerofs.baseline.admin.Task;
-import com.aerofs.baseline.admin.TasksResource;
+import com.aerofs.baseline.admin.Command;
+import com.aerofs.baseline.admin.Commands;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
@@ -13,34 +13,33 @@ import org.skife.jdbi.v2.ResultIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.util.Map;
 
-public final class TreeTask implements Task {
+@Singleton
+public final class TreeCommand implements Command {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TreeTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TreeCommand.class);
 
-    private final LogicalObjectStore logicalObjectStore;
+    private final LogicalObjectStore objectStore;
     private final ObjectMapper mapper;
 
-    public TreeTask(LogicalObjectStore logicalObjectStore, ObjectMapper mapper) {
-        this.logicalObjectStore = logicalObjectStore;
+    @Inject
+    public TreeCommand(LogicalObjectStore objectStore, ObjectMapper mapper) {
+        this.objectStore = objectStore;
         this.mapper = mapper;
     }
 
     @Override
-    public String getName() {
-        return "tree";
-    }
-
-    @Override
-    public void execute(MultivaluedMap<String, String> queryParameters, PrintWriter outputWriter) throws Exception {
+    public void execute(MultivaluedMap<String, String> queryParameters, PrintWriter entityWriter) throws Exception {
         final String root = queryParameters.getFirst("root");
         final ObjectNode forest = mapper.createObjectNode();
 
-        logicalObjectStore.inTransaction(new Transactional<Object>() {
+        objectStore.inTransaction(new Transactional<Object>() {
             @Override
             public Void execute(DAO dao) throws Exception {
                 if (root != null) {
@@ -75,8 +74,7 @@ public final class TreeTask implements Task {
 
             private ObjectNode traverse(DAO dao, String parent, ObjectNode parentNode) {
                 Map<String, ObjectNode> folders = Maps.newHashMap();
-                ResultIterator<Child> iterator = dao.children.getChildren(parent);
-                try {
+                try (ResultIterator<Child> iterator = dao.children.getChildren(parent)) {
                     while (iterator.hasNext()) {
                         Child child = iterator.next();
                         LOGGER.debug("{} -> {}", parent, child);
@@ -99,8 +97,6 @@ public final class TreeTask implements Task {
 
                         parentNode.set(child.name, node);
                     }
-                } finally {
-                    iterator.close();
                 }
 
                 // recurse into contained folders and mount points
@@ -114,6 +110,6 @@ public final class TreeTask implements Task {
         }, Connection.TRANSACTION_READ_COMMITTED);
 
         Object serialized = mapper.treeToValue(forest, Object.class);
-        TasksResource.printFormattedJson(serialized, queryParameters, mapper, outputWriter);
+        Commands.outputFormattedJson(mapper, entityWriter, queryParameters, serialized);
     }
 }

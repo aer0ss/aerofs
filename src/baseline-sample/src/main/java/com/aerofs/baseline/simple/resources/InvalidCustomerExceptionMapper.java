@@ -2,12 +2,14 @@ package com.aerofs.baseline.simple.resources;
 
 import com.aerofs.baseline.errors.BaseExceptionMapper;
 
+import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
 
 /**
  * Map instances of {@link InvalidCustomerException}
  * to specific error responses.
  */
+@Singleton
 public final class InvalidCustomerExceptionMapper extends BaseExceptionMapper<InvalidCustomerException> {
 
     public InvalidCustomerExceptionMapper() {

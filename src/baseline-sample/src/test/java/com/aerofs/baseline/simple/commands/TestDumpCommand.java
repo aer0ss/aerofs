@@ -1,4 +1,4 @@
-package com.aerofs.baseline.simple.tasks;
+package com.aerofs.baseline.simple.commands;
 
 import com.aerofs.baseline.simple.ServerConfiguration;
 import com.aerofs.baseline.simple.SimpleResource;
@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
 @SuppressWarnings("unchecked")
-public final class TestDumpTask {
+public final class TestDumpCommand {
 
     static {
         RestAssured.config = Utilities.newRestAssuredConfig();

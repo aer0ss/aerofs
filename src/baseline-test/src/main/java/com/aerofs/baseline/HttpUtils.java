@@ -1,6 +1,8 @@
 package com.aerofs.baseline;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import org.apache.http.HttpResponse;
 import org.apache.http.entity.BasicHttpEntity;
 
 import java.io.ByteArrayInputStream;
@@ -11,8 +13,13 @@ import java.util.Scanner;
 
 public abstract class HttpUtils {
 
+    public static String readResponseEntityToString(HttpResponse response) throws IOException {
+        Preconditions.checkArgument(response.getEntity().getContentLength() > 0,  "entity must have non-zero content length");
+        return readStreamToString(response.getEntity().getContent());
+    }
+
     // see http://stackoverflow.com/questions/309424/read-convert-an-inputstream-to-a-string
-    public static String readStreamToString(InputStream in) {
+    public static String readStreamToString(InputStream in) throws IOException {
         Scanner scanner = new Scanner(in).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : "";
     }

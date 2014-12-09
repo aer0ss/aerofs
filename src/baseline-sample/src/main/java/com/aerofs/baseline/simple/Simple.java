@@ -4,15 +4,15 @@ import com.aerofs.baseline.AdminEnvironment;
 import com.aerofs.baseline.LifecycleManager;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
-import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
 import com.aerofs.baseline.db.DataSources;
 import com.aerofs.baseline.db.DatabaseConfiguration;
+import com.aerofs.baseline.simple.commands.DumpCommand;
 import com.aerofs.baseline.simple.resources.CustomersResource;
 import com.aerofs.baseline.simple.resources.InvalidCustomerExceptionMapper;
-import com.aerofs.baseline.simple.tasks.DumpTask;
 import org.flywaydb.core.Flyway;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;
@@ -42,13 +42,29 @@ public final class Simple extends Service<SimpleConfiguration> {
         // setup JDBI
         DBI dbi = DBIInstances.newDBI(dataSource);
 
+        // setup the injector for both the admin and service environments
+        admin.addProvider(new AbstractBinder() {
+
+            @Override
+            public void configure() {
+                bind(dbi).to(DBI.class);
+            }
+        });
+
+        service.addProvider(new AbstractBinder() {
+
+            @Override
+            public void configure() {
+                bind(dbi).to(DBI.class);
+            }
+        });
+
         // register the task that dumps the list of customers
-        admin.registerTask(new DumpTask(dbi, admin.getMapper()));
+        admin.registerCommand("dump", DumpCommand.class);
 
         // register singleton providers
-        service.addProvider(new DBIBinder(dbi));
-        service.addProvider(new DBIExceptionMapper());
-        service.addProvider(new InvalidCustomerExceptionMapper());
+        service.addProvider(DBIExceptionMapper.class);
+        service.addProvider(InvalidCustomerExceptionMapper.class);
 
         // register root resources
         service.addResource(CustomersResource.class);

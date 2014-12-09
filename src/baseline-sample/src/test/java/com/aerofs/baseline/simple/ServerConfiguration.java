@@ -57,7 +57,7 @@ public abstract class ServerConfiguration {
 
     public static final String CUSTOMERS_URL = String.format("http://%s:%s/customers/", SERVICE.getHost(), SERVICE.getPort());
 
-    public static final String DUMP_URL = String.format("http://%s:%s/tasks/dump/", ADMIN.getHost(), ADMIN.getPort());
+    public static final String DUMP_URL = String.format("http://%s:%s/commands/dump/", ADMIN.getHost(), ADMIN.getPort());
 
     private ServerConfiguration() {
         // to prevent instantiation by subclasses
