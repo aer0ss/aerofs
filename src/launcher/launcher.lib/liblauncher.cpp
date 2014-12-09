@@ -253,6 +253,8 @@ vector<tstring> get_default_options()
     result.push_back(_T("-XX:+UseConcMarkSweepGC"));
     result.push_back(_T("-XX:+HeapDumpOnOutOfMemoryError"));
     result.push_back(_T("-Djava.net.preferIPv4Stack=true"));
+    result.push_back(_T("-Dfile.encoding=UTF-8"));
+    result.push_back(_T("-Dsun.jnu.encoding=UTF-8"));
     return result;
 }
 

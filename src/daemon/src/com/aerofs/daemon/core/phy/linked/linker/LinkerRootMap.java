@@ -112,12 +112,16 @@ public class LinkerRootMap
     Set<SID> init_()
     {
         Charset cs = Charset.defaultCharset();
-        l.info("encoding {} {}", cs, System.getProperty("file.encoding"));
-        // TODO: be extra strict and abort if the default charset is not UTF-8?
+        l.info("encoding {} {} {}", cs,
+                System.getProperty("file.encoding"),
+                System.getProperty("sun.jnu.encoding"));
+        // NB: file system probing is more accurate at detecting broken systems so we merely
+        // log encoding configuration instead of enforcing restrictions based on it alone
         if (!cs.equals(BaseUtil.CHARSET_UTF)) {
             newMetric("charset")
                     .addData("default", cs)
                     .addData("file", System.getProperty("file.encoding"))
+                    .addData("jnu", System.getProperty("sun.jnu.encoding"))
                     .sendAsync();
         }
 

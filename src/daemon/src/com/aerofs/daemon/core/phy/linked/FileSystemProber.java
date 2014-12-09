@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumSet;
 
 /**
@@ -70,6 +71,12 @@ public class FileSystemProber
             f.createNewFile();
             if (!f.exists()) {
                 throw new FileNotFoundException("Unable to create file with unicode name");
+            }
+
+            // For the scanner to work, we need to make sure that File.list doesn't choke
+            // on files with code points outside the BMP
+            if (!Arrays.asList(d.list()).contains(f.getName())) {
+                throw new FileNotFoundException("File.list is borked");
             }
 
             // cleanup probe dir for future runs
