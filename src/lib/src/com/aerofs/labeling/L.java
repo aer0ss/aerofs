@@ -65,4 +65,13 @@ public class L
     {
         LazyHolder.s_l = new PropertiesLabeling(p);
     }
+
+    // FIXME (AT): remove this method and all references to it when the feature is ready to ship.
+    // This flag should be used to shutdown all group sharing features on the desktop client until
+    // the entire experience is ready. Developers working on group sharing can toggle this while
+    // working on the feature.
+    public static boolean isGroupSharingEnabled()
+    {
+        return true;
+    }
 }

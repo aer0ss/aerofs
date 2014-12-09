@@ -8,17 +8,22 @@ import com.aerofs.base.LazyChecked;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
+import com.aerofs.proto.Sp.PBGroup;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.slf4j.Logger;
@@ -26,6 +31,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -42,7 +48,6 @@ public class InviteModel
     private final InjectableSPBlockingClientFactory     _spClientFactory;
     private final IRitualClientProvider                 _ritualProvider;
     private final ListeningExecutorService              _executor;
-
     private LazyChecked<SPBlockingClient, Exception>    _spClient;
 
     public InviteModel(InjectableCfg cfg, InjectableSPBlockingClientFactory spClientFactory,
@@ -94,8 +99,12 @@ public class InviteModel
     private List<Invitee> queryImpl(String query)
             throws Exception
     {
-        // TODO(AT): add querying group here
-        return queryUsers(query);
+        List<Invitee> result = newArrayList();
+        // groups before users
+        result.addAll(queryGroups(query));
+        result.addAll(queryUsers(query));
+        // return the first 6 results at most
+        return result.subList(0, Math.min(6, result.size()));
     }
 
     private List<Invitee> queryUsers(String query)
@@ -110,11 +119,28 @@ public class InviteModel
                 .collect(toList());
     }
 
+    private List<Invitee> queryGroups(String query)
+            throws Exception
+    {
+        if (!L.isGroupSharingEnabled()) {
+            return emptyList();
+        }
+
+        return _spClient.get()
+                .listGroups(6, 0, query)
+                .getGroupsList().stream()
+                .map(this::createGroupInviteeFromPBNullable)
+                .filter(invitee -> invitee != null)
+                .collect(toList());
+    }
+
     public ListenableFuture<Void> invite(Path path, List<Invitee> invitees, Permissions permissions,
             String note, boolean suppressSharedFolderRulesWarnings)
     {
         return _executor.submit(() -> {
-            // TODO (AT): support sharing with groups
+            // FIXME (AT): support sharing with groups.
+            // this is currently broken when group sharing is enabled as the GUI allows the user
+            // to select group suggestions but the GUI will then filter out groups.
             List<PBSubjectPermissions> pbsps = invitees.stream()
                     .filter(invitee -> invitee._type == InviteeType.USER)
                     .map(invitee -> new SubjectPermissions((UserID)invitee._value, permissions))
@@ -148,7 +174,7 @@ public class InviteModel
                 isBlank(fullname) ? userID.getString() : fullname, longText);
     }
 
-    private Invitee createGroupInvitee(int groupID, String name)
+    private Invitee createGroupInvitee(GroupID groupID, String name)
     {
         return new Invitee(InviteeType.GROUP, groupID, name, name);
     }
@@ -172,6 +198,19 @@ public class InviteModel
         return createUserInvitee(userID, pb.getFirstName(), pb.getLastName());
     }
 
+    // returns null on invalid group
+    private @Nullable Invitee createGroupInviteeFromPBNullable(PBGroup pb)
+    {
+        GroupID groupID;
+        try {
+            groupID = GroupID.fromExternal(pb.getGroupId());
+        } catch (ExBadArgs e) {
+            l.warn("SP returned an invalid group suggestion."); // ignored
+            return null;
+        }
+        return createGroupInvitee(groupID, pb.getCommonName());
+    }
+
     public enum InviteeType
     {
         USER, GROUP, INVALID
@@ -181,6 +220,7 @@ public class InviteModel
     {
         // TODO (AT): not a fan of using _type & untyped _value, suggestions welcomed
         public final InviteeType _type;
+        // _value is either an UserID for users, GroupID for groups, or String for invalid.
         public final Object _value;
         public final String _shortText;
         public final String _longText;
