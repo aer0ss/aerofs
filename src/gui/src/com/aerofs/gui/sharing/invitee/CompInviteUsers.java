@@ -226,8 +226,6 @@ public class CompInviteUsers extends Composite
                 onSuccess(Cfg.user().getString());
             }
         }, new GUIExecutor(_txtNote));
-
-        _model.load();
     }
 
     public static String getDefaultInvitationNote(String folderName, String fromPerson)

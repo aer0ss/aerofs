@@ -4,23 +4,28 @@
 
 package com.aerofs.gui.sharing.invitee;
 
+import com.aerofs.base.LazyChecked;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
+import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -38,7 +43,7 @@ public class InviteModel
     private final IRitualClientProvider                 _ritualProvider;
     private final ListeningExecutorService              _executor;
 
-    private List<Invitee>                               _invitees = emptyList();
+    private LazyChecked<SPBlockingClient, Exception>    _spClient;
 
     public InviteModel(InjectableCfg cfg, InjectableSPBlockingClientFactory spClientFactory,
             IRitualClientProvider ritualProvider, ListeningExecutorService executor)
@@ -47,20 +52,19 @@ public class InviteModel
         _spClientFactory    = spClientFactory;
         _ritualProvider     = ritualProvider;
         _executor           = executor;
+
+        resetSPClient();
     }
 
-    public void load()
+    private void resetSPClient()
     {
-        // TODO (AT): replace this to load from the real data source / SP.
-        // uncomment the following line to test the UI with fake invitees.
-        // _executor.submit(() -> _invitees = createFakeInvitees());
+        _spClient = new LazyChecked<>(() -> _spClientFactory.create().signInRemote());
     }
 
     // this method is a misfit, but we need this on the invite dialog.
     public ListenableFuture<String> getLocalUserFirstName()
     {
-        return _executor.submit(() -> _spClientFactory.create()
-                .signInRemote()
+        return _executor.submit(() -> _spClient.get()
                 .getUserPreferences(_cfg.did().toPB())
                 .getFirstName());
     }
@@ -68,19 +72,41 @@ public class InviteModel
     // the future will throw CancellationException if the task was cancelled
     public ListenableFuture<List<Invitee>> query(String query)
     {
-        if (isBlank(query) || _invitees.isEmpty()) {
+        if (isBlank(query)) {
             return immediateFuture(emptyList());
         } else {
-            return _executor.submit(() -> queryImpl(query));
+            return _executor.submit(() -> queryImplRetryOnce(query));
         }
     }
 
-    // TODO (AT): improve search algorithm to use a rank-based approach
-    private List<Invitee> queryImpl(String query)
+    private List<Invitee> queryImplRetryOnce(String query)
+            throws Exception
     {
-        return _invitees.stream()
-                .filter(invitee -> invitee._shortText.toLowerCase().startsWith(query.toLowerCase()))
-                .limit(6)
+        try {
+            return queryImpl(query);
+        } catch (InterruptedException e) {
+            // this is likely caused by broken connection, reset the cached client and try again
+            resetSPClient();
+            return queryImpl(query);
+        }
+    }
+
+    private List<Invitee> queryImpl(String query)
+            throws Exception
+    {
+        // TODO(AT): add querying group here
+        return queryUsers(query);
+    }
+
+    private List<Invitee> queryUsers(String query)
+            throws Exception
+    {
+        return _spClient.get()
+                .listOrganizationMembers(6, 0, query)
+                .getUserAndLevelList().stream()
+                .map(PBUserAndLevel::getUser)
+                .map(this::createUserInviteeFromPBNullable)
+                .filter(invitee -> invitee != null)
                 .collect(toList());
     }
 
@@ -133,6 +159,19 @@ public class InviteModel
         return new Invitee(InviteeType.INVALID, text, text, text);
     }
 
+    // returns null on invalid user
+    private @Nullable Invitee createUserInviteeFromPBNullable(PBUser pb)
+    {
+        UserID userID;
+        try {
+            userID = UserID.fromExternal(pb.getUserEmail());
+        } catch (ExEmptyEmailAddress e) {
+            l.warn("SP returned an invalid user suggestion."); // ignored
+            return null;
+        }
+        return createUserInvitee(userID, pb.getFirstName(), pb.getLastName());
+    }
+
     public enum InviteeType
     {
         USER, GROUP, INVALID
@@ -153,47 +192,5 @@ public class InviteModel
             _shortText = shortText;
             _longText = longText;
         }
-    }
-
-    // fake data used to test the UI
-    private List<Invitee> createFakeInvitees()
-    {
-        List<Invitee> invitees = newArrayList();
-
-        String hacks = "Alex\tTsay\n" +
-                "Allen\tGeorge\n" +
-                "Drew\tFisher\n" +
-                "Hugues\tBruant\n" +
-                "Erik\tMall\n" +
-                "Jon\tPile\n" +
-                "Jonathan \tGray\n" +
-                "Matt\tPillar\n" +
-                "Weihan\tWang\n" +
-                "Yuri\tSagalov\n" +
-                "Suthan\tNandakumar\n" +
-                "Karen\tRustad\n" +
-                "John\tGabaix\n" +
-                "Callie\tStrawn\n" +
-                "Chris\tDudley\n" +
-                "Blake\tSwineford\n" +
-                "Adam\tPoliak\n" +
-                "Abhishek\tSharma\n" +
-                "Rudy\tDai\n" +
-                "Abra\tKadabra\n" +
-                "Alakazam\t \n";
-
-        for(String line : hacks.split("\\n")) {
-            String[] tokens = line.split("\\t");
-            invitees.add(createUserInvitee(UserID.fromInternal(tokens[0].toLowerCase() + "@aerofs.com"),
-                    tokens[0], tokens[1]));
-        }
-
-        invitees.add(createGroupInvitee(0, "Team AeroFS"));
-        invitees.add(createGroupInvitee(1, "Sales"));
-        invitees.add(createGroupInvitee(2, "Marketing"));
-        invitees.add(createGroupInvitee(3, "Operation"));
-        invitees.add(createGroupInvitee(4, "Engineering"));
-
-        return invitees;
     }
 }
