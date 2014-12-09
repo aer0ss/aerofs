@@ -7,7 +7,6 @@ package com.aerofs.gui.sharing.invitee;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.GroupID;
@@ -23,7 +22,6 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import org.slf4j.Logger;
@@ -32,6 +30,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -42,6 +41,10 @@ import static org.apache.commons.lang.StringUtils.isBlank;
  */
 public class InviteModel
 {
+    // FIXME(AT): much of the code handling subjects are duplicated and spread throughout.
+    //   Consolidate!
+    private static final String GROUP_PREFIX = "g:";
+
     private static final Logger l = Loggers.getLogger(InviteModel.class);
 
     private final InjectableCfg                         _cfg;
@@ -138,14 +141,28 @@ public class InviteModel
             String note, boolean suppressSharedFolderRulesWarnings)
     {
         return _executor.submit(() -> {
-            // FIXME (AT): support sharing with groups.
-            // this is currently broken when group sharing is enabled as the GUI allows the user
-            // to select group suggestions but the GUI will then filter out groups.
-            List<PBSubjectPermissions> pbsps = invitees.stream()
-                    .filter(invitee -> invitee._type == InviteeType.USER)
-                    .map(invitee -> new SubjectPermissions((UserID)invitee._value, permissions))
-                    .map(SubjectPermissions::toPB)
-                    .collect(toList());
+            List<PBSubjectPermissions> pbsps = newArrayListWithCapacity(invitees.size());
+
+            for (Invitee invitee : invitees) {
+                switch (invitee._type) {
+                case USER:
+                    pbsps.add(PBSubjectPermissions.newBuilder()
+                            .setSubject(((UserID)invitee._value).getString())
+                            .setPermissions(permissions.toPB())
+                            .build());
+                    break;
+                case GROUP:
+                    pbsps.add(PBSubjectPermissions.newBuilder()
+                            .setSubject(GROUP_PREFIX + String.valueOf((int)invitee._value))
+                            .setPermissions(permissions.toPB())
+                            .build());
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Cannot invite an invalid subject " +
+                            "to a shared folder.");
+                }
+            }
+
             _ritualProvider.getBlockingClient()
                     .shareFolder(path.toPB(), pbsps, note, suppressSharedFolderRulesWarnings);
             return null;
@@ -218,7 +235,7 @@ public class InviteModel
 
     public class Invitee
     {
-        // TODO (AT): not a fan of using _type & untyped _value, suggestions welcomed
+        // FIXME (AT): not a fan of using _type & untyped _value, suggestions welcomed
         public final InviteeType _type;
         // _value is either an UserID for users, GroupID for groups, or String for invalid.
         public final Object _value;

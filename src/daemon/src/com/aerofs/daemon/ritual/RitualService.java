@@ -3,6 +3,7 @@ package com.aerofs.daemon.ritual;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
@@ -193,9 +194,12 @@ public class RitualService implements IRitualService
             String emailNote, Boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
-        Map<UserID, Permissions> acl = Maps.newTreeMap();
+        Map<String, Permissions> acl = Maps.newTreeMap();
         for (PBSubjectPermissions srp : srps) {
-            acl.put(UserID.fromExternal(srp.getSubject()), Permissions.fromPB(srp.getPermissions()));
+            // validates the subject and throws ExBadArgs if the subject is invalid
+            SubjectPermissions.getSubjectFromString(srp.getSubject());
+
+            acl.put(srp.getSubject(), Permissions.fromPB(srp.getPermissions()));
         }
         EIShareFolder ev = new EIShareFolder(Path.fromPB(path), acl, emailNote,
                 suppressSharedFolderRulesWarnings);
