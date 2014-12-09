@@ -4,12 +4,10 @@
 
 package com.aerofs.gui.sharing.members;
 
-import com.aerofs.gui.sharing.members.SharedFolderMember.User;
+import com.google.common.collect.ComparisonChain;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.Viewer;
 
-import static com.aerofs.gui.GUIUtil.aggregateComparisonResults;
-import static com.aerofs.gui.GUIUtil.compare;
 import static com.aerofs.sp.common.SharedFolderState.JOINED;
 
 /**
@@ -34,11 +32,13 @@ public class SharedFolderMemberComparators
                 if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
                     SharedFolderMember m1 = (SharedFolderMember)o1;
                     SharedFolderMember m2 = (SharedFolderMember)o2;
-                    return aggregateComparisonResults(
-                            compareByIsLocalUser(m1, m2),
-                            compareByState(m1, m2),
-                            compareByHavingNames(m1, m2),
-                            compareByLabel(m1, m2));
+
+                    return ComparisonChain.start()
+                            .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
+                            .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
+                            .compareTrueFirst(m1.hasName(), m2.hasName())
+                            .compare(m1.getLabel(), m2.getLabel())
+                            .result();
                 } else {
                     return 0;
                 }
@@ -55,49 +55,21 @@ public class SharedFolderMemberComparators
                 if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
                     SharedFolderMember m1 = (SharedFolderMember)o1;
                     SharedFolderMember m2 = (SharedFolderMember)o2;
-                    return aggregateComparisonResults(
-                            compareByIsLocalUser(m1, m2),
-                            compareByState(m1, m2),
-                            compareByRole(m1, m2),
-                            compareByHavingNames(m1, m2),
-                            compareByLabel(m1, m2));
+
+                    return ComparisonChain.start()
+                            .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
+                            .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
+                            // we want to sort the permissions such that Pa < Pb iff Pb is a subset
+                            // of Pa. This order is opposite from the order defined in Permissions,
+                            // thus we reverse the comparison order
+                            .compare(m2._permissions, m1._permissions)
+                            .compareTrueFirst(m1.hasName(), m2.hasName())
+                            .compare(m1.getLabel(), m2.getLabel())
+                            .result();
                 } else {
                     return 0;
                 }
             }
         };
-    }
-
-    // local user < non-local users
-    private static int compareByIsLocalUser(SharedFolderMember a, SharedFolderMember b)
-    {
-        return compare(a.isLocalUser(), b.isLocalUser());
-    }
-
-    // joined members < pending members | left members
-    private static int compareByState(SharedFolderMember a, SharedFolderMember b)
-    {
-        return compare(a._state == JOINED, b._state == JOINED);
-    }
-
-    // users with names < users with only emails (hasn't signed up)
-    private static int compareByHavingNames(SharedFolderMember a, SharedFolderMember b)
-    {
-        return a instanceof User && b instanceof User
-                ? compare(((User) a).hasName(), ((User) b).hasName())
-                // return equal because we cannot compare members unless they are both users.
-                : 0;
-    }
-
-    // alphabetical order of the label
-    private static int compareByLabel(SharedFolderMember a, SharedFolderMember b)
-    {
-        return a.getLabel().compareTo(b.getLabel());
-    }
-
-    // owner < editor < viewer
-    private static int compareByRole(SharedFolderMember a, SharedFolderMember b)
-    {
-        return a._permissions.compareTo(b._permissions);
     }
 }

@@ -219,28 +219,6 @@ public class GUIUtil
         return result;
     }
 
-    /**
-     * This is intended to be used to aggregate comparison results. The intention is to use it like:
-     *
-     * aggregateComparisonResults(comparison1, comparison2, comparison3)
-     *
-     * which will, in effect, compare two objects using a series of comparisons where the earlier
-     * comparisons have priorities over the later comparisons.
-     */
-    public static int aggregateComparisonResults(int... results)
-    {
-        for (int result : results) if (result != 0) return result;
-        return 0; // if we are here, all values must be 0
-    }
-
-    // compare booleans using true < false
-    public static int compare(boolean p, boolean q)
-    {
-        if (p && !q) return -1;
-        else if (q && !p) return 1;
-        else return 0;
-    }
-
     private static final String ELLIPSIS = "...";
 
     private static int validateOffset(TextLayout layout, int offset)

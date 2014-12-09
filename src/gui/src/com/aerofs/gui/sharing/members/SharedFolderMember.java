@@ -35,6 +35,9 @@ public abstract class SharedFolderMember
     // string used for protobuf serialization
     public abstract String getSubject();
 
+    // this method is exposed so that the comparator can compare by the member having a name or not.
+    public abstract boolean hasName();
+
     // a short text to identify the member
     public abstract String getLabel();
 
@@ -88,7 +91,8 @@ public abstract class SharedFolderMember
             return _userID.getString();
         }
 
-        protected boolean hasName()
+        @Override
+        public boolean hasName()
         {
             return !isBlank(getName());
         }
