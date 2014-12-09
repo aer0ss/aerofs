@@ -109,7 +109,7 @@ public final class SubjectPermissions
     {
         if (isGroupSubject(subject)) {
             try {
-                return new GroupID(Integer.parseInt(subject.substring(GROUP_PREFIX.length())));
+                return GroupID.fromExternal(Integer.parseInt(subject.substring(GROUP_PREFIX.length())));
             } catch (NumberFormatException e) {
                 // falls-through to throw ExBadArgs
             }

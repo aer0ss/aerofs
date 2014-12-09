@@ -106,7 +106,7 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
     public void shouldThrowOnAddIfGroupNotFound()
             throws Exception
     {
-        Group noExist = factGroup.create(new GroupID(666));
+        Group noExist = factGroup.create(GroupID.fromExternal(666));
         noExist.addMember(user1);
     }
 
@@ -114,7 +114,7 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
     public void shouldThrowOnRemoveIfGroupNotFound()
             throws Exception
     {
-        Group noExist = factGroup.create(new GroupID(666));
+        Group noExist = factGroup.create(GroupID.fromExternal(666));
         noExist.removeMember(user1);
     }
 }

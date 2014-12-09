@@ -4,13 +4,12 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.group.Group;
 import org.junit.Test;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-
-import java.sql.SQLException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -63,9 +62,23 @@ public class TestGroup_save extends AbstractBusinessObjectTest
 
     @Test
     public void shouldReportMissingGroupAsNotExisting()
-            throws SQLException
+            throws Exception
     {
-        Group group = factGroup.create(new GroupID(666));
+        Group group = factGroup.create(GroupID.fromExternal(666));
         assertFalse(group.exists());
+    }
+
+    @Test(expected = ExBadArgs.class)
+    public void shouldNotAllowCreationOfGroupWithInvalidID()
+            throws Exception
+    {
+        Group group = factGroup.create(GroupID.fromExternal(GroupID.NULL_GROUP.getInt()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldThrowIllegalArgumentIfInvalidInternalGroupID()
+            throws Exception
+    {
+        Group group = factGroup.create(GroupID.fromInternal(GroupID.NULL_GROUP.getInt()));
     }
 }

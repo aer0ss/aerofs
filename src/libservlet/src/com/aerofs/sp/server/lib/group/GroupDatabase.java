@@ -187,7 +187,7 @@ public class GroupDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         List<GroupID> groups = Lists.newArrayList();
-        while (rs.next()) groups.add(new GroupID(rs.getInt(1)));
+        while (rs.next()) groups.add(GroupID.fromInternal(rs.getInt(1)));
         return groups;
     }
 }

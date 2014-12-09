@@ -7,6 +7,7 @@ package com.aerofs.sp.server.lib.group;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExNotLocallyManaged;
 import com.aerofs.base.id.GroupID;
@@ -62,8 +63,9 @@ public class Group
         }
 
         public Group create(int gid)
+                throws ExBadArgs
         {
-            return new Group(this, new GroupID(gid));
+            return new Group(this, GroupID.fromExternal(gid));
         }
 
         public Group create(GroupID gid)
@@ -80,14 +82,15 @@ public class Group
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // groups. It is NOT a security measure.
-                GroupID gid = new GroupID(Util.rand().nextInt());
-                if (!gid.equals(NULL_GROUP)) {
-                    try {
-                        _gdb.createGroup(gid, commonName, orgId, externalId);
-                        return create(gid);
-                    } catch (ExAlreadyExist e) {
-                        l.info("duplicate group id " + gid + ". trying a new one.");
-                    }
+                int newID = Util.rand().nextInt();
+                try {
+                    GroupID gid = GroupID.fromExternal(newID);
+                    _gdb.createGroup(gid, commonName, orgId, externalId);
+                    return create(gid);
+                } catch (ExAlreadyExist e) {
+                    l.info("duplicate group id " + newID + ". trying a new one.");
+                } catch (ExBadArgs e) {
+                    l.info("hit a reserved group id of " + newID);
                 }
             }
         }

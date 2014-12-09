@@ -69,8 +69,11 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         throws Exception
     {
         CreateGroupReply reply = service.createGroup("a group").get();
-        GroupID gid = new GroupID(reply.getGroupId());
+        GroupID gid = GroupID.fromExternal(reply.getGroupId());
         Group newGroup = factGroup.create(gid);
+        sqlTrans.begin();
+        assertTrue(newGroup.exists());
+        sqlTrans.commit();
     }
 
     @Test

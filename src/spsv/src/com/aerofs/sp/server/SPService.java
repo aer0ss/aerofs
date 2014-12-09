@@ -3533,7 +3533,8 @@ public class SPService implements ISPService
             ExNotFound,
             ExNoPerm,
             ExNotLocallyManaged,
-            ExSecondFactorSetupRequired
+            ExSecondFactorSetupRequired,
+            ExBadArgs
     {
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
@@ -3733,7 +3734,8 @@ public class SPService implements ISPService
             ExSecondFactorRequired,
             ExNotFound,
             ExNoPerm,
-            ExSecondFactorSetupRequired
+            ExSecondFactorSetupRequired,
+            ExBadArgs
     {
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);

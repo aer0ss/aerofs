@@ -34,7 +34,7 @@ public class TestGroupShares extends AbstractBusinessObjectTest
     final OrganizationID orgId = new OrganizationID(1);
     Organization org;
     // Group.
-    final GroupID gid = new GroupID(1);
+    final GroupID gid = GroupID.fromInternal(1);
     Group group;
     // Shared folder.
     final SID sid = SID.generate();

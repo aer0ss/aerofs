@@ -148,7 +148,7 @@ public class GroupSharesDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         List<GroupID> shares = Lists.newArrayList();
-        while (rs.next()) shares.add(new GroupID(rs.getInt(1)));
+        while (rs.next()) shares.add(GroupID.fromInternal(rs.getInt(1)));
         return shares;
     }
 
@@ -156,7 +156,8 @@ public class GroupSharesDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         List<GroupIDAndRole> shares = Lists.newArrayList();
-        while (rs.next()) shares.add(new GroupIDAndRole(new GroupID(rs.getInt(1)), Permissions.fromBitmask(rs.getInt(2))));
+        while (rs.next()) shares.add(new GroupIDAndRole(GroupID.fromInternal(rs.getInt(1)),
+                Permissions.fromBitmask(rs.getInt(2))));
         return shares;
     }
 
