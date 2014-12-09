@@ -8,6 +8,8 @@ import com.aerofs.proto.Common.PBSubjectPermissions;
 
 import javax.annotation.Nullable;
 
+import static java.lang.Integer.parseInt;
+
 /**
  * A subject is an entity that has a set of permissions associated with it in the context of ACL.
  * In the past, all subjects are users and are identified by an UserID (including the Team Server
@@ -79,7 +81,6 @@ public final class SubjectPermissions
         return getStringFromSubject(_subject);
     }
 
-    // Note that these conversion methods can potentially be public if other classes need them.
     public static String getStringFromSubject(Object subject)
     {
         if (subject instanceof GroupID) {
@@ -104,13 +105,13 @@ public final class SubjectPermissions
         return subject.startsWith(GROUP_PREFIX);
     }
 
-    private static GroupID getGroupIDFromString(String subject)
+    public static GroupID getGroupIDFromString(String subject)
             throws ExBadArgs
     {
         if (isGroupSubject(subject)) {
             try {
-                return GroupID.fromExternal(Integer.parseInt(subject.substring(GROUP_PREFIX.length())));
-            } catch (NumberFormatException e) {
+                return GroupID.fromExternal(parseInt(subject.substring(GROUP_PREFIX.length())));
+            } catch (Exception e) {
                 // falls-through to throw ExBadArgs
             }
         }

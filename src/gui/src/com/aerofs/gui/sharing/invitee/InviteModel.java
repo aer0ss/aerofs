@@ -28,9 +28,10 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static com.aerofs.base.acl.SubjectPermissions.getStringFromSubject;
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -41,10 +42,6 @@ import static org.apache.commons.lang.StringUtils.isBlank;
  */
 public class InviteModel
 {
-    // FIXME(AT): much of the code handling subjects are duplicated and spread throughout.
-    //   Consolidate!
-    private static final String GROUP_PREFIX = "g:";
-
     private static final Logger l = Loggers.getLogger(InviteModel.class);
 
     private final InjectableCfg                         _cfg;
@@ -141,27 +138,12 @@ public class InviteModel
             String note, boolean suppressSharedFolderRulesWarnings)
     {
         return _executor.submit(() -> {
-            List<PBSubjectPermissions> pbsps = newArrayListWithCapacity(invitees.size());
-
-            for (Invitee invitee : invitees) {
-                switch (invitee._type) {
-                case USER:
-                    pbsps.add(PBSubjectPermissions.newBuilder()
-                            .setSubject(((UserID)invitee._value).getString())
+            List<PBSubjectPermissions> pbsps = invitees.stream()
+                    .map(invitee -> PBSubjectPermissions.newBuilder()
+                            .setSubject(getStringFromSubject(invitee._value))
                             .setPermissions(permissions.toPB())
-                            .build());
-                    break;
-                case GROUP:
-                    pbsps.add(PBSubjectPermissions.newBuilder()
-                            .setSubject(GROUP_PREFIX + String.valueOf((int)invitee._value))
-                            .setPermissions(permissions.toPB())
-                            .build());
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Cannot invite an invalid subject " +
-                            "to a shared folder.");
-                }
-            }
+                            .build())
+                    .collect(Collectors.toList());
 
             _ritualProvider.getBlockingClient()
                     .shareFolder(path.toPB(), pbsps, note, suppressSharedFolderRulesWarnings);

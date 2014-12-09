@@ -14,6 +14,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.sp.common.SharedFolderState;
 
+import static com.aerofs.base.acl.SubjectPermissions.getStringFromSubject;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.commons.lang.StringUtils.trim;
 
@@ -74,7 +75,7 @@ public abstract class SharedFolderMember
         @Override
         public String getSubject()
         {
-            return _userID.getString();
+            return getStringFromSubject(_userID);
         }
 
         @Override
@@ -118,8 +119,6 @@ public abstract class SharedFolderMember
 
     static class Group extends SharedFolderMember
     {
-        private static final String GROUP_PREFIX = "g:";
-
         public final GroupID _groupID;
         private final String _name;
 
@@ -140,7 +139,7 @@ public abstract class SharedFolderMember
         @Override
         public String getSubject()
         {
-            return GROUP_PREFIX + String.valueOf(_groupID.getInt());
+            return getStringFromSubject(_groupID);
         }
 
         @Override
