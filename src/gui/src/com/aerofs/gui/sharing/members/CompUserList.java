@@ -8,15 +8,18 @@ import com.aerofs.base.id.SID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.ArrowLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.RoleLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.SubjectLabelProvider;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Ritual;
 import com.aerofs.proto.Sp;
+import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.proto.Sp.PBSharedFolderState;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -140,7 +143,7 @@ public class CompUserList extends Composite
         });
 
         TableViewerColumn tvcArrow = new TableViewerColumn(_tv, SWT.NONE);
-        tvcArrow.setLabelProvider(new ArrowLabelProvider());
+        tvcArrow.setLabelProvider(new ArrowLabelProvider(this));
         _tcArrow = tvcArrow.getColumn();
         _tcArrow.setResizable(false);
 
@@ -164,7 +167,7 @@ public class CompUserList extends Composite
                 _tv.setSelection(new StructuredSelection(elem), true);
 
                 SharedFolderMember member = (SharedFolderMember)elem;
-                if (!RoleMenu.hasContextMenu(member)) return;
+                if (!RoleMenu.hasContextMenu(member, _localUserPermissions)) return;
 
                 RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserPermissions, member);
                 menu.setRoleChangeListener(
@@ -268,6 +271,9 @@ public class CompUserList extends Composite
                         pbFolder);
 
                 // N.B. the local user may not be a member, e.g. Team Server
+                // N.B. with addition of groups, the local user may not be a direct member of the
+                //   shared folder; the local user could be a member of a group which is then the
+                //   member of the shared folder.
                 _newLocalUserPermissions = _newMembers.stream()
                         .filter(SharedFolderMember::isLocalUser)
                         .findAny()
@@ -312,6 +318,12 @@ public class CompUserList extends Composite
                 for (PBUserPermissionsAndState urs : pbFolder.getUserPermissionsAndStateList()) {
                     if (urs.getState() != PBSharedFolderState.LEFT) {
                         members.add(factory.fromPB(urs));
+                    }
+                }
+
+                if (L.isGroupSharingEnabled()) {
+                    for (PBGroupPermissions gp : pbFolder.getGroupPermissionsList()) {
+                        members.add(factory.fromPB(gp));
                     }
                 }
 
@@ -403,8 +415,10 @@ public class CompUserList extends Composite
                         setRole(sid, member, permissions, true);
                     }
                 } else {
-                    String message = permissions == null ? "Failed to remove the user." :
-                            "Failed to update the user's role.";
+                    String message = String.format(permissions == null
+                            ? "Failed to remove the %s."
+                            : "Failed to update the %s's role.",
+                            member instanceof User ? "user" : "group");
                     ErrorMessages.show(getShell(), e, message,
                             new ErrorMessage(ExNoPerm.class,
                                     "You do not have the permission to do so."));

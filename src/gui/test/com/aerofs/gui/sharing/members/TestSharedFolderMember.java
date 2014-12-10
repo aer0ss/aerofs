@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 public class TestSharedFolderMember extends AbstractTest
 {
     @Mock CfgLocalUser _cfgLocalUser;
-    @InjectMocks Factory _factory;
 
     UserID _localUserID = UserID.fromInternal("test@example.com");
 
@@ -62,7 +61,7 @@ public class TestSharedFolderMember extends AbstractTest
     private void assertGetLabelResult(String expected, @Nonnull String firstName,
             @Nonnull String lastName, @Nonnull String email)
     {
-        SharedFolderMember member = new User(_factory, UserID.fromInternal(email),
+        SharedFolderMember member = new User(_cfgLocalUser, UserID.fromInternal(email),
                 firstName, lastName, Permissions.EDITOR, SharedFolderState.JOINED);
 
         assertEquals(expected, member.getLabel());

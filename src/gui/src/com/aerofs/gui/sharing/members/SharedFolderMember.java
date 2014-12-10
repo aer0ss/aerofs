@@ -7,8 +7,10 @@ package com.aerofs.gui.sharing.members;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
 import com.aerofs.sp.common.SharedFolderState;
 
@@ -46,20 +48,18 @@ public abstract class SharedFolderMember
 
     static class User extends SharedFolderMember
     {
-        // the only reason to maintain a reference to the factory is so we can check if this is the
-        // local user
-        private final Factory _factory;
+        private final CfgLocalUser _localUser;
 
         public final UserID _userID;
         private final String _firstname;
         private final String _lastname;
 
-        User(Factory factory, UserID userID, String firstName, String lastName,
+        User(CfgLocalUser localUser, UserID userID, String firstName, String lastName,
                 Permissions permissions, SharedFolderState state)
         {
             super(permissions, state);
 
-            _factory = factory;
+            _localUser = localUser;
             _userID = userID;
             _firstname = firstName;
             _lastname = lastName;
@@ -68,7 +68,7 @@ public abstract class SharedFolderMember
         @Override
         public boolean isLocalUser()
         {
-            return _factory._localUser.get().equals(_userID);
+            return _localUser.get().equals(_userID);
         }
 
         @Override
@@ -116,6 +116,64 @@ public abstract class SharedFolderMember
         }
     }
 
+    static class Group extends SharedFolderMember
+    {
+        private static final String GROUP_PREFIX = "g:";
+
+        public final GroupID _groupID;
+        private final String _name;
+
+        Group(GroupID groupID, String name, Permissions permissions, SharedFolderState state)
+        {
+            super(permissions, state);
+
+            _groupID = groupID;
+            _name = name;
+        }
+
+        @Override
+        public boolean isLocalUser()
+        {
+            return false;
+        }
+
+        @Override
+        public String getSubject()
+        {
+            return GROUP_PREFIX + String.valueOf(_groupID.getInt());
+        }
+
+        @Override
+        public boolean hasName()
+        {
+            return true;
+        }
+
+        @Override
+        public String getLabel()
+        {
+            return _name;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _name;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return this == o || ((o instanceof Group) && ((Group)o)._groupID.equals(_groupID));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _groupID.hashCode();
+        }
+    }
+
     // the only reason to have a factory is so we can inject a CfgLocalUser and check if a shared
     // folder member is the local user.
     public static class Factory
@@ -127,16 +185,27 @@ public abstract class SharedFolderMember
             _localUser = localUser;
         }
 
-        public User fromPB(PBUserPermissionsAndState urs)
+        public User fromPB(PBUserPermissionsAndState pb)
                 throws ExBadArgs
         {
-            String firstname = urs.getUser().getFirstName();
-            String lastname = urs.getUser().getLastName();
-            UserID userID = createUserID(urs.getUser().getUserEmail());
-            Permissions permissions = Permissions.fromPB(urs.getPermissions());
-            SharedFolderState state = SharedFolderState.fromPB(urs.getState());
+            String firstname = pb.getUser().getFirstName();
+            String lastname = pb.getUser().getLastName();
+            UserID userID = createUserID(pb.getUser().getUserEmail());
+            Permissions permissions = Permissions.fromPB(pb.getPermissions());
+            SharedFolderState state = SharedFolderState.fromPB(pb.getState());
 
-            return new User(this, userID, firstname, lastname, permissions, state);
+            return new User(_localUser, userID, firstname, lastname, permissions, state);
+        }
+
+        public Group fromPB(PBGroupPermissions pb)
+                throws ExBadArgs
+        {
+            GroupID groupID = GroupID.fromExternal(pb.getGroup().getGroupId());
+            String name = pb.getGroup().getCommonName();
+            Permissions permissions = Permissions.fromPB(pb.getPermissions());
+
+            // the state of a group is irrelevant.
+            return new Group(groupID, name, permissions, SharedFolderState.JOINED);
         }
 
         // the purpose is to wrap ExEmptyEmailAddress and throw ExBadArgs instead

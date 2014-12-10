@@ -5,8 +5,10 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.sharing.members.SharedFolderMember.Group;
 import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -23,8 +25,12 @@ public class RoleMenu
 
     private RoleChangeListener _listener;
 
-    public RoleMenu(Control parent, Permissions selfPermissions, SharedFolderMember member)
+    public RoleMenu(Control parent, @Nullable Permissions selfPermissions,
+            SharedFolderMember member)
     {
+        // N.B. since the menu items are subject to many conditionals, the easiest way to manage
+        // section separators is to aggressively add separators at the end of each section and then
+        // simply remove the last menu item at the end if it's a separator.
         _menu = new Menu(parent);
 
         if (shouldShowUpdateACLMenuItems(selfPermissions)) {
@@ -41,6 +47,7 @@ public class RoleMenu
                     });
                 }
             }
+
             new MenuItem(_menu, SWT.SEPARATOR);
         }
 
@@ -51,14 +58,31 @@ public class RoleMenu
             miEmail.setText("Email User");
             miEmail.addSelectionListener(GUIUtil.createUrlLaunchListener(
                     "mailto:" + subject));
+
+            new MenuItem(_menu, SWT.SEPARATOR);
         }
 
-        // TODO (AT): handle the logic for when it's not an user
-        // N.B. this is fine for now because all members are users. When we implement groups,
-        // we'll have to consider what to do with the label "Remove User" and the label to display
-        if (shouldShowUpdateACLMenuItems(selfPermissions) && member instanceof User) {
+        if (shouldShowUpdateACLMenuItems(selfPermissions)) {
+            final String label;
+            final String description;
+
+            if (member instanceof User) {
+                label = "Remove User";
+                description = "This will delete the folder from the person's computers. " +
+                        "However, old content may still be accessible from the person's sync" +
+                        "history.";
+            } else if (member instanceof Group) {
+                label = "Remove Group";
+                description = "This will delete the folder from the computers of every person " +
+                        "in the group. However, old content may still be accessible from each " +
+                        "person's sync history.";
+            } else {
+                // not supported
+                return;
+            }
+
             MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
-            miKickout.setText("Remove User");
+            miKickout.setText(label);
             miKickout.addSelectionListener(new SelectionAdapter()
             {
                 @Override
@@ -67,14 +91,22 @@ public class RoleMenu
                     if (GUI.get().ask(_menu.getShell(), MessageType.QUESTION,
                             "Are you sure you want to remove " + member.getDescription() +
                                     " from the shared folder?\n" +
-                                    "\n" +
-                                    "This will delete the folder from the person's computers." +
-                                    " However, old content may be still accessible from the" +
-                                    " person's sync history.")) {
+                                    "\n" + description)) {
                         select(null);
                     }
                 }
             });
+
+            new MenuItem(_menu, SWT.SEPARATOR);
+        }
+
+        // the last menu item could be a separator because we aggressively add separators at the
+        // end of each section. In which case, simply dispose it.
+        if (_menu.getItemCount() > 0) {
+            MenuItem lastItem = _menu.getItem(_menu.getItemCount() - 1);
+            if (Util.test(lastItem.getStyle(), SWT.SEPARATOR)) {
+                lastItem.dispose();
+            }
         }
     }
 
@@ -96,10 +128,11 @@ public class RoleMenu
         if (_listener != null) _listener.onRoleChangeSelected(permissions);
     }
 
-    public static boolean hasContextMenu(SharedFolderMember member)
+    public static boolean hasContextMenu(SharedFolderMember member,
+            @Nullable Permissions selfPermissions)
     {
-        // we can always send e-mail, except for the local user
-        return !member.isLocalUser();
+        return !member.isLocalUser() &&
+                (member instanceof User || shouldShowUpdateACLMenuItems(selfPermissions));
     }
 
     /**
@@ -112,10 +145,11 @@ public class RoleMenu
      *
      * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
      */
-    private boolean shouldShowUpdateACLMenuItems(Permissions selfPermissions)
+    private static boolean shouldShowUpdateACLMenuItems(@Nullable Permissions selfPermissions)
     {
-        return L.isMultiuser()                                  // Team Server only
-                || selfPermissions.covers(Permission.MANAGE);   // regular client
+        return L.isMultiuser()  // Team Server only
+                                // regular client
+                || (selfPermissions != null && selfPermissions.covers(Permission.MANAGE));
     }
 
     public void setRoleChangeListener(RoleChangeListener listener)

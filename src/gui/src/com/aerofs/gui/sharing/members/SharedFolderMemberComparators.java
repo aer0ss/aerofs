@@ -4,6 +4,8 @@
 
 package com.aerofs.gui.sharing.members;
 
+import com.aerofs.gui.sharing.members.SharedFolderMember.Group;
+import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.google.common.collect.ComparisonChain;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.Viewer;
@@ -36,6 +38,7 @@ public class SharedFolderMemberComparators
                     return ComparisonChain.start()
                             .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
                             .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
+                            .compareTrueFirst(m1 instanceof Group, m2 instanceof Group)
                             .compareTrueFirst(m1.hasName(), m2.hasName())
                             .compare(m1.getLabel(), m2.getLabel())
                             .result();
@@ -59,6 +62,7 @@ public class SharedFolderMemberComparators
                     return ComparisonChain.start()
                             .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
                             .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
+                            .compareTrueFirst(m1 instanceof Group, m2 instanceof Group)
                             // we want to sort the permissions such that Pa < Pb iff Pb is a subset
                             // of Pa. This order is opposite from the order defined in Permissions,
                             // thus we reverse the comparison order

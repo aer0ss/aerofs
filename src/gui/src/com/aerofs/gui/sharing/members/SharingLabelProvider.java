@@ -78,11 +78,19 @@ public class SharingLabelProvider extends ColumnLabelProvider
 
     public static class ArrowLabelProvider extends SharingLabelProvider
     {
+        private final CompUserList _parent;
+
+        public ArrowLabelProvider(CompUserList parent)
+        {
+            _parent = parent;
+        }
+
         @Override
         public String getText(Object element)
         {
             return element instanceof SharedFolderMember
-                    && RoleMenu.hasContextMenu((SharedFolderMember)element)
+                    && RoleMenu.hasContextMenu((SharedFolderMember)element,
+                    _parent._localUserPermissions)
                     ? GUIUtil.TRIANGLE_DOWNWARD
                     : "";
         }
