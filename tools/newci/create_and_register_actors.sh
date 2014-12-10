@@ -8,12 +8,13 @@ WBRIDGE_COUNT=${WBRIDGE_COUNT:=1}
 WCLIENT_COUNT=${WCLIENT_COUNT:=2}
 
 ACTOR_POOL_DIR="$(dirname $0)/actor-pool"
+VAGRANT_BASE_DIR="$(dirname $(dirname $0))/vagrant"
 
 # Clear the pool
 mysql -uroot --password='temp123' < "$ACTOR_POOL_DIR"/actorpool.sql  # clear the db
 
 # Linux actors
-pushd ~/repos/syncdet-vagrant
+pushd "$VAGRANT_BASE_DIR"/syncdet_linux
 vagrant destroy --force
 vagrant up | tee /var/log/newci/syncdet-vagrant-up.log
 bottom=0
@@ -24,7 +25,7 @@ fi
 popd
 
 # Windows actors
-pushd ~/repos/win7-syncdet-vagrant
+pushd "$VAGRANT_BASE_DIR"/syncdet_win
 vagrant destroy --force
 vagrant up | tee /var/log/newci/win7-syncdet-vagrant-up.log
 bottom=0
