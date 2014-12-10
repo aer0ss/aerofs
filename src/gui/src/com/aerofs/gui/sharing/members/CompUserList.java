@@ -7,26 +7,20 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.sharing.members.SharedFolderMember.User;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.ArrowLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.RoleLabelProvider;
 import com.aerofs.gui.sharing.members.SharingLabelProvider.SubjectLabelProvider;
-import com.aerofs.labeling.L;
+import com.aerofs.gui.sharing.members.SharingModel.LoadResult;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.proto.Ritual;
-import com.aerofs.proto.Sp;
-import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
-import com.aerofs.proto.Sp.PBSharedFolderState;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.FutureCallback;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
@@ -54,12 +48,13 @@ import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
 import static com.aerofs.gui.sharing.members.SharedFolderMember.Factory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
+import static com.google.common.util.concurrent.Futures.addCallback;
+import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static java.util.Collections.emptyList;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * SharedFolder and ACL are terms that are closely related: SharedFolder is the product feature to
@@ -71,6 +66,8 @@ import static java.util.Collections.emptyList;
 public class CompUserList extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompUserList.class);
+
+    private final SharingModel _model;
 
     private final TableViewer _tv;
 
@@ -102,6 +99,9 @@ public class CompUserList extends Composite
     public CompUserList(Composite parent)
     {
         super(parent, SWT.NONE);
+
+        _model = new SharingModel(UIGlobals.ritualClientProvider(), newMutualAuthClientFactory(),
+                new Factory(new CfgLocalUser()), listeningDecorator(newSingleThreadExecutor()));
 
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         _tv.setContentProvider(new ArrayContentProvider());
@@ -249,108 +249,33 @@ public class CompUserList extends Composite
     {
         checkState(GUI.get().isUIThread());
 
+        if (path == null) {
+            setState("");
+            return;
+        }
+
         setState(S.GUI_LOADING);
 
-        GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
-        {
-            List<SharedFolderMember> _newMembers = emptyList();
-            Permissions _newLocalUserPermissions;
-            SID _newSID;
-
+        addCallback(_model.load(path), new FutureCallback<LoadResult>() {
             @Override
-            public void run()
-                    throws Exception
+            public void onSuccess(@Nullable LoadResult result)
             {
-                if (path == null) return;
-
-                CfgLocalUser localUser = new CfgLocalUser();
-                _newSID = getStoreID(path);
-                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(_newSID);
-
-                _newMembers = createListFromPBAndFilterLeftMembers(new Factory(localUser),
-                        pbFolder);
-
-                // N.B. the local user may not be a member, e.g. Team Server
-                // N.B. with addition of groups, the local user may not be a direct member of the
-                //   shared folder; the local user could be a member of a group which is then the
-                //   member of the shared folder.
-                _newLocalUserPermissions = _newMembers.stream()
-                        .filter(SharedFolderMember::isLocalUser)
-                        .findAny()
-                        .map(member -> member._permissions)
-                        .orElse(null);
-            }
-
-            // makes a ritual call to determine the SID for a given path to a shared folder.
-            private SID getStoreID(Path path) throws Exception
-            {
-                Ritual.ListSharedFoldersReply reply = UIGlobals.ritual().listSharedFolders();
-
-                for (Ritual.PBSharedFolder folder : reply.getSharedFolderList()) {
-                    if (path.equals(Path.fromPB(folder.getPath()))) {
-                        return new SID(folder.getStoreId());
-                    }
-                }
-
-                throw new ExBadArgs("Invalid shared folder.");
-            }
-
-            // make a SP call to retrieve the shared folder associated with the store ID
-            // @param userID - the user ID of the local user
-            private Sp.PBSharedFolder getSharedFolderWithSID(SID sid)
-                    throws Exception
-            {
-                Sp.ListSharedFoldersReply reply = newMutualAuthClientFactory().create()
-                        .signInRemote()
-                        .listSharedFolders(ImmutableList.of(sid.toPB()));
-                // assert the contract of the sp call
-                checkArgument(reply.getSharedFolderCount() == 1);
-
-                return reply.getSharedFolder(0);
-            }
-
-            private List<SharedFolderMember> createListFromPBAndFilterLeftMembers(
-                    Factory factory, Sp.PBSharedFolder pbFolder) throws ExBadArgs
-            {
-                List<SharedFolderMember> members = newArrayListWithExpectedSize(
-                        pbFolder.getUserPermissionsAndStateCount());
-
-                for (PBUserPermissionsAndState urs : pbFolder.getUserPermissionsAndStateList()) {
-                    if (urs.getState() != PBSharedFolderState.LEFT) {
-                        members.add(factory.fromPB(urs));
-                    }
-                }
-
-                if (L.isGroupSharingReady()) {
-                    for (PBGroupPermissions gp : pbFolder.getGroupPermissionsList()) {
-                        members.add(factory.fromPB(gp));
-                    }
-                }
-
-                return members;
-            }
-
-            @Override
-            public void okay()
-            {
-                setState(_newMembers, _newLocalUserPermissions, _newSID);
-
+                setState(result._members, result._permissions, result._sid);
                 layoutTableColumns();
             }
 
             @Override
-            public void error(Exception e)
+            public void onFailure(Throwable t)
             {
                 setState("");
 
-                ErrorMessages.show(getShell(), e, "Failed to retrieve user list.",
+                ErrorMessages.show(getShell(), t, "Failed to retrieve user list.",
                         new ErrorMessage(ExNoPerm.class,
                                 "You are no longer a member of this shared folder."),
                         new ErrorMessage(ExBadArgs.class,
-                                "The application has received invalid data from the server.")
-                );
+                                "The application has received invalid data from the server."));
             }
-        });
+        }, new GUIExecutor(_tv.getTable()));
     }
 
     /**
@@ -359,71 +284,58 @@ public class CompUserList extends Composite
     private void setRole(final SID sid, final SharedFolderMember member,
             final Permissions permissions, final boolean suppressSharedFolderRulesWarnings)
     {
-        final Table table = _tv.getTable();
+        Table table = _tv.getTable();
         table.setEnabled(false);
 
         if (_compSpin != null) _compSpin.start();
 
-        GUI.get().safeWork(getShell(), new ISWTWorker()
-        {
-            @Override
-            public void run()
-                    throws Exception
-            {
-                SPBlockingClient sp = newMutualAuthClientFactory().create().signInRemote();
+        addCallback(_model.setRole(sid, member, permissions, suppressSharedFolderRulesWarnings),
+                new FutureCallback<Void>()
+                {
+                    @Override
+                    public void onSuccess(@Nullable Void result)
+                    {
+                        if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
 
-                if (permissions == null) {
-                    sp.deleteACL(sid.toPB(), member.getSubject());
-                } else {
-                    sp.updateACL(sid.toPB(), member.getSubject(), permissions.toPB(),
-                            suppressSharedFolderRulesWarnings);
-                }
-            }
+                        if (!table.isDisposed()) {
+                            table.setEnabled(true);
+                            table.setFocus();
 
-            @Override
-            public void okay()
-            {
-                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+                            if (permissions == null) {
+                                _members.remove(member);
+                            } else {
+                                member._permissions = permissions;
+                            }
 
-                if (!table.isDisposed()) {
-                    table.setEnabled(true);
-                    table.setFocus();
+                            _tv.refresh();
 
-                    if (permissions == null) {
-                        _members.remove(member);
-                    } else {
-                        member._permissions = permissions;
+                            notifyStateChangedListener();
+                        }
                     }
 
-                    _tv.refresh();
+                    @Override
+                    public void onFailure(Throwable t)
+                    {
+                        if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
 
-                    notifyStateChangedListener();
-                }
-            }
+                        if (!table.isDisposed()) table.setEnabled(true);
 
-            @Override
-            public void error(Exception e)
-            {
-                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+                        l.warn(Util.e(t));
 
-                if (!table.isDisposed()) table.setEnabled(true);
-
-                l.warn(Util.e(e));
-
-                if (canHandle(e)) {
-                    if (promptUserToSuppressWarning(getShell(), e)) {
-                        setRole(sid, member, permissions, true);
+                        if (canHandle(t)) {
+                            if (promptUserToSuppressWarning(getShell(), t)) {
+                                setRole(sid, member, permissions, true);
+                            }
+                        } else {
+                            String message = String.format(permissions == null
+                                            ? "Failed to remove the %s."
+                                            : "Failed to update the %s's role.",
+                                    member instanceof User ? "user" : "group");
+                            ErrorMessages.show(getShell(), t, message,
+                                    new ErrorMessage(ExNoPerm.class,
+                                            "You do not have the permission to do so."));
+                        }
                     }
-                } else {
-                    String message = String.format(permissions == null
-                            ? "Failed to remove the %s."
-                            : "Failed to update the %s's role.",
-                            member instanceof User ? "user" : "group");
-                    ErrorMessages.show(getShell(), e, message,
-                            new ErrorMessage(ExNoPerm.class,
-                                    "You do not have the permission to do so."));
-                }
-            }
-        });
+                }, new GUIExecutor(table));
     }
 }
