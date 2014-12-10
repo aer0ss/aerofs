@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 /**
  * Probes properties of physical filesystem
@@ -66,7 +67,7 @@ public class FileSystemProber
             }
 
             // U+1F44A FISTED HAND SIGN
-            // probe broken java encoding settings
+            // probe support for characters outside BMP
             InjectableFile f = _factFile.create(d, probeId + "\uD83D\uDC4A");
             f.createNewFile();
             if (!f.exists()) {
@@ -75,8 +76,14 @@ public class FileSystemProber
 
             // For the scanner to work, we need to make sure that File.list doesn't choke
             // on files with code points outside the BMP
-            if (!Arrays.asList(d.list()).contains(f.getName())) {
-                throw new FileNotFoundException("File.list is borked");
+            String[] files = d.list();
+            if (!Arrays.asList(files).contains(f.getName())) {
+                l.info("createNewFile and list inconsistent:\n{}", Arrays.stream(files)
+                                .map(s -> s.substring(probeId.length()).chars()
+                                        .mapToObj(c -> "U+" + Integer.toHexString(c))
+                                        .collect(Collectors.joining(" ")))
+                                .collect(Collectors.joining("\n")));
+                throw new FileNotFoundException("Created files missing from listing");
             }
 
             // cleanup probe dir for future runs
