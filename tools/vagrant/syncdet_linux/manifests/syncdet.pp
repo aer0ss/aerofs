@@ -1,6 +1,11 @@
 # Basic Puppet manifest for syncdet VM
 
 class syncdet-packages {
+    file {"/etc/default/locale":
+        ensure => file,
+        content => "LC_ALL=\"en_US.UTF-8\""
+    }
+
     exec {"apt_update":
         command => "/usr/bin/apt-get update"
     }
@@ -12,7 +17,8 @@ class syncdet-packages {
         "default-jre-headless",
         "avahi-daemon",
         "ntp",
-        "sqlite3"
+        "sqlite3",
+        "vim"
     ]:
         ensure => installed,
         require => Exec["apt_update"],
