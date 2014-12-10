@@ -30,7 +30,7 @@ Vagrant.configure("2") do |config|
 
           # Configure base box parameters
           config_a.vm.box = "win7wnp"
-          config_a.vm.box_url = "http://newci.local/win7wnp.box"
+          config_a.vm.box_url = "http://newci.local/win7ci.box"
           config_a.vm.guest = :windows
           config_a.vm.hostname = host
 
