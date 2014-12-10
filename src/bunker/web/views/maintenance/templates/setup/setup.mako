@@ -54,7 +54,7 @@
         <%email_page:body/>
         <% local.page_scripts = email_page.scripts %>
     %elif page == 4:
-        <h3>Sit back and relax</h3>
+        <h3>Please wait while your system is configured</h3>
         <%namespace name="apply_page" file="apply_page.mako"/>
         <%apply_page:body/>
         <% local.page_scripts = apply_page.scripts %>
