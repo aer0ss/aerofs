@@ -179,7 +179,7 @@ public class S
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
 
             // invite user to AeroFS dialog
-            INVITE_TITLE             = "Invite Coworkers to " + L.product(),
+            INVITE_TITLE             = "Invite Coworkers to " + L.brand(),
             INVITE_LBL_INVITE        = L.product() + " is better with coworkers! Email them an " +
                     "invitation.\n\n" +
                     "Email address to invite:",
