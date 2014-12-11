@@ -12,6 +12,7 @@ RPC methods can be called.  For example
     r.share_folder(...)
 
 """
+import os
 import socket
 import sys
 import tempfile
@@ -239,6 +240,9 @@ class _RitualServiceWrapper(object):
         self.create_pbpath(pbpath, directory)
 
     def create_pbpath(self, pbpath, directory):
+        # Without sleep here create_object at times
+        # returns source not found.
+        time.sleep(param.POLLING_INTERVAL)
         self._service.create_object(pbpath, directory)
 
     def delete_object(self, path):
@@ -424,10 +428,18 @@ class _RitualServiceWrapper(object):
         self.write_pbpath(convert.absolute_to_pbpath(path), content)
 
     def write_pbpath(self, pbpath, content):
-        tmp = tempfile.NamedTemporaryFile()
+        if 'win32' in sys.platform:
+            # If delete is not specified, the file will be closed after writing
+            # and import_pbpath will return a source not found.
+            tmp = tempfile.NamedTemporaryFile(dir="C:\\cygwin\\tmp", delete=False)
+        else:
+            tmp = tempfile.NamedTemporaryFile()
         with tmp.file as f:
             f.write(content.encode('utf-8'))
         self.import_pbpath(pbpath, tmp.name)
+        # Have to explicitly delete the temp folder on windows.
+        if 'win32' in sys.platform:
+            os.remove(tmp.name)
 
     def wait_file_with_content(self, path, content):
         self.wait_pbpath_with_content(convert.absolute_to_pbpath(path), content)

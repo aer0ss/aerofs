@@ -32,8 +32,11 @@ def _absolute_to_aerofs_path(absolute, root_anchor=None):
         root_anchor = get_cfg().get_root_anchor()
     if root_anchor not in absolute:
         raise ValueError("absolute path must contain root anchor")
-    return os.path.relpath(absolute, root_anchor)
-
+    # Cannot use os.path.relpath on win python for paths longer than 260 chars and some
+    # other non-windows friendly paths.
+    # Cannot add magic prefix "\\\\?\\" also because magic prefix only works with
+    # absolute paths.
+    return absolute[len(root_anchor):]
 
 def absolute_to_pbpath(absolute, root_anchor=None):
     return _string_to_pbpath(_absolute_to_aerofs_path(absolute, root_anchor))
