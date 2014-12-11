@@ -30,6 +30,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.custom.StackLayout;
 import org.slf4j.Logger;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgPreSetupUpdateCheck extends Shell
 {
     private static final Logger l = Loggers.getLogger(DlgPreSetupUpdateCheck.class);
@@ -56,11 +58,11 @@ public class DlgPreSetupUpdateCheck extends Shell
         _composite = new Composite(this, SWT.NONE);
         _composite.setLayout(_sl);
 
-        _lblDownloading = new Label(_composite, SWT.NONE);
+        _lblDownloading = createLabel(_composite, SWT.NONE);
         _lblDownloading.setText("Downloading updates. " + L.product() +
                 " will automatically restart...  ");
 
-        Label lblChecking = new Label(_composite, SWT.NONE);
+        Label lblChecking = createLabel(_composite, SWT.NONE);
         lblChecking.setText(S.CHECKING_FOR_DINOSAURS);
 
         _sl.topControl = lblChecking;

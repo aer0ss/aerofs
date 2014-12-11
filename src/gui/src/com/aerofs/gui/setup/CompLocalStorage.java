@@ -23,6 +23,8 @@ import org.eclipse.swt.widgets.Text;
 
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompLocalStorage
 {
     private final Composite _container;
@@ -113,7 +115,7 @@ public class CompLocalStorage
 
     private void addLabel()
     {
-        Label lbl = new Label(_container, SWT.NONE);
+        Label lbl = createLabel(_container, SWT.NONE);
         lbl.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lbl.setText(S.ROOT_ANCHOR + ":");
         _controls.add(lbl);

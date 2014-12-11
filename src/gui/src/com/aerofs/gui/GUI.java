@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.HashSet;
 
 import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.gui.GUIUtil.createLabel;
 
 public class GUI implements IUI
 {
@@ -252,7 +253,7 @@ public class GUI implements IUI
             shell.setLayout(glShell);
 
             new CompSpin(shell, SWT.NONE).start();
-            Label label = new Label(shell, SWT.WRAP);
+            Label label = createLabel(shell, SWT.WRAP);
             label.setText(_msg);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, true, 1, 1));
 

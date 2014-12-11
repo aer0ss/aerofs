@@ -38,6 +38,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
@@ -428,7 +429,7 @@ public class GUIUtil
     }
 
     /**
-     * Stubs out constructor for Button so we can do some custom business logic.
+     * Stubs out constructor for Button so we can do some custom logic.
      *
      * @return an AeroFSButton if the OS is windows or linux and it's a push button,
      *   a vanilla SWT Button otherwise.
@@ -439,6 +440,11 @@ public class GUIUtil
                 && (style & (SWT.ARROW | SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0
                 ? new AeroFSButton(parent, style)
                 : new Button(parent, style);
+    }
+
+    public static Label createLabel(Composite parent, int style)
+    {
+        return new AeroFSLabel(parent, style);
     }
 
     /**

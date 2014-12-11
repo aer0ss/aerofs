@@ -31,6 +31,8 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Composite;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgAbout extends AeroFSDialog
 {
     private CompSpin _compSpinUpdate;
@@ -53,27 +55,27 @@ public class DlgAbout extends AeroFSDialog
         glShell.marginWidth = GUIParam.MARGIN;
         shell.setLayout(glShell);
 
-        new Label(shell, SWT.NONE);
+        createLabel(shell, SWT.NONE);
 
-        Label lblImage = new Label(shell, SWT.NONE);
+        Label lblImage = createLabel(shell, SWT.NONE);
         lblImage.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, false, false, 1, 3));
         lblImage.setImage(Images.get(Images.ICON_LOGO64));
 
-        Label lblAerofs = new Label(shell, SWT.NONE);
+        Label lblAerofs = createLabel(shell, SWT.NONE);
         lblAerofs.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false, 1, 1));
         lblAerofs.setText(L.product());
 
         FontData fd = lblAerofs.getFont().getFontData()[0];
         lblAerofs.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 2, SWT.BOLD));
 
-        Label lblVersion = new Label(shell, SWT.NONE);
+        Label lblVersion = createLabel(shell, SWT.NONE);
         lblVersion.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
         lblVersion.setText("Version " + Cfg.ver());
 
-        new Label(shell, SWT.NONE);
-        new Label(shell, SWT.NONE);
+        createLabel(shell, SWT.NONE);
+        createLabel(shell, SWT.NONE);
 
-        Label lblCopyright = new Label(shell, SWT.NONE);
+        Label lblCopyright = createLabel(shell, SWT.NONE);
         lblCopyright.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         lblCopyright.setText("Copyright \u00a9 " + S.COPYRIGHT);
 
@@ -89,8 +91,8 @@ public class DlgAbout extends AeroFSDialog
             }
         });
 
-        new Label(shell, SWT.NONE);
-        new Label(shell, SWT.NONE);
+        createLabel(shell, SWT.NONE);
+        createLabel(shell, SWT.NONE);
 
         Composite composite = new Composite(shell, SWT.NONE);
         GridLayout glComposite = new GridLayout(3, false);
@@ -101,7 +103,7 @@ public class DlgAbout extends AeroFSDialog
 
         _btnUpdate = GUIUtil.createButton(composite, SWT.NONE);
         _compSpinUpdate = new CompSpin(composite, SWT.NONE);
-        _lblUpdateStatus = new Label(composite, SWT.NONE);
+        _lblUpdateStatus = createLabel(composite, SWT.NONE);
         _lblUpdateStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
         shell.addShellListener(new ShellAdapter() {

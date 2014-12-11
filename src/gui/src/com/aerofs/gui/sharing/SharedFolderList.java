@@ -52,6 +52,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -94,7 +95,7 @@ class SharedFolderList extends Composite
         l.marginWidth = 0;
         setLayout(l);
 
-        Label lbl = new Label(this, SWT.NONE);
+        Label lbl = createLabel(this, SWT.NONE);
         lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         lbl.setText("Shared Folders:");
 

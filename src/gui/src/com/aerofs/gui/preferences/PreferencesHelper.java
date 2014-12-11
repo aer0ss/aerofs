@@ -60,6 +60,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class PreferencesHelper
@@ -145,7 +146,7 @@ public class PreferencesHelper
 
     public void createRelocationLabelAndText()
     {
-        Label lblRootAnchor = new Label(_comp, SWT.NONE);
+        Label lblRootAnchor = createLabel(_comp, SWT.NONE);
         lblRootAnchor.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblRootAnchor.setText(S.ROOT_ANCHOR + ':');
 
@@ -171,7 +172,7 @@ public class PreferencesHelper
 
     public void createDeviceNameLabelAndText()
     {
-        Label lblDeviceName = new Label(_comp, SWT.NONE);
+        Label lblDeviceName = createLabel(_comp, SWT.NONE);
         lblDeviceName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblDeviceName.setText("Computer name:");
 
@@ -192,7 +193,7 @@ public class PreferencesHelper
 
     public void createManageDevices(String text, final String url)
     {
-        new Label(_comp, SWT.NONE);
+        createLabel(_comp, SWT.NONE);
 
         Link link = new Link(_comp, SWT.NONE);
         link.setText("<a>" + text + "</a>");
@@ -206,7 +207,7 @@ public class PreferencesHelper
             }
         });
 
-        new Label(_comp, SWT.NONE);
+        createLabel(_comp, SWT.NONE);
     }
 
     private GridData getTextFieldGridData()
@@ -458,7 +459,7 @@ public class PreferencesHelper
 
     static private void createSpacer(Composite parent)
     {
-        new Label(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
+        createLabel(parent, SWT.NONE).setLayoutData(new GridData(GUIParam.MARGIN, SWT.DEFAULT));
     }
 
     public void createSyncHistory(Composite parent)
@@ -568,7 +569,7 @@ public class PreferencesHelper
 
         createSpacer(parent);
 
-        new Label(parent, SWT.NONE).setText("Release channel:");
+        createLabel(parent, SWT.NONE).setText("Release channel:");
 
         final Combo comboCanary = new Combo(parent, SWT.READ_ONLY);
         comboCanary.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
@@ -657,7 +658,7 @@ public class PreferencesHelper
     // use invisible separator to increase spacing between widgets
     static public void createSeparator(Composite parent, boolean visible)
     {
-        Label separator = new Label(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
+        Label separator = createLabel(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
         // spans 5 columns because it's the most number of columns for the layouts we use
         separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 5, 1));
         separator.setVisible(visible);

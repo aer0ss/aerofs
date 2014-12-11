@@ -24,6 +24,8 @@ import org.eclipse.swt.widgets.List;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public abstract class AbstractCompTransport extends Composite
 {
     protected StackLayout _layout;
@@ -123,8 +125,8 @@ public abstract class AbstractCompTransport extends Composite
 
         public StatusDecorator(Composite parent)
         {
-            _lblText = new Label(parent, SWT.NONE);
-            _lblStatus = new Label(parent, SWT.WRAP);
+            _lblText = createLabel(parent, SWT.NONE);
+            _lblStatus = createLabel(parent, SWT.WRAP);
             _lblStatus.setFont(GUIUtil.makeBold(_lblStatus.getFont()));
             _lnkDesc = new Link(parent, SWT.WRAP);
             _lnkDesc.setFont(GUIUtil.makeSubtitle(_lnkDesc.getFont()));
@@ -167,7 +169,7 @@ public abstract class AbstractCompTransport extends Composite
 
         protected DevicesDecorator(Composite parent)
         {
-            _lblDevices = new Label(parent, SWT.NONE);
+            _lblDevices = createLabel(parent, SWT.NONE);
             _lblDevices.setText(S.LBL_REACHABLE_DEVICES);
 
             _lstDevices = new List(parent, SWT.BORDER);

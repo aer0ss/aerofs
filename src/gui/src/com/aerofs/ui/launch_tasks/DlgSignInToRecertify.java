@@ -31,6 +31,8 @@ import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * Show this dialog when we need to recertify the device and we can't use a current certificate
  * to do so.
@@ -69,7 +71,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
 
         // row 1a : call to action
 
-        Label labelAction = new Label(container, SWT.WRAP);
+        Label labelAction = createLabel(container, SWT.WRAP);
         GridData gdAction = new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1);
         gdAction.widthHint = 300;
         labelAction.setLayoutData(gdAction);
@@ -101,7 +103,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
             });
 
             // optional row 2 : separator between OpenId and external auth:
-            Label separator = new Label(container, SWT.NONE);
+            Label separator = createLabel(container, SWT.NONE);
             separator.setText(L.product() + " user without " +
                     Identity.SERVICE_IDENTIFIER + " accounts?");
             separator.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
@@ -110,7 +112,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
         // row 2
 
         if (L.isMultiuser()) {
-            new Label(container, SWT.RIGHT).setText(S.ADMIN_EMAIL + ":");
+            createLabel(container, SWT.RIGHT).setText(S.ADMIN_EMAIL + ":");
 
             _txtEmail = new Text(container, SWT.NONE);
             _txtEmail.setText(_setupModel.getUsername());
@@ -124,7 +126,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
             });
             _txtEmail.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         } else {
-            new Label(container, SWT.RIGHT).setText(S.SETUP_USER_ID + ":");
+            createLabel(container, SWT.RIGHT).setText(S.SETUP_USER_ID + ":");
 
             _txtEmail = new Text(container, SWT.NONE);
             _txtEmail.setEditable(false);
@@ -134,7 +136,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
 
         // row 3
 
-        new Label(container, SWT.RIGHT).setText(
+        createLabel(container, SWT.RIGHT).setText(
                 L.isMultiuser() ? S.ADMIN_PASSWD + ":" : S.SETUP_PASSWD + ":");
 
         _txtPasswd = new Text(container, SWT.BORDER | SWT.PASSWORD);

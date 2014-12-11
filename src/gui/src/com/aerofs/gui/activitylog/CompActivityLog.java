@@ -41,6 +41,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompActivityLog extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompActivityLog.class);
@@ -125,7 +127,7 @@ public class CompActivityLog extends Composite
 
         _compSpin = new CompSpin(this, SWT.NONE);
 
-        _lblStatus = new Label(this, SWT.NONE);
+        _lblStatus = createLabel(this, SWT.NONE);
         _lblStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         _lblStatus.setText("New Label");
 

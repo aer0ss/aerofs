@@ -28,6 +28,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * Show this dialog after the user has changed the password on the web site causing the local
  * device unable to login with the stored password.
@@ -60,7 +62,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
 
         // row 1
 
-        Label label = new Label(container, SWT.NONE);
+        Label label = createLabel(container, SWT.NONE);
         label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
         label.setText(S.PASSWORD_HAS_CHANGED + ":");
 
@@ -79,7 +81,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
 
         // row 3
 
-        _status = new Label(container, SWT.NONE);
+        _status = createLabel(container, SWT.NONE);
         _status.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         return container;

@@ -21,6 +21,8 @@ import org.eclipse.swt.layout.FillLayout;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgFolders extends AeroFSDialog
 {
     private Button _btnOk;
@@ -48,7 +50,7 @@ public class DlgFolders extends AeroFSDialog
         glShell.marginWidth = GUIParam.MARGIN;
         container.setLayout(glShell);
 
-        Label lblLabel = new Label(container, SWT.NONE);
+        Label lblLabel = createLabel(container, SWT.NONE);
         GridData gdLabel = new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1);
         gdLabel.heightHint = 22;
         lblLabel.setLayoutData(gdLabel);

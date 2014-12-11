@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class PageLocalStorage extends AbstractSetupWorkPage
 {
     private Text        _txtRootAnchor;
@@ -57,7 +59,7 @@ public class PageLocalStorage extends AbstractSetupWorkPage
 
         Composite compRootAnchor = createRootAnchorComposite(content);
 
-        Label lblDescription = new Label(content, SWT.NONE);
+        Label lblDescription = createLabel(content, SWT.NONE);
         lblDescription.setText(S.SETUP_TYPE_DESC);
 
         Composite compType = createTypeComposite(content);
@@ -80,7 +82,7 @@ public class PageLocalStorage extends AbstractSetupWorkPage
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        Label lblRootAnchor = new Label(composite, SWT.NONE);
+        Label lblRootAnchor = createLabel(composite, SWT.NONE);
         lblRootAnchor.setText(S.SETUP_ROOT_ANCHOR_LABEL);
 
         _txtRootAnchor = new Text(composite, SWT.BORDER);
@@ -149,14 +151,14 @@ public class PageLocalStorage extends AbstractSetupWorkPage
         _btnLinkStorage.setText(S.SETUP_LINK);
         _btnLinkStorage.setFont(GUIUtil.makeBold(_btnLinkStorage.getFont()));
 
-        Label lblLinkDesc = new Label(composite, SWT.WRAP);
+        Label lblLinkDesc = createLabel(composite, SWT.WRAP);
         lblLinkDesc.setText(S.SETUP_LINK_DESC);
 
         _btnBlockStorage = GUIUtil.createButton(composite, SWT.RADIO | SWT.WRAP);
         _btnBlockStorage.setText(S.SETUP_BLOCK);
         _btnBlockStorage.setFont(GUIUtil.makeBold(_btnBlockStorage.getFont()));
 
-        Label lblBlockDesc = new Label(composite, SWT.WRAP);
+        Label lblBlockDesc = createLabel(composite, SWT.WRAP);
         lblBlockDesc.setText(S.SETUP_BLOCK_DESC);
 
         Link lnkLearnMore = new Link(composite, SWT.NONE);

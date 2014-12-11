@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * openDialog() returns whether if the operation succeeds
  */
@@ -62,7 +64,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
 
         _compSpin = new CompSpin(shell, SWT.NONE);
 
-        Label lblMovingTheAerofs = new Label(shell, SWT.NONE);
+        Label lblMovingTheAerofs = createLabel(shell, SWT.NONE);
         lblMovingTheAerofs.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblMovingTheAerofs.setText("Moving files and Sync History. Please do not quit " + L.product() + ".");
 

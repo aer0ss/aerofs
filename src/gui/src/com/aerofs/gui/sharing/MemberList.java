@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 import static com.aerofs.gui.sharing.invitee.DlgInviteUsers.getLabelByName;
 
@@ -57,7 +58,7 @@ class MemberList extends Composite
         gl.marginWidth = 0;
         setLayout(gl);
 
-        Label lbl = new Label(this, SWT.NONE);
+        Label lbl = createLabel(this, SWT.NONE);
         lbl.setText("Members:");
         lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 

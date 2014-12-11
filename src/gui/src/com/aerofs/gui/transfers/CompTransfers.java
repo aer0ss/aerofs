@@ -8,6 +8,8 @@ import com.aerofs.gui.GUIParam;
 
 import org.eclipse.swt.widgets.Label;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompTransfers extends Composite
 {
     private final CompTransfersTable _view;
@@ -47,8 +49,8 @@ public class CompTransfers extends Composite
 
         _compStat = new CompTransferStat(composite, SWT.NONE);
         _compStat.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        new Label(_compStat, SWT.NONE);
-        new Label(_compStat, SWT.NONE);
+        createLabel(_compStat, SWT.NONE);
+        createLabel(_compStat, SWT.NONE);
     }
 
     @Override

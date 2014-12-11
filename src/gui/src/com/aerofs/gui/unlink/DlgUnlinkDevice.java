@@ -26,6 +26,8 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
 {
     private Label _lblStatus;
@@ -64,7 +66,7 @@ public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
         _compSpin = new CompSpin(composite, SWT.NONE);
         _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
 
-        _lblStatus = new Label(composite, SWT.WRAP);
+        _lblStatus = createLabel(composite, SWT.WRAP);
         GridData gdText = new GridData(SWT.FILL, SWT.CENTER, true, true, 1, 1);
         gdText.widthHint = 360;
         _lblStatus.setLayoutData(gdText);

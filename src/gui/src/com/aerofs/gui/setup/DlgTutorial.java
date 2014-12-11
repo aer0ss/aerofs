@@ -28,6 +28,8 @@ import org.eclipse.swt.widgets.Shell;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgTutorial extends AeroFSDialog
 {
     private int _currentStep;
@@ -152,7 +154,7 @@ public class DlgTutorial extends AeroFSDialog
         layout.verticalSpacing = GUIParam.MAJOR_SPACING;
         _shell.setLayout(layout);
 
-        _title = new Label(_shell, SWT.NONE);
+        _title = createLabel(_shell, SWT.NONE);
         gd = new GridData(SWT.FILL, SWT.TOP, true, false);
         gd.horizontalSpan = 2;
         _title.setLayoutData(gd);
@@ -160,18 +162,18 @@ public class DlgTutorial extends AeroFSDialog
         _title.setFont(SWTResourceManager.getFont(fd.getName(), (int)Math.round(fd.getHeight()*1.2),
                 SWT.BOLD));
 
-        _description = new Label(_shell, SWT.WRAP);
+        _description = createLabel(_shell, SWT.WRAP);
         gd = new GridData(SWT.FILL, SWT.TOP, true, false);
         gd.horizontalSpan = 2;
         gd.widthHint = 500;
         _description.setLayoutData(gd);
 
-        _image = new Label(_shell, SWT.NONE);
+        _image = createLabel(_shell, SWT.NONE);
         gd = new GridData(SWT.FILL, SWT.TOP, true, false);
         gd.horizontalSpan = 2;
         _image.setLayoutData(gd);
 
-        _lblStep = new Label(_shell, SWT.NONE);
+        _lblStep = createLabel(_shell, SWT.NONE);
 
         Composite compButtons = new Composite(_shell, SWT.NONE);
         compButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));

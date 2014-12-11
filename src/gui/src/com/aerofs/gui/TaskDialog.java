@@ -18,6 +18,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * Simple sheet dialog controlling a long running operation
  *
@@ -52,7 +54,7 @@ public abstract class TaskDialog extends AeroFSDialog implements ISWTWorker
 
         _compSpin = new CompSpin(shell, SWT.NONE);
 
-        final Label label = new Label(shell, SWT.WRAP);
+        final Label label = createLabel(shell, SWT.WRAP);
         final GridData gd = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
         label.setLayoutData(gd);
         if (_confirm != null && !_confirm.isEmpty()) {

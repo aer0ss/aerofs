@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.lib.Util.isValidEmailAddress;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.collect.Lists.newArrayList;
@@ -84,11 +85,11 @@ public class DlgInvite extends AeroFSDialog
             super(parent, style);
 
             _cmpInvite  = new Composite(this, SWT.NONE);
-            _lblInvite  = new Label(_cmpInvite, SWT.WRAP);
+            _lblInvite  = createLabel(_cmpInvite, SWT.WRAP);
             _txtInvite  = new Text(_cmpInvite, SWT.BORDER | SWT.SINGLE);
 
             _cmpBottom  = new Composite(this, SWT.NONE);
-            _lblStatus  = new Label(_cmpBottom, SWT.NONE);
+            _lblStatus  = createLabel(_cmpBottom, SWT.NONE);
             _cmpSpin    = new CompSpin(_cmpBottom, SWT.NONE);
 
             _cmpButtons = GUIUtil.newButtonContainer(_cmpBottom, false);

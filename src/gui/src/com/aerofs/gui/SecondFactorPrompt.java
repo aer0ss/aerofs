@@ -18,6 +18,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public abstract class SecondFactorPrompt
 {
     private Text _txtAuthCode;
@@ -36,7 +38,7 @@ public abstract class SecondFactorPrompt
         Label lblMessage = null;
         switch (setupNeeded) {
         case NEEDED:
-            Label lblAdmonition = new Label(_content, SWT.NONE);
+            Label lblAdmonition = createLabel(_content, SWT.NONE);
             lblAdmonition.setText("Your administrator requires that you\n" +
                                   "set up two-factor authentication.");
             lblAdmonition.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
@@ -45,17 +47,17 @@ public abstract class SecondFactorPrompt
             btnSetupTwoFactor.addSelectionListener(
                     GUIUtil.createUrlLaunchListener(WWW.TWO_FACTOR_SETUP_URL));
             btnSetupTwoFactor.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1));
-            lblMessage = new Label(_content, SWT.NONE);
+            lblMessage = createLabel(_content, SWT.NONE);
             lblMessage.setText("Then, enter your 6-digit authentication code below.");
             break;
         case OKAY:
-            lblMessage = new Label(_content, SWT.NONE);
+            lblMessage = createLabel(_content, SWT.NONE);
             lblMessage.setText("Two Factor Authentication required.\n" +
                     "Enter 6-digit authentication code below.");
             break;
         }
 
-        Label lblCode = new Label(_content, SWT.NONE);
+        Label lblCode = createLabel(_content, SWT.NONE);
         lblCode.setText("Authentication code:");
 
         _txtAuthCode = new Text(_content, SWT.BORDER);

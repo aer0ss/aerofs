@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
 public class PageS3Storage extends AbstractSetupWorkPage
@@ -71,7 +72,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
 
         Composite compConfig = createConfigurationComposite(content);
 
-        Label lblPassDesc = new Label(content, SWT.WRAP);
+        Label lblPassDesc = createLabel(content, SWT.WRAP);
         lblPassDesc.setText(S.SETUP_S3_PASSWD_DESC);
 
         Composite compPassphrase = createPassphraseComposite(content);
@@ -103,23 +104,23 @@ public class PageS3Storage extends AbstractSetupWorkPage
         Composite compConfig = new Composite(parent, SWT.NONE);
 
         // Endpoint
-        Label lblEndpoint = new Label(compConfig, SWT.NONE);
+        Label lblEndpoint = createLabel(compConfig, SWT.NONE);
         lblEndpoint.setText(S.SETUP_S3_ENDPOINT_GUI);
         _txtEndpoint = new Text(compConfig, SWT.BORDER);
 
         // Bucket name
-        Label lblBucketName = new Label(compConfig, SWT.NONE);
+        Label lblBucketName = createLabel(compConfig, SWT.NONE);
         lblBucketName.setText(S.SETUP_S3_BUCKET_NAME_GUI);
         _txtBucketName = new Text(compConfig, SWT.BORDER);
         _txtBucketName.setFocus();
 
         // Access key
-        Label lblAccessKey = new Label(compConfig, SWT.NONE);
+        Label lblAccessKey = createLabel(compConfig, SWT.NONE);
         lblAccessKey.setText(S.SETUP_S3_ACCESS_KEY_GUI);
         _txtAccessKey = new Text(compConfig, SWT.BORDER);
 
         // Secret key
-        Label lblSecretKey = new Label(compConfig, SWT.NONE);
+        Label lblSecretKey = createLabel(compConfig, SWT.NONE);
         lblSecretKey.setText(S.SETUP_S3_SECRET_KEY_GUI);
         _txtSecretKey = new Text(compConfig, SWT.BORDER);
 
@@ -145,12 +146,12 @@ public class PageS3Storage extends AbstractSetupWorkPage
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        Label lblPass1 = new Label(composite, SWT.NONE);
+        Label lblPass1 = createLabel(composite, SWT.NONE);
         lblPass1.setText(S.SETUP_S3_ENC_PASSWD_GUI);
 
         _txtPass1 = new Text(composite, SWT.BORDER | SWT.PASSWORD);
 
-        Label lblPass2 = new Label(composite, SWT.NONE);
+        Label lblPass2 = createLabel(composite, SWT.NONE);
         lblPass2.setText(S.SETUP_S3_CONF_PASSWD);
 
         _txtPass2 = new Text(composite, SWT.BORDER | SWT.PASSWORD);
@@ -176,7 +177,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
     {
         Composite statusBar = new Composite(parent, SWT.NONE);
 
-        _lblStatus = new Label(statusBar, SWT.NONE);
+        _lblStatus = createLabel(statusBar, SWT.NONE);
         _compError = new CompSpin(statusBar, SWT.NONE);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);

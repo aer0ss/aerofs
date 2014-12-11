@@ -26,6 +26,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Table;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompTCP extends AbstractCompTransport
 {
     protected Label         _lblStatus;
@@ -58,7 +60,7 @@ public class CompTCP extends AbstractCompTransport
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        _lblStatus = new Label(composite, SWT.WRAP);
+        _lblStatus = createLabel(composite, SWT.WRAP);
         _lblStatus.setFont(GUIUtil.makeBold(_lblStatus.getFont()));
         _lblStatus.setText(S.TXT_COLLECTING_NETWORK_INFO);
 
@@ -82,7 +84,7 @@ public class CompTCP extends AbstractCompTransport
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        Label lblDevices = new Label(composite, SWT.NONE);
+        Label lblDevices = createLabel(composite, SWT.NONE);
         lblDevices.setText(S.LBL_REACHABLE_DEVICES);
         lblDevices.setFont(GUIUtil.makeBold(lblDevices.getFont()));
 

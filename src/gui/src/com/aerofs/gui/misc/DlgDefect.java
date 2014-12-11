@@ -34,6 +34,8 @@ import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgDefect extends AeroFSJFaceDialog
 {
     // FIXME(AT): find a better way to do this
@@ -109,7 +111,7 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void createCommentFields(Composite container)
     {
-        Label lblWhatsUp = new Label(container, SWT.NONE);
+        Label lblWhatsUp = createLabel(container, SWT.NONE);
         // \n: a nasty way of setting margins. it's ugly but it works.
         String msg = "\nPlease describe the problem:\n" +
                 "\t- What are you trying to accomplish?\n" +
@@ -135,7 +137,7 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void createExceptionDetailsFields(Composite container)
     {
-        Label lblWhatsUp = new Label(container, SWT.NONE);
+        Label lblWhatsUp = createLabel(container, SWT.NONE);
         // \n: a nasty way of setting margins. it's ugly but it works.
         lblWhatsUp.setText("\nTechnical details:");
 
@@ -183,7 +185,7 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void createEmailFields(Composite container)
     {
-        Label lblWhatsUp = new Label(container, SWT.NONE);
+        Label lblWhatsUp = createLabel(container, SWT.NONE);
         lblWhatsUp.setText(
                 "Thank you for contacting us! We will get back to you as early as we can.\n" +
                 "This email address will be used for correspondence regarding this issue:");

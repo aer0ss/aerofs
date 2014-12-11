@@ -15,6 +15,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class PageSelectStorage extends AbstractSetupPage
 {
     private Button      _btnLocalStorage;
@@ -30,7 +32,7 @@ public class PageSelectStorage extends AbstractSetupPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        new Label(content, SWT.NONE).setText(S.SETUP_STORAGE_MESSAGE);
+        createLabel(content, SWT.NONE).setText(S.SETUP_STORAGE_MESSAGE);
 
         createChoicesComposite(content);
 

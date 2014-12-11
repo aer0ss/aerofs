@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 
 import java.io.File;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompRootAnchorUpdater extends Composite
 {
     private final static Logger l = Loggers.getLogger(CompRootAnchorUpdater.class);
@@ -56,7 +58,7 @@ public class CompRootAnchorUpdater extends Composite
         errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
         errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
 
-        Label errorLabel = new Label(this, SWT.WRAP);
+        Label errorLabel = createLabel(this, SWT.WRAP);
         GridData gdErrorLabel = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
         gdErrorLabel.widthHint = 360;
         errorLabel.setLayoutData(gdErrorLabel);

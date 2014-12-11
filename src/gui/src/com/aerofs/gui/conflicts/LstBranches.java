@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Label;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.google.common.base.Preconditions.checkState;
 
 class LstBranches extends ScrolledComposite
@@ -166,7 +167,7 @@ class LstBranches extends ScrolledComposite
         compBranch.setConflictEventListener(_listener);
         compBranch.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        Label separator = new Label(_content, SWT.HORIZONTAL | SWT.SEPARATOR);
+        Label separator = createLabel(_content, SWT.HORIZONTAL | SWT.SEPARATOR);
         separator.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
     }
 

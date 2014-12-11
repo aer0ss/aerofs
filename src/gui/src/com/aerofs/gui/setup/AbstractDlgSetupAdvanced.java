@@ -20,6 +20,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
     abstract protected void createStorageArea(Composite parent);
@@ -45,9 +47,9 @@ public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
         createDeviceNameField(container);
 
-        new Label(container, SWT.NONE);
+        createLabel(container, SWT.NONE);
 
-        new Label(container, SWT.NONE);
+        createLabel(container, SWT.NONE);
 
         createStorageArea(container);
 
@@ -85,7 +87,7 @@ public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
     private void createDeviceNameField(Composite container)
     {
-        Label lblComputerName = new Label(container, SWT.NONE);
+        Label lblComputerName = createLabel(container, SWT.NONE);
         lblComputerName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblComputerName.setText(S.SETUP_DEV_ALIAS + ":");
 

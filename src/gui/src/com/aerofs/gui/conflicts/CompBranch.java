@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.makeBold;
 import static com.aerofs.gui.GUIUtil.makeSubtitle;
 import static com.google.common.base.Preconditions.checkState;
@@ -44,19 +45,19 @@ class CompBranch extends Composite
 
         _branch = branch;
 
-        Label lblVersion = new Label(this, SWT.NONE);
+        Label lblVersion = createLabel(this, SWT.NONE);
         lblVersion.setText(_branch.formatVersion());
         lblVersion.setFont(makeBold(lblVersion.getFont()));
 
-        Label lblMtime = new Label(this, SWT.NONE);
+        Label lblMtime = createLabel(this, SWT.NONE);
         lblMtime.setText(_branch.formatLastModified());
         lblMtime.setFont(makeSubtitle(lblMtime.getFont()));
 
-        Label lblContributors = new Label(this, SWT.WRAP);
+        Label lblContributors = createLabel(this, SWT.WRAP);
         lblContributors.setText(_branch.formatContributors());
         lblContributors.setFont(lblContributors.getFont());
 
-        Label lblFilesize = new Label(this, SWT.NONE);
+        Label lblFilesize = createLabel(this, SWT.NONE);
         lblFilesize.setText(_branch.formatFileSize());
         lblFilesize.setFont(makeSubtitle(lblFilesize.getFont()));
 

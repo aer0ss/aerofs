@@ -16,6 +16,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * Helper class to add custom dynamic tooltip to each item of a Table
  */
@@ -67,7 +69,7 @@ class TableToolTip implements Listener
                 layout.marginWidth = 2;
                 _tip.setLayout(layout);
 
-                Label label = new Label(_tip, SWT.NONE);
+                Label label = createLabel(_tip, SWT.NONE);
                 label.setForeground(display.getSystemColor(SWT.COLOR_INFO_FOREGROUND));
                 label.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
                 label.setData("_TABLEITEM", item);

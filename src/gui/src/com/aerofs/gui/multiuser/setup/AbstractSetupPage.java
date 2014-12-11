@@ -22,6 +22,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 /**
  * This class serves as a base template for all pages used in the multiuser setup dialog.
  *
@@ -81,11 +83,11 @@ public abstract class AbstractSetupPage extends Composite
         header.setBackgroundMode(SWT.INHERIT_FORCE);
         header.setBackground(SWTResourceManager.getColor(0xFF, 0xFF, 0xFF));
 
-        Label title = new Label(header, SWT.NONE);
+        Label title = createLabel(header, SWT.NONE);
         title.setText(S.SETUP_TITLE);
         GUIUtil.changeFont(title, 16, SWT.BOLD);
 
-        Label logo = new Label(header, SWT.NONE);
+        Label logo = createLabel(header, SWT.NONE);
         logo.setImage(Images.get(Images.IMG_SETUP));
 
         GridLayout layout = new GridLayout(2, false);

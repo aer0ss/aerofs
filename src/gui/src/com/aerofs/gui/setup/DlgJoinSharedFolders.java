@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.google.common.util.concurrent.Futures.addCallback;
 
 public class DlgJoinSharedFolders extends AeroFSDialog
@@ -119,7 +120,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         layout.marginWidth = GUIParam.MARGIN;
         shell.setLayout(layout);
 
-        Label title = new Label(shell, SWT.NONE);
+        Label title = createLabel(shell, SWT.NONE);
         title.setText("Which shared folders would you like to join?");
 
         createTableViewer(shell);
@@ -186,7 +187,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
             composite.setLayout(new RowLayout(SWT.HORIZONTAL));
 
             _compSpin = new CompSpin(composite, SWT.NONE);
-            _lblStatus = new Label(composite, SWT.NONE);
+            _lblStatus = createLabel(composite, SWT.NONE);
         }
 
         // Create the join and cancel buttons

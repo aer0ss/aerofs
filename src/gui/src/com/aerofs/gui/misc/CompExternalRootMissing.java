@@ -20,6 +20,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompExternalRootMissing extends Composite
 {
     /**
@@ -85,7 +87,7 @@ public class CompExternalRootMissing extends Composite
         errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
         errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
 
-        Label errorLabel = new Label(this, SWT.WRAP);
+        Label errorLabel = createLabel(this, SWT.WRAP);
         GridData gdErrorLabel = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
         gdErrorLabel.widthHint = 360;
         errorLabel.setLayoutData(gdErrorLabel);

@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
 public class PageCredentialSignIn extends AbstractSetupWorkPage
@@ -55,33 +56,33 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        Label lblMessage = new Label(composite, SWT.NONE);
+        Label lblMessage = createLabel(composite, SWT.NONE);
         lblMessage.setText(S.SETUP_MESSAGE);
 
-        Label lblUserID = new Label(composite, SWT.NONE);
+        Label lblUserID = createLabel(composite, SWT.NONE);
         lblUserID.setText(S.ADMIN_EMAIL + ": ");
 
         _txtUserID = new Text(composite, SWT.BORDER);
         _txtUserID.setFocus();
 
-        Label lblPasswd = new Label(composite, SWT.NONE);
+        Label lblPasswd = createLabel(composite, SWT.NONE);
         lblPasswd.setText(S.ADMIN_PASSWD + ": ");
 
         _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
 
-        new Label(composite, SWT.NONE);
+        createLabel(composite, SWT.NONE);
 
         _lnkPasswd = new Link(composite, SWT.NONE);
         _lnkPasswd.setText(S.SETUP_LINK_FORGOT_PASSWD);
         _lnkPasswd.addSelectionListener(createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
 
-        Label lblDeviceName = new Label(composite, SWT.NONE);
+        Label lblDeviceName = createLabel(composite, SWT.NONE);
         lblDeviceName.setText(S.SETUP_DEV_ALIAS + ": ");
 
         _txtDeviceName = new Text(composite, SWT.BORDER);
 
         if (_helper._showAPIAccess) {
-            new Label(composite, SWT.NONE);
+            createLabel(composite, SWT.NONE);
 
             _helper.createCheckbox(composite);
             _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));

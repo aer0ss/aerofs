@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.lib.LibParam.Throttling.MIN_BANDWIDTH_UI;
 import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
 
@@ -112,7 +113,7 @@ public class DlgThrottling extends AeroFSDialog {
         glComposite.marginHeight = 0;
         composite.setLayout(glComposite);
 
-        Label lblDownloadRate = new Label(composite, SWT.NONE);
+        Label lblDownloadRate = createLabel(composite, SWT.NONE);
         lblDownloadRate.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true, 1, 1));
         lblDownloadRate.setText("Download rate:");
 
@@ -126,7 +127,7 @@ public class DlgThrottling extends AeroFSDialog {
         });
         _btnDownUnlimited.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true, 2, 1));
         _btnDownUnlimited.setText("Unlimited");
-        new Label(composite, SWT.NONE);
+        createLabel(composite, SWT.NONE);
 
         _btnDownLimit = GUIUtil.createButton(composite, SWT.RADIO);
         _btnDownLimit.setText("Limit to");
@@ -202,7 +203,7 @@ public class DlgThrottling extends AeroFSDialog {
         glComposite.marginHeight = 0;
         composite.setLayout(glComposite);
 
-        Label lblUploadRate = new Label(composite, SWT.NONE);
+        Label lblUploadRate = createLabel(composite, SWT.NONE);
         lblUploadRate.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
         lblUploadRate.setText("Upload rate:");
 
@@ -216,7 +217,7 @@ public class DlgThrottling extends AeroFSDialog {
         });
         _btnUpUnlimited.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         _btnUpUnlimited.setText("Unlimited");
-        new Label(composite, SWT.NONE);
+        createLabel(composite, SWT.NONE);
 
         _btnUpLimit = GUIUtil.createButton(composite, SWT.RADIO);
         _btnUpLimit.setText("Limit to");

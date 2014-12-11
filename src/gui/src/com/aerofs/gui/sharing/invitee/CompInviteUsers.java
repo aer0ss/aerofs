@@ -45,6 +45,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -92,19 +93,19 @@ public class CompInviteUsers extends Composite
         _notifyOnSuccess    = notifyOnSuccess;
 
         _cmpInvitees        = new Composite(this, SWT.NONE);
-        _lblInvitees        = new Label(_cmpInvitees, SWT.NONE);
+        _lblInvitees        = createLabel(_cmpInvitees, SWT.NONE);
         _txtInvitees        = new StyledText(_cmpInvitees, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
 
         _cmpNote            = new Composite(this, SWT.NONE);
-        _lblNote            = new Label(_cmpNote, SWT.NONE);
+        _lblNote            = createLabel(_cmpNote, SWT.NONE);
         _cmpRoles           = new Composite(_cmpNote, SWT.NONE);
-        _lblRoles           = new Label(_cmpRoles, SWT.NONE);
+        _lblRoles           = createLabel(_cmpRoles, SWT.NONE);
         _cmbRoles           = new ComboRoles(GUIUtil.newPackedButtonContainer(_cmpRoles));
         _txtNote            = new Text(_cmpNote, SWT.MULTI | SWT.BORDER | SWT.WRAP);
 
         _cmpBottom          = new Composite(this, SWT.NONE);
         _cmpSpin            = new CompSpin(_cmpBottom, SWT.NONE);
-        _lblStatus          = new Label(_cmpBottom, SWT.NONE);
+        _lblStatus          = createLabel(_cmpBottom, SWT.NONE);
         _cmpButtons         = GUIUtil.newButtonContainer(_cmpBottom, false);
         _btnOK              = GUIUtil.createButton(_cmpButtons, SWT.PUSH);
         _btnCancel          = GUIUtil.createButton(_cmpButtons, SWT.PUSH);

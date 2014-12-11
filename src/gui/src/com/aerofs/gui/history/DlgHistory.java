@@ -61,6 +61,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class DlgHistory extends AeroFSDialog
 {
     private static final Logger l = Loggers.getLogger(DlgHistory.class);
@@ -129,7 +131,7 @@ public class DlgHistory extends AeroFSDialog
         _group.setLayout(groupLayout);
         _group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        _statusLabel = new Label(_group, SWT.WRAP);
+        _statusLabel = createLabel(_group, SWT.WRAP);
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         createVersionTable(_group);

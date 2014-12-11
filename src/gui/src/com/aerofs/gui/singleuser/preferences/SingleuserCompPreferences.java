@@ -8,6 +8,8 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.preferences.PreferencesHelper;
+
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.preferences.PreferencesHelper.*;
 
 import com.aerofs.lib.cfg.Cfg;
@@ -45,11 +47,11 @@ public class SingleuserCompPreferences extends Composite
 
     private void createUserIDRow(Composite parent)
     {
-        final Label lblUserID = new Label(parent, SWT.RIGHT);
+        final Label lblUserID = createLabel(parent, SWT.RIGHT);
         lblUserID.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         lblUserID.setText("User ID:");
 
-        final Label lblUserIDValue = new Label(parent, SWT.NONE);
+        final Label lblUserIDValue = createLabel(parent, SWT.NONE);
         lblUserIDValue.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
         lblUserIDValue.setText(Cfg.user().getString());
         lblUserIDValue.addMouseListener(new MouseAdapter()
@@ -74,7 +76,7 @@ public class SingleuserCompPreferences extends Composite
 
     private void createNotificationsRow(Composite parent, final PreferencesHelper helper)
     {
-        new Label(parent, SWT.NONE);
+        createLabel(parent, SWT.NONE);
         final Button btnNotify = GUIUtil.createButton(parent, SWT.CHECK);
         btnNotify.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
         btnNotify.setText("Notify me about file changes");

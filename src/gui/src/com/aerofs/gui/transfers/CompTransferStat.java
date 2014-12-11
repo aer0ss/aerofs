@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 
 import java.nio.channels.ClosedChannelException;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
+
 public class CompTransferStat extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompTransferStat.class);
@@ -68,7 +70,7 @@ public class CompTransferStat extends Composite
     {
         CLabel icon = new CLabel(parent, SWT.NONE);
         icon.setImage(Images.get(img));
-        Label lbl = new Label(parent, SWT.NONE);
+        Label lbl = createLabel(parent, SWT.NONE);
         // N.B. the label is initialized to a really long text so the initial layout
         //   allocates sufficient space for the values we are going to display.
         // The advantage of this approach is that we don't need to redo layout every

@@ -37,6 +37,7 @@ import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.makeSubtitle;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang.StringUtils.isBlank;
@@ -109,7 +110,7 @@ public class DlgRenameFile extends AeroFSDialog
         {
             super(parent, SWT.NONE);
 
-            _lblMessage = new Label(this, SWT.WRAP);
+            _lblMessage = createLabel(this, SWT.WRAP);
             _lblMessage.setText(_message);
 
             _txtInput = new Text(this, SWT.BORDER);
@@ -126,7 +127,7 @@ public class DlgRenameFile extends AeroFSDialog
 
             _compMessage = new Composite(this, SWT.NONE);
 
-            _lblErrorMessage = new Label(_compMessage, SWT.WRAP);
+            _lblErrorMessage = createLabel(_compMessage, SWT.WRAP);
             _lblErrorMessage.setText("");
             _lblErrorMessage.setForeground(SWTResourceManager.getColor(SWT.COLOR_RED));
             _lblErrorMessage.setFont(makeSubtitle(_lblErrorMessage.getFont()));

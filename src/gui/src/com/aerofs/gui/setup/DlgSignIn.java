@@ -66,6 +66,7 @@ import java.net.ConnectException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.getNewText;
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
@@ -191,10 +192,10 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        new Label(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
+        createLabel(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
                 .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        new Label(composite, SWT.NONE).setText(label);
-        new Label(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
+        createLabel(composite, SWT.NONE).setText(label);
+        createLabel(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
                 .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         GridLayout layout = new GridLayout(3, false);
         layout.marginWidth = 0;
@@ -208,12 +209,12 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         Composite composite = new Composite(parent, SWT.NONE);
 
         if (_showOpenIdDialog) {
-            Label label = new Label(composite, SWT.NONE);
+            Label label = createLabel(composite, SWT.NONE);
             label.setText(L.product() + " user without " + Identity.SERVICE_IDENTIFIER + " accounts?");
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1));
         }
 
-        Label lblEmail = new Label(composite, SWT.NONE);
+        Label lblEmail = createLabel(composite, SWT.NONE);
         lblEmail.setText(S.SETUP_USER_ID + ": ");
         lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
@@ -229,7 +230,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _txtUserID.setLayoutData(createTextBoxLayoutData());
         _controls.add(_txtUserID);
 
-        Label lblPassword = new Label(composite, SWT.NONE);
+        Label lblPassword = createLabel(composite, SWT.NONE);
         lblPassword.setText(S.SETUP_PASSWD + ": ");
         lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
@@ -248,7 +249,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _controls.add(_txtPasswd);
 
        if (_helper._showAPIAccess) {
-            new Label(composite, SWT.NONE);
+            createLabel(composite, SWT.NONE);
 
            _helper.createCheckbox(composite);
            _helper.readFromModel(_model);
@@ -261,7 +262,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
            _controls.add(_helper._lnkAPIAccess);
         }
 
-        new Label(composite, SWT.NONE);
+        createLabel(composite, SWT.NONE);
 
         Link lnkForgotPassword = new Link(composite, SWT.NONE);
         lnkForgotPassword.setText("<a>Forgot your password?</a>");
@@ -271,7 +272,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         lnkForgotPassword.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
         _controls.add(lnkForgotPassword);
 
-        new Label(composite, SWT.NONE);
+        createLabel(composite, SWT.NONE);
         createStatusComposite(composite).setLayoutData(
                 new GridData(SWT.LEFT, SWT.BOTTOM, true, false, 2, 1));
 
@@ -299,7 +300,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        _lblStatus = new Label(composite, SWT.NONE);
+        _lblStatus = createLabel(composite, SWT.NONE);
         _compSpin = new CompSpin(composite, SWT.NONE);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);

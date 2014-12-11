@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Label;
 
 import java.util.Map.Entry;
 
+import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.google.common.base.Preconditions.checkState;
 
 public class CompExclusion extends Composite
@@ -52,7 +53,7 @@ public class CompExclusion extends Composite
     {
         super(parent, SWT.NONE);
 
-        _lblHeader = new Label(this, SWT.NONE);
+        _lblHeader = createLabel(this, SWT.NONE);
         _lblHeader.setText(_strMessage);
 
         _compBody = new Composite(this, SWT.NONE);
