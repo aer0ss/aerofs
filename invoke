@@ -229,9 +229,9 @@ def get_current_os():
     if sys.platform.startswith('linux'):
         pointer_bytes = ctypes.sizeof(ctypes.c_voidp)
         if pointer_bytes == 8:
-            return 'linux64'
+            return 'linux/amd64'
         if pointer_bytes == 4:
-            return 'linux32'
+            return 'linux/i386'
     raise NotImplementedError("Didn't recognize the OS we're running under")
 
 # For reconstructing command-line arguments
@@ -766,7 +766,7 @@ def main():
     parser.add_argument("--syncdet-scenario", action='append')
     parser.add_argument("--syncdet-sync-timeout", action='store', type=int, default=180)
     parser.add_argument("--syncdet-transport", action='store', default='default')
-    parser.add_argument("--target-os", action='store', choices=['win', 'osx', 'linux32', 'linux64'], default=get_current_os())
+    parser.add_argument("--target-os", action='store', choices=['win', 'osx', 'linux/i386', 'linux/amd64'], default=get_current_os())
     parser.add_argument("--team-city", action='store_true')
     parser.add_argument("commands", nargs="+", choices=sorted(commands.keys()))
     args = parser.parse_args(sys.argv[1:])
