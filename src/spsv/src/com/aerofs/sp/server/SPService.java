@@ -2887,8 +2887,10 @@ public class SPService implements ISPService
                 .publish();
 
         _sqlTrans.begin();
-        boolean enforceTwoFactor = user.shouldEnforceTwoFactor();
-        TwoFactorEnforcementLevel level = user.getOrganization().getTwoFactorEnforcementLevel();
+        Organization org = user.getOrganization();
+        TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
+        boolean enforceTwoFactor = user.shouldEnforceTwoFactor() &&
+                (level != TwoFactorEnforcementLevel.DISALLOWED);
         boolean needSecondFactorSetup = (level == TwoFactorEnforcementLevel.MANDATORY) &&
                 !enforceTwoFactor;
         boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
@@ -2928,7 +2930,8 @@ public class SPService implements ISPService
         _session.setBasicAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
         _sqlTrans.begin();
-        boolean enforceTwoFactor = user.shouldEnforceTwoFactor();
+        boolean enforceTwoFactor = user.shouldEnforceTwoFactor() &&
+                (user.getOrganization().getTwoFactorEnforcementLevel() != TwoFactorEnforcementLevel.DISALLOWED);
         boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
                 .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
         _sqlTrans.commit();
@@ -3155,8 +3158,10 @@ public class SPService implements ISPService
             // notify TS of user creation (for root store auto-join)
             _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
-        boolean enforceSecondFactor = user.shouldEnforceTwoFactor();
-        TwoFactorEnforcementLevel level = user.getOrganization().getTwoFactorEnforcementLevel();
+        Organization org = user.getOrganization();
+        TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
+        boolean enforceSecondFactor = user.shouldEnforceTwoFactor() &&
+                level != TwoFactorEnforcementLevel.DISALLOWED;
         _sqlTrans.commit();
         l.info("SI (OpenID): " + user.toString());
 
