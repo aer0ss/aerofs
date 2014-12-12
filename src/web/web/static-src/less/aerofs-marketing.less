@@ -275,12 +275,7 @@ body {
         color: @darkestblue;
     }
 }
-/* Applies to col-sm, but not smaller or larger*/
-@media (min-width: 768px) and (max-width: 991px) { 
-    .navbar-default .navbar-nav li a, .submenu li a {
-        padding: 15px 10px;
-    }
-}
+
 .submenu {
   height: @navheight;
   background: @ltblue;
@@ -308,6 +303,20 @@ body {
     }
   }
 }
+
+/* Applies to col-sm, but not smaller or larger*/
+@media (min-width: 768px) and (max-width: 991px) {
+    .navbar-default .navbar-nav li a, .submenu li a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .submenu ul li a {
+      font-size: 14px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+}
+
 .logo img {
   height: @navheight - 5;
   padding: 10px 15px 5px 0;
