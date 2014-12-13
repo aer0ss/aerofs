@@ -321,7 +321,7 @@ public class CompUserList extends Composite
                     }
                 }
 
-                if (L.isGroupSharingEnabled()) {
+                if (L.isGroupSharingReady()) {
                     for (PBGroupPermissions gp : pbFolder.getGroupPermissionsList()) {
                         members.add(factory.fromPB(gp));
                     }

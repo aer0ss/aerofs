@@ -122,7 +122,8 @@ public class InviteModel
     private List<Invitee> queryGroups(String query)
             throws Exception
     {
-        if (!L.isGroupSharingEnabled()) {
+        // TODO (AT): remove when the feature is ready
+        if (!L.isGroupSharingReady()) {
             return emptyList();
         }
 
