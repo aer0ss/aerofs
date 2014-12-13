@@ -1702,5 +1702,5 @@ message ListGroupStatusInSharedFolderReply {
         required PBSharedFolderState state = 2;
     }
 
-    repeated PBUserAndState user_permissions_and_state = 1;
+    repeated PBUserAndState user_and_state = 1;
 }

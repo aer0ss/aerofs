@@ -142,7 +142,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         ListGroupStatusInSharedFolderReply reply = service.listGroupStatusInSharedFolder(
             group.id().getInt(), sid.toPB()).get();
         // user 2 and TS
-        assertEquals(reply.getUserPermissionsAndStateCount(), 2);
+        assertEquals(reply.getUserAndStateCount(), 2);
     }
 
     @Test

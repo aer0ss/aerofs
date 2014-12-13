@@ -3771,7 +3771,7 @@ public class SPService implements ISPService
 
         ListGroupStatusInSharedFolderReply.Builder builder = ListGroupStatusInSharedFolderReply.newBuilder();
         for (UserPermissionsAndState ups : sf.getUserRolesAndStatesForGroup(group)) {
-            builder.addUserPermissionsAndState(PBUserAndState.newBuilder()
+            builder.addUserAndState(PBUserAndState.newBuilder()
                     .setUser(user2pb(ups._user))
                     .setState(ups._state.toPB())
                     .build());
