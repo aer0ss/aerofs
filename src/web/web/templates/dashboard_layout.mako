@@ -6,7 +6,7 @@
 
 <%!
     from web.auth import is_admin
-    from pyramid.security import  authenticated_userid
+    from pyramid.security import authenticated_userid
     from web.util import is_private_deployment, str2bool
 %>
 

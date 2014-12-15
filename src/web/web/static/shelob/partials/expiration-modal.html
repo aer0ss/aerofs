@@ -1,0 +1,28 @@
+<div class="modal-header">
+  <h4 class="modal-title">Link Expiration Time</h4>
+</div>
+<div id="expiry-modal" class="modal-body">
+  <form class="form-inline" role="form" method="post">
+    <div class="form-group">
+      <span class="control-label">
+      Expires: </span>
+      <select class="form-control" 
+              name="expiration" 
+              ng-model="link.expires" 
+              ng-options="option | humanTime for option in link.expiration_options">
+      </select>
+    </div>
+  </form>
+  <br>
+  <div ng-show="link.expires === -1">
+    <div class="input-group date datepicker no-padding" data-date-format="yyyy-mm-dd">
+      <input class="form-control" size="16" type="text">
+      <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+    </div>
+    <p class="help-block">Custom expiration dates expire at 23:59:59 UTC.</p>
+  </div>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-default" ng-click="cancel()" data-dismiss="modal">Close</button>
+  <button type="button" class="btn btn-primary" ng-click="ok()">Save</button>
+</div>

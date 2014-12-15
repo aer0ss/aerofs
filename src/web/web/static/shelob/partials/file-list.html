@@ -1,6 +1,7 @@
-<div id="breadcrumb-and-actions" ng-if="!share || enableLinksharing">
+<div id="breadcrumb-and-actions">
   <div id="actions"
-    ng-hide="share || !(fsLocation.currentFolder || fsLocation.isSingleObject)">
+    ng-if="!currentShare.token"
+    ng-hide="!fsLocation.currentFolder">
     <span aero-file-upload class="btn btn-primary" id="upload-file"
       ng-hide="isOldIE" ng-class="{'disabled': error.status == 503 }"></span>
     <button type="button" class="btn btn-default" id="new-folder"
@@ -8,18 +9,18 @@
       ng-class="{'disabled': error.status == 503}">New Folder</button>
   </div>
 
-  <div class="row" ng-hide="isSingleObject">
-    <h2 ng-show="share">Download files from folder</h2>
+  <div class="row" ng-hide="currentShare.isSingleObject">
+    <div aero-link-options 
+      ng-model="currentShare.link"
+      title="Sharing Options"
+      ng-if="currentShare.token && currentShare.isAdmin"></div>
+    <h2 ng-show="currentShare.token">Download files from folder</h2>
     <ul class="breadcrumb">
         <li class="active"
-          ng-if="fsLocation.currentFolder.id == 'root' && share">
-          Download files from folder
-        </li>
-        <li class="active"
-          ng-if="(fsLocation.currentFolder.id == 'root' || error.status == 503) && share === undefined">
+          ng-if="(fsLocation.currentFolder.id == 'root' || error.status == 503) && !currentShare.token">
             My Files
         </li>
-        <li ng-if="fsLocation.currentFolder.id != 'root' && error.status != 503 && share === undefined">
+        <li ng-if="fsLocation.currentFolder.id != 'root' && error.status != 503 && !currentShare.token">
             <a href="#/root">My Files</a>
         </li>
 
@@ -32,19 +33,23 @@
         </li>
     </ul>
   </div>
-  <div class="row" ng-show="isSingleObject">
+  <div class="row" ng-show="currentShare.isSingleObject">
+    <div aero-link-options 
+      ng-model="currentShare.link" 
+      title="Sharing Options"
+      ng-if="currentShare.token && currentShare.isAdmin"></div>
     <h2>Download file</h2>
   </div>
 </div>
 
-<div id="file-list" ng-if="!share || enableLinksharing">
+<div id="file-list">
   <div class="my-table-head row">
       <div class="hidden-xs">
         <div ng-class="{
-                'col-xs-8': share,
-                'col-xs-12': !share,
-                'col-sm-7': !share,
-                'col-md-6': !share}">
+                'col-xs-8': currentShare.token,
+                'col-xs-12': !currentShare.token,
+                'col-sm-7': !currentShare.token,
+                'col-md-6': !currentShare.token}">
           <div class="icon">&nbsp;
           </div>
           <div class="name">
@@ -52,19 +57,20 @@
           </div>
         </div>
         <div ng-class="{
-                'col-xs-4': share,
-                'col-xs-2': !share,
-                'col-sm-2': !share}">
+                'col-xs-4': currentShare.token,
+                'col-xs-2': !currentShare.token,
+                'col-sm-2': !currentShare.token}">
           Size
         </div>
-        <div ng-if="!share" class="col-md-4 last-modified hidden-sm">
+        <div ng-if="!currentShare.token" class="col-md-4 last-modified hidden-sm">
           Last modified
         </div>
       </div>
   </div>
   <div class="my-table-body">
-    
-      <div class="my-row row" ng-if="!newFolder.hidden" id="new-folder">
+      <div class="my-row row" id="new-folder"
+        ng-if="!currentShare.token"
+        ng-show="!newFolder.hidden">
         <div class="col-md-6 col-sm-7 col-xs-12">
           <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></div>
           <div class="name">
@@ -80,87 +86,23 @@
         </div>
       </div>
 
-      <div class="my-row row" ng-if="!objects.length">
+      <div class="my-row row" 
+        ng-if="!objects.length">
         <div class="col-sm-12 object dir-status">
-          <div ng-hide="error.status == 503 && !(fsLocation.isSingleObject)">
+          <div ng-hide="error.status == 503 && !(currentShare.isSingleObject)">
             <div class='icon'>&nbsp;</div>
             <div class="name">No files found</div>
           </div>
           <div class="name"
-            ng-show="error.status == 503 && !(fsLocation.isSingleObject)">
+            ng-show="error.status == 503 && !(currentShare.isSingleObject)">
             <div ng-bind-html="error.text"></div>
           </div>
         </div>
       </div>
 
       <div class="my-row row" ng-repeat="object in objects | orderBy:['-type', 'name']">
-        <div aero-file-row template-type="my-files"></div>
+        <div aero-file-row></div>
       </div>
 
-  </div>
-</div>
-
-<div id="expiry-modal" class="modal fade">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title">Link Expiration Date</h4>
-      </div>
-      <div class="modal-body">
-        <form class="form-inline" role="form" method="post">
-          <div class="form-group">
-            <span class="control-label">
-            Expires: </span>
-            <select class="form-control" 
-                    name="expiration" 
-                    ng-model="activeLink.expires" 
-                    ng-options="option.text for option in activeLink.expiration_options track by option.value">
-            </select>
-          </div>
-        </form>
-        <div ng-show="activeLink.expires.value === -1">
-          <div class="input-group date datepicker no-padding" data-date-format="yyyy-mm-dd">
-            <input class="form-control" size="16" type="text">
-            <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
-          </div>
-          <p class="help-block">Custom expiration dates expire at 23:59:59 UTC.</p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" ng-click='resetOption(activeLink, "expiration")' data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" ng-click="changeExpiration(activeLink)">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="password-modal" class="modal fade">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Link Password</h4>
-      </div>
-      <div class="modal-body">
-        <div class="password">
-          <form class="form-inline" role="form" method="post">
-            <div class="form-group">
-              <span class="control-label">Password: </span>
-              <input class="form-control"
-                    type="text"
-                    ng-model="activeLink.password"
-                    placeholder="None"
-                    ng-model="object.newName"
-                    size="8"/>
-            </div>
-          </form>
-          <button ng-show="link.password" ng-click="removePassword(link)" type="button" class="close" aria-hidden="true">&times;</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" ng-click='resetOption(activeLink, "password")' data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" ng-click="submitPassword(activeLink)">Save</button>
-      </div>
-    </div>
   </div>
 </div>

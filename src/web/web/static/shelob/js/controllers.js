@@ -47,9 +47,17 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         currentFolder: {
             id: $routeParams.oid || 'root'
         },
-        isSingleObject: false
     };
-
+    $scope.currentShare = {
+        token: null,
+        link: null,
+        isSingleObject: false,
+        file: null,
+        folder: null,
+        isAdmin: false
+    };
+    // email address of logged-in user, if any
+    $scope.user = currentUser;
     // for anchor SID/OID: return root folder SID/OID
     // for folder: return input
     $scope.deref_anchor = function(folder) {
@@ -73,10 +81,18 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 $scope.breadcrumbs = response.data.path.folders.slice(0);
             }
             // Don't show breadcrumbs for folders outside the domain of the share
-            if ($scope.share) {
+            if ($scope.currentShare.token) {
                 if ($scope.fsLocation.currentFolder.id === $scope.rootFolder) {
+                    // populate the folder data of the current share
+                    $scope.currentShare.folder = $scope.fsLocation.currentFolder;
+                    // save parents
+                    $scope.fsLocation.parents = response.data.path.folders.slice(0);
                     $scope.breadcrumbs = [];
+                    _detectOwnership($scope.currentShare.folder.id, function(isOwned){
+                        $scope.currentShare.isAdmin = isOwned;
+                    });
                 } else {
+                    $scope.fsLocation.parents = $scope.breadcrumbs;
                     for (var i = 0; i < $scope.breadcrumbs.length; i++) {
                         if ($scope.breadcrumbs[i].id === $scope.rootFolder) {
                             $scope.breadcrumbs = $scope.breadcrumbs.slice(i);
@@ -106,15 +122,19 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
         }, function(response) {
             OutstandingRequestsCounter.pop();
-            if ($scope.share && response.status == 404) {
+            if ($scope.currentShare.token && response.status == 404) {
                 /* Maybe the request is for a file, not a folder! */
                 $log.info('Request may be for a file rather than a folder, retrying...');
                 API.get('/files/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
                     $scope.requestHeaders).then(function(response) {
-                        $scope.fsLocation.isSingleObject = true;
+                        $scope.currentShare.isSingleObject = true;
                         var object = response.data;
                         object.type = 'file';
-                        $scope.objects = [object];
+                        $scope.currentShare.file = object;
+                        _detectOwnership($scope.currentShare.file.parent, function(isOwned){
+                            $scope.currentShare.isAdmin = isOwned;
+                        });
+                        $scope.objects = [$scope.currentShare.file];
                     }, _handleFailure);
             } else {
                 _handleFailure(response);
@@ -146,9 +166,32 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         });
     };
 
+    // given a folder ID, check if it/its parent is owned by the current user
+    // send result to callback function
+    var _detectOwnership = function(id, callback) {
+        // have to be an owner to make or manage a link
+        var linkPerm = "MANAGE";
+        if ($scope.user) {
+            API.get('/shares/' + id.slice(0,32) + '/members/me?t=' + Math.random(),
+                {}).then(function(response){
+                    if (response.data.permissions.indexOf(linkPerm) != -1) {
+                        $log.info('The current user owns this linkshare.');
+                        callback(true);
+                    } else {
+                        callback(false);
+                    }
+                }, function(response){
+                    $log.error(response);
+                    callback(false);
+                });
+        } else {
+            callback(false);
+        }
+    };
+
     var _handleFailure = function(response) {
         var status = response.status;
-        if (status == 401 && $scope.share) {
+        if (status == 401 && $scope.currentShare.token) {
             // redirect to linkshare login page
             $log.info('Link may be password-protected; directing user to log in.');
             if (window.location.hash != '#/login') {
@@ -159,12 +202,12 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             }
             $rootScope.linkPasswordEntered = undefined;
         } else {
-            if ($scope.share) {
+            if ($scope.currentShare.token) {
                 $log.error('Link-sharing call failed with ' + status);
             } else {
                 $log.error('My Files call failed with ' + status);
             }
-            if (status == 503 && $scope.share) {
+            if (status == 503 && $scope.currentShare.token) {
                 showErrorMessageUnsafe("This file is currently unavailable because <a href='https://support.aerofs.com/hc/en-us/articles/203143390'>all sharer AeroFS clients are offline</a>. " +
                 "Please check with the person who shared this link.");
             } else if (status == 503) {
@@ -176,7 +219,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             } else if (status == 401) {
                 showErrorMessage("Authorization failure; please login again.");
             } else if (status == 404 || status == 400) {
-                if ($scope.share) {
+                if ($scope.currentShare.token) {
                     showErrorMessage("This file-sharing link either does not exist or has expired.");
                 } else {
                     showErrorMessage("The file you requested was not found.");
@@ -192,18 +235,22 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
        See url_sharing_view.py for more details! */
     var pathList = window.location.pathname.split('/');
     if (pathList.length > 1 && pathList[1] === "l") {
-        $scope.share = pathList[2];
+        $scope.currentShare.token = pathList[2];
     }
     // Different behavior for linkshare pages and my files page
-    if ($scope.share) {
+    if ($scope.currentShare.token) {
         // is linksharing turned off?
         if ($scope.enableLinksharing) {
             // ping get_url_info for link's password-needed, expiry, token, and soid
             // if login's already run, and successfully, there'll be a password attached
-            $http.post('/url_info/' + $scope.share, {
+            $http.post('/url_info/' + $scope.currentShare.token, {
                 password: $rootScope.linkPasswordEntered
             }).success(function(response){
-                $scope.requestHeaders = response;
+                console.log(response);
+                $scope.currentShare.link = response;
+
+                $scope.requestHeaders.Authorization = response.Authorization;
+                $scope.requestHeaders.token = response.token;
                 // linkshare root is never 'root', fixing it
                 if ($scope.rootFolder === 'root') {
                     $scope.rootFolder = response.soid;
@@ -215,7 +262,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 if (response.expires < 0) {
                     _handleFailure({status: 404});
                 } else {
-                    // ping API for folder / file data
+                    // ping API for child folder / file data
                     _getFolders();
                 }
             }).error(function(response, status){
@@ -248,6 +295,19 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             }
         }
     }
+
+    // Remove linksharing link with given key from given file or folder object
+    $scope.removeLink = function(object, key){
+        for (var i=0; i<object.links.length; i++) {
+            if (object.links[i].key === key) {
+                object.links.splice(i,1);
+                if (object.links.length < 1) {
+                    object.showingLinks = false;
+                }
+                return;
+            }
+        }
+    };
 
     // This is called when a user clicks on a link to a file
     //
@@ -523,81 +583,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     };
 
     /* Link-based sharing methods */
-
-    // Generates options for link expiration
-    var _expiration_options = function(additional_option){
-        var options = [
-            {
-                // no expiration time assigned
-                value: 0,
-            },
-            {   value: 3600
-            },
-            {
-                value: 86400
-            },
-            {
-                value: 604800
-            },
-            {
-                // custom expiration option in options dropdown
-                value: -1
-            }
-            ];
-        if (additional_option && [0,3600,86400,604800,-1].indexOf(additional_option.value) === -1) {
-            var custom = options.pop();
-            options.push(additional_option);
-            options.push(custom);
-
-        }
-
-        for (var k = 0; k < options.length; k++) {
-            if (!options[k].text){
-                options[k].text = _humanTime(options[k].value);
-            }
-        }
-        return options;
-    };
-
-    // Helper for _humanTime()
-    var _pluralize = function(n) {
-        return n === 1 ? '' : 's';
-    };
-
-    // Takes a number of seconds and an optional boolean
-    // Returns a human-readable approximate string for the expiration time
-    // If actual_date is true and there's more than a little time left,
-    // it returns a more precise time or datestamp
-    var _humanTime = function(seconds, actual_date) {
-        var minutes = Math.floor(seconds/60);
-        if (seconds < 0) {
-            return "Custom...";
-        }
-        else if (minutes === 0) {
-            return "Never";
-        } else if (minutes < 60) {
-            return minutes.toString() + " minute" + _pluralize(minutes);
-        } else if (minutes === 60){
-            return "1 hour";
-        } else if (minutes < 1440) {
-            if (actual_date) {
-                return Math.floor(minutes/60).toString() + " hour" + _pluralize(minutes/60) + ', ' +
-                    (minutes % 60).toString() + ' minutes';
-            }
-            return Math.floor(minutes/60).toString() + " hour" + _pluralize(minutes/60);
-        } else if (actual_date && minutes >= 1440) {
-            var expirationDate = new Date(Date.now() + minutes*60000);
-            return expirationDate.toString().split(' ').slice(0,4).join(' ');
-        } else if (minutes === 10080) {
-            return "1 week";
-        } else if (minutes < 43200) {
-            return Math.floor(minutes/1440).toString() + " day" + _pluralize(minutes/1440);
-        } else {
-            return Math.floor(minutes/43200).toString() + " month" + _pluralize(minutes/43200);
-        }
-    };
-
-
     // attaches links to their associated files and folders
     function _populateLinks() {
         var o, l;
@@ -609,11 +594,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 l = $scope.links[j];
                 // Only show links that haven't already expired
                 if (l.soid === o.id && l.expires > -1) {
-                    l.expires = {
-                        value: l.expires,
-                        text: _humanTime(l.expires, true)
-                    };
-                    l.expiration_options = _expiration_options(l.expires);
                     if (l.has_password) {
                         l.password = '********';
                     }
@@ -667,9 +647,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             var newLink = {
                 key: response.key,
                 has_password: false,
-                expiration_options: _expiration_options()
+                // all new links have no expiration, can be added later
+                expires: 0
             };
-            newLink.expires = newLink.expiration_options[0];
             object.links.push(newLink);
         }).error(function(response, status) {
             // link creation request failed
@@ -689,7 +669,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         });
     };
 
-
     // Toggles whether the link is in copyable mode or not
     // (meaning replacing it w. a text input and a helpful note)
     $scope.toggleCopying = function(link) {
@@ -698,113 +677,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         } else {
             link.copying = true;
         }
-    };
-
-    // Show modal to set or change expiration date
-    // This method requires jquery-datepicker
-    $scope.showExpirationModal = function(link) {
-        link.oldExpiry = link.expires;
-        $scope.activeLink = link;
-        // initialize datepicker
-        var d = new Date();
-        var curr_day = d.getDate();
-        var curr_month = d.getMonth() + 1; // Months are zero based
-        if (curr_month < 10) {
-            curr_month = '0' + curr_month;
-        }
-        var curr_year = d.getFullYear();
-        var format = curr_year + '-' + curr_month + "-" + curr_day;
-        $("#expiry-modal .datepicker input").attr('value', format);
-
-        //calling the datepicker for bootstrap plugin
-        // https://github.com/eternicode/bootstrap-datepicker
-        // http://eternicode.github.io/bootstrap-datepicker/
-        $('.datepicker').datepicker({
-            autoclose: true,
-            startDate: new Date()
-        });
-        $('#expiry-modal').modal('toggle');
-    };
-
-    // Changes the expiration time of a link
-    $scope.changeExpiration = function(link) {
-        if (link.expires.value < 0) {
-            var data = $($('#expiry-modal input')[0]).val().split('-');
-            var date = new Date(parseInt(data[0],10), parseInt(data[1],10)-1, parseInt(data[2],10),23,59,59);
-            var elapsed = Math.floor((date - Date.now())/1000) - date.getTimezoneOffset() * 60;
-            var custom = {
-                value: elapsed,
-                text: _humanTime(elapsed, true)
-            };
-            link.expiration_options = _expiration_options(custom);
-            link.expires = custom;
-        }
-        $http.post('/set_url_expires', {key: link.key, expires: link.expires.value})
-            .success(function(response){
-                $('#expiry-modal').modal('toggle');
-            }).error(function(response){
-                showErrorMessageUnsafe(getInternalErrorText());
-            });
-    };
-
-    $scope.showPasswordModal = function(link) {
-        $scope.activeLink = link;
-        $scope.activeLink.oldPassword = $scope.activeLink.password;
-        $('#password-modal').modal('show');
-    };
-
-    // Changes a link's password
-    // If the password is the empty string, removes password altogether
-    $scope.submitPassword = function(link) {
-        if (link.password){
-            $http.post('set_url_password', {key: link.key, password: link.password})
-            .success(function(response){
-                $('#password-modal').modal('hide');
-                link.has_password = true;
-            }).error(function(response){
-                showErrorMessageUnsafe(getInternalErrorText());
-            });
-        } else {
-            $scope.removePassword(link);
-        }
-    };
-
-
-    // Removes password protection from link
-    $scope.removePassword = function(link) {
-        $http.post('remove_url_password', {key: link.key}).success(function(response){
-            $('#password-modal').modal('hide');
-            link.has_password = false;
-            delete link.password;
-        }).error(function(response){
-            showErrorMessageUnsafe(getInternalErrorText());
-        });
-    };
-
-    $scope.resetOption = function(link, option) {
-        if (option === "expiration") {
-            link.expires = link.oldExpiry;
-        } else if (option === "password") {
-            link.expires = link.oldPassword;
-        }
-    };
-
-    // Deletes shareable link
-    $scope.deleteLink = function(object, link) {
-        // destroy link on server
-        $http.post('remove_url', {key: link.key}).success(function(response){
-            for (var i=0; i < object.links.length; i++) {
-               if (object.links[i].key === link.key) {
-                  object.links.splice(i,1);
-                  if (object.links.length < 1) {
-                    $scope.toggleLink(object);
-                  }
-                  break;
-               }
-            }
-        }).error(function(response){
-            showErrorMessageUnsafe(getInternalErrorText());
-        });
     };
 }]);
 

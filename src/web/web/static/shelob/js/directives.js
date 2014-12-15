@@ -237,3 +237,172 @@ shelobDirectives.directive('aeroFileRow', function() {
         }
     };
 });
+
+shelobDirectives.directive('aeroLinkOptions', ['$modal','$log','$http','$timeout', function($modal, $log, $http, $timeout){
+    return {
+        restrict: 'A',
+        require: '^ngModel',
+        scope: {
+          link: '=ngModel',
+          title: '@',
+          deletionCallback: '&onDelete'
+        },
+        templateUrl: '/static/shelob/partials/link-options.html',
+        link: function($scope, element, attrs) {
+            // Deletes shareable link
+            $scope.deleteLink = function() {
+                // destroy link on server
+                $http.post('/remove_url', {
+                    key: $scope.link.key
+                }).success(function(response){
+                    showSuccessMessage("You have deleted the link " + $scope.link.key);
+                    if ($scope.deletionCallback && $scope.$parent.object) {
+                        // remove link from list of links, if relevant
+                        $scope.deletionCallback({
+                            object: $scope.$parent.object,
+                            key: $scope.link.key
+                        });
+                    } else {
+                        // blank out linkshare page
+                        $scope.link = undefined;
+                    }
+                }).error(function(response){
+                    showErrorMessageUnsafe(getInternalErrorText());
+                });
+            };
+
+            $scope.removePassword = function(){
+                $http.post('/remove_url_password', {
+                    key: $scope.link.key
+                }).success(function(response){
+                    $scope.link.has_password = false;
+                    delete $scope.link.password;
+                    $log.info('You have removed the password on link ' + $scope.link.key + '.');
+                }).error(function(response){
+                    showErrorMessageUnsafe(getInternalErrorText());
+                });
+            };
+
+            // function that produces list of values for expiration dates, in seconds
+            var _expiration_options = function(newOption){
+                var options = [0,3600,86400,604800,-1];
+                if (newOption && options.indexOf(newOption) === -1) {
+                    var custom = options.pop();
+                    options.push(newOption);
+                    options.push(custom);
+                }
+                return options;
+            };
+
+            $scope.password = function() {
+                var PasswordCtrl = function ($scope, $modalInstance, link) {
+                    $scope.link = link;
+                    // on modal open, make temp version of link
+                    $scope.linkOld = angular.copy($scope.link);
+
+                    $scope.cancel = function () {
+                        $scope.link = $scope.linkOld;
+                        $modalInstance.close();
+                    };
+
+                    $scope.ok = function () {
+                        if ($scope.link.password){
+                            $http.post('/set_url_password', {
+                                key: $scope.link.key,
+                                password: $scope.link.password
+                            }).success(function(response){
+                                $scope.link.has_password = true;
+                                $log.info('You have changed the password on link ' + $scope.link.key + '.');
+                                $modalInstance.close();
+                            }).error(function(response){
+                                showErrorMessageUnsafe(getInternalErrorText());
+                                $modalInstance.close();
+                            });
+                        } else {
+                            $scope.cancel();
+                        }
+                    };
+                };
+
+                var modalInstance = $modal.open({
+                    templateUrl: '/static/shelob/partials/password-modal.html',
+                    controller: PasswordCtrl,
+                    resolve: {
+                        link: function() {
+                            return $scope.link;
+                        }
+                    }
+                });
+            };
+
+            $scope.expiry = function() {
+                var ExpiryCtrl = function ($scope, $modalInstance, link) {
+                    $scope.link = link;
+                    $scope.link.expiration_options = _expiration_options($scope.link.expires);
+                    // on modal open, make temp version of link
+                    $scope.linkOld = angular.copy($scope.link);
+
+                    $scope.cancel = function () {
+                        $scope.link.expires = $scope.linkOld.expires;
+                        $modalInstance.close();
+                    };
+
+                    $scope.ok = function () {
+                        if ($scope.link.expires < 0) {
+                            var data = $($('#expiry-modal .datepicker input')[0]).val().split('-');
+                            var date = new Date(parseInt(data[0],10), parseInt(data[1],10)-1, parseInt(data[2],10),23,59,59);
+                            var elapsed = Math.floor((date - Date.now())/1000) - date.getTimezoneOffset() * 60;
+                            $scope.link.expiration_options = _expiration_options(elapsed);
+                            $scope.link.expires = elapsed;
+                        }
+                        $http.post('/set_url_expires', {
+                                key: link.key,
+                                expires: link.expires
+                            }).success(function(response){
+                                $log.info('You have modified the expiration settings of link "'+ $scope.link.key +'".');
+                                $modalInstance.close();
+                            }).error(function(response){
+                                showErrorMessageUnsafe(getInternalErrorText());
+                                $modalInstance.close();
+                            });
+                  };
+                };
+
+                var modalInstance = $modal.open({
+                    templateUrl: '/static/shelob/partials/expiration-modal.html',
+                    controller: ExpiryCtrl,
+                    resolve: {
+                        link: function() {
+                            return $scope.link;
+                        }
+                    }
+                });
+                modalInstance.opened.finally(function() {
+                    // because it's a transclude, .opened promise doesn't actually
+                    // mean the content's in the DOM yet >:(
+                    // wrapping with $timeout service hacks around this
+                    $timeout(function(){
+                        // initialize datepicker
+                        var d = new Date();
+                        var curr_day = d.getDate();
+                        var curr_month = d.getMonth() + 1; // Months are zero based
+                        if (curr_month < 10) {
+                            curr_month = '0' + curr_month;
+                        }
+                        var curr_year = d.getFullYear();
+                        var format = curr_year + '-' + curr_month + "-" + curr_day;
+                        $("#expiry-modal .datepicker input").attr('value', format);
+
+                        // calling the datepicker for bootstrap plugin
+                        // https://github.com/eternicode/bootstrap-datepicker
+                        // http://eternicode.github.io/bootstrap-datepicker/
+                        $('.datepicker').datepicker({
+                            autoclose: true,
+                            startDate: new Date()
+                        });
+                    }, 0);
+                });
+            };
+        }
+    };
+}]);

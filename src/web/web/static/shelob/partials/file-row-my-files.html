@@ -33,7 +33,7 @@
              title="Link settings">
             <span class="glyphicon glyphicon-link"></span> 
             <span class="extra-settings-icons">
-              <span ng-show="object.links[0].expires.value" class="glyphicon glyphicon-time"></span> 
+              <span ng-show="object.links[0].expires > 0" class="glyphicon glyphicon-time"></span> 
               <span ng-show="object.links[0].has_password" class="glyphicon glyphicon-lock"></span>
             </span>
           </a>
@@ -86,7 +86,7 @@
     <div ng-repeat="link in object.links">
         <div class="link row">
             <div class="col-sm-3 the-link" ng-hide="link.copying">
-              <span class="glyphicon glyphicon-link"></span> <span class="extra-settings-icons"><span ng-show="link.expires.value" class="glyphicon glyphicon-time" title="Has expiration time"></span> <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span></span> 
+              <span class="glyphicon glyphicon-link"></span> <span class="extra-settings-icons"><span ng-show="link.expires" class="glyphicon glyphicon-time" title="Has expiration time"></span> <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span></span> 
               Link to <span ng-if="object.type === 'folder'">folder</span><span ng-if="object.type === 'file'">file</span>:
             </div>
             <div class="col-sm-7 the-link" ng-hide="link.copying">
@@ -114,19 +114,10 @@
               </form>
             </div>
             <div class="col-sm-2 options">
-              <div class="btn-group pull-right">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                  Options <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu pull-right" role="menu">
-                  <li ng-hide="link.has_password"><a ng-click="showPasswordModal(link)">Add Password</a></li>
-                  <li ng-show="link.has_password"><a ng-click="removePassword(link)">Remove Password</a></li>
-                  <li ng-hide="link.expires.value"><a ng-click="showExpirationModal(link)">Add Expiration Time</a></li>
-                  <li ng-show="link.expires.value"><a ng-click="showExpirationModal(link)">Expires: {{link.expires.text}}</a></li>
-                  <li class="divider"></li>
-                  <li><a ng-click="deleteLink(object, link)"><span class="glyphicon glyphicon-trash"></span> Delete Link</a></li>
-                </ul>
-              </div>
+              <div aero-link-options 
+                ng-model="link" 
+                title="Options"
+                on-delete="removeLink(object, key)"></div>
             </div>
         </div>
     </div>
