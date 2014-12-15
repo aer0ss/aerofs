@@ -8,6 +8,8 @@ from aerofs_licensing import unicodecsv
 from lizard import db
 from . import appliance, emails, forms, models
 
+import stripe
+
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 @blueprint.route("/", methods=["GET"])
@@ -28,6 +30,10 @@ def queues():
 @blueprint.route("/customers/<int:org_id>", methods=["GET", "POST"])
 def customer_actions(org_id):
     customer = models.Customer.query.get_or_404(org_id)
+
+    if customer.stripe_customer_id:
+        charges = stripe.Charge.all(customer=customer.stripe_customer_id)
+
     form = forms.InternalLicenseRequestForm()
     if form.validate_on_submit():
         # TODO: sanity check all the values!
@@ -39,6 +45,8 @@ def customer_actions(org_id):
         l.expiry_date = datetime.datetime.combine(form.expiry_date.data, datetime.datetime.min.time())
         l.is_trial = form.is_trial.data
         l.allow_audit = form.allow_audit.data
+        l.invoice_id = form.manual_invoice.data
+
         db.session.add(l)
         db.session.commit()
         return redirect(url_for('.queues'))
@@ -46,12 +54,15 @@ def customer_actions(org_id):
     form.seats.data = 30
     form.expiry_date.data = (datetime.datetime.today() + datetime.timedelta(days=32)).date()
     form.is_trial.data = True
-    return render_template('customer_actions.html', form=form, customer=customer)
+
+    charge_data = charges.data if charges else None
+    return render_template('customer_actions.html', form=form, customer=customer, charges=charge_data)
 
 @blueprint.route("/licenses/<int:license_id>", methods=["GET", "POST"])
 def license_actions(license_id):
     license = models.License.query.get_or_404(license_id)
-    form = forms.InternalLicenseStateForm()
+    form = forms.InternalLicenseStateForm(invoice_id=license.invoice_id, stripe_id=license.stripe_charge_id)
+
     if form.validate_on_submit():
         license.state = getattr(models.License.states, form.state.data)
         db.session.add(license)

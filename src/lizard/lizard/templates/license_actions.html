@@ -1,5 +1,5 @@
 {% extends "admin.html" %}
-{% from "_formhelpers.html" import render_field, submit_button %}
+{% from "_formhelpers.html" import render_field, render_disabled_field, submit_button %}
 {% from "_licensehelper.html" import pretty_state %}
 
 {% block title %}License View | Licensing Admin{% endblock %}
@@ -31,15 +31,18 @@
 
     {# There's no good reason to manually change the state of the license once it is FILLED. #}
     {# You'll only confuse the service or break other invariants. #}
-    {% if license.state == license.states.FILLED %}
-        <a href="{{ url_for('.license_download', license_id=license.id) }}"><div class="btn btn-primary">Download</div></a>
-        <p>No state change allowed for FILLED licenses.</p>
-    {% else %}
-        <h3>Change request state</h3>
+    <h3>Update license information</h3>
         <form role="form" class="form-horizontal" action="" method="post">
             {{ form.hidden_tag() }}
-            {{ render_field(form.state) }}
+            {{ render_field(form.invoice_id) }}
+            {{ render_field(form.stripe_id) }}
+            {% if license.state != license.states.FILLED %}
+                {{ render_field(form.state) }}
+            {% endif %}
             {{ submit_button("Change state") }}
         </form>
+
+    {% if license.state == license.states.FILLED %}
+        <a href="{{ url_for('.license_download', license_id=license.id) }}"><div class="btn btn-primary">Download</div></a>
     {% endif %}
 {% endblock %}

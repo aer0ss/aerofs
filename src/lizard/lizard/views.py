@@ -4,14 +4,15 @@ import os
 import json
 import urllib
 
-from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response
+from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response, session
 from flask.ext import scrypt, login
 import itsdangerous
 from itsdangerous import TimestampSigner
 import markupsafe
 
-from lizard import analytics_client, db, login_manager, csrf
+from lizard import analytics_client, db, login_manager, csrf, stripe, filters
 from . import appliance, emails, forms, models
+import pricing
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
 
@@ -139,6 +140,7 @@ def signup_completion_page():
         # Create a new Customer named `company`
         cust = models.Customer()
         cust.name = signup.company_name
+        cust.renewal_seats = 25 # default renewal number
         db.session.add(cust)
 
         # Create a new Admin with the right
@@ -166,8 +168,7 @@ def signup_completion_page():
         l.customer = cust
         l.state = models.License.LicenseState.PENDING
         l.seats = 30 # Default to 30 seat trial licenses
-        e = datetime.datetime.today().date() + datetime.timedelta(days=32)
-        l.expiry_date = datetime.datetime(year=e.year, month=e.month, day=e.day)
+        l.set_days_until_expiry(32)
         l.is_trial = True
         l.allow_audit = False
         db.session.add(l)
@@ -310,16 +311,198 @@ def accept_organization_invite():
             invite=invite,
             customer=customer)
 
-@blueprint.route("/dashboard", methods=["GET"])
+@blueprint.route("/buy", methods=["GET","POST"])
+@login.login_required
+def buy():
+    user = login.current_user
+
+    if 'requested_license_count' in session:
+        requested_license_count= session['requested_license_count']
+    else:
+        flash(u"Please select a license count and try again.", "error")
+        return redirect(url_for('.dashboard'))
+
+    newest_license = user.customer.newest_license()
+
+    license_request = models.License()
+    license_request.customer = user.customer
+
+    if newest_license.is_trial:
+        license_request.set_days_until_expiry(365)
+        charge_amount = requested_license_count * pricing.COST_PER_SEAT
+        description = "Purchase "  + str(requested_license_count) +" seats"
+
+    else: #pro-rate
+        if requested_license_count <= newest_license.seats:
+            flash (u"Something went wrong. Your requested license count is lower than your existing license count.", "error")
+            return redirect(url_for('.dashboard'))
+
+        license_request.expiry_date = newest_license.expiry_date
+        charge_amount = (requested_license_count - newest_license.seats)* pricing.COST_PER_SEAT * \
+                        ((license_request.expiry_date.date() - datetime.date.today()).days )/365
+
+        description = "Upgrade from {prev_seats} to {new_seats} seats, pro-rated for {day_delta} days (renewing on {renewal_date})".format(
+            prev_seats=newest_license.seats,
+            new_seats=requested_license_count,
+            day_delta=(license_request.expiry_date.date()-datetime.date.today()).days,
+            renewal_date=license_request.expiry_date.strftime('%b %d, %Y')
+            )
+
+    if request.method == 'POST':
+        # charge the customer
+        msg=None
+        try:
+            customer = user.customer
+            if not customer.stripe_customer_id:
+
+                stripe_customer = stripe.Customer.create(
+                        email=user.email,
+                        card=request.form['stripeToken']
+                        )
+
+                customer.stripe_customer_id = stripe_customer.id
+                db.session.add(customer)
+            else:
+                cu = stripe.Customer.retrieve(customer.stripe_customer_id)
+                cu.card=request.form['stripeToken']
+                cu.save()
+
+            charge = stripe.Charge.create(
+                customer=customer.stripe_customer_id,
+                amount=charge_amount*100, # in cents
+                currency='usd',
+                description=description
+            )
+
+        except stripe.error.CardError as e:
+            # Since it's a decline, stripe.error.CardError will be caught
+            body = e.json_body
+            err  = body['error']
+            msg = err['message']
+        except stripe.error.StripeError as e:
+            msg = u"An unknown error has occured and your card has not been charged. Please try again later."
+            current_app.logger.warn(e)
+        except Exception as e:
+            msg = u"An internal server error has occured and your card has not been charged. If you continue seeing this error, please contact us at support@aerofs.com."
+            current_app.logger.warn(e)
+        finally:
+            if msg:
+                flash(msg, "error")
+                return redirect(url_for('.buy'))
+
+        # Charged succesfully, create license request.
+        license_request.stripe_charge_id=charge.id
+        license_request.state = models.License.LicenseState.PENDING
+        license_request.seats = requested_license_count
+        license_request.is_trial = False
+        license_request.allow_audit = True
+        db.session.add(license_request)
+
+        customer.renewal_seats = license_request.seats
+
+        db.session.add(customer)
+        # Commit.
+        db.session.commit()
+
+        if newest_license.is_trial:
+            flash(u"Successfully bought {} seats.".format(license_request.seats), 'success')
+        else:
+            flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
+
+        session.pop('requested_license_count', None)
+        return redirect(url_for('.dashboard'))
+
+    return render_template("buy.html",
+        current_license=newest_license,
+        requested_license_count = requested_license_count,
+        charge_amount = charge_amount,
+        description=description,
+        email=user.email
+        )
+
+@blueprint.route("/payment_history", methods=["GET"])
+@login.login_required
+def payment_history():
+    user = login.current_user
+
+    if user.customer.stripe_customer_id:
+        charges = stripe.Charge.all(customer=user.customer.stripe_customer_id)
+
+        return render_template("payment_history.html",
+            charges=charges.data
+        )
+    else:
+        return render_template("payment_history.html",
+            charges=None
+            )
+
+@blueprint.route("/receipt/<string:id>", methods=["GET"])
+@login.login_required
+def receipt(id):
+    user = login.current_user
+
+    charge = stripe.Charge.retrieve(id)
+    if charge.card.customer != user.customer.stripe_customer_id:
+            flash(u"This receipt does not exist.", "error")
+            return redirect(url_for(".payment_history"))
+
+    return render_template("receipt.html",
+        charge=charge
+    )
+
+@blueprint.route("/dashboard", methods=["GET", "POST"])
 @login.login_required
 def dashboard():
     user = login.current_user
-    licenses = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
+
+    customer = user.customer
+
+    active_license = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
                 models.License.expiry_date.desc(),
                 models.License.modify_date.desc(),
-            )
+            ).first()
+
+    newest_license = customer.newest_license()
+
+    form = forms.LicenseCountForm(count=(customer.renewal_seats or newest_license.seats))
+    if form.validate_on_submit():
+        requested_license_count = int(form.count.data)
+
+        if newest_license.is_trial:
+            # if current license is a trial, no matter what the seat count is, we're buying
+            session['requested_license_count'] = requested_license_count
+            return redirect(url_for(".buy"))
+
+        if requested_license_count < int(newest_license.seats): # we are downgrading
+
+            # Update the renewal seats
+            customer.renewal_seats = requested_license_count
+            db.session.add(customer)
+            db.session.commit()
+
+            flash(u"Your license will downgrade to {} seats on {}"
+                        .format(requested_license_count, newest_license.expiry_date.strftime('%b %d, %Y')),
+                   "success")
+            return redirect(url_for(".dashboard"))
+
+        elif requested_license_count > int(newest_license.seats): #we are upgrading
+            session['requested_license_count'] = requested_license_count
+            return redirect(url_for(".buy"))
+
+        else:
+            # Always update the renewal seats
+            customer.renewal_seats = requested_license_count
+            db.session.add(customer)
+            db.session.commit()
+
+            flash(u"You already have {} seats".format(requested_license_count), "success")
+            return redirect(url_for(".dashboard"))
+
     return render_template("dashboard.html",
-            current_license=licenses.first(),
+            form=form,
+            active_license=active_license,
+            newest_license=newest_license,
+            renewal_seats=(customer.renewal_seats or newest_license.seats),
             appliance_version=appliance.latest_appliance_version(),
             mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
             mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"

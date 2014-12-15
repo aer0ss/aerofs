@@ -9,6 +9,8 @@ from migrate.exceptions import DatabaseAlreadyControlledError
 
 from .flask_analytics import AnalyticsClient
 
+import stripe
+
 # Login manager.  Flask-login does session management.
 login_manager = LoginManager()
 
@@ -35,7 +37,7 @@ def migrate_database(app):
 # Analytics stuff
 analytics_client = AnalyticsClient()
 
-from lizard import views, internal_views
+from lizard import views, internal_views, filters
 
 def create_app(internal=False):
     app = Flask(__name__)
@@ -43,6 +45,10 @@ def create_app(internal=False):
     app.config.from_object('config')
     # Deployment-specific configuration.
     app.config.from_object('additional_config')
+
+    app.jinja_env.filters['timestamp_to_date'] = filters.timestamp_to_datetime
+    app.jinja_env.filters['format_currency'] = filters.format_currency
+    app.jinja_env.filters['date'] = filters.date
 
     # Enable plugins:
     # 1) Flask-Login
@@ -60,6 +66,9 @@ def create_app(internal=False):
 
     # 4) SegmentIO
     analytics_client.init_app(app)
+
+    # 5) Stripe
+    stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
     # Enable routes
     if internal:

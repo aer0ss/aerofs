@@ -45,6 +45,18 @@ class PreferencesForm(Form):
     #release_emails = BooleanField("Receive release notifications")
     #maintenance_emails = BooleanField("Receive maintenance notifications")
 
+class LicenseCountForm(Form):
+
+    count = SelectField('New License Count', choices=[
+        ('10','10'),
+        ('25', '25'),
+        ('50', '50'),
+        ('100', '100'),
+        ('250', '250'),
+        ('500', '500'),
+        ('1000', '1000')
+        ])
+
 def IsFutureDate(message=None):
     def _IsFutureDate(form, field):
         if field.data < datetime.datetime.today().date():
@@ -56,7 +68,7 @@ class InternalLicenseRequestForm(Form):
     expiry_date = DateField("Expiry Date (YYYY-MM-DD)", validators=[InputRequired(), IsFutureDate() ])
     is_trial = BooleanField("Trial?")
     allow_audit = BooleanField("Allow Audit?")
-
+    manual_invoice = TextField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
 
@@ -67,6 +79,8 @@ class InternalLicenseStateForm(Form):
         ('ON_HOLD', 'ON HOLD'),
         ('IGNORED', 'IGNORED')
     ])
+    invoice_id = TextField("Manual Invoice ID", validators=[Optional()])
+    stripe_id = TextField("Stripe Charge ID", validators=[Optional()])
 
 class PasswordResetForm(Form):
     email = TextField('Email', validators = [Email()])

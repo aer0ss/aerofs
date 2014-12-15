@@ -1,0 +1,67 @@
+{% extends "logged_in.html" %}
+{% from "_formhelpers.html" import render_field, eula_notice,  %}
+
+{% block title %}Buy Licenses | AeroFS Private Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <h2>Order Summary</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Amount ($)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                        <p>{{ description }}</p>
+                </td>
+                <td><p> $ {{ charge_amount }}</p></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="row text-center">
+<p>
+
+<form id='form' method="POST" role="form" style="form-inline">
+    <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
+    <button id="ccPurchase" class="btn btn-primary">Pay with Card</button>
+{% if requested_license_count >= 100 %}
+    <a href="mailto:sales@aerofs.com?subject=Purchase {{ requested_license_count }} seats by invoice"><button type="button" class="btn btn-default" id="invoice">Pay with Invoice</button></a>
+{% endif %}
+<br><br>
+    {{ eula_notice() }}
+</form>
+</p>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://checkout.stripe.com/checkout.js"></script>
+
+<script>
+    $('#ccPurchase').click(function(){
+      var token = function(res){
+        var $input = $('<input type=hidden name=stripeToken />').val(res.id);
+        $('form').append($input).submit();
+      };
+
+      StripeCheckout.open({
+        key:         '{{ config.STRIPE_PUBLISHABLE_KEY }}',
+        amount:      {{ charge_amount * 100 }},
+        currency:    'usd',
+        name:        'AeroFS Private Cloud',
+        description: '{% if current_license.is_trial %} Buying {% else %}Upgrading from {{ current_license.seats }} to {% endif %} {{ requested_license_count }} (${{ charge_amount }})',
+        token:       token
+      });
+
+      return false;
+    });
+  </script>
+{% endblock %}

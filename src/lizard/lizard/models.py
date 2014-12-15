@@ -67,9 +67,8 @@ class Customer(db.Model, TimeStampedMixin):
     # shouldn't let them request a license nor download a license.
     accepted_license = db.Column(db.Boolean, default=False, nullable=False)
 
-    # These can come later, I guess
-    #billing_info = ?
-    #billing_history = ?
+    # Stripe Customer ID used for billing
+    stripe_customer_id = db.Column(db.String(_USER_STRING_MAX_LEN))
 
     # A customer has a list of admins who are allowed to manage things about
     # the organization, request licenses, accept the license agreement, and pay
@@ -82,6 +81,24 @@ class Customer(db.Model, TimeStampedMixin):
 
     # A customer may have many licenses and license requests in the pipeline.
     licenses = db.relationship("License", backref="customer", lazy="dynamic")
+
+    # How many seats should the customer be billed for on Renewal?
+    # This is used at the time of renewal.
+    renewal_seats = db.Column(db.Integer, nullable=True)
+
+    def newest_license(self):
+        active_license = self.licenses.filter_by(state=License.states.FILLED).order_by(
+                    License.expiry_date.desc(),
+                    License.modify_date.desc(),
+                ).first()
+
+        pending_license = self.licenses.filter_by(state=License.states.PENDING).order_by(
+                    License.expiry_date.desc(),
+                    License.modify_date.desc(),
+                ).first()
+
+        return pending_license or active_license
+
 
     def __repr__(self):
         return "<Customer '{}'>".format(self.name)
@@ -206,12 +223,28 @@ class License(db.Model, TimeStampedMixin):
 
     # License parameters.
     seats = db.Column(db.Integer, nullable=False)
+
     expiry_date = db.Column(db.DateTime, nullable=False)
+
     is_trial = db.Column(db.Boolean, nullable=False)
     allow_audit = db.Column(db.Boolean, default=False, nullable=False)
 
+    # Each license should generally have either a stripe id or an invoice ID
+    # Exceptions are for trial licenses, and well, when we're feeling nice...
+    # Stripe Charge ID
+    stripe_charge_id = db.Column(db.String, nullable=True)
+
+    # Invoice ID
+    invoice_id = db.Column(db.String, nullable=True)
+
     # The license data itself.  Null unless state == FILLED.
     blob = db.Column(db.LargeBinary)
+
+    def set_days_until_expiry(self, d):
+        e = datetime.datetime.today().date() + datetime.timedelta(days=d)
+        self.expiry_date = datetime.datetime(year=e.year, month=e.month, day=e.day)
+
+
 
 # Each class with create_date/modify_date autoupdate magic must register here
 Customer.register()

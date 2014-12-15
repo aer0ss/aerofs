@@ -6,6 +6,7 @@
     - with_label (boolean, default: True) - whether to use a <label> element to display the field description, or to use
       the `placeholder` attribute. Note that attribute isn't supported before IE10.
 
+    - label_width(int, default: 3) - default label width.
     - no_divs (boolean, default: False) - if True, do not wrap the <input> elements with <div> elements. Use this for
       inline forms.
 
@@ -17,6 +18,7 @@
     {# Use labels instead of placeholders by default since placeholders aren't supported before IE10. #}
     {# Do not use labels on checkboxes however, since this would be redundant with the checkbox text. #}
     {% set with_label = kwargs.pop('with_label', True) and not field.type == 'BooleanField' %}
+    {% set label_width = kwargs.pop('label_width', 3) %}
     {% set with_divs = not kwargs.pop('no_divs', False) %}
     {% set placeholder = '' %}
     {% if not with_label %}{% set placeholder = field.label.text %}{% endif %}
@@ -24,12 +26,12 @@
         <div class="form-group {% if field.errors %}error{% endif %}">
     {% endif %}
         {% if with_label %}
-            <label for="{{ field.id }}" class="col-sm-3 control-label">
+            <label for="{{ field.id }}" class="col-sm-{{label_width}} control-label">
                 {{ field.label.text }}:{% if field.flags.required %} *{% endif %}
             </label>
         {% endif %}
         {% if with_divs %}
-            <div class="col-sm-9">
+            <div class="col-sm-{{ 12 - label_width }}">
         {% endif %}
             {% set class_ = kwargs.pop('class_', '') %}
             {% set type_ = "text" %}

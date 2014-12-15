@@ -36,7 +36,7 @@
 {% endmacro %}
 
 
-{% macro render_license_table(licenses) %}
+{% macro render_license_table(licenses, charges) %}
     <table class="table">
         <tr>
             <th>Company</th>
@@ -46,6 +46,8 @@
             <th>Trial?</th>
             <th>Expiry Date</th>
             <th>Issue Date</th>
+            <th>CC Receipt</th>
+            <th>Manual Invoice</th>
             <th colspan="3">Actions</th>
         </tr>
         {% for license in licenses %}
@@ -57,6 +59,23 @@
             <td>{% if license.is_trial %}Trial{% else %}Full license{% endif %}</td>
             <td>{{ license.expiry_date.strftime('%b %d, %Y') }}</td>
             <td>{{ license.create_date.strftime('%b %d, %Y') }}</td>
+            <td>
+            {% if license.stripe_charge_id %}
+
+                <a href="https://dashboard.stripe.com/payments/{{ license.stripe_charge_id }}" target="_blank">
+                    {% if charges %}
+                        {% for charge in charges %}
+                                {% if charge.id == license.stripe_charge_id %}
+                                    {{ charge.receipt_number }}
+                                {% endif %}
+                        {% endfor %}
+                    {% else %}
+                    Receipt
+                    {% endif %}
+                </a>
+            {% endif %}
+            </td>
+            <td>{% if license.invoice_id %} {{ license.invoice_id }} {% endif %}</td>
             <td><a href="{{ url_for(".license_actions", license_id=license.id) }}">Details</a></td>
             {{ render_license_state_buttons(license) }}
         </tr>

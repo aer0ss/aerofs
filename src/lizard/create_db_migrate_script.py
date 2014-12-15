@@ -16,7 +16,9 @@ import sys
 
 from migrate.versioning import api
 
-from lizard import app, db
+from lizard import create_app, db
+
+app = create_app(False)
 
 SQLALCHEMY_DATABASE_URI = app.config['SQLALCHEMY_DATABASE_URI']
 SQLALCHEMY_MIGRATE_REPO = app.config['SQLALCHEMY_MIGRATE_REPO']

@@ -14,13 +14,14 @@
     </ul>
 
     <h3>Licenses</h3>
-    {{ render_license_table(customer.licenses.all()) }}
+    {{ render_license_table(customer.licenses.all(), charges) }}
 
     <h3>Create license request</h3>
     <form role="form" class="form-horizontal" action="" method="post">
         {{ form.hidden_tag() }}
         {{ render_field(form.seats) }}
         {{ render_field(form.expiry_date) }}
+        {{ render_field(form.manual_invoice) }}
         {{ render_field(form.is_trial) }}
         {{ render_field(form.allow_audit) }}
         {{ submit_button("Create license request") }}

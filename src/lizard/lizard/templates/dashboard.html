@@ -1,21 +1,57 @@
 {% extends "logged_in.html" %}
 
+{% from "_formhelpers.html" import render_field, submit_button %}
+
 {% block title %}Dashboard | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
     <h1>Dashboard</h1>
-    {% if current_license %}
+    {% if active_license %}
         <div class="row">
             <div class="col-sm-6">
-                <h4>Current license</h4>
+                <h4>Active license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if current_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
+                    <dd>{% if active_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
                     <dt>Seats:</dt>
-                    <dd>{{ current_license.seats }}</dd>
+                    <dd>{{ active_license.seats }}</dd>
                     <dt>Valid until:</dt>
-                    <dd>{{ current_license.expiry_date.strftime('%b %d, %Y') }}</dd>
+                    <dd>{{ active_license.expiry_date | date }}</dd>
                 </dl>
+            {% if newest_license.state == newest_license.states.PENDING %}
+                <h4>Pending license</h4>
+                <dl class="well well-sm dl-horizontal">
+                    <dt>License type:</dt>
+                    <dd>{% if newest_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
+                    <dt>Seats:</dt>
+                    <dd>{{ newest_license.seats }}</dd>
+                    <dt>Valid until:</dt>
+                    <dd>{{ newest_license.expiry_date | date }}</dd>
+                </dl>
+            {% endif %}
+            {% if not newest_license.is_trial and renewal_seats < newest_license.seats %}
+                <h4>Renewal information</h4>
+                <dl class="well well-sm dl-horizontal">
+                    <dt>Seats:</dt>
+                    <dd>{{ renewal_seats }}</dd>
+                    <dt>Renews on:</dt>
+                    <dd>{{ newest_license.expiry_date | date }}</dd>
+                </dl>
+            {% endif %}
+                <h4>Purchase Licenses</h4>
+
+                    <p>You can purchase or upgrade your licenses at any time. If you need more than 1,000 seats,
+                        please contact us at <a href="mailto:sales@aerofs.com">sales@aerofs.com</a>.</p>
+                    <form role="form" class="form-inline" action="" method="post" name="seats">
+                        {{ form.hidden_tag() }}
+                        {{ render_field(form.count, type="select", no_divs=True, label_width=5, class="form-control")}}
+                        {% if newest_license.is_trial %}
+                        <button type="submit" class="btn btn-success">Purchase licenses</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-success">Change license count</button>
+                        {% endif %}
+                    </form>
+                <br><br>
             </div>
             <div class="col-sm-6">
                 <h4>AeroFS Private Cloud</h4>

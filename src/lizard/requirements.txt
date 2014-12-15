@@ -18,5 +18,6 @@ oursql
 requests
 scrypt
 sqlalchemy-migrate
+stripe
 # Hoisted dependencies from licensing:
 pygpgme
