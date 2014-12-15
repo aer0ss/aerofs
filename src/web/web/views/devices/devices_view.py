@@ -184,15 +184,15 @@ def get_devices_for_user(request, user):
     r.raise_for_status()
     mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
 
-    last_seen_nullable = None
+    last_seen_data = {}
     try:
-        last_seen_nullable = _get_last_seen(_get_verkehr_url(request.registry.settings), devices)
+        last_seen_data = _get_last_seen_data(_get_verkehr_url(request.registry.settings), devices)
     except Exception as e:
         log.error('get_last_seen failed. use null values: {}'.format(e))
 
     device_list = []
     for d in devices:
-        device_list.append(_jsonable_device(d, last_seen_nullable))
+        device_list.append(_jsonable_device(d, last_seen_data))
     mobile_device_list = []
     for d in mobile_devices:
         mobile_device_list.append(_jsonable_device_mobile(d))
@@ -271,14 +271,14 @@ def _get_verkehr_url(settings):
    return 'http://{}:{}'.format(host, port)
 
 
-def _get_last_seen(verkehr_url, devices):
+def _get_last_seen_data(verkehr_url, devices):
     """
     Call verkehr to retrieve last seen time and location for the given list of devices.
     @return a dict of:
 
         { "<device_id>": { "time": "Just Now", "ip": "1.2.3.4" }, ... }
 
-        Devices that haven't been seen before are absent from the map.
+    Devices that haven't been seen before are absent from the map.
     """
 
     last_seen = {}
