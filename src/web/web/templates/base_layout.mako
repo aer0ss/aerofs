@@ -239,7 +239,7 @@
 
     <!--[if lt IE 9]>
         <script type="text/javascript">
-            showErrorMessageUnsafe("<p>Sorry, but the AeroFS web portal does not fully support Internet Explorer version 8 or earlier. You might experience degraded styling or broken functionality.</p>");
+            showErrorMessageUnsafe("<p>The AeroFS web portal does not fully support Internet Explorer version 8 or earlier. You might experience degraded styling or broken functionality.</p>");
         </script>
     <![endif]-->
 
