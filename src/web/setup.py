@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 # If you want a package (something with an __init__.py)
 # to wind up installed, you need to list it here.
