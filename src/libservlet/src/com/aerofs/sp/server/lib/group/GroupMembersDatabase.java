@@ -93,18 +93,26 @@ public class GroupMembersDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            return membersResultSet2List(rs);
+            return membersResultSetToList(rs);
         } finally {
             rs.close();
         }
     }
 
-    private List<UserID> membersResultSet2List(ResultSet rs)
+    private List<UserID> membersResultSetToList(ResultSet rs)
             throws SQLException
     {
         List<UserID> users = Lists.newArrayList();
         while (rs.next()) users.add(UserID.fromInternal(rs.getString(1)));
         return users;
+    }
+
+    private List<GroupID> groupsResultSetToList(ResultSet rs)
+            throws SQLException
+    {
+        List<GroupID> groups = Lists.newArrayList();
+        while(rs.next()) groups.add(GroupID.fromInternal(rs.getInt(1)));
+        return groups;
     }
 
     public void deleteMembersFor(GroupID gid)
@@ -115,5 +123,22 @@ public class GroupMembersDatabase extends AbstractSQLDatabase
 
         ps.setInt(1, gid.getInt());
         ps.executeUpdate();
+    }
+
+    public List<GroupID> listGroupsFor(UserID userID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+                T_GM,
+                C_GM_MEMBER_ID + "=?",
+                C_GM_GID));
+
+        ps.setString(1, userID.getString());
+        ResultSet rs = ps.executeQuery();
+        try {
+            return groupsResultSetToList(rs);
+        } finally {
+            rs.close();
+        }
     }
 }

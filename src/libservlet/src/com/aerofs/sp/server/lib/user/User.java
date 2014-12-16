@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
@@ -31,6 +32,8 @@ import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.License;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.GroupMembersDatabase;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
@@ -72,27 +75,31 @@ public class User
         private UserDatabase _udb;
         private OrganizationInvitationDatabase _odb;
         private TwoFactorAuthDatabase _tfdb;
+        private GroupMembersDatabase _gmdb;
 
         private Device.Factory _factDevice;
         private Organization.Factory _factOrg;
         private OrganizationInvitation.Factory _factOrgInvite;
         private SharedFolder.Factory _factSharedFolder;
+        private Group.Factory _factGroup;
         private License _license;
 
         @Inject
         public void inject(UserDatabase udb, OrganizationInvitationDatabase odb,
-                TwoFactorAuthDatabase tfdb,
+                TwoFactorAuthDatabase tfdb, GroupMembersDatabase gmdb,
                 Device.Factory factDevice, Organization.Factory factOrg,
                 OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder,
-                License license)
+                Group.Factory factGroup, License license)
         {
             _udb = udb;
             _odb = odb;
             _tfdb = tfdb;
+            _gmdb = gmdb;
             _factDevice = factDevice;
             _factOrg = factOrg;
             _factOrgInvite = factOrgInvite;
             _factSharedFolder = factSharedFolder;
+            _factGroup = factGroup;
             _license = license;
         }
 
@@ -426,11 +433,15 @@ public class User
             if (oi.exists()) oi.delete();
 
         } else {
+            // If the user is a member of a group, set that user as a member of the group's org
+            ImmutableCollection<Group> groups = getGroups();
+            Organization org = groups.isEmpty() ?
+                    _f._factOrg.save() : groups.iterator().next().getOrganization();
             // Public deployment: create a new organization for this user and make them an admin
-            saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+            saveImpl(shaedSP, fullName, org, AuthorizationLevel.ADMIN);
 
-            // Because a brand new org is create, we don't need to delete any organization invite as
-            // what we do in the case of private deployment (see the other conditional branch).
+            // Because a brand new org is created, we don't need to delete any organization invite
+            // like what we do in the case of private deployment (see the other conditional branch).
         }
     }
 
@@ -468,7 +479,14 @@ public class User
 
         // delete ACLs
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
-        for (SharedFolder sf : getJoinedFolders()) {
+
+        // N.B. remove the user from all groups first, so that the later getSharedFolders() call
+        // will only return sharedFolders we're in a part of irrespective of group memberships
+        for (Group group : getGroups()) {
+            affected.addAll(group.removeMember(this, newOwner));
+        }
+
+        for (SharedFolder sf : getSharedFolders()) {
             affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner, null));
         }
 
@@ -586,6 +604,10 @@ public class User
     public ImmutableCollection<UserID> setOrganization(Organization org, AuthorizationLevel level)
             throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminOrOwner
     {
+        // Delete organization invitation if any
+        OrganizationInvitation oi = _f._factOrgInvite.create(this, org);
+        if (oi.exists()) oi.delete();
+
         Organization orgOld = getOrganization();
         if (orgOld.equals(org)) {
             // no organization change? only set the level and skip the rest. This optimization is
@@ -598,15 +620,16 @@ public class User
             return ImmutableList.of(org.id().toTeamServerUserID());
         }
 
-        // Delete organization invitation if any
-        OrganizationInvitation oi = _f._factOrgInvite.create(this, org);
-        if (oi.exists()) oi.delete();
-
         Collection<SharedFolder> sfs = getJoinedFolders();
 
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
 
         for (SharedFolder sf : sfs) builder.addAll(sf.removeTeamServerForUser(this));
+
+        // Since groups are only within an organization, leave all groups upon changing org
+        for (Group g : getGroups()) {
+            if (!org.equals(g.getOrganization())) builder.addAll(g.removeMember(this, null));
+        }
 
         _f._udb.setOrganizationID(_id, org.id());
 
@@ -699,9 +722,29 @@ public class User
         return code;
     }
 
-    public void deleteAllSignUpCodes()
-            throws SQLException
+    public String addSignUpCodeWithOrgInvite(User inviter)
+            throws SQLException, ExNotFound
     {
+        OrganizationInvitation invite =  _f._factOrgInvite.create(this, inviter.getOrganization());
+        if (invite.exists()) {
+            // don't make an extra invite, will fail the orginvite table's primary key constraint
+            return invite.getCode();
+        } else {
+            String code = addSignUpCode();
+            _f._factOrgInvite.save(inviter, this, inviter.getOrganization(), code);
+            return code;
+        }
+    }
+
+    public void deleteAllSignUpCodes()
+            throws SQLException, ExNotFound
+    {
+        for (OrganizationInvitation orgInvite : getOrganizationInvitations()) {
+            if (orgInvite.getCode() != null) {
+                // to avoid violating foreign key constraints
+                orgInvite.delete();
+            }
+        }
         _f._udb.deleteAllSignUpCodes(_id);
     }
 
@@ -908,5 +951,20 @@ public class User
     {
         // It's okay to leave the secrets in the DB; they will no longer be used.
         _f._udb.setEnforceSecondFactor(_id, false);
+    }
+
+    public ImmutableCollection<Group> getGroups()
+            throws SQLException
+    {
+        return groupsFromIDs(_f._gmdb.listGroupsFor(id()));
+    }
+
+    private ImmutableList<Group> groupsFromIDs(Iterable<GroupID> ids)
+    {
+        ImmutableList.Builder<Group> groups = ImmutableList.builder();
+        for (GroupID gid : ids) {
+            groups.add(_f._factGroup.create(gid));
+        }
+        return groups.build();
     }
 }

@@ -89,6 +89,24 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         }
     }
 
+    public String getCode(UserID invitee, OrganizationID org)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_OI,
+                C_OI_INVITEE + "=? and " + C_OI_ORG_ID + "=?", C_OI_SIGNUP_CODE));
+
+        ps.setString(1, invitee.getString());
+        ps.setInt(2, org.getInt());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) throw new ExNotFound();
+            return rs.getString(1);
+        } finally {
+            rs.close();
+        }
+    }
+
     /**
      * List all the organizations that a user has been invited to join.
      */

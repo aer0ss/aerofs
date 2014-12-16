@@ -52,8 +52,8 @@ public class InvitationHelper
     {
         List<InvitationEmailer> result = Lists.newLinkedList();
         for (User sharee : needEmails) {
-            result.add(_factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
-                folderName, note, sf.id(), permissions));
+            result.add(createFolderInvitationAndEmailer(sf, sharer, sharee, permissions, note,
+                    folderName));
         }
         return result;
     }
@@ -80,17 +80,17 @@ public class InvitationHelper
         return emailer;
     }
 
-    public InvitationEmailer createBatchFolderInvitationAndEmailer(Group sharer,
+    public InvitationEmailer createBatchFolderInvitationAndEmailer(Group group, User sharer,
             User newMember, Set<SharedFolder> needsEmail)
-            throws
-            IOException,
-            SQLException,
-            ExNotFound
+            throws IOException, SQLException, ExNotFound, ExExternalServiceUnavailable
     {
-        if (needsEmail.size() == 0) {
-            return _factInvitationEmailer.createAddedToGroupEmailer(newMember, sharer);
+        if (!newMember.exists()) {
+            return inviteToSignUp(sharer, newMember, group)._emailer;
+        }else if (needsEmail.size() == 0) {
+            return _factInvitationEmailer.createAddedToGroupEmailer(sharer, newMember, group);
         } else {
-            return _factInvitationEmailer.createBatchInvitationEmailer(newMember, sharer, needsEmail);
+            return _factInvitationEmailer.createBatchInvitationEmailer(sharer, newMember, group,
+                    needsEmail);
         }
     }
 
@@ -114,32 +114,58 @@ public class InvitationHelper
     /**
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
+    public InviteToSignUpResult inviteToSignUp(User inviter, User invitee)
+            throws IOException, SQLException, ExNotFound, ExExternalServiceUnavailable
+    {
+        assert !invitee.exists();
+        String code = codeForUser(inviter, invitee, false);
+        InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
+                invitee, code);
+        return new InviteToSignUpResult(emailer, code);
+    }
+
     public InviteToSignUpResult inviteToSignUp(User inviter, User invitee,
-            @Nullable String folderName, @Nullable Permissions permissions, @Nullable String note)
+            String folderName, Permissions permissions, @Nullable String note)
             throws SQLException, IOException, ExNotFound, ExExternalServiceUnavailable,
             LDAPSearchException
     {
         assert !invitee.exists();
+        String code = codeForUser(inviter, invitee, false);
+        InvitationEmailer emailer =
+                _factInvitationEmailer.createSharedFolderSignUpInvitationEmailer(inviter, invitee,
+                        folderName, permissions, note, code);
+        return new InviteToSignUpResult(emailer, code);
+    }
 
-        String code;
+    public InviteToSignUpResult inviteToSignUp(User inviter, User invitee, Group group)
+            throws SQLException, ExExternalServiceUnavailable, ExNotFound, IOException
+    {
+        assert !invitee.exists();
+        String code = codeForUser(inviter, invitee, true);
+        InvitationEmailer emailer = _factInvitationEmailer.createGroupSignUpInvitationEmailer(
+                inviter, invitee, group, code);
+        return new InviteToSignUpResult(emailer, code);
+    }
+
+    private @Nullable String codeForUser(User inviter, User invitee, Boolean inviteToOrg)
+            throws ExExternalServiceUnavailable, SQLException, ExNotFound
+    {
         if (_authenticator.isLocallyManaged(invitee.id())) {
-            code = invitee.addSignUpCode();
             _esdb.insertEmailSubscription(invitee.id(),
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            if (inviteToOrg) {
+                return invitee.addSignUpCodeWithOrgInvite(inviter);
+            } else {
+                return invitee.addSignUpCode();
+            }
         } else {
             // No signup code is needed for auto-provisioned users.
             // They can simply sign in using their externally-managed account credentials.
-            code = null;
-
+            return null;
             // We can't set up reminder emails as we do for locally-managed users, because
             // reminder email implementation requires valid signup codes. We can implement
             // different reminder emails if we'd like. In doing that, we need to remove the
             // reminder when creating the user during auto-provisioning.
         }
-
-        InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
-                invitee, folderName, permissions, note, code);
-
-        return new InviteToSignUpResult(emailer, code);
     }
 }

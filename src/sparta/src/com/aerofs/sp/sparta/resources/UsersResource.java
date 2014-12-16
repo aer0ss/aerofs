@@ -259,7 +259,7 @@ public class UsersResource extends AbstractSpartaResource
         }
 
         try {
-            checkState(sf.removeUser(user).isEmpty());
+            checkState(sf.removeIndividualUser(user).isEmpty());
         } catch (ExNoAdminOrOwner e) {
             throw new ExBadArgs(e.getMessage());
         }

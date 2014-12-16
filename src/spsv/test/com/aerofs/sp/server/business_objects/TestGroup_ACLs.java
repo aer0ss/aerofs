@@ -161,7 +161,7 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
         sf.setState(user2, SharedFolderState.JOINED);
         sf.setState(user3, SharedFolderState.JOINED);
         // all user clients and their TS need to update since user3's ACL will change
-        assertEquals(group.removeMember(user3).size(), 6);
+        assertEquals(group.removeMember(user3, null).size(), 6);
         // the remaining user2 and owner's clients and TS need to update
         assertEquals(group.deleteSharedFolder(sf).size(), 4);
         // still have user2 and owner's clients plus TS in the folder though
@@ -232,9 +232,9 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
         sf.setPermissions(owner, Permissions.EDITOR);
 
         // can remove this owner as user2 is still a member
-        group.removeMember(user3);
+        group.removeMember(user3, null);
         try {
-            group.removeMember(user2);
+            group.removeMember(user2, null);
             fail();
         } catch (ExNoAdminOrOwner e) {}
 
@@ -253,7 +253,7 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
 
         group.joinSharedFolder(sf, Permissions.OWNER, owner);
         sf.setState(user2, SharedFolderState.JOINED);
-        sf.removeUser(owner);
+        sf.removeIndividualUser(owner);
         sf.setState(user3, SharedFolderState.JOINED);
 
         // 2 users and their respective TS
@@ -274,7 +274,7 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
         assertTrue(groupStatus.contains(new UserPermissionsAndState(user2, Permissions.EDITOR, SharedFolderState.JOINED)));
         assertTrue(groupStatus.contains(new UserPermissionsAndState(user3, Permissions.EDITOR, SharedFolderState.PENDING)));
 
-        group.removeMember(user3);
+        group.removeMember(user3, null);
         groupStatus = Lists.newArrayList(sf.getUserRolesAndStatesForGroup(group));
         assertEquals(groupStatus.size(), 1);
         assertTrue(groupStatus.contains(new UserPermissionsAndState(user2, Permissions.EDITOR, SharedFolderState.JOINED)));

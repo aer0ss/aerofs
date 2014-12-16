@@ -185,8 +185,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected User.Factory factUser = new User.Factory();
     {
-        factUser.inject(udb, oidb, tfdb, factDevice, factOrg,
-                factOrgInvite, factSharedFolder, license);
+        factUser.inject(udb, oidb, tfdb, gmdb, factDevice, factOrg,
+                factOrgInvite, factSharedFolder, factGroup, license);
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, gsdb, factGroup, factUser);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
@@ -290,9 +290,13 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 any(String.class), any(SID.class), any(Permissions.class))).then(RETURNS_MOCKS);
         when(factEmailer.createOrganizationInvitationEmailer(any(User.class), any(User.class)))
                 .then(RETURNS_MOCKS);
-        when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
+        when(factEmailer.createSharedFolderSignUpInvitationEmailer(any(User.class), any(User.class),
                 any(String.class), any(Permissions.class), any(String.class), any(String.class)))
                 .then(RETURNS_MOCKS);
+        when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
+                any(String.class))).then(RETURNS_MOCKS);
+        when(factEmailer.createGroupSignUpInvitationEmailer(any(User.class), any(User.class),
+                any(Group.class), any(String.class))).then(RETURNS_MOCKS);
     }
 
     private void mockRateLimiter()

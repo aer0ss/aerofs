@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExBadArgs;
 public class GroupID extends IntegerID
 {
     public final static GroupID NULL_GROUP = new GroupID(0);
+
     protected GroupID(int i)
     {
         super(i);

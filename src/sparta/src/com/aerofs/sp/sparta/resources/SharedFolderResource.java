@@ -379,7 +379,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         try {
             affected = caller.equals(user)
                     ? sf.setState(user, SharedFolderState.LEFT)
-                    : sf.removeUser(user);
+                    : sf.removeIndividualUser(user);
         } catch (ExNoAdminOrOwner e) {
             throw new ExBadArgs(e.getMessage());
         }
@@ -528,7 +528,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                 .publish();
 
         try {
-            checkState(sf.removeUser(user).isEmpty());
+            checkState(sf.removeIndividualUser(user).isEmpty());
         } catch (ExNoAdminOrOwner e) {
             throw new ExBadArgs(e.getMessage());
         }

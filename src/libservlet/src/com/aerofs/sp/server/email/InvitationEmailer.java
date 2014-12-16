@@ -37,18 +37,15 @@ public class InvitationEmailer
     public static class Factory
     {
         /**
-         * @param folderName non-null if the invitation is triggered by sharing a folder, in which
-         *      case {@code role} must be non-null as well.
          * @param signUpCode null if the user is auto-provisioned.
          */
-        public InvitationEmailer createSignUpInvitationEmailer(
-                final User inviter, final User invitee, @Nullable final String folderName,
-                @Nullable Permissions permissions, @Nullable String note,
-                @Nullable final String signUpCode)
+        public InvitationEmailer createSharedFolderSignUpInvitationEmailer(final User inviter,
+                final User invitee, final String folderName, Permissions permissions,
+                @Nullable String note, @Nullable final String signUpCode)
                 throws IOException, SQLException, ExNotFound
         {
             final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
-                    invitee.id(), folderName, permissions, note, signUpCode);
+                    invitee.id(), folderName, permissions, note, null, signUpCode);
 
             final Email email = new Email();
             final NameFormatter nsInviter = new NameFormatter(inviter);
@@ -65,7 +62,63 @@ public class InvitationEmailer
                             email.getTextEmail(), email.getHTMLEmail());
 
                     EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
-                            " to " + folderName, "code " + signUpCode);
+                            " to folder " + folderName, "code " + signUpCode);
+                    return null;
+                }
+            });
+        }
+
+        public InvitationEmailer createSignUpInvitationEmailer(final User inviter,
+                final User invitee, @Nullable final String signUpCode)
+                throws SQLException, ExNotFound, IOException
+        {
+            final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
+                    invitee.id(), null, null, null, null, signUpCode);
+
+            final Email email = new Email();
+            final NameFormatter nsInviter = new NameFormatter(inviter);
+
+            composeSignUpInvitationEmail(cs, nsInviter, email);
+
+            return new InvitationEmailer(new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
+                            email.getTextEmail(), email.getHTMLEmail());
+
+                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
+                            " to " + L.brand(), "code " + signUpCode);
+                    return null;
+                }
+            });
+        }
+
+        public InvitationEmailer createGroupSignUpInvitationEmailer(final User inviter,
+                final User invitee, final Group group, @Nullable final String signUpCode)
+                throws SQLException, ExNotFound, IOException
+        {
+            final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
+                    invitee.id(), null, null, null, group.getCommonName(), signUpCode);
+
+            final Email email = new Email();
+            final NameFormatter nsInviter = new NameFormatter(inviter);
+
+            composeSignUpInvitationEmail(cs, nsInviter, email);
+
+            return new InvitationEmailer(new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
+                            email.getTextEmail(), email.getHTMLEmail());
+
+                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
+                            " to group " + group.getCommonName(), "code " + signUpCode);
                     return null;
                 }
             });
@@ -80,7 +133,7 @@ public class InvitationEmailer
                 cs.invitedTo() + cs.noteAndEndOfSentence() + "\n" +
                 "\n" +
                 L.brand() + " is a file syncing, sharing, and collaboration tool that" +
-                " lets you sync files privately without using public cloud. You can learn more" +
+                " lets you sync files privately without using the public cloud. You can learn more" +
                     // Whitespace required after URL for autolinker. TODO (WW) fix this!
                 " about it at " + WWW.MARKETING_HOST_URL + " ." + "\n" +
                 "\n" +
@@ -88,14 +141,14 @@ public class InvitationEmailer
                 "\n" + cs.signUpURLAndInstruction();
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
-            email.addSection(nsInviter.nameOnly() + " invited you to " + L.brand() + "!",
+            email.addSection(nsInviter.nameOnly() + " Invited You to " + L.brand() + "!",
                     body);
             email.addDefaultSignature();
         }
 
-        public InvitationEmailer createFolderInvitationEmailer(@Nonnull final User sharer,
-                final User sharee, @Nullable final String folderName,
-                @Nullable final String note, final SID sid, Permissions permissions)
+        public InvitationEmailer createFolderInvitationEmailer(final User sharer,
+                final User sharee, final String folderName, @Nullable final String note,
+                final SID sid, final Permissions permissions)
                 throws
                 IOException,
                 SQLException,
@@ -104,7 +157,7 @@ public class InvitationEmailer
             final Email email = new Email();
             final NameFormatter nsSharer = new NameFormatter(sharer);
             final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
-                    sharee.id(), folderName, permissions, note, null);
+                    sharee.id(), folderName, permissions, note, null, null);
 
             String body = "\n" +
                     nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
@@ -113,9 +166,10 @@ public class InvitationEmailer
                     "Click on this link to view and accept the invitation: " +
                     ACCEPT_INVITATION_LINK;
 
-            email.addSection(
-                    nsSharer.nameOnly() + " wants to share " + Util.quote(folderName) +
-                    " with you.", body);
+            String title = nsSharer.nameOnly() + " Wants to Share " + Util.quote(folderName) +
+                    " With You";
+
+            email.addSection(title, body);
             email.addDefaultSignature();
 
             return new InvitationEmailer(new Callable<Void>()
@@ -136,20 +190,26 @@ public class InvitationEmailer
             });
         }
 
-        public InvitationEmailer createAddedToGroupEmailer(final User newMember, final Group group)
+        public InvitationEmailer createAddedToGroupEmailer(final User changer, final User newMember,
+                final Group group)
                 throws
                 IOException,
                 SQLException,
                 ExNotFound
         {
             final Email email = new Email();
+            final NameFormatter nf = new NameFormatter(changer);
+            String quotedGroupName = Util.quote(group.getCommonName());
 
             String body = "\n" +
-                    "You've been added to the " + L.brand() + " group: " + group.getCommonName() +
-                    "!\n" + "From now on you will be invited to any shared folders that " +
-                    group.getCommonName() + " joins.";
+                    nf.nameAndEmail() + " has added you to the group " + quotedGroupName + ".\n" +
+                    "From now on you will be invited to any shared folders that " +
+                    quotedGroupName + " joins.\n" +
+                    "Click on this link to view and accept any pending invitations: " +
+                    ACCEPT_INVITATION_LINK;
+            String title = "You Are Now a Member of The Group " + quotedGroupName;
 
-            email.addSection("Your " + L.brand() + " admin has added you to a group", body);
+            email.addSection(title, body);
             email.addDefaultSignature();
 
             return new InvitationEmailer(new Callable<Void>()
@@ -157,9 +217,8 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    _emailSender.sendPublicEmailFromSupport(group.getCommonName(),
-                            newMember.id().getString(), getReplyTo(group),
-                            "You've been added to a group in " + L.brand() + "!",
+                    _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                            newMember.id().getString(), getReplyTo(changer), title,
                             email.getTextEmail(), email.getHTMLEmail());
 
                     EmailUtil.emailInternalNotification(
@@ -172,8 +231,8 @@ public class InvitationEmailer
             });
         }
 
-        public InvitationEmailer createBatchInvitationEmailer(final User sharee, final Group sharer,
-                Set<SharedFolder> sharedFolders)
+        public InvitationEmailer createBatchInvitationEmailer(final User sharer, final User sharee,
+                final Group group, Set<SharedFolder> sharedFolders)
                 throws
                 IOException,
                 SQLException,
@@ -181,20 +240,25 @@ public class InvitationEmailer
         {
             assert sharedFolders.size() > 0;
             final Email email = new Email();
+            final NameFormatter nf = new NameFormatter(sharer);
             String folderOrFolders = sharedFolders.size() == 1 ? "folder" : "folders";
             String inviteOrInvites = sharedFolders.size() == 1 ? "invitation" : "invitations";
+            String quotedGroupName = Util.quote(group.getCommonName());
 
             //TODO (RD) include names of the folders in the email
             String body = "\n" +
-                    "As part of being added to the group " +sharer.getCommonName() +
-                    ", you've been invited to " + sharedFolders.size() + " shared " + L.brand() +
-                    " " + folderOrFolders + ".\n\n" +
+                    nf.nameAndEmail() + " has added you to the group " + quotedGroupName + ".\n" +
+                    "As part of being added to the group " + quotedGroupName +
+                    ", you've been invited to " + sharedFolders.size() + " " + L.brand() +
+                    " shared " + folderOrFolders + ".\n" +
+                    "From now on you will also be invited to any shared folders that " +
+                    quotedGroupName + " joins.\n\n" +
                     "Click on this link to view and accept the " + inviteOrInvites + ": " +
                     ACCEPT_INVITATION_LINK;
 
-            email.addSection(
-                    sharer.getCommonName() + " wants to share " + sharedFolders.size() + " " +
-                            folderOrFolders + " with you.", body);
+            String title = "You Are Now a Member of The Group " + quotedGroupName;
+
+            email.addSection(title, body);
             email.addDefaultSignature();
 
             return new InvitationEmailer(new Callable<Void>()
@@ -202,13 +266,12 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    _emailSender.sendPublicEmailFromSupport(sharer.getCommonName(),
-                            sharee.id().getString(), getReplyTo(sharer),
-                            "Join my " + L.brand() +  " " + folderOrFolders,
+                    _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                            sharee.id().getString(), getReplyTo(sharer), title,
                             email.getTextEmail(), email.getHTMLEmail());
 
-                    EmailUtil.emailInternalNotification(sharer + " shared " + sharedFolders.size() +
-                                    " " + folderOrFolders + " with " + sharee,
+                    EmailUtil.emailInternalNotification(sharer + " added " + sharee + " to group " +
+                            group + " and shared " + sharedFolders.size() + " " + folderOrFolders,
                             folderOrFolders + ": " + Joiner.on(", ").join(sharedFolders));
 
                     return null;
@@ -220,7 +283,7 @@ public class InvitationEmailer
                 @Nonnull final User invitee)
                 throws IOException, SQLException, ExNotFound
         {
-            final String subject = "Join my organization on AeroFS!";
+            final String subject = "Join My Organization on AeroFS!";
             final NameFormatter ns = new NameFormatter(inviter);
             String body = "\n" +
                     ns.nameAndEmail() + " has invited you to join their organization on AeroFS.\n" +
@@ -265,11 +328,6 @@ public class InvitationEmailer
     private static String getReplyTo(User inviter)
     {
         return inviter.id().isTeamServerID() ? WWW.SUPPORT_EMAIL_ADDRESS : inviter.id().getString();
-    }
-
-    private static String getReplyTo(Group inviter)
-    {
-        return WWW.SUPPORT_EMAIL_ADDRESS;
     }
 
     private final @Nonnull Callable<Void> _call;

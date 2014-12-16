@@ -94,6 +94,20 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     }
 
     @Test
+    public void shouldNotifyNonExistingUserOfFolderChanges()
+            throws Exception
+    {
+        User user = newUser();
+        shareFolder(USER_1, SID_1, user, Permissions.allOf(Permission.WRITE));
+
+        service.updateACL(SID_1.toPB(), user.id().getString(), Permissions.allOf().toPB(), false);
+
+        verify(sharedFolderNotificationEmailer, times(1)).sendRoleChangedNotificationEmail(
+                eq(factSharedFolder.create(SID_1)), eq(USER_1), eq(user),
+                eq(Permissions.allOf(Permission.WRITE)), eq(Permissions.allOf()));
+    }
+
+    @Test
     public void shouldThrowWhenEditorTriesToInviteToFolder()
             throws Exception
     {
@@ -365,7 +379,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             throws Exception
     {
         verify(factEmailer, shouldBeInvited ? times(1) : never())
-                .createSignUpInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
-                        any(Permissions.class), eq(""), anyString());
+                .createSharedFolderSignUpInvitationEmailer(eq(sharer), eq(sharee),
+                        eq(sid.toStringFormal()), any(Permissions.class), eq(""), anyString());
     }
 }

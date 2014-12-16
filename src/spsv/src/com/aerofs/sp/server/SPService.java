@@ -1481,7 +1481,7 @@ public class SPService implements ISPService
         }
 
         // Ignore the invitation by deleting the user.
-        sf.removeUser(user);
+        sf.removeIndividualUser(user);
 
         auditSharing(sf, user, "folder.delete_invitation")
                 .add("target", user.id())
@@ -2205,8 +2205,7 @@ public class SPService implements ISPService
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
             // signup code with the organization invitation. See signUpWithCode() on how this association is
             // consumed.
-            InviteToSignUpResult res = _invitationHelper.inviteToSignUp(inviter, invitee, null,
-                    null, null);
+            InviteToSignUpResult res = _invitationHelper.inviteToSignUp(inviter, invitee);
             // ignore the emailer returned by inviteToOrganization(), so we only send one email
             // rather than two.
             inviteToOrganization(inviter, invitee, org, res._signUpCode);
@@ -2281,6 +2280,7 @@ public class SPService implements ISPService
         // TODO (WW) this comment points to poor naming (or cohesion) in setOrganization
         Collection<UserID> users = accepter.setOrganization(orgNew, AuthorizationLevel.USER);
 
+        // TODO (RD) this doesn't seem to do anything
         // retrieve the stripe data for the old organization _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
 
@@ -2660,7 +2660,7 @@ public class SPService implements ISPService
             auditSharing(sf, user, "folder.permission.delete").add("target", subject.id())
                     .publish();
 
-            _aclPublisher.publish_(sf.removeUser(subject));
+            _aclPublisher.publish_(sf.removeIndividualUser(subject));
             _sfnEmailer.sendRemovedFromFolderNotificationEmail(sf, user, subject);
         } else if (userOrGroupID instanceof GroupID) {
             Group subject = _factGroup.create((GroupID)userOrGroupID);
@@ -2791,7 +2791,7 @@ public class SPService implements ISPService
                 .add("first_name", firstName)
                 .add("last_name", lastName)
                 .add("organization", orgID)
-                .add("is_admin", !joinExistingOrg) // TODO: is this valid? right?
+                .add("is_admin", !joinExistingOrg) // TODO: this is incorrect if the user already exists
                 .publish();
 
         return createReply(SignUpWithCodeReply.newBuilder()
@@ -3586,13 +3586,13 @@ public class SPService implements ISPService
     {
         ImmutableCollection.Builder<UserID> needsACLUpdate = ImmutableSet.builder();
         _sqlTrans.begin();
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        Organization org = user.getOrganization();
+        User admin = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        Organization org = admin.getOrganization();
         // Permissions: cannot modify a group unless you are an admin.
-        user.throwIfNotAdmin();
+        admin.throwIfNotAdmin();
         Group group = _factGroup.create(groupID);
         // Permissions: cannot modify a group unless it is owned by your organization.
-        throwIfNotOwner(user.getOrganization(), group);
+        throwIfNotOwner(org, group);
         // Permissions: cannot modify externally managed groups.
         group.throwIfExternallyManaged();
 
@@ -3604,32 +3604,42 @@ public class SPService implements ISPService
 
         List<InvitationEmailer> emails = Lists.newLinkedList();
         for (String userEmail : userEmails) {
-            User u = _factUser.create(UserID.fromExternal(userEmail));
+            User newMember = _factUser.create(UserID.fromExternal(userEmail));
 
-            if (!_authenticator.isInternalUser(u.id())) {
-                throw new ExWrongOrganization(u + " is external to this organization, " +
+            if (!_authenticator.isInternalUser(newMember.id())) {
+                throw new ExWrongOrganization(newMember + " is external to this organization, " +
                         "and not allowed to be in this organization's groups");
-            } else if (!u.getOrganization().equals(org)) {
-                throw new ExWrongOrganization(u + " in wrong org");
+            } else if (newMember.exists() && !newMember.getOrganization().equals(org)) {
+                throw new ExWrongOrganization(newMember + " in wrong org");
+            } else if (!newMember.exists()) {
+                ImmutableCollection<Group> groups = newMember.getGroups();
+                // check if the user is a pending member of a different organization's group
+                if (!groups.isEmpty() && !groups.iterator().next().getOrganization().equals(org)) {
+                    throw new ExWrongOrganization(newMember + " in wrong org");
+                }
             }
-            AffectedUserIDsAndInvitedFolders updates = group.addMember(u);
+            AffectedUserIDsAndInvitedFolders updates = group.addMember(newMember);
             needsACLUpdate.addAll(updates._affected);
-            emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, u,
-                    updates._folders));
+            emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, admin,
+                    newMember, updates._folders));
         }
+        // since adding members to a group can send out org invites, we make sure they haven't
+        // exceeded the free org size limit
+        PBStripeData sd = getStripeData(org);
+        throwIfPaymentRequiredAndNoCustomerID(sd);
+
+        _aclPublisher.publish_(needsACLUpdate.build());
 
         _sqlTrans.commit();
 
-        l.info("{} added {} member(s) to {}", user, userEmails.size(), group);
-
-        _aclPublisher.publish_(needsACLUpdate.build());
+        l.info("{} added {} member(s) to {}", admin, userEmails.size(), group);
 
         for (InvitationEmailer email : emails) {
             try {
                 email.send();
             } catch (Exception e) {
                 l.warn("failed to send email notifying {} of folder invitations from joining {}",
-                        user, group);
+                        admin, group);
             }
         }
 
@@ -3662,7 +3672,7 @@ public class SPService implements ISPService
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
         for (String userEmail : userEmails) {
             User u = _factUser.create(UserID.fromExternal(userEmail));
-            affected.addAll(group.removeMember(u));
+            affected.addAll(group.removeMember(u, null));
         }
 
         _aclPublisher.publish_(affected.build());

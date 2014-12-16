@@ -24,7 +24,7 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
     Organization org;
     Group group;
 
-    User user1, user2, user3;
+    User user1, user2, user3, pending1;
 
     @Before
     public void setup()
@@ -37,6 +37,8 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
         user1 = saveUser();
         user2 = saveUser();
         user3 = saveUser();
+
+        pending1 = newUser();
     }
 
     @Test
@@ -84,9 +86,9 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
         group.addMember(user3);
         assertEquals(3, group.listMembers().size());
 
-        group.removeMember(user1);
-        group.removeMember(user2);
-        group.removeMember(user3);
+        group.removeMember(user1, null);
+        group.removeMember(user2, null);
+        group.removeMember(user3, null);
         assertEquals(0, group.listMembers().size());
     }
 
@@ -95,9 +97,9 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
             throws Exception
     {
         group.addMember(user1);
-        group.removeMember(user1);
+        group.removeMember(user1, null);
         try {
-            group.removeMember(user1);
+            group.removeMember(user1, null);
             fail();
         } catch (ExNotFound e) {}
     }
@@ -115,6 +117,25 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
             throws Exception
     {
         Group noExist = factGroup.create(GroupID.fromExternal(666));
-        noExist.removeMember(user1);
+        noExist.removeMember(user1, null);
+    }
+
+    @Test
+    public void shouldAcceptPendingMembers()
+            throws Exception
+    {
+        group.addMember(pending1);
+        assertEquals(group.listMembers().size(), 1);
+        assertEquals(group.listMembers().get(0).id(), pending1.id());
+        group.removeMember(pending1, null);
+    }
+
+    @Test
+    public void pendingMembersShouldGetOrg()
+            throws Exception
+    {
+        group.addMember(pending1);
+        saveUser(pending1);
+        assertEquals(pending1.getOrganization(), org);
     }
 }

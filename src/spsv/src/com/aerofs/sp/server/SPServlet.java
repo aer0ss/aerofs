@@ -154,8 +154,8 @@ public class SPServlet extends AeroServlet
              new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
 
     {
-        _factUser.inject(_udb, _oidb, _tfdb, _factDevice, _factOrg,
-                _factOrgInvite, _factSharedFolder, _license);
+        _factUser.inject(_udb, _oidb, _tfdb, _gmdb, _factDevice, _factOrg,
+                _factOrgInvite, _factSharedFolder, _factGroup, _license);
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite, _factGroup,
                 _gdb);

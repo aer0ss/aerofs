@@ -24,25 +24,31 @@ class InvitationEmailContentStrategy
     @Nullable private final String _folderName;
     @Nullable private final Permissions _permissions;
     @Nullable private final String _note;
+    @Nullable private final String _groupName;
     @Nullable private final String _signUpCode;
 
     /**
-     * See InvitationEmailer.createSignUpInvitationEmailer() for semantics of the null parameters.
+     * _folderName will be null if this invitation isn't associated with a folder, _groupName
+     * will be null if not associated with a group, if both are null then it's a plain invitation
      */
     InvitationEmailContentStrategy(@Nonnull UserID invitee, @Nullable String folderName,
-            @Nullable Permissions permissions, @Nullable String note, @Nullable String signUpCode)
+            @Nullable Permissions permissions, @Nullable String note, @Nullable String groupName,
+            @Nullable String signUpCode)
     {
         _invitee = invitee;
         _folderName = folderName;
         _permissions = permissions;
         _note = note;
+        _groupName = groupName;
         _signUpCode = signUpCode;
     }
 
     String subject()
     {
         if (isFolderInvite()) {
-            return "Join my " + L.brand() + " folder";
+            return "Join My " + L.brand() + " Folder";
+        } else if (isGroupInvite()) {
+            return "Join My " + L.brand() + " Group";
         } else {
             return "Invitation to " + L.brand();
         }
@@ -52,8 +58,10 @@ class InvitationEmailContentStrategy
     {
         if (isFolderInvite()) {
             assert _permissions != null;
-            return "a shared " + L.brand() + " folder " + Util.quote(_folderName)
-                    + " as " + _permissions.roleName();
+            return "a shared " + L.brand() + " folder " + Util.quote(_folderName) + " as " +
+                    _permissions.roleName();
+        } else if (isGroupInvite()) {
+            return "the " + L.brand() + " group " + Util.quote(_groupName);
         } else {
             return L.brand();
         }
@@ -90,5 +98,10 @@ class InvitationEmailContentStrategy
     private boolean isFolderInvite()
     {
         return _folderName != null;
+    }
+
+    private boolean isGroupInvite()
+    {
+        return _groupName != null;
     }
 }

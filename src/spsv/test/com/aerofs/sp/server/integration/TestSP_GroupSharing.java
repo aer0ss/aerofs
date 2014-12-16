@@ -20,11 +20,16 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 
 import java.util.List;
 
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.eq;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static com.google.common.collect.Lists.newArrayList;
@@ -92,12 +97,15 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         throws Exception
     {
         service.addGroupMembers(group.id().getInt(), emails(user2));
+        verify(factEmailer).createAddedToGroupEmailer(owner, user2, group);
         assertEquals(service.listGroupMembers(group.id().getInt()).get().getUsersCount(), 1);
         assertEquals(service.listGroupMembers(group.id().getInt())
                 .get()
                 .getUsers(0)
                 .getUserEmail(), email(user2));
         service.addGroupMembers(group.id().getInt(), emails(user3, user4));
+        verify(factEmailer).createAddedToGroupEmailer(owner, user3, group);
+        verify(factEmailer).createAddedToGroupEmailer(owner, user4, group);
         assertEquals(service.listGroupMembers(group.id().getInt()).get().getUsersCount(), 3);
     }
 
@@ -132,6 +140,49 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         throws Exception
     {
         service.addGroupMembers(group.id().getInt(), emails(outsideOrg));
+    }
+
+    @Test
+    public void shouldntAddMembersSetToJoinOtherOrg()
+            throws Exception
+    {
+        sqlTrans.begin();
+        Organization org2 = saveOrganization();
+        User org2admin = makeUserInOrg(org2, AuthorizationLevel.ADMIN);
+        User pending = newUser();
+        Group group2 = factGroup.save("another common name", org2.id(), null);
+        sqlTrans.commit();
+
+        setSession(org2admin);
+        service.addGroupMembers(group2.id().getInt(), emails(pending));
+
+        try {
+            setSession(owner);
+            service.addGroupMembers(group.id().getInt(), emails(outsideOrg));
+            fail();
+        } catch (ExWrongOrganization e) {
+        }
+    }
+
+    @Captor ArgumentCaptor<String> signUpCodeCaptor;
+
+    @Test
+    public void shouldAddPendingGroupMembersToSameOrg()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User pending = newUser();
+        sqlTrans.commit();
+
+        service.addGroupMembers(group.id().getInt(), emails(pending));
+        verify(factEmailer).createGroupSignUpInvitationEmailer(eq(owner), eq(pending), eq(group),
+                signUpCodeCaptor.capture());
+        service.signUpWithCode(signUpCodeCaptor.getValue(), ByteString.copyFromUtf8("password"),
+                "Firsty", "Lasto");
+
+        sqlTrans.begin();
+        assertEquals(pending.getOrganization(), org);
+        sqlTrans.commit();
     }
 
     @Test
@@ -229,7 +280,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         throws Exception
     {
         User u = saveUser();
-        u.setOrganization(org, auth);
+        u.setOrganization(o, auth);
         return u;
     }
 }

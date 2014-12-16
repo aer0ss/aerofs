@@ -40,7 +40,8 @@ public class TestGroupShares extends AbstractBusinessObjectTest
     final SID sid = SID.generate();
     SharedFolder sf;
 
-    User owner, user1, user2;
+    User owner, user1, user2, pending1;
+
 
     @Before
     public void setup() throws Exception
@@ -49,6 +50,7 @@ public class TestGroupShares extends AbstractBusinessObjectTest
         owner = saveUser();
         user1 = saveUser();
         user2 = saveUser();
+        pending1 = newUser();
 
         // Test organization.
         org = factOrg.save(orgId);
@@ -140,5 +142,19 @@ public class TestGroupShares extends AbstractBusinessObjectTest
         assertEquals(groupStatus.size(), 2);
         assertTrue(groupStatus.contains(new UserPermissionsAndState(user1, Permissions.EDITOR, SharedFolderState.JOINED)));
         assertTrue(groupStatus.contains(new UserPermissionsAndState(user2, Permissions.EDITOR, SharedFolderState.PENDING)));
+    }
+
+    @Test
+    public void pendingMembersShouldGetInvitedToSharedFolders()
+            throws Exception
+    {
+        group.addMember(pending1);
+        group.joinSharedFolder(sf, Permissions.EDITOR, null);
+        saveUser(pending1);
+        List<UserPermissionsAndState> groupStatus =
+                Lists.newArrayList(sf.getUserRolesAndStatesForGroup(group));
+        assertEquals(groupStatus.size(), 1);
+        assertEquals(groupStatus.get(0), new UserPermissionsAndState(pending1, Permissions.EDITOR,
+                SharedFolderState.PENDING));
     }
 }

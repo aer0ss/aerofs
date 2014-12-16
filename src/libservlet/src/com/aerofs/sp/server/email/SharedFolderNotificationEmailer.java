@@ -101,10 +101,11 @@ public class SharedFolderNotificationEmailer
             return;
         }
 
+        String quotedGroupName = Util.quote(group.getCommonName());
         for (User subject : group.listMembers()) {
-            String title = " Your group " + group.getCommonName() + "'s role in the folder " +
+            String title = "Your group " + quotedGroupName + "'s role in the folder " +
                     Util.quote(sf.getName(subject)) + " has changed";
-            String body = String.format(changeRoles, changerName(changer) , "your group's",
+            String body = String.format(changeRoles, changerName(changer), "your group's",
                     oldPermissions.roleName(), newPermissions.roleName(),
                     describeRoleChanges(oldPermissions, newPermissions));
 
@@ -125,10 +126,11 @@ public class SharedFolderNotificationEmailer
     public void sendRemovedFromFolderNotificationEmail(SharedFolder sf, User changer, Group group)
             throws ExNotFound, SQLException, IOException, MessagingException
     {
+        String quotedGroupName = Util.quote(group.getCommonName());
         for (User subject : group.listMembers()) {
-            String title = "Your group " + group.getCommonName() +
+            String title = "Your group " + quotedGroupName +
                     " has been removed from the folder " + Util.quote(sf.getName(subject));
-            String body = String.format(deleteFromFolder, changerName(changer), "your group",
+            String body = String.format(deleteFromFolder, changerName(changer), "your group's" +
                     "If you are not directly a member of this folder or in another group that is");
 
             sendEmail(subject, title, body);

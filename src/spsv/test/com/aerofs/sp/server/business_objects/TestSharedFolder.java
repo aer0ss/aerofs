@@ -414,7 +414,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.setPermissions(owner, Permissions.allOf(Permission.WRITE)).size(), 4);
 
         try {
-            sf.removeUser(user1);
+            sf.removeIndividualUser(user1);
             fail();
         } catch (ExNoAdminOrOwner e) {
             sqlTrans.handleException();
@@ -430,7 +430,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
 
         try {
-            sf.removeUser(user);
+            sf.removeIndividualUser(user);
             fail();
         } catch (ExNotFound e) {
             sqlTrans.handleException();
@@ -461,7 +461,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server id
-        assertEquals(sf.removeUser(user1).size(), 5);
+        assertEquals(sf.removeIndividualUser(user1).size(), 5);
 
         assertNull(sf.getPermissionsNullable(user1));
 
@@ -469,7 +469,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE));
 
         // why 4? owner, user2, owner's team server, user2's team server id
-        assertEquals(sf.removeUser(user2).size(), 4);
+        assertEquals(sf.removeIndividualUser(user2).size(), 4);
 
         assertNull(sf.getPermissionsNullable(user2));
 
@@ -492,7 +492,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // make sure TS not kicked out when last org member leaves
         // why 2? the user and the team server
-        assertEquals(sf.removeUser(user).size(), 2);
+        assertEquals(sf.removeIndividualUser(user).size(), 2);
         assertJoinedRole(sf, tsUser, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
     }
 
@@ -503,7 +503,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder shared = saveSharedFolder(user);
         shared.addJoinedUser(saveUser(), Permissions.allOf(Permission.WRITE, Permission.MANAGE));
 
-        shared.removeUser(user);
+        shared.removeIndividualUser(user);
 
         assertTrue(shared.exists());
     }
@@ -521,7 +521,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         shared.addJoinedUser(left, Permissions.allOf(Permission.WRITE));
         shared.setState(left, SharedFolderState.LEFT);
 
-        shared.removeUser(user);
+        shared.removeIndividualUser(user);
 
         assertFalse(shared.exists());
         assertEquals(ImmutableList.of(factSharedFolder.create(SID.rootSID(invited.id()))),
@@ -571,7 +571,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // now, remove user2
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server
-        assertEquals(sf.removeUser(user2).size(), 5);
+        assertEquals(sf.removeIndividualUser(user2).size(), 5);
 
         // why 4? owner, user1, owner's team server, user1's team server
         assertEquals(sf.removeTeamServerForUser(user1).size(), 4);
@@ -780,9 +780,9 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         folder.setState(user2, SharedFolderState.JOINED);
         folder.addUserWithGroup(user2, group, Permissions.EDITOR, owner);
         assertEquals(folder.getStateNullable(user2), SharedFolderState.JOINED);
-        folder.removeUser(user2);
+        folder.removeIndividualUser(user2);
         assertEquals(folder.getStateNullable(user2), SharedFolderState.JOINED);
-        folder.removeUser(user2, group);
+        folder.removeUserWithGroup(user2, group);
         assertEquals(folder.getStateNullable(user2), null);
     }
 

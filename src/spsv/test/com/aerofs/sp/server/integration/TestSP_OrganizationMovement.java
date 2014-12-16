@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExAlreadyInvited;
@@ -13,7 +12,6 @@ import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
@@ -33,13 +31,13 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     {
         clearPublishedMessages();
         service.acceptOrganizationInvitation(org.id().getInt());
-        // when the user changes the org, the ACL of its root store must be updated to inlucde
+        // when the user changes the org, the ACL of its root store must be updated to include
         // the team server user id.
         assertPublishedTo(user, org.getTeamServerUser());
     }
 
     /**
-     * Accept the first inviation returned by the get organization invites call.
+     * Accept the first invitation returned by the get organization invites call.
      * @return the ID of the organization that we have joined.
      */
     private Organization acceptFirstInvitation(User user)
@@ -57,8 +55,8 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     /**
-     * Ignore the first inviation returned by the get organization invites call.
-     * @return the ID of the organization that we hvae joined.
+     * Ignore the first invitation returned by the get organization invites call.
+     * @return the ID of the organization that we have joined.
      * @throws Exception
      */
     private Organization deleteFirstInvitation()

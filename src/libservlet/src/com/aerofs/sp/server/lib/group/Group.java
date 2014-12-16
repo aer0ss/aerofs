@@ -22,7 +22,6 @@ import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -30,7 +29,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -203,7 +201,7 @@ public class Group
 
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
         for (User u : listMembers()) {
-            affected.addAll(removeMember(u));
+            affected.addAll(removeMember(u, null));
         }
 
         // Order matters, or else we will die on foreign key constraints.
@@ -226,14 +224,12 @@ public class Group
             throws
             SQLException,
             ExAlreadyExist,
-            ExNotFound,
-            IOException,
-            ExNoAdminOrOwner
+            ExNotFound
     {
         // Group members db does not know about group existence, so we must check that separately.
         throwIfDoesNotExist();
 
-        // Constraint violation triggers the ExAlreadyExist exception; no need to handle here.
+        // Constraint violation triggers the ExAlreadyExist exception; no need to handle explicitly
         _f._gmdb.addMember(id(), user.id());
 
         Set<SharedFolder> invitedTo = Sets.newHashSet();
@@ -242,25 +238,26 @@ public class Group
             Permissions p = _f._gsdb.getRole(id(), sf.id());
             AffectedAndNeedsEmail updates = sf.addUserWithGroup(user, this, p, null);
             needsACLUpdate.addAll(updates._affected);
-            if(updates._needsEmail) {
+            if (updates._needsEmail) {
                 invitedTo.add(sf);
             }
         }
-
         return new AffectedUserIDsAndInvitedFolders(needsACLUpdate.build(), invitedTo);
     }
 
-    public ImmutableCollection<UserID> removeMember(User user)
+    public ImmutableCollection<UserID> removeMember(User user, @Nullable User newOwner)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
+        // don't need to check if group exists, hasMember will do that
         if (!hasMember(user)) {
             throw new ExNotFound(user + " not in " + this);
         }
+
         _f._gmdb.removeMember(id(), user.id());
 
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
         for (SharedFolder sf : listSharedFolders()) {
-            affected.addAll(sf.removeUser(user, this));
+            affected.addAll(sf.removeUserAndTransferOwnership(user, newOwner, this));
         }
         return affected.build();
     }
@@ -276,14 +273,18 @@ public class Group
             throws SQLException, ExNotFound
     {
         throwIfDoesNotExist();
+        return userFromEmails(_f._gmdb.listMembers(id()));
+    }
 
-        Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._gmdb.listMembers(id())) {
+    private ImmutableList<User> userFromEmails(Iterable<UserID> emails)
+            throws SQLException
+    {
+        ImmutableList.Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : emails) {
             builder.add(_f._factUser.create(userID));
         }
         return builder.build();
     }
-
     // ---
     // Shares
     // ---
@@ -347,7 +348,7 @@ public class Group
     {
         throwIfDoesNotExist();
 
-        Builder<SharedFolder> builder = ImmutableList.builder();
+        ImmutableList.Builder<SharedFolder> builder = ImmutableList.builder();
         for (SID sid : _f._gsdb.listSharedFolders(id())) {
             builder.add(_f._factSharedFolder.create(sid));
         }

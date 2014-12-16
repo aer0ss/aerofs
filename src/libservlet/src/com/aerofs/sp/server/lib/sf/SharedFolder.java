@@ -232,7 +232,7 @@ public class SharedFolder
      */
     public AffectedAndNeedsEmail addUserWithGroup(User user, @Nullable Group group,
             Permissions permissions, @Nullable User sharer)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExAlreadyExist, ExNotFound
     {
         GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
         UserID sharerID = sharer == null ? null : sharer.id();
@@ -351,13 +351,13 @@ public class SharedFolder
         }
     }
 
-    public ImmutableCollection<UserID> removeUser(User user)
-            throws SQLException, ExNotFound, ExNoAdminOrOwner
+    public ImmutableCollection<UserID> removeIndividualUser(User user)
+            throws ExNoAdminOrOwner, SQLException, ExNotFound
     {
         return removeUserAndTransferOwnership(user, null, null);
     }
 
-    public ImmutableCollection<UserID> removeUser(User user, Group group)
+    public ImmutableCollection<UserID> removeUserWithGroup(User user, Group group)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
         return removeUserAndTransferOwnership(user, null, group);

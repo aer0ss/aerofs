@@ -47,7 +47,7 @@ public class OrganizationInvitation
         /**
          * @param signUpCode an optional signUp code associated with the organization invitation.
          *  When the invited user signs up with this signup code the system will automatically
-         *  accept the organization inviation on behalf of the user.
+         *  accept the organization invitation on behalf of the user.
          */
         public OrganizationInvitation save(@Nonnull User inviter, @Nonnull User invitee,
                 @Nonnull Organization org, @Nullable String signUpCode)
@@ -71,7 +71,6 @@ public class OrganizationInvitation
     {
         _db = db;
         _factUser = factUser;
-
         _invitee = invitee;
         _org = org;
     }
@@ -110,5 +109,11 @@ public class OrganizationInvitation
             throws ExNotFound, SQLException
     {
         _db.delete(_invitee.id(), _org.id());
+    }
+
+    public String getCode()
+            throws SQLException, ExNotFound
+    {
+        return _db.getCode(_invitee.id(), _org.id());
     }
 }

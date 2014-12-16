@@ -4,18 +4,19 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -93,7 +94,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         service.inviteToOrganization(user.id().getString());
 
         verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
-                eq((String) null), eq((Permissions) null), eq((String) null), signUpCodeCaptor.capture());
+                signUpCodeCaptor.capture());
 
         assertNotNull(signUpCodeCaptor.getValue());
     }
@@ -106,8 +107,35 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         when(authenticator.isLocallyManaged(user.id())).thenReturn(false);
         service.inviteToOrganization(user.id().getString());
 
-        verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
-                eq((String) null), eq((Permissions) null), eq((String) null), eq((String) null));
+        verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user), eq((String)null));
+    }
+
+    @Test
+    public void shouldLeaveExtraOrgInvitesUponUserCreation()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User user1 = newUser(), admin1 = saveUser(), admin2 = saveUser();
+        sqlTrans.commit();
+
+        setSession(admin1);
+        service.inviteToOrganization(user1.id().getString());
+        verify(factEmailer).createSignUpInvitationEmailer(eq(admin1), eq(user1),
+                signUpCodeCaptor.capture());
+        String firstCode = signUpCodeCaptor.getValue();
+
+        setSession(admin2);
+        service.inviteToOrganization(user1.id().getString());
+        verify(factEmailer).createSignUpInvitationEmailer(eq(admin2), eq(user1),
+                signUpCodeCaptor.capture());
+        String secondCode = signUpCodeCaptor.getValue();
+
+        service.signUpWithCode(firstCode, ByteString.copyFromUtf8("password"), "Firsty", "Lasto");
+
+        sqlTrans.begin();
+        assertTrue(factOrgInvite.getBySignUpCodeNullable(firstCode) == null);
+        assertTrue(factOrgInvite.getBySignUpCodeNullable(secondCode).exists());
+        sqlTrans.commit();
     }
 
     private void inviteMaximumFreeUsers()

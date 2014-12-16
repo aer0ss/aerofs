@@ -101,7 +101,7 @@ public class Authenticator
      */
     public boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable
     {
-        return userID.isTeamServerID() ? true : _authorities[0].isInternalUser(userID);
+        return userID.isTeamServerID() || _authorities[0].isInternalUser(userID);
     }
 
     public void setACLPublisher_(ACLNotificationPublisher aclPublisher)
