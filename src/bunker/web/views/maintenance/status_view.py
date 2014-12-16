@@ -2,6 +2,7 @@ import logging
 import json
 import urllib2
 from pyramid.view import view_config
+from operator import itemgetter
 
 log = logging.getLogger(__name__)
 
@@ -19,4 +20,8 @@ def status_view(request):
     }
 
 def _get_server_statuses(request):
-    return json.load(urllib2.urlopen(_status_url(request)))['statuses']
+    """
+    Get server statuses, sorted by server name.
+    """
+    statuses = json.load(urllib2.urlopen(_status_url(request)))['statuses']
+    return sorted(statuses, key=itemgetter('service'))

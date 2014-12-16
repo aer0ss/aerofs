@@ -2,6 +2,6 @@ Package: aerofs-verification
 Section: java
 Priority: required
 Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS verification server package.
+Description: AeroFS verification servlet package.
 Architecture: all
 Depends: java8-jdk, tomcat6

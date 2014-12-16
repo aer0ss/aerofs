@@ -27,6 +27,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_FAMILY;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 
@@ -129,6 +130,17 @@ public class DeviceDatabase extends AbstractSQLDatabase
         ResultSet rs = queryDevice(did, C_DEVICE_OS_FAMILY);
         try {
             return rs.getString(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public long getInstallDate(DID did)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryDevice(did, C_DEVICE_TS);
+        try {
+            return rs.getTimestamp(1).getNanos();
         } finally {
             rs.close();
         }

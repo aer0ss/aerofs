@@ -334,12 +334,12 @@ public class SPServlet extends AeroServlet
     {
         try {
             if (req.getServletPath().equals("/license")) {
-                licenseCheck(req, rsp);
+                licenseCheck(rsp);
             } else {
                 // Ok, wonky but for backwards compatibility: we do the database sanity check for
                 // any servlet request to /sp/*.
                 // TODO: reconsider this; only do if path.equals("/")
-                databaseSanityCheck(req);
+                databaseSanityCheck();
             }
         } catch (Exception e) {
             l.warn("Database check error: " + Util.e(e));
@@ -347,7 +347,7 @@ public class SPServlet extends AeroServlet
         }
     }
 
-    private void licenseCheck(HttpServletRequest req, HttpServletResponse rsp) throws Exception
+    private void licenseCheck(HttpServletResponse rsp) throws Exception
     {
         // Haha, this is amazing. Such love.
         StringBuilder sb = new StringBuilder("{");
@@ -360,7 +360,7 @@ public class SPServlet extends AeroServlet
         rsp.getWriter().print(sb.toString());
     }
 
-    private void databaseSanityCheck(HttpServletRequest req) throws Exception
+    private void databaseSanityCheck() throws Exception
     {
         final int mysqlDatabaseCheckTimeoutSeconds = 1;
         // Check the mysql connection.

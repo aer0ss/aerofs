@@ -18,6 +18,7 @@ import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLe
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.lib.db.DBUtil.select;
 import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_QUOTA_PER_USER;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_TWO_FACTOR_ENFORCEMENT_LEVEL;
@@ -391,5 +393,23 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         try (ResultSet rs = queryOrg(id, C_O_TWO_FACTOR_ENFORCEMENT_LEVEL)) {
             return TwoFactorEnforcementLevel.valueOf(rs.getInt(1));
         }
+    }
+
+    public ImmutableList<OrganizationID> getOrganizationIDs()
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(select(T_ORGANIZATION, C_O_ID));
+
+        ImmutableList.Builder<OrganizationID> builder = ImmutableList.builder();
+        ResultSet rs = ps.executeQuery();
+        try {
+            while (rs.next()) {
+                builder.add(new OrganizationID(rs.getInt(1)));
+            }
+        } finally {
+            rs.close();
+        }
+
+        return builder.build();
     }
 }

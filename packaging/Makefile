@@ -28,6 +28,7 @@ PACKAGES= \
 	middleman \
 	pagerduty \
 	polaris \
+	probe \
 	repackaging \
 	rocklog \
 	sanity \

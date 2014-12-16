@@ -37,6 +37,7 @@ class transient::services {
 
     include servlet::sp
     include servlet::verification
+    include servlet::probe
     include servlet::identity
     include servlet::log_collection
 
@@ -166,6 +167,11 @@ class transient::services {
 
     file {"/opt/sanity/probes/polaris.sh":
         source => "puppet:///modules/transient/probes/polaris.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/team-servers.sh":
+        source => "puppet:///modules/transient/probes/team-servers.sh",
         require => Package["aerofs-sanity"],
     }
 

@@ -13,7 +13,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 public class SPParam
 {
     // Init parameters.
-    public static final String VERKEHR_CACERT_INIT_PARAMETER = "verkehr_cacert";
     public static final String SP_DATABASE_REFERENCE_PARAMETER = "sp_database_resource_reference";
 
     // Context attributes.
@@ -23,10 +22,6 @@ public class SPParam
     public static final String SESSION_USER_TRACKER = "session_user_tracker";
     public static final String SESSION_INVALIDATOR = "session_invalidator";
     public static final String SESSION_EXTENDER = "session_extender";
-
-    // Verkehr constants.
-    public static final long VERKEHR_RECONNECT_DELAY = 5 * C.SEC; // milliseconds
-    public static final long VERKEHR_ACK_TIMEOUT = 1 * C.SEC; // milliseconds
 
     // Email related constants.
     public static final String EMAIL_FROM_NAME = L.brand();

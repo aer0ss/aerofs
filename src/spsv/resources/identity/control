@@ -2,6 +2,6 @@ Package: aerofs-identity
 Section: java
 Priority: required
 Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS identity server package.
+Description: AeroFS identity servlet package.
 Architecture: all
 Depends: java8-jdk, tomcat6

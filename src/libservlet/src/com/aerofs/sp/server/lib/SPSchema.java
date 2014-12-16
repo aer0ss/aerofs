@@ -38,6 +38,7 @@ public final class SPSchema
 
             T_DEVICE                        = "sp_device",
             C_DEVICE_ID                     = "d_id",
+            C_DEVICE_TS                     = "d_ts",
             C_DEVICE_OS_FAMILY              = "d_os_family",
             C_DEVICE_OS_NAME                = "d_os_name",
             C_DEVICE_NAME                   = "d_name",

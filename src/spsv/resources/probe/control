@@ -1,7 +1,7 @@
-Package: aerofs-log-collection
+Package: aerofs-probe
 Section: java
 Priority: required
 Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS log collection servlet package.
+Description: AeroFS probe servlet package.
 Architecture: all
 Depends: java8-jdk, tomcat6

@@ -1,4 +1,4 @@
 Add sanity check probes (*.sh) here.
 
 If the probe script fails, they should print a one line message describing the
-problem. This messages is propagated to the layers above.
+problem. This message is propagated to the layers above.

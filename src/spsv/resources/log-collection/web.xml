@@ -24,12 +24,6 @@
     <!-- To enforce serializable sessions. -->
   <distributable/>
 
-  <!-- Verkehr -->
-  <context-param>
-    <param-name>verkehr_cacert</param-name>
-    <param-value>/etc/ssl/certs/AeroFS_CA.pem</param-value>
-  </context-param>
-
   <!-- Initialization listener -->
   <listener>
     <listener-class>com.aerofs.sp.server.listeners.LogCollectionLifecycleListener</listener-class>

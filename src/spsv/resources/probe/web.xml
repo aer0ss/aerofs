@@ -22,18 +22,20 @@
 
   <!-- Initialization listener -->
   <listener>
-    <listener-class>com.aerofs.sp.server.listeners.SPLifecycleListener</listener-class>
+    <listener-class>com.aerofs.sp.server.listeners.ProbeLifecycleListener</listener-class>
   </listener>
 
   <!-- Servlets -->
+
+  <!-- Team Server: probe sanity of Team Server installations -->
   <servlet>
-    <servlet-name>ServletSP</servlet-name>
-    <servlet-class>com.aerofs.sp.server.SPServlet</servlet-class>
+    <servlet-name>ServletTeamServerProbe</servlet-name>
+    <servlet-class>com.aerofs.sp.server.TeamServersProbeServlet</servlet-class>
   </servlet>
 
   <!-- URL mapping -->
   <servlet-mapping>
-    <servlet-name>ServletSP</servlet-name>
-    <url-pattern>/</url-pattern>
+    <servlet-name>ServletTeamServerProbe</servlet-name>
+    <url-pattern>/team-servers</url-pattern>
   </servlet-mapping>
 </web-app>
