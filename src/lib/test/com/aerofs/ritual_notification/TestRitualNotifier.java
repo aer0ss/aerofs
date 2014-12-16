@@ -13,7 +13,6 @@ import com.aerofs.testlib.AbstractTest;
 import com.google.common.util.concurrent.SettableFuture;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
@@ -26,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-@Ignore("https://aerofs.atlassian.net/browse/ENG-2230")
 public class TestRitualNotifier extends AbstractTest
 {
     SettableFuture<Boolean> connected;
@@ -115,6 +113,7 @@ public class TestRitualNotifier extends AbstractTest
             }
         });
 
+        assertTrue(connected.get());
         PBNotification.Builder bd = PBNotification.newBuilder();
         bd.setType(Type.BAD_CREDENTIAL);
         _rns.getRitualNotifier().sendNotification(bd.build());
