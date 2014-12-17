@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jnotify-aerofs">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/aerofsjn.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

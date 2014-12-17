@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="jnotify:0.95" type="repository">
+    <properties maven-id="com.aerofs:jnotify:0.95" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/jnotify/0.95/jnotify-0.95.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/jnotify/0.95/jnotify-0.95-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/jnotify/0.95/jnotify-0.95-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
