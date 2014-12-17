@@ -9,6 +9,7 @@ actors:
         address: sn-ubuntu.local
         aero_app_root: ~/.aerofs-bin
         aero_rt_root: ~/.aerofs
+        os: linux
         details:
             os: linux64
             distribution: Ubuntu 11.04 natty
@@ -17,6 +18,7 @@ actors:
         address: sn-windows7.local
         aero_app_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFSExec
         aero_rt_root: /cygdrive/c/Users/aerofstest/AppData/Local/AeroFS
+        os: windows
         details:
             os: Windows 7 Professional x64
             java: Java(TM) SE Runtime Environment (build 1.7.0_07-b11)
@@ -25,6 +27,7 @@ actors:
         login: safetynet
         aero_app_root: /Applications/AeroFS.app/Contents/Resources/Java
         aero_rt_root: "~/Library/Application Support/AeroFS"
+        os: osx
         details:
             os: OSX Snow Leopard 10.6.3
             java: Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-10M3811)
@@ -33,6 +36,7 @@ actors:
         login: Administrator
         aero_app_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFSExec"
         aero_rt_root: "/cygdrive/c/Documents and Settings/Administrator/Local Settings/Application Data/AeroFS"
+        os: windows
         details:
             os: Windows XP SP3 Professional
             java: Java(TM) SE Runtime Environment (build 1.7.0_04-b22)
@@ -40,6 +44,7 @@ actors:
         address: sn-ubuntu32.local
         aero_app_root: ~/.aerofs-bin
         aero_rt_root: ~/.aerofs
+        os: linux
         details:
             os: linux32
             distribution: Ubuntu 12.10 quantal
