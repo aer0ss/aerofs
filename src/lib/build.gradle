@@ -50,7 +50,7 @@ dependencies {
     compile 'commons-lang:commons-lang:2.6'
     compile 'com.aerofs:sqlite-jdbc:3.8.7'
     compile 'com.aerofs:jnotify:0.95'
-    compile name: 'aerofsd'
+    compile 'com.aerofs:aerofsd:0.1.0'
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'
     compile name: 'netty-native-socket'

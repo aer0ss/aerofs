@@ -1,0 +1,79 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.aerofs'
+archivesBaseName = 'aerofsd'
+version = '0.1.0'
+
+task resources << {
+    mkdir("${projectDir}/build")
+    mkdir("${projectDir}/gen")
+}
+
+task qmake(type: Exec, dependsOn: 'resources') {
+    workingDir = "${projectDir}/build"
+    executable = 'qmake'
+    args = ['../aerofsd.pro']
+}
+
+task swig(type: Exec, dependsOn: 'qmake') {
+    workingDir = "${projectDir}/build"
+    executable = 'make'
+    args = ['compiler_gen_swg_make_all']
+}
+
+task makeClean(type: Exec, dependsOn: 'qmake') {
+    workingDir = "${projectDir}/build"
+    executable = 'make'
+    args = ['clean']
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'gen'
+        }
+    }
+}
+
+compileJava {
+    options.compilerArgs << '-Werror'
+    options.compilerArgs << '-Xlint:all'
+    dependsOn('swig')
+}
+
+clean {
+    dependsOn('makeClean')
+    delete("${projectDir}/build")
+    delete("${projectDir}/gen")
+}
+
+javadoc {
+    options.links 'http://docs.oracle.com/javase/6/docs/api/'
+}
+
+task sourceJar(type: Jar, description: "Assembles a jar archive containing the source files") {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar, description: "Assembles a jar archive containing the javadoc files", dependsOn: javadoc) {
+    from "$docsDir"
+    classifier = 'javadoc'
+}
+
+artifacts {
+    archives sourceJar, javadocJar
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "${nexusRepo}/nexus/content/repositories/releases") {
+                authentication(userName: nexusUser, password: nexusPass)
+            }
+            pom.artifactId = 'aerofsd'
+        }
+    }
+}
+

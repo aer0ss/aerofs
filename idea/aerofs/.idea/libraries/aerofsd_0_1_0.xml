@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="aerofsd:0.1.0" type="repository">
+    <properties maven-id="com.aerofs:aerofsd:0.1.0" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/aerofsd/0.1.0/aerofsd-0.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/aerofsd/0.1.0/aerofsd-0.1.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/aerofsd/0.1.0/aerofsd-0.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
