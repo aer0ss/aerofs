@@ -95,7 +95,7 @@ mysql < aerofs-db-backup/mysql.dump
 # To preserve maximum schema flexibility we explictly drop the polaris
 # db from backups.
 # TODO: remove this when polaris schema is stable
-echo "drop database if exists \`polaris\`; " | mysql
+echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql
 
 echo ">>> Restoring CA files..."
 service ca-server stop 1>/dev/null 2>/dev/null || true
