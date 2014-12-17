@@ -11,7 +11,6 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExNotLocallyManaged;
 import com.aerofs.base.id.GroupID;
-import static com.aerofs.base.id.GroupID.NULL_GROUP;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;

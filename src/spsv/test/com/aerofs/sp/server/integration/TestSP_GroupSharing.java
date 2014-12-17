@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
+import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
@@ -13,6 +14,7 @@ import com.aerofs.proto.Sp.CreateGroupReply;
 import com.aerofs.proto.Sp.ListGroupMembersReply;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
@@ -26,6 +28,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static com.google.common.collect.Lists.newArrayList;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 
 public class TestSP_GroupSharing extends AbstractSPFolderTest
@@ -96,6 +99,32 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
                 .getUserEmail(), email(user2));
         service.addGroupMembers(group.id().getInt(), emails(user3, user4));
         assertEquals(service.listGroupMembers(group.id().getInt()).get().getUsersCount(), 3);
+    }
+
+    @Test
+    public void shouldLimitMembers()
+        throws Exception
+    {
+        int prevValue = SPService.MAX_GROUP_SIZE;
+        try {
+            SPService.MAX_GROUP_SIZE = 2;
+            service.addGroupMembers(group.id().getInt(), emails(user2));
+            try {
+                service.addGroupMembers(group.id().getInt(), emails(user3, user4));
+                fail();
+            } catch (ExMemberLimitExceeded e) {
+                sqlTrans.rollback();
+            }
+            service.addGroupMembers(group.id().getInt(), emails(user3));
+            try {
+                service.addGroupMembers(group.id().getInt(), emails(user4));
+                fail();
+            } catch (ExMemberLimitExceeded e) {
+                sqlTrans.rollback();
+            }
+        } finally {
+            SPService.MAX_GROUP_SIZE = prevValue;
+        }
     }
 
     @Test(expected = ExWrongOrganization.class)

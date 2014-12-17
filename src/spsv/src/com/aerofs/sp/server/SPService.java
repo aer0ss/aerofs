@@ -19,6 +19,7 @@ import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
@@ -208,6 +209,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
@@ -1331,6 +1333,12 @@ public class SPService implements ISPService
                 l.warn("{}: {}", msg, srp._subject);
                 throw new ExBadArgs(msg + ".");
             }
+        }
+
+        if (sf.getNumberOfActiveMembers() > SPParam.MAX_SHARED_FOLDER_MEMBERS) {
+            throw new ExMemberLimitExceeded("This action would lead to the shared folder having " +
+                    sf.getNumberOfActiveMembers() + " members, which is over the limit of " +
+                    SPParam.MAX_SHARED_FOLDER_MEMBERS + " members.");
         }
 
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
@@ -3587,6 +3595,12 @@ public class SPService implements ISPService
         throwIfNotOwner(user.getOrganization(), group);
         // Permissions: cannot modify externally managed groups.
         group.throwIfExternallyManaged();
+
+        if (group.listMembers().size() + userEmails.size() > SPParam.MAX_GROUP_SIZE) {
+            throw new ExMemberLimitExceeded("This would lead to the group having " +
+                    group.listMembers().size() + userEmails.size() +
+                    " members, which exceeds the limit of " + SPParam.MAX_GROUP_SIZE + " members.");
+        }
 
         List<InvitationEmailer> emails = Lists.newLinkedList();
         for (String userEmail : userEmails) {

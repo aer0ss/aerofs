@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Cmd.Command;
@@ -15,6 +16,8 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -276,6 +279,74 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
 
         // twice because we've verified that it's been sent once during the setup
         verifyFolderInvitation(owner, leftUser, sid, 2);
+    }
+
+    @Test
+    public void shouldLimitUsersAtMemberCap()
+            throws Exception
+    {
+        int prevValue = SPService.MAX_SHARED_FOLDER_MEMBERS;
+        try {
+            SPService.MAX_SHARED_FOLDER_MEMBERS = 2;
+            sqlTrans.begin();
+            User owner = saveUser();
+            User other1 = saveUser();
+            other1.setOrganization(owner.getOrganization(), AuthorizationLevel.USER);
+            User other2 = saveUser();
+            other2.setOrganization(owner.getOrganization(), AuthorizationLevel.USER);
+            sqlTrans.commit();
+
+            SID sid = SID.generate();
+            shareAndJoinFolder(owner, sid, other1, Permissions.allOf());
+
+            try {
+                shareAndJoinFolder(owner, sid, other2, Permissions.allOf());
+                fail();
+            } catch (ExMemberLimitExceeded e) {
+                sqlTrans.rollback();
+            }
+
+
+            sqlTrans.begin();
+            Group group = factGroup.save("common name", owner.getOrganization().id(), null);
+            group.addMember(other2);
+            group.addMember(other1);
+            sqlTrans.commit();
+
+            try {
+                shareFolder(owner, sid, group, Permissions.allOf());
+                fail();
+            } catch (ExMemberLimitExceeded e) {
+                sqlTrans.rollback();
+            }
+
+            SPService.MAX_SHARED_FOLDER_MEMBERS = 3;
+            shareFolder(owner, sid, group, Permissions.allOf());
+        } finally {
+            SPService.MAX_SHARED_FOLDER_MEMBERS = prevValue;
+        }
+    }
+
+    @Test
+    public void memberCapShouldIgnoreLeftUsers()
+            throws Exception
+    {
+        int prevValue = SPService.MAX_SHARED_FOLDER_MEMBERS;
+        try {
+            SPService.MAX_SHARED_FOLDER_MEMBERS = 2;
+            sqlTrans.begin();
+            User owner = saveUser();
+            User other1 = saveUser();
+            User other2 = saveUser();
+            sqlTrans.commit();
+
+            SID sid = SID.generate();
+            shareAndJoinFolder(owner, sid, other1, Permissions.allOf());
+            leaveSharedFolder(other1, sid);
+            shareAndJoinFolder(owner, sid, other2, Permissions.allOf());
+        } finally {
+            SPService.MAX_SHARED_FOLDER_MEMBERS = prevValue;
+        }
     }
 
     /**

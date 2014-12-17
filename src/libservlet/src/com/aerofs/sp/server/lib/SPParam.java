@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
 
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SPParam
@@ -22,6 +23,10 @@ public class SPParam
     public static final String SESSION_USER_TRACKER = "session_user_tracker";
     public static final String SESSION_INVALIDATOR = "session_invalidator";
     public static final String SESSION_EXTENDER = "session_extender";
+
+    public static int MAX_GROUP_SIZE = getIntegerProperty("sp.max.membership.group", 50);
+    public static int MAX_SHARED_FOLDER_MEMBERS =
+            getIntegerProperty("sp.max.membership.sharedfolder", 50);
 
     // Email related constants.
     public static final String EMAIL_FROM_NAME = L.brand();

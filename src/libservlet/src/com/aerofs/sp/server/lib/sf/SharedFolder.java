@@ -781,6 +781,18 @@ public class SharedFolder
         return sharer == null ? null : _f._factUser.create(sharer);
     }
 
+    // the number of pending and active users in this folder
+    public int getNumberOfActiveMembers()
+            throws SQLException
+    {
+        int count = 0;
+        for (UserPermissionsAndState ups : getAllUsersRolesAndStates()) {
+            if ((ups._state == PENDING || ups._state == JOINED) && !ups._user.id().isTeamServerID())
+                count++;
+        }
+        return count;
+    }
+
     // the only purpose of this class is to hold the result of getAllUsersRolesAndStates()
     public static class UserPermissionsAndState
     {
