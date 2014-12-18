@@ -62,12 +62,12 @@ def two_factor_setup_get(request):
     request_method='POST',
 )
 def two_factor_setup_post(request):
+    sp = get_rpc_stub(request)
     if _URL_PARAM_CODE in request.params:
         # The user is trying to prove they have successfully set up their two-factor auth app.
         # See if they got it right.
         try:
             claimed_code = int(request.params[_URL_PARAM_CODE], 10)
-            sp = get_rpc_stub(request)
             try:
                 reply = sp.set_two_factor_enforcement(True, claimed_code, None)
                 # Two factor auth is now enabled!
@@ -96,7 +96,6 @@ def two_factor_setup_post(request):
             return HTTPFound(location=request.route_path('two_factor_intro'))
     else:
         # Otherwise, we're enrolling anew - ask SP to generate us new codes.
-        sp = get_rpc_stub(request)
         try:
             reply = sp.setup_two_factor()
             shared_secret = reply.secret
