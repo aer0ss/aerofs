@@ -36,8 +36,8 @@ public class SharedFolderNotificationEmailer
                 "please take a look at https://support.aerofs.com/entries/22831810 .";
 
     private static final String deleteFromFolder = "\n" +
-            "This email is a confirmation that %s has removed %s from the folder. %s, you will need a" +
-            "new invitation to the folder to rejoin it.";
+            "This email is a confirmation that %s has removed %s from the folder. %s, " +
+            "you will need a new invitation to the folder to rejoin it.";
 
     /**
      * Notify the inviter of a shared folder when the person he/she invited accepts the invitation
