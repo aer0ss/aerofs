@@ -1,1 +1,1 @@
-recursive-include aerofs_licensing
+recursive-include aerofs_licensing *.gpg *.py *random_seed

@@ -14,4 +14,3 @@ setup(name='aerofs_licensing',
       scripts      = ['scripts/license-tool'],
       package_data = {'aerofs_licensing': ['crypto/license_root_public/*']},
       )
-
