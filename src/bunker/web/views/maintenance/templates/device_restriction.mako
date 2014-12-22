@@ -99,7 +99,6 @@ enabled and cannot be configured.
     </form>
 </%def>
 
-<!--
 <br/>
 
 <h4>Mobile Device Management</h4>
@@ -162,7 +161,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
         </div>
     </form>
 </%def>
--->
 
 <%progress_modal:html>
     Applying changes...
@@ -191,7 +189,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             });
         }
 
-        /*
         function submitMDMForm() {
             var $progress = $('#${progress_modal.id()}');
             $progress.modal('show');
@@ -204,7 +201,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
                 $progress.modal('hide');
             });
         }
-        */
 
         function restartDeviceServices() {
             var $progress = $('#${progress_modal.id()}');
@@ -216,7 +212,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             });
         }
 
-        /*
         function newCIDRBox(element){
             if (!element.value) {
                 if (element.nextElementSibling!==null) {
@@ -241,7 +236,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
                 $progress.modal('hide');
             });
         }
-        */
 
         function deviceEnableToggled(checkbox) {
             if (checkbox.checked) {
@@ -271,7 +265,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             return uri;
         }
 
-        /*
         function mdmEnableToggled(checkbox) {
             if (checkbox.checked) {
                 $('#cidr-blocks').show();
@@ -279,7 +272,6 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
                 $('#cidr-blocks').hide();
             }
         }
-        */
 
         function optionsUpdated() {
             $('span#uri').text(constructURI());
