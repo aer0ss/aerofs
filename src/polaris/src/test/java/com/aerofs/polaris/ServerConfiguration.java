@@ -63,7 +63,7 @@ public abstract class ServerConfiguration {
 
     public static final String TRANSFORMS_URL = String.format("http://%s:%s/transforms/", SERVICE.getHost(), SERVICE.getPort());
 
-    public static final String TREE_URL = String.format("http://%s:%s/tasks/tree/", ADMIN.getHost(), ADMIN.getPort());
+    public static final String TREE_URL = String.format("http://%s:%s/commands/tree/", ADMIN.getHost(), ADMIN.getPort());
 
     private ServerConfiguration() {
         // to prevent instantiation by subclasses

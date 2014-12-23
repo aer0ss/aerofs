@@ -1,9 +1,10 @@
 package com.aerofs.baseline.simple;
 
 import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.LifecycleManager;
+import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
+import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
 import com.aerofs.baseline.db.DataSources;
@@ -12,7 +13,6 @@ import com.aerofs.baseline.simple.commands.DumpCommand;
 import com.aerofs.baseline.simple.resources.CustomersResource;
 import com.aerofs.baseline.simple.resources.InvalidCustomerExceptionMapper;
 import org.flywaydb.core.Flyway;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;
@@ -29,10 +29,10 @@ public final class Simple extends Service<SimpleConfiguration> {
     }
 
     @Override
-    public void init(SimpleConfiguration configuration, LifecycleManager lifecycle, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
+    public void init(SimpleConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
-        DataSource dataSource = DataSources.newManagedDataSource(database, lifecycle);
+        DataSource dataSource = DataSources.newManagedDataSource(root, database);
 
         // setup the database
         Flyway flyway = new Flyway();
@@ -43,21 +43,7 @@ public final class Simple extends Service<SimpleConfiguration> {
         DBI dbi = DBIInstances.newDBI(dataSource);
 
         // setup the injector for both the admin and service environments
-        admin.addProvider(new AbstractBinder() {
-
-            @Override
-            public void configure() {
-                bind(dbi).to(DBI.class);
-            }
-        });
-
-        service.addProvider(new AbstractBinder() {
-
-            @Override
-            public void configure() {
-                bind(dbi).to(DBI.class);
-            }
-        });
+        root.addInjectable(new DBIBinder(dbi));
 
         // register the task that dumps the list of customers
         admin.registerCommand("dump", DumpCommand.class);

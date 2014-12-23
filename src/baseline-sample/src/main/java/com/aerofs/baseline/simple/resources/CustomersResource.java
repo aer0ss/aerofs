@@ -1,7 +1,7 @@
 package com.aerofs.baseline.simple.resources;
 
-import com.aerofs.baseline.MetricRegistries;
 import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.baseline.simple.SimpleConfiguration;
 import com.aerofs.baseline.simple.api.Customer;
 import com.aerofs.baseline.simple.db.Customers;

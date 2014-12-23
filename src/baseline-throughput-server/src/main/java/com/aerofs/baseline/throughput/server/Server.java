@@ -1,7 +1,7 @@
 package com.aerofs.baseline.throughput.server;
 
 import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.LifecycleManager;
+import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.throughput.server.resources.ChunkedUploadResource;
@@ -22,7 +22,7 @@ public final class Server extends Service<ServerConfiguration> {
     }
 
     @Override
-    public void init(ServerConfiguration configuration, LifecycleManager lifecycle, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
+    public void init(ServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
         service.addResource(SimpleGetResource.class);
         service.addResource(SimplePostResource.class);
         service.addResource(ChunkedUploadResource.class);
