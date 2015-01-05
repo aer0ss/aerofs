@@ -18,7 +18,6 @@ import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import io.netty.bootstrap.Bootstrap;
@@ -102,7 +101,7 @@ public class PolarisClient
                 new Auth(localUser.get(), localDID.get()), sslEngineFactory);
     }
 
-    public PolarisClient(URI endpoint, Executor executor, Auth auth, SSLEngineFactory sslEngineFactory)
+    private PolarisClient(URI endpoint, Executor executor, Auth auth, SSLEngineFactory sslEngineFactory)
     {
         _auth = auth;
         _executor = executor;
@@ -170,6 +169,9 @@ public class PolarisClient
         {
             FullHttpResponse r = (FullHttpResponse)response;
             l.info("recv {} {}", r.status(), r.headers());
+            if (l.isDebugEnabled()) {
+                l.debug("{}", r.content().toString(BaseUtil.CHARSET_UTF));
+            }
             _requests.poll().set((FullHttpResponse)response);
         }
 
@@ -213,10 +215,8 @@ public class PolarisClient
         }
     }
 
-    ListenableFuture<FullHttpResponse> send(HttpRequest req)
+    private void send(HttpRequest req, final SettableFuture<FullHttpResponse> f)
     {
-        final SettableFuture<FullHttpResponse> f = SettableFuture.create();
-
         _auth.apply(req.headers());
         req.headers().add(Names.HOST, _endpoint.getHost());
         req.setUri(_endpoint.getPath() + req.uri());
@@ -224,7 +224,7 @@ public class PolarisClient
         Channel c = _channel.get();
         if (c != null && c.isActive()) {
             write(c, req, f);
-            return f;
+            return;
         }
 
         _bootstrap.connect(new InetSocketAddress(_endpoint.getHost(), _endpoint.getPort()))
@@ -237,8 +237,6 @@ public class PolarisClient
                         f.setException(cf.cause());
                     }
                 });
-
-        return f;
     }
 
     @FunctionalInterface
@@ -250,8 +248,23 @@ public class PolarisClient
     public void send(HttpRequest req, AsyncTaskCallback cb,
             Function<FullHttpResponse, Boolean, Exception> cons)
     {
-
-        ListenableFuture<FullHttpResponse> f = send(req);
+        SettableFuture<FullHttpResponse> f = SettableFuture.create();
+        // NB: MUST add the listener before passing the future to avoid some nasty race conditions
+        //
+        // We use CoreExecutor to make sure the listener is invoked through a core event to be able
+        // to access the core db and all in-memory data structures that are implicitly synchronized
+        // through the core lock.
+        //
+        // Unfortunately the core queue is protected by a non-reentrant lock so, in the rare but not
+        // impossible case of the request completing before the listener is added, we would end up
+        // calling {@CoreExecutor#execute} from a core thread, which  would result in an AE
+        //
+        // I consider this to be an egregious violation of the standard Executor interface and I
+        // would very much like to fix it but I fear I would get sidetracked rewriting the entire
+        // threading/event model of the core.
+        //
+        // Adding the listener before the future is used ensures that it will be called from a Netty
+        // I/O thread, thereby avoiding any possibility of triggering the AE.
         f.addListener(() -> {
             checkState(f.isDone());
             checkState(!f.isCancelled());
@@ -261,6 +274,8 @@ public class PolarisClient
                 cb.onFailure_(t);
             }
         }, _executor);
+
+        send(req, f);
     }
 
     private void onConnect(Channel c)

@@ -11,6 +11,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.api.Transforms;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.PolarisClient;
@@ -30,8 +31,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import org.slf4j.Logger;
-
-import java.util.List;
 
 /**
  * Fetch changes from Polaris.
@@ -94,12 +93,6 @@ public class ChangeFetcher
         _client.send(req, cb, r -> handle_(sid, r));
     }
 
-    private static class Changes
-    {
-        long maxTransformCount;
-        List<RemoteChange> transforms;
-    }
-
     private boolean handle_(SID sid, FullHttpResponse r) throws Exception
     {
         // TODO: streaming response processing
@@ -110,9 +103,15 @@ public class ChangeFetcher
         }
 
         SIndex sidx = _sid2sidx.getNullable_(sid);
-        Changes c = GsonUtil.GSON.fromJson(content, Changes.class);
+        if (sidx == null) {
+            l.info("ignoring response for absent store {}", sid.toStringFormal());
+            return false;
+        }
 
-        if (sidx == null || c.transforms == null || c.transforms.isEmpty()) {
+        Transforms c = GsonUtil.GSON.fromJson(content, Transforms.class);
+
+        if (c.transforms == null || c.transforms.isEmpty()) {
+            l.debug("no transforms");
             return false;
         }
 

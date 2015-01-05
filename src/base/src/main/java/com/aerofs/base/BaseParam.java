@@ -136,12 +136,6 @@ public class BaseParam
                 "https://sp.aerofs.com/sp/");
     }
 
-    public static class MobileService
-    {
-        private static final byte VERSION_NUMBER = 3;
-        public static final byte[] MAGIC_BYTES = {'M', 'B', 'L', VERSION_NUMBER};
-    }
-
     public static class Verkehr
     {
         public static final String HOST =

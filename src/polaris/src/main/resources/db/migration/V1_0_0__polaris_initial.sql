@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `object_types` (
 CREATE TABLE IF NOT EXISTS `file_properties` (
   `oid`     CHAR(32) NOT NULL,
   `version` BIGINT   NOT NULL,
-  `hash`    CHAR(32) NOT NULL,
+  `hash`    CHAR(64) NOT NULL,
   `size`    BIGINT   NOT NULL,
   `mtime`   BIGINT   NOT NULL,
   PRIMARY KEY (`oid`, `version`)
