@@ -6,9 +6,16 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.sp.authentication.LdapConfiguration.SecurityType;
 import com.aerofs.testlib.SimpleSslEngineFactory;
+import com.google.common.collect.Lists;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
 import com.unboundid.ldap.listener.InMemoryListenerConfig;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.SearchScope;
+
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class InMemoryServer
 {
@@ -46,7 +53,7 @@ public abstract class InMemoryServer
 
     abstract protected void createSchema(InMemoryDirectoryServer server) throws Exception;
 
-    void resetConfig(LdapConfiguration cfg)
+    public void resetConfig(LdapConfiguration cfg)
     {
         cfg.SERVER_HOST = "localhost";
         cfg.SERVER_PORT = _serverPort;
@@ -55,16 +62,27 @@ public abstract class InMemoryServer
         cfg.SERVER_CREDENTIAL = CRED;
 
         cfg.USER_ADDITIONALFILTER = "";
-        cfg.USER_SCOPE = "sub";
+        cfg.USER_SCOPE = SearchScope.SUB;
         cfg.USER_BASE = "dc=users,dc=example,dc=org";
         cfg.USER_EMAIL = "mail";
         cfg.USER_FIRSTNAME = "givenName";
         cfg.USER_LASTNAME = "sn";
         cfg.USER_OBJECTCLASS = "inetOrgPerson";
         cfg.USER_RDN = "dn";
+
+        cfg.GROUP_OBJECTCLASSES = Lists.newArrayList("groupOfNames", "groupOfUniqueNames",
+                "groupOfEntries", "groupOfURLs", "groupOfUniqueURLs", "posixGroup");
+        cfg.GROUP_SCOPE = SearchScope.SUB;
+        cfg.GROUP_NAME = "cn";
+        cfg.GROUP_BASE = "dc=roles,dc=example,dc=org";
+        cfg.GROUP_DYNAMIC_MEMBERS = Lists.newArrayList("memberUrl");
+        cfg.GROUP_STATIC_MEMBERS = Lists.newArrayList("member", "uniqueMember");
+        cfg.GROUP_UID_MEMBER = "memberUid";
+
+        cfg.COMMON_UID_ATTRIBUTE = "uidNumber";
     }
 
-    InMemoryServer(boolean useTls, boolean useSsl) throws Exception
+    protected InMemoryServer(boolean useTls, boolean useSsl) throws Exception
     {
         _useSsl = useSsl;
         _useTls = useTls;
@@ -104,6 +122,24 @@ public abstract class InMemoryServer
     public String getCertString()       { return _cert; }
 
     public void add(String... ldifLines) throws Exception { _server.add(ldifLines); }
+
+    public void modify(String DN, Modification mod)
+            throws LDAPException
+    {
+        _server.modify(DN, mod);
+    }
+
+    public void modify(String DN, List<Modification> mods)
+            throws LDAPException
+    {
+        _server.modify(DN, mods);
+    }
+
+    public void delete(String DN)
+            throws LDAPException
+    {
+        _server.deleteSubtree(DN);
+    }
 
     public void stop()                  { _server.shutDown(true); }
 

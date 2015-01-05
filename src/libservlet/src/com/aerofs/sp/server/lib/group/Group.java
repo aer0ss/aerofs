@@ -70,6 +70,17 @@ public class Group
             return new Group(this, gid);
         }
 
+        // N.B. needs to be in a SQLTransaction since this method accesses the database
+        public @Nullable Group createFromExternalID(@Nonnull byte[] externalID)
+                throws SQLException
+        {
+            GroupID gid = _gdb.getGroupWithExternalID(externalID);
+            if (gid == null) {
+                return null;
+            }
+            return create(gid);
+        }
+
         /**
          * Add a new group and generate a new group ID.
          */
@@ -166,9 +177,7 @@ public class Group
         _f._gdb.setCommonName(id(), commonName);
     }
 
-    public
-    @Nullable
-    byte[] getExternalIdNullable()
+    public @Nullable byte[] getExternalIdNullable()
             throws SQLException, ExNotFound
     {
         return _f._gdb.getExternalIdNullable(id());

@@ -36,9 +36,19 @@ ldap.server.schema.user.scope={{ ldap_server_schema_user_scope }}
 ldap.server.schema.user.field.firstname={{ ldap_server_schema_user_field_firstname }}
 ldap.server.schema.user.field.lastname={{ ldap_server_schema_user_field_lastname }}
 ldap.server.schema.user.field.email={{ ldap_server_schema_user_field_email }}
-ldap.server.schema.user.field.rdn={{ ldap_server_schema_user_field_rdn }}
+ldap.server.schema.user.field.uid={{ ldap_server_schema_user_field_uid }}
 ldap.server.schema.user.class={{ ldap_server_schema_user_class }}
 ldap.server.schema.user.filter={{ ldap_server_schema_user_filter }}
+ldap.server.schema.group.class={{ ldap_server_schema_group_class }}
+ldap.server.schema.group.name={{ ldap_server_schema_group_name }}
+ldap.server.schema.group.base={{ ldap_server_schema_group_base }}
+ldap.server.schema.group.scope={{ ldap_server_schema_group_scope }}
+ldap.server.schema.group.member.static={{ ldap_server_schema_group_member_static }}
+ldap.server.schema.group.member.dynamic={{ ldap_server_schema_group_member_dynamic }}
+ldap.server.schema.group.member.unique={{ ldap_server_schema_group_member_unique }}
+
+ldap.groupsyncing.enabled={{ ldap_groupsyncing_enabled }}
+ldap.groupsyncing.time={{ ldap_groupsyncing_time }}
 
 openid.idp.endpoint.url={{ openid_idp_endpoint_url }}
 openid.idp.endpoint.stateful={{ openid_idp_endpoint_stateful }}

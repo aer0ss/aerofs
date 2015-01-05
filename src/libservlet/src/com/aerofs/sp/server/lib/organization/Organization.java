@@ -20,6 +20,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 public class Organization
 {
@@ -349,4 +351,15 @@ public class Organization
     {
         return _f._odb.getTwoFactorEnforcementLevel(_id);
     }
+
+    public List<String> getExternalIDs()
+            throws SQLException
+    {
+        List<String> externalStrings = Lists.newLinkedList();
+        for (byte[] externalBytes : _f._gdb.getExternalIDs()) {
+            externalStrings.add(new String(externalBytes));
+        }
+        return externalStrings;
+    }
+
 }

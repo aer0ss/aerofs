@@ -66,4 +66,5 @@ public class SPParam
     // Also see URLs defined in BaseParam.WWW
     public static final String STATIC_ASSETS =
             getStringProperty("sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
+
 }

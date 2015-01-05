@@ -88,6 +88,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -222,6 +223,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Mock protected JedisRateLimiter rateLimiter;
 
+    @Mock ScheduledExecutorService scheduledExecutorService;
+
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
     // - InvitationEmailer, or
@@ -297,6 +300,10 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 any(String.class))).then(RETURNS_MOCKS);
         when(factEmailer.createGroupSignUpInvitationEmailer(any(User.class), any(User.class),
                 any(Group.class), any(String.class))).then(RETURNS_MOCKS);
+        when(factEmailer.createAddedToGroupEmailer(any(User.class), any(User.class),
+                any(Group.class))).then(RETURNS_MOCKS);
+        when(factEmailer.createBatchInvitationEmailer(any(User.class), any(User.class),
+                any(Group.class), any())).then(RETURNS_MOCKS);
     }
 
     private void mockRateLimiter()
@@ -336,7 +343,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 factUrlShare,
                 factGroup,
                 rateLimiter,
-                license);
+                license,
+                scheduledExecutorService);
         wireSPService();
     }
 

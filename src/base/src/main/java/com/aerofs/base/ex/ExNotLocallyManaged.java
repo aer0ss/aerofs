@@ -13,6 +13,11 @@ public class ExNotLocallyManaged extends AbstractExWirable
         super();
     }
 
+    public ExNotLocallyManaged(String str)
+    {
+        super(str);
+    }
+
     public ExNotLocallyManaged(PBException pb)
     {
         super(pb);

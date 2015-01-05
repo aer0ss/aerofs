@@ -14,7 +14,6 @@ import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.base.Joiner;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

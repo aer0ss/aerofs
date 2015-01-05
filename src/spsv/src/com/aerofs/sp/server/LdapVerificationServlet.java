@@ -63,7 +63,8 @@ public class LdapVerificationServlet extends HttpServlet
             lcfg.SERVER_CREDENTIAL = getParameter(req, "ldap_server_credential");
             lcfg.SERVER_SECURITY   = LdapConfiguration.convertStringToSecurityType(
                     getParameter(req, "ldap_server_security"));
-            lcfg.USER_SCOPE        = getParameter(req, "ldap_server_schema_user_scope");
+            lcfg.USER_SCOPE        = LdapConfiguration.convertStringToSearchScope(
+                    getParameter(req, "ldap_server_schema_user_scope"));
             lcfg.USER_FIRSTNAME    = getParameter(req, "ldap_server_schema_user_field_firstname");
             lcfg.USER_LASTNAME     = getParameter(req, "ldap_server_schema_user_field_lastname");
             lcfg.USER_EMAIL        = getParameter(req, "ldap_server_schema_user_field_email");

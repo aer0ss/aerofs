@@ -11,7 +11,6 @@ import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

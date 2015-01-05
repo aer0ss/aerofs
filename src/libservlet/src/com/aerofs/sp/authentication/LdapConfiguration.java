@@ -4,6 +4,13 @@
 
 package com.aerofs.sp.authentication;
 
+import com.google.common.base.Splitter;
+import com.unboundid.ldap.sdk.SearchScope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
@@ -16,6 +23,11 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  */
 public class LdapConfiguration
 {
+    // spaces are not permitted in LDAP objectClass names nor attribute names, so we can use them
+    // to delimit the separate items in a serialized list
+    // make sure this value is consistent with the value in identity_view.py
+    public final static String LDAP_SEPARATOR = " ";
+
     public enum SecurityType
     {
         /** The server does not support any socket-level security. Strongly not recommended. */
@@ -39,14 +51,14 @@ public class LdapConfiguration
      * Host name of the LDAP server.
      */
     public String                                   SERVER_HOST =
-            getStringProperty(                      "ldap.server.host", "");
+            getStringProperty("ldap.server.host", "");
 
     /**
      * Port on which to connect to the LDAP server. Default is 389 for ldap protocol,
      * 636 for ldaps.
      */
     public Integer                                  SERVER_PORT =
-            getIntegerProperty(                     "ldap.server.port", 389);
+            getIntegerProperty("ldap.server.port", 389);
 
     /**
      * Configure the socket-level security type used by the LDAP server. The options are:
@@ -78,7 +90,7 @@ public class LdapConfiguration
      * Timeout, in seconds, after which a server connect attempt will be abandoned.
      */
     public Integer                                  SERVER_TIMEOUT_CONNECT =
-            getIntegerProperty(                     "ldap.server.timeout.connect", 5);
+            getIntegerProperty("ldap.server.timeout.connect", 5);
 
     /**
      * Principal on the LDAP server to use for the initial user search.
@@ -103,8 +115,9 @@ public class LdapConfiguration
      * The scope to search for user records. Valid values are "base", "one", or "subtree".
      * The default is "subtree".
      */
-    public String                                   USER_SCOPE =
-            getStringProperty(                      "ldap.server.schema.user.scope", "subtree");
+    public SearchScope                              USER_SCOPE =
+            convertStringToSearchScope(getStringProperty(
+                                                    "ldap.server.schema.user.scope", "subtree"));
 
     /**
      * The field name in the LDAP record of the user's first name.
@@ -138,8 +151,71 @@ public class LdapConfiguration
     public String                                   USER_OBJECTCLASS =
             getStringProperty(                      "ldap.server.schema.user.class", "");
 
+    /**
+     * An extra LDAP filter used only when authenticating users, any user who passes all the other
+     * requirements but fails this one will be unable to sign up for or sign into AeroFS
+     */
     public String                                   USER_ADDITIONALFILTER =
             getStringProperty(                      "ldap.server.schema.user.filter", "");
+
+    /**
+     * A space-separated list of object classes which correspond to groups in the LDAP tree
+     */
+    public List<String>                             GROUP_OBJECTCLASSES =
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.class", ""));
+
+    /**
+     * The name of the field that will contain the group's name as displayed by AeroFS
+     */
+    public String                                   GROUP_NAME =
+            getStringProperty(                      "ldap.server.schema.group.name", "");
+
+    /**
+     * The Distinguished Name of the base of the subtree in LDAP which AeroFS will sync groups from
+     */
+    public String                                   GROUP_BASE =
+            getStringProperty(                      "ldap.server.schema.group.base", "");
+
+    /**
+     * The scope from the GROUP_BASE within which we sync groups
+     */
+    public SearchScope                              GROUP_SCOPE =
+            convertStringToSearchScope(getStringProperty(
+                                                    "ldap.server.schema.group.scope", "subtree"));
+
+    /**
+     * A space-separated list of group member attribute names whose value is the DN of that member
+     */
+    public List<String>                             GROUP_STATIC_MEMBERS =
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.static", ""));
+
+    /**
+     * A space-separated list of group member attribute names whose value is a LDAP search which
+     * defines members of the group
+     */
+    public List<String>                             GROUP_DYNAMIC_MEMBERS =
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.dynamic", ""));
+
+    /**
+     * The name of the member attribute which has as its value a unique value found on the member
+     */
+    public String                                   GROUP_UID_MEMBER =
+            getStringProperty(                      "ldap.server.schema.group.member.unique", "");
+
+    /**
+     * The name of the attribute that uniquely specifies group members, and whose value is specified
+     * by the GROUP_UID_MEMBER attribute on the LDAP group entry
+     */
+    public String                                   COMMON_UID_ATTRIBUTE =
+            getStringProperty(                      "ldap.server.schema.user.uid", "");
+
+    private List<String> splitIntoList(String serialized)
+    {
+        return Splitter.on(LDAP_SEPARATOR)
+                .trimResults()
+                .omitEmptyStrings()
+                .splitToList(serialized);
+    }
 
     /**
      * A quick converter from a configuration property name to an enum that falls back to a default
@@ -152,6 +228,21 @@ public class LdapConfiguration
         // from the actual enum - one is public-visible and the other is developers only.
         String value = getStringProperty(propertyName, defaultValue).toUpperCase();
         return convertStringToSecurityType(value);
+    }
+
+    public static SearchScope convertStringToSearchScope(String propertyValue)
+    {
+        switch (propertyValue) {
+        case "base":
+            return SearchScope.BASE;
+        case "one":
+            return SearchScope.ONE;
+        case "subtree":
+            return SearchScope.SUB;
+        default:
+            _l.error("unrecognized scope {}, defaulting to subtree", propertyValue);
+            return SearchScope.SUB;
+        }
     }
 
     /**
@@ -173,4 +264,6 @@ public class LdapConfiguration
         // Uhh, so...who will catch this?
         throw new ExLdapConfigurationError("Unknown security type " + inputString);
     }
+
+    private static Logger _l = LoggerFactory.getLogger(LdapConfiguration.class);
 }

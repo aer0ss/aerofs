@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.selectWhere;
@@ -123,6 +124,42 @@ public class GroupDatabase extends AbstractSQLDatabase
         ResultSet rs = queryGroup(gid, C_SG_EXTERNAL_ID);
         try {
             return rs.getBytes(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public @Nullable GroupID getGroupWithExternalID(byte[] externalID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + "=?", C_SG_GID));
+        ps.setBytes(1, externalID);
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) {
+                return null;
+            }
+            GroupID match = GroupID.fromInternal(rs.getInt(1));
+            // should only have one group that matches the external id
+            assert !rs.next();
+            return match;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public List<byte[]> getExternalIDs()
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + " IS NOT NULL",
+                C_SG_EXTERNAL_ID));
+        ResultSet rs = ps.executeQuery();
+        try {
+            List<byte[]> externalGroups = Lists.newLinkedList();
+            while (rs.next()) {
+                externalGroups.add(rs.getBytes(1));
+            }
+            return externalGroups;
         } finally {
             rs.close();
         }

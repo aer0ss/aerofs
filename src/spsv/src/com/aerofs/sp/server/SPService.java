@@ -37,6 +37,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Util;
@@ -132,10 +133,12 @@ import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.authentication.IAuthority;
+import com.aerofs.sp.authentication.LdapConfiguration;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
+import com.aerofs.sp.server.LdapGroupSynchronizer.AffectedUsersAndError;
 import com.aerofs.sp.server.URLSharing.UrlShare;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
@@ -200,6 +203,9 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -207,9 +213,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
@@ -264,6 +272,8 @@ public class SPService implements ISPService
 
     private final IdentitySessionManager _identitySessionManager;
     private Authenticator _authenticator;
+    private final LdapGroupSynchronizer _ldapGroupSynchronizer;
+    private ScheduledExecutorService _scheduledExecutor;
 
     private final InvitationHelper _invitationHelper;
 
@@ -278,6 +288,15 @@ public class SPService implements ISPService
     // Whether to allow self sign-ups via RequestToSignUp()
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
+
+    // If true, server will start a periodic job to sync groups with LDAP endpoint representation
+    public final boolean LDAP_GROUP_SYNCING_ENABLED =
+            getBooleanProperty("ldap.groupsyncing.enabled", false) &&
+            Identity.AUTHENTICATOR == Identity.Authenticator.EXTERNAL_CREDENTIAL;
+
+    // The daily time at which to sync with LDAP, in UTC, in the form HH:MM
+    public final String LDAP_GROUP_SYNCING_TIME =
+            getStringProperty("ldap.groupsyncing.time", "00:00");
 
     private final DeviceAuthClient _systemAuthClient =
             new DeviceAuthClient(new DeviceAuthEndpoint());
@@ -314,7 +333,8 @@ public class SPService implements ISPService
             UrlShare.Factory factUrlShare,
             Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
-            License license)
+            License license,
+            ScheduledExecutorService scheduledExecutor)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -349,6 +369,8 @@ public class SPService implements ISPService
         _authenticator = authenticator;
 
         _invitationHelper = new InvitationHelper(_authenticator, _factInvitationEmailer, _esdb);
+        _ldapGroupSynchronizer = new LdapGroupSynchronizer(new LdapConfiguration(), factUser,
+                factGroup, _invitationHelper);
 
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
@@ -356,6 +378,18 @@ public class SPService implements ISPService
 
         _rateLimiter = rateLimiter;
         _license = license;
+
+        _scheduledExecutor = scheduledExecutor;
+        startPeriodicSyncing(_scheduledExecutor, () -> {
+            try {
+                syncGroupsWithLDAPImpl(null);
+            } catch (Exception e) {
+                //have to catch and suppress this exception because Runnable.run() can't throw
+                //exceptions, this also allows us to continue periodically syncing even if the
+                //previous attempt failed
+                l.warn("failed to sync LDAP groups", e);
+            }
+        });
     }
 
     /**
@@ -399,6 +433,24 @@ public class SPService implements ISPService
     {
         assert sessionExtender != null;
         _sessionExtender = sessionExtender;
+    }
+
+    private void startPeriodicSyncing(ScheduledExecutorService scheduler, Runnable sync)
+    {
+        if (LDAP_GROUP_SYNCING_ENABLED) {
+            // first get the difference in seconds between now and the SYNCING_TIME set, then set it
+            // to repeat once a day at that time
+            Duration difference = Duration.between(LocalTime.now(Clock.systemUTC()),
+                    LocalTime.parse(LDAP_GROUP_SYNCING_TIME));
+            // if the time has already passed today, the difference will be negative - add 24 hours
+            // so we get to the scheduled time tomorrow
+            if (difference.isNegative()) {
+                difference = difference.plusDays(1);
+            }
+            scheduler.scheduleAtFixedRate(sync, difference.getSeconds(), 60 * 60 * 24, TimeUnit.SECONDS);
+        } else {
+            scheduler.shutdown();
+        }
     }
 
     @Override
@@ -3568,8 +3620,13 @@ public class SPService implements ISPService
         Group group = _factGroup.create(groupID);
         // Permissions: cannot modify a group unless it is owned by your organization.
         throwIfNotOwner(user.getOrganization(), group);
-        // Permissions: cannot modify externally managed groups.
-        group.throwIfExternallyManaged();
+        // Permissions: can only modify an external group's common name if we couldn't find its CN
+        // from the LDAP tree - valid CN's can also contain an escaped "=", so the condition is not
+        // strictly correct, but this code is only to prevent user confusion
+        if (group.isExternallyManaged() && !group.getCommonName().contains("=")) {
+            throw new ExNotLocallyManaged("only allowed to change name of externally managed " +
+                    "group if we could not get its name from the LDAP endpoint");
+        }
         group.setCommonName(commonName);
         _sqlTrans.commit();
 
@@ -3689,6 +3746,8 @@ public class SPService implements ISPService
         _aclPublisher.publish_(affected.build());
 
         _sqlTrans.commit();
+
+        // TODO (RD) send removed from group email
 
         l.info("{} removed {} member(s) from {}", user, userEmails.size(), group);
 
@@ -3815,6 +3874,42 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(builder.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> syncGroupsWithLDAPEndpoint()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.INTERACTIVE);
+        user.throwIfNotAdmin();
+        Organization sessionOrg = user.getOrganization();
+        _sqlTrans.commit();
+
+        if (LDAP_GROUP_SYNCING_ENABLED) {
+            // commit transaction before calling this because the LDAP Group Synchronizer assumes
+            // that the sqlTransaction starts off inactive
+            syncGroupsWithLDAPImpl(sessionOrg);
+        }
+        return createVoidReply();
+    }
+
+    private void syncGroupsWithLDAPImpl(@Nullable Organization org)
+            throws Exception
+    {
+        if (org == null) {
+            // org is null when called automatically, since we can't grab a session org;
+            // default to the private organization, since LDAP is only enabled in private cloud
+            org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        }
+
+        AffectedUsersAndError result = _ldapGroupSynchronizer.synchronizeGroups(_sqlTrans, org);
+        _aclPublisher.publish_(result._affected);
+
+        if (result._errored) {
+            l.warn("ldap group syncing did not complete successfully, view log for details");
+            // TODO (RD) set up an exponential retry?
+        }
     }
 
     /**

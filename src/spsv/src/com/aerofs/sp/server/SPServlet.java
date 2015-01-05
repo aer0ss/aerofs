@@ -66,6 +66,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
@@ -153,6 +155,9 @@ public class SPServlet extends AeroServlet
     private final JedisRateLimiter _rateLimiter =
              new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
 
+    private final ScheduledExecutorService _scheduledExecutor =
+            Executors.newSingleThreadScheduledExecutor();
+
     {
         _factUser.inject(_udb, _oidb, _tfdb, _gmdb, _factDevice, _factOrg,
                 _factOrgInvite, _factSharedFolder, _factGroup, _license);
@@ -192,7 +197,8 @@ public class SPServlet extends AeroServlet
             _factUrlShare,
             _factGroup,
             _rateLimiter,
-            _license);
+            _license,
+            _scheduledExecutor);
 
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
