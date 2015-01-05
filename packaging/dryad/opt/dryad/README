@@ -2,7 +2,7 @@ Dryad
 =====
 Dryad is the codename for the problem reporting system used by AeroFS. Its only responsibility is to persist the logs posted by the Dryad clients.
 
-In the current implementation, Dryad exposes a REST API. Dryad clients make POST requests to Dryad and Dryad will persist the logs to the local disk.
+In the current implementation, Dryad exposes a REST API. Dryad clients make PUT requests to Dryad and Dryad will persist the logs to the local disk.
 
 Installation
 ------------

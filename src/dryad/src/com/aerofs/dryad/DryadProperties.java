@@ -29,6 +29,15 @@ public class DryadProperties extends Properties
     // stores path to the blacklist file for devices
     public static final String BLACKLIST_DEVICES = "dryad.blacklist.devices";
 
+    // the directory name of the defects directory
+    public static final String DIR_DEFECTS = "defects";
+
+    // the directory name of the archived logs directory
+    public static final String DIR_ARCHIVED = "archived";
+
+    // the directory name of the health check logs directory
+    public static final String DIR_HEALTHCHECK = ".healthcheck";
+
     public static DryadProperties loadFromFile(File source)
             throws IOException
     {

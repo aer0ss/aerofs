@@ -55,6 +55,7 @@ node "z.arrowfs.org" inherits default {
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
     "dryad port dryad.aerofs.com 443",
+    "dryad url-internalcert https://dryad.aerofs.com/v1.0/status",
   ]:
     hour => "*",
     minute => "*/10",

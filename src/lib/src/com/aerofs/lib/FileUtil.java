@@ -229,6 +229,9 @@ public abstract class FileUtil
         if (!dir.mkdir()) throw new ExFileIO("couldn't make the directory", dir);
     }
 
+    /**
+     * This is duplicated in FileUtils#mkdirs() in the dryad module.
+     */
     public static void mkdirs(File dir) throws IOException
     {
         // sigh Windows / long path / Java...
@@ -252,6 +255,8 @@ public abstract class FileUtil
      * http://bugs.java.com/view_bug.do?bug_id=4742723
      *
      * Consider using ensureDirExists(dir, retryAttempts) in multi-threaded environment.
+     *
+     * This is duplicated in FileUtils#ensureDirExists() in the dryad module.
      */
     public static File ensureDirExists(File dir) throws IOException
     {
@@ -262,6 +267,8 @@ public abstract class FileUtil
     /**
      * retry mkdirs() {@paramref retryAttempts} times because mkdirs() is not thread safe and
      * may fail when there are concurrent mkdirs()
+     *
+     * This is duplicated in FileUtils#ensureDirExists() in the dryad module.
      */
     public static File ensureDirExists(File dir, int retryAttempts) throws IOException
     {

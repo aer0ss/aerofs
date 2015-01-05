@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
-import static com.aerofs.dryad.LogStore.DIR_ARCHIVED;
-import static com.aerofs.dryad.LogStore.DIR_DEFECTS;
+import static com.aerofs.dryad.DryadProperties.DIR_ARCHIVED;
+import static com.aerofs.dryad.DryadProperties.DIR_DEFECTS;
 
 @Path(Service.VERSION + "/")
 public class LogsResource
@@ -63,7 +63,7 @@ public class LogsResource
         throwIfInvalidDefectID(defectID);
 
         String filePath = format("%s/%s/appliance.zip", DIR_DEFECTS, defectID);
-        l.info("Saving defect {}/appliance to {}", defectID, filePath);
+        l.debug("Saving defect {}/appliance to {}", defectID, filePath);
         storeLogs(body, filePath);
         return Response.noContent().build();
     }
@@ -86,7 +86,7 @@ public class LogsResource
         throwIfInvalid(userID, deviceID);
 
         String filePath = format("%s/%s/%s_%s.zip", DIR_DEFECTS, defectID, userID, deviceID);
-        l.info("Saving defect {}/client to {}", defectID, filePath);
+        l.debug("Saving defect {}/client to {}", defectID, filePath);
         storeLogs(body, filePath);
         return Response.noContent().build();
     }
@@ -108,7 +108,7 @@ public class LogsResource
         throwIfInvalid(userID, deviceID, filename);
 
         String filePath = format("%s/%s/%s_%s", DIR_ARCHIVED, userID, deviceID, filename);
-        l.info("Saving archived logs from {}/{} to {}", userID, deviceID, filePath);
+        l.debug("Saving archived logs from {}/{} to {}", userID, deviceID, filePath);
         storeLogs(body, filePath);
         return Response.noContent().build();
     }

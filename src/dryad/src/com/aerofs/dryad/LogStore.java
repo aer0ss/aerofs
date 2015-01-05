@@ -5,6 +5,7 @@
 package com.aerofs.dryad;
 
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
@@ -15,16 +16,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.util.UUID;
 
+import static com.aerofs.dryad.DryadProperties.*;
+import static com.aerofs.dryad.FileUtils.ensureDirExists;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.String.format;
 import static java.nio.channels.Channels.newChannel;
 
 @Singleton
 public class LogStore
 {
-    public static final String DIR_DEFECTS = "defects";
-    public static final String DIR_ARCHIVED = "archived";
-    private static final String[] SUB_DIRS = { DIR_DEFECTS, DIR_ARCHIVED };
-
     private static final Logger l = LoggerFactory.getLogger(LogStore.class);
 
     private final String _storageDirectory;
@@ -33,11 +36,11 @@ public class LogStore
     public LogStore(DryadProperties properties)
             throws IOException
     {
-        _storageDirectory = properties.getProperty(DryadProperties.STORAGE_DIRECTORY);
+        _storageDirectory = properties.getProperty(STORAGE_DIRECTORY);
 
         l.info("Initializing LogStore...");
 
-        for (String dirname : SUB_DIRS) {
+        for (String dirname : newArrayList(DIR_DEFECTS, DIR_ARCHIVED)) {
             File dir = new File(_storageDirectory, dirname);
             l.info("Creating directory {}", dir.getAbsolutePath());
             ensureDirExists(dir);
@@ -79,43 +82,37 @@ public class LogStore
     }
 
     /**
-     * Java's mkdirs() is _not_ thread safe!
-     * See http://www.jroller.com/ethdsy/entry/file_mkdirs_is_not_thread and
-     * http://bugs.java.com/view_bug.do?bug_id=4742723
+     * This method performs a health check by creating logs under the storage directory and then
+     * verify the content of the log created. By doing so, we can be sure that file persistence is
+     * working as intended.
      *
-     * Consider using ensureDirExists(dir, retryAttempts) in multi-threaded environment.
+     * @throws Exception if the health check fails.
      */
-    public static File ensureDirExists(File dir) throws IOException
+    public void throwIfNotHealthy()
+            throws Exception
     {
-        if (!dir.isDirectory()) mkdirs(dir);
-        return dir;
-    }
+        l.debug("Performing health checks.");
 
-    /**
-     * retry mkdirs() {@paramref retryAttempts} times because mkdirs() is not thread safe and
-     * may fail when there are concurrent mkdirs()
-     */
-    public static File ensureDirExists(File dir, int retryAttempts) throws IOException
-    {
-        for (int i = 1; i <= retryAttempts; i++) {
-            try {
-                ensureDirExists(dir);
-                return dir;
-            } catch (IOException e) {
-                if (i == retryAttempts) {
-                    throw e;
-                }
-                l.debug("mkdirs failed, trying again...");
+        String id = UUID.randomUUID().toString().replaceAll("-", "");
+        String content = "id: " + id;
+        Charset charset = Charset.defaultCharset();
+
+        for (String dir : newArrayList(DIR_DEFECTS, DIR_ARCHIVED)) {
+            String path = format("%s/%s/%s", dir, DIR_HEALTHCHECK, id);
+            File file = new File(_storageDirectory, path);
+
+            ensureDirExists(file.getParentFile(), 3);
+            Files.write(content, file, charset);
+
+            String actual = Files.readFirstLine(file, charset);
+            if (!content.equals(actual)) {
+                String message = format("Health check failed.\n" +
+                        "Expected content: %s\n" +
+                        "Actual content: %s", content, actual);
+                throw new Exception(message);
             }
         }
 
-        throw new AssertionError("This line should be unreachable.");
-    }
-
-    public static void mkdirs(File dir) throws IOException
-    {
-        if (!dir.mkdirs() && !dir.isDirectory()) {
-            throw new IOException("couldn't make the directories");
-        }
+        l.debug("Health check succeeded.");
     }
 }

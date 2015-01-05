@@ -3,6 +3,7 @@ package com.aerofs.dryad;
 import com.aerofs.dryad.Blacklist.DeviceBlacklist;
 import com.aerofs.dryad.Blacklist.UserBlacklist;
 import com.aerofs.dryad.providers.DryadExceptionMapper;
+import com.aerofs.dryad.resources.HealthCheckResource;
 import com.aerofs.dryad.resources.LogsResource;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
@@ -32,6 +33,7 @@ public class DryadServer extends Service
                 newCachedThreadPool());
 
         addResource(LogsResource.class);
+        addResource(HealthCheckResource.class);
     }
 
     private static InetSocketAddress getServerAddressFromProperties(DryadProperties properties)
