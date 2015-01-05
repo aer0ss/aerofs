@@ -10,6 +10,7 @@ workspace.xml
 dump.rdb
 syncdet_test/.idea/
 .idea
+!idea/aerofs/.idea/libraries
 .DS_Store
 .metadata
 .gradle

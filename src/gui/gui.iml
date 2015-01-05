@@ -15,7 +15,7 @@
     <orderEntry type="library" name="commons-cli:1.2" level="project" />
     <orderEntry type="library" name="org.eclipse.jface" level="project" />
     <orderEntry type="library" name="org.eclipse.core.commands" level="project" />
-    <orderEntry type="library" name="jline2-git" level="project" />
+    <orderEntry type="library" name="jline:2.13" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

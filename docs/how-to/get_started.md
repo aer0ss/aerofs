@@ -219,14 +219,25 @@ The last step may take a while (expect 30 mins). Grab a coffee from Philz, look 
 This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
 
     cd $HOME/repos/aerofs/
-    ant -Dmode=PRIVATE -Dproduct=CLIENT -Ddir.out=approot clean setupenv build_client
+    gradle clean gen dist
+    ./invoke --mode PRIVATE --product CLIENT setupenv
     approot/run ~/rtroot/user1 gui
 
-The `-Dmode=PRIVATE` flag points the client to your private environment. Specify `-Dmode=PUBLIC` to build clients for the public production environment (discouraged). `-Ddir.out=approot` puts classes in the appropriate place for local development.
+Running gradle will compile the Java source code and create the class files needed to run the client. Running invoke will create a directory called approot and populate it with all environment-dependent resources.
+
+The `--mode PRIVATE` flag points the client to your private environment. Specify `--mode PUBLIC` to build clients for the public production environment (discouraged).
 
 Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
 
 Run `sh` to enter interactive AeroFS shell. This command requires a running daemon.
+
+## Build Java inside of IntelliJ
+
+IntelliJ 14 has a bug which prevents it from downloading some libraries needed to build AeroFS. As a workaround, run the following script to force Maven to download these libraries to the local cache:
+
+    $HOME/repos/aerofs/tools/setup-maven.sh
+
+Note that the first time you open IntelliJ, IntelliJ will launch background tasks to download various libraries from Maven Central to the local Maven cache. This process is time-intensive (~15 minutes) and you will see background tasks running, one after another, in IntelliJ.
 
 ### To avoid relaunching the daemon every time
 

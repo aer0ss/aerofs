@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="jline:2.13" type="repository">
+    <properties maven-id="com.aerofs:jline:2.13" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/aerofs/jline/2.13/jline-2.13.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/fusesource/jansi/jansi/1.11/jansi-1.11.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
