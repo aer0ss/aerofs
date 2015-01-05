@@ -1,5 +1,6 @@
 import os
 import socket
+import datetime
 from subprocess import call, Popen, PIPE
 import tempfile
 
@@ -64,6 +65,16 @@ def unformat_pem(string):
     Convert the formatted pem string back to HTML format.
     """
     return string.replace('\\n', '\n')
+
+
+def format_time(form_value, offset):
+    """
+    Convert a time of the form 1:15 PM to the form 13:15, as well as
+    adding 'offset' number of hours - usually to convert to UTC
+    """
+    local_time = datetime.datetime.strptime(form_value, "%I:%M %p").time()
+    new_hours = local_time.replace(hour = ((local_time.hour + offset) % 24))
+    return new_hours.strftime("%H:%M")
 
 
 def _get_modulus_helper(cmd):

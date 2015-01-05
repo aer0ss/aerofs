@@ -18,7 +18,16 @@
 
         <div ng-controller="GroupsController">
             <div ng-if="isAdmin">
-                <a class='btn btn-primary' ng-click="add()">Add new group</a>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <a class='btn btn-primary' ng-click="add()">Add new group</a>
+                    </div>
+                    %if groupsyncing_enabled:
+                        <div class="col-sm-6">
+                            <a class='btn btn-primary' ng-click="syncNow()">Sync with LDAP</a>
+                        </div>
+                    %endif
+                </div>
                 <br><br>
             </div>
 
@@ -61,6 +70,7 @@
         addGroupURL = "${request.route_path('json.add_org_group')}";
         editGroupURL = "${request.route_path('json.edit_org_group')}";
         removeGroupURL = "${request.route_path('json.remove_org_group')}";
+        syncGroupsURL = "${request.route_path('json.sync_groups')}";
         paginationLimit = "${pagination_limit}";
         maxMembers = parseInt("${member_limit}");
     </script>

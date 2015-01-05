@@ -894,7 +894,7 @@ service SPService {
     // Sync group members with their representation in the LDAP endpoint configured in bunker
     //
     // Required Auth Level: admin
-    rpc SyncGroupsWithLDAPEndpoint(Void) returns (Void);
+    rpc SyncGroupsWithLdapEndpoint(Void) returns (Void);
 }
 
 message SetStripeCustomerIDCall {

@@ -12,7 +12,6 @@ log = logging.getLogger(__name__)
 class InvalidFormInput(Exception):
     pass
 
-
 def parse_cidr_list(cidr_list):
     return [x.strip() for x in cidr_list.split(';') if len(x.strip()) > 0]
 

@@ -3877,7 +3877,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> syncGroupsWithLDAPEndpoint()
+    public ListenableFuture<Void> syncGroupsWithLdapEndpoint()
             throws Exception
     {
         _sqlTrans.begin();

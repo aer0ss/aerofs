@@ -16,11 +16,14 @@ PAGE_LIMIT = 20
 def org_groups(request):
     sp = util.get_rpc_stub(request)
     reply = sp.get_org_preferences()
+    settings = request.registry.settings
 
     return {
         'organization_name': reply.organization_name,
         'pagination_limit': PAGE_LIMIT,
-        'member_limit': int(request.registry.settings.get('sp.max.membership.group', '50'))
+        'member_limit': int(settings.get('sp.max.membership.group', '50')),
+        'groupsyncing_enabled': settings.get('ldap.groupsyncing.enabled', False) and
+            settings.get('lib.authenticator', "").upper() == 'EXTERNAL_CREDENTIAL'
     }
 
 def _get_members(request, group_id):
@@ -52,7 +55,7 @@ def json_list_group_members(request):
     request_method = 'GET'
 )
 def json_list_org_groups(request):
-    '''List groups in this organization. 
+    '''List groups in this organization.
     Can optionally filter by substring in the group name.'''
     count = int(request.params.get('count', PAGE_LIMIT))
     offset = int(request.params.get('offset', 0))
@@ -144,6 +147,17 @@ def json_edit_org_group(request):
 def json_remove_org_group(request):
     sp = util.get_rpc_stub(request)
     group_id = request.json_body['id']
-    
+
     reply = sp.delete_group(group_id)
     return HTTPOk()
+
+@view_config(
+    route_name = 'json.sync_groups',
+    permission = 'admin',
+    request_method = 'POST'
+)
+def json_sync_groups(request):
+    sp = util.get_rpc_stub(request)
+    sp.sync_groups_with_ldap_endpoint()
+    return HTTPOk()
+

@@ -114,6 +114,29 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 }
             });
         };
+
+        $scope.syncNow = function() {
+            $log.info('admin started LDAP group syncing');
+            // if the request takes more than 500 milliseconds, give user immediate feedback
+            var nowSyncing=setTimeout(function() {
+                showSuccessMessage("Now syncing groups with LDAP");
+            }, 500);
+            $http.post(syncGroupsURL)
+            .success(function(response) {
+                clearTimeout(nowSyncing);
+                $log.info('LDAP group syncing completed');
+                showSuccessMessage("Successfully synced groups with LDAP");
+            }).error(function(response, status) {
+                clearTimeout(nowSyncing);
+                $log.warn("failed ldap group syncing, error response with status " + status +
+                    " and type " + response.type);
+                showErrorMessageUnsafe("We encountered an error while syncing with LDAP, " +
+                    "if the problem persists please contact " +
+                    "<a href='mailto:support@aerofs.com' target='_blank'>" +
+                    "support@aerofs.com</a>.");
+            });
+        }
+
         $scope.edit = function(group) {
             var editGroupModalCtrl = function($scope, $modalInstance, group) {
                 $scope.group = group;
