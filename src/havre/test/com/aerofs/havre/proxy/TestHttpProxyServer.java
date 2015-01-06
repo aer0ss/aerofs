@@ -60,7 +60,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     static {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
-        ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<ILoggingEvent>();
+        ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<>();
         console.setContext(context);
         console.setEncoder(newEncoder(context));
         console.start();

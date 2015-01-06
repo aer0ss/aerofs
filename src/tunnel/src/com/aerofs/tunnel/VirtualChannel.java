@@ -163,7 +163,14 @@ public class VirtualChannel extends AbstractChannel
         int virtual = super.getInterestOps();
         int physical = _tunnel._channel.getInterestOps();
 
-        return ((physical & virtual) & OP_READ) | ((physical | virtual) & OP_WRITE);
+        return (virtual & OP_READ) | ((physical | virtual) & OP_WRITE);
+    }
+
+    @Override
+    public ChannelFuture setReadable(boolean readable)
+    {
+        int virtual = super.getInterestOps();
+        return setInterestOps(readable ? virtual | OP_READ : virtual & ~OP_READ);
     }
 
     /**

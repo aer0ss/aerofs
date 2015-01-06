@@ -114,7 +114,7 @@ public class TestTunnel extends AbstractBaseTest
                 timer).connect();
         Channel c = cf.getChannel();
         cf.awaitUninterruptibly();
-        return new Tunnel<Channel, TunnelHandler>(c, serverConnections.nextConnection().get());
+        return new Tunnel<>(c, serverConnections.nextConnection().get());
     }
 
     /**
@@ -125,7 +125,7 @@ public class TestTunnel extends AbstractBaseTest
         Channel c = h.newVirtualChannel(Channels.pipeline(serverVirtualConnections.handler));
         // the connection is only open on the other side when the first packet is sent
         c.write(ChannelBuffers.EMPTY_BUFFER);
-        return new Tunnel<Channel, Channel>(clientVirtualConnections.nextConnection().get(), c);
+        return new Tunnel<>(clientVirtualConnections.nextConnection().get(), c);
     }
 
     static void assertBufferEquals(byte[] expected, ChannelBuffer actual)

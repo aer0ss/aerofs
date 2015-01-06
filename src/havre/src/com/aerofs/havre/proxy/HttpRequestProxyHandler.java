@@ -224,10 +224,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent cse)
     {
-        if (_upstream != null && _upstream.isConnected()
-                && _upstream.isReadable() != ctx.getChannel().isWritable()) {
-            l.info("{} upstream {}", _upstream.isReadable() ? "suspending" : "resuming", _upstream);
-            _upstream.setReadable(ctx.getChannel().isWritable());
+        if (_upstream != null && _upstream.isConnected()) {
+            final boolean downstreamWritable = ctx.getChannel().isWritable();
+            l.info("{} upstream {}", downstreamWritable ? "resume" : "suspend", _upstream);
+            _upstream.setReadable(downstreamWritable);
         }
     }
 

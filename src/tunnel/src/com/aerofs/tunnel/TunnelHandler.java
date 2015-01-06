@@ -6,12 +6,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.google.common.base.Function;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelFutureNotifier;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -30,6 +28,7 @@ import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.ProtocolException;
@@ -132,7 +131,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     }
 
     @Override
-    public void onPeerVerified(UserID user, DID did)
+    public void onPeerVerified(@Nonnull UserID user, @Nonnull DID did)
     {
         checkState(_addr == null);
         _addr = new TunnelAddress(user, did);
@@ -192,7 +191,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             client.fireInterestChanged(client.getInterestOps() | Channel.OP_WRITE);
             break;
         case MSG_RESUME:
-            // mark channel as  writable
+            // mark channel as writable
             client.fireInterestChanged(client.getInterestOps() & ~Channel.OP_WRITE);
             break;
         case MSG_PAYLOAD:
