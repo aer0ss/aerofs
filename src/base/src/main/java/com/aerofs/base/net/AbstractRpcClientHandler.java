@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
 import java.util.Queue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.google.common.collect.Queues.newArrayDeque;
@@ -49,6 +51,11 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     private final Timer _timer = getGlobalTimer();
     private final long _timeoutDuration;
 
+    // Lock for pendingReads queue.
+    private final Object _pendingReadsLock = new Object();
+    // Lock for pendingWrites queue.
+    private final Object _pendingWritesLock = new Object();
+
     // Holds the exception that triggered a disconnection
     // Access to this field must be synchronized on this
     private Throwable _lastException;
@@ -72,13 +79,12 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     {
         final UncancellableFuture<byte[]> readFuture = UncancellableFuture.create();
 
-        synchronized (this) {
-            if (_channel.getCloseFuture().isDone()) {
-                // The channel has been closed. We can fail the request right away.
-                readFuture.setException(getCloseReason(_channel));
-            } else {
+        if (_channel.getCloseFuture().isDone()) {
+            // The channel has been closed. We can fail the request right away.
+            readFuture.setException(getCloseReason(_channel));
+        } else {
+            synchronized (_pendingReadsLock) {
                 _pendingReads.add(readFuture);
-
                 // Add a timeout
                 if (_timeoutDuration > 0) {
                     _timer.newTimeout(timeout -> {
@@ -89,8 +95,10 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
                         }
                     }, _timeoutDuration, MILLISECONDS);
                 }
+            }
 
-                // Send the request down the wire or enqueue it if we're not connected yet
+            // Send the request down the wire or enqueue it if we're not connected yet
+            synchronized (_pendingWritesLock) {
                 if (_channel.isConnected()) {
                     doWrite(bytes, readFuture);
                 } else {
@@ -145,15 +153,13 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     {
         UncancellableFuture<byte[]> readFuture;
 
-        synchronized (this) {
+        synchronized (_pendingReadsLock) {
             readFuture = _pendingReads.poll();
         }
-
         // If replyFuture is null, we received a reply with no previous query
         if (readFuture == null) {
             throw new ChannelException("Received an unexpected RPC reply");
         }
-
         readFuture.set(NettyUtil.toByteArray((ChannelBuffer)e.getMessage()));
     }
 
@@ -167,10 +173,12 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
-        synchronized (this) {
-            _channel = e.getChannel();
-            _channel.getCloseFuture().addListener(
-                    future -> drainPendingRequests(getCloseReason(_channel)));
+        synchronized (_pendingReadsLock) {
+            synchronized (_pendingWritesLock) {
+                _channel = e.getChannel();
+                _channel.getCloseFuture()
+                        .addListener(future -> drainPendingRequests(getCloseReason(_channel)));
+            }
         }
         super.channelOpen(ctx, e);
     }
@@ -178,28 +186,31 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
-        synchronized (this) {
-            // Flush all pending writes now that we are connected
-            Iterator<byte[]> writeIter = _pendingWrites.iterator();
-            Iterator<UncancellableFuture<byte[]>> readIter = _pendingReads.iterator();
-            while (writeIter.hasNext()) {
-                doWrite(writeIter.next(), readIter.next());
-            }
-            _pendingWrites.clear();
-        }
+        synchronized (_pendingReadsLock) {
+            synchronized (_pendingWritesLock) {
+                Iterator<byte[]> writeIter = _pendingWrites.iterator();
+                Iterator<UncancellableFuture<byte[]>> readIter = _pendingReads.iterator();
 
+                while (writeIter.hasNext()) {
+                    doWrite(writeIter.next(), readIter.next());
+                }
+                _pendingWrites.clear();
+            }
+        }
         super.channelConnected(ctx, e);
     }
 
     private void drainPendingRequests(Throwable reason)
     {
-        synchronized (this) {
-            for (UncancellableFuture<byte[]> pending : _pendingReads) {
-                pending.setException(reason);
+        synchronized (_pendingReadsLock) {
+            synchronized (_pendingWritesLock) {
+                for (UncancellableFuture<byte[]> pending : _pendingReads) {
+                    pending.setException(reason);
+                }
+                _pendingReads.clear();
+                _pendingWrites.clear();
+                _lastException = reason;
             }
-            _pendingReads.clear();
-            _pendingWrites.clear();
-            _lastException = reason;
         }
     }
 

@@ -3,7 +3,6 @@ package com.aerofs.gui.shellext;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
 import com.aerofs.lib.nativesocket.NativeSocketHelper;
@@ -25,7 +24,6 @@ import org.newsclub.net.unix.NativeSocketAddress;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.SocketException;
 
 /**

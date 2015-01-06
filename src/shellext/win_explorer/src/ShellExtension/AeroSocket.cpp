@@ -8,8 +8,10 @@
 #include <conio.h>
 #include <tchar.h>
 
+#define THREAD_WAIT_TIMEOUT 1000
+
 AeroSocket::AeroSocket()
-	: m_handle(NULL),
+	:m_handle(NULL),
 	m_read_thread(NULL)
 {
 }
@@ -53,6 +55,8 @@ void AeroSocket::reconnect()
 		}
 
 		INFO_LOG("AeroFS Shellext connected to: " << m_pipe_name);
+	} else {
+		INFO_LOG("AeroFS Shellext already connected to: " << m_pipe_name);
 	}
 	AeroFSShellExtension::instance()->sendGreeting();
 	listenForMessage();
@@ -61,19 +65,23 @@ void AeroSocket::reconnect()
 void AeroSocket::closeReadThread()
 {
 	if (m_read_thread != NULL) {
-		CloseHandle(m_read_thread);
-		TerminateThread(m_read_thread, 0);
+		DWORD result = WaitForSingleObject(m_read_thread, THREAD_WAIT_TIMEOUT);
+		if (result != WAIT_OBJECT_0) {
+			// Wait timed out, forcefully close the thread
+			TerminateThread(m_read_thread, 0);
+		}
 		m_read_thread = NULL;
 	}
 }
+
 void AeroSocket::disconnect()
 {
-	closeReadThread();
 	if (m_handle != NULL) {
 		INFO_LOG("===Disconnecting AeroSocket.===");
 		CloseHandle(m_handle);
 		m_handle = NULL;
 	}
+	closeReadThread();
 }
 
 void AeroSocket::sendMessage(const ShellextCall& call)
@@ -157,6 +165,8 @@ void AeroSocket::listenForMessage()
 			return;
 		}
 		CloseHandle(m_read_thread);
+	} else {
+		closeReadThread();
 	}
 }
 
@@ -164,9 +174,8 @@ DWORD WINAPI AeroSocket::ReadThread(LPVOID lpvParam)
 {
 	AeroSocket* self = (AeroSocket*) lpvParam;
 	self->start_read();
-	INFO_LOG("==========Exiting read thread==========");
-	self->disconnect();
-	return 1;
+	INFO_LOG("===Exiting read thread===");
+	return 0;
 }
 
 void AeroSocket::disconnectOnError(char* buf)
@@ -174,6 +183,7 @@ void AeroSocket::disconnectOnError(char* buf)
 	cleanup_read_buffer(buf);
 	disconnect();
 }
+
 void AeroSocket::start_read()
 {
 	while (true) {

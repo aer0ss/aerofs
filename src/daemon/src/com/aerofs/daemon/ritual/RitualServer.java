@@ -77,7 +77,6 @@ public class RitualServer
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
         {
             try {
-                l.info("Ritual server accepted a connection.");
                 byte[] message = NettyUtil.toByteArray((ChannelBuffer)e.getMessage());
 
                 final Channel channel = e.getChannel();

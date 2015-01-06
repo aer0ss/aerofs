@@ -19,7 +19,10 @@ import com.aerofs.proto.Shellext.RootAnchorNotification;
 import com.aerofs.proto.Shellext.ShellextCall;
 import com.aerofs.proto.Shellext.ShellextNotification;
 import com.aerofs.proto.Shellext.ShellextNotification.Type;
+import com.aerofs.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualClient;
 import com.aerofs.ritual.RitualClientProvider;
+import com.flipkart.phantom.netty.common.OioServerSocketChannel;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -219,8 +222,8 @@ public class ShellextService
             @Override
             public void onFailure(Throwable throwable)
             {
-                l.warn("ss overview fetch for shellext: {}", BaseLogUtil.suppress(throwable,
-                        ClosedChannelException.class));
+                l.warn("ss overview fetch for shellext: {}",
+                        BaseLogUtil.suppress(throwable, ClosedChannelException.class));
                 // TODO: send clear cache? retry?
             }
         });
