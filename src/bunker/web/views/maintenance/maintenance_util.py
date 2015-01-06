@@ -20,7 +20,7 @@ def is_maintenance_mode(settings):
 
 def write_pem_to_file(pem_string):
     os_handle, filename = tempfile.mkstemp()
-    os.write(os_handle, pem_string)
+    os.write(os_handle, pem_string.encode('utf8'))
     os.close(os_handle)
     return filename
 
