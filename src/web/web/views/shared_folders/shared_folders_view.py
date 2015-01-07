@@ -190,6 +190,7 @@ def _jsonable_person(person):
         'last_name': person.user.last_name,
         'is_owner': is_owner,
         'can_edit': can_edit,
+        'is_group': False,
         'is_pending': is_pending,
         'email': person.user.user_email
     }
@@ -346,7 +347,7 @@ def json_add_shared_folder_perm(request):
     """
     _ = request.translate
 
-    subject_id = (GROUP_PREFIX if request.json_body['is_group'] else "") + str(request.json_body['subject_id'])
+    subject_id = (GROUP_PREFIX if request.json_body.get('is_group', False) else "") + str(request.json_body['subject_id'])
     store_id = _decode_store_id(request.json_body['store_id'])
     folder_name = request.json_body['folder_name']
     permissions = request.json_body['permissions']
@@ -417,7 +418,7 @@ def json_set_shared_folder_perm(request):
     _ = request.translate
 
     store_id = _decode_store_id(request.json_body['store_id'])
-    subject_id = (GROUP_PREFIX if request.json_body['is_group'] else "") + str(request.json_body['subject_id'])
+    subject_id = (GROUP_PREFIX if request.json_body.get('is_group', False) else "") + str(request.json_body['subject_id'])
     permissions = _pb_permissions_from_json(request.json_body['permissions'])
     suppress_warnings = request.json_body['suppress_sharing_rules_warnings']
 
@@ -436,7 +437,7 @@ def json_set_shared_folder_perm(request):
 )
 def json_delete_shared_folder_perm(request):
     store_id = _decode_store_id(request.json_body['store_id'])
-    subject_id = (GROUP_PREFIX if 'is_group' in request.json_body else "") + str(request.json_body['subject_id'])
+    subject_id = (GROUP_PREFIX if request.json_body.get('is_group', False) else "") + str(request.json_body['subject_id'])
 
     sp = get_rpc_stub(request)
     try:

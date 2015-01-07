@@ -21,7 +21,8 @@ class JsonSharedFolderPermTest(TestBase):
             json_add_shared_folder_perm
 
         params = {
-            'user_id': 'test_user_id',
+            'subject_id': 'test_user_id',
+            'is_group': False,
             'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
             'folder_name': 'test_folder_name',
             'permissions': [],
@@ -40,7 +41,8 @@ class JsonSharedFolderPermTest(TestBase):
             json_set_shared_folder_perm
 
         params = {
-            'user_id': 'test_user_id',
+            'subject_id': 'test_user_id',
+            'is_group': False,
             'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
             'permissions': [],
             'suppress_sharing_rules_warnings': True
@@ -58,7 +60,8 @@ class JsonSharedFolderPermTest(TestBase):
             json_delete_shared_folder_perm
 
         params = {
-            'user_id': 'test_user_id',
+            'subject_id': 'test_user_id',
+            'is_group': False,
             'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
         }
         request = self.create_dummy_request(json_body=params)
