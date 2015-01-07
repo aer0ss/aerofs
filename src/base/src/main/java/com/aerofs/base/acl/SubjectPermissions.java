@@ -8,8 +8,6 @@ import com.aerofs.proto.Common.PBSubjectPermissions;
 
 import javax.annotation.Nullable;
 
-import static java.lang.Integer.parseInt;
-
 /**
  * A subject is an entity that has a set of permissions associated with it in the context of ACL.
  * In the past, all subjects are users and are identified by an UserID (including the Team Server
@@ -110,7 +108,12 @@ public final class SubjectPermissions
     {
         if (isGroupSubject(subject)) {
             try {
-                return GroupID.fromExternal(parseInt(subject.substring(GROUP_PREFIX.length())));
+                // N.B. Need a parseLong here instead of a parseInt because groupID is a uint32 type
+                // in protobuf. Normally protobuf takes care of converting that back into an int,
+                // but since we've passed it around as a string if this message comes from a
+                // language that supports uint32 (e.g. Python), the string value can be larger than
+                // the max integer value
+                return GroupID.fromExternal((int)Long.parseLong(subject.substring(GROUP_PREFIX.length())));
             } catch (NumberFormatException e) {
                 // falls-through to throw ExBadArgs
             }
