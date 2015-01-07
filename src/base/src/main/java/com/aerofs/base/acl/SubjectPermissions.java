@@ -8,6 +8,8 @@ import com.aerofs.proto.Common.PBSubjectPermissions;
 
 import javax.annotation.Nullable;
 
+import static java.lang.Integer.parseInt;
+
 /**
  * A subject is an entity that has a set of permissions associated with it in the context of ACL.
  * In the past, all subjects are users and are identified by an UserID (including the Team Server
