@@ -6,6 +6,8 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.http.ContentType;
@@ -71,6 +73,20 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("shares", emptyIterable())
         .when().log().everything()
                 .get(RESOURCE, user.getString());
+    }
+
+    @Test
+    public void shouldGetSelfImplicit() throws Exception
+    {
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("email", equalTo(user.getString()))
+                .body("first_name", equalTo("User"))
+                .body("last_name", equalTo("Foo"))
+                .body("shares", emptyIterable())
+        .when().log().everything()
+                .get(RESOURCE, "me");
     }
 
     @Test

@@ -13,6 +13,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="lib" exported="" />
     <orderEntry type="module" module-name="verkehr" exported="" />
+    <orderEntry type="module" module-name="rest-api" exported="" />
     <orderEntry type="library" exported="" name="jedis" level="project" />
     <orderEntry type="library" exported="" name="bcpkix-jdk15on:1.51" level="project" />
     <orderEntry type="library" exported="" name="bcprov-jdk15on:1.51" level="project" />

@@ -10,9 +10,11 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.sun.jersey.api.container.ContainerException;
 import com.sun.jersey.api.container.MappableContainerException;
+import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.spi.StringReader;
 import com.sun.jersey.spi.StringReaderProvider;
 
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -46,10 +48,15 @@ import java.util.Map;
  *     }
  * }
  * }
+ *
+ * For added black magic, the factory method can optionally accept the jersey's HttpContext object
+ * for the request as its second parameter.
  */
 @Provider
 public class FactoryReaderProvider implements StringReaderProvider<Object>
 {
+    private @Context HttpContext _cxt;
+
     private final Injector _inj;
 
     private final StringReader<Object> INVALID = new StringReader<Object>() {
@@ -75,15 +82,14 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
             final Method m = f != null
                     ? factoryMethod(c, f)
                     : factoryMethod(c, c);
-            i = m != null
-                    ? new FactoryReader(f != null ? _inj.getInstance(f) : null, m)
-                    : INVALID;
-            _readers.put(c, i);
+            i = m == null
+                ? INVALID
+                : new FactoryReader(f != null ? _inj.getInstance(f) : null, m);
         }
         return i != INVALID ? i : null;
     }
 
-    private static class FactoryReader implements StringReader<Object>
+    private class FactoryReader implements StringReader<Object>
     {
         private final Object _o;
         private final Method _m;
@@ -98,7 +104,9 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
         public Object fromString(String s)
         {
             try {
-                return _m.invoke(_o, s);
+                return _m.getParameterCount() == 1
+                        ? _m.invoke(_o, s)
+                        : _m.invoke(_o, s, _cxt);
             } catch (InvocationTargetException e) {
                 Throwable t = e.getCause();
                 // rethrow unchecked exceptions without Mappable wrapping to ensure we get a
@@ -140,10 +148,12 @@ public class FactoryReaderProvider implements StringReaderProvider<Object>
     private static Method factoryMethod(Class<?> c, Class<?> f)
     {
         for (Method m : f.getDeclaredMethods()) {
+            int p = m.getParameterCount();
+            Class<?>[] pt = m.getParameterTypes();
             if (m.isAnnotationPresent(ParamFactory.class)
                     && c.isAssignableFrom(m.getReturnType())
-                    && m.getParameterTypes().length == 1
-                    && m.getParameterTypes()[0].isAssignableFrom(String.class)
+                    && (p == 1 || (p == 2 && pt[1] == HttpContext.class))
+                    && pt[0].isAssignableFrom(String.class)
                     && (Modifier.isStatic(m.getModifiers()) == c.equals(f))) {
                 return m;
             }

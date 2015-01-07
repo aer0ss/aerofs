@@ -18,7 +18,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 /**
- * Easy access to Version object extracted by VersionfilterFactory in resource method:
+ * Easy access to Version object extracted by VersionFilterFactory in resource method:
  *
  * {@code
  * @GET

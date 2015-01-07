@@ -16,6 +16,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.rest.util.IUserAuthToken;
+import com.aerofs.rest.util.OAuthRequestFilter;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.group.Group;
@@ -31,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import com.sun.jersey.api.core.HttpContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -72,14 +75,23 @@ public class SharedFolder
             return new SharedFolder(this, sid);
         }
 
-        @ParamFactory
-        public SharedFolder _create(String s)
+        public SharedFolder create(String s)
         {
             try {
                 return create(s.contains("@") ? SID.rootSID(UserID.fromExternal(s)) : new SID(s));
             } catch (ExEmptyEmailAddress|ExFormatError e) {
                 throw new IllegalArgumentException("Invalid SID");
             }
+        }
+
+        @ParamFactory
+        public SharedFolder create(String s, HttpContext cxt)
+        {
+            if (s.equals("root")) {
+                IUserAuthToken token = (IUserAuthToken)cxt.getProperties().get(OAuthRequestFilter.OAUTH_TOKEN);
+                s = token.user().getString();
+            }
+            return create(s);
         }
     }
 

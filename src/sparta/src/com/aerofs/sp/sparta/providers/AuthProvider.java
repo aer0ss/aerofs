@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.sparta.providers;
 
-import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.rest.providers.OAuthProvider;
 import com.aerofs.rest.util.OAuthToken;
 import com.google.inject.Inject;
@@ -16,9 +15,8 @@ import com.sun.jersey.api.core.HttpContext;
 public class AuthProvider extends OAuthProvider
 {
     @Inject
-    public AuthProvider(TokenVerifier verifier)
+    public AuthProvider()
     {
-        super(verifier);
     }
 
     @Override

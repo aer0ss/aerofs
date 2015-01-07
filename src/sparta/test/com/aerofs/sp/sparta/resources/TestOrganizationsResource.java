@@ -52,7 +52,7 @@ public class TestOrganizationsResource extends AbstractResourceTest
         long quota = 42 * (long)1E9;
 
         sqlTrans.begin();
-        Organization org = factUser._create(admin.getString()).getOrganization();
+        Organization org = factUser.create(admin.getString()).getOrganization();
         String name = org.getName();
         org.setQuotaPerUser(quota);
         sqlTrans.commit();
@@ -70,7 +70,7 @@ public class TestOrganizationsResource extends AbstractResourceTest
     public void shouldNotIncludeQuotaWhenNoQuotaSet() throws Exception
     {
         sqlTrans.begin();
-        Organization org = factUser._create(admin.getString()).getOrganization();
+        Organization org = factUser.create(admin.getString()).getOrganization();
         String name = org.getName();
         org.setQuotaPerUser(null);
         sqlTrans.commit();

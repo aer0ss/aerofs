@@ -11,6 +11,7 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.rest.util.OAuthRequestFilter;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
@@ -93,6 +94,8 @@ public class Sparta extends Service
 
         _executionHandler = new ExecutionHandler(
                 new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB));
+
+        addRequestFilter(OAuthRequestFilter.class);
 
         enableVersioning();
 

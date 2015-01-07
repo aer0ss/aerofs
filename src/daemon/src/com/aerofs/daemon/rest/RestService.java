@@ -18,6 +18,7 @@ import com.aerofs.rest.providers.JsonExceptionMapper;
 import com.aerofs.rest.providers.OAuthProvider;
 import com.aerofs.rest.providers.ParamExceptionMapper;
 import com.aerofs.rest.providers.RuntimeExceptionMapper;
+import com.aerofs.rest.util.OAuthRequestFilter;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Version;
 import com.google.common.collect.ImmutableSet;
@@ -53,6 +54,8 @@ public class RestService extends Service
         _sslHandlerFactory = SSLEngineFactory.newServerFactory(kmgr, null);
 
         enableVersioning();
+
+        addRequestFilter(OAuthRequestFilter.class);
 
         checkNotNull(kmgr.getCert());
         checkNotNull(kmgr.getPrivateKey());

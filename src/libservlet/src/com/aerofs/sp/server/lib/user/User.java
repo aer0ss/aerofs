@@ -24,6 +24,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
+import com.aerofs.rest.util.IUserAuthToken;
+import com.aerofs.rest.util.OAuthRequestFilter;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
@@ -47,6 +49,7 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.sun.jersey.api.core.HttpContext;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -57,6 +60,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class User
@@ -93,10 +97,19 @@ public class User
         }
 
         @ParamFactory
-        public User _create(String userid)
+        public User create(String userid, HttpContext cxt)
+        {
+            if (userid.equals("me")) {
+                IUserAuthToken token = (IUserAuthToken)cxt.getProperties().get(OAuthRequestFilter.OAUTH_TOKEN);
+                return create(token.user());
+            }
+            return create(userid);
+        }
+
+        public User create(String userid)
         {
             try {
-                return create(UserID.fromExternal(userid));
+                return createFromExternalID(userid);
             } catch (ExEmptyEmailAddress e) {
                 throw new IllegalArgumentException("empty email address");
             }
