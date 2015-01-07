@@ -50,6 +50,7 @@ public class Exceptions
         _types.put(Type.WRONG_ORGANIZATION, ExWrongOrganization.class);
         _types.put(Type.NOT_LOCALLY_MANAGED, ExNotLocallyManaged.class);
         _types.put(Type.SECOND_FACTOR_SETUP_REQUIRED, ExSecondFactorSetupRequired.class);
+        _types.put(Type.MEMBER_LIMIT_EXCEEDED, ExMemberLimitExceeded.class);
     }
 
     /**

@@ -16,7 +16,7 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -285,9 +285,9 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void shouldLimitUsersAtMemberCap()
             throws Exception
     {
-        int prevValue = SPService.MAX_SHARED_FOLDER_MEMBERS;
+        int prevValue = SPParam.MAX_SHARED_FOLDER_MEMBERS;
         try {
-            SPService.MAX_SHARED_FOLDER_MEMBERS = 2;
+            SPParam.MAX_SHARED_FOLDER_MEMBERS = 2;
             sqlTrans.begin();
             User owner = saveUser();
             User other1 = saveUser();
@@ -320,10 +320,10 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
                 sqlTrans.rollback();
             }
 
-            SPService.MAX_SHARED_FOLDER_MEMBERS = 3;
+            SPParam.MAX_SHARED_FOLDER_MEMBERS = 3;
             shareFolder(owner, sid, group, Permissions.allOf());
         } finally {
-            SPService.MAX_SHARED_FOLDER_MEMBERS = prevValue;
+            SPParam.MAX_SHARED_FOLDER_MEMBERS = prevValue;
         }
     }
 
@@ -331,9 +331,9 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     public void memberCapShouldIgnoreLeftUsers()
             throws Exception
     {
-        int prevValue = SPService.MAX_SHARED_FOLDER_MEMBERS;
+        int prevValue = SPParam.MAX_SHARED_FOLDER_MEMBERS;
         try {
-            SPService.MAX_SHARED_FOLDER_MEMBERS = 2;
+            SPParam.MAX_SHARED_FOLDER_MEMBERS = 2;
             sqlTrans.begin();
             User owner = saveUser();
             User other1 = saveUser();
@@ -345,7 +345,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             leaveSharedFolder(other1, sid);
             shareAndJoinFolder(owner, sid, other2, Permissions.allOf());
         } finally {
-            SPService.MAX_SHARED_FOLDER_MEMBERS = prevValue;
+            SPParam.MAX_SHARED_FOLDER_MEMBERS = prevValue;
         }
     }
 

@@ -14,7 +14,7 @@ import com.aerofs.proto.Sp.CreateGroupReply;
 import com.aerofs.proto.Sp.ListGroupMembersReply;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply;
 import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
@@ -105,9 +105,9 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
     public void shouldLimitMembers()
         throws Exception
     {
-        int prevValue = SPService.MAX_GROUP_SIZE;
+        int prevValue = SPParam.MAX_GROUP_SIZE;
         try {
-            SPService.MAX_GROUP_SIZE = 2;
+            SPParam.MAX_GROUP_SIZE = 2;
             service.addGroupMembers(group.id().getInt(), emails(user2));
             try {
                 service.addGroupMembers(group.id().getInt(), emails(user3, user4));
@@ -123,7 +123,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
                 sqlTrans.rollback();
             }
         } finally {
-            SPService.MAX_GROUP_SIZE = prevValue;
+            SPParam.MAX_GROUP_SIZE = prevValue;
         }
     }
 
