@@ -8,19 +8,13 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
-import com.aerofs.rest.api.Error.Type;
 import com.google.inject.Inject;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
@@ -50,25 +44,19 @@ public class OAuthRequestFilter implements ContainerRequestFilter
         String authHeader = singleton(req.getRequestHeader(HttpHeaders.AUTHORIZATION));
         String queryToken = singleton(req.getQueryParameters().get("token"));
 
+        if ((authHeader == null) == (queryToken == null)) return req;
+
         try {
-            if ((authHeader == null) == (queryToken == null)) throw new Exception("invalid or missing oauth token");
             VerifyTokenResponse r = authHeader != null ?
                     _verifier.verifyHeader(authHeader) : _verifier.verifyToken(queryToken);
             if (r != null && r.principal != null) {
                 l.info("verified");
                 req.getProperties().put(OAUTH_TOKEN, new OAuthToken(r));
-                return req;
             }
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e, ClosedChannelException.class));
         }
-
-        throw new WebApplicationException(Response
-                .status(Status.UNAUTHORIZED)
-                .header(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"")
-                .header(Names.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                .entity(new com.aerofs.rest.api.Error(Type.UNAUTHORIZED, "Missing or invalid access token"))
-                .build());
+        return req;
     }
 
     private @Nullable String singleton(List<String> l)
