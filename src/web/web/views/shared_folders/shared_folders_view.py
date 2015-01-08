@@ -107,15 +107,13 @@ def _shared_folders(request, page_heading, data_url, has_pagination=False, can_a
 def json_get_my_shared_folders(request):
     return json_get_user_shared_folders(request, is_me=True)
 
-
-def _is_joined(folder, user):
-    """ return true if the user is a JOINED member of the PBSharedFolder """
-    return any(ups.user.user_email == user and ups.state == JOINED for ups in folder.user_permissions_and_state)
-
 def _is_left(folder, user):
     """ return true if the user is a LEFT member of the PBSharedFolder """
     return any(ups.user.user_email == user and ups.state == LEFT for ups in folder.user_permissions_and_state)
 
+def _is_pending(folder, user):
+    """ return true if the user is a PENDING member of the PBSharedFolder"""
+    return any(ups.user.user_email == user and ups.state == PENDING for ups in folder.user_permissions_and_state)
 
 def _session_user_privileger(folder, session_user):
     return _has_permission(folder, session_user, common.MANAGE)
@@ -147,7 +145,7 @@ def json_get_user_shared_folders(request, is_me=False):
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_user_shared_folders(specified_user)
-    folders = [f for f in reply.shared_folder if (_is_joined(f, specified_user) or _is_left(f, specified_user))]
+    folders = [f for f in reply.shared_folder if (not _is_pending(f, specified_user))]
     return _sp_reply2json(folders,
         _session_team_privileger, authenticated_userid(request), request, is_mine=is_me, specified_user=specified_user)
 
