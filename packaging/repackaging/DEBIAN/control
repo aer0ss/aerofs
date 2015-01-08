@@ -4,4 +4,4 @@ Priority: required
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS installers package.
 Architecture: all
-Depends: python-pip, p7zip-full, hfsplus, zip
+Depends: p7zip-full, libdmg-hfsplus, zip
