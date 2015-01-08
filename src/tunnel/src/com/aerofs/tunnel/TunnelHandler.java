@@ -187,12 +187,10 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             client.fireDisconnected();
             break;
         case MSG_SUSPEND:
-            // mark channel as not writable
-            client.fireInterestChanged(client.getInterestOps() | Channel.OP_WRITE);
+            client.makeWritable(false);
             break;
         case MSG_RESUME:
-            // mark channel as writable
-            client.fireInterestChanged(client.getInterestOps() & ~Channel.OP_WRITE);
+            client.makeWritable(true);
             break;
         case MSG_PAYLOAD:
             //l.info("payload msg on {}: {}", _channel, buf.readableBytes());
@@ -217,6 +215,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e)
     {
+        l.debug("physical channel interest changed {} {}", _channel.getInterestOps(), this);
         _provider.foreach(c -> {
             Channels.fireChannelInterestChanged(c);
             return null;
@@ -301,9 +300,10 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
                         if (cf.isSuccess()) {
                             // execute in I/O thread to respect Netty's threading model
                             virtualChannel.getPipeline()
-                                    .execute(() -> virtualChannel.fireInterestChanged(ops))
+                                    .execute(() -> Channels.fireChannelInterestChanged(virtualChannel))
                                     .addListener(new ChannelFutureNotifier(future));
                         } else {
+                            l.warn("fail write {} -> {}", virtualChannel, this);
                             future.setFailure(cf.getCause());
                         }
                     });

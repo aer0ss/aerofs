@@ -153,17 +153,10 @@ public class VirtualChannel extends AbstractChannel
     public int getInterestOps()
     {
         /**
-         * gah, Netty interest ops are so annoyingly confusing:
-         *
-         * OP_WRITE is set to suspend write
-         * OP_READ is set to accept reads
-         *
-         * which complicates merging two set of ops...
+         * The virtual channel is effectively writable if both itself and the underlying physical
+         * accept writes.
          */
-        int virtual = super.getInterestOps();
-        int physical = _tunnel._channel.getInterestOps();
-
-        return (virtual & OP_READ) | ((physical | virtual) & OP_WRITE);
+        return super.getInterestOps() | ( _tunnel._channel.getInterestOps() & OP_WRITE);
     }
 
     @Override
@@ -189,12 +182,14 @@ public class VirtualChannel extends AbstractChannel
     /**
      * To honor Netty's threading model, this should only be called from the channel's I/O thread
      */
-    void fireInterestChanged(int ops)
+    void makeWritable(boolean writable)
     {
+        int ops = super.getInterestOps();
+        ops = writable ? ops & ~OP_WRITE : ops | OP_WRITE;
         int prev = getInterestOps();
         setInterestOpsNow(ops);
         if (prev != getInterestOps()) {
-            l.debug("tunnel {} {}", (ops & OP_WRITE) == 0 ? "resume" : "suspend", this);
+            l.debug("tunnel remote {} {}", (ops & OP_WRITE) == 0 ? "resume" : "suspend", this);
             Channels.fireChannelInterestChanged(this);
         }
     }
@@ -218,6 +213,7 @@ public class VirtualChannel extends AbstractChannel
         int prev = super.getInterestOps();
         setInterestOpsNow(ops);
         if (prev != super.getInterestOps()) {
+            l.debug("tunnel local {} {}", (ops & OP_READ) == 0 ? "suspend" : "resume", this);
             _tunnel.onInterestChanged(this, ops, future);
         }
     }
