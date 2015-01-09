@@ -41,7 +41,6 @@ if [ -z "$GIT_ROOT" ]; then
 fi
 readonly GIT_ROOT="$(cd "$GIT_ROOT" && pwd)"
 readonly TOOLS_ROOT="${GIT_ROOT}/tools"
-readonly DAMAGE_PY="${GIT_ROOT}/packaging/repackaging/opt/repackaging/tools/osx/damage.py"
 readonly BUILD_SCRIPT_DIR="${TOOLS_ROOT}/build"
 readonly PROGUARD_HOME="${TOOLS_ROOT}/proguard"
 readonly LOCAL_NSIS_DIR="${TOOLS_ROOT}/win_installer"

@@ -319,16 +319,11 @@ function make_osx_packages() {
             # N.B. THIS DOES NOT PRODUCE A WORKING .dmg file!! That requires a little more work. This will produce
             # junk that will let the packaging continue, so long as you don't try to execute the .dmg
             HFS_IMAGE="${DMG_TEMP_DIR}/img.hfs"
-            PATH_TO_MOUNT="${DMG_TEMP_DIR}/image_loop"
-            mkdir -p "$PATH_TO_MOUNT"
-            # python $DAMAGE_PY extract "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg" "$HFS_IMAGE"
             dd if=/dev/zero of=$HFS_IMAGE bs=1024 seek=102400 count=1
             mkfs.hfsplus "$HFS_IMAGE"
-            sudo mount -t hfsplus -o loop,rw,force "$HFS_IMAGE" "$PATH_TO_MOUNT"
-            # rm -rf "$PATH_TO_MOUNT/${AEROFS_PRODUCT_SPACEFREE}.app"
-            sudo cp -a "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "$PATH_TO_MOUNT"/
-            sudo umount "$PATH_TO_MOUNT"
-            python $DAMAGE_PY compress "$HFS_IMAGE" "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
+            hfsplus "$HFS_IMAGE" mkdir "/${AEROFS_PRODUCT_SPACEFREE}.app"
+            hfsplus "$HFS_IMAGE" addall "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "/${AEROFS_PRODUCT_SPACEFREE}.app"
+            dmg build "$HFS_IMAGE" "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
             rm "$HFS_IMAGE"
             ;;
         *)
