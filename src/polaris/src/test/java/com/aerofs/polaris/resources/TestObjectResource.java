@@ -1,8 +1,9 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.PolarisResource;
+import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.types.ObjectType;
@@ -13,6 +14,7 @@ import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -30,7 +32,7 @@ public final class TestObjectResource {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Rule
-    public PolarisResource polarisResource = new PolarisResource();
+    public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
 
     @Test
     public void shouldProperlyCreateObjectTree() throws Exception {

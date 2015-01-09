@@ -1,0 +1,31 @@
+maxReturnedTransforms: 10
+
+admin:
+  host: localhost
+  port: 8087
+  directMemoryBacked: false
+  maxAcceptQueueSize: 10
+  numNetworkThreads: 2
+
+service:
+  host: localhost
+  port: 8086
+  directMemoryBacked: false
+  maxAcceptQueueSize: 10
+  numNetworkThreads: 2
+
+database:
+  username: test
+  password: temp123
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost/test
+  minIdleConnections: 1
+
+logging:
+  level: ALL
+
+  console:
+    enabled: true
+
+  file:
+    enabled: false

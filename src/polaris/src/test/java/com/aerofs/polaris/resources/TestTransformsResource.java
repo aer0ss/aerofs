@@ -1,7 +1,8 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.core.Identifiers;
-import com.aerofs.polaris.PolarisResource;
+import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.ObjectType;
@@ -15,6 +16,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import javax.annotation.Nullable;
 
@@ -33,7 +35,7 @@ public final class TestTransformsResource {
     private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(device, "test@aerofs.com");
 
     @Rule
-    public PolarisResource polarisResource = new PolarisResource();
+    public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsInserted() {

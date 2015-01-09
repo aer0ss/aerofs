@@ -1,7 +1,8 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.core.Identifiers;
-import com.aerofs.polaris.PolarisResource;
+import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.batch.LocationBatch;
@@ -14,6 +15,7 @@ import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import javax.ws.rs.core.MediaType;
 
@@ -33,7 +35,7 @@ public final class TestLocationBatchResource {
     private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(device, "test@aerofs.com");
 
     @Rule
-    public PolarisResource polarisResource = new PolarisResource();
+    public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
 
     @Test
     public void shouldSuccessfullyCompleteAllOperationsInBatch() throws InterruptedException {

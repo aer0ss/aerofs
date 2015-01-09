@@ -18,7 +18,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'com.aerofs.baseline.simple.Simple',
+                'Main-Class': 'com.aerofs.baseline.sample.Sample',
                 'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
         )
     }

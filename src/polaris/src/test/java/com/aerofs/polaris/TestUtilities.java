@@ -140,7 +140,7 @@ public abstract class TestUtilities {
         return given()
                     .queryParam("root", root)
                     .queryParam(com.aerofs.baseline.Constants.JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER)
-                    .post(ServerConfiguration.TREE_URL)
+                    .post(getTreeUrl())
                     .then()
                     .assertThat()
                     .statusCode(Response.Status.OK.getStatusCode())
@@ -164,24 +164,27 @@ public abstract class TestUtilities {
                 .extract().as(AppliedTransforms.class);
     }
 
+    public static String getTreeUrl() {
+        return String.format("%s/commands/tree/", PolarisTestServer.getAdminURL());
+    }
+
     public static String getObjectURL(String oid) {
-        return ServerConfiguration.OBJECTS_URL + oid + "/";
+        return String.format("%s/objects/%s/", PolarisTestServer.getServiceURL(), oid);
     }
 
     public static String getTransformBatchURL() {
-        return ServerConfiguration.BATCH_URL + "transforms/";
+        return String.format("%s/batch/transforms/", PolarisTestServer.getServiceURL());
     }
 
     public static String getLocationBatchURL() {
-        return ServerConfiguration.BATCH_URL + "locations/";
+        return String.format("%s/batch/locations/", PolarisTestServer.getServiceURL());
     }
 
     private static String getTransformsURL(String root) {
-        return ServerConfiguration.TRANSFORMS_URL + root + "/";
+        return String.format("%s/transforms/%s/", PolarisTestServer.getServiceURL(), root);
     }
 
     private TestUtilities() {
         // to prevent instantiation by subclasses
     }
-
 }
