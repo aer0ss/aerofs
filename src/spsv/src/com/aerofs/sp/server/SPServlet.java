@@ -317,7 +317,7 @@ public class SPServlet extends AeroServlet
             bytes = _reactor.react(decodedMessage).get();
             _sqlTrans.cleanUp();
             _jedisTrans.cleanUp();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             l.warn("exception in reactor: " + Util.e(e));
             throw new IOException(e.getCause());
         }

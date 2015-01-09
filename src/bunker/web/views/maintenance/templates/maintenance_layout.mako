@@ -42,10 +42,15 @@
         </ul>
 
         <li class="nav-header">My AeroFS</li>
-        <% import re %>
-        ## remove the port number from the host name, if any.
         <ul>
-            <li><a href="https://${re.sub(r':.*$', '', request.host)}">Home</a></li>
+            ## Using this hack to refer to another service is not a best practice.
+            ## However it has the lowest cost given the current architecture.
+            <li><a href="javascript:goHome()">Home</a></li>
+            <script>
+                function goHome() {
+                    window.location.assign("https://" + window.location.hostname);
+                }
+            </script>
         </ul>
     </ul>
 </div>

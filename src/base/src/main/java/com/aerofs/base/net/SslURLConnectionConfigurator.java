@@ -30,6 +30,8 @@ public class SslURLConnectionConfigurator implements IURLConnectionConfigurator
     @Override
     public void configure(URLConnection connection) throws Throwable
     {
+        if (!connection.getURL().getProtocol().equals("https")) return;
+
         if (_sslSocketFactory == null) {
             _sslSocketFactory = _factory.getSSLContext().getSocketFactory();
         }

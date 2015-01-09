@@ -67,7 +67,7 @@ public final class Configuration
             InputStream is = new URL(CONFIGURATION_URL).openConnection().getInputStream();
             httpProperties.load(is);
         } catch (IOException e) {
-            throw new ExHttpConfig("Couldn't load configuration from config server.");
+            throw new ExHttpConfig("Couldn't load configuration from config server " + CONFIGURATION_URL + ".");
         }
 
         return httpProperties;

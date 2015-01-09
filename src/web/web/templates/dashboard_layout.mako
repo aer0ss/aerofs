@@ -188,9 +188,14 @@
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Appliance</li>
             <ul>
-                <% import re %>
-                ## remove the port number from the host name, if any.
-                <li><a href="http://${re.sub(r':.*$', '', request.host) + ':8484'}">Manage</a></li>
+                <li><a href='javascript:gotoMaintenance()' id="mng-link">Manage</a></li>
+                <script>
+                    ## Using this hack to refer to another service is not a best practice.
+                    ## However it has the lowest cost given the current architecture.
+                    function gotoMaintenance() {
+                        window.location.assign("http://" + window.location.hostname + ":8484");
+                    }
+                </script>
             </ul>
         %endif
     </ul>

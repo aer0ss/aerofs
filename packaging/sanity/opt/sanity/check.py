@@ -33,8 +33,10 @@ class SanityCheck(object):
 
         statuses = []
         for script in scripts:
-            status = self.performCheck(script)
             service = script.split('.')[0]
+            print "probing", service, "..."
+            status = self.performCheck(script)
+            print "done"
 
             if len(status) == 1 or len(status[1]) == 0:
                 statuses.append({ \

@@ -90,7 +90,7 @@ echo ">>> Submitting request to CA"
 # IMPORTANT: use data-binary to preserve newlines
 # IMPORTANT: use --trace-ascii - to dump output
 
-curl --silent -X POST \
+curl --silent --show-error -X POST \
     --data-binary @"$SERVER_NAME"".csr" \
     --output "$SERVER_X509CERT_FILENAME" \
     "$CA_URL""?""$SERVER_NAME"

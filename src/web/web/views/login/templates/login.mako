@@ -27,7 +27,7 @@
             ## N.B. signup.mock manually creates this form. Make sure the fields there
             ## are consistent with the fields here.
 
-            <form id="signin_form" class="form-horizontal" role="form" action="${request.url}" method="post">
+            <form id="signin_form" class="form-horizontal" role="form" method="post">
                 ${self.csrf.token_input()}
                 <div class="form-group">
                     <label for="input_email" class="col-sm-4 control-label">Email</label>
