@@ -274,6 +274,60 @@ public class TestTunnel extends AbstractBaseTest
     }
 
     @Test
+    public void shouldSuspendResumeInterlaced() throws Exception
+    {
+        Tunnel<Channel, TunnelHandler> p = makePhysical();
+        Tunnel<Channel, Channel> v = makeVirtual(p.server);
+
+        Future<Boolean> clientWritable = clientVirtualConnections.interestChanged(v.client);
+        v.server.setReadable(false).awaitUninterruptibly();
+        assertFalse(clientWritable.get());
+        assertFalse(v.server.isReadable());
+
+        Future<Boolean> serverWritable = serverVirtualConnections.interestChanged(v.server);
+        v.client.setReadable(false).awaitUninterruptibly();
+        assertFalse(serverWritable.get());
+        assertFalse(v.client.isReadable());
+
+        clientWritable = clientVirtualConnections.interestChanged(v.client);
+        v.server.setReadable(true);
+        assertTrue(clientWritable.get());
+        assertTrue(v.server.isReadable());
+
+        serverWritable = serverVirtualConnections.interestChanged(v.server);
+        v.client.setReadable(true);
+        assertTrue(serverWritable.get());
+        assertTrue(v.client.isReadable());
+    }
+
+    @Test
+    public void shouldSuspendResumeNested() throws Exception
+    {
+        Tunnel<Channel, TunnelHandler> p = makePhysical();
+        Tunnel<Channel, Channel> v = makeVirtual(p.server);
+
+        Future<Boolean> clientWritable = clientVirtualConnections.interestChanged(v.client);
+        v.server.setReadable(false).awaitUninterruptibly();
+        assertFalse(clientWritable.get());
+        assertFalse(v.server.isReadable());
+
+        Future<Boolean> serverWritable = serverVirtualConnections.interestChanged(v.server);
+        v.client.setReadable(false).awaitUninterruptibly();
+        assertFalse(serverWritable.get());
+        assertFalse(v.client.isReadable());
+
+        serverWritable = serverVirtualConnections.interestChanged(v.server);
+        v.client.setReadable(true);
+        assertTrue(serverWritable.get());
+        assertTrue(v.client.isReadable());
+
+        clientWritable = clientVirtualConnections.interestChanged(v.client);
+        v.server.setReadable(true);
+        assertTrue(clientWritable.get());
+        assertTrue(v.server.isReadable());
+    }
+
+    @Test
     public void shouldMultiplexMessages() throws Exception
     {
         Tunnel<Channel, TunnelHandler> p = makePhysical();

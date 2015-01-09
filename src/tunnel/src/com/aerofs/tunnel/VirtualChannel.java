@@ -60,7 +60,9 @@ public class VirtualChannel extends AbstractChannel
                     c.onDisconnect(future);
                     break;
                 case INTEREST_OPS:
-                    c.onInterestChanged((Integer)value, future);
+                    // all changes to interest ops done in I/O thread of underlying physical
+                    // channel to avoid synchronization and ordering headaches
+                    execute(pipeline, () -> c.onInterestChanged((Integer)value, future));
                     break;
                 default:
                     break;
@@ -156,7 +158,7 @@ public class VirtualChannel extends AbstractChannel
          * The virtual channel is effectively writable if both itself and the underlying physical
          * accept writes.
          */
-        return super.getInterestOps() | ( _tunnel._channel.getInterestOps() & OP_WRITE);
+        return super.getInterestOps() | (_tunnel._channel.getInterestOps() & OP_WRITE);
     }
 
     @Override
@@ -184,12 +186,11 @@ public class VirtualChannel extends AbstractChannel
      */
     void makeWritable(boolean writable)
     {
-        int ops = super.getInterestOps();
-        ops = writable ? ops & ~OP_WRITE : ops | OP_WRITE;
         int prev = getInterestOps();
-        setInterestOpsNow(ops);
+        int ops = super.getInterestOps();
+        setInterestOpsNow(writable ? ops & ~OP_WRITE : ops | OP_WRITE);
         if (prev != getInterestOps()) {
-            l.debug("tunnel remote {} {}", (ops & OP_WRITE) == 0 ? "resume" : "suspend", this);
+            l.info("tunnel remote {} {}", writable ? "resume" : "suspend", this);
             Channels.fireChannelInterestChanged(this);
         }
     }
@@ -208,13 +209,21 @@ public class VirtualChannel extends AbstractChannel
         _tunnel.onDisconnect(this, future);
     }
 
+    /**
+     * To honor Netty's threading model, this should only be called from the channel's I/O thread
+     */
     private void onInterestChanged(int ops, ChannelFuture future)
     {
         int prev = super.getInterestOps();
+        // local interest change cannot affect writability, which reflects remote interest
+        ops = (ops & ~OP_WRITE) | (prev & OP_WRITE);
+        boolean readable = (ops & OP_READ) == 0;
         setInterestOpsNow(ops);
-        if (prev != super.getInterestOps()) {
-            l.debug("tunnel local {} {}", (ops & OP_READ) == 0 ? "suspend" : "resume", this);
-            _tunnel.onInterestChanged(this, ops, future);
+        if (prev != ops) {
+            l.info("tunnel local {} {}", readable ? "suspend" : "resume", this);
+            _tunnel.onReadabilityChanged(this, readable, future);
+        } else {
+            future.setSuccess();
         }
     }
 }

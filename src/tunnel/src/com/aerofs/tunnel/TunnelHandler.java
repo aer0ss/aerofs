@@ -291,22 +291,13 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         return _channel.write(message);
     }
 
-    void onInterestChanged(final VirtualChannel virtualChannel, final int ops, final ChannelFuture future)
+    void onReadabilityChanged(final VirtualChannel virtualChannel, boolean readable,
+            final ChannelFuture future)
     {
         try {
-            writeMsg((ops & Channel.OP_READ) == 0 ? MSG_SUSPEND : MSG_RESUME,
-                    virtualChannel.getConnectionId())
-                    .addListener(cf -> {
-                        if (cf.isSuccess()) {
-                            // execute in I/O thread to respect Netty's threading model
-                            virtualChannel.getPipeline()
-                                    .execute(() -> Channels.fireChannelInterestChanged(virtualChannel))
-                                    .addListener(new ChannelFutureNotifier(future));
-                        } else {
-                            l.warn("fail write {} -> {}", virtualChannel, this);
-                            future.setFailure(cf.getCause());
-                        }
-                    });
+            writeMsg(readable ? MSG_SUSPEND : MSG_RESUME, virtualChannel.getConnectionId());
+            future.setSuccess();
+            Channels.fireChannelInterestChanged(virtualChannel);
         } catch (ClosedChannelException e) {
             l.warn("ignore write {} -> {}", virtualChannel, this);
             future.setFailure(e);
