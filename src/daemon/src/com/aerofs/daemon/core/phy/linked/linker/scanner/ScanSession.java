@@ -427,7 +427,7 @@ class ScanSession
     private void addLogicalChildrenToDeletionBuffer_(OA oaParent)
             throws SQLException, ExNotDir, ExNotFound
     {
-        // It is possible to run into a non-representable object durin a scan, e.g. :
+        // It is possible to run into a non-representable object during a scan, e.g. :
         //
         // virtual:
         //      foo/
@@ -467,7 +467,7 @@ class ScanSession
                     OA oa = _f._ds.getOA_(soid);
                     // avoid placing objects in deletion buffer if we know they won't appear in a scan:
                     // 1. expelled objects
-                    // 2. files whose master branch was not succcessfully downloaded yet
+                    // 2. files whose master branch was not successfully downloaded yet
                     // 3. non-representable objects
                     if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
                         l.debug("hold_ on {}", soid);

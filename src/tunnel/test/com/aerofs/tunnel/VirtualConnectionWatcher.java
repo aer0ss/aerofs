@@ -87,22 +87,22 @@ public class VirtualConnectionWatcher extends ConnectionWatcher<Channel>
         @Override
         public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e)
         {
-            final boolean writable;
+            final boolean writable = e.getChannel().isWritable();
             final SettableFuture<Boolean> future;
             synchronized (_watchers) {
                 Watcher w = _watchers.get(ctx.getChannel());
                 Preconditions.checkNotNull(w);
-                w.writable = e.getChannel().isWritable();
-                if (w.interestFuture != null) {
-                    future = w.interestFuture;
-                    writable = w.writable;
-                    w.interestFuture = null;
-                } else {
-                    future = null;
-                    writable = false;
+                if (w.writable == writable)  {
+                    l.info("ignoring interest change with no impact on writability");
+                    return;
                 }
+                w.writable = writable;
+                if (w.interestFuture == null) return;
+                future = w.interestFuture;
+                w.interestFuture = null;
             }
-            if (future != null) future.set(writable);
+            // must set future outside of synchronized block
+            future.set(writable);
         }
 
         @Override
