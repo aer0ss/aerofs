@@ -6,7 +6,7 @@ import analytics
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
-from web.util import send_internal_email
+from web.util import send_sales_email
 
 
 DEVELOPERS_SIGNUP_LOG = '/var/log/web/developer_license_requests.csv'
@@ -60,10 +60,10 @@ def json_developers_signup(request):
     )
     analytics.track(markupsafe.escape(request.params['email']), "Requested a Developer License")
 
-    # send the team an email
+    # Send the team an email.
     body = '\n'.join('{}: {}'.format(k, v) for k, v in request.params.iteritems())
     subject = "[DEVELOPER] Developer license request from {}".format(request.params['email'])
-    send_internal_email(subject, body)
+    send_sales_email(request.params['email'], subject, body)
 
     return {
         'email': request.params['email'],

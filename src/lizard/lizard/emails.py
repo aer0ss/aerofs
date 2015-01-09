@@ -9,8 +9,8 @@ from flask import current_app, render_template, url_for
 from . import appliance
 
 # TODO: extract these into external configuration
-SENDER_ADDR = "AeroFS <support@aerofs.com>"
-SUPPORT_ADDR = "business@aerofs.com"
+SENDER_ADDR = "support@aerofs.com"
+SALES_ADDR = "sales@aerofs.com"
 
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart('alternative')
@@ -130,16 +130,16 @@ def send_password_reset_email(email_address, link):
     msg = _password_reset_email_for(email_address, link)
     _send_email(email_address, msg)
 
-def send_support_request_email(requester, message):
-    subject = "[Private Cloud Support] - {}".format(requester)
+def send_private_cloud_question_email(requester, message):
+    subject = "[Private Cloud Question] - {}".format(requester)
     text_body = message
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = SENDER_ADDR
-    msg['To'] = SUPPORT_ADDR
+    msg['From'] = requester
+    msg['To'] = SALES_ADDR
     part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8')
     msg.attach(part1)
-    _send_email(SUPPORT_ADDR, msg)
+    _send_email(SALES_ADDR, msg)
 
 def send_internal_appliance_release_email(email_address, appliance_version):
     template_args = {

@@ -426,7 +426,7 @@ def contact_us():
     user = login.current_user
     form = forms.ContactForm()
     if form.validate_on_submit():
-        emails.send_support_request_email(user.email, form.message.data)
+        emails.send_private_cloud_question_email(user.email, form.message.data)
         flash(u"Message sent successfully.  We'll be in touch.", 'success')
         return redirect(url_for(".dashboard"))
     return render_template("contact_us.html", form=form)

@@ -145,29 +145,28 @@ def get_last_flash_message_and_empty_queue(request):
     return (successes[-1], True) if successes else \
             ((errors[-1], False) if errors else None)
 
-def send_internal_email(subject, body):
+def send_sales_email(from_email, subject, body):
     """
-    Send an email to business@aerofs.com. Ignore errors.
+    Send an email to sales@aerofs.com. Ignore errors.
     """
-    fromEmail = 'Pyramid Server <business@aerofs.com>'
-    toEmail = 'business@aerofs.com'
+    to_email = 'sales@aerofs.com'
 
-    log.info("send_internal_email:\n"
+    log.info("send_sales_email:\n"
               "subject: {}\nbody: {}\n".format(subject, body))
 
     msg = MIMEText(body)
     msg['Subject'] = subject
-    msg['From'] = fromEmail
-    msg['To'] = toEmail
+    msg['From'] = from_email
+    msg['To'] = to_email
 
     # Send the message via our own SMTP server, but don't include the
     # envelope header.
     try:
         s = smtplib.SMTP('localhost')
-        s.sendmail(fromEmail, [toEmail], msg.as_string())
+        s.sendmail(from_email, [toEmail], msg.as_string())
         s.quit()
     except Exception, e:
-        log.error("send_internal_email failed and ignored", exc_info=e)
+        log.error("send_sales_email failed and ignored", exc_info=e)
 
 def is_team_server_user_id(user_id):
     """

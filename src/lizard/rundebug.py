@@ -6,4 +6,4 @@ internal = len(sys.argv) > 1 and sys.argv[1] == "internal"
 
 app = create_app(internal)
 migrate_database(app)
-app.run(debug=True)
+app.run(debug=True, port=4444)

@@ -28,8 +28,8 @@
         <ul class="dropdown-menu">
             <li><a href="${request.route_path('dashboard_home')}">Sign in</a></li>
             <li class="divider"></li>
-            <li><a href="mailto:business@aerofs.com">
-                business@aerofs.com</a></li>
+            <li><a href="mailto:sales@aerofs.com">
+                sales@aerofs.com</a></li>
             <li><a style="font-weight: normal; color: #222">1-800-656-AERO</a></li>
         </ul>
     </li>

@@ -75,4 +75,4 @@ class ReleaseForm(Form):
     release_version = TextField('Version', validators = [InputRequired()])
 
 class ContactForm(Form):
-    message = TextAreaField("What's up?", validators=[InputRequired()])
+    message = TextAreaField("Your Message", validators=[InputRequired()])
