@@ -1,0 +1,9 @@
+@@ -72,7 +72,7 @@
+         Executor nioExecutor = Executors.newCachedThreadPool();
+         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
+         return VerkehrClient.create(
+-                Verkehr.HOST,
++                "verkehr.service",
+                 Verkehr.REST_PORT,
+                 MILLISECONDS.convert(30, SECONDS),
+                 MILLISECONDS.convert(60, SECONDS),

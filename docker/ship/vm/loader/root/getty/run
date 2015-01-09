@@ -1,0 +1,180 @@
+#!/bin/bash
+# No set -e. We display errors ourselves.
+
+STATIC_NETWORK_FILE=/etc/systemd/network/10-ship-static.network
+
+default_iface() {
+    # Example output: enp0s17.
+    #
+    # TODO (WW) it may echo an empty string if no route is configured. This script doesn't work well in this case since
+    # we don't know the correct interface name to place in STATIC_NETWORK_FILE. See config_static_network_file.
+    # Additionally, if systemd-networkd restart failed, we can't configure static networks, either. This is to be improved.
+    #
+    # 'head' is needed in case there are multiple route to 0/0
+    ip route show to 0/0 | grep 'default via' | head -1 | awk '{print $5}'
+}
+
+first_gateway() {
+    # Example output: 1.2.3.4
+    ip route show to 0/0 | grep 'default via' | head -1 | awk '{print $3}'
+}
+
+mac_address_of() {
+    # Example output: 00:00:00:00:00:00
+    ip addr show $1 | grep -E '^ +link/ether ' | awk '{print $2}'
+}
+
+first_ipv4_address_and_mask_of() {
+    # Example output: 1.2.3.4/8
+    ip addr show $1 | grep -E '^ +inet ' | head -1 | awk '{print $2}'
+}
+
+name_servers() {
+    cat /etc/resolv.conf | grep -E '^nameserver\s' | awk '{print $2}'
+}
+
+is_dhcp_selected() {
+    # The OS default is DHCP
+    [[ -f ${STATIC_NETWORK_FILE} ]] && echo 0 || echo 1
+}
+
+CYAN='\033[1;36m'
+NORM='\033[0m'
+cecho() {
+    echo -e "${CYAN}$1${NORM}"
+}
+
+validated_read() {
+    local PROMPT=$1
+    local EXAMPLE_INPUT=$2
+    local EXPECTED_PATTERN=$3
+
+    while true; do
+        echo -n "${PROMPT} (e.g. ${EXAMPLE_INPUT}): " >&2
+        local V && read V
+        if [[ "$(echo "${V}" | grep -E "${EXPECTED_PATTERN}")" ]]; then
+            echo "${V}"
+            break
+        else
+            echo "Invalid input. Please follow the format of the example input." >&2
+        fi
+    done
+}
+
+write_static_network_file() {
+    local IPV4_PATTERN_SNIPPET='((2[0-5]|1[0-9]|[0-9])?[0-9]\.){3}((2[0-5]|1[0-9]|[0-9])?[0-9])'
+    local IPV4_PATTERN="^${IPV4_PATTERN_SNIPPET}$"
+
+    mkdir -p $(dirname ${STATIC_NETWORK_FILE})
+    # See http://www.freedesktop.org/software/systemd/man/systemd.network.html for syntax
+    cat > ${STATIC_NETWORK_FILE} <<END
+[Match]
+Name=$(default_iface)
+
+[Network]
+Address=$(validated_read 'IP Address & prefix' '1.2.3.4/24' "^${IPV4_PATTERN_SNIPPET}/[0-9]{1,2}$")
+Gateway=$(validated_read 'Gateway' '1.2.3.1' "${IPV4_PATTERN}")
+DNS=$(validated_read 'DNS Nameserver' '8.8.8.8' "${IPV4_PATTERN}")
+END
+    while true; do
+        read -p 'Add another nameserver? [y/N] ' MORE
+        [[ "${MORE}" != y ]] && [[ "${MORE}" != Y ]] && break
+        echo "DNS=$(validated_read 'DNS Nameserver' '8.8.8.8' "${IPV4_PATTERN}")" >> ${STATIC_NETWORK_FILE}
+    done
+}
+
+delete_all_ipv4_addresses_of() {
+    [[ "$1" ]] || return
+    while true; do
+        local IP=$(first_ipv4_address_and_mask_of $1)
+        [[ "${IP}" ]] && ip addr del ${IP} dev $1 || break
+    done
+}
+
+interact() {
+    local INPUT && read INPUT
+    case "$INPUT" in
+    1)
+        rm -f ${STATIC_NETWORK_FILE}
+        delete_all_ipv4_addresses_of $(default_iface)
+        systemctl restart systemd-networkd && cecho "DHCP is configured."
+        ;;
+    2)
+        write_static_network_file
+        delete_all_ipv4_addresses_of $(default_iface)
+        systemctl restart systemd-networkd && cecho "Static networking is configured."
+        ;;
+    3)
+        systemctl reboot
+        ;;
+    4)
+        systemctl poweroff
+        ;;
+    root-shell)
+        /bin/bash
+        ;;
+    *)
+        echo 'Please choose a number between 1 and 4.'
+    esac
+}
+
+welcome_screen() {
+    local IFACE=$(default_iface)
+    local MAC=$(mac_address_of ${IFACE})
+    local IP_AND_MASK=$(first_ipv4_address_and_mask_of ${IFACE})
+    local IP=$(echo ${IP_AND_MASK} | sed -e 's`/.*``')
+    local GATEWAY=$(first_gateway)
+    [[ $(is_dhcp_selected) = 1 ]] && local DHCP_SELECTED='[selected]' || local STATIC_SELECTED='[selected]'
+
+    local NAME_SERVERS
+    local FIRST=1
+    for i in $(name_servers); do
+        [[ ${FIRST} = 1 ]] && FIRST=0 || NAME_SERVERS+=', '
+         NAME_SERVERS+=${i}
+    done
+
+    # Make the text bottom aligned
+    for i in $(seq 1 40); do echo; done
+
+    [[ -f $(dirname $0)/banner ]] && (
+        echo -en ${CYAN}
+        cat $(dirname $0)/banner
+        echo -en ${NORM}
+    ) || (
+        cecho "                             __                            __               "
+        cecho "       __ _____  __ ______  / /  ___ ____  ___  ___ ____  / /  ___ ______ _ "
+        cecho "      / // / _ \/ // / __/ / _ \/ _ \`/ _ \/ _ \/ -_) __/ / _ \/ -_) __/ -_)"
+        cecho "      \_, /\___/\_,_/_/   /_.__/\_,_/_//_/_//_/\__/_/   /_//_/\__/_/  \__/  "
+        cecho "     /___/                                                                  "
+    )
+
+    cecho "                                                              $(cat $(dirname $0)/tag)"
+    echo  "                        MAC Address: ${MAC}"
+    echo  "                         IP Address: ${IP_AND_MASK}"
+    echo  "                            Gateway: ${GATEWAY}"
+    echo  "                    DNS Nameservers: ${NAME_SERVERS}"
+    echo
+    echo  "        To continue configuring this node, point your browser at:"
+    cecho "                             http://${IP}"
+    echo
+    echo  "Or select an option below:"
+    echo  "1. Use DHCP ${DHCP_SELECTED}"
+    echo  "2. Use Static IP ${STATIC_SELECTED}"
+    echo  "3. Reboot System"
+    echo  "4. Shutdown System"
+    echo -n "? "
+}
+
+prompt_reload_service() {
+    read -p 'Reload console service? [y/N] ' RELOAD
+    [[ "${RELOAD}" != y ]] && [[ "${RELOAD}" != Y ]] && welcome_screen || exit 0
+}
+
+# ^C to reload the getty service
+trap prompt_reload_service INT
+
+while true; do
+    welcome_screen
+    interact
+    read -p 'Press [ENTER] to continue...'
+done

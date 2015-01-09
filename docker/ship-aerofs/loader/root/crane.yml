@@ -1,0 +1,247 @@
+containers:
+  data:
+    image: aerofs/data
+    run:
+      detach: true
+
+  loader:
+    image: aerofs/loader
+    run:
+      detach: true
+
+  mysql:
+    image: aerofs/mysql
+    run:
+      detach: true
+      volumes-from:
+        - data
+
+  redis:
+    image: aerofs/redis
+    run:
+      detach: true
+      volumes-from:
+        - data
+
+  postfix:
+    image: aerofs/postfix
+    run:
+      detach: true
+
+  nginx:
+    image: aerofs/nginx
+    run:
+      detach: true
+      publish:
+        - "80:80"
+        - "443:443"
+        - "4433:4433"
+      volumes-from:
+        - data
+      link:
+        - ca:ca.service
+        - config:config.service
+        - web:web.service
+        - repackaging:repackaging.service
+        - charlie:charlie.service
+        - sp:sp.service
+        - havre:havre.service
+        - sparta:sparta.service
+        - bifrost:bifrost.service
+        - auditor:auditor.service
+        - identity:identity.service
+        - polaris:polaris.service
+
+  bunker:
+    image: aerofs/bunker
+    run:
+      detach: true
+      publish:
+        - "8484:8484"
+    #  volume:
+    #    - src/bunker/web/views/maintenance:/opt/bunker/web/views/maintenance
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+        - loader:loader.service
+        - verification:verification.service
+        - logcollection:logcollection.service
+        - repackaging:repackaging.service
+        - bifrost:bifrost.service
+        - status:status.service
+
+  repackaging:
+    image: aerofs/repackaging
+    run:
+      detach: true
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+
+  config:
+    image: aerofs/config
+    run:
+      detach: true
+      volumes-from:
+        - data
+
+  ca:
+    image: aerofs/ca
+    run:
+      detach: true
+      volumes-from:
+        - data
+
+  web:
+    image: aerofs/web
+    run:
+      detach: true
+      volumes-from:
+        - data
+      link:
+        - bifrost:bifrost.service
+        - config:config.service
+        - sp:sp.service
+        - havre:havre.service
+
+  bifrost:
+    image: aerofs/bifrost
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - sp:sp.service
+
+  zephyr:
+    image: aerofs/zephyr
+    run:
+      detach: true
+
+  verkehr:
+    image: aerofs/verkehr
+    run:
+      publish:
+        - "29438:29438"
+      detach: true
+      # the sysctl call from start.sh requires privilege
+      privileged: true
+      # for copying cacert only
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+        - ca:ca.service
+        - identity:identity.service
+
+  havre:
+    image: aerofs/havre
+    run:
+      publish:
+        # The API tunnel that AeroFS daemons connect to.
+        - "8084:8084"
+      detach: true
+      volumes-from:
+        # For copying /opt/ca/prod/cacert.pem only
+        - data
+      link:
+        - ca:ca.service
+        - bifrost:bifrost.service
+
+  polaris:
+    image: aerofs/polaris
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+
+  sparta:
+    image: aerofs/sparta
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - redis:redis.service
+        - bifrost:bifrost.service
+
+  auditor:
+    image: aerofs/auditor
+    run:
+      detach: true
+      volumes-from:
+        # For copying /opt/ca/prod/cacert.pem only
+        - data
+      link:
+        - config:config.service
+        - ca:ca.service
+
+  charlie:
+    image: aerofs/charlie
+    run:
+      detach: true
+      link:
+        - verkehr:verkehr.service
+
+  sp:
+    image: aerofs/sp
+    run:
+      detach: true
+      link:
+        - ca:ca.service
+        - mysql:mysql.service
+        - redis:redis.service
+        - postfix:postfix.service
+        - verkehr:verkehr.service
+        - auditor:auditor.service
+        - config:config.service
+
+  verification:
+    image: aerofs/verification
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - postfix:postfix.service
+        - config:config.service
+
+  logcollection:
+    image: aerofs/logcollection
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - redis:redis.service
+
+  identity:
+    image: aerofs/identity
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - redis:redis.service
+        - config:config.service
+
+  status:
+    image: aerofs/status
+    run:
+      detach: true
+      link:
+        - bifrost:bifrost.service
+        - loader:loader.service
+        - ca:ca.service
+        - charlie:charlie.service
+        # - ejabberd:ejabberd.service
+        - havre:havre.service
+        - identity:identity.service
+        - mysql:mysql.service
+        - polaris:polaris.service
+        - postfix:postfix.service
+        - redis:redis.service
+        - repackaging:repackaging.service
+        - sp:sp.service
+        - sparta:sparta.service
+        - verification:verification.service
+        - verkehr:verkehr.service
+        - web:web.service
+        - zephyr:zephyr.service

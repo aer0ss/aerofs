@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+#
+# Wait until all TCP ports declared by `docker link` are open and then run $@.
+# Linked host names must have the '.service' suffix.
+
+function test_port() {
+    # See http://bit.ly/1vDblqg
+    exec 3<> "/dev/tcp/$1.service/$2"
+    CODE=$?
+    exec 3>&- # close output
+    exec 3<&- # close input
+    echo $CODE
+}
+
+function wait_port() {
+    echo "| Waiting for $1.service:$2 ..."
+    while [ $(test_port $1 $2 2> /dev/null) != 0 ]; do
+    	sleep 1
+    done
+}
+
+LINES="$(env | grep '\.SERVICE_PORT_[0-9][0-9]*_TCP_PORT' || true)"
+if [ -n "${LINES}" ]; then
+    echo '.-----------'
+    for LINE in ${LINES}; do
+        SERVICE=$(echo $LINE | sed -e 's/\..*//')
+        PORT=$(echo $LINE | sed -e 's/.*=//')
+        # {$,,} to make lowercase
+        wait_port ${SERVICE,,} $PORT
+    done
+    echo '`-----------'
+fi
+
+exec $@

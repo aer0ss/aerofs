@@ -1,0 +1,3 @@
+location /static/installers {
+  proxy_pass http://repackaging.service/installers;
+}

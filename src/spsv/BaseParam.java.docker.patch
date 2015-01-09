@@ -1,0 +1,9 @@
+@@ -206,7 +206,7 @@
+          * Hostname for private (server-component-only) access to the audit service.
+          */
+         public static final String              SERVICE_HOST =
+-                getStringProperty(              "base.audit.service.host", "localhost");
++                "auditor.service";
+ 
+         /**
+          * Port number for private (server-component-only) access to the audit service.

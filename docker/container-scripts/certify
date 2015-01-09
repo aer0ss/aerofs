@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+#
+# This script is adapted from certify-service.sh
+#
+# N.B. Running this script overwrites existing certs and keys
+#
+
+if [ $# -ne 2 ]; then
+    echo "Certify a service and place files <base_path>.{key,crt}."
+    echo "Usage: $0 <cname> <base_path>"
+    echo 'Example: ./certify $(./get-config-property base.verkehr.host) /opt/verkehr/verkehr'
+    exit 1
+fi
+
+CNAME="$1"
+BASE_PATH="$2"
+
+WORKING_DIR="$(mktemp -d -t XXXXXX)"
+
+pushd "$WORKING_DIR" >/dev/null
+
+echo "Certifying cname \"$CNAME\"..."
+"$(dirname $0)/crt-create" "$CNAME" ca.service
+
+for ext in crt key; do
+    cp "${CNAME}_ssl/${CNAME}.$ext" "$BASE_PATH.$ext"
+done
+
+rm -rf "${CNAME}_ssl"
+
+popd >/dev/null
+rm -rf "$WORKING_DIR"

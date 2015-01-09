@@ -1,0 +1,3 @@
+location /config/client {
+  proxy_pass http://config.service:5434/client;
+}

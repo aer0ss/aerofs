@@ -1,0 +1,116 @@
+#cloud-config
+
+{#
+  Why restart getty? getty service may start before cloud-init. We restart getty so it can pick up
+  the drop-in created by cloud-init.
+#}
+{% set getty_restart_unit = 'getty-restart' %}
+{% set getty_drop_in = '/etc/systemd/system/getty@tty1.service.d/50-ship.conf' %}
+{% set getty_restart = '/opt/ship/getty/restart' %}
+{% set getty_restarted = '/opt/ship/getty/restarted' %}
+{% set getty_run = '/opt/ship/getty/run' %}
+{% set loader_getty = '/opt/ship/loader/getty' %}
+{% set sail = '/opt/ship/sail' %}
+{% set pull_loader = '/opt/ship/pull-loader' %}
+
+hostname: {{ hostname }}
+
+coreos:
+  units:
+    - name: {{ getty_restart_unit }}.path
+      command: start
+      content: |
+        [Unit]
+        Description=Getty Restart path
+        [Path]
+        PathExists={{ getty_drop_in }}
+
+    - name: {{ getty_restart_unit }}.service
+      content: |
+        [Unit]
+        Description=Getty Restart service
+        [Service]
+        ExecStart={{ getty_restart }}
+
+    - name: ship.service
+      command: start
+      content: |
+        [Unit]
+        Description=Ship service
+        After=docker.service
+        [Service]
+        ExecStart={{ sail }}
+
+  oem:
+    id: aerofs-ship
+    name: AeroFS Ship
+    version-id: 0.0.0
+    home-url: http://www.aerofs.com/
+    bug-report-url: http://www.aerofs.com/
+
+  update:
+    reboot-strategy: off
+
+write_files:
+  - path: {{ getty_restart }}
+    permissions: 0755
+    owner: root
+    content: |
+      #!/bin/bash
+      set -ex
+      if [ -f {{ getty_restarted }} ]; then exit 0; fi
+      systemctl daemon-reload
+      systemctl restart getty@tty1
+      touch {{ getty_restarted }}
+
+  - path: {{ getty_drop_in }}
+    permissions: 0644
+    owner: root
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/sbin/agetty --noclear --skip-login --autologin root --login-program {{ getty_run }} %I $TERM
+
+  - path: {{ getty_run }}
+    permissions: 0755
+    owner: root
+    content: |
+      #!/bin/bash
+      set -e
+      {# No more console pollution from dmesg #}
+      dmesg -n 1
+      while true; do
+        echo -e 'Loading console service...'
+        {{ pull_loader }}
+        docker run --rm -v {{ loader_getty }}:/host {{ loader_image }} install-getty /host
+        {{ loader_getty }}/run
+      done
+
+  - path: {{ sail }}
+    permissions: 0755
+    owner: root
+    content: |
+      #!/bin/bash
+      set -ex
+      {{ pull_loader }}
+      while true; do
+        {# Use the same container name across restarts as crane/docker doesn't update container links on restarts. #}
+        {# Attach tag to support live upgrades. #}
+        CONTAINER=loader-$(docker run --rm {{ loader_image }} tag)
+        {# Must use the original Loader image name w/o tags or repo names. See loader.py:my_image_name(). #}
+        [[ "$(docker ps -a | grep ${CONTAINER})" ]] || \
+            docker create --name ${CONTAINER} -v /var/run/docker.sock:/var/run/docker.sock {{ loader_image }} load
+        docker start ${CONTAINER}
+      done
+
+  - path: {{ pull_loader }}
+    permissions: 0755
+    owner: root
+    content: |
+      #!/bin/bash
+      set -e
+      [[ $(docker images | grep "^{{ loader_image }}\s") ]] || {
+        echo 'Pulling Docker image {{ repo }}/{{ loader_image }}...'
+        docker pull {{ repo }}/{{ loader_image }}
+        docker tag {{ repo }}/{{ loader_image }} {{ loader_image }}
+      }

@@ -6,6 +6,7 @@ out.gradle
 out.shell
 out.idea
 out.shell
+out.ship
 workspace.xml
 dump.rdb
 syncdet_test/.idea/
@@ -25,3 +26,4 @@ web/styles/css/compiled/
 web/js/recruiting.js
 docs/user_docs/api/css/compiled/
 src/**/src_*.iml
+buildroot

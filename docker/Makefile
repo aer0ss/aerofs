@@ -1,0 +1,62 @@
+BASE_DIRS = \
+	base/jre8 \
+	base/jre8-and-mysql-client \
+	base/python2.7
+
+# Sort image names alphabetically to help users observe build progress
+DIRS = \
+	data-container \
+	mysql \
+	nginx \
+	postfix \
+	redis \
+	../src/auditor \
+	../src/bifrost \
+	../src/bunker \
+	../packaging/ca-server \
+	../packaging/config \
+	../packaging/charlie \
+	../src/havre \
+	../src/polaris \
+	../src/sparta \
+	../src/spsv \
+	../src/spsv/resources/identity \
+	../src/spsv/resources/log-collection \
+	../packaging/repackaging \
+	../packaging/sanity \
+	../src/spsv/resources/sp \
+	../src/spsv/resources/verification \
+	../src/verkehr \
+	../src/web \
+	../src/zephyr \
+	ship/vm/loader \
+	ship-aerofs/loader
+
+all: images gc
+
+DOCKERIZE_BASE_DIRS=$(BASE_DIRS:%=dockerize-%)
+DOCKERIZE_DIRS=$(DIRS:%=dockerize-%)
+
+base: $(DOCKERIZE_BASE_DIRS)
+images: base $(DOCKERIZE_DIRS)
+
+$(DOCKERIZE_BASE_DIRS) $(DOCKERIZE_DIRS):
+	@echo "========================================"
+	@echo "  Dockerizing $(@:dockerize-%=%)"
+	@echo "========================================"
+	$(MAKE) -C $(@:dockerize-%=%) image
+
+ship: make-ship gc
+
+make-ship:
+	$(MAKE) -C ship-aerofs
+
+gc:
+	@echo Removing untagged images to save space...
+	docker rmi `docker images --no-trunc | grep '^<none>' | awk '{print $$3}'` 2>/dev/null || true
+
+clean:
+	# TODO (WW) clean buildroot?
+	$(MAKE) -C ship-aerofs clean
+
+.PHONY: ship

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# PREDOCKER it should call CA's API rather than accessing CA's data volume.
+echo "Importing cacert.pem to Java..."
+keytool \
+    -import \
+    -alias pd-$(date +%s) \
+    -file /opt/ca/prod/cacert.pem \
+    -keystore /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts \
+    -storepass "changeit" \
+    -noprompt

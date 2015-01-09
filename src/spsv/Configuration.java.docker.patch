@@ -1,0 +1,9 @@
+@@ -21,7 +21,7 @@
+     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+ 
+     // The URL that we must GET to obtain configuration properties.
+-    private static final String CONFIGURATION_URL = "http://localhost:5436/";
++    private static final String CONFIGURATION_URL = "http://config.service:5434/server";
+ 
+     // Flag created by puppet that tells us we are in private deployment mode.
+     public static final String PRIVATE_DEPLOYMENT_FLAG_FILE = "/etc/aerofs/private-deployment-flag";

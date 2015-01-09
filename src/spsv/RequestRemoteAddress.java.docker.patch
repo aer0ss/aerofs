@@ -1,0 +1,8 @@
+@@ -17,6 +17,6 @@
+ 
+     public String get()
+     {
+-        return _request.get().getHeader("X-Real-IP");
++         	String ip = _request.get().getHeader("X-Real-IP"); 	if (ip == null) { 		com.aerofs.base.Loggers.getLogger(RequestRemoteAddress.class).warn("no X-Real-IP header. Use remote address"); 		ip = _request.get().getRemoteAddr(); 	} 	return ip;
+     }
+ }
