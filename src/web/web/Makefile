@@ -62,20 +62,20 @@ watch:
 # Special rules for things which get placed outside of the web project
 # Marketing site files
 $(MARKETING_DEST)/js/recruiting.js: $(DEST)/js/compiled/recruiting.js
-	mkdir -p $(MARKETING_DEST)/js
+	mkdir -p $(@D)
 	cp $? $@
 $(MARKETING_DEST)/styles/css/compiled/style.css: $(DEST)/css/compiled/aerofs-marketing.css
-	mkdir -p $(MARKETING_DEST)/styles/css/compiled
+	mkdir -p $(@D)
 	cp $? $@
 $(MARKETING_DEST)/styles/css/compiled/syntax.min.css: $(DEST)/css/compiled/syntax.min.css
-	mkdir -p $(MARKETING_DEST)/styles/css/compiled
+	mkdir -p $(@D)
 	cp $? $@
 # API docs site files
 $(DOCS_DEST)/css/compiled/aerofs.min.css: $(DEST)/css/compiled/aerofs.min.css
-	mkdir -p $(DOCS_DEST)/css/compiled
+	mkdir -p $(@D)
 	cp $? $@
 $(DOCS_DEST)/css/compiled/api.min.css: $(DEST)/css/compiled/api.min.css
-	mkdir -p $(DOCS_DEST)/css/compiled
+	mkdir -p $(@D)
 	cp $? $@
 
 # .min.css files come from .css files...
@@ -84,8 +84,10 @@ $(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css
 
 # and .css files come from .less files.
 $(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
+	mkdir -p $(@D)
 	lessc $? > $@
 
 # .js files in the compiled folder come from .js files in the source folder
 $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
+	mkdir -p $(@D)
 	uglifyjs -o $@ $?
