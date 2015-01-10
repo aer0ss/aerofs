@@ -744,6 +744,14 @@ public class SPService implements ISPService
                         entry._permissions);
             }
 
+            SharedFolderState requestedUserState = sf.getStateNullable(user);
+            if (requestedUserState != null) {
+                builder.setRequestedUsersPermissionsAndState(PBUserPermissionsAndState.newBuilder()
+                        .setPermissions(sf.getPermissions(user).toPB())
+                        .setState(requestedUserState.toPB())
+                        .setUser(user2pb(user)));
+            }
+
             pbs.add(builder.build());
         }
         return pbs;

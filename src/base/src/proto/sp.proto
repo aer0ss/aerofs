@@ -1326,6 +1326,7 @@ message PBSharedFolder {
     required bool owned_by_team = 3;
     repeated PBUserPermissionsAndState user_permissions_and_state = 4;
     repeated PBGroupPermissions group_permissions = 5;
+    optional PBUserPermissionsAndState requested_users_permissions_and_state = 6;
 }
 
 message GetOrganizationInvitationsReply {
