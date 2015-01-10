@@ -62,7 +62,7 @@
         editGroupURL = "${request.route_path('json.edit_org_group')}";
         removeGroupURL = "${request.route_path('json.remove_org_group')}";
         paginationLimit = "${pagination_limit}";
-        maxMembers = parseInt("${member_limit}") - 10;
+        maxMembers = parseInt("${member_limit}");
     </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>

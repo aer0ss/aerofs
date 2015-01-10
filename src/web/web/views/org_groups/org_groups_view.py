@@ -8,8 +8,6 @@ from web.sp_util import exception2error
 log = logging.getLogger(__name__)
 PAGE_LIMIT = 20
 
-MAX_MEMBERS = 50
-
 @view_config(
     route_name = 'org_groups',
     renderer = 'groups.mako',
@@ -22,7 +20,7 @@ def org_groups(request):
     return {
         'organization_name': reply.organization_name,
         'pagination_limit': PAGE_LIMIT,
-        'member_limit': MAX_MEMBERS
+        'member_limit': int(request.registry.settings.get('sp.max.membership.group', '50'))
     }
 
 def _get_members(request, group_id):
