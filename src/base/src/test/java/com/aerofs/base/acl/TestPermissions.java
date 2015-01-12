@@ -6,6 +6,8 @@ package com.aerofs.base.acl;
 
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.proto.Common.PBPermission;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,9 +15,7 @@ import org.junit.Test;
 import java.util.Properties;
 
 import static com.aerofs.base.acl.Permissions.allOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TestPermissions
 {
@@ -82,5 +82,38 @@ public class TestPermissions
                 .covers(Permission.WRITE));
         assertTrue(allOf()
                 .covers(allOf()));
+    }
+
+    @Test
+    public void shouldHandleRangeOfUnsignedGroupIDs()
+            throws Exception
+    {
+        int negative = -10;
+        long largeNegative = Long.MIN_VALUE;
+        int nullGroup = GroupID.NULL_GROUP.getInt();
+        int positive = 10;
+        long largePositive = (long) Integer.MAX_VALUE + 100L;
+        long tooLargePositive = Long.MAX_VALUE;
+
+        parseGroupIDFromString(Integer.toString(negative), false);
+        parseGroupIDFromString(Integer.toString(positive), false);
+        parseGroupIDFromString(Long.toString(largePositive), false);
+        parseGroupIDFromString(Long.toString(largeNegative), true);
+        parseGroupIDFromString(Long.toString(tooLargePositive), true);
+        parseGroupIDFromString(Integer.toString(nullGroup), true);
+    }
+
+    private void parseGroupIDFromString(String s, boolean shouldFail) throws ExBadArgs
+    {
+        // make sure this prefix matches the prefix in SubjectPermissions.java
+        String subjectString = "g:" + s;
+        if (shouldFail) {
+            try {
+                SubjectPermissions.getGroupIDFromString(subjectString);
+                fail();
+            } catch (ExBadArgs e) {}
+        } else {
+            SubjectPermissions.getGroupIDFromString(subjectString);
+        }
     }
 }

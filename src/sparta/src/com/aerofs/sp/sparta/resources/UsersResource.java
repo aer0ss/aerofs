@@ -32,6 +32,7 @@ import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -68,6 +69,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
+import static com.aerofs.sp.sparta.resources.SharedFolderResource.listGroupMembers;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -121,7 +123,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}")
-    public Response get(@Auth IAuthToken token,
+    public Response get(@Auth IAuthToken token, @Context Version version,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
@@ -130,7 +132,7 @@ public class UsersResource extends AbstractSpartaResource
         FullName n = user.getFullName();
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(user.id().getString(), n._first, n._last,
-                        listShares(user, token), listInvitations(user, token)))
+                        listShares(user, version, token), listInvitations(user, token)))
                 .build();
     }
 
@@ -158,14 +160,31 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}/shares")
-    public Response listShares(@Auth IAuthToken token,
+    public Response listShares(@Auth IAuthToken token, @Context Version version,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
         validateAuth(token, Scope.READ_ACL, user);
 
         return Response.ok()
-                .entity(listShares(user, token))
+                .entity(listShares(user, version, token))
+                .build();
+    }
+
+    @Since("1.3")
+    @GET
+    @Path("/{email}/groups")
+    public Response listGroups(@Auth IUserAuthToken token, @PathParam("email") User user)
+            throws ExNotFound, SQLException
+    {
+        requirePermission(Scope.READ_USER, token);
+        User caller = _factUser.create(token.user());
+        throwIfNotSelfOrTSOf(caller, user);
+
+        ImmutableCollection<com.aerofs.rest.api.Group> groups = listGroups(user, token);
+
+        return Response.ok()
+                .entity(groups)
                 .build();
     }
 
@@ -247,8 +266,8 @@ public class UsersResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(user), listMembers(sf), listPendingMembers(sf),
-                        sf.isExternal(user), permissions))
+                        sf.getName(user), listMembers(sf), listGroupMembers(sf),
+                        listPendingMembers(sf), sf.isExternal(user), permissions))
                 .build();
     }
 
@@ -289,19 +308,33 @@ public class UsersResource extends AbstractSpartaResource
         if (!UserManagement.isSelfOrTSOf(caller, target)) throw new ExNotFound("No such user");
     }
 
-    static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user, IAuthToken token)
+    static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user, Version version, IAuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.SharedFolder> bd = ImmutableList.builder();
         for (SharedFolder sf : user.getJoinedFolders()) {
             // filter out root store
             if (sf.id().isUserRoot()) continue;
-            com.aerofs.rest.api.SharedFolder s = new com.aerofs.rest.api.SharedFolder(
-                    sf.id().toStringFormal(), sf.getName(user),
-                    SharedFolderResource.listMembers(sf),
-                    SharedFolderResource.listPendingMembers(sf),
-                    sf.isExternal(user), sf.getPermissions(user).toArray());
-            if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) bd.add(s);
+            if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) {
+                bd.add(new com.aerofs.rest.api.SharedFolder(
+                        sf.id().toStringFormal(), sf.getName(user),
+                        listMembers(sf),
+                        version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
+                        listPendingMembers(sf),
+                        sf.isExternal(user), sf.getPermissions(user).toArray()));
+            }
+        }
+        return bd.build();
+    }
+
+    static ImmutableCollection<com.aerofs.rest.api.Group> listGroups(User user, IAuthToken token)
+            throws SQLException, ExNotFound
+    {
+        requirePermission(Scope.READ_GROUPS, token);
+        ImmutableList.Builder<com.aerofs.rest.api.Group> bd = ImmutableList.builder();
+        for (Group group : user.getGroups()) {
+            bd.add(new com.aerofs.rest.api.Group(group.id().getString(), group.getCommonName(),
+                    GroupResource.listMembersFor(group)));
         }
         return bd.build();
     }
@@ -374,7 +407,7 @@ public class UsersResource extends AbstractSpartaResource
                 + "/users/" + newUser.id().getString();
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.User(newUser.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(newUser, auth),
+                        attrs.lastName, listShares(newUser, version, auth),
                         listInvitations(newUser, auth)))
                 .build();
     }
@@ -384,6 +417,7 @@ public class UsersResource extends AbstractSpartaResource
     @Path("/{email}")
     public Response update(
             @Auth IUserAuthToken auth,
+            @Context Version version,
             @PathParam("email") User target,
             com.aerofs.rest.api.User attrs) throws Exception
     {
@@ -411,7 +445,7 @@ public class UsersResource extends AbstractSpartaResource
         l.warn("Updated user {}", attrs);
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(target.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(target, auth),
+                        attrs.lastName, listShares(target, version, auth),
                         listInvitations(target, auth)))
                 .build();
     }

@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.id.GroupID;
@@ -287,6 +288,35 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         assertEquals(sf.getPermissionsNullable(user2), null);
         sqlTrans.commit();
         verify(sharedFolderNotificationEmailer).sendRemovedFromFolderNotificationEmail(sf, owner, group);
+    }
+
+    @Test
+    public void canHandleSignedAndUnsignedGroupIDs()
+            throws Exception
+    {
+        int negative = -10;
+        long largeNegative = Long.MIN_VALUE;
+        int nullGroup = GroupID.NULL_GROUP.getInt();
+        int positive = 10;
+        long largePositive = (long) Integer.MAX_VALUE + 100L;
+        long tooLargePositive = Long.MAX_VALUE;
+
+        GroupID.fromExternal(Integer.toString(negative));
+        GroupID.fromExternal(Integer.toString(positive));
+        GroupID.fromExternal(Long.toString(largePositive));
+        try {
+            GroupID.fromExternal(Long.toString(largeNegative));
+            fail();
+        } catch (ExBadArgs e) {}
+        try {
+            GroupID.fromExternal(Integer.toString(nullGroup));
+            fail();
+        } catch (ExBadArgs e) {}
+        try {
+            GroupID.fromExternal(Long.toString(tooLargePositive));
+            fail();
+        } catch (ExBadArgs e) {}
+
     }
 
     private String email(User u) {

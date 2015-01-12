@@ -737,7 +737,7 @@ public class SharedFolder
             }
         }
 
-        throw new ExNoPerm("Not allowed to manage users for this shared folder");
+        throw new ExNoPerm("Not allowed to manage members of this shared folder");
     }
 
     private boolean isJoinedOwner(User user)

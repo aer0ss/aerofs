@@ -11,19 +11,24 @@ public class SharedFolder
 {
     public final String id;
     public final String name;
-    public final Collection<Member> members;
-    public final Collection<PendingMember> pending;
+    public final Collection<SFMember> members;
+    // field not introduced until api v1.3
+    @Nullable
+    public final Collection<SFGroupMember> groups;
+    public final Collection<SFPendingMember> pending;
     public final Boolean isExternal;
     // only set in server responses
     @Nullable
     public final String[] callerEffectivePermissions;
 
-    public SharedFolder(String id, String name, Collection<Member> members,
-            Collection<PendingMember> pending, Boolean isExternal, @Nullable String[] callerEffectivePermissions)
+    public SharedFolder(String id, String name, Collection<SFMember> members,
+            Collection<SFGroupMember> groupMembers, Collection<SFPendingMember> pending,
+            Boolean isExternal, @Nullable String[] callerEffectivePermissions)
     {
         this.id = id;
         this.name = name;
         this.members = members;
+        this.groups = groupMembers;
         this.pending = pending;
         this.isExternal = isExternal;
         this.callerEffectivePermissions = callerEffectivePermissions;

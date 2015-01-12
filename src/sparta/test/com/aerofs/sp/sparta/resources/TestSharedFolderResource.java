@@ -5,28 +5,22 @@
 package com.aerofs.sp.sparta.resources;
 
 
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.rest.api.Member;
-import com.aerofs.rest.api.PendingMember;
+import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.rest.api.SFGroupMember;
+import com.aerofs.rest.api.SFMember;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
-import com.jayway.restassured.specification.RequestSpecification;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Base64;
 import java.util.Date;
 import java.util.Random;
 
@@ -39,6 +33,9 @@ public class TestSharedFolderResource extends AbstractResourceTest
 {
     private final String BASE_RESOURCE = "/v1.1/shares/";
     private final String RESOURCE = BASE_RESOURCE + "{sid}";
+    private final String V13_RESOURCE = "/v1.3/shares/{sid}/";
+    private final String GROUPS_RESOURCE = V13_RESOURCE + "groups/";
+    private final String SINGLE_GROUP_RESOURCE = GROUPS_RESOURCE + "{gid}";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -60,39 +57,6 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .body("type", equalTo("UNAUTHORIZED"))
         .when().log().everything()
                 .get(RESOURCE, SID.generate().toStringFormal());
-    }
-
-    private static final Base64.Encoder base64 = Base64.getEncoder();
-
-    private static String encode(UserID user)
-    {
-        return BaseUtil.utf2string(base64.encode(BaseUtil.string2utf(user.getString())));
-    }
-
-    private RequestSpecification givenCert(DID did, UserID user, long serial)
-    {
-        return given()
-                .header(Names.AUTHORIZATION,
-                        "Aero-Device-Cert " + encode(user) + " " + did.toStringFormal())
-                .header("DName", "CN=" + BaseSecUtil.getCertificateCName(user, did))
-                .header("Serial", Long.toString(serial, 16))
-                .header("Verify", "SUCCESS");
-    }
-
-    private RequestSpecification givenSecret(String service, String secret, DID did, UserID user)
-    {
-        return given()
-                .header(Names.AUTHORIZATION,
-                        "Aero-Delegated-User-Device "
-                                + service + " " + secret + " "
-                                + encode(user) + " " + did.toStringFormal());
-    }
-
-    private RequestSpecification givenSecret(String service, String secret)
-    {
-        return given()
-                .header(Names.AUTHORIZATION,
-                        "Aero-Service-Shared-Secret " + service + " " + secret);
     }
 
     @Test
@@ -454,7 +418,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"MANAGE"}),
+                .content(new SFMember(null, null, null, new String[]{"MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(200)
@@ -472,7 +436,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(Names.IF_MATCH, membersEtag(user))
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"MANAGE"}),
+                .content(new SFMember(null, null, null, new String[]{"MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(200)
@@ -491,7 +455,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(Names.IF_MATCH, "\"deadbeef\"")
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"MANAGE"}),
+                .content(new SFMember(null, null, null, new String[]{"MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(412)
@@ -507,7 +471,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"WRITE"}), ObjectMapperType.GSON)
+                .content(new SFMember(null, null, null, new String[]{"WRITE"}), ObjectMapperType.GSON)
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
@@ -523,7 +487,8 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"WRITE"}), ObjectMapperType.GSON)
+                .content(new SFMember(null, null, null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -540,7 +505,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .content(new Member(null, null, null, new String[]{"MANAGE"}),
+                .content(new SFMember(null, null, null, new String[]{"MANAGE"}),
                         ObjectMapperType.GSON)
                 .expect()
                 .statusCode(403)
@@ -628,7 +593,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
                 .body("message", equalTo("No such shared folder"))
-        .when().log().everything()
+        .when()
                 .delete(RESOURCE + "/members/{email}", sid.toStringFormal(), user.getString());
     }
 
@@ -718,7 +683,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new PendingMember(other.getString(), new String[] {"WRITE"}, "Join us"),
+                .body(new SFPendingMember(other.getString(), new String[]{"WRITE"}, "Join us"),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -742,7 +707,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new PendingMember(other.getString(), new String[]{"WRITE", "MANAGE"},
+                .body(new SFPendingMember(other.getString(), new String[]{"WRITE", "MANAGE"},
                         "Join us"), ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -763,7 +728,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .body(new PendingMember("a@b.c", new String[]{"WRITE"}, "Join us"),
+                .body(new SFPendingMember("a@b.c", new String[]{"WRITE"}, "Join us"),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
@@ -781,12 +746,12 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .body(new PendingMember("a@b.c", new String[]{"WRITE"},
+                .body(new SFPendingMember("a@b.c", new String[]{"WRITE"},
                         "Join us"), ObjectMapperType.GSON)
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-                .body("message", equalTo("Not allowed to manage users for this shared folder"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
         .when().log().everything()
                 .post(RESOURCE + "/pending", sid.toStringFormal());
     }
@@ -827,7 +792,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-                .body("message", equalTo("Not allowed to manage users for this shared folder"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
         .when().log().everything()
                 .delete(RESOURCE + "/pending/{email}", sid.toStringFormal(), "a@b.c");
     }
@@ -854,7 +819,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenAdminAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(other.getString(), null, null, new String[] {"WRITE"}),
+                .body(new SFMember(other.getString(), null, null, new String[] {"WRITE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -877,7 +842,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenAdminAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(other.getString(), null, null, new String[]{"WRITE", "MANAGE"}),
+                .body(new SFMember(other.getString(), null, null, new String[]{"WRITE", "MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -899,7 +864,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member("a@b.c", null, null, new String[]{"WRITE", "MANAGE"}),
+                .body(new SFMember("a@b.c", null, null, new String[]{"WRITE", "MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
@@ -917,7 +882,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenAdminAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(other.getString(), null, null, new String[]{"WRITE", "MANAGE"}),
+                .body(new SFMember(other.getString(), null, null, new String[]{"WRITE", "MANAGE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(409)
@@ -934,7 +899,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(other.getString(), null, null, new String[]{"WRITE"}),
+                .body(new SFMember(other.getString(), null, null, new String[]{"WRITE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)
@@ -952,12 +917,12 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenOtherAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(admin.getString(), null, null, new String[]{"WRITE"}),
+                .body(new SFMember(admin.getString(), null, null, new String[]{"WRITE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-                .body("message", equalTo("Not allowed to manage users for this shared folder"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
         .when().log().everything()
                 .post(RESOURCE + "/members", sid.toStringFormal());
     }
@@ -969,8 +934,8 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new Member(other.getString(), null, null, new String[]{"WRITE"}),
-                        ObjectMapperType.GSON)
+                .body(new SFMember(other.getString(), null, null,
+                        new String[]{"WRITE"}), ObjectMapperType.GSON)
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
@@ -984,7 +949,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "Shareme", null, null, false, null),
+                .body(new SharedFolder(null, "Shareme", null, null, null, false, null),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -1003,12 +968,12 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "External", null, null, true, null),
+                .body(new SharedFolder(null, "External", null, null, null, true, null),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
-                .header(Names.LOCATION,
-                        startsWith("https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE))
+                .header(Names.LOCATION, startsWith(
+                        "https://localhost:" + sparta.getListeningPort() + BASE_RESOURCE))
                 .body("name", equalTo("External"))
                 .body("is_external", equalTo(true))
                 .body("members.email", hasItem(user.getString()))
@@ -1018,21 +983,240 @@ public class TestSharedFolderResource extends AbstractResourceTest
     }
 
     @Test
-    public void shouldReturnEffectivePermissions() throws Exception
-    {
+    public void shouldReturnEffectivePermissions() throws Exception {
         GroupID group = GroupID.fromExternal(1);
         mkGroup(group, "Test Group");
         SID share = mkShare("Test Folder", other.getString());
         addUser(share, user, Permissions.VIEWER);
-        addUserToGroup(group, factUser.create(user));
-        addGroup(share, group, Permissions.EDITOR);
+        addUserToGroup(group, user);
+        addGroup(share, group, Permissions.EDITOR, other);
 
         givenReadAccess()
-            .expect()
+        .expect()
                 .statusCode(200)
                 .body("id", equalTo(share.toStringFormal()))
                 .body("caller_effective_permissions", hasItem("WRITE"))
-            .when()
+        .when()
                 .get(RESOURCE, share.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturnGroupMembers() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("permissions", hasItems(hasItems("WRITE")))
+                .body("id", hasItem(gid.getString()))
+        .when()
+                .get(GROUPS_RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenNonMemberTriesToListGroupMembers() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such shared folder"))
+        .when().log().everything()
+                .get(GROUPS_RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldAddGroupMembers() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFGroupMember(gid.getString(), "A group",
+                        new String[]{"WRITE"}), ObjectMapperType.GSON)
+        .expect()
+                .statusCode(201)
+                .header(Names.LOCATION,
+                        "https://localhost:" + sparta.getListeningPort() + "/v1.3/shares/" + sid.toStringFormal() +
+                                "/groups/" + gid.getString())
+                .body("permissions", hasItem("WRITE"))
+                .body("id", equalTo(gid.getString()))
+        .when().log().everything()
+                .post(GROUPS_RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn404WhenGroupDoesNotExist() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFGroupMember("123", "A group", new String[] {"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such group"))
+        .when().log().everything()
+                .post(GROUPS_RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn409WhenGroupMemberAlreadyExists() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFGroupMember(gid.getString(), null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(409)
+                .body("type", equalTo("CONFLICT"))
+                .body("message", equalTo("Member already exists"))
+        .when().log().everything()
+                .post(GROUPS_RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenEditorModifiesGroup() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addUser(sid, other, Permissions.EDITOR);
+
+        givenOtherAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFGroupMember(gid.getString(), null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
+        .when()
+                .post(GROUPS_RESOURCE, sid.toStringFormal());
+
+        addGroup(sid, gid, Permissions.EDITOR, user);
+        givenOtherAccess()
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
+        .when()
+                .delete(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+
+        givenOtherAccess()
+                .contentType(ContentType.JSON)
+                .content(new SFGroupMember(null, null, new String[]{"MANAGE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+                .body("message", equalTo("Not allowed to manage members of this shared folder"))
+        .when()
+                .put(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+    }
+
+    @Test
+    public void shouldGetGroup() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(gid.getString()))
+                .body("permissions", hasItems("WRITE"))
+        .when()
+                .get(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+    }
+
+    @Test
+    public void shouldReturn404WhenNonMemberTriesToAccessGroups() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such shared folder"))
+        .when().log().everything()
+                .get(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+
+        givenOtherAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFGroupMember(gid.getString(), null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such shared folder"))
+        .when()
+                .post(GROUPS_RESOURCE, sid.toStringFormal());
+
+        givenOtherAccess()
+                .contentType(ContentType.JSON)
+                .content(new SFGroupMember(null, null, new String[]{"MANAGE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such shared folder"))
+        .when()
+                .put(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+                .body("message", equalTo("No such shared folder"))
+        .when()
+                .delete(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+    }
+
+    @Test
+    public void shouldUpdateGroup() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .content(new SFGroupMember(null, null, new String[]{"MANAGE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(gid.getString()))
+                .body("permissions", hasItems("MANAGE"))
+        .when().log().everything()
+                .put(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+    }
+
+    @Test
+    public void shouldAllowOwnerToDeleteGroup() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addGroup(sid, gid, Permissions.EDITOR, user);
+
+        givenWriteAccess()
+        .expect()
+                .statusCode(204)
+        .when().log().everything()
+                .delete(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
     }
 }

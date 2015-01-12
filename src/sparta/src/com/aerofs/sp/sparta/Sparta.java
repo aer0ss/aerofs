@@ -39,10 +39,7 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
-import com.aerofs.sp.sparta.resources.DevicesResource;
-import com.aerofs.sp.sparta.resources.OrganizationsResource;
-import com.aerofs.sp.sparta.resources.SharedFolderResource;
-import com.aerofs.sp.sparta.resources.UsersResource;
+import com.aerofs.sp.sparta.resources.*;
 import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.*;
@@ -104,6 +101,7 @@ public class Sparta extends Service
         addResource(DevicesResource.class);
         addResource(SharedFolderResource.class);
         addResource(OrganizationsResource.class);
+        addResource(GroupResource.class);
     }
 
     private static InetSocketAddress listenAddress()

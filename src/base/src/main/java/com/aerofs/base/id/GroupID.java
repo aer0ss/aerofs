@@ -27,6 +27,24 @@ public class GroupID extends IntegerID
         return new GroupID(i);
     }
 
+    // since we pass around groupIDs as strings in protobuf, we have to handle strings for both
+    // signed and unsigned 32bit ints
+    public static GroupID fromExternal(String s)
+            throws ExBadArgs
+    {
+        int i;
+        try {
+            i = Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            try {
+                i = Integer.parseUnsignedInt(s);
+            } catch (NumberFormatException ee) {
+                throw new ExBadArgs(String.format("could not parse \"%s\" as a groupID", s));
+            }
+        }
+        return GroupID.fromExternal(i);
+    }
+
     // encountering the NULL_GROUP id in our own system should never happen, so we throw an
     // IllegalArgumentException
     public static GroupID fromInternal(int i)
@@ -36,5 +54,10 @@ public class GroupID extends IntegerID
                     "group ID");
         }
         return new GroupID(i);
+    }
+
+    public String getString()
+    {
+        return Integer.toUnsignedString(getInt());
     }
 }

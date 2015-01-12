@@ -10,6 +10,7 @@ import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.C;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.rest.auth.IAuthToken;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
@@ -36,8 +37,11 @@ import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
+import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
 import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
@@ -70,7 +74,6 @@ import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -82,6 +85,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class SharedFolderResource extends AbstractSpartaResource
 {
     private final User.Factory _factUser;
+    private final Group.Factory _factGroup;
     private final SharedFolder.Factory _factSF;
     private final UrlShare.Factory _factUrlShare;
     private final SharingRulesFactory _sharingRules;
@@ -91,12 +95,13 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final AuditClient _audit;
 
     @Inject
-    public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF,
+    public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF, Group.Factory factGroup,
             UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
             InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
             SharedFolderNotificationEmailer sfnEmailer, AuditClient audit)
     {
         _factUser = factUser;
+        _factGroup = factGroup;
         _factSF = factSF;
         _factUrlShare = factUrlShare;
         _sharingRules = sharingRules;
@@ -129,8 +134,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}")
-    public Response get(@Auth IAuthToken token,
-            @PathParam("id") SharedFolder sf)
+    public Response get(@Auth IAuthToken token, @Context Version version, @PathParam("id") SharedFolder sf)
             throws SQLException, ExNotFound
     {
         User caller = validateAuth(token, Scope.READ_ACL, sf);
@@ -138,7 +142,9 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         return Response.ok()
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), listPendingMembers(sf),
+                        sf.getName(caller), listMembers(sf),
+                        version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
+                        listPendingMembers(sf),
                         caller == null ? null : sf.isExternal(caller),
                         callerPermissions == null ? null : callerPermissions.toArray()))
                 .build();
@@ -174,9 +180,9 @@ public class SharedFolderResource extends AbstractSpartaResource
                 + "/shares/" + sf.id().toStringFormal();
 
         return Response.created(URI.create(location))
-                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), listPendingMembers(sf),
-                        sf.isExternal(caller), Permissions.OWNER.toArray()))
+                .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(caller), listMembers(sf),
+                        version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
+                        listPendingMembers(sf), sf.isExternal(caller), Permissions.OWNER.toArray()))
                 .build();
     }
 
@@ -237,22 +243,19 @@ public class SharedFolderResource extends AbstractSpartaResource
     public Response addMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @Context Version version,
-            Member member)
+            SFMember member)
             throws Exception
     {
-        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
+        User caller = validateAuth(token, Scope.WRITE_ACL, sf);
         User user;
         try {
             user = _factUser.create(UserID.fromExternal(member.email));
         } catch (ExInvalidID e) {
             throw new ExBadArgs("Invalid member email");
         }
-        throwIfNotAMember(sf, caller, "No such shared folder");
 
         if (!user.exists()) throw new ExNotFound("No such user");
 
-        // TODO oauth scopes
         sf.throwIfNoPrivilegeToChangeACL(caller);
         if (!UserManagement.isSelfOrTSOf(caller, user)) {
             throw new ExNoPerm("Not allowed to bypass invitation process");
@@ -305,7 +308,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
-            Member member)
+            SFMember member)
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
@@ -313,7 +316,6 @@ public class SharedFolderResource extends AbstractSpartaResource
         throwIfNotAMember(sf, caller, "No such shared folder");
         Permissions oldPermissions = throwIfNotAMember(sf, user, "No such member");
 
-        // TODO: oauth scopes
         sf.throwIfNoPrivilegeToChangeACL(caller);
 
         // TODO: consider more robust etag
@@ -395,6 +397,173 @@ public class SharedFolderResource extends AbstractSpartaResource
                 .build();
     }
 
+    @Since("1.3")
+    @GET
+    @Path("/{id}/groups")
+    public Response getGroupMembers(@Auth IAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
+            throws Exception
+    {
+        validateAuth(token, Scope.READ_ACL, sf);
+
+        return Response.ok()
+                .entity(listGroupMembers(sf))
+                .build();
+    }
+
+    @Since("1.3")
+    @POST
+    @Path("/{id}/groups")
+    public Response addGroupMember(@Auth IUserAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            @Context Version version,
+            SFGroupMember groupMember)
+            throws Exception
+    {
+        User caller = validateAuth(token, Scope.WRITE_ACL, sf);
+
+        Group group = _factGroup.create(GroupID.fromExternal(groupMember.id));
+        if (!group.exists()) throw new ExNotFound("No such group");
+
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+
+        if (group.inSharedFolder(sf)) {
+            return Response.status(Status.CONFLICT)
+                    .entity(new Error(Type.CONFLICT, "Member already exists"))
+                    .build();
+        }
+
+        ISharingRules rules = _sharingRules.create(caller);
+        Permissions req = rules.onUpdatingACL(sf, group, Permissions.fromArray(groupMember.permissions));
+
+
+        AffectedUserIDsAndInvitedUsers result = group.joinSharedFolder(sf,
+                Permissions.fromArray(groupMember.permissions), caller);
+
+        _aclNotifier.publish_(result._affected);
+
+        for (User invitee : group.listMembers()) {
+            audit(sf, caller, token, "folder.add")
+                    .add("target", invitee.id())
+                    .embed("role", req.toArray())
+                    .publish();
+        }
+
+        // TODO: outside transaction
+        _sfnEmailer.sendRoleChangedNotificationEmail(sf, caller, group, Permissions.allOf(), req);
+
+        String location = Service.DUMMY_LOCATION
+                + 'v' + version
+                + "/shares/" + sf.id().toStringFormal()
+                + "/groups/" + groupMember.id;
+
+        // TODO: etags
+        return Response.created(URI.create(location))
+                .entity(toGroupMember(group, req))
+                .build();
+    }
+
+    @Since("1.3")
+    @GET
+    @Path("/{id}/groups/{groupid}")
+    public Response getGroupMember(@Auth IAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            @PathParam("groupid") Group group)
+            throws SQLException, ExNotFound
+    {
+        validateAuth(token, Scope.READ_ACL, sf);
+        if (!group.inSharedFolder(sf)) {
+            throw new ExNotFound("No such member");
+        }
+
+        // TODO: etags
+        return Response.ok()
+                .entity(toGroupMember(group, group.getRoleForSharedFolder(sf)))
+                .build();
+    }
+
+    @Since("1.3")
+    @PUT
+    @Path("/{id}/groups/{groupid}")
+    public Response updateGroupMember(@Auth IUserAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            @PathParam("groupid") Group group,
+            SFGroupMember groupMember)
+            throws Exception
+    {
+        User caller = validateAuth(token, Scope.WRITE_ACL, sf);
+        if (!group.inSharedFolder(sf)) {
+            throw new ExNotFound("No such member");
+        }
+
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+
+        // TODO: etags
+        ISharingRules rules = _sharingRules.create(caller);
+        Permissions req = rules.onUpdatingACL(sf, group, Permissions.fromArray(groupMember.permissions));
+        Permissions oldPermissions = group.getRoleForSharedFolder(sf);
+
+        ImmutableCollection<UserID> affected;
+        try {
+            affected = group.changeRoleInSharedFolder(sf, req);
+        } catch (ExNoAdminOrOwner e) {
+            throw new ExBadArgs(e.getMessage());
+        }
+
+        // NB: ignore sharing rules warnings for now
+        // rules.throwIfAnyWarningTriggered();
+
+        _aclNotifier.publish_(affected);
+
+        audit(sf, caller, token, "folder.permission.update")
+                .add("target", group.id())
+                .embed("new_role", req.toArray())
+                .embed("old_role", oldPermissions.toArray())
+                .publish();
+
+        // TODO: outside transaction
+        _sfnEmailer.sendRoleChangedNotificationEmail(sf, caller, group, oldPermissions, req);
+
+        return Response.ok()
+                .entity(toGroupMember(group, req))
+                .build();
+    }
+
+    @Since("1.3")
+    @DELETE
+    @Path("/{id}/groups/{groupid}")
+    public Response deleteGroupMember(@Auth IUserAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            @PathParam("groupid") Group group)
+            throws Exception
+    {
+        requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
+        User caller = _factUser.create(token.user());
+        throwIfNotAMember(sf, caller, "No such shared folder");
+        if (!group.inSharedFolder(sf)) {
+            throw new ExNotFound("No such member");
+        }
+
+        sf.throwIfNoPrivilegeToChangeACL(caller);
+
+        // TODO: etags?
+        ImmutableCollection<UserID> affected;
+        try {
+            affected = group.deleteSharedFolder(sf);
+        } catch (ExNoAdminOrOwner e) {
+            throw new ExBadArgs(e.getMessage());
+        }
+
+        _aclNotifier.publish_(affected);
+        audit(sf, caller, token, "folder.permission.delete")
+                .add("target", group.id())
+                .publish();
+
+        return Response.noContent()
+                .build();
+    }
+
     @Since("1.1")
     @GET
     @Path("/{id}/pending")
@@ -435,7 +604,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     public Response inviteMember(@Auth IUserAuthToken token,
             @PathParam("id") SharedFolder sf,
             @Context Version version,
-            PendingMember invitee)
+            SFPendingMember invitee)
             throws Exception
     {
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
@@ -586,47 +755,82 @@ public class SharedFolderResource extends AbstractSpartaResource
         return p;
     }
 
-    static Member toMember(User u, Permissions p) throws ExNotFound, SQLException
+    static SFMember toMember(User u, Permissions p) throws ExNotFound, SQLException
     {
         FullName name = u.getFullName();
-        return new Member(u.id().getString(), name._first, name._last, p.toArray());
+        return new SFMember(u.id().getString(), name._first, name._last, p.toArray());
     }
 
-    static List<Member> listMembers(SharedFolder sf) throws ExNotFound, SQLException
+    static SFGroupMember toGroupMember(Group g, Permissions p)
+            throws SQLException, ExNotFound
     {
-        ImmutableMap<User, Permissions> users = sf.getJoinedUsersAndRoles();
-        List<Member> members = Lists.newArrayListWithExpectedSize(users.size());
-        for (Entry<User, Permissions> e : users.entrySet()) {
-            // filter out TS users
-            if (e.getKey().id().isTeamServerID()) continue;
-            members.add(toMember(e.getKey(), e.getValue()));
-        }
-        return members;
+        return new SFGroupMember(g.id().getString(), g.getCommonName(), p.toArray());
     }
 
-    static PendingMember toPendingMember(User u, Permissions p, @Nullable User sharer)
+    static SFPendingMember toPendingMember(User u, Permissions p, @Nullable User sharer)
             throws ExNotFound, SQLException
     {
         FullName n = u.exists() ? u.getFullName() : null;
-        return new PendingMember(u.id().getString(),
+        return new SFPendingMember(u.id().getString(),
                 n != null ? n._first : null,
                 n != null ? n._last : null,
                 sharer != null ? sharer.id().getString() : null,
                 p.toArray());
     }
 
-    static List<PendingMember> listPendingMembers(SharedFolder sf)
+    /**
+     * @return a list of SFMembers that are in the SharedFolder not taking groups into account
+     */
+    private static List<SFMember> listMembers(Iterable<UserPermissionsAndState> userPermStates)
             throws ExNotFound, SQLException
     {
-        List<PendingMember> members = Lists.newArrayList();
-        for (UserPermissionsAndState ups : sf.getAllUsersRolesAndStates()) {
+        List<SFMember> members = Lists.newArrayList();
+        for (UserPermissionsAndState ups : userPermStates) {
+            if (ups._state != SharedFolderState.JOINED) continue;
+            // filter out TS users
+            if (ups._user.id().isTeamServerID()) continue;
+            members.add(toMember(ups._user, ups._permissions));
+        }
+        return members;
+    }
+
+    static List<SFMember> listMembers(SharedFolder sf)
+            throws ExNotFound, SQLException
+    {
+        return listMembers(sf.getUserRolesAndStatesForGroup(null));
+    }
+
+    /**
+     * @return a list of SFPendingMembers that are invited to the SharedFolder not taking groups into account
+     */
+    private static List<SFPendingMember> listPendingMembers(SharedFolder sf, Iterable<UserPermissionsAndState> userPermStates)
+            throws ExNotFound, SQLException
+    {
+        List<SFPendingMember> members = Lists.newArrayList();
+        for (UserPermissionsAndState ups : userPermStates) {
             if (ups._state != SharedFolderState.PENDING) continue;
             // filter out TS users
             if (ups._user.id().isTeamServerID()) continue;
-            PendingMember pm = toPendingMember(ups._user, ups._permissions,
+            SFPendingMember pm = toPendingMember(ups._user, ups._permissions,
                     sf.getSharerNullable(ups._user));
             members.add(pm);
         }
         return members;
+    }
+
+    static List<SFPendingMember> listPendingMembers(SharedFolder sf)
+            throws SQLException, ExNotFound
+    {
+        return listPendingMembers(sf, sf.getUserRolesAndStatesForGroup(null));
+    }
+
+    static List<SFGroupMember> listGroupMembers(SharedFolder sf)
+            throws SQLException, ExNotFound
+    {
+        List<SFGroupMember> groupMembers = Lists.newArrayList();
+        for (GroupPermissions gp : sf.getAllGroupsAndRoles()) {
+            groupMembers.add(toGroupMember(gp._group, gp._permissions));
+        }
+        return groupMembers;
     }
 }

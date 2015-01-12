@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.group;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
@@ -81,6 +82,16 @@ public class Group
             return create(gid);
         }
 
+        @ParamFactory
+        public Group create(String s)
+        {
+            try {
+                return create(GroupID.fromExternal(s));
+            } catch (ExBadArgs e) {
+                throw new IllegalArgumentException("Invalid Group ID");
+            }
+        }
+
         /**
          * Add a new group and generate a new group ID.
          */
@@ -130,7 +141,7 @@ public class Group
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && _gid.equals(((Group)o)._gid));
+        return this == o || (o != null && (o instanceof Group && _gid.equals(((Group)o)._gid)));
     }
 
     @Override
@@ -341,7 +352,6 @@ public class Group
             throw new ExNotFound(sf + " not in " + this);
         }
         _f._gsdb.setRoleForSharedFolder(id(), sf.id(), newRole);
-
         return sf.setPermissionsForGroup(this, newRole);
     }
 

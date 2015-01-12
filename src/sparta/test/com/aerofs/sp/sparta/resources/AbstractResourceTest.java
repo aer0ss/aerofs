@@ -5,11 +5,12 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.DID;
@@ -20,8 +21,6 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
-import com.aerofs.rest.auth.OAuthToken;
-import com.aerofs.oauth.Scope;
 import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
@@ -74,6 +73,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
@@ -82,7 +82,6 @@ import static com.aerofs.bifrost.server.BifrostTest.createAccessToken;
 import static com.aerofs.bifrost.server.BifrostTest.createClient;
 import static com.aerofs.bifrost.server.BifrostTest.createResourceServer;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -103,11 +102,15 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected static final UserID user = UserID.fromInternal("user@bar.baz");
     protected static final UserID admin = UserID.fromInternal("admin@bar.baz");
     protected static final UserID other = UserID.fromInternal("other@bar.baz");
+    protected static final UserID otherOrg = UserID.fromInternal("outsideorg@bar.baz");
+    protected static final OrganizationID otherOrgID = new OrganizationID(3);
 
     private static final String RO_SELF = "roself";
     private static final String RW_SELF = "rwself";
     private static final String ADMIN = "admin";
     private static final String OTHER = "other";
+    private static final String NO_GROUPS = "nogroups";
+    private static final String DIFFERENT_ORG = "differentorg";
 
     private static final SSMPConnection ssmp = mock(SSMPConnection.class);
     private static final CommandDispatcher commandDispatcher = mock(CommandDispatcher.class);
@@ -240,15 +243,23 @@ public class AbstractResourceTest extends AbstractBaseTest
                 BifrostTest.CLIENTNAME, ImmutableSet.of("files.read", "files.write"), 0L);
 
         createAccessToken(client, inj, RW_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read",
-                        "user.write", "acl.write", "acl.invitations"));
+                ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write",
+                        "acl.invitations", "groups.read"));
         createAccessToken(client, inj, RO_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read", "acl.invitations"));
-        createAccessToken(client, inj, ADMIN, OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID(), OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read",
-                        "user.write", "user.password", "acl.write", "acl.invitations"));
+                ImmutableSet.of("user.read", "acl.read", "acl.invitations", "groups.read"));
+        createAccessToken(client, inj, ADMIN,
+                OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID(),
+                OrganizationID.PRIVATE_ORGANIZATION, 0,
+                ImmutableSet.of("user.read", "acl.read", "organization.admin", "user.write",
+                        "user.password", "acl.write", "acl.invitations", "groups.read"));
         createAccessToken(client, inj, OTHER, other, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write", "acl.invitations"));
+                ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write",
+                        "acl.invitations", "groups.read"));
+        createAccessToken(client, inj, NO_GROUPS, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
+                ImmutableSet.of("user.read", "acl.read", "acl.invitations"));
+        createAccessToken(client, inj, DIFFERENT_ORG, otherOrg, otherOrgID, 0,
+                ImmutableSet.of("user.read", "acl.read", "organization.admin", "user.write",
+                        "user.password", "acl.write", "acl.invitations", "groups.read"));
 
         return inj;
     }
@@ -281,6 +292,8 @@ public class AbstractResourceTest extends AbstractBaseTest
         factSF = inj.getInstance(SharedFolder.Factory.class);
         factGroup = inj.getInstance(Group.Factory.class);
         factDevice = inj.getInstance(Device.Factory.class);
+        factGroup = inj.getInstance(Group.Factory.class);
+        Organization.Factory factOrg = inj.getInstance(Organization.Factory.class);
 
         sqlTrans.begin();
         try (Statement s = sqlTrans.getConnection().createStatement()) {
@@ -288,8 +301,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 s.execute("delete from sp_" + table);
             }
         }
-        Organization org = inj.getInstance(Organization.Factory.class)
-                .save(OrganizationID.PRIVATE_ORGANIZATION);
+        Organization org = factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
 
         User u = factUser.create(user);
         u.save(new byte[0], new FullName("User", "Foo"));
@@ -297,6 +309,9 @@ public class AbstractResourceTest extends AbstractBaseTest
         o.save(new byte[0], new FullName("Other", "Foo"));
         User a = factUser.create(admin);
         a.save(new byte[0], new FullName("Admin", "Foo"));
+        User oo = factUser.create(otherOrg);
+        oo.save(new byte[0], new FullName("Other", "Org"));
+        oo.setOrganization(factOrg.save(otherOrgID), AuthorizationLevel.ADMIN);
 
         a.setOrganization(org, AuthorizationLevel.ADMIN);
         u.setOrganization(org, AuthorizationLevel.USER);
@@ -317,7 +332,9 @@ public class AbstractResourceTest extends AbstractBaseTest
         if (sqlTrans.isInTransaction()) sqlTrans.rollback();
         sqlTrans.cleanUp();
 
-        sparta.stop();
+        if (sparta != null) {
+            sparta.stop();
+        }
     }
 
     protected RequestSpecification givenAccess(String token)
@@ -330,6 +347,39 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected RequestSpecification givenWriteAccess() { return givenAccess(RW_SELF); }
     protected RequestSpecification givenAdminAccess() { return givenAccess(ADMIN); }
     protected RequestSpecification givenOtherAccess() { return givenAccess(OTHER); }
+    protected RequestSpecification givenNoGroupAccess() { return givenAccess(NO_GROUPS); }
+    protected RequestSpecification givenOtherOrgAccess() { return givenAccess(DIFFERENT_ORG); }
+
+    private static final Base64.Encoder base64 = Base64.getEncoder();
+
+    protected static String encode(UserID user)
+    {
+        return BaseUtil.utf2string(base64.encode(BaseUtil.string2utf(user.getString())));
+    }
+
+    protected RequestSpecification givenCert(DID did, UserID user, long serial)
+    {
+        return given()
+                .header(Names.AUTHORIZATION,
+                        "Aero-Device-Cert " + encode(user) + " " + did.toStringFormal())
+                .header("DName", "CN=" + BaseSecUtil.getCertificateCName(user, did))
+                .header("Serial", Long.toString(serial, 16))
+                .header("Verify", "SUCCESS");
+    }
+
+    protected RequestSpecification givenSecret(String service, String secret, DID did, UserID user)
+    {
+        return given()
+                .header(Names.AUTHORIZATION, "Aero-Delegated-User-Device "
+                            + service + " " + secret + " "
+                            + encode(user) + " " + did.toStringFormal());
+    }
+
+    protected RequestSpecification givenSecret(String service, String secret)
+    {
+        return given()
+                .header(Names.AUTHORIZATION, "Aero-Service-Shared-Secret " + service + " " + secret);
+    }
 
     protected void mkUser(String userid, String first, String last) throws Exception
     {
@@ -354,11 +404,23 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.commit();
     }
 
+    protected GroupID mkGroup(String name) throws Exception
+    {
+        sqlTrans.begin();
+        GroupID ret = factGroup.save(name, OrganizationID.PRIVATE_ORGANIZATION, null).id();
+        sqlTrans.commit();
+        return ret;
+    }
     protected SID mkShare(String name, String owner) throws Exception
+    {
+        return mkShare(name, UserID.fromExternal(owner));
+    }
+
+    protected SID mkShare(String name, UserID owner) throws Exception
     {
         SID sid = SID.generate();
         sqlTrans.begin();
-        User user = factUser.create(UserID.fromInternal(owner));
+        User user = factUser.create(owner);
         factSF.create(sid).save(name, user);
         sqlTrans.commit();
         return sid;
@@ -378,17 +440,17 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.commit();
     }
 
-    protected void addGroup(SID sid, GroupID groupID, Permissions p) throws Exception
+    protected void addGroup(SID sid, GroupID groupID, Permissions p, UserID sharer) throws Exception
     {
         sqlTrans.begin();
-        factGroup.create(groupID).joinSharedFolder(factSF.create(sid), p, null);
+        factGroup.create(groupID).joinSharedFolder(factSF.create(sid), p, factUser.create(sharer));
         sqlTrans.commit();
     }
 
-    protected void addUserToGroup(GroupID group, User user) throws Exception
+    protected void addUserToGroup(GroupID group, UserID user) throws Exception
     {
         sqlTrans.begin();
-        factGroup.create(group).addMember(user);
+        factGroup.create(group).addMember(factUser.create(user));
         sqlTrans.commit();
     }
 
@@ -396,30 +458,6 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         sqlTrans.begin();
         String etag = "W/\"" + aclEtag(factUser.create(user)) + "\"";
-        sqlTrans.commit();
-        return etag;
-    }
-
-    protected String shareEtag(UserID user, SID sid) throws SQLException, ExNotFound
-    {
-        sqlTrans.begin();
-        listPendingMembers(factSF.create(sid));
-        String etag = "W/\""
-                + aclEtag(factUser.create(user))
-                + "\"";
-        sqlTrans.commit();
-        return etag;
-    }
-
-    protected String sharesEtag(UserID user) throws SQLException, ExNotFound
-    {
-        sqlTrans.begin();
-        OAuthToken tok = mock(OAuthToken.class);
-        when(tok.hasFolderPermission(any(Scope.class), any(SID.class))).thenReturn(true);
-        UsersResource.listShares(factUser.create(user), tok);
-        String etag = "W/\""
-                + aclEtag(factUser.create(user))
-                + "\"";
         sqlTrans.commit();
         return etag;
     }

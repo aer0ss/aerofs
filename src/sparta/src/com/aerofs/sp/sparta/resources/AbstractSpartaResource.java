@@ -37,4 +37,5 @@ public class AbstractSpartaResource
                 .status(Status.FORBIDDEN)
                 .entity(new Error(Type.FORBIDDEN, "Token lacks required scope"));
     }
+
 }

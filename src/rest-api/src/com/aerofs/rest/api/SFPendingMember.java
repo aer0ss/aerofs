@@ -7,7 +7,7 @@ package com.aerofs.rest.api;
 
 import javax.annotation.Nullable;
 
-public class PendingMember
+public class SFPendingMember
 {
     public final String email;
     public final String firstName;
@@ -18,8 +18,8 @@ public class PendingMember
     // write-only: may only be non-null when incoming
     public final @Nullable String note;
 
-    public PendingMember(String email, String firstName, String lastName, String invitedBy,
-            String[] permissions)
+    public SFPendingMember(String email, String firstName, String lastName, String invitedBy,
+                           String[] permissions)
     {
         this.email = email;
         this.firstName = firstName;
@@ -29,7 +29,7 @@ public class PendingMember
         this.note = null;
     }
 
-    public PendingMember(String email, String[] permissions, String note)
+    public SFPendingMember(String email, String[] permissions, String note)
     {
         this.email = email;
         this.firstName = null;

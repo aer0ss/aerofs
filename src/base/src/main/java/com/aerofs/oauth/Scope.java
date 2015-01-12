@@ -31,7 +31,8 @@ public enum Scope
     MANAGE_PASSWORD("user.password", false),
     ORG_ADMIN("organization.admin", false),
     APPDATA("files.appdata", false),
-    LINKSHARE("linksharing", false)
+    LINKSHARE("linksharing", false),
+    READ_GROUPS("groups.read", false)
     ;
 
     private final String name;
