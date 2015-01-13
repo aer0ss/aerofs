@@ -4,7 +4,7 @@
  * FIXME (AG): change all sid, oid, did to BINARY(32)
  */
 
-CREATE SCHEMA IF NOT EXISTS `polaris` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
+ALTER SCHEMA `polaris` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
 
 CREATE TABLE IF NOT EXISTS `objects` (
   `root_oid` CHAR(32) NOT NULL,
