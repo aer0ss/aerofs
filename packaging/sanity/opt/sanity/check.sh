@@ -52,6 +52,7 @@ for probe_script in $probe_scripts
 do
     probe_name=${probe_script%%\.*}
     msg=$(./$probe_script)
+    retcode=$?
 
     # Skip the probs the user has asked us to ignore.
     ignore=false
@@ -62,7 +63,7 @@ do
     if [ $ignore = true ]; then continue; fi
 
     # Run the probe script, i.e. execute the service sanity test.
-    if [ $? -ne 0 ]
+    if [ $retcode -ne 0 ]
     then
         echo "Probe failed: $probe_name: $msg"
         failure=true
