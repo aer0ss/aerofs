@@ -283,13 +283,9 @@ public class CacheBackend implements IBlockStorageBackend
             if (status == null) {
                 status = new CacheStatus();
                 _statusMap.put(key, status);
-                future = new FutureTask<File>(new Callable<File>() {
-                    @Override
-                    public File call() throws Exception
-                    {
-                        downloadBlock(key, file);
-                        return file;
-                    }
+                future = new FutureTask<>(() -> {
+                    downloadBlock(key, file);
+                    return file;
                 });
                 status._future = future;
             }
@@ -303,14 +299,7 @@ public class CacheBackend implements IBlockStorageBackend
             access(key, date);
             ok = true;
             return f;
-        } catch (InterruptedException e) {
-            // unwrap IOExceptions to avoid multi-level wrapping of exceptions thrown by the
-            // proxied backend
-            if (e.getCause() != null && e.getCause() instanceof IOException) {
-                throw (IOException)e.getCause();
-            }
-            throw new IOException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             // unwrap IOExceptions to avoid multi-level wrapping of exceptions thrown by the
             // proxied backend
             if (e.getCause() != null && e.getCause() instanceof IOException) {
@@ -354,16 +343,9 @@ public class CacheBackend implements IBlockStorageBackend
          * things from /tmp elsewhere, and SELinux will complain...so just use the auxroot)
          */
         File tempFile = FileUtil.createTempFile("cache", null, _downloadDir);
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
-        try {
-            InputStream in = _bsb.getBlock(key);
-            try {
-                ByteStreams.copy(in, out);
-            } finally {
-                in.close();
-            }
-        } finally {
-            out.close();
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
+                InputStream in = _bsb.getBlock(key)) {
+            ByteStreams.copy(in, out);
         }
 
         FileUtil.rename(tempFile, file);
@@ -422,11 +404,8 @@ public class CacheBackend implements IBlockStorageBackend
             _oldAccessTimeDirtyMap = map;
         }
 
-        if (l.isDebugEnabled()) {
-            l.debug("writing " + map.size() + " dirty cache access entries");
-        }
-        Trans t = _tm.begin_();
-        try {
+        l.debug("writing {} dirty cache access entries", map.size());
+        try (Trans t = _tm.begin_()) {
             for (Map.Entry<ContentBlockHash, Date> entry : map.entrySet()) {
                 ContentBlockHash key = entry.getKey();
                 Date accessTime = entry.getValue();
@@ -439,7 +418,6 @@ public class CacheBackend implements IBlockStorageBackend
             t.commit_();
         } finally {
             map.clear();
-            t.end_();
         }
     }
 
@@ -449,15 +427,11 @@ public class CacheBackend implements IBlockStorageBackend
 
         void init_()
         {
-            _delayedScheduler = new DelayedScheduler(_sched, SLEEP_MILLIS, new Runnable() {
-                @Override
-                public void run()
-                {
-                    try {
-                        freeSomeSpace_();
-                    } catch (SQLException e) {
-                        l.warn(Util.e(e));
-                    }
+            _delayedScheduler = new DelayedScheduler(_sched, SLEEP_MILLIS, () -> {
+                try {
+                    freeSomeSpace_();
+                } catch (SQLException e) {
+                    l.warn(Util.e(e));
                 }
             });
             schedule_();
@@ -521,16 +495,13 @@ public class CacheBackend implements IBlockStorageBackend
                 // thread may try to acquire the block we are deleting
                 assert Thread.holdsLock(_statusMap);
 
-                if (l.isDebugEnabled()) l.debug("deleting " + file);
+                l.debug("deleting {}", file);
                 if (file.exists()) FileUtil.delete(file);
 
                 // FIXME: should this use the dirty access time map???
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     _cdb.deleteCachedEntry(key, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
 
                 return length;

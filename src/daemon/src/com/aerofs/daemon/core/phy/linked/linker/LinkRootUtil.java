@@ -61,8 +61,7 @@ class LinkRootUtil
 
     SIndex linkRoot(InjectableFile f, SID sid) throws Exception
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             // If creating store, must link before creating store. This prevents creation of a
             // conflicting root in TS (FlatLinkedStorage creates new root by default on every
             // store creation)
@@ -71,8 +70,6 @@ class LinkRootUtil
             SIndex sidx = _sc.createRootStore_(sid, f.getName(), t);
             t.commit_();
             return sidx;
-        } finally {
-            t.end_();
         }
     }
 }

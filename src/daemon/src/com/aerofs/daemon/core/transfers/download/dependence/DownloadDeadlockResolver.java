@@ -243,8 +243,7 @@ public class DownloadDeadlockResolver
         // TODO (MJ) what if the socidLocal changed while we were processing all of the received
         // components? We should probably abort and start the download anew.
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             CausalityResult cr = _mu.computeCausality_(socidRemote.soid(), vRemote,
                     metaDiff);
             assert cr != null : socidRemote + " " + vRemote + " " + metaDiff + " " + cycle;
@@ -256,8 +255,6 @@ public class DownloadDeadlockResolver
         } catch (IOException | ExNotFound e) {
             // Assert false as we want to know when exceptions happen in the DeadlockResolver
             assert false : Util.e(e) + " " + cycle;
-        } finally {
-            t.end_();
         }
     }
 

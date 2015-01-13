@@ -22,8 +22,6 @@ import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -225,19 +223,13 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void callSP_(SID sid, String folderName, List<PBSubjectPermissions> roles,
             String emailNote, boolean suppressSharingRulesWarnings) throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-share");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("sp-share");
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share", () ->
             // NB: external shared folders are create by HdCreateRoot only
             _factSP.create()
                     .signInRemote()
                     .shareFolder(folderName, sid.toPB(), roles, emailNote, false,
-                            suppressSharingRulesWarnings);
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+                            suppressSharingRulesWarnings)
+        );
     }
 
     private void convertToSharedFolder_(Path path, OA oa, SID sid)
@@ -249,12 +241,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         cleanupAnchorCreatedByAutoJoin_(soid.sidx(), sid);
 
-        Trans t = _tm.begin_();
-        try {
+        try  (Trans t = _tm.begin_()){
             convertToSharedFolderImpl_(soid, oa.parent(), sid, path, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
@@ -275,12 +264,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         l.debug("cleanup auto-join {} {}", sid, oaAnchor.name());
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _od.delete_(anchor, APPLY, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 

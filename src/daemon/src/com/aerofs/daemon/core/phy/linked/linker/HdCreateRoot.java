@@ -10,8 +10,6 @@ import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EICreateRoot;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -99,32 +97,21 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
 
     private void callSPToCreateSharedFolder_(String name, SID sid) throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-share-ext");
-        try {
-            TCB tcb = tk.pseudoPause_("sp-share-ext");
-            try {
-                _factSP.create()
-                        .signInRemote()
-                        .shareFolder(name, sid.toPB(), Collections.<PBSubjectPermissions>emptyList(),
-                                "", true, false);
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share-ext", () ->
+            _factSP.create()
+                    .signInRemote()
+                    .shareFolder(name, sid.toPB(),
+                            Collections.<PBSubjectPermissions>emptyList(), "", true, false)
+        );
     }
 
     private void unlinkRoot_(SID sid, SIndex sidx) throws Exception
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             // NB: use MAP and not APPLY as we don't want to delete user's files
             _sd.deleteRootStore_(sidx, PhysicalOp.MAP, t);
             _lrm.unlink_(sid, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

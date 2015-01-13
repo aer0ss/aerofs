@@ -142,8 +142,7 @@ public class DeviceToUserMapper
         l.info("{} send resolve", did);
         _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
 
-        Token tk = _tokenManager.acquireThrows_(Cat.RESOLVE_USER_ID, did.toString());
-        try {
+        try (Token tk = _tokenManager.acquireThrows_(Cat.RESOLVE_USER_ID, did.toString())) {
             TCB tcb = TC.tcb();
             checkState(_resolutionWaiters.put(did, tcb) == null);
             try {
@@ -151,8 +150,6 @@ public class DeviceToUserMapper
             } finally {
                 checkState(_resolutionWaiters.remove(did) == tcb);
             }
-        } finally {
-            tk.reclaim_();
         }
 
         // this should always return a non-null value
@@ -188,12 +185,9 @@ public class DeviceToUserMapper
             throws SQLException
     {
         if (!_mappingCache.containsKey(did)) {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 onUserIdResolvedInternal_(did, userID, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } else {
             _deviceLRU.addDevice_(did);

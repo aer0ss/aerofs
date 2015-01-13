@@ -156,13 +156,10 @@ public class ContentFetcher
 
     private void fetch_() throws SQLException
     {
-        boolean retry = false;
-        Trans t = _f._tm.begin_();
-        try {
+        boolean retry;
+        try (Trans t = _f._tm.begin_()) {
             retry = fetchLoop_(t);
             t.commit_();
-        } finally {
-            t.end_();
         }
         if (retry) {
             l.debug("{} resched {}", _sidx, _it);

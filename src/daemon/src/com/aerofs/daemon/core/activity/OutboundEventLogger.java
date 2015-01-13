@@ -72,12 +72,9 @@ public class OutboundEventLogger
         }
 
         l.debug("outbound {} {} {} {}", soid, type, path, to);
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _aldb.insertActivity_(soid, type, path, null, ImmutableSet.of(to), t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

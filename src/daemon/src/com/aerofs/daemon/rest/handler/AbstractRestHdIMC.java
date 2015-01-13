@@ -72,12 +72,9 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
         UserID user = _did2user.getNullable_(did);
         if (user == null) {
             l.info("store MDID->user mapping {} {}", did, issuer);
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _did2user.insert_(did, issuer, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } else if (!user.equals(issuer)) {
             l.warn("inconsistent MDID->user mapping {} {} != {}", did, issuer, user);

@@ -316,8 +316,7 @@ public class GetVersionsResponse
             // when we block for chunk receiving, database may have changed
             cxt.refreshKnowledge_();
 
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 PBGetVersionsResponseBlock block;
 
                 l.debug("blocks/tx={}", qblocks.size());
@@ -328,8 +327,6 @@ public class GetVersionsResponse
 
                 if (storeBoundary) cxt.finalizeStore_(t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         }
 

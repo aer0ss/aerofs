@@ -276,12 +276,9 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         DeletionStatus status;
 
         do {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 status = executeDeletion_(System.currentTimeMillis(), t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } while (status == DeletionStatus.CONTINUE);
 

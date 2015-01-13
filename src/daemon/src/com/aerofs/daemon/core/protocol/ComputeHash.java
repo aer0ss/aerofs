@@ -86,11 +86,8 @@ public class ComputeHash
     public void sendResponse_(DigestedMessage msg, SOCKID k) throws Exception
     {
         // Compute hash
-        Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "ComputeHashResponse");
-        try {
+        try (Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "ComputeHashResponse")) {
             _hasher.computeHash_(k.sokid(), true, tk);
-        } finally {
-            tk.reclaim_();
         }
         // Reply that the hash has been computed with an empty message
         PBCore response = CoreProtocolUtil.newResponse(msg.pb()).build();

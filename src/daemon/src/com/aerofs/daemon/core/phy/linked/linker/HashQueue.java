@@ -19,8 +19,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -215,12 +213,9 @@ public class HashQueue
                     return;
                 }
 
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     updateCAHash_(newHash, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
             } catch (Exception e) {
                 l.warn("failed to update hash", e);
@@ -280,17 +275,10 @@ public class HashQueue
         {
             if (executor.isShutdown()) return;
             try {
-                Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "blocking-hash");
-                try {
-                    TCB tcb = tk.pseudoPause_("blocking-hash");
-                    try {
-                        r.run();
-                    } finally {
-                        tcb.pseudoResumed_();
-                    }
-                } finally {
-                    tk.reclaim_();
-                }
+                _tokenManager.inPseudoPause_(Cat.UNLIMITED, "blocking-hash", () -> {
+                    r.run();
+                    return null;
+                });
             } catch (ExNoResource|ExAborted e) {
                 l.warn("blocking hashing failed", e);
             }

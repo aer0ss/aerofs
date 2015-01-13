@@ -170,12 +170,9 @@ public class FirstLaunch
     {
         try {
             if (_sid2sidx.getNullable_(_cfgRootSID.get()) != null) return;
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _sc.createRootStore_(_cfgRootSID.get(), "", t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -185,14 +182,11 @@ public class FirstLaunch
     private void restoreRoots_()
     {
         try {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 for (Entry<SID, String> e : RootDatabase.loadSeed_().entrySet()) {
                     restoreRoot_(e.getKey(), e.getValue(), t);
                 }
                 t.commit_();
-            } finally {
-                t.end_();
             }
             RootDatabase.cleaupSeed_();
         } catch (Exception e) {

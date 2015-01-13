@@ -9,8 +9,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
@@ -80,36 +78,24 @@ class DLTFetchStoreNames extends DaemonLaunchTask
 
     private GetACLReply getACL() throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl4foldername");
-        try {
-            TCB tcb = tk.pseudoPause_("spacl4foldername");
-            try {
-                return newMutualAuthClientFactory().create()
-                        .signInRemote()
-                        .getACL(0L);
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
+        return _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl4foldername", () ->
+                newMutualAuthClientFactory().create()
+                    .signInRemote()
+                    .getACL(0L)
+        );
     }
 
     private void writeNamesToDatabase(GetACLReply reply)
             throws Exception
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             for (PBStoreACL store : reply.getStoreAclList()) {
                 SID sid = new SID(store.getStoreId());
                 SIndex sidx = _sid2sidx.getNullable_(sid);
 
                 if (sidx != null) setName_(sidx, store.getName());
             }
-
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 

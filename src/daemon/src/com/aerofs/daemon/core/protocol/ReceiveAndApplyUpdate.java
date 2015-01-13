@@ -109,8 +109,7 @@ public class ReceiveAndApplyUpdate
         Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
 
         if (isStreaming || !vPrefixOld.isZero_()) {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 if (!vPrefixOld.isZero_()) {
                     _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
                 }
@@ -122,9 +121,6 @@ public class ReceiveAndApplyUpdate
                 }
 
                 t.commit_();
-
-            } finally {
-                t.end_();
             }
         }
     }
@@ -132,8 +128,7 @@ public class ReceiveAndApplyUpdate
     private void movePrefixFile_(SOID soid, KIndex kFrom, KIndex kTo, Version vRemote)
             throws SQLException, IOException
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             // TODO (DF) : figure out if prefix files need a KIndex or are assumed
             // to be MASTER like everything else in Download
             IPhysicalPrefix from = _ps.newPrefix_(new SOKID(soid, kFrom), null);
@@ -149,8 +144,6 @@ public class ReceiveAndApplyUpdate
             _pvc.addPrefixVersion_(soid, kTo, vRemote, t);
 
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
@@ -248,14 +241,12 @@ public class ReceiveAndApplyUpdate
                 IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()), matchingLocalBranch);
 
                 try {
+                    TCB tcb = tk.pseudoPause_("cp-prefix");
                     try (InputStream is = file.newInputStream_()) {
                         // release core lock to avoid blocking while copying a large prefix
-                        TCB tcb = tk.pseudoPause_("cp-prefix");
-                        try {
-                            ByteStreams.copy(is, prefixStream);
-                        } finally {
-                            tcb.pseudoResumed_();
-                        }
+                        ByteStreams.copy(is, prefixStream);
+                    } finally {
+                        tcb.pseudoResumed_();
                     }
                 } catch (FileNotFoundException e) {
                     SOCKID conflict = new SOCKID(k.soid(), CID.CONTENT, matchingLocalBranch);

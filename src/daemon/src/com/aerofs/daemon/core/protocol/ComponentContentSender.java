@@ -219,11 +219,8 @@ public class ComponentContentSender
                     .setGetComponentResponse(bd)
                     .build());
 
-            Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "SendContent(" + k + ", " + ep + ")");
-            try {
+            try (Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "SendContent(" + k + ", " + ep + ")")) {
                 return sendBig_(ep, k, os, newPrefixLen, tk, mtime, fileLength, h, pf);
-            } finally {
-                tk.reclaim_();
             }
         }
         return null;

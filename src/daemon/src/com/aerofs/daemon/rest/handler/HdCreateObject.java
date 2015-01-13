@@ -35,9 +35,8 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
 
         checkArgument(oaParent.isDir(), "parent field must point to a valid folder");
 
-        Trans t = _tm.begin_();
         SOID soid;
-        try {
+        try (Trans t = _tm.begin_()) {
             soid = _oc.createMeta_(ev._folder ? Type.DIR : Type.FILE,
                     oaParent.soid(), ev._name, PhysicalOp.APPLY, t);
             t.commit_();
@@ -47,8 +46,6 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
                     .entity(new Error(Error.Type.CONFLICT,
                             "A file already exists at this location")));
             return;
-        } finally {
-            t.end_();
         }
 
         RestObject object = _mb.object(soid);

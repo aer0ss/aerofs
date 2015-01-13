@@ -153,11 +153,8 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         // try the unblocking version first, and then fall back to the blocking version
         if (ep.tp().q().enqueue(ev, TC.currentThreadPrio())) return;
 
-        Token tk = tokenManager.acquireThrows_(Cat.UNLIMITED, "UOBL.enqBlocking");
-        try {
+        try (Token tk = tokenManager.acquireThrows_(Cat.UNLIMITED, "UOBL.enqBlocking")) {
             enqueueBlockingImpl_(ep, ev, tk);
-        } finally {
-            tk.reclaim_();
         }
     }
 
@@ -165,7 +162,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
             throws ExNoResource, ExAborted
     {
         TCB tcb = tk.pseudoPause_(ev.toString());
-        try {
+        try{
             ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
         } finally {
             tcb.pseudoResumed_();

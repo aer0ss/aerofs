@@ -73,15 +73,11 @@ public class Path2SIndexResolver
 
     private SIndex getSIndex_(SID sid) throws SQLException, ExNotShared
     {
-        SIndex sidx;
-        sidx = _sid2sidx.getNullable_(sid);
+        SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 sidx = _sid2sidx.getAbsent_(sid, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         }
         return sidx;

@@ -133,25 +133,19 @@ public class PersistentQueueDriver<I, O>
             O payload;
             while ((payload = _q.front_()) != null) {
                 _retryScan = false;
-                boolean ok = false;
+                boolean ok;
 
                 // pass down a Token to allow implementation to release and re-acquire core lock
-                Token tk = _f._tokenManager.acquireThrows_(Cat.UNLIMITED, "pq-out");
-                try {
+                try (Token tk = _f._tokenManager.acquireThrows_(Cat.UNLIMITED, "pq-out")) {
                     ok = _q.process_(payload, tk);
-                } finally {
-                    tk.reclaim_();
                 }
 
                 if (_retryScan || !ok) continue;
 
                 // remove successfully processed payload from persistent queue
-                Trans t = _f._tm.begin_();
-                try {
+                try (Trans t = _f._tm.begin_()) {
                     _q.dequeue_(payload, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
             }
         } finally {

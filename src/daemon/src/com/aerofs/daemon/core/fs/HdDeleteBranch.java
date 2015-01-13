@@ -62,14 +62,11 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
             OA oa = _ds.getOAThrows_(soid);
             CA ca = oa.caThrows(ev._kidx);
             l.info("delete branch {} {} {}", ev._kidx, ca.length(), ca.mtime());
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 // TODO(phoenix): update base version of MASTER CA?
                 _ds.deleteCA_(soid, ev._kidx, t);
                 _ps.newFile_(_ds.resolve_(soid), ev._kidx).delete_(PhysicalOp.APPLY, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
             return;
         }
@@ -88,16 +85,13 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
             l.warn("del branch {} {} {}", kBranch, vBranch, vMaster);
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _nvc.addLocalVersion_(kMaster, vB_M, t);
             // no need to call _cd.updateMaxTicks() here as atomicWrite below
             // calls it any way
             _vu.update_(kMaster, t);
             _bd.deleteBranch_(kBranch, vBranch, true, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

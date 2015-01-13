@@ -46,13 +46,10 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
         OA oaParent = _ds.getOA_(soidParent);
         if (!oaParent.isDir() || oaParent.isExpelled()) throw new ExBadArgs("Invalid parent");
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             OA.Type type = ev._dir ? OA.Type.DIR : OA.Type.FILE;
             _oc.create_(type, soidParent, ev._path.last(), PhysicalOp.APPLY, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
 
         ev.setResult_(false);

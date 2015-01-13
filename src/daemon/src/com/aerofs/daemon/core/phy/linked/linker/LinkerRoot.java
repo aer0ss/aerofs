@@ -190,8 +190,7 @@ public class LinkerRoot
         PathCombo pc = new PathCombo(_sid, _absRootAnchor, absPath);
         try {
             MightCreate.Result res;
-            Trans t = _f._tm.begin_();
-            try {
+            try (Trans t = _f._tm.begin_()) {
                 res = _f._mc.mightCreate_(pc, _f._globalBuffer, _og, t);
                 t.commit_();
             } catch (ExFileNotFound|ExFileNoPerm|ExNotFound e) {
@@ -201,8 +200,6 @@ public class LinkerRoot
                 // and thus cpu hogging when editors create and delete/move temporary files.
                 l.warn("ignored by MCN: {} {}", e.getClass().getName(), e.getMessage());
                 return;
-            } finally {
-                t.end_();
             }
             if (res == Result.NEW_OR_REPLACED_FOLDER
                     || (res == Result.EXISTING_FOLDER && rescanSubtree == RescanSubtree.FORCE)) {

@@ -187,8 +187,7 @@ public class Aliasing
         l.debug("This peer has performed aliasing for alias: {} to target: {}. Dropping message.",
                 alias, targetOIDLocal);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             SOCID target = new SOCID(alias.sidx(), targetOIDLocal, CID.META);
 
             Version vKMLAlias = _nvc.getKMLVersion_(alias).nonAliasTicks_();
@@ -198,8 +197,6 @@ public class Aliasing
             Version vKMLAdd = vKMLAlias.sub_(vAllTarget);
             _nvc.addKMLVersionAndCollectorSequence_(target, vKMLAdd, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 

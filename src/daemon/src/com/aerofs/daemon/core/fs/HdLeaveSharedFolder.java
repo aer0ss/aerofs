@@ -10,8 +10,6 @@ import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -57,19 +55,13 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
             sid = SID.anchorOID2storeSID(soid.oid());
         }
 
-        l.info("leave: " + sid + " " + ev._path);
+        l.info("leave: {} {}", sid, ev._path);
 
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-leave");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("sp-leave");
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-leave", () ->
             _factSP.create()
                     .signInRemote()
-                    .leaveSharedFolder(sid.toPB());
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+                    .leaveSharedFolder(sid.toPB())
+        );
 
         /**
          * Force ACL sync to make sure we do not report success to the Ritual caller before the

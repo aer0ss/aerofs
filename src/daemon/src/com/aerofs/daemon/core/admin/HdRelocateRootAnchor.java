@@ -116,8 +116,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         // Perform actual operations.
         l.warn("{} -> {}. same fs? {}", absOldRoot, absNewRoot, sameFS);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             try {
                 relocator.doWork(t);
             } catch (IOException e) {
@@ -135,7 +134,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             }
 
             t.commit_();
-
         } catch (Exception e) {
             l.warn("Move failed. Rollback: " + Util.e(e));
 
@@ -144,9 +142,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             Cfg.init_(Cfg.absRTRoot(), false);
             relocator.rollback();
             throw e;
-
-        } finally {
-            t.end_();
         }
 
         relocator.onSuccessfulTransaction();

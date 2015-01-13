@@ -115,12 +115,9 @@ public class ChangeFetcher
             return false;
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _cedb.setRemoteChangeEpoch_(sidx, c.maxTransformCount, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
 
         long lastLogicalTimestamp = 0;
@@ -131,13 +128,10 @@ public class ChangeFetcher
                 rc.oid = OID.ROOT;
             }
 
-            t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _at.apply_(sidx, rc, c.maxTransformCount, t);
                 _cedb.setChangeEpoch_(sidx, rc.logicalTimestamp, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
             if (rc.logicalTimestamp <= lastLogicalTimestamp) {
                 throw new ExProtocolError();
@@ -151,12 +145,9 @@ public class ChangeFetcher
     private void applyBufferedChanges_(SIndex sidx, long timestamp) throws Exception
     {
         // NB: can throw for exp retry
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _at.applyBufferedChanges_(sidx, timestamp, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

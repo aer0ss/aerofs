@@ -39,12 +39,9 @@ public class HdDeleteObject extends AbstractRestHdIMC<EIDeleteObject>
             return;
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _od.delete_(from.soid(), PhysicalOp.APPLY, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
 
         ev.setResult_(Response.noContent());

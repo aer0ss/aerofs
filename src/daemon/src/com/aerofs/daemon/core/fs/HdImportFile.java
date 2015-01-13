@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIImportFile;
@@ -91,16 +90,13 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
          * retry of such a failing command.
          */
         if (soid == null) {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 // create a new object with no associated CA (this is important to avoid generating
                 // a bogus empty version)
                 soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
                 _oc.createMeta_(OA.Type.FILE, soid, soidParent.oid(), ev._dest.last(),
                         PhysicalOp.APPLY, false, true, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         }
 
@@ -112,36 +108,24 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         SOKID sokid = new SOKID(soid, KIndex.MASTER);
         IPhysicalPrefix pp = _ps.newPrefix_(sokid, null);
 
-        ContentHash h = null;
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file");
-        try {
+        final ContentHash h;
+        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file")) {
             // copy source file to prefix (with core lock released)
-            TCB tcb = tk.pseudoPause_("import to prefix");
-            try {
-                InputStream in = null;
-                OutputStream out = null;
+            h = tk.inPseudoPause_(() -> {
                 MessageDigest md = SecUtil.newMessageDigest();
-                try {
-                    in = new FileInputStream(f);
-                    out = new DigestOutputStream(pp.newOutputStream_(false), md);
+                try (
+                        InputStream in = new FileInputStream(f);
+                        OutputStream out = new DigestOutputStream(pp.newOutputStream_(false), md)
+                ) {
                     ByteStreams.copy(in, out);
-                    h = new ContentHash(md.digest());
-                } finally {
-                    if (in != null) in.close();
-                    if (out != null) out.close();
                 }
-            } finally {
-                tcb.pseudoResumed_();
-            }
-
+                return new ContentHash(md.digest());
+            });
             // prepare prefix for persistent storage
             pp.prepare_(tk);
-        } finally {
-            tk.reclaim_();
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             // Values might have changed while the core lock was released
             oa = _ds.getOA_(soid);
             ResolvedPath path = _ds.resolve_(oa);
@@ -159,8 +143,6 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             _vu.update_(new SOCKID(sokid, CID.CONTENT), t);
 
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

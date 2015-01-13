@@ -12,8 +12,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -172,8 +170,7 @@ public class UserAndDeviceNames
                     reply.getDeviceInfoCount() + " != " + dids.size() + ")");
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             for (int i = 0; i < dids.size(); i++) {
                 DID did = dids.get(i);
                 // guaranteed by the above code
@@ -191,26 +188,16 @@ public class UserAndDeviceNames
                 }
             }
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
     private GetDeviceInfoReply getDevicesInfoFromSP_(List<DID> dids) throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-devinfo");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("sp-devinfo");
+        return _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-devinfo", () -> {
             List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
             for (DID did : dids) pb.add(did.toPB());
-            return _factSP.create()
-                    .signInRemote()
-                    .getDeviceInfo(pb);
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+            return _factSP.create().signInRemote().getDeviceInfo(pb);
+        });
     }
 
     /**

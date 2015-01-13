@@ -20,8 +20,6 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
@@ -411,33 +409,22 @@ public final class ClientAuditEventReporter // this can be final because it's no
 
         l.debug("{} events to send in batch", eventBatch.numEvents());
 
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "audit reporting");
-        try {
-            TCB tcb = tk.pseudoPause_("audit reporting");
-            try {
-                for (AuditableEvent event : eventBatch.reportableEvents) {
-                    event.publishBlocking();
-                }
-            } finally {
-                tcb.pseudoResumed_();
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "audit reporting", () -> {
+            for (AuditableEvent event : eventBatch.reportableEvents) {
+                event.publishBlocking();
             }
-        } finally {
-            tk.reclaim_();
-        }
+            return null;
+        });
     }
 
     private void persistLastReportedActivityLogIndex_(long lastReportedActivityLogIndex)
             throws SQLException
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _auditDatabase.setLastReportedActivityRow_(lastReportedActivityLogIndex, t);
             lastActivityLogIndex = lastReportedActivityLogIndex;
             t.commit_();
-        } finally {
-            t.end_();
         }
-
         l.debug("mark event {} as successfully stored", lastActivityLogIndex);
     }
 }

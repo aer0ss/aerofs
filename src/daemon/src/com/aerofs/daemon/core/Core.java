@@ -21,8 +21,6 @@ import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
@@ -213,29 +211,15 @@ public class Core implements IModule
          */
         _tc.suspend_();
 
-        Token tk = checkNotNull(_tokenManager.acquire_(Cat.UNLIMITED, "first-launch"));
         try {
-            TCB tcb = null;
-            try {
-                tcb = tk.pseudoPause_("first-launch");
-
-                Thread t = new Thread() {
-                    @Override
-                    public void run()
-                    {
-                        startAll_();
-                    }
-                };
-
+            _tokenManager.inPseudoPause_(Cat.UNLIMITED, "first-launch", () -> {
+                Thread t = new Thread(this::startAll_);
                 t.start();
                 t.join();
-            } finally {
-                if (tcb != null) tcb.pseudoResumed_();
-            }
+                return null;
+            });
         } catch (Exception e) {
             SystemUtil.fatal(e);
-        } finally {
-            tk.reclaim_();
         }
 
         _tc.resume_();
@@ -247,7 +231,7 @@ public class Core implements IModule
         // this service should not be started
         // unless auditing is allowed for this
         // installation
-        // TDOO (WW) use DI and polymorphysm
+        // TDOO (WW) use DI and polymorphism
         if (Audit.AUDIT_ENABLED) {
             _caer.start_();
         }

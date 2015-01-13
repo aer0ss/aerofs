@@ -121,8 +121,7 @@ public class Hasher
 
         // Look for any branches that need to be deleted/merged.
         if (!delList.isEmpty()) {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 for (Entry<KIndex, Version> en : delList.entrySet()) {
                     KIndex kidx = en.getKey();
                     checkState(!kidx.isMaster());
@@ -140,8 +139,6 @@ public class Hasher
                 l.debug("Final vAddLocal: {} kApply: {}", vAddLocal, kidxApply);
                 _nvc.addLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply), vAddLocal, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } else {
             l.debug("Hash: No branches with same hash found");
@@ -209,12 +206,9 @@ public class Hasher
                 // AssertionError later
                 _ds.getOAThrows_(sokid.soid());
 
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     _ds.setCAHash_(sokid, h, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
 
                 if (mergeBranches) mergeBranches_(sokid, h);

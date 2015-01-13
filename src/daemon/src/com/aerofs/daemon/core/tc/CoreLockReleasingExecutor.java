@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.tc;
 
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.google.inject.Inject;
 
 import java.util.concurrent.Callable;
@@ -26,16 +25,6 @@ public class CoreLockReleasingExecutor
 
     public <V> V execute_(Callable<V> c, String reason) throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, reason);
-        try {
-            TCB tcb = tk.pseudoPause_(reason);
-            try {
-                return c.call();
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
+        return _tokenManager.inPseudoPause_(Cat.UNLIMITED, reason, c::call);
     }
 }

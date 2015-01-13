@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.phy.linked.db.LinkedStagingAreaDatabase.StagedFold
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.CleanupScheduler;
@@ -162,8 +161,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     @Override
     public boolean process_() throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "psa");
-        try {
+        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "psa")) {
             StagedFolder f;
             long lastId = -1;
             boolean ok = true;
@@ -180,8 +178,6 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                 l.info("deferred processing of staging area");
                 throw new ExRetryLater("failed to clear staging area");
             }
-        } finally {
-            tk.reclaim_();
         }
         l.info("linked staging area empty");
         return false;
@@ -200,12 +196,9 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     private void removeEntry_(long id) throws SQLException
     {
         l.debug("unstage {}", id);
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _sadb.removeEntry_(id, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
@@ -216,16 +209,13 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         if (_lrm.get_(sf.historyPath.sid()) == null) return true;
         InjectableFile f = stagedPath(sf.id, sf.historyPath.sid());
         if (!f.exists()) return true;
-        TCB tcb = tk.pseudoPause_("psa");
-        try {
+        return tk.inPseudoPause_(() -> {
             if (sf.historyPath.isEmpty()) {
                 return deleteIgnoreErrorRecursively_(f);
             } else {
                 return moveToRevIgnoreErrorRecursively_(f, sf.historyPath);
             }
-        } finally {
-            tcb.pseudoResumed_();
-        }
+        });
     }
 
     private boolean deleteIgnoreErrorRecursively_(InjectableFile f)

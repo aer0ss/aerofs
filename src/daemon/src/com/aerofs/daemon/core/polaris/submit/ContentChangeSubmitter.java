@@ -169,14 +169,10 @@ public class ContentChangeSubmitter implements Submitter
             throws Exception
     {
         Ack ack = GsonUtil.GSON.fromJson(body, Ack.class);
-
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             if (ack.updated.size() != 1) throw new ExProtocolError();
             ackSubmission_(c, ack.updated.get(0), t);
             t.commit_();
-        } finally {
-            t.end_();
         }
         return true;
     }

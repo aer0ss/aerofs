@@ -50,9 +50,8 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
             return;
         }
 
-        Trans t = _tm.begin_();
         SOID soid;
-        try {
+        try (Trans t = _tm.begin_()) {
             soid = _imc.move_(from.soid(), toParent.soid(), ev._newName, PhysicalOp.APPLY, t);
             t.commit_();
         } catch (ExAlreadyExist e) {
@@ -61,8 +60,6 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
                     .entity(new Error(Error.Type.CONFLICT,
                             "Object with this name already exists at this location")));
             return;
-        } finally {
-            t.end_();
         }
 
         ev.setResult_(Response.ok()

@@ -12,8 +12,6 @@ import com.aerofs.daemon.core.store.AbstractStoreJoiner;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -111,12 +109,9 @@ public class ACLSynchronizer
     private void commitToLocal_(SIndex sidx, UserID userID, Permissions permissions)
             throws SQLException, ExNotFound
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _lacl.set_(sidx, Collections.singletonMap(userID, permissions), t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
@@ -277,8 +272,7 @@ public class ACLSynchronizer
             Set<SIndex> stores)
             throws Exception
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             if (sidx != null) {
                 _lacl.clear_(sidx, t);
             } else {
@@ -295,8 +289,6 @@ public class ACLSynchronizer
             }
 
             t.commit_();
-        } finally {
-            t.end_();
         }
         return sidx;
     }
@@ -306,17 +298,11 @@ public class ACLSynchronizer
      */
     private boolean leave_(SIndex sidx)
     {
-        Trans t = _tm.begin_();
-
-        try {
-            try {
-                _lacl.clear_(sidx, t);
-                _storeJoiner.leaveStore_(sidx, _sidx2sid.getLocalOrAbsent_(sidx), t);
-                t.commit_();
-                return true;
-            } finally {
-                t.end_();
-            }
+        try (Trans t = _tm.begin_()) {
+            _lacl.clear_(sidx, t);
+            _storeJoiner.leaveStore_(sidx, _sidx2sid.getLocalOrAbsent_(sidx), t);
+            t.commit_();
+            return true;
         } catch (Exception e) {
             // ignore errors to allow incremental progress but prevent epoch bump
             l.warn("failed to leave store {}", sidx, e);
@@ -334,12 +320,9 @@ public class ACLSynchronizer
         boolean ok = true;
         for (UserID user : newMembers) {
             try {
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     _storeJoiner.adjustAnchor_(sidx, name, user, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
             } catch (Exception e) {
                 // ignore errors to allow incremental progress but prevent epoch bump
@@ -353,33 +336,17 @@ public class ACLSynchronizer
 
     private void updateEpoch_(long serverEpoch) throws SQLException
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _filter.updateEpoch_(serverEpoch, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 
     private ServerACLReturn getServerACL_(long localEpoch)
             throws Exception
     {
-        GetACLReply aclReply;
-
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
-        try {
-            TCB tcb = tk.pseudoPause_("spacl");
-            try {
-                aclReply = _factSP.create()
-                        .signInRemote()
-                        .getACL(localEpoch);
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
+        GetACLReply aclReply = _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl",
+                () -> _factSP.create().signInRemote().getACL(localEpoch));
 
         long serverEpoch = aclReply.getEpoch();
         Map<SID, StoreInfo> stores = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
@@ -432,18 +399,10 @@ public class ACLSynchronizer
 
         // make the SP call (done before adding entries to the local database to avoid changing the
         // local database if the SP call fails)
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("spacl");
-            _factSP.create()
-                    .signInRemote()
-                    .updateACL(sid.toPB(), subject.getString(), permissions.toPB(),
-                            suppressSharingRulesWarnings);
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl", () -> _factSP.create()
+                        .signInRemote()
+                        .updateACL(sid.toPB(), subject.getString(), permissions.toPB(),
+                                suppressSharingRulesWarnings));
 
         // add new entries to the local database
         commitToLocal_(sidx, subject, permissions);
@@ -459,29 +418,18 @@ public class ACLSynchronizer
         SID sid = resolveSIndex_(sidx);
 
         // make the SP call
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "spacl");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("spacl");
-            _factSP.create()
-                    .signInRemote()
-                    .deleteACL(sid.toPB(), subject.getString());
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl",
+                () -> _factSP.create().signInRemote().deleteACL(sid.toPB(), subject.getString()));
 
         //
         // for faster UI refresh and banning the removed users, immediately add the entries to
         // the local database rather than waiting for notifications from the push service.
         //
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _lacl.delete_(sidx, subject, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

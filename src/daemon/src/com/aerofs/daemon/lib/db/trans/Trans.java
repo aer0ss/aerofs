@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * Transactions. Client should not create Transaction objects directly. Use TransManager instead.
  */
-public class Trans
+public class Trans implements AutoCloseable
 {
     private boolean _commit;
     private boolean _ended;
@@ -30,6 +30,12 @@ public class Trans
 
     private final Factory _f;
     private final TransManager _tm;
+
+    @Override
+    public final void close() throws SQLException
+    {
+        end_();
+    }
 
     public static class Factory
     {

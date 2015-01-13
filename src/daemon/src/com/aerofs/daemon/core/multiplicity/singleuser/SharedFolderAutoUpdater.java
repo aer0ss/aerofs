@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
 import com.aerofs.daemon.core.persistency.IPersistentQueue;
 import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -68,9 +67,8 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpuls
         @Override
         public boolean process_(ISharedFolderOp op, Token tk) throws Exception
         {
-            TCB tcb = tk.pseudoPause_("sp-leave");
             try {
-                try {
+                tk.inPseudoPause_(() -> {
                     final SPBlockingClient client = newMutualAuthClientFactory().create()
                             .signInRemote();
                     if (op instanceof LeaveOp){
@@ -80,16 +78,15 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpuls
                     } else {
                         throw new IllegalArgumentException("Unrecognized operation: " + op);
                     }
-                } catch (ExNotFound e) {
-                    l.info("Not a member, ignore shared folder command: " + op);
-                } catch (ExBadArgs e) {
-                    l.info("Root folder, ignore shared folder command: " + op);
-                }
-                l.info("auto-leave.done " + op.getSID());
-                return true;
-            } finally {
-                tcb.pseudoResumed_();
+                    return null;
+                });
+            } catch (ExNotFound e) {
+                l.info("Not a member, ignore shared folder command: {}", op);
+            } catch (ExBadArgs e) {
+                l.info("Root folder, ignore shared folder command: {}", op);
             }
+            l.info("auto-leave.done {}", op.getSID());
+            return true;
         }
 
         @Override

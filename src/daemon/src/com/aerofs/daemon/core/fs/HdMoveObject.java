@@ -37,12 +37,9 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
 
         SOID soidToParent = _ds.resolveFollowAnchorThrows_(ev._toParent);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _imc.move_(soid, soidToParent, ev._toName, PhysicalOp.APPLY, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

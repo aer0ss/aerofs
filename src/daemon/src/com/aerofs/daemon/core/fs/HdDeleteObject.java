@@ -36,12 +36,9 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
         // do not follow anchor
         SOID soid = _ds.resolveThrows_(ev._path);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _od.delete_(soid, PhysicalOp.APPLY, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

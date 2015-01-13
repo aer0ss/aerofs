@@ -176,6 +176,20 @@ public class TokenManager implements IDumpStatMisc
         return tk;
     }
 
+    @FunctionalInterface
+    public interface Closure<T, E extends Throwable>
+    {
+        T run() throws E;
+    }
+
+    final public <T, E extends Exception> T inPseudoPause_(Cat cat, String reason, Closure<T, E> r)
+            throws E, ExNoResource, ExAborted
+    {
+        try (Token tk = acquireThrows_(cat, reason)) {
+            return tk.inPseudoPause_(r);
+        }
+    }
+
     void reclaim_(Token tk, Prio prio, boolean notifyReclaimListener)
     {
         final CatInfo info = _cat2info.get(tk.getCat());

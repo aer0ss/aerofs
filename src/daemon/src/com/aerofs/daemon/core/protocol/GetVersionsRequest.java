@@ -234,13 +234,10 @@ public class GetVersionsRequest
     private void processRequestFromStream_(DID from, UserID user, InputStream is, StreamKey key, BlockSender sender)
             throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "GetVersReq(" + from + ")");
-        try {
+        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "GetVersReq(" + from + ")")) {
             while (processRequestBlock_(from, user, is, sender)) {
                 is = _iss.recvChunk_(key, tk);
             }
-        } finally {
-            tk.reclaim_();
         }
     }
 
@@ -647,8 +644,7 @@ public class GetVersionsRequest
         checkState(vToDelete.isEntirelyShadowedBy_(vAllTarget), "%s %s %s",
                 vToDelete, vAllTarget, loggedData);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             if (vToDelete.isEntirelyShadowedBy_(_nvc.getKMLVersion_(socidToDelete))) {
                 // vToDelete is a KML for socidToDelete
                 _nvc.deleteKMLVersionPermanently_(socidToDelete, vToDelete, t);
@@ -676,8 +672,6 @@ public class GetVersionsRequest
             t.commit_();
         } catch (Exception e) {
             l.warn(Util.e(e));
-        } finally {
-            t.end_();
         }
 
         // Assert that the given alias object has no non-alias ticks remaining

@@ -227,16 +227,13 @@ public class Collector implements IDumpStatMisc
      */
     private void collect_() throws SQLException
     {
-        Trans t = _f._tm.begin_();
-        try {
+        try (Trans t = _f._tm.begin_()) {
             collectLoop_(t);
 
             l.debug("collect {} ret. {}", _sidx, _it);
             attemptToStopAndFinalizeCollection_(t);
 
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 

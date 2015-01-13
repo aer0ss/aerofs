@@ -210,15 +210,10 @@ public class MetaChangeSubmitter implements Submitter
     private boolean onSuccess_(MetaChange c, LocalChange change, String body) throws Exception
     {
         Ack ack = GsonUtil.GSON.fromJson(body, Ack.class);
-
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             ackSubmission_(c, change.type, ack.updated, t);
             t.commit_();
-        } finally {
-            t.end_();
         }
-
         return true;
     }
 
@@ -235,12 +230,9 @@ public class MetaChangeSubmitter implements Submitter
              * happen.
              */
             l.info("discard conflicting local change {} {} {}", c.idx, c.sidx, c.oid);
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _mcdb.deleteChange_(c.sidx, c.idx, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
             return true;
         }

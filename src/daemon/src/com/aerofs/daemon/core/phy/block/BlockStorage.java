@@ -529,28 +529,22 @@ class BlockStorage implements IPhysicalStorage
         private StorageState prePutBlock(Block block) throws SQLException
         {
             StorageState retval = StorageState.ALREADY_STORED;
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 BlockState bs = _bsdb.getBlockState_(block._hash);
                 if (bs != BlockState.STORED && bs != BlockState.REFERENCED) {
                     _bsdb.prePutBlock_(block._hash, block._length, t);
                     retval = StorageState.NEEDS_STORAGE;
                 }
                 t.commit_();
-            } finally {
-                t.end_();
             }
             return retval;
         }
 
         private void postPutBlock(Block block) throws SQLException
         {
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _bsdb.postPutBlock_(block._hash, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         }
 
@@ -700,12 +694,9 @@ class BlockStorage implements IPhysicalStorage
                 FileInfo info = _bsdb.getHistFileInfo_(index);
                 if (info == null) throw new ExInvalidRevisionIndex();
 
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     removeHistFile_(info, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
 
                 // TODO: schedule instead?
@@ -723,12 +714,9 @@ class BlockStorage implements IPhysicalStorage
                 long dirId = _bsdb.getHistDirByPath_(path);
                 if (dirId == DIR_ID_NOT_FOUND) return;
 
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     removeHistDirRecursively_(dirId, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
 
                 // TODO: schedule instead?
@@ -857,12 +845,9 @@ class BlockStorage implements IPhysicalStorage
         try {
             while (it.iterator().next_()) {
                 ContentBlockHash h = it.iterator().get_();
-                Trans t = _tm.begin_();
-                try {
+                try (Trans t = _tm.begin_()) {
                     _bsdb.deleteBlock_(h, t);
                     t.commit_();
-                } finally {
-                    t.end_();
                 }
                 _bsb.deleteBlock(h, it);
                 _pi.incrementMonotonicProgress();

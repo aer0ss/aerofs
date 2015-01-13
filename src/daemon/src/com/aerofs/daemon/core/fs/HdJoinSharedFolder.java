@@ -3,8 +3,6 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import org.slf4j.Logger;
 
@@ -32,20 +30,14 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
     @Override
     protected void handleThrows_(EIJoinSharedFolder ev, Prio prio) throws Exception
     {
-        l.info("join: " + ev._sid);
+        l.info("join: {}", ev._sid);
 
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "sp-join");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("sp-join");
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-join", () ->
             // join the shared folder through SP
             newMutualAuthClientFactory().create()
                     .signInRemote()
-                    .joinSharedFolder(ev._sid.toPB(), false);
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+                    .joinSharedFolder(ev._sid.toPB(), false)
+        );
 
         /**
          * Force ACL sync to make sure we do not report success to the Ritual caller before the

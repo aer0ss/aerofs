@@ -47,7 +47,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     static final long FOREVER = Long.MAX_VALUE;
 
     // thread control block
-    public class TCB
+    public class TCB implements AutoCloseable
     {
         private final Condition _cv = _l.newCondition();
 
@@ -137,6 +137,12 @@ public class TC implements IDumpStatMisc, ITokenUseListener
         public String toString()
         {
             return _thd.getName() + (_running ? " running" : " " + _pauseReason);
+        }
+
+        @Override
+        public final void close() throws ExAborted
+        {
+            pseudoResumed_();
         }
     }
 

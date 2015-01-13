@@ -50,8 +50,7 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
         if (_lrm.get_(ev._sid) == null) throw new ExBadArgs();
 
         l.info("Unlink external root sid: {}", ev._sid);
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _ps.discardRevForTrans_(t);
             _urdb.addUnlinkedRoot(ev._sid, _ss.getName_(sidxRoot), t);
             // MAP is used here because we don't want to physically delete the user's files. MAP
@@ -60,9 +59,6 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
             _sd.deleteRootStore_(sidxRoot, PhysicalOp.MAP, t);
             t.commit_();
             l.info("Unlinked external root sid: {}", ev._sid);
-        } finally {
-            t.end_();
         }
     }
-
 }

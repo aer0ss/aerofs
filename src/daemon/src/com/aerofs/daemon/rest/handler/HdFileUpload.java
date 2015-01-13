@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
@@ -260,38 +259,30 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     private long uploadPrefix_(InputStream in, IPhysicalPrefix pf, MessageDigest md)
             throws ExNoResource, ExAborted, IOException
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.API_UPLOAD, "rest-upload");
-        try {
-            TCB tcb = tk.pseudoPause_("rest-upload");
-            try {
-                // TODO: version listener to check ifMatch on every change and abort transfer
-                // as soon as possible
-                // TODO: ideally we wouldn't need to use a core thread for that copy
-                // we really should just pipe incoming packets into the prefix as they arrive
-                // and schedule a self-handling event to apply the prefix at the end of the
-                // transfer
-                if (md != null && pf.getLength_() > 0) {
-                    try (InputStream is = pf.newInputStream_()) {
-                        ByteStreams.copy(is,
-                                new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-                    }
+        return _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "rest-upload", () -> {
+            // TODO: version listener to check ifMatch on every change and abort transfer
+            // as soon as possible
+            // TODO: ideally we wouldn't need to use a core thread for that copy
+            // we really should just pipe incoming packets into the prefix as they arrive
+            // and schedule a self-handling event to apply the prefix at the end of the
+            // transfer
+            if (md != null && pf.getLength_() > 0) {
+                try (InputStream is = pf.newInputStream_()) {
+                    ByteStreams.copy(is,
+                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
                 }
-                OutputStream out = pf.newOutputStream_(true);
-                try {
-                    return ByteStreams.copy(in, md != null ? new DigestOutputStream(out, md) : out);
-                } finally {
-                    out.flush();
-                    if (out instanceof FileOutputStream) {
-                        ((FileOutputStream)out).getChannel().force(true);
-                    }
-                    out.close();
-                }
-            } finally {
-                tcb.pseudoResumed_();
             }
-        } finally {
-            tk.reclaim_();
-        }
+            OutputStream out = pf.newOutputStream_(true);
+            try {
+                return ByteStreams.copy(in, md != null ? new DigestOutputStream(out, md) : out);
+            } finally {
+                out.flush();
+                if (out instanceof FileOutputStream) {
+                    ((FileOutputStream)out).getChannel().force(true);
+                }
+                out.close();
+            }
+        });
     }
 
     private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)
@@ -299,12 +290,12 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     {
         // sigh....................................................................................
         // ideally we should not need that (if BlockPrefix performed incremental chunking)
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "prepare");
-        pf.prepare_(tk);
+        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "prepare")) {
+            pf.prepare_(tk);
+        }
 
         SOID soid = oa.soid();
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             ResolvedPath path = _ds.resolve_(oa);
             // NB: MUST get prefix length BEFORE apply_
             long length = pf.getLength_();
@@ -320,8 +311,6 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             _vu.update_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER), t);
 
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 }

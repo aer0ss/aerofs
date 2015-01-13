@@ -215,8 +215,7 @@ public class SenderFilters
         l.debug("update 4 {} {} {} merge {} create {} sfidxNew {}",
                 _sidx, did, sfidxOld, merge, create, sfidxNew);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             if (merge) {
                 SenderFilterIndex sfidxPrev = _sfdb
                         .getSenderFilterPreviousIndex_(_sidx, sfidxOld);
@@ -238,8 +237,6 @@ public class SenderFilters
             assert _sfdb.getSenderFilter_(_sidx, sfidxNew) != null;
 
             t.commit_();
-        } finally {
-            t.end_();
         }
 
         if (create) {

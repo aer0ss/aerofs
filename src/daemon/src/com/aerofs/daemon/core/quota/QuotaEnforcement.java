@@ -13,8 +13,6 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -119,19 +117,13 @@ public class QuotaEnforcement implements IQuotaEnforcement
     private Map<SID, Boolean> checkQuotas_(Map<SID, Long> sid2usage)
             throws Exception
     {
-        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "quota");
-        try {
-            TCB tcb = tk.pseudoPause_("quota");
-            try {
-                return fromPB(_factSP.create()
-                        .signInRemote()
-                        .checkQuota(toPB(sid2usage)).getStoreList());
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
-        }
+        return _tokenManager.inPseudoPause_(Cat.UNLIMITED, "quota", () -> {
+                    return fromPB(_factSP.create()
+                            .signInRemote()
+                            .checkQuota(toPB(sid2usage))
+                            .getStoreList());
+                }
+        );
     }
 
     /**
@@ -168,8 +160,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
     private void toggleContentCollection_(Map<SID, Boolean> sid2bool)
             throws SQLException
     {
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             for (Entry<SID, Boolean> en : sid2bool.entrySet()) {
                 SID sid = new SID(en.getKey());
                 Store s = getStoreNullable_(sid);
@@ -182,8 +173,6 @@ public class QuotaEnforcement implements IQuotaEnforcement
                 }
             }
             t.commit_();
-        } finally {
-            t.end_();
         }
     }
 

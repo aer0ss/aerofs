@@ -133,8 +133,7 @@ public class RestObjectResolver
     {
         Path p = appDataPath(token);
         SOID soid = _ds.resolveNullable_(p);
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             // create /.appdata if needed
             if (soid == null) {
                 soid = _oc.create_(Type.DIR, _ds.resolveNullable_(p.removeLast()),
@@ -153,8 +152,6 @@ public class RestObjectResolver
         } catch (Exception e) {
             l.error("failed to create appdata", e);
             throw new ExNotFound("Failed to create appdata");
-        } finally {
-            t.end_();
         }
     }
 

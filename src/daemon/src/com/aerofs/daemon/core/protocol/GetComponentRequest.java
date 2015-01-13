@@ -371,12 +371,9 @@ public class GetComponentRequest
                 }
                 return;
             }
-            Trans t = _tm.begin_();
-            try {
+            try (Trans t = _tm.begin_()) {
                 _ds.setCAHash_(sokid, h, t);
                 t.commit_();
-            } finally {
-                t.end_();
             }
         } catch (Exception e) {
             l.warn("failed to update ca hash", e);
