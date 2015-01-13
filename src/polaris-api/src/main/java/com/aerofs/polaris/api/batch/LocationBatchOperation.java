@@ -1,5 +1,6 @@
 package com.aerofs.polaris.api.batch;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -7,6 +8,8 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class LocationBatchOperation {
 
     public static enum LocationUpdateType {
@@ -16,28 +19,56 @@ public final class LocationBatchOperation {
 
     @NotNull
     @Size(min = 1)
-    public String oid;
+    private String oid;
 
     @Min(0)
-    public long version;
+    private long version;
 
     @NotNull
     @Size(min = 1)
-    public String did;
+    private String did;
 
     @NotNull
-    public LocationUpdateType locationUpdateType;
-
-    /**
-     * For Jackson use only - do not use directly.
-     */
-    @SuppressWarnings("unused")
-    private LocationBatchOperation() { }
+    private LocationUpdateType locationUpdateType;
 
     public LocationBatchOperation(String oid, long version, String did, LocationUpdateType locationUpdateType) {
         this.oid = oid;
         this.version = version;
         this.did = did;
+        this.locationUpdateType = locationUpdateType;
+    }
+
+    private LocationBatchOperation() { }
+
+    public String getOid() {
+        return oid;
+    }
+
+    private void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    private void setVersion(long version) {
+        this.version = version;
+    }
+
+    public String getDid() {
+        return did;
+    }
+
+    private void setDid(String did) {
+        this.did = did;
+    }
+
+    public LocationUpdateType getLocationUpdateType() {
+        return locationUpdateType;
+    }
+
+    private void setLocationUpdateType(LocationUpdateType locationUpdateType) {
         this.locationUpdateType = locationUpdateType;
     }
 

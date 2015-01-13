@@ -10,9 +10,7 @@ import com.aerofs.polaris.api.batch.LocationBatch;
 import com.aerofs.polaris.api.batch.LocationBatchOperation;
 import com.aerofs.polaris.api.batch.LocationBatchOperationResult;
 import com.aerofs.polaris.api.batch.LocationBatchResult;
-import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import com.aerofs.polaris.logical.Transactional;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +23,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @RolesAllowed(AeroPrincipal.Roles.CLIENT)
 @Singleton
@@ -44,34 +43,32 @@ public final class LocationBatchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public LocationBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final LocationBatch batch) {
-        final LocationBatchResult batchResult = new LocationBatchResult(batch.operations.size());
+        List<LocationBatchOperation> operations = batch.getOperations();
+        final LocationBatchResult batchResult = new LocationBatchResult(operations.size());
 
         LocationBatchOperation operation = null;
 
         try {
-            for (int i = 0; i < batch.operations.size(); i++) {
-                operation = batch.operations.get(i);
-                accessManager.checkAccess(principal.getUser(), operation.oid, Access.WRITE);
+            for (int i = 0; i < operations.size(); i++) {
+                operation = operations.get(i);
+                accessManager.checkAccess(principal.getUser(), operation.getOid(), Access.WRITE);
 
                 final LocationBatchOperation submitted = operation;
-                objectStore.inTransaction(new Transactional<Void>() {
-                    @Override
-                    public Void execute(DAO dao) throws Exception {
-                        switch (submitted.locationUpdateType) {
-                            case INSERT:
-                                objectStore.insertLocation(dao, submitted.oid, submitted.version, submitted.did);
-                                break;
-                            case REMOVE:
-                                objectStore.removeLocation(dao, submitted.oid, submitted.version, submitted.did);
-                                break;
-                            default:
-                                throw new IllegalArgumentException("unhandled location update type " + submitted.locationUpdateType.name());
-                        }
-
-                        batchResult.results.add(new LocationBatchOperationResult());
-
-                        return null;
+                objectStore.inTransaction(dao -> {
+                    switch (submitted.getLocationUpdateType()) {
+                        case INSERT:
+                            objectStore.insertLocation(dao, submitted.getOid(), submitted.getVersion(), submitted.getDid());
+                            break;
+                        case REMOVE:
+                            objectStore.removeLocation(dao, submitted.getOid(), submitted.getVersion(), submitted.getDid());
+                            break;
+                        default:
+                            throw new IllegalArgumentException("unhandled location update type " + submitted.getLocationUpdateType().name());
                     }
+
+                    batchResult.getResults().add(new LocationBatchOperationResult());
+
+                    return null;
                 });
             }
         } catch (CallbackFailedException e) {
@@ -79,11 +76,11 @@ public final class LocationBatchResource {
             Throwable cause = DBIExceptions.findRootCause(e);
             LocationBatchOperationResult result = getBatchOperationErrorResult(cause);
             LOGGER.warn("fail location batch operation {}", operation, e);
-            batchResult.results.add(result);
+            batchResult.getResults().add(result);
         } catch (Exception e) {
             LocationBatchOperationResult result = getBatchOperationErrorResult(e);
             LOGGER.warn("fail location batch operation {}", operation, e);
-            batchResult.results.add(result);
+            batchResult.getResults().add(result);
         }
 
         return batchResult;

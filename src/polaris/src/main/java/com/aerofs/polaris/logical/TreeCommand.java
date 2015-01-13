@@ -80,22 +80,22 @@ public final class TreeCommand implements Command {
                         LOGGER.debug("{} -> {}", parent, child);
 
                         ObjectNode node = mapper.createObjectNode();
-                        node.put("type", child.objectType.name());
+                        node.put("type", child.getObjectType().name());
 
-                        if (child.objectType == ObjectType.FILE) {
-                            Content content = dao.objectProperties.getLatest(child.oid);
+                        if (child.getObjectType() == ObjectType.FILE) {
+                            Content content = dao.objectProperties.getLatest(child.getOid());
                             if (content != null) {
-                                node.put("hash", content.hash);
-                                node.put("size", content.size);
-                                node.put("mtime", content.mtime);
+                                node.put("hash", content.getHash());
+                                node.put("size", content.getSize());
+                                node.put("mtime", content.getMtime());
                             }
                         }
 
-                        if (child.objectType == ObjectType.FOLDER) {
-                            folders.put(child.oid, node);
+                        if (child.getObjectType() == ObjectType.FOLDER) {
+                            folders.put(child.getOid(), node);
                         }
 
-                        parentNode.set(child.name, node);
+                        parentNode.set(child.getName(), node);
                     }
                 }
 

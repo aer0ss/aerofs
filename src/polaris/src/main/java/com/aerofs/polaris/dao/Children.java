@@ -19,10 +19,10 @@ import java.sql.SQLException;
 public interface Children {
 
     @SqlUpdate("insert into children(oid, child_oid, child_name) values(:oid, :child_oid, :child_name)")
-    int add(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") String childName);
+    int add(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") byte[] childName);
 
     @SqlUpdate("update children set child_name = :child_name where oid = :oid and child_oid = :child_oid")
-    void update(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") String newChildName);
+    void update(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") byte[] newChildName);
 
     @SqlUpdate("delete from children where oid = :oid and child_oid = :child_oid")
     int remove(@Bind("oid") String oid, @Bind("child_oid") String child);
@@ -39,11 +39,11 @@ public interface Children {
 
     @Nullable
     @SqlQuery("select child_oid from children where oid = :oid and child_name = :child_name")
-    String getChildNamed(@Bind("oid") String oid, @Bind("child_name") String childName);
+    String getChildNamed(@Bind("oid") String oid, @Bind("child_name") byte[] childName);
 
     @Nullable
     @SqlQuery("select child_name from children where oid = :oid and child_oid = :child_oid")
-    String getChildName(@Bind("oid") String oid, @Bind("child_oid") String child);
+    byte[] getChildName(@Bind("oid") String oid, @Bind("child_oid") String child);
 
     @SqlQuery("select child_oid, child_name, object_type from children inner join object_types on (children.child_oid = object_types.oid) where children.oid = :oid")
     ResultIterator<Child> getChildren(@Bind("oid") String oid);
@@ -60,7 +60,7 @@ public interface Children {
         @Override
         public Child map(int index, ResultSet r, StatementContext ctx) throws SQLException {
             try {
-                return new Child(r.getString(COL_CHILD_OID), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getString(COL_CHILD_NAME));
+                return new Child(r.getString(COL_CHILD_OID), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getBytes(COL_CHILD_NAME));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

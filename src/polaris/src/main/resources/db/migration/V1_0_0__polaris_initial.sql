@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS `locations` (
 CREATE INDEX `locations_index` ON `locations` (`oid`, `version`);
 
 CREATE TABLE IF NOT EXISTS `children` (
-  `oid`        CHAR(32)            NOT NULL,
-  `child_oid`  CHAR(32)            NOT NULL,
-  `child_name` VARCHAR(255)        NOT NULL
+  `oid`        CHAR(32)           NOT NULL,
+  `child_oid`  CHAR(32)           NOT NULL,
+  `child_name` VARBINARY(1020)    NOT NULL
 ) ENGINE = InnoDB;
 
 CREATE INDEX `parent_index` ON `children` (`oid`);
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `transforms` (
   `transform_type`         INTEGER               NOT NULL,
   `new_version`            BIGINT                NOT NULL,
   `child_oid`              CHAR(32)              DEFAULT NULL,
-  `child_name`             VARCHAR(255)          DEFAULT NULL,
+  `child_name`             VARBINARY(1020)       DEFAULT NULL,
   `atomic_operation_id`    CHAR(32)              DEFAULT NULL,
   `atomic_operation_index` INT                   DEFAULT NULL,
   `atomic_operation_total` INT                   DEFAULT NULL,

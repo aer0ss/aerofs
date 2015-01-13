@@ -43,10 +43,10 @@ public final class TestTransformsResource {
         String folder = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
 
         AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(1));
-        assertThat(applied.maxTransformCount, is(1L));
+        assertThat(applied.getTransforms(), hasSize(1));
+        assertThat(applied.getMaxTransformCount(), is(1L));
 
-        Transform transform = applied.transforms.get(0);
+        Transform transform = applied.getTransforms().get(0);
         assertThat(transform, matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
     }
 
@@ -57,11 +57,11 @@ public final class TestTransformsResource {
         TestUtilities.removeFileOrFolder(verified, sharedFolder, folder);
 
         AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(2));
-        assertThat(applied.maxTransformCount, is(2L));
+        assertThat(applied.getTransforms(), hasSize(2));
+        assertThat(applied.getMaxTransformCount(), is(2L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.REMOVE_CHILD, 2, folder, null, null));
+        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.REMOVE_CHILD, 2, folder, null, null));
     }
 
     @Test
@@ -73,14 +73,14 @@ public final class TestTransformsResource {
         TestUtilities.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
         AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(5));
-        assertThat(applied.maxTransformCount, is(5L));
+        assertThat(applied.getTransforms(), hasSize(5));
+        assertThat(applied.getMaxTransformCount(), is(5L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.transforms.get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
+        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.getTransforms().get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.getTransforms().get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
     }
 
     @Test
@@ -91,12 +91,12 @@ public final class TestTransformsResource {
         TestUtilities.moveFileOrFolder(verified, folder, folder, file, "renamed");
 
         AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(3));
-        assertThat(applied.maxTransformCount, is(3L));
+        assertThat(applied.getTransforms(), hasSize(3));
+        assertThat(applied.getMaxTransformCount(), is(3L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, device, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, device, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed"));
     }
 
     @Test
@@ -106,11 +106,11 @@ public final class TestTransformsResource {
         TestUtilities.newFileContent(verified, file, 0, "HASH", 100, 1024);
 
         AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(2));
-        assertThat(applied.maxTransformCount, is(2L));
+        assertThat(applied.getTransforms(), hasSize(2));
+        assertThat(applied.getMaxTransformCount(), is(2L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(1), matchesContentTransform(2, device, file, 1, "HASH", 100, 1024));
+        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.getTransforms().get(1), matchesContentTransform(2, device, file, 1, "HASH", 100, 1024));
     }
 
     @Test
@@ -124,18 +124,18 @@ public final class TestTransformsResource {
         AppliedTransforms applied;
 
         applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(5));
-        assertThat(applied.maxTransformCount, is(5L));
+        assertThat(applied.getTransforms(), hasSize(5));
+        assertThat(applied.getMaxTransformCount(), is(5L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.transforms.get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
+        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.getTransforms().get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.getTransforms().get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
 
         applied = TestUtilities.getTransforms(verified, sharedFolder, 5, 10);
-        assertThat(applied.transforms, nullValue()); // i.e. no transforms
-        assertThat(applied.maxTransformCount, is(5L));
+        assertThat(applied.getTransforms(), nullValue()); // i.e. no transforms
+        assertThat(applied.getMaxTransformCount(), is(5L));
     }
 
     @Test
@@ -161,21 +161,21 @@ public final class TestTransformsResource {
         int count;
 
         applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 100);
-        assertThat(applied.transforms, hasSize(10));
-        assertThat(applied.maxTransformCount, is(13L));
+        assertThat(applied.getTransforms(), hasSize(10));
+        assertThat(applied.getMaxTransformCount(), is(13L));
 
         count = 1;
-        for (int i = 0; i < applied.transforms.size(); i++) {
-            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
+        for (int i = 0; i < applied.getTransforms().size(); i++) {
+            assertThat(applied.getTransforms().get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
         }
 
         applied = TestUtilities.getTransforms(verified, sharedFolder, 10, 100);
-        assertThat(applied.transforms, hasSize(3));
-        assertThat(applied.maxTransformCount, is(13L));
+        assertThat(applied.getTransforms(), hasSize(3));
+        assertThat(applied.getMaxTransformCount(), is(13L));
 
         count = 11;
-        for (int i = 0; i < applied.transforms.size(); i++) {
-            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
+        for (int i = 0; i < applied.getTransforms().size(); i++) {
+            assertThat(applied.getTransforms().get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
         }
     }
 
@@ -192,17 +192,17 @@ public final class TestTransformsResource {
         return new TypeSafeMatcher<Transform>() {
             @Override
             protected boolean matchesSafely(Transform item) {
-                return logicalTimestamp == item.logicalTimestamp
-                        && Objects.equal(originator, item.originator)
-                        && Objects.equal(oid, item.oid)
-                        && transformType == item.transformType
-                        && newVersion == item.newVersion
-                        && Objects.equal(child, item.child)
-                        && Objects.equal(childObjectType, item.childObjectType)
-                        && Objects.equal(childName, item.childName)
-                        && item.contentHash == null
-                        && item.contentSize == -1
-                        && item.contentMtime == -1;
+                return logicalTimestamp == item.getLogicalTimestamp()
+                        && Objects.equal(originator, item.getOriginator())
+                        && Objects.equal(oid, item.getOid())
+                        && transformType == item.getTransformType()
+                        && newVersion == item.getNewVersion()
+                        && Objects.equal(child, item.getChild())
+                        && Objects.equal(childObjectType, item.getChildObjectType())
+                        && Objects.equal(childName, item.getChildName())
+                        && item.getContentHash() == null
+                        && item.getContentSize() == -1
+                        && item.getContentMtime() == -1;
             }
 
             @Override
@@ -232,17 +232,17 @@ public final class TestTransformsResource {
         return new TypeSafeMatcher<Transform>() {
             @Override
             protected boolean matchesSafely(Transform item) {
-                return logicalTimestamp == item.logicalTimestamp
-                        && Objects.equal(originator, item.originator)
-                        && Objects.equal(oid, item.oid)
-                        && item.transformType == TransformType.UPDATE_CONTENT
-                        && newVersion == item.newVersion
-                        && item.child == null
-                        && item.childObjectType == null
-                        && item.childName == null
-                        && Objects.equal(contentHash, item.contentHash)
-                        && contentSize == item.contentSize
-                        && contentMtime == item.contentMtime;
+                return logicalTimestamp == item.getLogicalTimestamp()
+                        && Objects.equal(originator, item.getOriginator())
+                        && Objects.equal(oid, item.getOid())
+                        && item.getTransformType() == TransformType.UPDATE_CONTENT
+                        && newVersion == item.getNewVersion()
+                        && item.getChild() == null
+                        && item.getChildObjectType() == null
+                        && item.getChildName() == null
+                        && Objects.equal(contentHash, item.getContentHash())
+                        && contentSize == item.getContentSize()
+                        && contentMtime == item.getContentMtime();
             }
 
             @Override

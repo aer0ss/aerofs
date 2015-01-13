@@ -1,6 +1,6 @@
 package com.aerofs.polaris.api.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -8,38 +8,29 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class Content {
 
-    @JsonIgnore
     public static final String INVALID_HASH = null;
-
-    @JsonIgnore
     public static final long INVALID_MODIFICATION_TIME = -1;
-
-    @JsonIgnore
     public static final long INVALID_SIZE = -1;
 
     @NotNull
     @Size(min = 1)
-    public String oid;
+    private String oid;
 
     @Min(0)
-    public long version;
+    private long version;
 
     @Nullable
-    public String hash;
+    private String hash;
 
     @Min(0)
-    public long size;
+    private long size;
 
     @Min(0)
-    public long mtime;
-
-    /**
-     * For Jackson use only - do not use directly.
-     */
-    @SuppressWarnings("unused")
-    private Content() { }
+    private long mtime;
 
     public Content(String oid, long version) {
         this(oid, version, INVALID_HASH, INVALID_SIZE, INVALID_MODIFICATION_TIME);
@@ -50,6 +41,49 @@ public final class Content {
         this.version = version;
         this.hash = hash;
         this.size = size;
+        this.mtime = mtime;
+    }
+
+    private Content() { }
+
+    public String getOid() {
+        return oid;
+    }
+
+    private void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    private void setVersion(long version) {
+        this.version = version;
+    }
+
+    @Nullable
+    public String getHash() {
+        return hash;
+    }
+
+    private void setHash(@Nullable String hash) {
+        this.hash = hash;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    private void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getMtime() {
+        return mtime;
+    }
+
+    private void setMtime(long mtime) {
         this.mtime = mtime;
     }
 

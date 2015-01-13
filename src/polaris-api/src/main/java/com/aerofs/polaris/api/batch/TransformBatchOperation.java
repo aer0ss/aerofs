@@ -1,6 +1,7 @@
 package com.aerofs.polaris.api.batch;
 
 import com.aerofs.polaris.api.operation.Operation;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -8,24 +9,39 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class TransformBatchOperation {
 
     @NotNull
     @Size(min = 1)
-    public String oid;
+    private String oid;
 
     @NotNull
     @Valid
-    public Operation operation;
+    private Operation operation;
 
-    /**
-     * For Jackson use only - do not use directly.
-     */
-    @SuppressWarnings("unused")
-    private TransformBatchOperation() { }
 
     public TransformBatchOperation(String oid, Operation operation) {
         this.oid = oid;
+        this.operation = operation;
+    }
+
+    private TransformBatchOperation() { }
+
+    public String getOid() {
+        return oid;
+    }
+
+    private void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    public Operation getOperation() {
+        return operation;
+    }
+
+    private void setOperation(Operation operation) {
         this.operation = operation;
     }
 

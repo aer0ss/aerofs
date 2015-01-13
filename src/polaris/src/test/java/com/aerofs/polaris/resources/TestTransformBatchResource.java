@@ -59,12 +59,12 @@ public final class TestTransformBatchResource {
                 .then()
                 .extract().response().as(TransformBatchResult.class);
 
-        assertThat(result.results, hasSize(3));
+        assertThat(result.getResults(), hasSize(3));
 
-        for (TransformBatchOperationResult operationResult : result.results) {
-            assertThat(operationResult.successful, is(true));
-            assertThat(operationResult.updated, hasSize(1));
-            assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        for (TransformBatchOperationResult operationResult : result.getResults()) {
+            assertThat(operationResult.isSuccessful(), is(true));
+            assertThat(operationResult.getUpdated(), hasSize(1));
+            assertThat(operationResult.getUpdated().get(0).getObject().getOid(), equalTo(root));
         }
     }
 
@@ -89,26 +89,26 @@ public final class TestTransformBatchResource {
                 .then()
                 .extract().response().as(TransformBatchResult.class);
 
-        assertThat(result.results, hasSize(3));
+        assertThat(result.getResults(), hasSize(3));
 
         TransformBatchOperationResult operationResult;
 
         // first result
-        operationResult = result.results.get(0);
-        assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        operationResult = result.getResults().get(0);
+        assertThat(operationResult.isSuccessful(), is(true));
+        assertThat(operationResult.getUpdated(), hasSize(1));
+        assertThat(operationResult.getUpdated().get(0).getObject().getOid(), equalTo(root));
 
         // second result
-        operationResult = result.results.get(1);
-        assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        operationResult = result.getResults().get(1);
+        assertThat(operationResult.isSuccessful(), is(true));
+        assertThat(operationResult.getUpdated(), hasSize(1));
+        assertThat(operationResult.getUpdated().get(0).getObject().getOid(), equalTo(root));
 
         // third result
-        operationResult = result.results.get(2);
-        assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NAME_CONFLICT));
+        operationResult = result.getResults().get(2);
+        assertThat(operationResult.isSuccessful(), is(false));
+        assertThat(operationResult.getErrorCode(), equalTo(PolarisError.NAME_CONFLICT));
     }
 
     @Test
@@ -132,19 +132,19 @@ public final class TestTransformBatchResource {
                 .then()
                 .extract().response().as(TransformBatchResult.class);
 
-        assertThat(result.results, hasSize(2));
+        assertThat(result.getResults(), hasSize(2));
 
         TransformBatchOperationResult operationResult;
 
         // first result
-        operationResult = result.results.get(0);
-        assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        operationResult = result.getResults().get(0);
+        assertThat(operationResult.isSuccessful(), is(true));
+        assertThat(operationResult.getUpdated(), hasSize(1));
+        assertThat(operationResult.getUpdated().get(0).getObject().getOid(), equalTo(root));
 
         // second result
-        operationResult = result.results.get(1);
-        assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NAME_CONFLICT));
+        operationResult = result.getResults().get(1);
+        assertThat(operationResult.isSuccessful(), is(false));
+        assertThat(operationResult.getErrorCode(), equalTo(PolarisError.NAME_CONFLICT));
     }
 }

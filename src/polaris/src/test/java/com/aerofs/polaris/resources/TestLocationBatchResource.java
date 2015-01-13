@@ -59,10 +59,10 @@ public final class TestLocationBatchResource {
                 .then()
                 .extract().response().as(LocationBatchResult.class);
 
-        assertThat(result.results, hasSize(3));
+        assertThat(result.getResults(), hasSize(3));
 
-        for (LocationBatchOperationResult operationResult : result.results) {
-            assertThat(operationResult.successful, is(true));
+        for (LocationBatchOperationResult operationResult : result.getResults()) {
+            assertThat(operationResult.isSuccessful(), is(true));
         }
     }
 
@@ -88,22 +88,22 @@ public final class TestLocationBatchResource {
                 .then()
                 .extract().response().as(LocationBatchResult.class);
 
-        assertThat(result.results, hasSize(3));
+        assertThat(result.getResults(), hasSize(3));
 
         LocationBatchOperationResult operationResult;
 
         // first result
-        operationResult = result.results.get(0);
-        assertThat(operationResult.successful, is(true));
+        operationResult = result.getResults().get(0);
+        assertThat(operationResult.isSuccessful(), is(true));
 
         // second result
-        operationResult = result.results.get(1);
-        assertThat(operationResult.successful, is(true));
+        operationResult = result.getResults().get(1);
+        assertThat(operationResult.isSuccessful(), is(true));
 
         // third result
-        operationResult = result.results.get(2);
-        assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
+        operationResult = result.getResults().get(2);
+        assertThat(operationResult.isSuccessful(), is(false));
+        assertThat(operationResult.getErrorCode(), equalTo(PolarisError.NO_SUCH_OBJECT));
     }
 
     @Test
@@ -128,17 +128,17 @@ public final class TestLocationBatchResource {
                 .then()
                 .extract().response().as(LocationBatchResult.class);
 
-        assertThat(result.results, hasSize(2)); // the batch aborts early
+        assertThat(result.getResults(), hasSize(2)); // the batch aborts early
 
         LocationBatchOperationResult operationResult;
 
         // first result
-        operationResult = result.results.get(0);
-        assertThat(operationResult.successful, is(true));
+        operationResult = result.getResults().get(0);
+        assertThat(operationResult.isSuccessful(), is(true));
 
         // second result
-        operationResult = result.results.get(1);
-        assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
+        operationResult = result.getResults().get(1);
+        assertThat(operationResult.isSuccessful(), is(false));
+        assertThat(operationResult.getErrorCode(), equalTo(PolarisError.NO_SUCH_OBJECT));
     }
 }

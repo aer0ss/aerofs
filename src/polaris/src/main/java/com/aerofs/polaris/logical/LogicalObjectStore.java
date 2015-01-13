@@ -67,42 +67,42 @@ public final class LogicalObjectStore {
     public List<Updated> performOperation(DAO dao, String origin, String oid, Operation operation) throws PolarisException {
         List<Updated> updated = Lists.newArrayListWithExpectedSize(2);
 
-        switch (operation.type) {
+        switch (operation.getType()) {
             case INSERT_CHILD: {
                 InsertChild insertChild = (InsertChild) operation;
                 updated.add(insertChild(
                         dao,
                         origin,
                         oid,
-                        insertChild.child,
-                        insertChild.childObjectType,
-                        insertChild.childName,
+                        insertChild.getChild(),
+                        insertChild.getChildObjectType(),
+                        insertChild.getChildNameBytes(),
                         false,
                         null));
                 break;
             }
             case MOVE_CHILD: {
                 MoveChild moveChild = (MoveChild) operation;
-                if (oid.equals(moveChild.newParent)) {
-                    updated.add(renameChild(dao, origin, oid, moveChild.child, moveChild.newChildName));
+                if (oid.equals(moveChild.getNewParent())) {
+                    updated.add(renameChild(dao, origin, oid, moveChild.getChild(), moveChild.getNewChildNameBytes()));
                 } else {
                     Atomic atomic = new Atomic(2);
                     updated.add(insertChild(
                             dao,
                             origin,
-                            moveChild.newParent,
-                            moveChild.child,
+                            moveChild.getNewParent(),
+                            moveChild.getChild(),
                             null,
-                            moveChild.newChildName,
+                            moveChild.getNewChildNameBytes(),
                             true,
                             atomic));
-                    updated.add(removeChild(dao, origin, oid, moveChild.child, atomic));
+                    updated.add(removeChild(dao, origin, oid, moveChild.getChild(), atomic));
                 }
                 break;
             }
             case REMOVE_CHILD: {
                 RemoveChild removeChild = (RemoveChild) operation;
-                updated.add(removeChild(dao, origin, oid, removeChild.child, null));
+                updated.add(removeChild(dao, origin, oid, removeChild.getChild(), null));
                 break;
             }
             case UPDATE_CONTENT: {
@@ -111,14 +111,14 @@ public final class LogicalObjectStore {
                         dao,
                         origin,
                         oid,
-                        updateContent.localVersion,
-                        updateContent.hash,
-                        updateContent.size,
-                        updateContent.mtime));
+                        updateContent.getLocalVersion(),
+                        updateContent.getHash(),
+                        updateContent.getSize(),
+                        updateContent.getMtime()));
                 break;
             }
             default:
-                throw new IllegalArgumentException("unsupported operation " + operation.type);
+                throw new IllegalArgumentException("unsupported operation " + operation.getType());
         }
 
         return updated;
@@ -130,7 +130,7 @@ public final class LogicalObjectStore {
             String oid,
             String child,
             @Nullable ObjectType childObjectType,
-            String childName,
+            byte[] childName,
             boolean allowReinsert,
             @Nullable Atomic atomic) throws NotFoundException, NameConflictException, ParentConflictException {
         // check if the object was already inserted
@@ -145,7 +145,7 @@ public final class LogicalObjectStore {
 
         // get the parent
         LogicalObject parentObject = getOrCreateParent(dao, oid);
-        Preconditions.checkArgument(isFolder(parentObject.objectType), "cannot insert into %s", parentObject.objectType);
+        Preconditions.checkArgument(isFolder(parentObject.getObjectType()), "cannot insert into %s", parentObject.getObjectType());
 
         // check for name conflicts within the parent
         checkForNameConflicts(dao, oid, childName);
@@ -160,7 +160,7 @@ public final class LogicalObjectStore {
             childObject = dao.logicalObjects.get(child);
         } else {
             Preconditions.checkArgument(childObjectType != null, "%s does not exist", child);
-            childObject = newObject(dao, parentObject.root, child, childObjectType);
+            childObject = newObject(dao, parentObject.getRoot(), child, childObjectType);
         }
 
         // by this point the child object should exist
@@ -180,7 +180,7 @@ public final class LogicalObjectStore {
             String origin,
             String oid,
             String child,
-            String newChildName) throws NotFoundException, VersionConflictException, NameConflictException {
+            byte[] newChildName) throws NotFoundException, VersionConflictException, NameConflictException {
         // get the parent
         LogicalObject parentObject = getOrCreateParent(dao, oid);
 
@@ -194,7 +194,7 @@ public final class LogicalObjectStore {
         Preconditions.checkArgument(dao.children.isChild(oid, child), "%s is not a child of %s", child, oid);
 
         // get the current child name (informational)
-        String currentChildName = dao.children.getChildName(oid, child);
+        byte[] currentChildName = dao.children.getChildName(oid, child);
 
         // check for name conflicts with the new name
         checkForNameConflicts(dao, oid, newChildName);
@@ -226,7 +226,7 @@ public final class LogicalObjectStore {
         }
 
         // the child we're removing is actually the child of this object
-        String childName = dao.children.getChildName(oid, child);
+        byte[] childName = dao.children.getChildName(oid, child);
         Preconditions.checkArgument(childName != null, "%s is not a child of %s", child, oid);
 
         // detach the child from its parent
@@ -259,8 +259,8 @@ public final class LogicalObjectStore {
         Preconditions.checkArgument(isFile(objectType), "cannot add content for %s type", objectType);
 
         // check that we're at the right version
-        if (localVersion != fileObject.version) {
-            throw new VersionConflictException(oid, localVersion, fileObject.version);
+        if (localVersion != fileObject.getVersion()) {
+            throw new VersionConflictException(oid, localVersion, fileObject.getVersion());
         }
 
         // create an entry for a new version of the content
@@ -314,7 +314,7 @@ public final class LogicalObjectStore {
 
     private void checkVersionInRange(LogicalObject object, long version) {
         Preconditions.checkArgument(version >= 0, "version %s less than 0", version);
-        Preconditions.checkArgument(version <= object.version, "version %s exceeds upper bound of %s", version, object.version);
+        Preconditions.checkArgument(version <= object.getVersion(), "version %s exceeds upper bound of %s", version, object.getVersion());
     }
 
     private LogicalObject getOrCreateParent(DAO dao, String oid) throws NotFoundException {
@@ -343,7 +343,7 @@ public final class LogicalObjectStore {
         return fileObject;
     }
 
-    private void checkForNameConflicts(DAO dao, String parent, String childName) throws NameConflictException, NotFoundException {
+    private void checkForNameConflicts(DAO dao, String parent, byte[] childName) throws NameConflictException, NotFoundException {
         String conflictingChild = dao.children.getChildNamed(parent, childName);
 
         if (conflictingChild != null) {
@@ -376,14 +376,14 @@ public final class LogicalObjectStore {
         return dao.logicalObjects.get(oid);
     }
 
-    private long attachChild(DAO dao, String origin, LogicalObject parentObject, String child, String childName, @Nullable Atomic atomic) {
-        long newParentVersion = parentObject.version + 1;
+    private long attachChild(DAO dao, String origin, LogicalObject parentObject, String child, byte[] childName, @Nullable Atomic atomic) {
+        long newParentVersion = parentObject.getVersion() + 1;
 
         // add the transform
         long logicalTimestamp = dao.transforms.add(
                 origin,
-                parentObject.root,
-                parentObject.oid,
+                parentObject.getRoot(),
+                parentObject.getOid(),
                 TransformType.INSERT_CHILD,
                 newParentVersion,
                 child,
@@ -392,23 +392,23 @@ public final class LogicalObjectStore {
                 atomic);
 
         // update the version of the parent
-        dao.logicalObjects.update(parentObject.root, parentObject.oid, newParentVersion);
+        dao.logicalObjects.update(parentObject.getRoot(), parentObject.getOid(), newParentVersion);
 
         // create an entry for the child
-        dao.children.add(parentObject.oid, child, childName);
+        dao.children.add(parentObject.getOid(), child, childName);
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
     private long detachChild(DAO dao, String origin, LogicalObject parentObject, String child, @Nullable Atomic atomic) {
-        long newParentVersion = parentObject.version + 1;
+        long newParentVersion = parentObject.getVersion() + 1;
 
         // add the transform
         long logicalTimestamp = dao.transforms.add(
                 origin,
-                parentObject.root,
-                parentObject.oid,
+                parentObject.getRoot(),
+                parentObject.getOid(),
                 TransformType.REMOVE_CHILD,
                 newParentVersion,
                 child,
@@ -417,23 +417,23 @@ public final class LogicalObjectStore {
                 atomic);
 
         // update the version of the parent
-        dao.logicalObjects.update(parentObject.root, parentObject.oid, newParentVersion);
+        dao.logicalObjects.update(parentObject.getRoot(), parentObject.getOid(), newParentVersion);
 
         // remove the entry for the child
-        dao.children.remove(parentObject.oid, child);
+        dao.children.remove(parentObject.getOid(), child);
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
-    private long renameChild(DAO dao, String origin, LogicalObject parentObject, String child, String childName) {
-        long newParentVersion = parentObject.version + 1;
+    private long renameChild(DAO dao, String origin, LogicalObject parentObject, String child, byte[] childName) {
+        long newParentVersion = parentObject.getVersion() + 1;
 
         // add the transform
         long logicalTimestamp = dao.transforms.add(
                 origin,
-                parentObject.root,
-                parentObject.oid,
+                parentObject.getRoot(),
+                parentObject.getOid(),
                 TransformType.RENAME_CHILD,
                 newParentVersion,
                 child,
@@ -442,23 +442,23 @@ public final class LogicalObjectStore {
                 null);
 
         // update the version of the parent
-        dao.logicalObjects.update(parentObject.root, parentObject.oid, newParentVersion);
+        dao.logicalObjects.update(parentObject.getRoot(), parentObject.getOid(), newParentVersion);
 
         // update the child entry in the children table
-        dao.children.update(parentObject.oid, child, childName);
+        dao.children.update(parentObject.getOid(), child, childName);
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
     private long newContent(DAO dao, String origin, LogicalObject fileObject, String hash, long size, long mtime) {
-        long newVersion = fileObject.version + 1;
+        long newVersion = fileObject.getVersion() + 1;
 
         // add an entry in the transforms table
         long logicalTimestamp = dao.transforms.add(
                 origin,
-                fileObject.root,
-                fileObject.oid,
+                fileObject.getRoot(),
+                fileObject.getOid(),
                 TransformType.UPDATE_CONTENT,
                 newVersion,
                 null,
@@ -467,18 +467,18 @@ public final class LogicalObjectStore {
                 null);
 
         // add a row to the content table
-        dao.objectProperties.add(fileObject.oid, newVersion, hash, size, mtime);
+        dao.objectProperties.add(fileObject.getOid(), newVersion, hash, size, mtime);
 
         // update the version for the object
-        dao.logicalObjects.update(fileObject.root, fileObject.oid, newVersion);
+        dao.logicalObjects.update(fileObject.getRoot(), fileObject.getOid(), newVersion);
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
-    private void unrootObject(DAO dao, LogicalObject logicalObject, String name) {
-        dao.logicalObjects.update(Constants.NO_ROOT, logicalObject.oid, logicalObject.version);
-        dao.children.add(Constants.NO_ROOT, logicalObject.oid, name);
+    private void unrootObject(DAO dao, LogicalObject logicalObject, byte[] name) {
+        dao.logicalObjects.update(Constants.NO_ROOT, logicalObject.getOid(), logicalObject.getVersion());
+        dao.children.add(Constants.NO_ROOT, logicalObject.getOid(), name);
     }
 
     private static void verifyStore(String oid) {

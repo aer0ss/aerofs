@@ -11,9 +11,7 @@ import com.aerofs.polaris.api.batch.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.TransformBatchResult;
 import com.aerofs.polaris.api.operation.Updated;
-import com.aerofs.polaris.logical.DAO;
 import com.aerofs.polaris.logical.LogicalObjectStore;
-import com.aerofs.polaris.logical.Transactional;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,22 +44,20 @@ public final class TransformBatchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public TransformBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final TransformBatch batch) {
-        final TransformBatchResult batchResult = new TransformBatchResult(batch.operations.size());
+        List<TransformBatchOperation> operations = batch.getOperations();
+        final TransformBatchResult batchResult = new TransformBatchResult(operations.size());
 
         TransformBatchOperation operation = null;
         try {
-            for (int i = 0; i < batch.operations.size(); i++) {
-                operation = batch.operations.get(i);
-                accessManager.checkAccess(principal.getUser(), operation.oid, Access.WRITE);
+            for (int i = 0; i < operations.size(); i++) {
+                operation = operations.get(i);
+                accessManager.checkAccess(principal.getUser(), operation.getOid(), Access.WRITE);
 
                 final TransformBatchOperation submitted = operation;
-                objectStore.inTransaction(new Transactional<Void>() {
-                    @Override
-                    public Void execute(DAO dao) throws Exception {
-                        List<Updated> updated = objectStore.performOperation(dao, principal.getDevice(), submitted.oid, submitted.operation);
-                        batchResult.results.add(new TransformBatchOperationResult(updated));
-                        return null;
-                    }
+                objectStore.inTransaction(dao -> {
+                    List<Updated> updated = objectStore.performOperation(dao, principal.getDevice(), submitted.getOid(), submitted.getOperation());
+                    batchResult.getResults().add(new TransformBatchOperationResult(updated));
+                    return null;
                 });
             }
         } catch (CallbackFailedException e) {
@@ -69,11 +65,11 @@ public final class TransformBatchResource {
             Throwable cause = DBIExceptions.findRootCause(e);
             TransformBatchOperationResult result = getBatchOperationErrorResult(cause);
             LOGGER.warn("fail transform batch operation {}", operation, e);
-            batchResult.results.add(result);
+            batchResult.getResults().add(result);
         } catch (Exception e) {
             TransformBatchOperationResult result = getBatchOperationErrorResult(e);
             LOGGER.warn("fail transform batch operation {}", operation, e);
-            batchResult.results.add(result);
+            batchResult.getResults().add(result);
         }
 
         return batchResult;

@@ -1,6 +1,6 @@
 package com.aerofs.polaris.api.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -8,33 +8,62 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class LogicalObject {
 
-    @JsonIgnore // property exists, but we won't serialize it
     @NotNull
     @Size(min = 1)
-    public String root;
+    private String root;
 
     @NotNull
     @Size(min = 1)
-    public String oid;
+    private String oid;
 
     @Min(0)
-    public long version;
+    private long version;
 
     @NotNull
-    public ObjectType objectType;
-
-    /**
-     * For Jackson use only - do not use directly.
-     */
-    @SuppressWarnings("unused")
-    private LogicalObject() { }
+    private ObjectType objectType;
 
     public LogicalObject(String root, String oid, long version, ObjectType objectType) {
         this.root = root;
         this.oid = oid;
         this.version = version;
+        this.objectType = objectType;
+    }
+
+    private LogicalObject() { }
+
+    public String getRoot() {
+        return root;
+    }
+
+    private void setRoot(String root) {
+        this.root = root;
+    }
+
+    public String getOid() {
+        return oid;
+    }
+
+    private void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    private void setVersion(long version) {
+        this.version = version;
+    }
+
+    public ObjectType getObjectType() {
+        return objectType;
+    }
+
+    private void setObjectType(ObjectType objectType) {
         this.objectType = objectType;
     }
 

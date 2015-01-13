@@ -1,7 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.Version;
@@ -18,18 +17,21 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 @JsonPropertyOrder({"type"}) // this field is always serialized first
 public abstract class Operation {
 
-    @JsonIgnore
     private static final String TYPE_FIELD_NAME = "type";
 
     @NotNull
-    @JsonProperty(TYPE_FIELD_NAME)
-    public final OperationType type;
+    protected final OperationType type;
 
     protected Operation(OperationType type) {
         this.type = type;
+    }
+
+    public OperationType getType() {
+        return type;
     }
 
     public static void registerDeserializer(ObjectMapper mapper) {

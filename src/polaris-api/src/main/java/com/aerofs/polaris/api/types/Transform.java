@@ -1,5 +1,7 @@
 package com.aerofs.polaris.api.types;
 
+import com.aerofs.polaris.api.Filenames;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Objects;
@@ -8,73 +10,68 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Arrays;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public final class Transform {
 
     @Min(1)
-    public long logicalTimestamp = -1;
+    private long logicalTimestamp = -1;
 
     @NotNull
     @Size(min = 1)
-    public String originator = null;
+    private String originator = null;
 
     @JsonIgnore // not included in response
-    public String root = null;
+    private String root = null;
 
     @NotNull
     @Size(min = 1)
-    public String oid = null;
+    private String oid = null;
 
     @NotNull
-    public TransformType transformType = null;
+    private TransformType transformType = null;
 
     @Min(0)
-    public long newVersion = -1;
+    private long newVersion = -1;
 
     @Min(1)
-    public long timestamp = -1;
+    private long timestamp = -1;
 
     //
     // these parameters are set when the transform is part of an atomic operation
     //
 
-    public String atomicOperationId = null;
+    private String atomicOperationId = null;
 
-    public int atomicOperationIndex = -1;
+    private int atomicOperationIndex = -1;
 
-    public int atomicOperationTotal = -1;
+    private int atomicOperationTotal = -1;
 
     //
     // these parameters are set when the transform modifies a child
     //
 
-    public String child = null;
+    private String child = null;
 
-    public ObjectType childObjectType = null;
+    private ObjectType childObjectType = null;
 
-    public String childName = null;
+    @Nullable
+    private byte[] childName = null;
 
     //
     // these parameters are set when the transform modifies the content for an object
     //
 
-    public String contentHash = null;
+    private String contentHash = null;
 
-    public long contentSize = -1;
+    private long contentSize = -1;
 
-    public long contentMtime = -1;
+    private long contentMtime = -1;
 
-    /**
-     * For Jackson use only - do not use directly.
-     */
-    @SuppressWarnings("unused")
-    private Transform() { }
-
-    //
     // constructor only includes parameters that must *always* be set
-    //
-
     public Transform(
             long logicalTimestamp,
             String originator,
@@ -92,13 +89,15 @@ public final class Transform {
         this.timestamp = timestamp;
     }
 
+    private Transform() { }
+
     public void setAtomicOperationParameters(String atomicOperationId, int atomicOperationIndex, int atomicOperationTotal) {
         this.atomicOperationId = atomicOperationId;
         this.atomicOperationIndex = atomicOperationIndex;
         this.atomicOperationTotal = atomicOperationTotal;
     }
 
-    public void setChildParameters(String child, @Nullable ObjectType childObjectType, @Nullable String childName) {
+    public void setChildParameters(String child, @Nullable ObjectType childObjectType, @Nullable byte[] childName) {
         this.child = child;
         this.childObjectType = childObjectType;
         this.childName = childName;
@@ -108,6 +107,140 @@ public final class Transform {
         this.contentHash = hash;
         this.contentSize = size;
         this.contentMtime = mtime;
+    }
+
+    public long getLogicalTimestamp() {
+        return logicalTimestamp;
+    }
+
+    private void setLogicalTimestamp(long logicalTimestamp) {
+        this.logicalTimestamp = logicalTimestamp;
+    }
+
+    public String getOriginator() {
+        return originator;
+    }
+
+    private void setOriginator(String originator) {
+        this.originator = originator;
+    }
+
+    public String getRoot() {
+        return root;
+    }
+
+    private void setRoot(String root) {
+        this.root = root;
+    }
+
+    public String getOid() {
+        return oid;
+    }
+
+    private void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    public TransformType getTransformType() {
+        return transformType;
+    }
+
+    private void setTransformType(TransformType transformType) {
+        this.transformType = transformType;
+    }
+
+    public long getNewVersion() {
+        return newVersion;
+    }
+
+    private void setNewVersion(long newVersion) {
+        this.newVersion = newVersion;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    private void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getAtomicOperationId() {
+        return atomicOperationId;
+    }
+
+    private void setAtomicOperationId(String atomicOperationId) {
+        this.atomicOperationId = atomicOperationId;
+    }
+
+    public int getAtomicOperationIndex() {
+        return atomicOperationIndex;
+    }
+
+    private void setAtomicOperationIndex(int atomicOperationIndex) {
+        this.atomicOperationIndex = atomicOperationIndex;
+    }
+
+    public int getAtomicOperationTotal() {
+        return atomicOperationTotal;
+    }
+
+    private void setAtomicOperationTotal(int atomicOperationTotal) {
+        this.atomicOperationTotal = atomicOperationTotal;
+    }
+
+    public String getChild() {
+        return child;
+    }
+
+    private void setChild(String child) {
+        this.child = child;
+    }
+
+    public ObjectType getChildObjectType() {
+        return childObjectType;
+    }
+
+    private void setChildObjectType(ObjectType childObjectType) {
+        this.childObjectType = childObjectType;
+    }
+
+    @Nullable
+    public String getChildName() {
+        return Filenames.fromBytes(childName);
+    }
+
+    @JsonIgnore
+    public byte[] getChildNameBytes() {
+        return childName;
+    }
+
+    private void setChildName(String childName) {
+        this.childName = Filenames.toBytes(childName);
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    private void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    public long getContentSize() {
+        return contentSize;
+    }
+
+    private void setContentSize(long contentSize) {
+        this.contentSize = contentSize;
+    }
+
+    public long getContentMtime() {
+        return contentMtime;
+    }
+
+    private void setContentMtime(long contentMtime) {
+        this.contentMtime = contentMtime;
     }
 
     @Override
@@ -128,7 +261,7 @@ public final class Transform {
                 && atomicOperationTotal == other.atomicOperationTotal
                 && Objects.equal(child, other.child)
                 && Objects.equal(childObjectType, other.childObjectType)
-                && Objects.equal(childName, other.childName)
+                && Arrays.equals(childName, other.childName)
                 && Objects.equal(contentHash, other.contentHash)
                 && contentSize == other.contentSize
                 && contentMtime == other.contentMtime;

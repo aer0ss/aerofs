@@ -1,5 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -8,14 +9,26 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
+@SuppressWarnings("unused")
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class OperationResult {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    public final List<Updated> updated;
+    private List<Updated> updated;
 
     public OperationResult(List<Updated> updated) {
+        this.updated = updated;
+    }
+
+    public OperationResult() { }
+
+    public List<Updated> getUpdated() {
+        return updated;
+    }
+
+    private void setUpdated(List<Updated> updated) {
         this.updated = updated;
     }
 

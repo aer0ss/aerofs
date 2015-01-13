@@ -22,7 +22,7 @@ public interface Transforms {
 
     @GetGeneratedKeys
     @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, root_oid, oid, transform_type, new_version, child_oid, child_name, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :root_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :timestamp)")
-    long add(@Bind("originator") String originator, @Bind("root_oid") String root, @Bind("oid") String oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable String child, @Bind("child_name") @Nullable String name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
+    long add(@Bind("originator") String originator, @Bind("root_oid") String root, @Bind("oid") String oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable String child, @Bind("child_name") @Nullable byte[] name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
 
     @SqlQuery("select logical_timestamp, originator, root_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and root_oid = :root_oid order by logical_timestamp asc")
     ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("root_oid") String root);
@@ -80,7 +80,7 @@ public interface Transforms {
                     } else {
                         int objectTypeId = r.getInt(COL_CHILD_OBJECT_TYPE);
                         Preconditions.checkState(objectTypeId != 0, "invalid object type for child %s", child);
-                        transform.setChildParameters(child, ObjectType.fromTypeId(objectTypeId), r.getString(COL_CHILD_NAME));
+                        transform.setChildParameters(child, ObjectType.fromTypeId(objectTypeId), r.getBytes(COL_CHILD_NAME));
                     }
                 }
 

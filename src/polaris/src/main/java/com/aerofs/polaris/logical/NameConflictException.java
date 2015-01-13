@@ -1,6 +1,7 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.polaris.PolarisException;
+import com.aerofs.polaris.api.Filenames;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.types.LogicalObject;
 
@@ -14,11 +15,10 @@ public final class NameConflictException extends PolarisException {
     private final String childName;
     private final LogicalObject conflictingObject;
 
-    public NameConflictException(String parent, String childName, LogicalObject conflictingObject) {
+    public NameConflictException(String parent, byte[] childName, LogicalObject conflictingObject) {
         super(PolarisError.NAME_CONFLICT);
-
         this.parent = parent;
-        this.childName = childName;
+        this.childName = Filenames.fromBytes(childName);
         this.conflictingObject = conflictingObject;
     }
 
