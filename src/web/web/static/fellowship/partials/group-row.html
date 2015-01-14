@@ -7,7 +7,10 @@
                 class="admin_label label">LDAP</span>
         </div>
         <div class="col-sm-8">
-            {{group.members|memberFilter}}
+            <span ng-show="group.members.length === 0">No members</span>
+            <span ng-hide="group.members.length === 0">
+                {{group.members|memberFilter}}
+            </span>
             <a title="Show/hide all members"
                 ng-click="group.showAll = !!!group.showAll" 
                 ng-show="group.members.length > 3">and {{ group.members.length - 3 }} more...</a>
