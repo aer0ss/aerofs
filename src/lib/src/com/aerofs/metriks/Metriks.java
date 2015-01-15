@@ -106,7 +106,7 @@ public final class Metriks implements IMetriks
             public void run()
             {
                 try {
-                    l.info("pusher: startin pushing...");
+                    l.info("pusher: starting pushing...");
 
                     // noinspection InfiniteLoopStatement
                     while (true) {

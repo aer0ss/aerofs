@@ -1,23 +1,22 @@
 #!/bin/bash
-# This script retrives defect log files and retrace them
+# This script retrives defect log files and retrace them.
 set -eu
 
 if [ $# -eq 0 ]; then
-    echo "usage: $0 [defect # (multiple, space separated)]"
+    echo "Usage: $0 <device_id_1> [<defect_id_2>, ...]"
     echo
-    echo "example: $0 ff8b799e-75dd-4f71-ac72-48a61cad9f0an"
+    echo "Example: $0 ff8b799e75dd4f71ac7248a61cad9f0an"
     exit 1
 fi
 
 DEFECTS="$@"
-
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 retrace()
 {
     FOLDER=$1
     PROGRAM=$2
-    ${BASE}/retrace_v2.py rl "$FOLDER/$PROGRAM.log"
+    python ${BASE}/retrace.py "$FOLDER/$PROGRAM.log"
 }
 
 main()
@@ -25,7 +24,7 @@ main()
     for DEFECT in $DEFECTS; do
         TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd
         if [[ -e "$TARGET_FOLDER" ]]; then
-            echo "$TARGET_FOLDER already exists"
+            echo "$TARGET_FOLDER already exists."
             continue
         fi
 
