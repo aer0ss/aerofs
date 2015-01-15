@@ -88,4 +88,5 @@ private:
 	wstring m_userId;
 	unsigned long m_lastConnectionAttempt;
 	tstring m_fileName;
+	bool is_link_sharing_enabled;
 };

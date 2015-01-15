@@ -4,6 +4,8 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.ShellextLinkSharing;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -14,6 +16,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Shellext.GreetingCall;
+import com.aerofs.proto.Shellext.LinkSharingEnabled;
 import com.aerofs.proto.Shellext.PathStatusNotification;
 import com.aerofs.proto.Shellext.RootAnchorNotification;
 import com.aerofs.proto.Shellext.ShellextCall;
@@ -78,6 +81,18 @@ public class ShellextService
                     .setUser(Cfg.user().getString()))
                 .build();
 
+        _server.send(notification.toByteArray());
+    }
+
+    private void notifyLinkSharingEnabled()
+    {
+        l.info("Link sharing from shellext is " +
+                ((ShellextLinkSharing.IS_ENABLED)? "enabled ": "disabled "));
+        ShellextNotification notification = ShellextNotification.newBuilder()
+                .setType(Type.LINK_SHARING_ENABLED)
+                .setLinkSharingEnabled(LinkSharingEnabled.newBuilder()
+                    .setIsLinkSharingEnabled(ShellextLinkSharing.IS_ENABLED))
+                .build();
         _server.send(notification.toByteArray());
     }
 
@@ -153,6 +168,7 @@ public class ShellextService
         }
 
         notifyRootAnchor();
+        notifyLinkSharingEnabled();
     }
 
     private Path mkpath(String absRoot, String absPath)

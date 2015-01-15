@@ -75,10 +75,15 @@ message ShellextNotification {
         // Sent when the daemon is restarted, to clear all cached
         // statuses.
         CLEAR_STATUS_CACHE = 3;
+
+        // Sent to notify the shellext if link sharing has been enabled by admin.
+        LINK_SHARING_ENABLED = 4;
     }
     required Type type = 1;
     optional RootAnchorNotification root_anchor = 2;
     optional PathStatusNotification path_status = 3;
+    optional LinkSharingEnabled link_sharing_enabled = 4;
+
 }
 
 message RootAnchorNotification {
@@ -91,4 +96,9 @@ message PathStatusNotification {
     // Absolute path of the file that changed
     required string path = 1;
     required PBPathStatus status = 2;
+}
+
+message LinkSharingEnabled {
+    // Link sharing enabled by admin
+    required bool is_link_sharing_enabled = 1;
 }

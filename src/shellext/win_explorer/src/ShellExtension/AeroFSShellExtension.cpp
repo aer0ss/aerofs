@@ -154,6 +154,10 @@ void AeroFSShellExtension::parseNotification(const ShellextNotification& notific
 			clearCache();
 			break;
 
+		case ShellextNotification_Type_LINK_SHARING_ENABLED:
+			is_link_sharing_enabled = notification.link_sharing_enabled().is_link_sharing_enabled();
+			break;
+
 		default:
 			break;
 	}

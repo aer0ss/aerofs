@@ -506,4 +506,9 @@ public class LibParam extends BaseParam
         public static final Integer             INTERNAL_BIFROST_PORT =
                 getIntegerProperty(             "base.bifrost.internal.port", 8700);
     }
+    public static class ShellextLinkSharing {
+        public static Boolean                           IS_ENABLED =
+                getBooleanProperty(                     "url_sharing.enabled",
+                                                        true);
+    }
 }

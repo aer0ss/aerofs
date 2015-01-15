@@ -307,6 +307,10 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
             }
             break;
 
+        case ShellextNotification_TypeLinkSharingEnabled:
+            isLinkSharingEnabled = notification.linkSharingEnabled.isLinkSharingEnabled;
+            break;
+
         case ShellextNotification_TypeClearStatusCache:
             [self clearCache];
             break;

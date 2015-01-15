@@ -35,6 +35,8 @@ typedef enum {
 	NSString* userId;
 	AeroOverlayCache* statusCache;
 
+	BOOL isLinkSharingEnabled;
+
 	NSTimer* refreshTimer;
 	NSTimeInterval lastRefreshTime;
 }
