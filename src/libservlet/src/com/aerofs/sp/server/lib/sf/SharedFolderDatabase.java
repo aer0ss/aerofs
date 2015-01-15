@@ -454,7 +454,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setInt(3, gid.getInt());
 
-        if (ps.executeUpdate() == 0) throw new ExNotFound();
+        ps.executeUpdate();
     }
 
     public void grantPermission(SID sid, UserID userID, Permission permission)
