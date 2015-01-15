@@ -71,7 +71,8 @@
             total="paginationInfo.total"
             offset="paginationInfo.offset"
             pagelimit="paginationInfo.limit"
-            callback="paginationInfo.callback(offset)"></div>
+            callback="paginationInfo.callback(offset)"
+            ng-if="paginationInfo.active"></div>
         <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
             <div class="col-sm-12">
                 <h2>Left folders</h2>
@@ -106,6 +107,7 @@
     <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.tpl.min.js')}"></script>
     <script type="text/javascript">
         canAdminister = "${can_administer}" == "True" ? true : false;
+        hasPagination = "${has_pagination}" == "True" ? true: false;
         dataUrl = "${data_url}";
         setPermUrl = "${request.route_path('json.set_shared_folder_perm')}";
         addMemberUrl = "${request.route_path('json.add_shared_folder_perm')}";

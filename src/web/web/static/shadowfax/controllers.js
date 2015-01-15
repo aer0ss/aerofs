@@ -43,6 +43,7 @@ shadowfaxControllers.controller('SharedFoldersController',
             });
         };
         $scope.paginationInfo = {
+            active: hasPagination,
             total: 0,
             offset: 0,
             limit: parseInt(paginationLimit, 10),
