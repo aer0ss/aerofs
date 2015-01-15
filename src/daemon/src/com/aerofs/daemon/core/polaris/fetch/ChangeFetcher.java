@@ -9,17 +9,20 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.api.Transforms;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.oauth.OAuthVerificationHandler.UnexpectedResponse;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -52,11 +55,14 @@ public class ChangeFetcher
     private final ChangeEpochDatabase _cedb;
     private final TransManager _tm;
 
+    private final PauseSync _pauseSync;
+
     @Inject
-    public ChangeFetcher(PolarisClient client, ChangeEpochDatabase cedb,
+    public ChangeFetcher(PolarisClient client, PauseSync pauseSync, ChangeEpochDatabase cedb,
             ApplyChange at, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, TransManager tm)
     {
         _client = client;
+        _pauseSync = pauseSync;
         _at = at;
         _cedb = cedb;
         _tm = tm;
@@ -66,10 +72,17 @@ public class ChangeFetcher
 
     public void fetch_(SIndex sidx, AsyncTaskCallback cb) throws Exception
     {
+        if (_pauseSync.isPaused()) {
+            l.warn("paused {}", sidx);
+            cb.onFailure_(new ExRetryLater("paused"));
+            return;
+        }
+
         SID sid = _sidx2sid.get_(sidx);
         Long epoch = _cedb.getChangeEpoch_(sidx);
         if (epoch == null) {
             l.warn("No fetch epoch for {} {}", sidx, sid);
+            cb.onFailure_(new ExAborted("no fetch epoch"));
             return;
         }
 

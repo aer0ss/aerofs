@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -22,11 +23,13 @@ import org.mockito.Mock;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TestHdPauseOrResumeSyncing extends AbstractTest
 {
     private @Mock LinkStateService _lss;
+    private @Mock PauseSync pause;
     private @Mock Token _token;
     private @Mock TCB _tcb;
     private @Mock TokenManager _tokenManager;
@@ -48,6 +51,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(true, _imce);
         _handler.handle_(event, Prio.LO);
 
+        verify(pause).pause();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
         inOrder.verify(_tokenManager).acquireThrows_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
@@ -63,6 +67,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(false, _imce);
         _handler.handle_(event, Prio.LO);
 
+        verify(pause).resume();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
         inOrder.verify(_tokenManager).acquireThrows_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());

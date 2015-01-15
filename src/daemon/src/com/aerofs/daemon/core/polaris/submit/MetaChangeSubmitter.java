@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -71,13 +72,14 @@ public class MetaChangeSubmitter implements Submitter
     private final RemoteLinkDatabase _rpdb;
     private final IMapSIndex2SID _sidx2sid;
     private final CentralVersionDatabase _cvdb;
+    private final PauseSync _pauseSync;
     private final DirectoryService _ds;
     private final TransManager _tm;
 
     @Inject
     public MetaChangeSubmitter(PolarisClient client, MetaChangesDatabase mcdb,
             MetaBufferDatabase mbdb, RemoteLinkDatabase rpdb, CentralVersionDatabase cvdb,
-            IMapSIndex2SID sidx2sid, MapAlias2Target a2t,
+            IMapSIndex2SID sidx2sid, MapAlias2Target a2t, PauseSync pauseSync,
             DirectoryService ds, TransManager tm)
     {
         _client = client;
@@ -87,6 +89,7 @@ public class MetaChangeSubmitter implements Submitter
         _cvdb = cvdb;
         _sidx2sid = sidx2sid;
         _a2t = a2t;
+        _pauseSync = pauseSync;
         _ds = ds;
         _tm = tm;
     }
@@ -122,6 +125,12 @@ public class MetaChangeSubmitter implements Submitter
     @Override
     public void submit_(SIndex sidx, AsyncTaskCallback cb) throws SQLException
     {
+        if (_pauseSync.isPaused()) {
+            l.warn("paused {}", sidx);
+            cb.onFailure_(new ExRetryLater("paused"));
+            return;
+        }
+
         // get next meta change from queue
         MetaChange c;
         try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {

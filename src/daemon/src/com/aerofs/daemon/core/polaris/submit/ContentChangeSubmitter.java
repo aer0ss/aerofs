@@ -23,6 +23,7 @@ import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase.ContentChange;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
@@ -64,19 +65,21 @@ public class ContentChangeSubmitter implements Submitter
     private final ContentChangesDatabase _ccdb;
     private final CentralVersionDatabase _cvdb;
     private final RemoteContentDatabase _rcdb;
+    private final PauseSync _pauseSync;
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final TransManager _tm;
 
     @Inject
     public ContentChangeSubmitter(PolarisClient client, ContentChangesDatabase ccdb,
-            RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
+            RemoteContentDatabase rcdb, CentralVersionDatabase cvdb, PauseSync pauseSync,
             DirectoryService ds, IPhysicalStorage ps, TransManager tm)
     {
         _client = client;
         _rcdb = rcdb;
         _ccdb = ccdb;
         _cvdb = cvdb;
+        _pauseSync = pauseSync;
         _ds = ds;
         _ps = ps;
         _tm = tm;
@@ -97,6 +100,12 @@ public class ContentChangeSubmitter implements Submitter
     public void submit_(SIndex sidx, AsyncTaskCallback cb)
             throws SQLException
     {
+        if (_pauseSync.isPaused()) {
+            l.warn("paused {}", sidx);
+            cb.onFailure_(new ExRetryLater("paused"));
+            return;
+        }
+
         // TODO: avoid wasteful repeated iteration of ignored entries
         try (IDBIterator<ContentChange> it = _ccdb.getChanges_(sidx)) {
             while (it.next_()) {

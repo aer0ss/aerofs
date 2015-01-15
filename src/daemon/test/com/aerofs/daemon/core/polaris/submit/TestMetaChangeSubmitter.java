@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -55,6 +56,7 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
     private final DirectoryService ds = mock(DirectoryService.class);
     private final MapAlias2Target a2t = mock(MapAlias2Target.class);
     private final TransManager tm = mock(TransManager.class);
+    private final PauseSync pause = mock(PauseSync.class);
 
     private final Trans t = mock(Trans.class);
 
@@ -72,7 +74,7 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
         when(a2t.dereferenceAliasedOID_(any(SOID.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
-        mcs = new MetaChangeSubmitter(client, mcdb, mbdb, rldb, cvdb, sidx2sid, a2t, ds, tm);
+        mcs = new MetaChangeSubmitter(client, mcdb, mbdb, rldb, cvdb, sidx2sid, a2t, pause, ds, tm);
     }
 
     void givenLocalChanges(MetaChange... c) throws SQLException
