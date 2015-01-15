@@ -60,9 +60,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
                             invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
-                            " to folder " + folderName, "code " + signUpCode);
                     return null;
                 }
             });
@@ -88,9 +85,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
                             invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
-                            " to " + L.brand(), "code " + signUpCode);
                     return null;
                 }
             });
@@ -116,9 +110,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
                             invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
-                            " to group " + group.getCommonName(), "code " + signUpCode);
                     return null;
                 }
             });
@@ -180,11 +171,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
                             sharee.id().getString(), getReplyTo(sharer), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(
-                            sharer + " shared " + folderName + " with " + sharee,
-                            "code " + sid.toStringFormal());
-
                     return null;
                 }
             });
@@ -220,12 +206,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
                             newMember.id().getString(), getReplyTo(changer), title,
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(
-                            newMember + " added to group " + group
-                            , "group id: " + group.id().toString() +
-                            " user id: " + newMember.id().getString());
-
                     return null;
                 }
             });
@@ -269,11 +249,6 @@ public class InvitationEmailer
                     _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
                             sharee.id().getString(), getReplyTo(sharer), title,
                             email.getTextEmail(), email.getHTMLEmail());
-
-                    EmailUtil.emailInternalNotification(sharer + " added " + sharee + " to group " +
-                            group + " and shared " + sharedFolders.size() + " " + folderOrFolders,
-                            folderOrFolders + ": " + Joiner.on(", ").join(sharedFolders));
-
                     return null;
                 }
             });

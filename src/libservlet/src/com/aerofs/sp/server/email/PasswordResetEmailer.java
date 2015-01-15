@@ -30,7 +30,6 @@ public class PasswordResetEmailer
                 "If you didn't request this email please ignore this message.";
 
         sendPublicEmail(userId, subject, body);
-        EmailUtil.emailInternalNotification(userId + " initiated a password reset ", "");
     }
 
     public void sendPasswordResetConfirmation(UserID userId)
@@ -45,7 +44,6 @@ public class PasswordResetEmailer
                 " We will take necessary steps to secure your account.";
 
         sendPublicEmail(userId, subject, body);
-        EmailUtil.emailInternalNotification(userId + " completed a password reset ", "");
     }
 
     /**
@@ -62,8 +60,6 @@ public class PasswordResetEmailer
                 " please contact " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately.";
 
         sendPublicEmail(userId, subject, body);
-
-        EmailUtil.emailInternalNotification(userId + " password changed by admin action ", "");
     }
 
     /**
@@ -83,7 +79,6 @@ public class PasswordResetEmailer
                 " please contact " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately.";
 
         sendPublicEmail(userId, subject, body);
-        EmailUtil.emailInternalNotification(userId + " password was revoked ", "");
     }
 
     private void sendPublicEmail(UserID target, String subject, String body)

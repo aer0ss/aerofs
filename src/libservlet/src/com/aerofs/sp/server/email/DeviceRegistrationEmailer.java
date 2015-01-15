@@ -61,8 +61,5 @@ public class DeviceRegistrationEmailer
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
                 subject, email.getTextEmail(), email.getHTMLEmail());
-
-        EmailUtil.emailInternalNotification(emailAddress + " device certified email.",
-                "device id: " + did.toStringFormal());
     }
 }
