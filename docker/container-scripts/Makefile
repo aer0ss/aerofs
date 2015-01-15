@@ -3,6 +3,7 @@ FILES = service-barrier \
 	copy-ca-cert \
 	certify \
 	get-config-property \
+	set-config-property \
 	create-database \
 	crt-create
 

@@ -9,9 +9,10 @@
 {% set getty_restart = '/opt/ship/getty/restart' %}
 {% set getty_restarted = '/opt/ship/getty/restarted' %}
 {% set getty_run = '/opt/ship/getty/run' %}
-{% set loader_getty = '/opt/ship/loader/getty' %}
 {% set sail = '/opt/ship/sail' %}
-{% set pull_loader = '/opt/ship/pull-loader' %}
+{% set loader_getty = '/opt/ship/loader/getty' %}
+{% set repo_file = '/opt/ship/loader/repo' %}
+{% set target_file = '/opt/ship/loader/target' %}
 
 hostname: {{ hostname }}
 
@@ -54,7 +55,6 @@ coreos:
 write_files:
   - path: {{ getty_restart }}
     permissions: 0755
-    owner: root
     content: |
       #!/bin/bash
       set -ex
@@ -64,8 +64,6 @@ write_files:
       touch {{ getty_restarted }}
 
   - path: {{ getty_drop_in }}
-    permissions: 0644
-    owner: root
     content: |
       [Service]
       ExecStart=
@@ -73,44 +71,57 @@ write_files:
 
   - path: {{ getty_run }}
     permissions: 0755
-    owner: root
     content: |
       #!/bin/bash
       set -e
       {# No more console pollution from dmesg #}
       dmesg -n 1
-      while true; do
-        echo -e 'Loading console service...'
-        {{ pull_loader }}
-        docker run --rm -v {{ loader_getty }}:/host {{ loader_image }} install-getty /host
-        {{ loader_getty }}/run
-      done
+      echo 'Loading console service...'
+
+      {# Create repo file if not exist #}
+      [[ -f {{ repo_file }} ]] || (mkdir -p $(dirname {{ repo_file }}) && echo '{{ repo }}' > {{ repo_file }})
+
+      IMAGE="$(cat {{ repo_file }})/{{ loader_image }}"
+      docker run --rm -v {{ loader_getty }}:/host "${IMAGE}" install-getty /host
+      {# Don't rely on systemd's Restart= directive as the user may ^C in quick succession causing systemd to #}
+      {# disable the service. #}
+      while true; do {{ loader_getty }}/run; done
 
   - path: {{ sail }}
     permissions: 0755
-    owner: root
     content: |
       #!/bin/bash
       set -ex
-      {{ pull_loader }}
       while true; do
+        {# A potential bug in CoreOS (as of 554.0.0) may cause scope units remain running after a container stops. #}
+        {# Stop the unit here as it would block the container from restarting. #}
+        RUNNING="$(docker ps -q --no-trunc)"
+        for SCOPE in $(systemctl list-units --no-legend 'docker-*.scope' | awk '{print $1}'); do
+          ID=$(echo ${SCOPE} | sed -e 's/^docker-\(.*\)\.scope$/\1/')
+          {# Stop a Docker scope unit if the container ID it refers to is not in `docker ps` #}
+          [[ "$(echo "${RUNNING}" | grep ${ID})" ]] || (
+            echo "Stopping dangling unit ${SCOPE}..."
+            systemctl stop ${SCOPE}
+          )
+        done
+
+        {# Create repo and target files if not exist #}
+        [[ -f {{ repo_file }} ]] || (mkdir -p $(dirname {{ repo_file }}) && echo '{{ repo }}' > {{ repo_file }})
+        [[ -f {{ target_file }} ]] || (mkdir -p $(dirname {{ target_file }}) && echo '{{ target }}' > {{ target_file }})
+
+        IMAGE="$(cat {{ repo_file }})/{{ loader_image }}"
+
         {# Use the same container name across restarts as crane/docker doesn't update container links on restarts. #}
         {# Attach tag to support live upgrades. #}
-        CONTAINER=loader-$(docker run --rm {{ loader_image }} tag)
-        {# Must use the original Loader image name w/o tags or repo names. See loader.py:my_image_name(). #}
-        [[ "$(docker ps -a | grep ${CONTAINER})" ]] || \
-            docker create --name ${CONTAINER} -v /var/run/docker.sock:/var/run/docker.sock {{ loader_image }} load
-        docker start ${CONTAINER}
-      done
+        CONTAINER=loader-$(docker run --rm "${IMAGE}" tag)
 
-  - path: {{ pull_loader }}
-    permissions: 0755
-    owner: root
-    content: |
-      #!/bin/bash
-      set -e
-      [[ $(docker images | grep "^{{ loader_image }}\s") ]] || {
-        echo 'Pulling Docker image {{ repo }}/{{ loader_image }}...'
-        docker pull {{ repo }}/{{ loader_image }}
-        docker tag {{ repo }}/{{ loader_image }} {{ loader_image }}
-      }
+        {# Create Loader container if not exist #}
+        [[ "$(docker ps -a | grep ${CONTAINER})" ]] || \
+            docker create --name "${CONTAINER}" -v /var/run/docker.sock:/var/run/docker.sock \
+              -v {{ repo_file }}:/host{{ repo_file }} -v {{ target_file }}:/host{{ target_file }} \
+              "${IMAGE}" load /host{{ repo_file }} /host{{ target_file }}
+
+        echo 'Starting Loader...'
+        docker start -a "${CONTAINER}"
+        echo 'Loader stopped'
+      done

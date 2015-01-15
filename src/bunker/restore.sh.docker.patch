@@ -1,0 +1,42 @@
+@@ -71,10 +71,8 @@
+ fi
+ 
+ echo ">>> Restoring redis database..."
+-service redis-aof stop 1>/dev/null 2>/dev/null
+ rm -f /data/redis/redis.*
+ cp -a aerofs-db-backup/redis.aof /data/redis
+-service redis-aof start 1>/dev/null 2>/dev/null
+ 
+ # NOTE: This is not a general solution. Required because mysql.dump only deletes
+ # and restores tables that existed when the dump-file was created. This will cause
+@@ -83,11 +81,11 @@
+ for db in bifrost aerofs_sp polaris
+ do
+     echo ">>>   Drop $db..."
+-    echo "drop database if exists \`$db\`; " | mysql
++    echo "drop database if exists \`$db\`; " | mysql -h mysql.service
+ done
+ 
+ echo ">>> Restoring mysql database..."
+-mysql < aerofs-db-backup/mysql.dump
++mysql -h mysql.service < aerofs-db-backup/mysql.dump
+ 
+ # As a compromise between CI and packaging complexity, we ship polaris
+ # in the private cloud appliance. It is running but clients do not
+@@ -95,14 +93,12 @@
+ # To preserve maximum schema flexibility we explictly drop the polaris
+ # db from backups.
+ # TODO: remove this when polaris schema is stable
+-echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql
++echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql -h mysql.service
+ 
+ echo ">>> Restoring CA files..."
+-service ca-server stop 1>/dev/null 2>/dev/null || true
+-rm -rf /opt/ca/prod
++rm -rf /opt/ca/prod/*
+ mkdir -p /opt/ca/prod
+ cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
+-service ca-server start 1>/dev/null 2>/dev/null
+ 
+ # Only restore verkehr topics for backups that are new enough to contain
+ # backed-up topic sets, version 2. This works around a bug that existed

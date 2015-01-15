@@ -20,7 +20,7 @@ doesn't need this much but it's just in case you become a heavy docker user late
 
 - Test images:
 
-      $ crane run
+      $ crane run -d all
       $ open http://`boot2docker ip`
 
 - Build the appliance (after images are built):
@@ -42,7 +42,7 @@ The docker build system introduced many scripts with the sole purpose of fixing 
 
 - Dockerfile
 - Makefile (the legacy system has Makefiles but doesn't use them extensively)
-- .\*docker.\*
+- \*docker\*
 - /root/
 - /buildroot/
 

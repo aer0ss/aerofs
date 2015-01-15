@@ -1,10 +1,8 @@
 #!/usr/local/bin/python
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from os import walk
 from os.path import join
 from sys import argv
-import StringIO, gzip, base64
 import yaml
 
 RESOURCES = '/resources'
@@ -30,7 +28,8 @@ if __name__ == "__main__":
         f.write(env.get_template('cloud-config.yml.jinja').render(
             hostname=y['vm-host-name'],
             loader_image=y['loader-image'],
-            repo=y['repo']
+            repo=y['repo'],
+            target=y['target']
         ))
 
     # Render preload-cloud-config.yml

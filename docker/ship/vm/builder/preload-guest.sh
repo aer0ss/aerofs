@@ -46,9 +46,9 @@ systemctl restart docker.service
 
 # Remove repo name and add tag to the images
 for i in ${IMAGES}; do
-    docker tag "${PRELOAD_REPO}/${i}" "${i}:${TAG}"
+    docker tag "${PRELOAD_REPO}/${i}" "${REPO}/${i}:${TAG}"
     docker rmi "${PRELOAD_REPO}/${i}"
 done
 
 # Create the loader tag which will be used by the sail script.
-docker tag "${LOADER_IMAGE}:${TAG}" "${LOADER_IMAGE}"
+docker tag "${REPO}/${LOADER_IMAGE}:${TAG}" "${REPO}/${LOADER_IMAGE}"

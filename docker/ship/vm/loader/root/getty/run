@@ -110,6 +110,9 @@ interact() {
     4)
         systemctl poweroff
         ;;
+    logs)
+        "$(dirname $0)/logs" "$(cat $(dirname $0)/tag)"
+        ;;
     root-shell)
         /bin/bash
         ;;
@@ -165,13 +168,8 @@ welcome_screen() {
     echo -n "? "
 }
 
-prompt_reload_service() {
-    read -p 'Reload console service? [y/N] ' RELOAD
-    [[ "${RELOAD}" != y ]] && [[ "${RELOAD}" != Y ]] && welcome_screen || exit 0
-}
-
-# ^C to reload the getty service
-trap prompt_reload_service INT
+# ^C to exit and let the caller to launch us again. Without this the caller would catch the signal and be interrupted.
+trap exit INT
 
 while true; do
     welcome_screen

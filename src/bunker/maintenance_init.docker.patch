@@ -1,12 +1,31 @@
-@@ -14,6 +14,11 @@
+@@ -14,6 +14,13 @@
      'json_upload_backup',
      'json_setup_finalize',
  
-+    # Dockerized Bootstrap
-+    'json-boot',
++    'json-get-boot',
 +    'json-repackaging',
-+    'json-create-configuration-initialized-flag',
++    'json-set-configuration-initialized',
++    'json-backup',
++    'json-restore',
++    'json-archive-container-logs',
 +
      # Bootstrap
      'json_enqueue_bootstrap_task',
      'json_get_bootstrap_task_status',
+@@ -47,12 +54,14 @@
+     'timekeeping',
+     'json_set_mobile_device_management',
+ 
+-    # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
+     'maintenance_mode',
+-    'license_expired'
++    'license_expired',
++    'redirect'
+ ]
+ 
+ 
+ def includeme(config):
+     add_routes(config, routes)
+     config.add_route('maintenance_home', '/')
++
++    config.add_route('json-boot', 'json-boot/{repo}/{tag}/{target}')

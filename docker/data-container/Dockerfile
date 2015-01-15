@@ -1,17 +1,14 @@
-FROM debian:jessie
+FROM aerofs/base
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-# Used by verkehr (/data/topics) and Redis (/data). Other containers
-# should use it, too.
+# TODO (WW) move verkehr's /data/topics to /data/verkehr
+RUN mkdir -p \
+    /data/bunker \
+    /data/web \
+    /data/redis
+
 VOLUME /data
-
-# Used by Bunker
-# TODO (WW) rename all /data2 to data
-VOLUME /data2/bunker
-
-# Used by Web
-VOLUME /data2/web
 
 # Used by Repackaging & Nginx
 VOLUME /opt/repackaging/installers/modified
@@ -19,17 +16,18 @@ VOLUME /opt/repackaging/installers/modified
 # Used by Config
 VOLUME /opt/config/properties
 
-# Used for license-expired-flag, configuration-initialized-flag
-VOLUME /var/aerofs
-
 # Used by Config for license.gpg
 VOLUME /etc/aerofs
 
-# Used by Ca
+# Used by CA
 VOLUME /opt/ca/prod
 
 # Used by MySQL
 VOLUME /var/lib/mysql
 
+# For maintenance-bunker & bunker to share the backup file.
+# TODO (WW) remove this.
+VOLUME /opt/bootstrap/public
+
 # No-op entry point
-CMD [ "/bin/true" ]
+CMD [ "true" ]

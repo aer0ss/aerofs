@@ -1,0 +1,9 @@
+--- opt/config/properties/external.properties	2015-01-07 17:27:15.000000000 -0800
++++ buildroot/external.properties.default	2015-01-16 20:43:16.000000000 -0800
+@@ -1,5 +1,5 @@
+-configuration_initialized=false
+ ldap_server_port=389
+ ldap_server_security=tls
+ authenticator=local_credential
+ url_sharing_enabled=true
++base_host=share.domain.name

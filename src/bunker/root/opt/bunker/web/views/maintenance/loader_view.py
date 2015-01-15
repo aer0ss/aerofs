@@ -1,18 +1,21 @@
 import logging
 from pyramid.view import view_config
 import requests
+import maintenance_util
 
 log = logging.getLogger(__name__)
 
+LOADER_URL = 'http://loader.service/v1'
+
 
 @view_config(
-    route_name='json-create-configuration-initialized-flag',
+    route_name='json-set-configuration-initialized',
     permission='maintain',
     renderer='json',
     request_method='POST'
 )
-def create_configuration_initialized_flag(request):
-    open('/var/aerofs/configuration-initialized-flag', 'w').close()
+def set_configuration_initialized(request):
+    maintenance_util.set_configuration_initialized()
     return {}
 
 ####################
@@ -21,16 +24,16 @@ def create_configuration_initialized_flag(request):
 
 
 @view_config(
-    route_name='json-boot',
+    route_name='json-get-boot',
     permission='maintain',
     renderer='json',
     request_method='GET'
 )
-def boot_get(request):
+def get_boot(request):
     """
     Get the boot id
     """
-    return requests.get('http://loader.service/boot').json()
+    return requests.get(LOADER_URL + '/boot').json()
 
 
 @view_config(
@@ -39,37 +42,13 @@ def boot_get(request):
     renderer='json',
     request_method='POST'
 )
-def boot_post(request):
+def post_boot(request):
     """
     Reboot
     """
-    requests.post('http://loader.service/boot')
+    requests.post(LOADER_URL + '/boot/{}/{}/{}'.format(
+        request.matchdict['repo'],
+        request.matchdict['tag'],
+        request.matchdict['target'],
+    ))
     return {}
-
-
-@view_config(
-    route_name='json-repackaging',
-    permission='maintain',
-    renderer='json',
-    request_method='GET'
-)
-def repackaging_get(request):
-    """
-    Get repackaging status
-    """
-    return requests.get('http://repackaging.service').json()
-
-
-@view_config(
-    route_name='json-repackaging',
-    permission='maintain',
-    renderer='json',
-    request_method='POST'
-)
-def repackaging_post(request):
-    """
-    Launch repackaging
-    """
-    requests.post('http://repackaging.service')
-    return {}
-

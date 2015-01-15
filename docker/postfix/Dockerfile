@@ -1,5 +1,4 @@
-# Use the same base image as python:2.7 to leverage the image cache.
-FROM buildpack-deps:jessie
+FROM aerofs/base
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
@@ -16,5 +15,6 @@ RUN sed -i -e 's`mynetworks =.*`mynetworks = 0.0.0.0/0`' /etc/postfix/main.cf
 # Expose port
 EXPOSE 25
 
-# The default command. TODO (WW) run postfix or tail its logs in the foreground
-CMD /etc/init.d/postfix start && echo "postfix started in the background." && sleep infinity
+CMD [ "/run.sh" ]
+
+COPY root /

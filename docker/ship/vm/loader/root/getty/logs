@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+# Usage: $0 <tag>
+
+read -p "Enter a container name as defined in crane.yml: " CONTAINER
+read -p "Follow log or pipe it to less? [F/l] " OPTION
+
+if [ "${OPTION,,}" = l ]; then
+    docker logs "${CONTAINER}-$1" | less
+else
+    docker logs -f "${CONTAINER}-$1"
+fi

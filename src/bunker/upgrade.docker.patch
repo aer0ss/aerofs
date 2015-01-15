@@ -1,0 +1,64 @@
+@@ -36,41 +36,25 @@
+ 
+ <div class="page-block">
+     <button class="btn btn-primary"
+-            onclick="backup(); return false;">
+-        Download Backup File and Shutdown Appliance
++            onclick="backup(promptShutdown); return false;">
++        Download Backup File
+     </button>
+ </div>
+ 
+ <%modal:modal>
+     <%def name="id()">shutdown-modal</%def>
+-    <%def name="title()">Shutdown appliance</%def>
++    <%def name="title()">Please shut down appliance</%def>
+     <%def name="no_close()"/>
+-    <%def name="footer()">
+-        <a href="#" class="btn btn-danger"
+-                onclick="shutdown(); return false;">
+-            Download Completed. Shutdown Appliance</a>
+-    </%def>
+-
+-    <p>This appliance is now in maintenance mode to prevent further modifications
+-        to the system's state. After the download completes, click the button
+-        below to shutdown the system.</p>
+-</%modal:modal>
+-
+-<%modal:modal>
+-    <%def name="id()">shutdown-done-modal</%def>
+-    <%def name="title()">Shutting down</%def>
+-    <%def name="no_close()"/>
+-    <p>The system is shutting down. Please close this page and boot up a
+-        new appliance.</p>
+ 
+-    <p class="footnote">If the system doesn't power off on its own, you may turn
+-        it off manually.</p>
++    <p>After the download completes, please shut down the system and boot up a new appliance.
++        This appliance is now in maintenance mode and no further operations should be made.
++    </p>
+ </%modal:modal>
+ 
+ <%common:html/>
+ 
+ <%block name="scripts">
+-    ${common.scripts('promptShutdown')}
++    <%common:scripts/>
+ 
+     <script>
+         $(document).ready(function() {
+@@ -81,14 +65,5 @@
+             onSuccess();
+             $('#shutdown-modal').modal('show');
+         }
+-
+-        function shutdown() {
+-            enqueueBootstrapTask('shutdown-system', showShutdownDone);
+-        }
+-
+-        function showShutdownDone() {
+-            $('#shutdown-modal').modal('hide');
+-            $('#shutdown-done-modal').modal('show');
+-        }
+     </script>
+ </%block>

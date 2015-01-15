@@ -16,7 +16,7 @@ def is_configuration_initialized(settings):
 def is_maintenance_mode(settings):
     # bootstrap tasks maintenance-enter & maintenance-exit create and delete
     # this file
-    basepath = _flag_file_folder(settings);
+    basepath = _flag_file_folder(settings)
     return os.path.exists(os.path.join(basepath, 'maintenance-flag'))
 
 def write_pem_to_file(pem_string):

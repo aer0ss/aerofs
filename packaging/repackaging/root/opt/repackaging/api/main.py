@@ -14,15 +14,21 @@ app = Flask(__name__)
 @app.route("/", methods=["GET"])
 def get():
     """
-    Return the status of the repackaging task
+    Return the status of the repackaging task.
+    Note: backup_view.py shares very similar logic.
     """
-    return jsonify(succeeded=os.path.isfile(DONE_FILE), running=is_running())
+    running = is_running()
+    return jsonify(
+        running=running,
+        succeeded=not running and os.path.isfile(DONE_FILE)
+    )
 
 
 @app.route("/", methods=["POST"])
 def post():
     """
-    Launch the repackaging task
+    Launch the repackaging task.
+    Note: backup_view.py shares very similar logic.
     """
     if is_running():
         return jsonify(error='already running'), 400
@@ -34,11 +40,7 @@ def post():
     config_service_public_url = config.server_properties()['config.loader.configuration_service_url']
     print 'Launch repackaging task (config service url:', config_service_public_url, ')'
 
-    subprocess.Popen([
-        REPACKAGER,
-        config_service_public_url,
-        '/opt/repackaging/cacert.pem'
-    ], stdout=sys.stdout, stderr=sys.stderr)
+    subprocess.Popen([REPACKAGER, config_service_public_url, '/opt/repackaging/cacert.pem'])
 
     return '', 204
 

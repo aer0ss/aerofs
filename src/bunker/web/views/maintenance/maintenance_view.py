@@ -78,7 +78,7 @@ def toggle_maintenance_mode(request):
 
 @view_config(
     route_name='maintenance_home',
-    ## The target routes of the redirect below manage permissions
+    # The target routes of the redirect below manage permissions
     permission=NO_PERMISSION_REQUIRED,
 )
 def maintenance_home(request):

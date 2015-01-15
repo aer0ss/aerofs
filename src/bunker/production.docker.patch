@@ -1,0 +1,21 @@
+@@ -1,14 +1,14 @@
+ [app:main]
+ paste.app_factory = web:main
+ 
+-deployment.config_server_uri = http://localhost:5434
+-deployment.verification_server_uri = http://localhost:8080/verification
+-deployment.log_collection_server_uri = http://localhost:8080/log-collection
+-deployment.oauth_server_uri = http://localhost:8700
+-deployment.status_server_uri = http://localhost:8000
++deployment.config_server_uri = http://config.service:5434
++deployment.verification_server_uri = http://verification.service:8080
++deployment.log_collection_server_uri = http://logcollection.service:8080
++deployment.oauth_server_uri = http://bifrost.service:8700
++deployment.status_server_uri = http://status.service:8000
+ deployment.bootstrap_server_uri = http://localhost:9070
+ deployment.flag_file_folder = /var/aerofs
+-deployment.state_folder = /opt/bunker/state
++deployment.state_folder = /data/bunker
+ deployment.installer_folder = /opt/repackaging/installers/original
+ 
+ # Pyramid settings

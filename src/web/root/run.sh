@@ -49,8 +49,8 @@ function render_production_ini() {
     ZELDA_SECRET="$2"
     SETTINGS_SECRET="$3"
 
-    ENC_KEY_FILE=/data2/web/session_encrypt_key
-    VLD_KEY_FILE=/data2/web/session_validate_key
+    ENC_KEY_FILE=/data/web/session_encrypt_key
+    VLD_KEY_FILE=/data/web/session_validate_key
 
     # Generate session encrypt and validate keys if not exist.
     if [ ! -f $ENC_KEY_FILE ]; then

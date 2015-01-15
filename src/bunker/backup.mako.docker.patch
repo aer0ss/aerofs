@@ -1,0 +1,26 @@
+@@ -27,7 +27,7 @@
+ 
+ <p>
+     <button class="btn btn-primary"
+-            onclick="backup(); return false;">
++            onclick="backup(maintenanceExit); return false;">
+         Download Backup File
+     </button>
+ </p>
+@@ -35,11 +35,14 @@
+ <%common:html/>
+ 
+ <%block name="scripts">
+-    ${common.scripts('maintenanceExit')}
++    <%common:scripts/>
+ 
+     <script>
+         function maintenanceExit(onSuccess, onFailure) {
+-            runBootstrapTask('maintenance-exit', onSuccess, onFailure);
++            reboot('current', 'current', 'default', onSuccess, function(xhr) {
++                showErrorMessageFromResponse(xhr);
++                onFailure();
++            });
+         }
+     </script>
+ </%block>

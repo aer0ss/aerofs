@@ -14,10 +14,12 @@ Specify one of the following Loader commands when launching the loader. For exam
 - `load` launches all the containers of the app, waits until the app needs a restart,
   and exits. This command requires the host's docker.sock:
 
-      docker run -v /var/run/docker.sock:/var/run/docker.sock <loader_image> load
+      docker run -v /var/run/docker.sock:/var/run/docker.sock
+          -v <host_repo_file>:<repo_file> -v <host_target_file>:<target_file>
+          <loader_image> load <repo_file> <target_file> [tag]
 
-   Optionally specify a tag name as the parameter to override the value specified in /tag.
-   This is mostly for testing.
+   Optionally specify a tag as the parameter to override the value specified in /tag.
+   This option is for testing only.
 
    Important: `load` assumes that the host didn't alter the Loader container's hostname
    when launching it (via `docker run -h`). See loader.py:my_container_id().
@@ -28,6 +30,9 @@ folder on the first virtual terminal (tty1).
 
 - `test-getty` runs the console service in the container, used mainly to test the banner.
 This command may need '-it' docker options to work properly.
+
+- `modified-yaml` prints the modified yaml for actual loading of the app. For testing only.
+It requires mounting of the docker.sock file.
 
 # VM build process
 

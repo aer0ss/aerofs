@@ -1,25 +1,28 @@
-from socket import gethostname
 from re import compile
-import subprocess
 import yaml
-from constants import MODIFIED_YML_PATH, CRANE_YML_PATH, TAG_PATH
+from common import MODIFIED_YML_PATH, CRANE_YML_PATH, TAG_PATH, call_crane, my_image_name, my_container_name
 from api import start
 
 
-def load(alternative_tag=None):
-    modify_yaml(alternative_tag)
+def load(repo_file, target_file):
+    with open(repo_file) as f:
+        repo = f.read().strip()
+    with open(target_file) as f:
+        target = f.read().strip()
 
-    print 'Starting all containers...'
-    subprocess.check_call(['crane', 'run', '-c', MODIFIED_YML_PATH])
+    tag = get_tag()
+    modify_yaml(repo, tag)
+    call_crane('run', target)
+    start(repo, target, repo_file, target_file, tag)
 
-    start()
+
+def simulate(repo, target):
+    tag = get_tag()
+    modify_yaml(repo, tag)
+    start(repo, target, '/dev/null', '/dev/null', tag)
 
 
-def modify_yaml(alternative_tag):
-    """
-    :param alternative_tag When not None, override the value in TAG_PATH.
-    """
-    tag = alternative_tag if alternative_tag else get_tag()
+def modify_yaml(repo, tag):
 
     with open(CRANE_YML_PATH) as f:
         y = yaml.load(f)
@@ -29,9 +32,11 @@ def modify_yaml(alternative_tag):
     my_container = my_container_name()
 
     loader_container = remove_loader_container(containers, my_image)
-    tag_images(containers, tag)
-    modify_links(containers, loader_container, my_container, tag)
-    modify_volumes_from(containers, loader_container, my_container, tag)
+    tagged_loader_container = add_tag_to_container(loader_container, tag)
+    add_repo_and_tag_to_images(containers, repo, tag)
+    modify_links(containers, tagged_loader_container, my_container, tag)
+    modify_volumes_from(containers, tagged_loader_container, my_container, tag)
+    modify_groups(y['groups'], tagged_loader_container, my_container, tag)
 
     with open(MODIFIED_YML_PATH, 'w') as f:
         f.write(yaml.dump(y, default_flow_style=False))
@@ -52,62 +57,62 @@ def remove_loader_container(containers, my_image):
     return loader_container
 
 
-def tag_images(containers, tag):
+def add_repo_and_tag_to_images(containers, repo, tag):
+    """
+    :param repo empty to refer to Docker's default repo
+    """
+    repo = '{}/'.format(repo) if repo else ''
     for key in containers.keys():
         c = containers.pop(key)
-        c['image'] = '{}:{}'.format(c['image'], tag)
+        c['image'] = '{}{}:{}'.format(repo, c['image'], tag)
         # Add the container back with the new container name
-        containers['{}-{}'.format(key, tag)] = c
+        containers[add_tag_to_container(key, tag)] = c
 
 
-def modify_links(containers, loader_container, my_container, tag):
+def modify_links(containers, tagged_loader_container, my_container, tag):
     """
-    This method adds tag to all container links, and replace links to the Loader container with my container name
+    Add tag to all container links and replace links to the Loader container with my container name
     """
     tag_pattern = compile(':')
     tag_replace = '-{}:'.format(tag)
-
-    loader_pattern = compile('^{}-{}:'.format(loader_container, tag))
-    loader_replace = '{}:'.format(my_container)
+    loader_pattern = compile('^{}:'.format(tagged_loader_container))
 
     for c in containers.itervalues():
         if 'run' in c and 'link' in c['run']:
             links = [tag_pattern.sub(tag_replace, link) for link in c['run']['link']]
-            c['run']['link'] = [loader_pattern.sub(loader_replace, link) for link in links]
+            c['run']['link'] = [loader_pattern.sub('{}:'.format(my_container), link) for link in links]
 
 
-def modify_volumes_from(containers, loader_container, my_container, tag):
+def modify_volumes_from(containers, tagged_loader_container, my_container, tag):
     """
-    This method adds tag to all volumes-from links, and replace links to the Loader container with my container name
+    Add tag to all volumes-from links and replace links to the Loader container with my container name
     """
     # Replace links to Loader container with my container name
-    loader_pattern = compile('^{}-{}$'.format(loader_container, tag))
-    loader_replace = my_container
+    loader_pattern = compile('^{}$'.format(tagged_loader_container))
 
     for c in containers.itervalues():
         if 'run' in c and 'volumes-from' in c['run']:
-            volumes = ['{}-{}'.format(link, tag) for link in c['run']['volumes-from']]
-            c['run']['volumes-from'] = [loader_pattern.sub(loader_replace, link) for link in volumes]
+            volumes = [add_tag_to_container(link, tag) for link in c['run']['volumes-from']]
+            c['run']['volumes-from'] = [loader_pattern.sub(my_container, link) for link in volumes]
 
 
-def my_container_id():
+def modify_groups(groups, tagged_loader_container, my_container, tag):
     """
-    :return ID of the current container. It assumes the host didn't alter the hostname when launching the container.
+    Add tag to all containers in groups and replace the Loader container with my container name
     """
-    return gethostname()
+    # Replace links to Loader container with my container name
+    loader_pattern = compile('^{}$'.format(tagged_loader_container))
+
+    for k in groups:
+        groups[k] = [add_tag_to_container(c, tag) for c in groups[k]]
+        groups[k] = [loader_pattern.sub(my_container, c) for c in groups[k]]
 
 
-def my_image_name():
+def add_tag_to_container(c, tag):
     """
-    :return: The loader's image name. We assume /opt/ship/sail on the host always starts us using the original image
-    name defined in crane.yml, with no tags or repo names. Thus, we can find the loader definition in crane.yml by
-    searching this file for the returned image name.
+    See also: patterns defined in modify_links()
     """
-    return subprocess.check_output(['docker', 'inspect', '-f', '{{ .Config.Image }}', my_container_id()]).strip()
-
-
-def my_container_name():
-    return subprocess.check_output(['docker', 'inspect', '-f', '{{ .Name }}', my_container_id()]).strip()
+    return '{}-{}'.format(c, tag)
 
 
 def get_images():
@@ -128,10 +133,6 @@ def get_tag():
 def verify():
     if not get_tag():
         raise Exception('{} is empty.'.format(TAG_PATH))
-
-    elif get_tag() == 'latest':
-        raise Exception('Using "latest" as the tag is not allowed, as it couldn\'t guarantee' +
-                        ' version consistency across containers.')
 
     for image in get_images():
         if ':' in image:

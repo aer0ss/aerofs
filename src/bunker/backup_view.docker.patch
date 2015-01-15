@@ -1,0 +1,79 @@
+@@ -1,8 +1,13 @@
+ import logging
+ 
+ from pyramid.view import view_config
++from subprocess import Popen
+ from web.version import get_private_version
+ from web.views.maintenance.logs_view import get_file_download_response, get_download_file_name
++import psutil
++from os.path import isfile
++from web.error import error
++from os import unlink
+ 
+ log = logging.getLogger(__name__)
+ 
+@@ -12,6 +17,9 @@
+ # Use no suffix to discourage users from unzipping the file
+ _DOWNLOAD_FILE_SUFFIX = ''
+ 
++_WRAPPER = '/backup-restore-wrapper.sh'
++_DONE_FILE = '/backup-done'
++
+ @view_config(
+     route_name='backup',
+     permission='maintain',
+@@ -30,6 +38,54 @@
+         'current_version': get_private_version(request.registry.settings)
+     }
+ 
++
++@view_config(
++    route_name='json-backup',
++    permission='maintain',
++    request_method='POST',
++    renderer='json'
++)
++def json_backup_post(request):
++    """
++    Note: repackaging/api/main.py shares very similar logic.
++    """
++    if is_running():
++        error('backup process is already running')
++
++    if isfile(_DONE_FILE):
++        unlink(_DONE_FILE)
++
++    Popen([_WRAPPER, 'backup', BACKUP_FILE_PATH, _DONE_FILE])
++
++    return {}
++
++
++@view_config(
++    route_name='json-backup',
++    permission='maintain',
++    request_method='GET',
++    renderer='json'
++)
++def json_backup_get(request):
++    """
++    Note: repackaging/api/main.py shares very similar logic.
++    """
++    running = is_running()
++    return {
++        'running': running,
++        'succeeded': not running and isfile(_DONE_FILE)
++    }
++
++
++def is_running():
++    for pid in psutil.pids():
++        cmdline = psutil.Process(pid).cmdline()
++        # The expected cmdline is [ '/bin/bash', _WRAPPER, ... ]
++        if len(cmdline) > 1 and cmdline[1] == _WRAPPER:
++            return True
++    return False
++
++
+ @view_config(
+     route_name='download_backup_file',
+     permission='maintain',

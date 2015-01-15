@@ -57,65 +57,56 @@ There are many instructions tagged with the "PREDOCKER" keyword to prepare and f
 
 The following tasks are necessary to completely containerize AeroFS services. 
 Even if we end up with not adopting Docker, these changes would improve service 
-decoupling and pave the road for scaling the appliance in the future. 
+decoupling and pave the road for scaling the appliance in the future.
+
+0. console service may start before dhcp init is done.
+
+0. vk calls Identity to retrieve CRL on launch.
+
+0. dryad
+
+0. following bootstrap tasks:
+    update-monitoring-password
+    bifrost-sanity-check
+    sanity-check
+
+0. reconfigure-ntp (see https://coreos.com/docs/cluster-management/setup/configuring-date-and-timezone/)
+
+0. TS sanity check? Change-Id: Ic70edc0ce09096d67d2bd0a2ec083895d49d407d
+
+0. redis: how to run "sysctl vm.overcommit_memory = 1"?
+
+Logistic items:
+
+0. Use stable rather than alpha CoreOS release channel (by the time of writing 
+stable doesn't support gz+b64 cloud-config encoding.
+
+0. Some images may be unofficial builds. We should only use official images.
+
+0. Right before release, verify all the code/scripts that duplicate 
+with the original source are still consistent with the original. In particular, 
+check all nginx configurations.
+
+0. Right before release, verify all new code in puppet and other folder have been
+copied or duplicated in the new system.
+
+
+### Items after initial release
 
 - reliably delete files from buildroot using a master buildroot. Use plain copying to populate buildroot and then lazy-rsync (rsync with lazy-copy) to sync to target buildroot.
-
-- Update osx-repackaging source code.
-
-- Use stable rather than alpha CoreOS release channel (by the time of writing 
-stable doesn't support gz+b64 cloud-config encoding.
 
 - Avoid buildpack-deps. They're huge. And optimize image sizes.
 
 - Expose docker pull progress.
-
-- following bootstrap tasks: 
-ejabberd-metadata-reset
-ejabberd-fix-config
-ejabberd-certify
-update-monitoring-password
-bifrost-sanity-check
-sanity-check
-
-- persist browser cert
 
 - bug: http://share.syncfs.com/create_first_user?email=weihan%40aerofs.com 
 redirects to 
 https://share.syncfs.com/create_first_user?email=weihan%40aerofs.com?email=weiha
 n%40aerofs.com
 
-- service barrier
-
-- license expiry should kill services
-
-- on launching, wait for all links
-
-- vk calls Identity to retrieve CRL on launch.
-
 - use uwsgi rather than pserve for web?
 
-- implement bootstrap task reconfigure-ntp
-
-- redis: how to run "sysctl vm.overcommit_memory = 1"?
-
-- maintenance mode
-
-- restore & backup
-
 - remove url_ignore_status.sh and implement proper sanity checks
-
-- enforce_license: aerofs/config should expose an API to return whether the 
-license has expired. The client containers (verkehr & zephyr) should 
-periodically check the API and shut down the service if license expired. i.e. 
-move enforce_license logic from 
-`puppetmaster/modules/persistent/manifests/services.pp` to client containers.
-
-- Bootstrap: migrate the following remaining tasks to containers. Some of them 
-might be no longer needed in the new system:
-    - nginx-certificate-generate-placeholder
-    - browser-cert-populate
-    - enable-all-nginx-services
 
 - Stop using /etc/ssl/certs/AeroFS_CA.pem and call certifier/certify to 
 retrieve the file and place it in /opt/<service>/cacert.pem. Also, update 
@@ -129,18 +120,7 @@ clean up CA's certs directory every time CA starts up.
 - Use build containers to compile things up, so the host dev environment can be 
 completely clean.
 
-- Some images may be unofficial builds. We should only use official images.
-
-- Before releasing to production, verify all the code/scripts that duplicate 
-with the original source are still consistent with the original. In particular, 
-check all nginx configurations.
-
-- Remove the `docker=1` configuration property and related code.
-
 - use buildpack-deps:micro instead of buildpack-deps
-
-- TS sanity check? Change-Id: Ic70edc0ce09096d67d2bd0a2ec083895d49d407d
-
 
 
 ## If you like Sci-Fi movies

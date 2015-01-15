@@ -1,0 +1,46 @@
+@@ -2,21 +2,37 @@
+ import socket
+ from subprocess import call, Popen, PIPE
+ import tempfile
++import requests
+ 
+ from aerofs_common.configuration import Configuration
+ 
+-def _flag_file_folder(settings):
+-    return settings.get('deployment.flag_file_folder', "/var/aerofs")
++_FLAG_FILE = '/data/bunker/configuration-initialized-flag'
++
+ 
+ def is_configuration_initialized(settings):
+-    basepath = _flag_file_folder(settings)
+-    return os.path.exists(os.path.join(basepath, 'configuration-initialized-flag'))
++    return os.path.exists(_FLAG_FILE)
++
++
++def set_configuration_initialized():
++    open(_FLAG_FILE, 'w').close()
++
+ 
++_maintenance_mode_cache = None
+ def is_maintenance_mode(settings):
+-    # bootstrap tasks maintenance-enter & maintenance-exit create and delete
+-    # this file
+-    basepath = _flag_file_folder(settings)
+-    return os.path.exists(os.path.join(basepath, 'maintenance-flag'))
++    """
++    The system is in maintenance mode if the current target is "maintenance" and the system
++    has been initialized.
++    """
++    global _maintenance_mode_cache
++    if _maintenance_mode_cache is None:
++        if is_configuration_initialized(settings):
++            r = requests.get('http://loader.service/v1/boot')
++            r.raise_for_status()
++            _maintenance_mode_cache = r.json()['target'] == 'maintenance'
++        else:
++            _maintenance_mode_cache = False
++    return _maintenance_mode_cache
++
+ 
+ def write_pem_to_file(pem_string):
+     os_handle, filename = tempfile.mkstemp()

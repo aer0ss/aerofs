@@ -1,34 +1,41 @@
 BASE_DIRS = \
+	base/base \
 	base/jre8 \
 	base/jre8-and-mysql-client \
 	base/python2.7
 
 # Sort image names alphabetically to help users observe build progress
 DIRS = \
-	data-container \
-	mysql \
-	nginx \
-	postfix \
-	redis \
 	../src/auditor \
 	../src/bifrost \
 	../src/bunker \
 	../packaging/ca-server \
 	../packaging/config \
 	../packaging/charlie \
+	data-container \
+	enforcer \
+	ejabberd \
 	../src/havre \
+	maintenance-nginx \
+	mysql \
+	nginx \
+	postfix \
 	../src/polaris \
+	redis \
+	../packaging/repackaging \
+	../packaging/sanity \
 	../src/sparta \
+	\
 	../src/spsv \
 	../src/spsv/resources/identity \
 	../src/spsv/resources/log-collection \
-	../packaging/repackaging \
-	../packaging/sanity \
 	../src/spsv/resources/sp \
 	../src/spsv/resources/verification \
+	\
 	../src/verkehr \
 	../src/web \
 	../src/zephyr \
+	\
 	ship/vm/loader \
 	ship-aerofs/loader
 

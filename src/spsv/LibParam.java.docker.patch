@@ -1,9 +1,16 @@
-@@ -203,11 +203,11 @@
+@@ -203,11 +203,19 @@ public class LibParam extends BaseParam
          public static final long MIN_BANDWIDTH_UI = 10 * C.KB;
      }
  
--    public static class CA
-+    	static URL getURL() 	{ 	    try { 		return new URL("http://ca.service:9002"); 	    } catch (java.net.MalformedURLException e) { 		throw com.google.common.base.Throwables.propagate(e); 	    } 	} 	public static  class CA
++    static URL getURL() {
++        try {
++            return new URL("http://ca.service:9002");
++        } catch (java.net.MalformedURLException e) {
++            throw com.google.common.base.Throwables.propagate(e);
++        }
++    }
++
+     public static class CA
      {
          // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
          public static final URL URL =
@@ -12,12 +19,12 @@
      }
  
      public static class RootAnchor
-@@ -228,7 +228,7 @@
-                 InetSocketAddress.createUnresolved("localhost", 6380);
- 
+@@ -226,7 +234,7 @@ public class LibParam extends BaseParam
+     {
          public static final InetSocketAddress AOF_ADDRESS =
--                InetSocketAddress.createUnresolved("localhost", 6379);
-+                InetSocketAddress.createUnresolved("redis.service", 6379);
+                 InetSocketAddress.createUnresolved(
+-                        getStringProperty("sp.redis.service.host", "localhost"),
++                        getStringProperty("sp.redis.service.host", "redis.service"),
+                         getIntegerProperty("sp.redis.service.port", 6379));
      }
  
-     public static class LicenseProperties

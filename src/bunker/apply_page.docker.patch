@@ -1,4 +1,20 @@
-@@ -114,26 +114,112 @@
+@@ -1,5 +1,5 @@
+ <%namespace name="csrf" file="../csrf.mako"/>
+-<%namespace name="bootstrap" file="../bootstrap.mako"/>
++<%namespace name="loader" file="../loader.mako"/>
+ <%namespace name="common" file="setup_common.mako"/>
+ <%namespace name="spinner" file="../spinner.mako"/>
+ <%namespace name="progress_modal" file="../progress_modal.mako"/>
+@@ -68,7 +68,7 @@
+     <%progress_modal:scripts/>
+     ## spinner support is required by progress_modal
+     <%spinner:scripts/>
+-    <%bootstrap:scripts/>
++    <%loader:scripts/>
+ 
+     <script>
+         $(document).ready(function() {
+@@ -114,26 +114,79 @@
              ## Show the progress modal
              $('#${progress_modal.id()}').modal('show');
  
@@ -7,46 +23,10 @@
 -                hideAllModals();
 -                trackError();
 -            });
-+            reboot();
-         }
- 
--        function finalize() {
--            console.log("finalizing...");
--            $.post("${request.route_path('json_setup_finalize')}")
-+        function reboot() {
-+            ## Get current boot number before rebooting
-+            $.get("${request.route_path('json-boot')}")
-+            .done(function(resp) {
-+                var number = resp['boot_id'];
-+                console.log("reboot now. previous boot id: " + number);
-+                $.post("${request.route_path('json-boot')}")
-+                .done(function() {
-+                    waitForReboot(number);
-+                }).fail(onFailure);
-+
-+            }).fail(onFailure);
++            reboot('current', 'current', 'default', waitForPreviousRepackaging, onFailure);
 +        }
 +
-+        function waitForReboot(oldBootNumber) {
-+            console.log('wait for reboot to finish');
-+            var interval = window.setInterval(function() {
-+                $.get("${request.route_path('json-boot')}")
-+                .done(function(resp) {
-+                    var number = resp['boot_id'];
-+                    console.log("boot number: " + number);
-+                    if (oldBootNumber != number) {
-+                        window.clearInterval(interval);
-+                        ## I know we just booted up but someone else might kicked off repackaging
-+                        ## right before us.
-+                        waitForPreviousRepackaging();
-+                    }
-+                }).fail(function(xhr, textStatus, errorThrown) {
-+                    console.log("ignore GET boot failure: " + xhr.status + " " +
-+                        textStatus + " " + errorThrown);
-+                });
-+            }, 1000);
-+        }
-+
++        ## I know we just booted up but someone else might kicked off repackaging right before us.
 +        function waitForPreviousRepackaging() {
 +            console.log('wait for previous repackaging to finish');
 +            ## Wait for previouew repackaging done
@@ -59,10 +39,10 @@
 +                            window.clearInterval(interval);
 +                            repackage();
 +                        }
-+                    }).fail(function(xhr) {
++                    }).fail(function(xhr, textStatus, errorThrown) {
 +                        ## Ignore failures as Repackaging might not have started
-+                        console.log("ignore GET repackaging failure: " + xhr.status + " " +
-+                            textStatus + " " + errorThrown);
++                        console.log("ignore GET repackaging failure: " + xhr.status + " " +textStatus + " " +
++                            errorThrown);
 +                    });
 +            }, 1000);
 +        }
@@ -96,11 +76,14 @@
 +                    onFailure(xhr);
 +                });
 +            }, 1000);
-+        }
-+
+         }
+ 
+-        function finalize() {
+-            console.log("finalizing...");
+-            $.post("${request.route_path('json_setup_finalize')}")
 +        function conclude() {
 +            console.log('create conf-initialized flag');
-+            $.post("${request.route_path('json-create-configuration-initialized-flag')}")
++            $.post("${request.route_path('json-set-configuration-initialized')}")
              .done(function() {
 -                console.log('succeeded');
 +                ## TODO: wait for web to fully launch before prompting the user to navigate

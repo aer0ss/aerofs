@@ -1,11 +1,14 @@
 IMAGE_NAME = aerofs/bunker
 ROOT = buildroot/opt/bunker
 
-FILES = $(shell find -L requirements-exact.txt entry.py web -type f)
+FILES = $(shell find -L entry.py web -type f)
 VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
 PRODUCTION_INI = $(ROOT)/production.ini
+BACKUP_SH = buildroot/backup.sh
+RESTORE_SH = buildroot/restore.sh
+REQUIREMENTS_FILE = buildroot/requirements-exact.txt
 
-image: .make-web $(FILES:%=$(ROOT)/%) $(VERSION_FILE) $(PRODUCTION_INI)
+image: .make-web $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH)
 	docker build -t $(IMAGE_NAME) .
 
 # make sure all the web assets that we'll be using exist
@@ -16,21 +19,64 @@ $(ROOT)/%: %
 	mkdir -p $(@D)
 	cp $< $@ 
 
+patch = \
+	mkdir -p $(dir $(1)) &&\
+	cp $(2) $(1) &&\
+	patch $(1) < $(3).docker.patch
+
 # PREDOCKER
-$(ROOT)/web/views/maintenance/templates/setup/apply_page.mako: web/views/maintenance/templates/setup/apply_page.mako
+$(REQUIREMENTS_FILE): requirements-exact.txt
 	mkdir -p $(@D)
-	cp $< $@ 
-	# sed has no fun for this file. use patch instead.
-	patch $@ < apply_page.docker.patch
+	cp $< $@
+	echo psutil >> $@
 
-$(ROOT)/web/views/maintenance/__init__.py: web/views/maintenance/__init__.py
-	mkdir -p $(@D)
-	cp $< $@ 
-	patch $@ < maintenance_init.docker.patch
+$(ROOT)/web/views/maintenance/templates/maintenance_layout.mako: web/views/maintenance/templates/maintenance_layout.mako maintenance_layout.docker.patch
+	$(call patch,$@,$<,maintenance_layout)
 
-$(ROOT)/web/views/maintenance/setup_view.py: web/views/maintenance/setup_view.py
-	mkdir -p $(@D)
-	sed -e "s/host = 'localhost'/host = 'postfix.service'/" $< > $@
+$(ROOT)/web/views/maintenance/templates/logs_common.mako: web/views/maintenance/templates/logs_common.mako logs_common.docker.patch
+	$(call patch,$@,$<,logs_common)
+
+$(ROOT)/web/views/maintenance/setup_view.py: web/views/maintenance/setup_view.py setup_view.docker.patch
+	$(call patch,$@,$<,setup_view)
+
+$(ROOT)/web/views/maintenance/templates/setup/create_or_restore_page.mako: web/views/maintenance/templates/setup/create_or_restore_page.mako create_or_restore_page.docker.patch
+	$(call patch,$@,$<,create_or_restore_page)
+
+$(ROOT)/web/views/maintenance/backup_view.py: web/views/maintenance/backup_view.py backup_view.docker.patch
+	$(call patch,$@,$<,backup_view)
+
+$(ROOT)/web/views/maintenance/templates/backup.mako: web/views/maintenance/templates/backup.mako backup.mako.docker.patch
+	$(call patch,$@,$<,backup.mako)
+
+$(ROOT)/web/views/maintenance/templates/backup_common.mako: web/views/maintenance/templates/backup_common.mako backup_common.docker.patch
+	$(call patch,$@,$<,backup_common)
+
+$(ROOT)/web/views/maintenance/templates/upgrade.mako: web/views/maintenance/templates/upgrade.mako upgrade.docker.patch
+	$(call patch,$@,$<,upgrade)
+
+$(ROOT)/web/views/maintenance/templates/toggle_maintenance_mode.mako: web/views/maintenance/templates/toggle_maintenance_mode.mako toggle_maintenance_mode.docker.patch
+	$(call patch,$@,$<,toggle_maintenance_mode)
+
+$(ROOT)/web/views/maintenance/maintenance_util.py: web/views/maintenance/maintenance_util.py maintenance_util.docker.patch
+	$(call patch,$@,$<,maintenance_util)
+
+$(ROOT)/web/views/maintenance/templates/setup/apply_page.mako: web/views/maintenance/templates/setup/apply_page.mako apply_page.docker.patch
+	$(call patch,$@,$<,apply_page)
+
+$(ROOT)/web/views/maintenance/maintenance_view.py: web/views/maintenance/maintenance_view.py maintenance_view.docker.patch
+	$(call patch,$@,$<,maintenance_view)
+
+$(ROOT)/web/views/maintenance/__init__.py: web/views/maintenance/__init__.py maintenance_init.docker.patch
+	$(call patch,$@,$<,maintenance_init)
+
+$(PRODUCTION_INI): ../../puppetmaster/modules/bunker/files/production.ini production.docker.patch
+	$(call patch,$@,$<,production)
+
+$(BACKUP_SH): ../../packaging/db-backup/usr/bin/aerofs-db-backup backup.sh.docker.patch
+	$(call patch,$@,$<,backup.sh)
+
+$(RESTORE_SH): ../../packaging/db-backup/usr/bin/aerofs-db-restore restore.sh.docker.patch
+	$(call patch,$@,$<,restore.sh)
 
 $(ROOT)/web/views/maintenance/templates/setup/email_page.mako: web/views/maintenance/templates/setup/email_page.mako
 	mkdir -p $(@D)
@@ -38,18 +84,8 @@ $(ROOT)/web/views/maintenance/templates/setup/email_page.mako: web/views/mainten
 
 $(ROOT)/web/__init__.py: web/__init__.py
 	mkdir -p $(@D)
-	sed -e 's`/opt/bunker/state`/data2/bunker`' $< > $@
+	sed -e 's./opt/bunker/state./data/bunker.' $< > $@
 
 $(VERSION_FILE): ../../out.gradle/packages/current.ver
 	mkdir -p $(@D)
 	cp $< $@
-
-$(PRODUCTION_INI): ../../puppetmaster/modules/bunker/files/production.ini
-	sed \
-		-e 's`localhost:5434`config.service:5434`' \
-		-e 's`localhost:8080/verification`verification.service:8080`' \
-		-e 's`localhost:8080/log-collection`logcollection.service:8080`' \
-		-e 's`localhost:8000`status.service:8000`' \
-		-e 's`localhost:8700`bifrost.service:8700`' \
-		-e 's`/opt/bunker/state`/data2/bunker`' \
-		$< > $@

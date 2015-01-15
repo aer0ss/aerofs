@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+if [ $# -ne 2 ]; then
+    echo "Set a configuration property's value"
+    echo "Usage: $0 <key> <value>"
+    exit 1
+fi
+
+# Convert newlines to '\\n'. See http://stackoverflow.com/a/1252191.
+V=$(echo "$2" | sed ':a;N;$!ba;s/\n/\\n/g')
+
+curl -s -S -XPOST config.service:5434/set --data-urlencode "key=$1" --data-urlencode "value=${V}"

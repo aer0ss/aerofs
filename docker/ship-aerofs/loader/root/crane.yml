@@ -8,6 +8,9 @@ containers:
     image: aerofs/loader
     run:
       detach: true
+      cmd: simulate registry.aerofs.com maintenance
+      volume:
+        - /var/run/docker.sock:/var/run/docker.sock
 
   mysql:
     image: aerofs/mysql
@@ -27,6 +30,17 @@ containers:
     image: aerofs/postfix
     run:
       detach: true
+
+  ejabberd:
+    image: aerofs/ejabberd
+    run:
+      detach: true
+      publish:
+        - "5222:5222"
+      link:
+        - config:config.service
+        - mysql:mysql.service
+        - ca:ca.service
 
   nginx:
     image: aerofs/nginx
@@ -58,8 +72,9 @@ containers:
       detach: true
       publish:
         - "8484:8484"
-    #  volume:
-    #    - src/bunker/web/views/maintenance:/opt/bunker/web/views/maintenance
+      volume:
+        # To collect docker logs
+        - /var/run/docker.sock:/var/run/docker.sock
       volumes-from:
         - data
       link:
@@ -71,6 +86,14 @@ containers:
         - bifrost:bifrost.service
         - status:status.service
 
+  enforcer:
+    image: aerofs/enforcer
+    run:
+      detach: true
+      link:
+        - config:config.service
+        - loader:loader.service
+
   repackaging:
     image: aerofs/repackaging
     run:
@@ -78,6 +101,7 @@ containers:
       volumes-from:
         - data
       link:
+        - ca:ca.service
         - config:config.service
 
   config:
@@ -201,7 +225,6 @@ containers:
     run:
       detach: true
       link:
-        - mysql:mysql.service
         - postfix:postfix.service
         - config:config.service
 
@@ -210,7 +233,6 @@ containers:
     run:
       detach: true
       link:
-        - mysql:mysql.service
         - redis:redis.service
 
   identity:
@@ -231,7 +253,7 @@ containers:
         - loader:loader.service
         - ca:ca.service
         - charlie:charlie.service
-        # - ejabberd:ejabberd.service
+        - ejabberd:ejabberd.service
         - havre:havre.service
         - identity:identity.service
         - mysql:mysql.service
@@ -245,3 +267,47 @@ containers:
         - verkehr:verkehr.service
         - web:web.service
         - zephyr:zephyr.service
+
+  maintenance-nginx:
+    image: aerofs/maintenance-nginx
+    run:
+      detach: true
+      publish:
+        - "80:80"
+        - "443:443"
+      link:
+        - ca:ca.service
+        - config:config.service
+      volumes-from:
+        - data
+
+  maintenance-bunker:
+    image: aerofs/bunker
+    run:
+      detach: true
+      publish:
+        - "8484:8484"
+      volume:
+        # To collect docker logs
+        - /var/run/docker.sock:/var/run/docker.sock
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+        - loader:loader.service
+        - verification:verification.service
+        # For db backup
+        - mysql:mysql.service
+
+# Only root services are defined here. Always use 'crane -d all'.
+groups:
+  default:
+    - bunker
+    - nginx
+    - enforcer
+    - ejabberd
+
+  # Bunker relies on this group's name to detect if the system is in maintenance mode.
+  maintenance:
+    - maintenance-bunker
+    - maintenance-nginx
