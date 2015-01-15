@@ -14,7 +14,7 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'state', 'databas
 
 # Email: in development use svmail
 # In production, prefer sendgrid
-MAIL_SERVER = "sv.aerofs.com"
+MAIL_SERVER = "devmail.aerofs.com"
 MAIL_PORT = 25
 MAIL_USE_TLS = False
 MAIL_USE_SSL = False

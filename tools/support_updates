@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Connecting to sv.aerofs.com..."
-ssh sv.aerofs.com "support_updates $@"

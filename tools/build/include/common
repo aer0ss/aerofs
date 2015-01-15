@@ -94,7 +94,7 @@ readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
 readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
 
 # Proguard maps server credentials and paths
-readonly MAP_SERVER="sv.aerofs.com"
+readonly MAP_SERVER="rocklog.aerofs.com"
 readonly MAP_SERVER_LOGIN=${MAP_SERVER}
 readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"

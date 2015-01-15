@@ -39,7 +39,6 @@ port verkehr.aerofs.com 443
 port x.aerofs.com 443
 port zephyr.aerofs.com 443
 url https://aerofs.com/login
-url https://sv.aerofs.com/sv_beta/sv
 url-internal-ssl https://sp.aerofs.com/sp
 
 if [ $SUCCESS == TRUE ]; then

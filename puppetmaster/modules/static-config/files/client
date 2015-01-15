@@ -26,7 +26,6 @@ base.www.support_email_address=support@aerofs.com
 
 base.mixpanel.url=https://api.mixpanel.com/track/?data=
 lib.rocklog.url=http://rocklog.aerofs.com
-lib.sv.url=https://sv.aerofs.com
 lib.notifications.enabled=true
 lib.authenticator=local_credential
 sp.payment.enabled=true
