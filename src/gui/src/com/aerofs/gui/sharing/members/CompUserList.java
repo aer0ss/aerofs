@@ -167,12 +167,14 @@ public class CompUserList extends Composite
                 _tv.setSelection(new StructuredSelection(elem), true);
 
                 SharedFolderMember member = (SharedFolderMember)elem;
-                if (!RoleMenu.hasContextMenu(member, _localUserPermissions)) return;
+                SharedFolderMemberMenu menu =
+                        SharedFolderMemberMenu.get(_localUserPermissions, member);
 
-                RoleMenu menu = new RoleMenu(_tv.getTable(), _localUserPermissions, member);
+                if (!menu.hasContextMenu()) return;
+
                 menu.setRoleChangeListener(
                         permissions -> setRole(_sid, member, permissions, false));
-                menu.open();
+                menu.open(_tv.getTable());
             }
         });
     }

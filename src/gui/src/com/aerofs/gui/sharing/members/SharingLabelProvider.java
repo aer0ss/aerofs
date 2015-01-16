@@ -88,9 +88,9 @@ public class SharingLabelProvider extends ColumnLabelProvider
         @Override
         public String getText(Object element)
         {
-            return element instanceof SharedFolderMember
-                    && RoleMenu.hasContextMenu((SharedFolderMember)element,
-                    _parent._localUserPermissions)
+            return element instanceof SharedFolderMember &&
+                    SharedFolderMemberMenu.get(_parent._localUserPermissions,
+                            (SharedFolderMember)element).hasContextMenu()
                     ? GUIUtil.TRIANGLE_DOWNWARD
                     : "";
         }
