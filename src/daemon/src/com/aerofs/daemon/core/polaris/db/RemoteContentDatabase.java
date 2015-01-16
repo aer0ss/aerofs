@@ -113,7 +113,7 @@ public class RemoteContentDatabase extends AbstractDatabase
 
     private final ParameterizedStatement<SIndex> _pswDelete = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx),
-                    C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + "<=?"));
+                    C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + "<?"));
     public boolean deleteUpToVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
         return exec(_pswDelete.get(sidx), ps -> {
@@ -123,11 +123,25 @@ public class RemoteContentDatabase extends AbstractDatabase
         });
     }
 
-    private final ParameterizedStatement<SIndex> _pswHas = new ParameterizedStatement<>(
+    private final ParameterizedStatement<SIndex> _pswHasNew = new ParameterizedStatement<>(
             sidx -> DBUtil.selectWhere(tableName(sidx),
                     C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + ">?", "1")
                     + " limit 1");
     public boolean hasRemoteChanges_(SIndex sidx, OID oid, long version) throws SQLException
+    {
+        return exec(_pswHasNew.get(sidx), ps -> {
+            ps.setBytes(1, oid.getBytes());
+            ps.setLong(2, version);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        });
+    }
+
+    private final ParameterizedStatement<SIndex> _pswHas = new ParameterizedStatement<>(
+            sidx -> DBUtil.selectWhere(tableName(sidx),
+                    C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + "=?", "1"));
+    public boolean hasRemoteChange_(SIndex sidx, OID oid, long version) throws SQLException
     {
         return exec(_pswHas.get(sidx), ps -> {
             ps.setBytes(1, oid.getBytes());

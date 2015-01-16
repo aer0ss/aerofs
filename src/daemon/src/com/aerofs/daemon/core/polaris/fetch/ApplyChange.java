@@ -189,12 +189,15 @@ public class ApplyChange
                 _ccdb.deleteChange_(sidx, soid.oid(), t);
                 _cvdb.setVersion_(sidx, soid.oid(), c.newVersion, t);
                 _rcdb.deleteUpToVersion_(sidx, soid.oid(), c.newVersion, t);
+                // add "remote" content entry for latest version (in case of expulsion)
+                _rcdb.insert_(sidx, soid.oid(), c.newVersion, new DID(c.originator),
+                        c.contentHash, c.contentSize, t);
 
                 // delete conflict branch if any
                 if (oa.cas().size() > 1) {
                     checkState(oa.cas().size() == 2);
                     KIndex kidx = KIndex.MASTER.increment();
-                    l.info("delete branch {}", kidx);
+                    l.info("delete branch {}k{}", soid, kidx);
                     _ds.deleteCA_(soid, kidx, t);
                     _ps.newFile_(_ds.resolve_(oa), kidx).delete_(PhysicalOp.APPLY, t);
                 }

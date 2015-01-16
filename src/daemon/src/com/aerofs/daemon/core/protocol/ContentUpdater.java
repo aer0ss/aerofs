@@ -10,6 +10,8 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -24,6 +26,7 @@ import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
@@ -43,6 +46,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
@@ -278,22 +282,39 @@ public class ContentUpdater
 
         if (rcv != null) {
             if (!usePolaris) throw new ExAborted("incompatible versioning");
-            if (!response.hasHashLength()) throw new ExProtocolError();
 
             Long lcv = _cvdb.getVersion_(soid.sidx(), soid.oid());
             if (lcv != null && lcv >= rcv) {
                 l.info("local {} >= {} remote", lcv, rcv);
                 return null;
             }
+
+            if (!response.hasHashLength()) throw new ExProtocolError();
+
+            // TODO(phoenix): validate against RCDB entries
             KIndex target = KIndex.MASTER;
+            boolean avoidContentIO = false;
             SortedMap<KIndex, CA> cas = remoteOA.cas();
-            // TODO(phoenix): merge if local change && remote hash == local hash
+
             if (cas.size() > 1 || _ccdb.hasChange_(soid.sidx(), soid.oid())) {
-                checkState(cas.size() == 2);
-                target = KIndex.MASTER.increment();
+                checkState(cas.size() <= 2);
+                ContentHash h = _ds.getCAHash_(new SOKID(soid, KIndex.MASTER));
+
+                // if the MASTER CA matches the remote object, avoid creating a conflict
+                if (h != null && h.equals(hRemote)
+                        && cas.get(KIndex.MASTER).length() == response.getFileTotalLength()) {
+                    target = KIndex.MASTER;
+                    avoidContentIO = true;
+                    // merge if local change && remote hash == local hash
+                    if (cas.size() > 1) {
+                        kidcsDel.add(KIndex.MASTER.increment());
+                    }
+                } else {
+                    target = KIndex.MASTER.increment();
+                }
             }
             return new CausalityResult(target, vRemote, kidcsDel, hRemote,
-                    Version.wrapCentral(lcv), false);
+                    Version.wrapCentral(lcv), avoidContentIO);
         } else if (usePolaris) {
             throw new ExAborted("incompatible versioning");
         }
@@ -487,13 +508,34 @@ public class ContentUpdater
     {
         Long rcv = vRemote.unwrapCentral();
         if (rcv != null) {
-            // TODO(phoenix): del branch if needed
-            checkState(res._kidcsDel.isEmpty());
             Long lcv = _cvdb.getVersion_(k.sidx(), k.oid());
             if (lcv != null && rcv < lcv) throw new ExAborted(k + " version changed");
+
+            OA oa = _ds.getOA_(k.soid());
+
             l.debug("{} version {} -> {}", k, lcv, rcv);
             _cvdb.setVersion_(k.sidx(), k.oid(), rcv, t);
             _rcdb.deleteUpToVersion_(k.sidx(), k.oid(), rcv, t);
+            if (!_rcdb.hasRemoteChange_(k.sidx(), k.oid(), rcv)) {
+                // add "remote" content entry for latest version (in case of expulsion)
+                CA ca = oa.ca(k.kidx());
+                _rcdb.insert_(k.sidx(), k.oid(), rcv, new DID(UniqueID.ZERO), res._hash, ca.length(), t);
+            }
+
+            // del branch if needed
+            if (!res._kidcsDel.isEmpty()) {
+                checkState(res._kidcsDel.size() == 1);
+                KIndex kidx = Iterables.getFirst(res._kidcsDel, null);
+                checkState(kidx == KIndex.MASTER.increment());
+                checkState(kidx != k.kidx());
+                if (oa.caNullable(kidx) != null) {
+                    l.info("delete branch {}k{}", k.soid(), kidx);
+                    _ds.deleteCA_(k.soid(), kidx, t);
+                    _ps.newFile_(_ds.resolve_(k.soid()), kidx).delete_(PhysicalOp.APPLY, t);
+                } else {
+                    l.warn("{} mergeable ca {} disappeared", k.soid(), kidx);
+                }
+            }
             return;
         }
 

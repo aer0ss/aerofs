@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -94,7 +95,7 @@ public class ContentChangeSubmitter implements Submitter
     /**
      * Asynchronously submit the next queued local metadata change to Polaris.
      *
-     * TODO: batch multiple changes in a single request
+     * TODO(phoenix): batch multiple changes in a single request
      */
     @Override
     public void submit_(SIndex sidx, AsyncTaskCallback cb)
@@ -106,7 +107,7 @@ public class ContentChangeSubmitter implements Submitter
             return;
         }
 
-        // TODO: avoid wasteful repeated iteration of ignored entries
+        // TODO(phoenix): avoid wasteful repeated iteration of ignored entries
         try (IDBIterator<ContentChange> it = _ccdb.getChanges_(sidx)) {
             while (it.next_()) {
                 if (submit_(it.get_(), cb)) {
@@ -122,6 +123,8 @@ public class ContentChangeSubmitter implements Submitter
     {
         OA oa = _ds.getOA_(new SOID(c.sidx, c.oid));
         // don't submit changes when a conflict exists
+        // TODO(phoenix): skip until meta is successfully submitted
+        // TODO(phoenix): make sure ignored entries are submitted promptly on condition change
         if (oa.cas().size() != 1) return false;
         CA ca = oa.caMaster();
 
@@ -180,7 +183,7 @@ public class ContentChangeSubmitter implements Submitter
         Ack ack = GsonUtil.GSON.fromJson(body, Ack.class);
         try (Trans t = _tm.begin_()) {
             if (ack.updated.size() != 1) throw new ExProtocolError();
-            ackSubmission_(c, ack.updated.get(0), t);
+            ackSubmission_(c, change, ack.updated.get(0), t);
             t.commit_();
         }
         return true;
@@ -193,8 +196,8 @@ public class ContentChangeSubmitter implements Submitter
         return true;
     }
 
-    private void ackSubmission_(ContentChange c, UpdatedObject updated, Trans t)
-            throws SQLException
+    private void ackSubmission_(ContentChange c, LocalChange change, UpdatedObject updated, Trans t)
+            throws Exception
     {
         checkState(c.oid.equals(updated.object.oid));
 
@@ -203,6 +206,9 @@ public class ContentChangeSubmitter implements Submitter
         if (v == null || v < updated.object.version) {
             _cvdb.setVersion_(c.sidx, c.oid, updated.object.version, t);
             _rcdb.deleteUpToVersion_(c.sidx, c.oid, updated.object.version, t);
+            // add "remote" content entry for latest version (in case of expulsion)
+            _rcdb.insert_(c.sidx, c.oid, updated.object.version, Cfg.did(),
+                    new ContentHash(BaseUtil.hexDecode(change.hash)), change.size, t);
         }
 
         if (!_ccdb.deleteChange_(c.sidx, c.idx, t)) {

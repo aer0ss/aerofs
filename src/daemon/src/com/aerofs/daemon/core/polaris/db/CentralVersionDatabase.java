@@ -40,6 +40,22 @@ import static com.google.common.base.Preconditions.checkState;
  * For files, the version is bumped every time the size or content hash changes.
  * Timestamp-only change do NOT cause version bump.
  *
+ * Contrary to the distributed version scheme which allowed an arbitrary amount of
+ * content branches, the centralized system only leaves room for a single *local*
+ * content branch. Local changes that conflict with a remote change already accepted
+ * by the central server are rejected (and thus not propagated to remote peers). The
+ * device on which that conflicting change was made thus ends up with two content
+ * branches:
+ *   - LOCAL (kidx = 0): the current local version (visible on the file system and on
+ *     which more change can be done. For historical version this branch is known as
+ *     MASTER. That may be changed once the transition away from the distributed model
+ *     is complete.
+ *   - REMOTE (kidx = 1): the newest known centrally accepted version
+ *
+ * The entries in this database only refer to valid (i.e. centrally-issued) version
+ * numbers. In case of conflict, the entry corresponds to the version of the REMOTE
+ * branch.
+ *
  * NB: in neither case does a change to the object's own name cause a version bump.
  * Such a change would result in the version of the parent folder being bumped.
  */

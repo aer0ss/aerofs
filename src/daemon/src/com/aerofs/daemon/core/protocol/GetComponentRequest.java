@@ -134,7 +134,8 @@ public class GetComponentRequest
                 .setObjectId(socid.oid().toPB())
                 .setComId(socid.cid().getInt());
 
-        if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
+        boolean polaris = _cedb.getChangeEpoch_(socid.sidx()) != null;
+        if (polaris) {
             checkState(socid.cid().isContent());
             bd.setLocalVersion(Version.wrapCentral(_cvdb.getVersion_(socid.sidx(), socid.oid())).toPB_());
         } else {
@@ -142,7 +143,7 @@ public class GetComponentRequest
         }
 
         if (socid.cid().isContent()) {
-            setIncrementalDownloadInfo_(socid, bd);
+            setIncrementalDownloadInfo_(socid, bd, polaris);
         }
 
         PBCore request = CoreProtocolUtil.newRequest(Type.GET_COMPONENT_REQUEST)
@@ -183,7 +184,8 @@ public class GetComponentRequest
         }
     }
 
-    private void setIncrementalDownloadInfo_(SOCID socid, PBGetComponentRequest.Builder bd)
+    private void setIncrementalDownloadInfo_(SOCID socid, PBGetComponentRequest.Builder bd,
+            boolean polaris)
             throws SQLException, ExNotFound
     {
         OA oa = _ds.getOANullable_(socid.soid());
@@ -192,7 +194,10 @@ public class GetComponentRequest
 
         SOKID branch = new SOKID(socid.soid(), KIndex.MASTER);
 
-        ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch) : null;
+        // NB: the polaris codepath cannot handle "same content" responses gracefully
+        // so we avoid sending the local hash when requesting content to ensure that
+        // such a response never occurs
+        ContentHash h = !polaris && oa.caMasterNullable() != null ? _ds.getCAHash_(branch) : null;
         if (h != null) {
             bd.setHashContent(h.toPB());
             l.info("advertise hash in gcc {} {}", socid, h);
