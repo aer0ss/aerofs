@@ -13,8 +13,9 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.sharing.SharingModel;
 import com.aerofs.gui.sharing.SharingRulesExceptionHandlers;
-import com.aerofs.gui.sharing.invitee.InviteModel.Invitee;
+import com.aerofs.gui.sharing.Subject;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -44,6 +45,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
+
+import java.util.List;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
@@ -81,7 +84,7 @@ public class CompInviteUsers extends Composite
     private final Button                _btnOK;
     private final Button                _btnCancel;
 
-    private final InviteModel           _model;
+    private final SharingModel          _model;
     private final InviteeTextAdapter    _adapter;
 
     public CompInviteUsers(Composite parent, Path path, String name, boolean notifyOnSuccess)
@@ -114,8 +117,8 @@ public class CompInviteUsers extends Composite
         //   this case.
         ListeningExecutorService executor = listeningDecorator(newSingleThreadExecutor(
                 runnable -> new Thread(runnable, "invite")));
-        _model              = new InviteModel(new InjectableCfg(), newMutualAuthClientFactory(),
-                UIGlobals.ritualClientProvider(), executor);
+        _model              = new SharingModel(new InjectableCfg(),
+                UIGlobals.ritualClientProvider(), newMutualAuthClientFactory(), executor);
         _adapter            = new InviteeTextAdapter(_model, _txtInvitees);
 
         initializeControls();
@@ -211,7 +214,7 @@ public class CompInviteUsers extends Composite
 
     private void onLoad()
     {
-        addCallback(_model.getLocalUserFirstName(), new FutureCallback<String>()
+        addCallback(_model.getLocalUserFirstname(), new FutureCallback<String>()
         {
             @Override
             public void onSuccess(String firstName)
@@ -235,7 +238,7 @@ public class CompInviteUsers extends Composite
                 isBlank(folderName) ? "a folder" : Util.quote(folderName), fromPerson);
     }
 
-    private void workImpl(java.util.List<Invitee> invitees, Permissions permissions, String notes,
+    private void workImpl(List<Subject> invitees, Permissions permissions, String notes,
             boolean suppressSFRWarnings)
     {
         setStatusText(S.INVITING);

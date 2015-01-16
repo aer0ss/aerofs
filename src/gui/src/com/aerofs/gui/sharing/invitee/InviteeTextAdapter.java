@@ -8,8 +8,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.sharing.invitee.InviteModel.Invitee;
-import com.aerofs.gui.sharing.invitee.InviteModel.InviteeType;
+import com.aerofs.gui.sharing.SharingModel;
+import com.aerofs.gui.sharing.Subject;
+import com.aerofs.gui.sharing.Subject.Group;
+import com.aerofs.gui.sharing.Subject.InvalidSubject;
+import com.aerofs.gui.sharing.Subject.User;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.swtdesigner.SWTResourceManager;
@@ -132,26 +135,28 @@ public class InviteeTextAdapter
     private final int ICON_WIDTH            = ICON_USER.getImageData().width;
     private final int ICON_HEIGHT           = ICON_USER.getImageData().height;
 
-    private final InviteModel       _model;
-    private final StyledText        _text;
-    private final Shell             _shell;
-    private final Composite         _cmpContent;
-    private final TableViewer       _viewer;
-    private final Table             _table;
-    private final TableViewerColumn _column;
+    private final SharingModel          _model;
+    private final StyledText            _text;
+    private final Shell                 _shell;
+    private final Composite             _cmpContent;
+    private final TableViewer           _viewer;
+    private final Table                 _table;
+    private final TableViewerColumn     _column;
+    private final InviteeLabelProvider  _labelProvider;
 
-    private List<Invitee> _suggestions = emptyList();
-    private ListenableFuture<List<Invitee>> _lastQueryTask = immediateCancelledFuture();
+    private List<Subject>                   _suggestions    = emptyList();
+    private ListenableFuture<List<Subject>> _lastQueryTask  = immediateCancelledFuture();
 
-    public InviteeTextAdapter(InviteModel model, StyledText text)
+    public InviteeTextAdapter(SharingModel model, StyledText text)
     {
-        _model      = model;
-        _text       = text;
-        _shell      = new Shell(_text.getShell(), SWT.TOOL | SWT.ON_TOP);
-        _cmpContent = new Composite(_shell, SWT.NONE);
-        _viewer     = new TableViewer(_cmpContent, SWT.SINGLE | SWT.READ_ONLY);
-        _table      = _viewer.getTable();
-        _column     = new TableViewerColumn(_viewer, SWT.NONE);
+        _model          = model;
+        _text           = text;
+        _shell          = new Shell(_text.getShell(), SWT.TOOL | SWT.ON_TOP);
+        _cmpContent     = new Composite(_shell, SWT.NONE);
+        _viewer         = new TableViewer(_cmpContent, SWT.SINGLE | SWT.READ_ONLY);
+        _table          = _viewer.getTable();
+        _column         = new TableViewerColumn(_viewer, SWT.NONE);
+        _labelProvider  = new InviteeLabelProvider();
 
         initializeSuggestionsPopup();
     }
@@ -163,7 +168,7 @@ public class InviteeTextAdapter
         _shell.setBackgroundMode(SWT.INHERIT_FORCE);
 
         _viewer.setContentProvider(ArrayContentProvider.getInstance());
-        _viewer.setLabelProvider(new InviteeLabelProvider());
+        _viewer.setLabelProvider(_labelProvider);
 
         _table.setForeground(SWTResourceManager.getColor(SWT.COLOR_INFO_FOREGROUND));
         _table.setBackground(SWTResourceManager.getColor(SWT.COLOR_INFO_BACKGROUND));
@@ -199,11 +204,11 @@ public class InviteeTextAdapter
                 _lastQueryTask.cancel(true);
             }
 
-            _lastQueryTask = _model.query(getPendingText());
+            _lastQueryTask = _model.getSuggestions(getPendingText());
 
-            addCallback(_lastQueryTask, new FutureCallback<List<Invitee>>() {
+            addCallback(_lastQueryTask, new FutureCallback<List<Subject>>() {
                 @Override
-                public void onSuccess(List<Invitee> suggestions)
+                public void onSuccess(List<Subject> suggestions)
                 {
                     setSuggestions(suggestions);
                 }
@@ -228,7 +233,7 @@ public class InviteeTextAdapter
         // only handle DefaultSelection if the table doesn't handle it
         _text.addListener(SWT.DefaultSelection, e -> {
             if (!e.doit || isBlank(getPendingText())) return;
-            addInvitee(_model.createInvitee(getPendingText()));
+            addInvitee(_model._factory.fromUserInput(getPendingText()));
             e.doit = false;
         });
 
@@ -269,8 +274,8 @@ public class InviteeTextAdapter
 
         // custom painting code to draw the invitee bubble
         _text.addPaintObjectListener(e -> {
-            if (!(e.style.data instanceof Invitee)) return;
-            Invitee data = (Invitee)e.style.data;
+            if (!(e.style.data instanceof Subject)) return;
+            Subject data = (Subject)e.style.data;
 
             GC gc = e.gc;
             GlyphMetrics metrics = e.style.metrics;
@@ -288,14 +293,12 @@ public class InviteeTextAdapter
             gc.drawRoundRectangle(e.x + H_MARGIN, e.y + V_MARGIN, bubbleWidth, bubbleHeight,
                     H_OFFSET, bubbleHeight / 2);
 
-            Image icon = data._type == InviteeType.GROUP ? ICON_GROUP
-                    : data._type == InviteeType.USER ? ICON_USER
-                    : ICON_ERROR;
+            Image icon = _labelProvider.getImage(data);
 
             // _here be dragons_: test thoroughly on all platforms if you change the math here
             gc.drawImage(icon, e.x + H_MARGIN + H_OFFSET, e.y +
                     (metrics.ascent + metrics.descent - ICON_HEIGHT) / 2);
-            gc.drawString(data._shortText, e.x + H_MARGIN + H_OFFSET + ICON_WIDTH + H_SPACING,
+            gc.drawString(data.getLabel(), e.x + H_MARGIN + H_OFFSET + ICON_WIDTH + H_SPACING,
                     e.y + V_MARGIN + V_OFFSET, true);
         });
 
@@ -352,16 +355,16 @@ public class InviteeTextAdapter
         _text.addListener(SWT.FocusOut, lostFocusListener);
     }
 
-    public List<Invitee> getValues()
+    public List<Subject> getValues()
     {
-        List<Invitee> values = Stream.of(_text.getStyleRanges())
-                .map(styleRange -> (Invitee)styleRange.data)
+        List<Subject> values = Stream.of(_text.getStyleRanges())
+                .map(styleRange -> (Subject)styleRange.data)
                 .collect(toList());
 
         if (isNotBlank(getPendingText())) {
             // FIXME (AT): this will cause AeroFS to create an invitee on every text modified event.
             //   This is expensive.
-            values.add(_model.createInvitee(getPendingText()));
+            values.add(_model._factory.fromUserInput(getPendingText()));
         }
 
         return values;
@@ -369,15 +372,15 @@ public class InviteeTextAdapter
 
     public boolean isInputValid()
     {
-        List<Invitee> values = getValues();
+        List<Subject> values = getValues();
         return values.size() > 0
                 && !values.stream()
-                .filter(invitee -> invitee._type == InviteeType.INVALID)
+                .filter(subject -> subject instanceof InvalidSubject)
                 .findAny()
                 .isPresent();
     }
 
-    private void addInvitee(Invitee invitee)
+    private void addInvitee(Subject subject)
     {
         checkState(GUI.get().isUIThread());
         int offset = getPendingTextIndex();
@@ -386,14 +389,14 @@ public class InviteeTextAdapter
         StyleRange styleRange = new StyleRange();
         styleRange.start = offset;
         styleRange.length = 1;
-        styleRange.data = invitee;
+        styleRange.data = subject;
 
         GC gc = new GC(_text);
         FontMetrics metrics = gc.getFontMetrics();
         styleRange.metrics = new GlyphMetrics(
                 metrics.getAscent() + V_MARGIN + V_OFFSET,
                 metrics.getDescent() + V_MARGIN + V_OFFSET,
-                ICON_WIDTH + H_SPACING + gc.textExtent(invitee._shortText).x
+                ICON_WIDTH + H_SPACING + gc.textExtent(subject.getLabel()).x
                         + 2 * (H_MARGIN + H_OFFSET));
         // it is necessary to dispose the GC otherwise the user will see weird behaviours on Ubuntu
         gc.dispose();
@@ -415,7 +418,7 @@ public class InviteeTextAdapter
         return _text.getText().substring(getPendingTextIndex()).trim();
     }
 
-    private void setSuggestions(List<Invitee> suggestions)
+    private void setSuggestions(List<Subject> suggestions)
     {
         checkState(GUI.get().isUIThread());
 
@@ -472,8 +475,8 @@ public class InviteeTextAdapter
         @Override
         public String getText(Object element)
         {
-            if (element instanceof Invitee) {
-                return ((Invitee)element)._longText;
+            if (element instanceof Subject) {
+                return ((Subject)element).getDescription();
             } else {
                 return "";
             }
@@ -482,15 +485,10 @@ public class InviteeTextAdapter
         @Override
         public Image getImage(Object element)
         {
-            if (element instanceof Invitee) {
-                switch (((Invitee)element)._type) {
-                case USER:  return ICON_USER;
-                case GROUP: return ICON_GROUP;
-                default:    return ICON_ERROR;
-                }
-            } else {
-                return null;
-            }
+            return element instanceof User ? ICON_USER
+                    : element instanceof Group ? ICON_GROUP
+                    : element instanceof InvalidSubject ? ICON_ERROR
+                    : null;
         }
     }
 }

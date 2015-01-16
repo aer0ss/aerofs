@@ -8,8 +8,11 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.sharing.members.SharedFolderMember.Group;
-import com.aerofs.gui.sharing.members.SharedFolderMember.User;
+import com.aerofs.gui.sharing.SharedFolderMember;
+import com.aerofs.gui.sharing.SharedFolderMember.CanSetPermissions;
+import com.aerofs.gui.sharing.Subject;
+import com.aerofs.gui.sharing.Subject.Group;
+import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.labeling.L;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
@@ -33,10 +36,26 @@ public abstract class SharedFolderMemberMenu
     public static SharedFolderMemberMenu get(@Nullable Permissions localUserPermissions,
             SharedFolderMember member)
     {
-        if (member.isLocalUser()) {
+        Subject subject = member.getSubject();
+
+        if (subject.isLocalUser()) {
             return new NoMenu();
+        } else if (member instanceof CanSetPermissions
+                && canManagePermissions(localUserPermissions)) {
+            if (subject instanceof User) {
+                return new ManageUserMenu((CanSetPermissions)member, (User)subject);
+            } else if (subject instanceof Group) {
+                return new ManageGroupMenu((CanSetPermissions)member, (Group)subject);
+            }
+        } else if (member.getSubject() instanceof User) {
+            return new EmailUserMenu((User)member.getSubject());
         }
 
+        return new NoMenu();
+    }
+
+    private static boolean canManagePermissions(Permissions localUserPermissions)
+    {
         /**
          * FIXME Edge case: Team Servers show the menu to update ACL even though the Team Server may
          * not necessarily have the permission to update the ACL.
@@ -47,18 +66,8 @@ public abstract class SharedFolderMemberMenu
          *
          * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
          */
-        if ((localUserPermissions != null && localUserPermissions.covers(Permission.MANAGE))
-                || L.isMultiuser()) {
-            if (member instanceof User) {
-                return new ManageUserMenu((User)member);
-            } else if (member instanceof Group) {
-                return new ManageGroupMenu((Group)member);
-            }
-        } else if (member instanceof User) {
-            return new EmailUserMenu((User)member);
-        }
-
-        return new NoMenu();
+        return L.isMultiuser() ||
+                localUserPermissions != null && localUserPermissions.covers(Permission.MANAGE);
     }
 
     public void open(Control parent)
@@ -125,18 +134,19 @@ public abstract class SharedFolderMemberMenu
             new MenuItem(_menu, SWT.SEPARATOR);
         }
 
-        public void addSetPermissions(SharedFolderMember member)
+        public void addSetPermissions(CanSetPermissions member)
         {
             Permissions.ROLE_NAMES.keySet()
                     .stream()
-                    .filter(role -> !member._permissions.equals(role))
+                    .filter(role -> !member.getPermissions().equals(role))
                     .forEach(role -> createMenuItem("Set as " + role.roleName(),
                             () -> notifyRoleChangeListener(role)));
         }
 
         public void addEmailUser(User user)
         {
-            createMenuItem("Email User", () -> GUIUtil.launch("mailto:" + user._userID.getString()));
+            createMenuItem("Email User",
+                    () -> GUIUtil.launch("mailto:" + user._userID.getString()));
         }
 
         public void addRemoveUser(User user)
@@ -186,17 +196,19 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is an user
     static class ManageUserMenu extends SharedFolderMemberMenu
     {
-        private final User _user;
+        private final CanSetPermissions _member;
+        private final User                  _user;
 
-        public ManageUserMenu(User user)
+        public ManageUserMenu(CanSetPermissions member, User user)
         {
-            _user = user;
+            _member = member;
+            _user   = user;
         }
 
         @Override
         protected void onOpen()
         {
-            _populator.addSetPermissions(_user);
+            _populator.addSetPermissions(_member);
             _populator.addSeparator();
             _populator.addEmailUser(_user);
             _populator.addSeparator();
@@ -213,17 +225,19 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is a group
     static class ManageGroupMenu extends SharedFolderMemberMenu
     {
-        private final Group _group;
+        private final CanSetPermissions _member;
+        private final Group                 _group;
 
-        public ManageGroupMenu(Group group)
+        public ManageGroupMenu(CanSetPermissions member, Group group)
         {
-            _group = group;
+            _member = member;
+            _group  = group;
         }
 
         @Override
         protected void onOpen()
         {
-            _populator.addSetPermissions(_group);
+            _populator.addSetPermissions(_member);
             _populator.addSeparator();
             _populator.addRemoveGroup(_group);
         }

@@ -8,26 +8,27 @@ import com.aerofs.base.id.SID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
-import com.aerofs.gui.sharing.members.SharedFolderMember.User;
-import com.aerofs.gui.sharing.members.SharingLabelProvider.ArrowLabelProvider;
-import com.aerofs.gui.sharing.members.SharingLabelProvider.RoleLabelProvider;
-import com.aerofs.gui.sharing.members.SharingLabelProvider.SubjectLabelProvider;
-import com.aerofs.gui.sharing.members.SharingModel.LoadResult;
+import com.aerofs.gui.sharing.SharedFolderMember;
+import com.aerofs.gui.sharing.SharedFolderMember.CanSetPermissions;
+import com.aerofs.gui.sharing.SharingModel;
+import com.aerofs.gui.sharing.SharingModel.MemberListResult;
+import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
-import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.viewers.ArrayContentProvider;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.eclipse.jface.layout.TreeColumnLayout;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
@@ -37,8 +38,8 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -46,11 +47,9 @@ import java.util.List;
 
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.canHandle;
 import static com.aerofs.gui.sharing.SharingRulesExceptionHandlers.promptUserToSuppressWarning;
-import static com.aerofs.gui.sharing.members.SharedFolderMember.Factory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static java.util.Collections.emptyList;
@@ -69,11 +68,12 @@ public class CompUserList extends Composite
 
     private final SharingModel _model;
 
-    private final TableViewer _tv;
+    private final TreeViewer _tv;
+    private final Tree _tree;
 
-    private final TableColumn _tcSubject;
-    private final TableColumn _tcRole;
-    private final TableColumn _tcArrow;
+    private final TreeColumn _tcSubject;
+    private final TreeColumn _tcRole;
+    private final TreeColumn _tcArrow;
 
     private CompSpin _compSpin;
 
@@ -100,23 +100,23 @@ public class CompUserList extends Composite
     {
         super(parent, SWT.NONE);
 
-        _model = new SharingModel(UIGlobals.ritualClientProvider(), newMutualAuthClientFactory(),
-                new Factory(new CfgLocalUser()), listeningDecorator(newSingleThreadExecutor()));
+        _model = new SharingModel(new InjectableCfg(), UIGlobals.ritualClientProvider(),
+                newMutualAuthClientFactory(), listeningDecorator(newSingleThreadExecutor()));
 
-        _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
-        _tv.setContentProvider(new ArrayContentProvider());
+        _tv = new TreeViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
+        _tv.setContentProvider(new SharingContentProvider());
         _tv.setComparator(SharedFolderMemberComparators.bySubject());
         ColumnViewerToolTipSupport.enableFor(_tv);
 
-        final Table table = _tv.getTable();
-        table.setBackground(getShell().getDisplay().getSystemColor(SWT.COLOR_WHITE));
-        table.setHeaderVisible(true);
-        table.setLinesVisible(false);
+        _tree = _tv.getTree();
+        _tree.setBackground(getShell().getDisplay().getSystemColor(SWT.COLOR_WHITE));
+        _tree.setHeaderVisible(true);
+        _tree.setLinesVisible(false);
 
         ////////
         // add columns
-        TableViewerColumn tvcSubject = new TableViewerColumn(_tv, SWT.NONE);
-        tvcSubject.setLabelProvider(new SubjectLabelProvider());
+        TreeViewerColumn tvcSubject = new TreeViewerColumn(_tv, SWT.NONE);
+        tvcSubject.setLabelProvider(SharingLabelProviders.forSubject());
         _tcSubject = tvcSubject.getColumn();
         _tcSubject.setText("Name");
         _tcSubject.addSelectionListener(new SelectionAdapter()
@@ -128,11 +128,10 @@ public class CompUserList extends Composite
             }
         });
 
-        TableViewerColumn tvcRole = new TableViewerColumn(_tv, SWT.NONE);
-        tvcRole.setLabelProvider(new RoleLabelProvider());
+        TreeViewerColumn tvcRole = new TreeViewerColumn(_tv, SWT.NONE);
+        tvcRole.setLabelProvider(SharingLabelProviders.forRole());
         _tcRole = tvcRole.getColumn();
         _tcRole.setText("Role");
-        _tcRole.setAlignment(SWT.RIGHT);
         _tcRole.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -142,18 +141,19 @@ public class CompUserList extends Composite
             }
         });
 
-        TableViewerColumn tvcArrow = new TableViewerColumn(_tv, SWT.NONE);
-        tvcArrow.setLabelProvider(new ArrowLabelProvider(this));
+        TreeViewerColumn tvcArrow = new TreeViewerColumn(_tv, SWT.NONE);
+        tvcArrow.setLabelProvider(SharingLabelProviders.forActions(this));
         _tcArrow = tvcArrow.getColumn();
         _tcArrow.setResizable(false);
+        int tcArrowIndex = _tcArrow.getParent().indexOf(_tcArrow);
 
-        setLayout(new TableColumnLayout());
-        layoutTableColumns();
+        setLayout(new TreeColumnLayout());
+        layoutTreeColumns();
 
         ////////
         // table-wise operations
 
-        table.addMouseListener(new MouseAdapter()
+        _tree.addMouseListener(new MouseAdapter()
         {
             @Override
             public void mouseUp(MouseEvent ev)
@@ -161,21 +161,32 @@ public class CompUserList extends Composite
                 ViewerCell vc = _tv.getCell(new Point(ev.x, ev.y));
                 if (vc == null) return;
 
+                if (vc.getColumnIndex() != tcArrowIndex) return;
+
                 Object elem = vc.getElement();
                 if (!(elem instanceof SharedFolderMember)) return;
 
                 _tv.setSelection(new StructuredSelection(elem), true);
 
                 SharedFolderMember member = (SharedFolderMember)elem;
-                SharedFolderMemberMenu menu =
-                        SharedFolderMemberMenu.get(_localUserPermissions, member);
+                SharedFolderMemberMenu menu = SharedFolderMemberMenu.get(_localUserPermissions,
+                        member);
 
                 if (!menu.hasContextMenu()) return;
 
-                menu.setRoleChangeListener(
-                        permissions -> setRole(_sid, member, permissions, false));
-                menu.open(_tv.getTable());
+                if (member instanceof CanSetPermissions) {
+                    menu.setRoleChangeListener(
+                            permissions -> setRole(_sid, (CanSetPermissions)member, permissions,
+                                    false));
+                }
+
+                menu.open(_tree);
             }
+        });
+
+        _tv.addDoubleClickListener(e -> {
+            Object element = ((IStructuredSelection)e.getSelection()).getFirstElement();
+            _tv.setExpandedState(element, !_tv.getExpandedState(element));
         });
     }
 
@@ -189,16 +200,16 @@ public class CompUserList extends Composite
 
     // updates the layout of table columns, should be called every time the width of _tcRole
     // or _tcArrow changes
-    private void layoutTableColumns()
+    private void layoutTreeColumns()
     {
         _tcArrow.pack();
 
         // use golden ratio
-        TableColumnLayout layout = (TableColumnLayout) getLayout();
+        TreeColumnLayout layout = (TreeColumnLayout) getLayout();
         layout.setColumnData(_tcSubject, new ColumnWeightData(618));
         layout.setColumnData(_tcRole, new ColumnWeightData(382));
         layout.setColumnData(_tcArrow, new ColumnWeightData(0, _tcArrow.getWidth()));
-        layout(new Control[]{_tv.getTable()});
+        layout(new Control[]{_tree});
     }
 
     // pre: must be called from UI thread and members must not be null.
@@ -211,7 +222,7 @@ public class CompUserList extends Composite
     // pre: must be called from the UI thread
     private void setState(String errorMessage)
     {
-        setStateImpl(newArrayList(errorMessage), emptyList(), null, null);
+        setStateImpl(errorMessage, emptyList(), null, null);
     }
 
     // pre: must be called from the UI thread and members must not be null
@@ -258,12 +269,12 @@ public class CompUserList extends Composite
 
         setState(S.GUI_LOADING);
 
-        addCallback(_model.load(path), new FutureCallback<LoadResult>() {
+        addCallback(_model.load(path), new FutureCallback<MemberListResult>() {
             @Override
-            public void onSuccess(@Nullable LoadResult result)
+            public void onSuccess(@Nullable MemberListResult result)
             {
                 setState(result._members, result._permissions, result._sid);
-                layoutTableColumns();
+                layoutTreeColumns();
             }
 
             @Override
@@ -277,67 +288,71 @@ public class CompUserList extends Composite
                         new ErrorMessage(ExBadArgs.class,
                                 "The application has received invalid data from the server."));
             }
-        }, new GUIExecutor(_tv.getTable()));
+        }, new GUIExecutor(_tree));
     }
 
     /**
      * {@paramref sid} needs to be passed in because _sid can change while ISWTWorker does work
      */
-    private void setRole(final SID sid, final SharedFolderMember member,
+    private void setRole(final SID sid, final CanSetPermissions member,
             final Permissions permissions, final boolean suppressSharedFolderRulesWarnings)
     {
-        Table table = _tv.getTable();
-        table.setEnabled(false);
+        _tree.setEnabled(false);
 
         if (_compSpin != null) _compSpin.start();
 
-        addCallback(_model.setRole(sid, member, permissions, suppressSharedFolderRulesWarnings),
-                new FutureCallback<Void>()
-                {
-                    @Override
-                    public void onSuccess(@Nullable Void result)
-                    {
-                        if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+        ListenableFuture<Void> task = permissions == null
+                ? _model.removeSubject(sid, member.getSubject())
+                : _model.setSubjectPermissions(sid, member.getSubject(), permissions,
+                suppressSharedFolderRulesWarnings);
+        FutureCallback<Void> callback = new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(@Nullable Void result)
+            {
+                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
 
-                        if (!table.isDisposed()) {
-                            table.setEnabled(true);
-                            table.setFocus();
+                if (!_tree.isDisposed()) {
+                    _tree.setEnabled(true);
+                    _tree.setFocus();
 
-                            if (permissions == null) {
-                                _members.remove(member);
-                            } else {
-                                member._permissions = permissions;
-                            }
-
-                            _tv.refresh();
-
-                            notifyStateChangedListener();
-                        }
+                    if (permissions == null) {
+                        _members.remove(member);
+                    } else {
+                        member.setPermissions(permissions);
                     }
 
-                    @Override
-                    public void onFailure(Throwable t)
-                    {
-                        if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+                    _tv.refresh();
 
-                        if (!table.isDisposed()) table.setEnabled(true);
+                    notifyStateChangedListener();
+                }
+            }
 
-                        l.warn(Util.e(t));
+            @Override
+            public void onFailure(Throwable t)
+            {
+                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
 
-                        if (canHandle(t)) {
-                            if (promptUserToSuppressWarning(getShell(), t)) {
-                                setRole(sid, member, permissions, true);
-                            }
-                        } else {
-                            String message = String.format(permissions == null
-                                            ? "Failed to remove the %s."
-                                            : "Failed to update the %s's role.",
-                                    member instanceof User ? "user" : "group");
-                            ErrorMessages.show(getShell(), t, message,
-                                    new ErrorMessage(ExNoPerm.class,
-                                            "You do not have the permission to do so."));
-                        }
+                if (!_tree.isDisposed()) _tree.setEnabled(true);
+
+                l.warn(Util.e(t));
+
+                if (canHandle(t)) {
+                    if (promptUserToSuppressWarning(getShell(), t)) {
+                        setRole(sid, member, permissions, true);
                     }
-                }, new GUIExecutor(table));
+                } else {
+                    String message = String.format(permissions == null
+                                    ? "Failed to remove the %s."
+                                    : "Failed to update the %s's role.",
+                            member.getSubject() instanceof User ? "user" : "group");
+                    ErrorMessages.show(getShell(), t, message,
+                            new ErrorMessage(ExNoPerm.class,
+                                    "You do not have the permission to do so."));
+                }
+            }
+        };
+
+        addCallback(task, callback, new GUIExecutor(_tree));
     }
 }

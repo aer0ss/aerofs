@@ -4,8 +4,9 @@
 
 package com.aerofs.gui.sharing.members;
 
-import com.aerofs.gui.sharing.members.SharedFolderMember.Group;
-import com.aerofs.gui.sharing.members.SharedFolderMember.User;
+import com.aerofs.gui.sharing.SharedFolderMember;
+import com.aerofs.gui.sharing.Subject;
+import com.aerofs.gui.sharing.Subject.Group;
 import com.google.common.collect.ComparisonChain;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.Viewer;
@@ -34,13 +35,15 @@ public class SharedFolderMemberComparators
                 if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
                     SharedFolderMember m1 = (SharedFolderMember)o1;
                     SharedFolderMember m2 = (SharedFolderMember)o2;
+                    Subject s1 = m1.getSubject();
+                    Subject s2 = m2.getSubject();
 
                     return ComparisonChain.start()
-                            .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
-                            .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
-                            .compareTrueFirst(m1 instanceof Group, m2 instanceof Group)
-                            .compareTrueFirst(m1.hasName(), m2.hasName())
-                            .compare(m1.getLabel(), m2.getLabel())
+                            .compareTrueFirst(s1.isLocalUser(), s2.isLocalUser())
+                            .compareTrueFirst(m1.getState() == JOINED, m2.getState() == JOINED)
+                            .compareTrueFirst(s1 instanceof Group, s2 instanceof Group)
+                            .compareTrueFirst(s1.hasName(), s2.hasName())
+                            .compare(s1.getLabel(), s2.getLabel())
                             .result();
                 } else {
                     return 0;
@@ -58,17 +61,19 @@ public class SharedFolderMemberComparators
                 if (o1 instanceof SharedFolderMember && o2 instanceof SharedFolderMember) {
                     SharedFolderMember m1 = (SharedFolderMember)o1;
                     SharedFolderMember m2 = (SharedFolderMember)o2;
+                    Subject s1 = m1.getSubject();
+                    Subject s2 = m2.getSubject();
 
                     return ComparisonChain.start()
-                            .compareTrueFirst(m1.isLocalUser(), m2.isLocalUser())
-                            .compareTrueFirst(m1._state == JOINED, m2._state == JOINED)
-                            .compareTrueFirst(m1 instanceof Group, m2 instanceof Group)
+                            .compareTrueFirst(s1.isLocalUser(), s2.isLocalUser())
+                            .compareTrueFirst(m1.getState() == JOINED, m2.getState() == JOINED)
+                            .compareTrueFirst(s1 instanceof Group, s2 instanceof Group)
                             // we want to sort the permissions such that Pa < Pb iff Pb is a subset
                             // of Pa. This order is opposite from the order defined in Permissions,
                             // thus we reverse the comparison order
-                            .compare(m2._permissions, m1._permissions)
-                            .compareTrueFirst(m1.hasName(), m2.hasName())
-                            .compare(m1.getLabel(), m2.getLabel())
+                            .compare(m2.getPermissions(), m1.getPermissions())
+                            .compareTrueFirst(s1.hasName(), s2.hasName())
+                            .compare(s1.getLabel(), s2.getLabel())
                             .result();
                 } else {
                     return 0;
