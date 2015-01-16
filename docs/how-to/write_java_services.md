@@ -31,7 +31,7 @@ Use Jetty. Jetty is an embeddable servlet container that allows you to build an 
 
 **Build a REST service with custom routes**
 
-Use Restless or DropWizard. (Both micro-frameworks use Jersey, aka. JAX-RS under the hood.) I recommend using Restless if you need to support chunked uploading, mutual authentication or have custom requirements. I prefer using Dropwizard in the services I build because it handles component wiring out-of-the-box, has well-integrated metrics and database pooling/query library support and, frankly, gets out of my way.
+Use restless or baseline. (Both micro-frameworks are JAX-RS-compliant under the hood.) I recommend using restless if you need to support mutual authentication. I prefer using baseline in the services I build because it handles component wiring out-of-the-box, has well-integrated metrics and database pooling/query library support.
 
 **Use an ORM**
 

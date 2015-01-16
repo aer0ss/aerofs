@@ -5,6 +5,7 @@ SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SERVICE=bootstrap
 RESOURCES=../src/$SERVICE/resources
+CONF_DIR=../src/$SERVICE/src/dist
 OUTPUT_DIR=build/$SERVICE
 OPT=$OUTPUT_DIR/opt/$SERVICE
 DEBIAN=$OUTPUT_DIR/DEBIAN
@@ -29,8 +30,7 @@ cp $RESOURCES/bootstrap.conf $OUTPUT_DIR/etc/init/
 # Java-related file copies.
 cp ../out.gradle/$SERVICE/dist/*.jar $OPT/
 
-cp $RESOURCES/logback-stdout.xml $OPT
-cp $RESOURCES/bootstrap.yml $OPT
+cp $CONF_DIR/bootstrap.yml $OPT
 
 # Copy over additional scripts required in the bootstrap package.
 cp -a $RESOURCES/scripts $OPT
