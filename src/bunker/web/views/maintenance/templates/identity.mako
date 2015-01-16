@@ -59,7 +59,7 @@
                         style="display: none;"
                     %endif
                 >
-                    <p><a href="https://support.aerofs.com/entries/23101219" target="_blank">
+                    <p><a href="https://support.aerofs.com/hc/en-us/articles/203689174" target="_blank">
                             Need help setting up or troubleshooting AD/LDAP?</a></p>
 
                     ${ldap_options()}
