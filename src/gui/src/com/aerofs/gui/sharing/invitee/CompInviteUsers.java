@@ -4,10 +4,12 @@
 
 package com.aerofs.gui.sharing.invitee;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIExecutor;
@@ -278,8 +280,29 @@ public class CompInviteUsers extends Composite
                             new ErrorMessage(ExAlreadyExist.class, exAlreadyExistMessage),
                             new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
                             new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED),
+                            new ErrorMessage(ExMemberLimitExceeded.class, formatErrorMessage(t)),
                             new ErrorMessage(ExNoPerm.class, exNoPermMessage));
                 }
+            }
+
+            /**
+             * @return the empty string if t is not an instance of ExMemberLimitExceeded
+             */
+            private String formatErrorMessage(Throwable t)
+            {
+                if (!(t instanceof ExMemberLimitExceeded)) return "";
+
+                ExMemberLimitExceeded e = (ExMemberLimitExceeded)t;
+
+                return format("%s couldn't invite these users to the shared folder because " +
+                                "you have reached the maximum number of members allowed for " +
+                                "a shared folder.\n\n" +
+                                "Members invited: %s\n" +
+                                "Members limit: %s\n\n" +
+                                "Please contact support at <a href=\"mailto:%s\">%s</a> " +
+                                "for assistance.",
+                        L.brand(), e._count, e._limit,
+                        WWW.SUPPORT_EMAIL_ADDRESS, WWW.SUPPORT_EMAIL_ADDRESS);
             }
         };
 

@@ -1344,9 +1344,8 @@ public class SPService implements ISPService
         }
 
         if (sf.getNumberOfActiveMembers() > SPParam.MAX_SHARED_FOLDER_MEMBERS) {
-            throw new ExMemberLimitExceeded("This action would lead to the shared folder having " +
-                    sf.getNumberOfActiveMembers() + " members, which is over the limit of " +
-                    SPParam.MAX_SHARED_FOLDER_MEMBERS + " members.");
+            throw new ExMemberLimitExceeded(sf.getNumberOfActiveMembers(),
+                    SPParam.MAX_SHARED_FOLDER_MEMBERS);
         }
 
         if (!suppressSharingRulesWarnings) rules.throwIfAnyWarningTriggered();
@@ -3605,9 +3604,8 @@ public class SPService implements ISPService
         group.throwIfExternallyManaged();
 
         if (group.listMembers().size() + userEmails.size() > SPParam.MAX_GROUP_SIZE) {
-            throw new ExMemberLimitExceeded("This would lead to the group having " +
-                    group.listMembers().size() + userEmails.size() +
-                    " members, which exceeds the limit of " + SPParam.MAX_GROUP_SIZE + " members.");
+            throw new ExMemberLimitExceeded(group.listMembers().size() + userEmails.size(),
+                    SPParam.MAX_GROUP_SIZE);
         }
 
         List<InvitationEmailer> emails = Lists.newLinkedList();
