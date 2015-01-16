@@ -130,7 +130,7 @@ public class SharedFolderNotificationEmailer
         for (User subject : group.listMembers()) {
             String title = "Your group " + quotedGroupName +
                     " has been removed from the folder " + Util.quote(sf.getName(subject));
-            String body = String.format(deleteFromFolder, changerName(changer), "your group's" +
+            String body = String.format(deleteFromFolder, changerName(changer), "your group's",
                     "If you are not directly a member of this folder or in another group that is");
 
             sendEmail(subject, title, body);
