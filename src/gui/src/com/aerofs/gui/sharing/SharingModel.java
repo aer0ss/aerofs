@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
@@ -12,6 +13,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.defects.Defect;
+import com.aerofs.defects.Defects;
 import com.aerofs.gui.sharing.SharedFolderMember.*;
 import com.aerofs.gui.sharing.Subject.*;
 import com.aerofs.labeling.L;
@@ -81,10 +84,18 @@ public class SharingModel
     private List<Subject> getSuggestionsImpl(String query)
             throws Exception
     {
+        ElapsedTimer timer = new ElapsedTimer().start();
+
         List<Subject> suggestions = newArrayList();
         // groups before users
         suggestions.addAll(getGroupSuggestions(query));
         suggestions.addAll(getUserSuggestions(query));
+
+        Defects.newMetric("gui.sharing.suggestions")
+                .addData("count", Math.min(suggestions.size(), 6))
+                .addData("elapsed_time", timer.elapsed())
+                .sendAsync();
+
         // only include the first 6 suggestions at most
         return suggestions.subList(0, Math.min(6, suggestions.size()));
     }
@@ -157,6 +168,9 @@ public class SharingModel
     private List<SharedFolderMember> getSharedFolderMembersImpl(SID sid)
             throws Exception
     {
+        Defect metric = Defects.newMetric("gui.sharing.members");
+        ElapsedTimer timer = new ElapsedTimer().start();
+
         List<PBSharedFolder> pbSharedFolders = _spClient.get()
                 .listSharedFolders(ImmutableList.of(sid.toPB()))
                 .getSharedFolderList();
@@ -166,6 +180,8 @@ public class SharingModel
 
         PBSharedFolder pbSharedFolder = pbSharedFolders.get(0);
 
+        metric.addData("user_count", pbSharedFolder.getUserPermissionsAndStateCount());
+
         List<SharedFolderMember> members = newArrayList();
 
         for (PBUserPermissionsAndState pbups : pbSharedFolder.getUserPermissionsAndStateList()) {
@@ -173,6 +189,8 @@ public class SharingModel
         }
 
         if (L.isGroupSharingReady()) {
+            metric.addData("group_count", pbSharedFolder.getGroupPermissionsCount());
+
             for (PBGroupPermissions pbgp : pbSharedFolder.getGroupPermissionsList()) {
                 GroupPermissions gp = _factory.fromPB(pbgp);
                 List<PBUserAndState> pbuss = _spClient.get()
@@ -185,6 +203,10 @@ public class SharingModel
                 }
             }
         }
+
+        metric.addData("total_count", members.size())
+                .addData("elapsed_time", timer.elapsed())
+                .sendAsync();
 
         return members;
     }

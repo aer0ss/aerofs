@@ -9,6 +9,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.defects.Defects;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -149,6 +150,9 @@ public class DlgInvite extends AeroFSDialog
                         {
                             UIGlobals.analytics().track(INVITE_COWORKER_SUCCEEDED);
 
+                            Defects.newMetric("gui.invite.success")
+                                    .sendAsync();
+
                             setStatus("Invitation sent.");
                             setInProgress(false);
                             _txtInvite.setText("");
@@ -159,6 +163,11 @@ public class DlgInvite extends AeroFSDialog
                         public void error(Exception e)
                         {
                             UIGlobals.analytics().track(INVITE_COWORKER_FAILED);
+
+                            Defects.newMetric("gui.invite.failure")
+                                    .setMessage(e.toString())
+                                    .setException(e)
+                                    .sendAsync();
 
                             ErrorMessages.show(getShell(), e, "Sorry, we failed to send the " +
                                             "invitation.",
