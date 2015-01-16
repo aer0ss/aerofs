@@ -95,12 +95,6 @@ subprojects {
                 if (details.requested.group == 'ch.qos.logback') {
                     details.useVersion '1.1.+'
                 }
-
-                // maven central has an issue where the jar for 2.4.5 has disappeared.
-                // TODO WW remove this hack after maven central restores its sanity.
-                if (details.requested.name.contains('jackson-datatype-joda')) {
-                    details.useVersion '2.4.4'
-                }
             }
         }
     }
