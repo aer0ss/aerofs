@@ -74,20 +74,6 @@ public class AsyncEmailSender extends AbstractEmailSender
     }
 
     /**
-     * Creates an AsyncEmailSender configured to send log-style emails to devs.
-     * FIXME: this should go away in the future and its callers should use rocklog events instead.
-     */
-    public static AsyncEmailSender createDeprecatedForLogEmails()
-    {
-        Properties p = loadPropsFromDisk();
-        String host     = p.getProperty("internal_host", "localhost");
-        String port     = p.getProperty("internal_port", "25");
-        String username = p.getProperty("internal_username", "");
-        String password = p.getProperty("internal_password", "");
-        return new AsyncEmailSender(host, port, username, password, true, null);
-    }
-
-    /**
      * We need to be able to load credentials from somewhere on the filesystem for the public
      * deployment, but it doesn't need to exist for the private deployment.
      */
