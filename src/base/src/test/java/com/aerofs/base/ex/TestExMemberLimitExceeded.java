@@ -24,7 +24,7 @@ public class TestExMemberLimitExceeded
     {
         // the purpose of this test is to ensure the consumers of this exception can decode
         // the exception produced by the producer when the exception is sent over the wire
-        ExMemberLimitExceeded src = new ExMemberLimitExceeded(3, 5);
+        ExMemberLimitExceeded src = new ExMemberLimitExceeded(5, 3);
         PBException pb = Exceptions.toPB(src);
         ExMemberLimitExceeded unwired = new ExMemberLimitExceeded(pb);
 
