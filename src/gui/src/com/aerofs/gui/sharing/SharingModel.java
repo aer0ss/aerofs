@@ -115,9 +115,6 @@ public class SharingModel
     private List<Group> getGroupSuggestions(String query)
             throws Exception
     {
-        // TODO (AT): remove when group sharing is ready on desktop clients
-        if (!L.isGroupSharingReady()) return emptyList();
-
         return _spClient.get().listGroups(6, 0, query)
                 .getGroupsList().stream()
                 .map(_factory::fromPBNullable)
@@ -188,19 +185,17 @@ public class SharingModel
             members.add(_factory.fromPB(pbups));
         }
 
-        if (L.isGroupSharingReady()) {
-            metric.addData("group_count", pbSharedFolder.getGroupPermissionsCount());
+        metric.addData("group_count", pbSharedFolder.getGroupPermissionsCount());
 
-            for (PBGroupPermissions pbgp : pbSharedFolder.getGroupPermissionsList()) {
-                GroupPermissions gp = _factory.fromPB(pbgp);
-                List<PBUserAndState> pbuss = _spClient.get()
-                        .listGroupStatusInSharedFolder(gp._group._groupID.getInt(), sid.toPB())
-                        .getUserAndStateList();
+        for (PBGroupPermissions pbgp : pbSharedFolder.getGroupPermissionsList()) {
+            GroupPermissions gp = _factory.fromPB(pbgp);
+            List<PBUserAndState> pbuss = _spClient.get()
+                    .listGroupStatusInSharedFolder(gp._group._groupID.getInt(), sid.toPB())
+                    .getUserAndStateList();
 
-                members.add(gp);
-                for (PBUserAndState pbus : pbuss) {
-                    members.add(_factory.fromPB(gp, pbus));
-                }
+            members.add(gp);
+            for (PBUserAndState pbus : pbuss) {
+                members.add(_factory.fromPB(gp, pbus));
             }
         }
 
