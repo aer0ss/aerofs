@@ -13,6 +13,7 @@ import com.aerofs.gui.sharing.Subject;
 import com.aerofs.gui.sharing.Subject.Group;
 import com.aerofs.gui.sharing.Subject.InvalidSubject;
 import com.aerofs.gui.sharing.Subject.User;
+import com.aerofs.lib.os.OSUtil;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.swtdesigner.SWTResourceManager;
@@ -163,16 +164,17 @@ public class InviteeTextAdapter
 
     private void initializeSuggestionsPopup()
     {
-        _shell.setForeground(SWTResourceManager.getColor(SWT.COLOR_INFO_FOREGROUND));
-        _shell.setBackground(SWTResourceManager.getColor(SWT.COLOR_INFO_BACKGROUND));
-        _shell.setBackgroundMode(SWT.INHERIT_FORCE);
-
         _viewer.setContentProvider(ArrayContentProvider.getInstance());
         _viewer.setLabelProvider(_labelProvider);
 
-        _table.setForeground(SWTResourceManager.getColor(SWT.COLOR_INFO_FOREGROUND));
-        _table.setBackground(SWTResourceManager.getColor(SWT.COLOR_INFO_BACKGROUND));
-        _table.setBackgroundMode(SWT.INHERIT_FORCE);
+        if (!OSUtil.isLinux()) {
+            // turns out this looks great on Windows and OS X but looks horrible on Ubuntu with
+            // Unity, which is the default desktop environment :(
+            // Long story short, we can't trust the taste of Linux desktop environment developers.
+            _table.setForeground(SWTResourceManager.getColor(SWT.COLOR_INFO_FOREGROUND));
+            _table.setBackground(SWTResourceManager.getColor(SWT.COLOR_INFO_BACKGROUND));
+            _table.setBackgroundMode(SWT.INHERIT_FORCE);
+        }
 
         RowLayout layout = new RowLayout(SWT.VERTICAL);
         layout.marginWidth  = 0;
