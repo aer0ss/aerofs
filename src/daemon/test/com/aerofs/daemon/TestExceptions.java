@@ -18,6 +18,7 @@ import org.junit.Test;
 import static com.aerofs.proto.Common.PBException.Type.INTERNAL_ERROR;
 import static com.aerofs.proto.Common.PBException.Type.INVALID_EMAIL_ADDRESS;
 import static com.aerofs.proto.Common.PBException.Type.LAUNCH_ABORTED;
+import static com.aerofs.proto.Common.PBException.Type.MEMBER_LIMIT_EXCEEDED;
 import static com.aerofs.proto.Common.PBException.Type.NOT_DIR;
 import static com.aerofs.proto.Common.PBException.Type.NOT_FILE;
 import static com.aerofs.proto.Common.PBException.Type.NO_ADMIN_OR_OWNER;
@@ -69,6 +70,7 @@ public class TestExceptions
         return t == INTERNAL_ERROR
                 || t == LAUNCH_ABORTED // thrown by Controller and isn't sent over the wire
                 || t == NO_ADMIN_OR_OWNER // intended for the Python web client, not Java
+                || t == MEMBER_LIMIT_EXCEEDED // covered in TestExMemberLimitExceeded.java
                 || t == INVALID_EMAIL_ADDRESS; // intended for the Python web client, not Java
     }
 
