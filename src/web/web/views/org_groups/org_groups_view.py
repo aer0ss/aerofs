@@ -96,7 +96,9 @@ def json_add_org_group(request):
                     "this organization associated with it.")
         }
     )
-    return HTTPOk()
+    return {
+        'id': group_id
+    }
 
 
 @view_config(

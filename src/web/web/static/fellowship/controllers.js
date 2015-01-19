@@ -88,6 +88,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                         members: _user_objects_to_email_list($scope.newGroup.members)
                     }).success(function(response){
                         $log.info('Created new group "' + $scope.newGroup.name + '".');
+                        $scope.newGroup.id = response.id;
                         $scope.addGroup($scope.newGroup);
                         $modalInstance.close();
                     }).error(function(response, status){
