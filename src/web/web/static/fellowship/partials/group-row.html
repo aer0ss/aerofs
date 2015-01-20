@@ -2,8 +2,8 @@
     <div class="row" style="padding-bottom: 10px;">
         <div class="col-sm-2">
             <strong>{{group.name}}</strong>
-            <span ng-if="isAdmin && group.is_ldap" data-toggle="tooltip" 
-                tooltip="This group comes from your organization's LDAP server." 
+            <span ng-if="isAdmin && group.is_externally_managed" data-toggle="tooltip"
+                tooltip="This group comes from your organization's LDAP server."
                 class="admin_label label">LDAP</span>
         </div>
         <div class="col-sm-8">
@@ -12,11 +12,11 @@
                 {{group.members|memberFilter}}
             </span>
             <a title="Show/hide all members"
-                ng-click="group.showAll = !!!group.showAll" 
+                ng-click="group.showAll = !!!group.showAll"
                 ng-show="group.members.length > 3">and {{ group.members.length - 3 }} more...</a>
         </div>
         <div class="col-sm-2">
-            <div ng-if="isAdmin && !group.is_ldap" class="btn-group pull-right actions">
+            <div ng-if="isAdmin && !group.is_externally_managed" class="btn-group pull-right actions">
                 <button type="button" class="btn btn-plain dropdown-toggle" data-toggle="dropdown">
                 Actions <span class="caret"></span>
                 </button>
