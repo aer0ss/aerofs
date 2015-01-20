@@ -186,6 +186,36 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void shouldRemovePendingMembers()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User pending = newUser();
+        sqlTrans.commit();
+
+        service.addGroupMembers(group.id().getInt(), emails(pending));
+        service.removeGroupMembers(group.id().getInt(), emails(pending));
+
+        sqlTrans.begin();
+        assertTrue(group.listMembers().isEmpty());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldListPendingMembers()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User pending = newUser();
+        sqlTrans.commit();
+
+        service.addGroupMembers(group.id().getInt(), emails(pending));
+        List<PBUser> users = service.listGroupMembers(group.id().getInt()).get().getUsersList();
+        assertEquals(users.size(), 1);
+        assertEquals(users.get(0).getUserEmail(), pending.id().getString());
+    }
+
+    @Test
     public void shouldRemoveMembers()
         throws Exception
     {

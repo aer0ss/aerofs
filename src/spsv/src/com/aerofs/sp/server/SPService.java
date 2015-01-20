@@ -796,18 +796,23 @@ public class SPService implements ISPService
         FullName fullname = user2nameCache.get(user);
 
         if (fullname == null) {
-            try {
-                fullname = user.getFullName();
-            } catch (ExNotFound e) {
-                // the user doesn't exist, which is realistic when we try to resolve pending
-                //   members of a shared folder
-                fullname = new FullName("", "");
-            }
-
+            fullname = getUserFullNameOrEmpty(user);
             user2nameCache.put(user, fullname);
         }
 
         return fullname;
+    }
+
+    // method to get the name of users that might not exist, i.e. shared folder members and group
+    // members
+    private FullName getUserFullNameOrEmpty(User user)
+            throws SQLException
+    {
+        try {
+            return user.getFullName();
+        } catch (ExNotFound e) {
+            return new FullName("", "");
+        }
     }
 
     private static PBUser.Builder user2pb(User user)
@@ -3777,14 +3782,15 @@ public class SPService implements ISPService
         Group group = _factGroup.create(groupID);
         // Permissions: cannot list group members unless your org owns the group in question.
         throwIfNotOwner(user.getOrganization(), group);
-        ListGroupMembersReply reply = ListGroupMembersReply.newBuilder()
-                .addAllUsers(users2pbUsers(group.listMembers()))
-                .build();
+        ListGroupMembersReply.Builder reply = ListGroupMembersReply.newBuilder();
+        for (User u : group.listMembers()) {
+            reply.addUsers(user2pb(u, getUserFullNameOrEmpty(u)));
+        }
         _sqlTrans.commit();
 
         l.info("{} listed members for {}; total: {}", user, group, reply.getUsersCount());
 
-        return createReply(reply);
+        return createReply(reply.build());
     }
 
     @Override
@@ -3809,16 +3815,6 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(builder.build());
-    }
-
-    private static List<PBUser> users2pbUsers(Collection<User> users)
-            throws SQLException, ExNotFound
-    {
-        List<PBUser> pb = Lists.newArrayListWithCapacity(users.size());
-        for (User user : users) {
-            pb.add(user2pb(user).build());
-        }
-        return pb;
     }
 
     /**
