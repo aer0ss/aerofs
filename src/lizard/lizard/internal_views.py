@@ -31,6 +31,7 @@ def queues():
 def customer_actions(org_id):
     customer = models.Customer.query.get_or_404(org_id)
 
+    charges = None
     if customer.stripe_customer_id:
         charges = stripe.Charge.all(customer=customer.stripe_customer_id)
 
