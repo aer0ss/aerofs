@@ -63,7 +63,7 @@ function notify_team() {
     done
 
     echo "Done. Sending mail notification."
-    cat mail.txt | mail -s "[$TARGET_REPOSITORY] AeroFS Debian Package Build Notification" team@aerofs.com
+    cat mail.txt | mail -s "[$TARGET_REPOSITORY] AeroFS Debian Package Build Notification" build-notifications@aerofs.com
     rm -f mail.txt
 }
 
