@@ -43,7 +43,7 @@ public class TestSP_GroupSyncing extends AbstractSPTest
         setSession(user1);
 
         try {
-            service.syncGroupsWithLDAPEndpoint();
+            service.syncGroupsWithLdapEndpoint();
             fail();
         } catch (ExNoPerm e) {}
     }
