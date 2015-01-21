@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.sparta;
 
+import com.aerofs.lib.LibParam;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.googlecode.flyway.core.Flyway;
@@ -12,9 +13,7 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import com.google.common.base.Optional;
 
-import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<Connection>
@@ -34,17 +33,11 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
     private static DataSource dataSource()
     {
         PoolProperties p = new PoolProperties();
-        p.setUrl(getStringProperty("sparta.db.url", "jdbc:mysql://localhost/aerofs_sp"));
-        p.setUsername(getStringProperty("sparta.db.user", "aerofs_sp"));
+        p.setUrl("jdbc:mysql://" + LibParam.MYSQL.MYSQL_ADDRESS + "/aerofs_sp");
+        p.setUsername(LibParam.MYSQL.MYSQL_USER);
+        p.setPassword(LibParam.MYSQL.MYSQL_PASS);
 
-        // Password is present in PC.
-        // Password is not present in HC.
-        Optional<String> password = getOptionalStringProperty("sparta.db.password");
-        if (password.isPresent()) {
-            p.setPassword(password.get());
-        }
-
-        p.setDriverClassName(getStringProperty("sparta.db.driverClass", "com.mysql.jdbc.Driver"));
+        p.setDriverClassName(LibParam.MYSQL.MYSQL_DRIVER);
         p.setTestWhileIdle(false);
         p.setTestOnBorrow(true);
         p.setTestOnReturn(false);

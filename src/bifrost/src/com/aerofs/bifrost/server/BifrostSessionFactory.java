@@ -5,6 +5,7 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.C;
+import com.aerofs.lib.LibParam;
 import com.googlecode.flyway.core.Flyway;
 import org.apache.tomcat.dbcp.dbcp.DriverManagerConnectionFactory;
 import org.apache.tomcat.dbcp.dbcp.PoolableConnectionFactory;
@@ -86,11 +87,11 @@ public class BifrostSessionFactory
         pool.setWhenExhaustedAction(GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
 
         final Properties properties = new Properties();
-        properties.setProperty("user",
-                getStringProperty("bifrost.db.user", "bifrost"));
+        properties.setProperty("user", LibParam.MYSQL.MYSQL_USER);
+        properties.setProperty("password", LibParam.MYSQL.MYSQL_PASS);
 
         final DriverManagerConnectionFactory factory = new DriverManagerConnectionFactory(
-                getStringProperty("bifrost.db.url", "jdbc:mysql://localhost:3306/bifrost"),
+                "jdbc:mysql://" + LibParam.MYSQL.MYSQL_ADDRESS + "/bifrost",
                 properties);
 
         final PoolableConnectionFactory connectionFactory = new PoolableConnectionFactory(factory,

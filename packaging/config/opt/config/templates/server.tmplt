@@ -3,8 +3,12 @@
 base.configuration.initialized={{ configuration_initialized }}
 base.ca.url=http://localhost:1029/prod
 
-sp.redis.service.host=localhost
-sp.redis.service.port=6379
+redis.host={{ redis_host }}
+redis.port={{ redis_port }}
+mysql.url={{ mysql_url }}
+mysql.user={{ mysql_user }}
+mysql.password={{ mysql_password }}
+
 sp.probe.ts_allowed_offline_seconds={{ sp_probe_ts_allowed_offline_seconds }}
 
 email.sender.public_host={{ email_host }}
@@ -106,3 +110,4 @@ base.collect_logs.url=http://{{ base_host }}:8484/collect_logs
 
 sp.max.membership.sharedfolder=50
 sp.max.membership.group=50
+

@@ -7,9 +7,12 @@ service:
   port: 8086
 
 database:
-  username: polaris
+  username: MYSQL_USER
+# make sure this matches the value in /src/bootstrap/resources/scripts/write-yaml-file.sh
+# dummy value is in quotes so that if we use no password, represented as the empty string, the yaml will still be parsed properly
+  password: "MYSQL_PASSWORD"
   driverClass: com.mysql.jdbc.Driver
-  url: jdbc:mysql://localhost/polaris
+  url: jdbc:mysql://MYSQL_URL/polaris
 
 verkehr:
   url: http://localhost:9079

@@ -42,7 +42,7 @@ config = {
 }
 
 def application(environ, start_response):
-    spconn = make_connection('aerofs_sp', config["sp_database"], 'aerofs_sp')
+    spconn = make_connection('aerofsdb', config["sp_database"], 'aerofs_sp')
     response_headers = [("Content-type", "text/plain")]
     status = "500 Internal Error"
     content = "Internal server failure"

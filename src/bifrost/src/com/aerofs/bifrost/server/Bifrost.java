@@ -28,6 +28,7 @@ import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
 import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.LibParam;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -84,7 +85,7 @@ public class Bifrost extends Service
 
         ServerConfigurationLoader.initialize("bifrost", extra);
 
-        Class.forName(getStringProperty("bifrost.db.driverClass", "com.mysql.jdbc.Driver"));
+        Class.forName(LibParam.MYSQL.MYSQL_DRIVER);
 
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(), bifrostModule(), spModule());
