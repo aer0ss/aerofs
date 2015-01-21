@@ -35,7 +35,6 @@ for i in `seq 1 $TRIES`; do
         TITLE="$PROBE returned $RET: $ARGS"
         echo sending alert \"$TITLE\"
         echo " " | mail $SERVICE@aerofs.pagerduty.com -s "$TITLE"
-        echo " " | mail team@aerofs.com -s "PagerDuty Probe Failed: $TITLE"
         echo "PagerDuty Probe Failed: $TITLE" | $HIPCHAT_SCRIPT -t $HIPCHAT_TOKEN -r 93246 -f "PagerDuty" -c "red" -n
         exit 1
     fi
