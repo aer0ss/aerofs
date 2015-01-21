@@ -142,6 +142,8 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
             // when a conflict branch is present it MUST be the last downloaded version
             // therefore it is still present in the remote content db, from which the
             // originator can be extracted
+            editors.put(KIndex.MASTER,
+                    ImmutableList.of(peer(Cfg.did()).toPB()));
             editors.put(KIndex.MASTER.increment(),
                     ImmutableList.of(peer(_rcdb.getOriginator_(soid)).toPB()));
             return editors;

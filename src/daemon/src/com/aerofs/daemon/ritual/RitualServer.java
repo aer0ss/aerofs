@@ -126,12 +126,13 @@ public class RitualServer
                     @Override
                     public void onFailure(Throwable throwable)
                     {
-                        l.warn("Ritual server: received an exception from the reactor. This should never happen. Aborting.");
+                        l.warn("exception from ritual reactor");
                         SystemUtil.fatal(throwable);
                     }
                 });
-            } catch (Exception ex) {
-                l.warn("RitualServerHandler: Exception " + Util.e(ex));
+            } catch (Throwable ex) {
+                l.warn("exception from ritual reactor");
+                SystemUtil.fatal(ex);
             }
         }
 
