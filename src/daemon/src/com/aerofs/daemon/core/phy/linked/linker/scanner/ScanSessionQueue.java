@@ -244,16 +244,13 @@ public class ScanSessionQueue implements IDumpStatMisc
         assert delay >= 0;
 
         if (_ongoing || _nextSchedule <= time) {
-            l.info("skip schedule " + delay + " " + time + " " + _ongoing + " " + _nextSchedule);
+            l.info("skip schedule {} {} {} {}", delay, time, _ongoing, _nextSchedule);
             return;
         }
 
         _nextSchedule = time;
         final int seq = ++_scheduleSeq;
-
-        l.info("schedule " + delay + " seq " + _scheduleSeq);
-
-        _f._sched.schedule(new AbstractEBSelfHandling() {
+        AbstractEBSelfHandling ev = new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
@@ -268,7 +265,15 @@ public class ScanSessionQueue implements IDumpStatMisc
                 _ongoing = true;
                 runAll_();
             }
-        }, delay);
+        };
+
+        l.info("schedule {} seq {}", delay, _scheduleSeq);
+
+        if (delay > 0) {
+            _f._sched.schedule(ev, delay);
+        } else {
+            _f._sched.schedule_(ev);
+        }
     }
 
     /**
@@ -308,13 +313,13 @@ public class ScanSessionQueue implements IDumpStatMisc
         _callbacks = Lists.newArrayList();
 
         for (final ScanCompletionCallback callback : callbacks) {
-            _f._sched.schedule(new AbstractEBSelfHandling() {
+            _f._sched.schedule_(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {
                     callback.done_();
                 }
-            }, 0);
+            });
         }
     }
 
