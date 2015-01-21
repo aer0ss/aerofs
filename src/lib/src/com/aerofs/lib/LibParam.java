@@ -15,6 +15,7 @@ import java.net.URL;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringPropery;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
@@ -226,8 +227,23 @@ public class LibParam extends BaseParam
     {
         public static final InetSocketAddress AOF_ADDRESS =
                 InetSocketAddress.createUnresolved(
-                        getStringProperty("sp.redis.service.host", "localhost"),
-                        getIntegerProperty("sp.redis.service.port", 6379));
+                        getNonEmptyStringPropery("redis.host", "localhost"),
+                        getIntegerProperty("redis.port", 6379));
+    }
+
+    public static class MYSQL
+    {
+        public static final String MYSQL_ADDRESS =
+                getNonEmptyStringPropery("mysql.url", "localhost:3306");
+
+        public static final String MYSQL_DRIVER =
+                "com.mysql.jdbc.Driver";
+
+        public static final String MYSQL_USER =
+                getNonEmptyStringPropery("mysql.user", "aerofsdb");
+
+        public static final String MYSQL_PASS =
+                getStringProperty("mysql.password", "");
     }
 
     public static class LicenseProperties

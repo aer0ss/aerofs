@@ -7,7 +7,10 @@ service:
   port: 8086
 
 database:
-  username: polaris
+  username: aerofsdb
+# make sure this matches the value in /src/bootstrap/resources/scripts/write-polaris-password.sh
+# dummy value is in quotes so that if we use no password, represented as the empty string, the yaml will still be parsed properly
+  password: "NOT_A_PASSWORD"
   driverClass: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost/polaris
 

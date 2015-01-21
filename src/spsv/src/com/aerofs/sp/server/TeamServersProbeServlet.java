@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.TimeZone;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -65,11 +64,6 @@ public class TeamServersProbeServlet extends HttpServlet
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
-
-        // SP Database.
-        String dbResourceName = getServletContext().getInitParameter(
-                SP_DATABASE_REFERENCE_PARAMETER);
-        _sqlConProvider.init_(dbResourceName);
 
         // Vekrehr.
         VerkehrClient verkehrClient = (VerkehrClient) getServletContext().getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
