@@ -232,10 +232,10 @@ class License(db.Model, TimeStampedMixin):
     # Each license should generally have either a stripe id or an invoice ID
     # Exceptions are for trial licenses, and well, when we're feeling nice...
     # Stripe Charge ID
-    stripe_charge_id = db.Column(db.String, nullable=True)
+    stripe_charge_id = db.Column(db.String(256), nullable=True)
 
     # Invoice ID
-    invoice_id = db.Column(db.String, nullable=True)
+    invoice_id = db.Column(db.String(256), nullable=True)
 
     # The license data itself.  Null unless state == FILLED.
     blob = db.Column(db.LargeBinary)

@@ -26,8 +26,8 @@ license = Table('license', post_meta,
     Column('expiry_date', DateTime, nullable=False),
     Column('is_trial', Boolean, nullable=False),
     Column('allow_audit', Boolean, nullable=False, default=ColumnDefault(False)),
-    Column('stripe_charge_id', String),
-    Column('invoice_id', String),
+    Column('stripe_charge_id', String(length=256)),
+    Column('invoice_id', String(length=256)),
     Column('blob', LargeBinary),
 )
 
