@@ -318,6 +318,72 @@ public class TestApplyChange extends AbstractBaseTest
     }
 
     @Test
+    public void shouldHandleMoveeOfBufferedObject() throws Exception
+    {
+        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+
+        OID p = OID.generate(), c = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", p, ObjectType.FOLDER),
+                insert(p, "bar", c, ObjectType.FOLDER),
+                insert(OID.ROOT, "baz", c, ObjectType.FOLDER),
+                remove(p, c)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        // verify
+        mds.expect(rootSID, folder("foo", p), folder("baz", c));
+        assertHasRemoteLink(p, OID.ROOT, "foo", 1);
+        assertHasRemoteLink(c, OID.ROOT, "baz", 3);
+        assertIsBuffered(false, p, c);
+    }
+
+    @Test
+    public void shouldHandleRenameOfBufferedObject() throws Exception
+    {
+        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+
+        OID p = OID.generate(), c = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", p, ObjectType.FOLDER),
+                insert(p, "bar", c, ObjectType.FOLDER),
+                rename(p, "baz", c)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        // verify
+        mds.expect(rootSID,
+                folder("foo", p,
+                        folder("baz", c)));
+        assertHasRemoteLink(p, OID.ROOT, "foo", 1);
+        assertHasRemoteLink(c, p, "baz", 3);
+        assertIsBuffered(false, p, c);
+    }
+
+    @Test
+    public void shouldHandleDeleteOfBufferedObject() throws Exception
+    {
+        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+
+        OID p = OID.generate(), c = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", p, ObjectType.FOLDER),
+                insert(p, "bar", c, ObjectType.FOLDER),
+                remove(p, c)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        // verify
+        mds.expect(rootSID,
+                folder("foo", p));
+        assertHasRemoteLink(p, OID.ROOT, "foo", 1);
+        assertIsBuffered(false, p, c);
+    }
+
+    @Test
     public void shouldRenameImmediately() throws Exception
     {
         OID oid = OID.generate();

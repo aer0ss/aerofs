@@ -309,9 +309,9 @@ public class ApplyChange
          * turned into a MOVE
          */
         OA oaChild = _ds.getOANullable_(new SOID(sidx, oidChild));
-        if (oaChild != null) {
-            checkState(type == oaChild.type());
-            // TODO: handle cycle creation
+        if (oaChild != null || _rpdb.getParent_(sidx, oidChild) != null) {
+            checkState(oaChild == null || type == oaChild.type());
+            // TODO(phoenix): handle cycle creation
             moveChild(parent, oidChild, c.childName, c.logicalTimestamp, mergeBoundary, t);
             return;
         }
@@ -390,7 +390,7 @@ public class ApplyChange
         if (oaParent == null) {
             l.info("apply parent {}{}", sidx, lnk.parent);
             checkState(_mbdb.isBuffered_(new SOID(sidx, lnk.parent)));
-            // TODO: watch for cycles
+            // TODO(phoenix): watch for cycles
             applyBufferedChange_(sidx, new BufferedChange(lnk.parent, Type.DIR), t);
             oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
         }
