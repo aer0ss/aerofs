@@ -129,7 +129,7 @@ public class ContentChangeSubmitter implements Submitter
         CA ca = oa.caMaster();
 
         ContentHash h = _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
-        checkState(h != null);
+        if (h == null) return false;
 
         try {
             IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
