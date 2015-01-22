@@ -86,7 +86,7 @@ Function requestAdminPrivileges
 
         # User declined to give admin privileges.
         StrCpy $9 "If $(^Name) is installed without admin privileges, it may not function properly.\
-                   See http://ae.ro/155wpHG for more information.$\n\
+                   See http://ae.ro/1yxEsNe for more information.$\n\
                    $\n\
                    Install anyway?"
         MessageBox MB_YESNO|MB_ICONQUESTION|mb_TopMost|mb_SetForeground $9 /SD IDYES IDYES proceed IDNO 0
