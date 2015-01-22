@@ -66,6 +66,10 @@ Install python packages:
 sudo pip install requests flask
 ```
 
+Install docker following the instructions [here](https://docs.docker.com/installation/), and set-uid for the docker executable so scripts do need "sudo docker" all the time. (To be consistent with development environment):
+
+    $ sudo chmod u+s `which docker`
+
 ## Set up RSA keys
 
 Copy `AeroFS/Air\ Computing\ Team/users/jonathan/ci-ssh-folder.tar` onto the box. Untar it into `~/.ssh`
@@ -367,6 +371,8 @@ Allow the agent passwordless sudo for some commands (this is needed to make the 
 aerofsbuild ALL=(ALL) NOPASSWD:/bin/mount
 aerofsbuild ALL=(ALL) NOPASSWD:/bin/cp
 aerofsbuild ALL=(ALL) NOPASSWD:/bin/umount
+aerofsbuild ALL=(ALL) NOPASSWD:/user/bin/docker
+# Update docs/how-to/setup_ci.md when adding new entires here
 ```
 
 Create the directory for the syncdet yaml files:

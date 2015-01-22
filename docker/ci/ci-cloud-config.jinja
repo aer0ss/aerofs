@@ -1,0 +1,78 @@
+#cloud-config
+
+coreos:
+  units:
+    - name: 00-ci-static.network
+      content: |
+        [Match]
+        Name=en*
+        [Network]
+        Address={{ ip_and_prefix }}
+        Gateway={{ gateway }}
+        DNS=8.8.8.8
+
+    # signup-decoder is a Web service listening at <appliance-hostname>:5775 to return signup codes stored in mysql.
+    # It's used by CI to sign up users automatically. It's a container because containers are the only thing CoreOS supports.
+    - name: signup-decoder.service
+      command: start
+      content: |
+        [Unit]
+        Description=Signup Decoder
+        [Service]
+        ExecStart=/signup-decoder/run
+        ExecStop=/usr/bin/docker rm -fv decoder
+
+write_files:
+  - path: /etc/hosts
+    content: |
+      {{ ip }} {{ hostname }}
+
+  - path: /signup-decoder/run
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      set -e
+      docker build -t signup-decoder /signup-decoder
+      docker run --name decoder -p 5775:5775 -v /var/run/docker.sock:/var/run/docker.sock signup-decoder
+
+  - path: /signup-decoder/Dockerfile
+    content: |
+      FROM debian:jessie
+      RUN apt-get update && apt-get install -y curl python docker.io &&\
+          curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python &&\
+          pip install Flask
+      COPY decoder.py /
+      CMD [ "python", "-u", "/decoder.py" ]
+
+  - path: /signup-decoder/decoder.py
+    content: |
+      from flask import Flask
+      from subprocess import check_output, Popen, PIPE
+      app = Flask(__name__)
+      IMAGE = 'aerofs/mysql'
+
+      @app.route("/", methods=["GET"])
+      def get():
+          # Find mysql container
+          container = None
+          for line in check_output(['docker', 'ps']).split('\n'):
+              if IMAGE in line:
+                  # last word is the container name
+                  container = line.strip().rsplit(' ', 1)[1]
+                  break
+          if not container:
+              return 'found no container running image {}'.format(IMAGE), 400
+
+          # Run SQL in mysql container to print the most recent signup code.
+          script = 'mysql -N aerofs_sp <<< "select t_code from sp_signup_code order by t_ts desc limit 1"'
+          p = Popen(['docker', 'exec', container, 'bash', '-c', script], stdout=PIPE, stderr=PIPE)
+          out, err = p.communicate()
+          if err:
+            return err, 400
+          else:
+            return out
+
+      app.run('0.0.0.0', 5775)
+
+ssh_authorized_keys:
+    - {{ ssh_pub }}

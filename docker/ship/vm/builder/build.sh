@@ -38,17 +38,26 @@ setup_preload_registry() {
     if [ $(docker ps -a | grep ${REPO_CONTAINER} | wc -l) = 0 ]; then
         docker create -P --name ${REPO_CONTAINER} registry
     fi
-    docker start ${REPO_CONTAINER}
+
+    # A potential bug of docker registry https://github.com/docker/docker-registry/issues/892 may cause the container
+    # sometimes fail to start. So we keep restarting it until success.
+    while true; do
+        docker start ${REPO_CONTAINER}
+        sleep 3
+        local RUNNING=$(docker inspect -f '{{ .State.Running }}' ${REPO_CONTAINER})
+        [[ "${RUNNING}" = 'true' ]] && break
+        echo "WARNING: ${REPO_CONTAINER} failed to start. Try again."
+    done
 
     # Find the registry's hostname
     local REPO_HOST
     if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
-        # Use the hostname specified in DOCKER_HOST
+        # Use the hostname specified in DOCKER_HOST environment variable
         REPO_HOST=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
     else
-        # Find out the IP address of the local bridge
+        # Find the first IP address of the local bridge
         local IFACE=$(ip route show 0.0.0.0/0 | awk '{print $5}')
-        REPO_HOST=$(ip addr show ${IFACE} | grep '^ *inet ' | tr / ' ' | awk '{print $2}')
+        REPO_HOST=$(ip addr show ${IFACE} | grep '^ *inet ' | head -1 | tr / ' ' | awk '{print $2}')
     fi
     if [ -z "${REPO_HOST}" ]; then
         echo "ERROR: can't identify the registry's IP address" >&2
@@ -139,6 +148,13 @@ delete_vm() {
     # Don't use 'unregistervm --delete' as the VM may refer to the vdi file we just created. Deleting the VM would
     # delete this file.
     rm -rf "${VM_BASE_DIR}"
+
+    # Delete the VM folder in the default machine folder. the unregistervm above may destroy the VM the user launches
+    # under the same VM name. Not deleting the folder may prevent the user from launching VMs under the same name.
+    local VM_FOLDER=$(VBoxManage list systemproperties \
+        | grep '^Default machine folder:' \
+        | sed 's/^Default machine folder:[ ]*\(.*\)/\1/')
+    rm -rf "${VM_FOLDER}/${VM}"
 }
 
 is_vm_powered_off() {
