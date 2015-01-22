@@ -10,11 +10,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="baseline" />
     <orderEntry type="module" module-name="polaris-api" />
     <orderEntry type="library" name="flyway-core:3.0" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="mysql-connector-java:5.1.32" level="project" />
-    <orderEntry type="module" module-name="baseline-test" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="rest-assured:2.3.4" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito-core:1.10.8" level="project" />

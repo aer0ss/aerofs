@@ -1,6 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -22,7 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@RolesAllowed(AeroPrincipal.Roles.CLIENT)
+@RolesAllowed(Roles.CLIENT)
 @Singleton
 public final class LocationResource {
 
@@ -41,7 +42,7 @@ public final class LocationResource {
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.READ);
+        accessManager.checkAccess(principal.getDevice(), oid, Access.READ);
 
         return objectStore.inTransaction(new Transactional<List<String>>() {
 
@@ -58,7 +59,7 @@ public final class LocationResource {
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
+        accessManager.checkAccess(principal.getDevice(), oid, Access.WRITE);
 
         objectStore.inTransaction(new Transactional<Object>() {
 
@@ -76,7 +77,7 @@ public final class LocationResource {
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.WRITE);
+        accessManager.checkAccess(principal.getDevice(), oid, Access.WRITE);
 
         objectStore.inTransaction(new Transactional<Object>() {
 

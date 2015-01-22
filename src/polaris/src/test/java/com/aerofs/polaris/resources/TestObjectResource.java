@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -193,6 +194,7 @@ public final class TestObjectResource {
         checkTreeState(Constants.NO_ROOT, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent_0000.json");
     }
 
+    @Ignore
     @Test
     public void shouldAllowTwoObjectsWithTheSameNameToBeRemoved() throws Exception {
 

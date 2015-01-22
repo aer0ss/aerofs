@@ -1,6 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -23,7 +24,7 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-@RolesAllowed(AeroPrincipal.Roles.CLIENT)
+@RolesAllowed(Roles.CLIENT)
 @Singleton
 public final class ObjectResource {
 
@@ -47,7 +48,7 @@ public final class ObjectResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public OperationResult update(@Context @NotNull final AeroPrincipal principal, @PathParam("oid") @NotNull @Identifier final String oid, @NotNull final Operation operation) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.READ, Access.WRITE);
+        accessManager.checkAccess(principal.getDevice(), oid, Access.READ, Access.WRITE);
 
         return objectStore.inTransaction(new Transactional<OperationResult>() {
 

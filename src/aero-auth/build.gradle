@@ -2,9 +2,8 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
+archivesBaseName = 'aero-auth'
+
 dependencies {
-    compile 'com.google.guava:guava:17.+'
-    compile 'org.slf4j:slf4j-api:1.7.+'
-    compile 'com.google.code.findbugs:jsr305:3.0.+'
-    compile 'javax.validation:validation-api:1.1.0.Final'
+    compile 'com.aerofs.baseline:baseline-service:0.2.0-SNAPSHOT'
 }

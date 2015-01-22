@@ -3,13 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../../src/aero-ids/aero-ids.iml" filepath="$PROJECT_DIR$/../../src/aero-ids/aero-ids.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/aero-ids-validation/aero-ids-validation.iml" filepath="$PROJECT_DIR$/../../src/aero-ids-validation/aero-ids-validation.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/auditor/auditor.iml" filepath="$PROJECT_DIR$/../../src/auditor/auditor.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/baseline/baseline.iml" filepath="$PROJECT_DIR$/../../src/baseline/baseline.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-sample/baseline-sample.iml" filepath="$PROJECT_DIR$/../../src/baseline-sample/baseline-sample.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-test/baseline-test.iml" filepath="$PROJECT_DIR$/../../src/baseline-test/baseline-test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/baseline-throughput-server/baseline-throughput-server.iml" filepath="$PROJECT_DIR$/../../src/baseline-throughput-server/baseline-throughput-server.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bifrost/bifrost.iml" filepath="$PROJECT_DIR$/../../src/bifrost/bifrost.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" filepath="$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/command/command.iml" filepath="$PROJECT_DIR$/../../src/command/command.iml" />

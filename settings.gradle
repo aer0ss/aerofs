@@ -4,14 +4,10 @@
 
 rootProject.name = 'aerofs-gradle'
 
-include 'src/aero-ids',
-        'src/aero-ids-validation',
+include 'src/aero-auth',
+        'src/aero-ids',
         'src/auditor',
         'src/base',
-        'src/baseline',
-        'src/baseline-test',
-        'src/baseline-sample',
-        'src/baseline-throughput-server',
         'src/bifrost',
         'src/bootstrap',
         'src/command',

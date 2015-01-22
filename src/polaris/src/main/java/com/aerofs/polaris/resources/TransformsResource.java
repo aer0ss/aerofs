@@ -1,6 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.Access;
@@ -25,7 +26,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@RolesAllowed(AeroPrincipal.Roles.CLIENT)
+@RolesAllowed(Roles.CLIENT)
 @Path("/transforms")
 @Singleton
 public final class TransformsResource {
@@ -48,7 +49,7 @@ public final class TransformsResource {
             @PathParam("oid") @NotNull @Identifier final String oid,
             @QueryParam("since") @Min(-1) final long since,
             @QueryParam("count") @Min(1) int resultCount) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.READ);
+        accessManager.checkAccess(principal.getDevice(), oid, Access.READ);
 
         final int actualResultCount = Math.min(resultCount, maxReturnedTransforms);
         return objectStore.inTransaction(new Transactional<AppliedTransforms>() {

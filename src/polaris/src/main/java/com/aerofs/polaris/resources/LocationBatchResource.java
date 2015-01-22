@@ -1,6 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.AeroPrincipal;
+import com.aerofs.baseline.auth.aero.Roles;
 import com.aerofs.baseline.db.DBIExceptions;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
@@ -25,7 +26,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@RolesAllowed(AeroPrincipal.Roles.CLIENT)
+@RolesAllowed(Roles.CLIENT)
 @Singleton
 public final class LocationBatchResource {
 
@@ -51,7 +52,7 @@ public final class LocationBatchResource {
         try {
             for (int i = 0; i < operations.size(); i++) {
                 operation = operations.get(i);
-                accessManager.checkAccess(principal.getUser(), operation.getOid(), Access.WRITE);
+                accessManager.checkAccess(principal.getDevice(), operation.getOid(), Access.WRITE);
 
                 final LocationBatchOperation submitted = operation;
                 objectStore.inTransaction(dao -> {

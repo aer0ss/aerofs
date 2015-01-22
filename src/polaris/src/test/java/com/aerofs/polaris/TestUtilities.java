@@ -1,7 +1,7 @@
 package com.aerofs.polaris;
 
-import com.aerofs.baseline.auth.SecurityContexts;
-import com.aerofs.baseline.http.Headers;
+import com.aerofs.baseline.auth.aero.AeroAuthHeaders;
+import com.aerofs.baseline.auth.aero.AeroClientCertBasedAuthenticator;
 import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.operation.InsertChild;
@@ -49,14 +49,14 @@ public abstract class TestUtilities {
     public static RequestSpecification newVerifiedAeroUserSpecification(String device, String user) {
         return new RequestSpecBuilder().addHeaders(
                 ImmutableMap.of(
-                        Headers.AERO_AUTHORIZATION_HEADER, String.format(Headers.AERO_AUTHORIZATION_HEADER_FORMAT, device, user),
-                        Headers.DNAME_HEADER, newDNameHeader(device, user),
-                        Headers.VERIFY_HEADER, Headers.VERIFY_HEADER_OK_VALUE
+                        AeroAuthHeaders.AERO_AUTHORIZATION_HEADER, String.format(AeroAuthHeaders.AERO_AUTHORIZATION_HEADER_FORMAT, device, user),
+                        AeroAuthHeaders.DNAME_HEADER, newDNameHeader(device, user),
+                        AeroAuthHeaders.VERIFY_HEADER, AeroAuthHeaders.VERIFY_HEADER_OK_VALUE
                 )).build();
     }
 
     private static String newDNameHeader(String device, String user) {
-        return String.format("G=test.aerofs.com/CN=%s", SecurityContexts.getCertificateCName(device, user));
+        return String.format("G=test.aerofs.com/CN=%s", AeroClientCertBasedAuthenticator.getCertificateCName(device, user));
     }
 
     //

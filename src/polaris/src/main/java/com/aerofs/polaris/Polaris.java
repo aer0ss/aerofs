@@ -4,6 +4,8 @@ import com.aerofs.baseline.AdminEnvironment;
 import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
+import com.aerofs.baseline.auth.aero.AeroClientCertBasedAuthenticator;
+import com.aerofs.baseline.auth.aero.AeroPrincipalBinder;
 import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
@@ -55,6 +57,11 @@ public final class Polaris extends Service<PolarisConfiguration> {
 
         // configure the root injector (available to both admin and service)
         root.addInjectableSingletonInstance(logicalObjectStore);
+
+        // setup resource authorization
+        root.addAuthenticator(new AeroClientCertBasedAuthenticator());
+        admin.addProvider(new AeroPrincipalBinder());
+        service.addProvider(new AeroPrincipalBinder());
 
         // register singleton providers
         service.addProvider(new DBIBinder(dbi));
