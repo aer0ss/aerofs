@@ -119,5 +119,9 @@ public final class SPSchema
             T_GS                            = "sp_sharing_group_shares",
             C_GS_GID                        = "gs_gid",
             C_GS_SID                        = "gs_sid",
-            C_GS_ROLE                       = "gs_role";
+            C_GS_ROLE                       = "gs_role",
+
+            T_ST                            = "sp_settings_token",
+            C_ST_USER_ID                    = "st_uid",
+            C_ST_TOKEN                      = "st_token";
 }

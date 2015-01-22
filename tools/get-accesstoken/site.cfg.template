@@ -24,4 +24,3 @@ hostname=share.syncfs.com
 id=11fcde6c-929d-4340-8923-6a0a1ea97117
 secret=d98630e5-3306-4013-b779-95a431adda21
 redirect_uri=http://localhost:9009/
-

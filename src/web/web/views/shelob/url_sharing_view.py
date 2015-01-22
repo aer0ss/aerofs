@@ -10,7 +10,7 @@ from pyramid.view import view_config
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 import requests
 
-from oauth import get_new_oauth_token, delete_oauth_token
+from web.oauth import get_new_oauth_token, delete_oauth_token
 from web import error
 from web.sp_util import exception2error
 from web.util import get_rpc_stub, is_private_deployment, str2bool
@@ -147,6 +147,8 @@ def set_url_expires(request):
         error.error('missing "key" param')
     if expires is None:
         error.error('missing "expires" param')
+
+    expires_abs_milli = None
     try:
         expires_abs_milli = _delta_seconds_to_abs_milli(int(expires))
     except ValueError:

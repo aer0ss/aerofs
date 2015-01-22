@@ -6,6 +6,7 @@ import re
 import requests
 from web import util
 from web.util import flash_error
+from web.util import get_rpc_stub
 
 log = logging.getLogger(__name__)
 
@@ -49,3 +50,29 @@ def delete_all_tokens(request, owner):
 def delete_delegated_tokens(request, owner):
     return requests.delete(get_bifrost_url(request) + '/users/' + owner + '/delegates')
 
+def get_new_oauth_token(request, client_id, client_secret, expires_in=0, scopes=None):
+    # N.B. (JG) the get_mobile_access_code RPC returns a proof-of-identity nonce that
+    # Bifrost uses for authentication. It was originally designed for a mobile app
+    # and its original name remains to maintain backwards compatibility.
+
+    data={
+        'grant_type': 'authorization_code',
+        'code': get_rpc_stub(request).get_mobile_access_code().accessCode,
+        'code_type': 'device_authorization',
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'expires_in': expires_in,
+    }
+
+    if scopes is not None:
+        data['scope'] = ','.join(scopes)
+    r = requests.post(request.registry.settings["deployment.oauth_server_uri"]+'/token', data)
+    r.raise_for_status()
+    token = r.json()['access_token']
+    return token
+
+def delete_oauth_token(request, token):
+    r = requests.delete(request.registry.settings["deployment.oauth_server_uri"]+'/token/'+token)
+    if r.status_code == 404:
+        return
+    r.raise_for_status()

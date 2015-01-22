@@ -55,6 +55,7 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
+    // FIXME this function never throws ExAlreadyExist, but it should.
     public void insertRow(@Nonnull String key, @Nonnull SID sid, @Nonnull OID oid,
             @Nonnull String token, @Nullable Long expires, @Nonnull UserID createdBy)
             throws SQLException, ExAlreadyExist

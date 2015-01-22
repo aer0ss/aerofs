@@ -47,6 +47,7 @@ function authorize() {
 function render_production_ini() {
     SHELOB_SECRET="$1"
     ZELDA_SECRET="$2"
+    SETTINGS_SECRET="$3"
 
     ENC_KEY_FILE=/data2/web/session_encrypt_key
     VLD_KEY_FILE=/data2/web/session_validate_key
@@ -68,6 +69,7 @@ function render_production_ini() {
         -e "s/{{ encrypt_key }}/$ENC_KEY/" \
         -e "s/{{ shelob_client_secret }}/$SHELOB_SECRET/" \
         -e "s/{{ zelda_client_secret }}/$ZELDA_SECRET/" \
+        -e "s/{{ settings_client_secret }}/$SETTINGS_SECRET/" \
         /opt/web/production.ini.template > /opt/web/production.ini
 }
 
@@ -77,8 +79,11 @@ SHELOB_SECRET=$(authorize aerofs-shelob 'AeroFS Web Access' 900)
 echo Authorizing zelda to bifrost...
 ZELDA_SECRET=$(authorize aerofs-zelda 'AeroFS Link Sharing' 0)
 
+echo Authorizing settings to bifrost...
+SETTINGS_SECRET=$(authorize aerofs-settings 'AeroFS Settings' 0)
+
 echo Write to production.ini...
-render_production_ini "$SHELOB_SECRET" "$ZELDA_SECRET"
+render_production_ini "$SHELOB_SECRET" "$ZELDA_SECRET" "$SETTINGS_SECRET"
 
 echo Starting pserve...
 export PYTHONPATH=/opt/web

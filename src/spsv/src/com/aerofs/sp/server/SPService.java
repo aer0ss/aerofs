@@ -85,6 +85,7 @@ import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUrlInfoReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
+import com.aerofs.proto.Sp.GetUserSettingsTokenReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListGroupMembersReply;
@@ -181,6 +182,7 @@ import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
@@ -256,6 +258,7 @@ public class SPService implements ISPService
     private final Device.Factory _factDevice;
     private final SharedFolder.Factory _factSharedFolder;
     private final UrlShare.Factory _factUrlShare;
+    private final UserSettingsToken.Factory _factUserSettingsToken;
     private final Group.Factory _factGroup;
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
@@ -331,6 +334,7 @@ public class SPService implements ISPService
             SharedFolderNotificationEmailer sfnEmailer,
             AsyncEmailSender asyncEmailSender,
             UrlShare.Factory factUrlShare,
+            UserSettingsToken.Factory factUserSettingsToken,
             Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
             License license,
@@ -354,6 +358,7 @@ public class SPService implements ISPService
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
         _factUrlShare = factUrlShare;
+        _factUserSettingsToken = factUserSettingsToken;
         _factGroup = factGroup;
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
@@ -518,6 +523,55 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(reply.build());
+    }
+
+    @Override
+    public ListenableFuture<GetUserSettingsTokenReply> getUserSettingsToken()
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        UserSettingsToken token = _factUserSettingsToken.create(user);
+
+        GetUserSettingsTokenReply.Builder reply = GetUserSettingsTokenReply.newBuilder();
+
+        // The token is optional. If the user does not have one, return null.
+        if (token.exists()) {
+            reply.setToken(token.get());
+        }
+
+        _sqlTrans.commit();
+
+        return createReply(reply.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> setUserSettingsToken(String token)
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        _factUserSettingsToken.save(user, token);
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteUserSettingsToken()
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        _factUserSettingsToken.create(user).delete();
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     @Override

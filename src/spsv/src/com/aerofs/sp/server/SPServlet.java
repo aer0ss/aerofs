@@ -55,6 +55,8 @@ import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.settings.token.UserSettingsToken;
+import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.googlecode.flyway.core.Flyway;
@@ -96,6 +98,7 @@ public class SPServlet extends AeroServlet
     private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_sqlTrans);
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
     private final UrlSharingDatabase _usdb = new UrlSharingDatabase(_sqlTrans);
+    private final UserSettingsTokenDatabase _ustdb = new UserSettingsTokenDatabase(_sqlTrans);
     private final GroupDatabase _gdb = new GroupDatabase(_sqlTrans);
     private final GroupMembersDatabase _gmdb = new GroupMembersDatabase(_sqlTrans);
     private final GroupSharesDatabase _gsdb = new GroupSharesDatabase(_sqlTrans);
@@ -120,6 +123,7 @@ public class SPServlet extends AeroServlet
     private final License _license = new License();
     private final User.Factory _factUser = new User.Factory();
     private final UrlShare.Factory _factUrlShare = new UrlShare.Factory(_usdb);
+    private final UserSettingsToken.Factory _factUserSettingsToken = new UserSettingsToken.Factory();
     private final Group.Factory _factGroup = new Group.Factory();
 
     private final SPSession _session = new SPSession(_factUser, _sessionProvider);
@@ -167,6 +171,7 @@ public class SPServlet extends AeroServlet
         _factOrgInvite.inject(_oidb, _factUser, _factOrg);
         _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser);
         _factGroup.inject(_gdb, _gmdb, _gsdb, _factOrg, _factSharedFolder, _factUser);
+        _factUserSettingsToken.inject(_ustdb);
     }
 
     private final SPService _service = new SPService(_db,
@@ -195,6 +200,7 @@ public class SPServlet extends AeroServlet
             _sfnEmailer,
             _asyncEmailSender,
             _factUrlShare,
+            _factUserSettingsToken,
             _factGroup,
             _rateLimiter,
             _license,

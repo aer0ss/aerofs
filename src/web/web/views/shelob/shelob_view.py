@@ -4,7 +4,7 @@ from pyramid.view import view_config
 from pyramid.security import authenticated_userid
 from web.util import show_welcome_image_and_set_cookie
 
-from oauth import get_new_oauth_token
+from web.oauth import get_new_oauth_token
 
 
 log = logging.getLogger(__name__)

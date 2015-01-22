@@ -895,6 +895,25 @@ service SPService {
     //
     // Required Auth Level: admin
     rpc SyncGroupsWithLdapEndpoint(Void) returns (Void);
+
+    // Get the user's settings token, if it exists.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExNotFound if the user does not currently have a settings token.
+    rpc GetUserSettingsToken(Void) returns (GetUserSettingsTokenReply);
+
+    // Set the user's settings token.
+    //
+    // Required Auth Level: user
+    //
+    // Throws:
+    //   ExAlreadyExist if the user already has a settings token.
+    rpc SetUserSettingsToken(SetUserSettingsTokenCall) returns (Void);
+
+    // Delete the user's settings token, if it exists.
+    rpc DeleteUserSettingsToken(Void) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -1067,6 +1086,14 @@ message GetUserPreferencesReply {
     optional string device_name = 3; // absent if did wasn't specified
     optional uint64 signup_date = 4;
     optional bool two_factor_enforced = 5;
+}
+
+message GetUserSettingsTokenReply {
+    optional string token = 1;
+}
+
+message SetUserSettingsTokenCall {
+    required string token = 1;
 }
 
 message SetUserPreferencesCall {

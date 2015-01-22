@@ -30,4 +30,3 @@ in the current directory is expected.
 
 This version of the tool does not support configurable scopes. OAuth tokens are
 generated with "files.read" and "files.write" privilege.
-

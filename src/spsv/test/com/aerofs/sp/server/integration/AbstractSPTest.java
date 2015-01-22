@@ -64,6 +64,8 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.settings.token.UserSettingsToken;
+import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Objects;
@@ -160,6 +162,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
     @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(sqlTrans);
     @Spy protected UrlSharingDatabase usdb = new UrlSharingDatabase(sqlTrans);
+    @Spy protected UserSettingsTokenDatabase ustdb = new UserSettingsTokenDatabase(sqlTrans);
     @Spy protected final GroupDatabase gdb = new GroupDatabase(sqlTrans);
     @Spy protected final GroupMembersDatabase gmdb = new GroupMembersDatabase(sqlTrans);
     @Spy protected final GroupSharesDatabase gsdb = new GroupSharesDatabase(sqlTrans);
@@ -177,6 +180,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
     @Spy protected UrlShare.Factory factUrlShare = new UrlShare.Factory(usdb);
+    @Spy protected UserSettingsToken.Factory factUserSettingsToken = new UserSettingsToken.Factory();
     @Spy protected final Group.Factory factGroup = new Group.Factory();
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
@@ -193,6 +197,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
         factOrgInvite.inject(oidb, factUser, factOrg);
         factGroup.inject(gdb, gmdb, gsdb, factOrg, factSharedFolder, factUser);
+        factUserSettingsToken.inject(ustdb);
     }
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
@@ -341,6 +346,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 sharedFolderNotificationEmailer,
                 asyncEmailSender,
                 factUrlShare,
+                factUserSettingsToken,
                 factGroup,
                 rateLimiter,
                 license,
