@@ -1,3 +1,5 @@
+See also [How to restart CI](restart_ci.html).
+
 # Introduction
 
 This doc describes what must be installed and configured on the CI box. For a higher-level overview of how CI works, see docs/references/ci.md
