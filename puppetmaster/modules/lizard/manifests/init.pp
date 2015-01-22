@@ -1,5 +1,7 @@
 class lizard (
     $mysql_password,
+    $stripe_publishable_key,
+    $stripe_secret_key,
 ) {
     package{"aerofs-lizard":
         ensure => latest,
