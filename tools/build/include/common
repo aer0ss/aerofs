@@ -96,7 +96,6 @@ readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
 # Proguard maps server credentials and paths
 readonly MAP_SERVER="rocklog.aerofs.com"
 readonly MAP_SERVER_LOGIN=${MAP_SERVER}
-readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"
 
 ###############################################################################
@@ -459,8 +458,6 @@ function upload_map {
     declare MAP_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.map"
     echo "uploading proguard map file to $MAP_SERVER..."
     scp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
-    echo "uploading proguard map file to $ROCKLOG_SERVER"
-    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
 }
 
 # Tags this release in the codeline.
