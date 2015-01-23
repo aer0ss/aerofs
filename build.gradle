@@ -154,6 +154,8 @@ subprojects {
         from jar
         into "${buildDir}/dist"
     }
+
+    task deps(type: DependencyReportTask) {}
 }
 
 //-----------------------------------------------------------------------------
