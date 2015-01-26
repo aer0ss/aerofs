@@ -22,6 +22,7 @@ server {
     ssl_prefer_server_ciphers on;
 
     add_header X-Frame-Options SAMEORIGIN;
+    add_header Strict-Transport-Security "max-age=31536000";
 
     # Canonicalize on www.aerofs.com to avoid IE sending cookies for aerofs.com
     # to support.aerofs.com (which is Zendesk, not us).  Other browsers won't
@@ -48,6 +49,7 @@ server {
     ssl_prefer_server_ciphers on;
 
     add_header X-Frame-Options SAMEORIGIN;
+    add_header Strict-Transport-Security "max-age=31536000";
 
     location /static {
         root /opt/web/web;
