@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.PathStatusNotifier;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
+import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -98,6 +99,8 @@ public class CoreModule extends AbstractModule
 
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
+
+        bind(NewUpdatesSender.class).asEagerSingleton();
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);

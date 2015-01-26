@@ -30,6 +30,7 @@ import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.Store;
@@ -121,7 +122,8 @@ public class InMemoryDS
 
         Store.Factory factStore  = new Store.Factory(factSF, factCollector,
                 mock(AntiEntropy.class), mock(Devices.class), mock(IPulledDeviceDatabase.class),
-                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF);
+                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF,
+                mock(PauseSync.class));
         stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
 
         ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);

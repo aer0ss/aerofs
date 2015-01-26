@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IDumpStatMisc;
@@ -26,7 +27,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class Store implements Comparable<Store>, IDumpStatMisc
+public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listener
 {
     private final SIndex _sidx;
     private final boolean _usePolaris;
@@ -58,6 +59,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         private final SubmissionScheduler.Factory<MetaChangeSubmitter> _factMCSS;
         private final SubmissionScheduler.Factory<ContentChangeSubmitter> _factCCSS;
         private final ContentFetcher.Factory _factCF;
+        private final PauseSync _pauseSync;
 
         @Inject
         public Factory(
@@ -71,7 +73,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
                 ChangeFetchScheduler.Factory factCFS,
                 SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS,
                 SubmissionScheduler.Factory<ContentChangeSubmitter> factCCSS,
-                ContentFetcher.Factory factCF)
+                ContentFetcher.Factory factCF,
+                PauseSync pauseSync)
         {
             _factSF = factSF;
             _factCollector = factCollector;
@@ -84,6 +87,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
             _factMCSS = factMCSS;
             _factCCSS = factCCSS;
             _factCF = factCF;
+            _pauseSync = pauseSync;
         }
 
         public Store create_(SIndex sidx) throws SQLException
@@ -124,6 +128,18 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     {
         assert !_isDeleted;
         return _sidx;
+    }
+
+    public SubmissionScheduler<MetaChangeSubmitter> metaSubmitter()
+    {
+        checkState(_usePolaris && !_isDeleted);
+        return _mcss;
+    }
+
+    public SubmissionScheduler<ContentChangeSubmitter> contentSubmitter()
+    {
+        checkState(_usePolaris && !_isDeleted);
+        return _ccss;
     }
 
     public ContentFetcher contentFetcher()
@@ -180,6 +196,28 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         }
     }
 
+    @Override
+    public void onPauseSync_()
+    {
+       if (_usePolaris) {
+           _mcss.stop_();
+           _ccss.stop_();
+           _cfs.stop_();
+           _f._cnsub.unsubscribe_(this);
+       }
+    }
+
+    @Override
+    public void onResumeSync_()
+    {
+        if (_usePolaris) {
+            _mcss.start_();
+            _ccss.start_();
+            _cfs.start_();
+            _f._cnsub.subscribe_(this);
+        }
+    }
+
     /**
      * Called after the Store is created.
      * If there are no OPM devices for this store, do nothing.
@@ -192,7 +230,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
             _ccss.start_();
 
             // start fetching updates from polaris
-            _cfs.schedule_();
+            _cfs.start_();
 
             // subscribe to change notifications
             _f._cnsub.subscribe_(this);
@@ -205,6 +243,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
             // we map online devices in the collector as OPM devices of a member store
             getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
         }
+
+        _f._pauseSync.addListener_(this);
     }
 
     /**
@@ -213,6 +253,8 @@ public class Store implements Comparable<Store>, IDumpStatMisc
      */
     void preDelete_()
     {
+        _f._pauseSync.removeListener_(this);
+
         if (_usePolaris) {
             // stop submitting local updates to polaris
             _mcss.stop_();

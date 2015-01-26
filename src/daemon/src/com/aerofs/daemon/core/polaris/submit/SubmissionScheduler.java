@@ -49,7 +49,7 @@ public class SubmissionScheduler<T extends Submitter>
                 @Override
                 public void committed_()
                 {
-                    start_();
+                    _sched.schedule_();
                 }
             });
             return null;
@@ -68,8 +68,11 @@ public class SubmissionScheduler<T extends Submitter>
             }
         });
 
-        // TODO: META/CONTENT split?
-        _f._vu.addListener_((soid, t) -> startOnCommit_(t));
+        // TODO: META/CONTENT split
+        // TODO: don't start content submit for object pending meta submit
+        _f._vu.addListener_((soid, t) -> {
+            if (soid.sidx().equals(_sidx)) startOnCommit_(t);
+        });
     }
 
     private String name()
@@ -79,7 +82,7 @@ public class SubmissionScheduler<T extends Submitter>
 
     public void start_()
     {
-        _sched.schedule_();
+        _sched.start_();
     }
 
     public void startOnCommit_(Trans t)

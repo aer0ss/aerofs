@@ -307,7 +307,8 @@ public class TC implements IDumpStatMisc, ITokenUseListener
      */
     public static Prio currentThreadPrio()
     {
-        return tcb()._prio;
+        TCB tcb = tcb();
+        return tcb != null && tcb._running ? tcb._prio : null;
     }
 
     /**

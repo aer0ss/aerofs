@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.polaris.fetch.ChangeFetcher;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;

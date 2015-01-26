@@ -54,6 +54,7 @@ message PBUpdateSenderFilter {
 
 message PBNewUpdates {
     required bytes store_id = 1;
+    optional uint64 change_epoch = 2;
 }
 
 // IMPORTANT:

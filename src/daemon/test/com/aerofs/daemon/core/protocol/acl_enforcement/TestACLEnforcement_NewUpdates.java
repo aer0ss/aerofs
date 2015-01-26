@@ -99,22 +99,17 @@ public class TestACLEnforcement_NewUpdates extends AbstractTest
             throws Exception
     {
         connectSenderToReceiver();
-        sender._nu.send_(_sidxs);
+        sender._nus.send_(_sidxs);
         verifyResult();
     }
 
     private void connectSenderToReceiver()
             throws Exception
     {
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                ByteArrayOutputStream os = (ByteArrayOutputStream) invocation.getArguments()[3];
-                receiver._nu.process_(newDigestedMessage(sender.user(), os));
-                return null;
-            }
+        doAnswer(invocation -> {
+            ByteArrayOutputStream os = (ByteArrayOutputStream) invocation.getArguments()[3];
+            receiver._nu.process_(newDigestedMessage(sender.user(), os));
+            return null;
         }).when(sender._trl).sendMaxcast_(any(SID.class), anyString(), anyInt(),
                 any(ByteArrayOutputStream.class));
     }

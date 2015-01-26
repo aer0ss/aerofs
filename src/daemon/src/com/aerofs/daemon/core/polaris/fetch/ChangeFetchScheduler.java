@@ -53,13 +53,18 @@ public class ChangeFetchScheduler
         });
     }
 
-    public void schedule_()
+    public void start_()
     {
-        _sched.schedule_();
+        _sched.start_();
     }
 
     public void stop_()
     {
         _sched.stop_();
+    }
+
+    public void schedule_()
+    {
+        _sched.schedule_();
     }
 }

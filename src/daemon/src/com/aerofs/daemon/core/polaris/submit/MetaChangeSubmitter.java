@@ -7,13 +7,18 @@ package com.aerofs.daemon.core.polaris.submit;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.polaris.api.Ack;
 import com.aerofs.daemon.core.polaris.GsonUtil;
+import com.aerofs.daemon.core.polaris.api.Batch;
+import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
+import com.aerofs.daemon.core.polaris.api.BatchResult;
+import com.aerofs.daemon.core.polaris.api.BatchResult.BatchOpResult;
+import com.aerofs.daemon.core.polaris.api.BatchResult.PolarisError;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.api.LogicalObject;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
@@ -27,8 +32,10 @@ import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.db.IDBIterator;
@@ -37,6 +44,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -49,7 +57,9 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -75,12 +85,14 @@ public class MetaChangeSubmitter implements Submitter
     private final PauseSync _pauseSync;
     private final DirectoryService _ds;
     private final TransManager _tm;
+    private final NewUpdatesSender _nus;
+    private final MapSIndex2Store _sidx2s;
 
     @Inject
     public MetaChangeSubmitter(PolarisClient client, MetaChangesDatabase mcdb,
             MetaBufferDatabase mbdb, RemoteLinkDatabase rpdb, CentralVersionDatabase cvdb,
             IMapSIndex2SID sidx2sid, MapAlias2Target a2t, PauseSync pauseSync,
-            DirectoryService ds, TransManager tm)
+            DirectoryService ds, TransManager tm, NewUpdatesSender nus, MapSIndex2Store sidx2s)
     {
         _client = client;
         _mcdb = mcdb;
@@ -92,6 +104,8 @@ public class MetaChangeSubmitter implements Submitter
         _pauseSync = pauseSync;
         _ds = ds;
         _tm = tm;
+        _nus = nus;
+        _sidx2s = sidx2s;
     }
 
     @Override
@@ -117,10 +131,33 @@ public class MetaChangeSubmitter implements Submitter
         return c;
     }
 
+    private final int MAX_BATCH_SIZE = 100;
+
+    private class RemoteLinkProxy
+    {
+        private final SIndex _sidx;
+        private final Map<OID, OID> _overlay = new HashMap<>();
+
+        RemoteLinkProxy(SIndex sidx)
+        {
+            _sidx = sidx;
+        }
+
+        OID getParent_(OID oid) throws SQLException
+        {
+            if (_overlay.containsKey(oid)) return  _overlay.get(oid);
+            RemoteLink lnk = _rpdb.getParent_(_sidx, oid);
+            return lnk != null ? lnk.parent : null;
+        }
+
+        public void setParent(OID oid, OID newParent)
+        {
+            _overlay.put(oid, newParent);
+        }
+    }
+
     /**
-     * Asynchronously submit the next queued local metadata change to Polaris.
-     *
-     * TODO: batch multiple changes in a single request
+     * Asynchronously submit the next queued local metadata change(s) to Polaris.
      */
     @Override
     public void submit_(SIndex sidx, AsyncTaskCallback cb) throws SQLException
@@ -132,24 +169,38 @@ public class MetaChangeSubmitter implements Submitter
         }
 
         // get next meta change from queue
-        MetaChange c;
+        RemoteLinkProxy proxy = new RemoteLinkProxy(sidx);
+        List<MetaChange> changes = Lists.newArrayList();
+        List<BatchOp> ops = Lists.newArrayList();
         try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
-            if (!it.next_()) {
-                cb.onSuccess_(false);
-                return;
+            while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
+                MetaChange c = resolveAliasing_(it.get_());
+                changes.add(c);
+                ops.add(op_(c, proxy));
             }
-
-            c = resolveAliasing_(it.get_());
         }
 
-        c.newParent = _a2t.dereferenceAliasedOID_(new SOID(sidx, c.newParent)).oid();
+        if (ops.isEmpty()) {
+            cb.onSuccess_(false);
+        } else {
+            batchSubmit(changes, new Batch(ops), cb);
+        }
+    }
 
+    /**
+     * IMPORTANT: this method should only access IMMUTABLE data from the DB
+     *
+     * Any access to mutable data must be proxied through an in-memory overlay that accounts
+     * for the changes caused by previous operations in the same batch.
+     */
+    private BatchOp op_(MetaChange c, RemoteLinkProxy proxy) throws SQLException
+    {
+        SIndex sidx = c.sidx;
         OID parent;
         LocalChange change = new LocalChange();
         change.child = c.oid.toStringFormal();
 
-        RemoteLink lnk = _rpdb.getParent_(sidx, c.oid);
-        OID oldParent = lnk != null ? lnk.parent : null;
+        OID oldParent = proxy.getParent_(c.oid);
 
         // FIXME: conversion pitfall: deletion of auto-joined store
         if (oldParent == null) {
@@ -159,17 +210,20 @@ public class MetaChangeSubmitter implements Submitter
             change.childName = c.newName;
             OA oa = _ds.getOA_(new SOID(sidx, c.oid));
             change.childObjectType = type(oa.type());
+            proxy.setParent(c.oid, c.newParent);
         } else if (c.newParent.isTrash()) {
             checkState(!oldParent.isTrash());
             parent = oldParent;
             change.type = LocalChange.Type.REMOVE_CHILD;
+            proxy.setParent(c.oid, null);
         } else {
             parent = oldParent;
             change.type = LocalChange.Type.MOVE_CHILD;
             change.newChildName = c.newName;
             change.newParent = rootOID2SID(sidx, c.newParent).toStringFormal();
+            proxy.setParent(c.oid, c.newParent);
         }
-        submit(c, parent, change, cb);
+        return new BatchOp(rootOID2SID(c.sidx, parent).toStringFormal(), change);
     }
 
     private UniqueID rootOID2SID(SIndex sidx, OID oid)
@@ -188,42 +242,68 @@ public class MetaChangeSubmitter implements Submitter
         }
     }
 
-    private void submit(MetaChange c, OID oid, LocalChange change,
-            AsyncTaskCallback cb)
+    private void batchSubmit(List<MetaChange> c, Batch batch, AsyncTaskCallback cb)
     {
         FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
-                "/objects/" + rootOID2SID(c.sidx, oid).toStringFormal(),
-                Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(change))));
+                "/batch/transforms",
+                Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(batch))));
         req.headers().add(Names.CONTENT_TYPE, "application/json");
         req.headers().add(Names.TRANSFER_ENCODING, "chunked");
 
-        _client.send(req, cb, r -> handle_(c, change, r));
+        _client.send(req, cb, r -> handleBatch_(c, batch, r));
     }
 
-    private boolean handle_(MetaChange c, LocalChange change, FullHttpResponse resp)
-            throws Exception
+    private boolean handleBatch_(List<MetaChange> c, Batch batch, FullHttpResponse resp)
+             throws Exception
     {
         int statusCode = resp.status().code();
         String body = resp.content().toString(BaseUtil.CHARSET_UTF);
         switch (statusCode) {
-        case 200:
-            return onSuccess_(c, change, body);
-        case 409:
-            return onConflict_(c, change, body);
+        case 200: {
+            BatchResult r = GsonUtil.GSON.fromJson(body, BatchResult.class);
+            if (r.results.size() > batch.operations.size()) throw new ExProtocolError();
+
+            long ack = 0L;
+            SIndex sidx = null;
+
+            // TODO: optimistic transaction merging
+            try {
+                for (int i = 0; i < r.results.size(); ++i) {
+                    BatchOpResult or = r.results.get(i);
+                    LocalChange lc = batch.operations.get(i).operation;
+                    if (or.successful) {
+                        try (Trans t = _tm.begin_()) {
+                            ackSubmission_(c.get(i), lc.type, or.updated, t);
+                            t.commit_();
+                        }
+                        if (or.updated.size() > 0) {
+                            if (sidx == null) {
+                                sidx = c.get(i).sidx;
+                            } else {
+                                // we segregate update submission by store
+                                checkState(sidx == c.get(i).sidx);
+                            }
+                            ack = Math.max(ack, or.updated.get(0).transformTimestamp);
+                        }
+                    } else if (or.errorCode == PolarisError.NAME_CONFLICT) {
+                        onConflict_(c.get(i), lc, "");
+                    } else {
+                        // TODO(phoenix): ???
+                        l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
+                                GsonUtil.GSON.toJson(batch.operations.get(i)));
+                    }
+                }
+            } finally {
+                if (sidx != null && ack > 0) {
+                    _nus.sendForStore_(sidx, ack);
+                }
+            }
+            return true;
+        }
         default:
             l.warn("unexpected error {}\n", statusCode, body);
             throw new ExRetryLater("unexpected status code: " + statusCode);
         }
-    }
-
-    private boolean onSuccess_(MetaChange c, LocalChange change, String body) throws Exception
-    {
-        Ack ack = GsonUtil.GSON.fromJson(body, Ack.class);
-        try (Trans t = _tm.begin_()) {
-            ackSubmission_(c, change.type, ack.updated, t);
-            t.commit_();
-        }
-        return true;
     }
 
     private boolean onConflict_(MetaChange c, LocalChange change, String body) throws Exception
@@ -317,9 +397,9 @@ public class MetaChangeSubmitter implements Submitter
 
     private void ackSubmission_(MetaChange c, LocalChange.Type transformType,
             List<UpdatedObject> acks, Trans t)
-            throws SQLException, ExFormatError
+            throws SQLException
     {
-        // TODO: safety check to ensure ACK is resilient to local changes after submit
+        // TODO(phoenix): safety check to ensure ACK is resilient to local changes after submit
         if (!_mcdb.deleteChange_(c.sidx, c.idx, t)) {
             l.warn("already ack'ed {}", c.idx);
             return;
@@ -346,9 +426,10 @@ public class MetaChangeSubmitter implements Submitter
             _rpdb.insertParent_(c.sidx, c.oid, c.newParent, c.newName,
                     acks.get(0).transformTimestamp, t);
 
-            if (_ds.getOA_(new SOID(c.sidx, c.oid)).type() == OA.Type.FILE) {
-                // TODO: on successful file creation, add CONTENT entry to queue
-                // TODO: what if object was locally deleted after submission
+            OA oa = _ds.getOANullable_(new SOID(c.sidx, c.oid));
+            if (oa != null && !oa.isExpelled() && oa.isFile()) {
+                // fast retry content submission
+                _sidx2s.get_(c.sidx).contentSubmitter().startOnCommit_(t);
             }
             break;
         case MOVE_CHILD:
