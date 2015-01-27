@@ -5,7 +5,8 @@ bootstrap.tasks.configuration_service_url=https://localhost:5436/
 
 base.ca.url=http://localhost:1029/prod
 
-sp.redis.address=localhost:6379
+sp.redis.service.host=localhost
+sp.redis.service.port=6379
 sp.probe.ts_allowed_offline_seconds={{ sp_probe_ts_allowed_offline_seconds }}
 
 email.sender.public_host={{ email_host }}

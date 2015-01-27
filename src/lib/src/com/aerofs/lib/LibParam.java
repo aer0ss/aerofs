@@ -224,11 +224,10 @@ public class LibParam extends BaseParam
 
     public static class REDIS
     {
-        public static final InetSocketAddress DISKSTORE_ADDRESS =
-                InetSocketAddress.createUnresolved("localhost", 6380);
-
         public static final InetSocketAddress AOF_ADDRESS =
-                InetSocketAddress.createUnresolved("localhost", 6379);
+                InetSocketAddress.createUnresolved(
+                        getStringProperty("sp.redis.service.host", "localhost"),
+                        getIntegerProperty("sp.redis.service.port", 6379));
     }
 
     public static class LicenseProperties
