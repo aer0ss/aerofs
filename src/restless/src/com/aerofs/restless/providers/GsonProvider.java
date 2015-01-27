@@ -5,10 +5,13 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
@@ -35,6 +38,8 @@ import java.util.TimeZone;
 @Produces(MediaType.APPLICATION_JSON)
 public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWriter<Object>
 {
+    private final static Logger l = LoggerFactory.getLogger(GsonProvider.class);
+
     private final Gson _gson = new GsonBuilder()
             .registerTypeAdapter(Date.class, new DateTypeAdapter())
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -96,11 +101,14 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
     @Override
     public void writeTo(Object t, Class<?> type, Type genericType, Annotation[] annotations,
             MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
-            throws IOException, WebApplicationException
+            throws IOException
     {
         JsonWriter jsw = new JsonWriter(new OutputStreamWriter(entityStream, Charsets.UTF_8));
         try {
             _gson.toJson(t, type, jsw);
+        } catch (JsonIOException e) {
+            l.warn("serialization failed", e);
+            throw e;
         } finally {
             jsw.close();
         }
