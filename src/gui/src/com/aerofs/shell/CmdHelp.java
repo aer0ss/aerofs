@@ -85,9 +85,6 @@ public class CmdHelp<T> extends AbstractShellCommand<T>
                 out.println(INDENT + cmd.getName() + " -- " + cmd.getDescription());
             }
         }
-        out.println();
-        hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
-                "(More to come. Submit or vote for new commands at http://vote.aerofs.com)");
         pw.flush();
 
         out.println();
@@ -105,8 +102,6 @@ public class CmdHelp<T> extends AbstractShellCommand<T>
         pw.flush();
 
         out.println();
-        hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
-                "Need more functions? Submit feature requests at http://vote.aerofs.com.");
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
                 "Got problems? Visit http://support.aerofs.com.");
         pw.flush();
