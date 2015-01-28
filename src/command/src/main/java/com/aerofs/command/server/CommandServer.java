@@ -75,7 +75,8 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
 
         // create the jedis connection objects
         PooledJedisConnectionProvider provider = new PooledJedisConnectionProvider();
-        provider.init_(configuration.getRedis().getHost(), configuration.getRedis().getPort());
+        // command server is only used in HC so we don't have to worry about redis passwords
+        provider.init_(configuration.getRedis().getHost(), configuration.getRedis().getPort(), null);
         JedisThreadLocalTransaction transaction = new JedisThreadLocalTransaction(provider);
 
         // configure the service injector

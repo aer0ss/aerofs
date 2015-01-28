@@ -79,9 +79,7 @@ public class CollectLogsServlet extends HttpServlet
         checkNotNull(_verkehrClient);
 
         PooledJedisConnectionProvider _jedisConnProvider = new PooledJedisConnectionProvider();
-        String redisHost = REDIS.AOF_ADDRESS.getHostName();
-        short redisPort = (short)REDIS.AOF_ADDRESS.getPort();
-        _jedisConnProvider.init_(redisHost, redisPort);
+        _jedisConnProvider.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 
         JedisThreadLocalTransaction _jedisTrans = new JedisThreadLocalTransaction(_jedisConnProvider);
         JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);

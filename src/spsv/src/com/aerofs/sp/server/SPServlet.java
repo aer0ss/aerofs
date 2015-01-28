@@ -230,9 +230,7 @@ public class SPServlet extends AeroServlet
         _service.setSessionExtender(getSessionExtender());
         migrate();
 
-        String redisHost = REDIS.AOF_ADDRESS.getHostName();
-        int redisPort = REDIS.AOF_ADDRESS.getPort();
-        _jedisConProvider.init_(redisHost, (short) redisPort);
+        _jedisConProvider.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 
         InvitationReminder er = new InvitationReminder(_esdb, _sqlTrans, _invitationReminderEmailer);
         er.start();
