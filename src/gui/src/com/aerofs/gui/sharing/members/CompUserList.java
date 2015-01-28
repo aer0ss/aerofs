@@ -87,8 +87,9 @@ public class CompUserList extends Composite
      * UI thread to avoid a race against the UI thread.
      */
     public List<SharedFolderMember> _members = emptyList();
-    public @Nullable Permissions _localUserPermissions;
-    public @Nullable SID _sid;
+    public @Nullable SID            _sid;
+    // whether the GUI state should be for privileged users or non-privileged users
+    public boolean                  _isPrivileged;
 
     public interface StateChangedListener
     {
@@ -169,8 +170,7 @@ public class CompUserList extends Composite
                 _tv.setSelection(new StructuredSelection(elem), true);
 
                 SharedFolderMember member = (SharedFolderMember)elem;
-                SharedFolderMemberMenu menu = SharedFolderMemberMenu.get(_localUserPermissions,
-                        member);
+                SharedFolderMemberMenu menu = SharedFolderMemberMenu.get(_isPrivileged, member);
 
                 if (!menu.hasContextMenu()) return;
 
@@ -213,28 +213,27 @@ public class CompUserList extends Composite
     }
 
     // pre: must be called from UI thread and members must not be null.
-    private void setState(List<SharedFolderMember> members, Permissions localUserPermissions,
-            SID sid)
+    private void setState(List<SharedFolderMember> members, SID sid, boolean isPrivileged)
     {
-        setStateImpl(members, members, localUserPermissions, sid);
+        setStateImpl(members, members, sid, isPrivileged);
     }
 
     // pre: must be called from the UI thread
     private void setState(String errorMessage)
     {
-        setStateImpl(errorMessage, emptyList(), null, null);
+        setStateImpl(errorMessage, emptyList(), null, false);
     }
 
     // pre: must be called from the UI thread and members must not be null
     private void setStateImpl(Object input, List<SharedFolderMember> members,
-            @Nullable Permissions localUserPermissions, @Nullable SID sid)
+            @Nullable SID sid, boolean isPrivileged)
     {
         checkState(GUI.get().isUIThread());
         checkNotNull(members);
 
         _members = members;
-        _localUserPermissions = localUserPermissions;
         _sid = sid;
+        _isPrivileged = isPrivileged;
 
         // N.B. this establishes a tight binding; if the data in _members is updated, the changes
         // will be visible after _tv refreshes.
@@ -273,7 +272,7 @@ public class CompUserList extends Composite
             @Override
             public void onSuccess(@Nullable MemberListResult result)
             {
-                setState(result._members, result._permissions, result._sid);
+                setState(result._members, result._sid, result._isPrivileged);
                 layoutTreeColumns();
             }
 

@@ -125,7 +125,7 @@ public class SharingLabelProviders
         public String getText(Object element)
         {
             return element instanceof SharedFolderMember &&
-                    SharedFolderMemberMenu.get(_parent._localUserPermissions,
+                    SharedFolderMemberMenu.get(_parent._isPrivileged,
                             (SharedFolderMember)element).hasContextMenu()
                     ? "Actions " + GUIUtil.TRIANGLE_DOWNWARD
                     : "";

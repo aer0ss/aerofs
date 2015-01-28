@@ -7,6 +7,7 @@ package com.aerofs.gui.sharing;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNotFound;
@@ -16,6 +17,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.sharing.SharedFolderMember.*;
 import com.aerofs.gui.sharing.Subject.*;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
@@ -148,7 +150,7 @@ public class SharingModel
                     .filter(member -> member.getState() != SharedFolderState.LEFT)
                     .collect(toList());
 
-            Permissions permissions = getLocalUserPermissions(pbSharedFolder);
+            boolean isPrivileged = canManagePermissions(getLocalUserPermissions(pbSharedFolder));
 
             Defects.newMetric("gui.sharing.members")
                     .addData("elapsed_time", timer.elapsed())
@@ -157,7 +159,7 @@ public class SharingModel
                     .addData("total_count", members.size())
                     .sendAsync();
 
-            return new MemberListResult(sid, listMembers, permissions);
+            return new MemberListResult(sid, listMembers, isPrivileged);
         });
     }
 
@@ -215,6 +217,22 @@ public class SharingModel
     {
         return Permissions.fromPB(pbSharedFolder.getRequestedUsersPermissionsAndState()
                 .getPermissions());
+    }
+
+    private boolean canManagePermissions(Permissions localUserPermissions)
+    {
+        /**
+         * FIXME Edge case: Team Servers show the menu to update ACL even though the Team Server may
+         * not necessarily have the permission to update the ACL.
+         *
+         * It occurs when the Team Server sees a particular shared folder because someone in the
+         * organization is a member but none of the owners of the said shared folder is in the
+         * organization.
+         *
+         * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
+         */
+        return L.isMultiuser() ||
+                localUserPermissions != null && localUserPermissions.covers(Permission.MANAGE);
     }
 
     public ListenableFuture<Void> setSubjectPermissions(SID sid, Subject subject,
@@ -317,13 +335,13 @@ public class SharingModel
     {
         public final SID                        _sid;
         public final List<SharedFolderMember>   _members;
-        public final Permissions                _permissions;
+        public final boolean                    _isPrivileged;
 
-        public MemberListResult(SID sid, List<SharedFolderMember> members, Permissions permissions)
+        public MemberListResult(SID sid, List<SharedFolderMember> members, boolean isPrivileged)
         {
             _sid            = sid;
             _members        = members;
-            _permissions    = permissions;
+            _isPrivileged   = isPrivileged;
         }
     }
 }

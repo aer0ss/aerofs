@@ -43,7 +43,6 @@ class MemberList extends Composite
     private final Button _btnInvite;
     private @Nullable Path _path;
     private @Nullable String _name;
-    private boolean _iAmAdmin;      // whether the local user is an admin of the shared folder.
 
     MemberList(Composite composite, int style)
     {
@@ -107,12 +106,7 @@ class MemberList extends Composite
     private void refreshAsync()
     {
         _userList.setStateChangedListener(() -> {
-            // gray out invite button when not admin, except on Team Server where
-            // the ACL check is slightly more complicated...
-            // FIXME: TS needs effective ACL
-            _iAmAdmin = L.isMultiuser() || (_userList._localUserPermissions != null
-                    && _userList._localUserPermissions.covers(Permission.MANAGE));
-            _btnInvite.setEnabled(_iAmAdmin);
+            _btnInvite.setEnabled(_userList._isPrivileged);
         });
         _userList.load(_path);
 
@@ -124,7 +118,7 @@ class MemberList extends Composite
         if (_path == null) {
             l.error("invite to a null folder?");
 
-        } else if (_iAmAdmin) {
+        } else if (_userList._isPrivileged) {
             new DlgInviteUsers(getShell(), getLabelByName(_name), _path, _name, true).openDialog();
             refreshAsync();
 

@@ -33,15 +33,14 @@ public abstract class SharedFolderMemberMenu
 
     private RoleChangeListener  _listener;
 
-    public static SharedFolderMemberMenu get(@Nullable Permissions localUserPermissions,
-            SharedFolderMember member)
+    public static SharedFolderMemberMenu get(boolean isPrivileged, SharedFolderMember member)
     {
         Subject subject = member.getSubject();
 
         if (subject.isLocalUser()) {
             return new NoMenu();
         } else if (member instanceof SharedFolderMemberWithPermissions
-                && canManagePermissions(localUserPermissions)) {
+                && isPrivileged) {
             if (subject instanceof User) {
                 return new ManageUserMenu((SharedFolderMemberWithPermissions)member,
                         (User)subject);
@@ -54,22 +53,6 @@ public abstract class SharedFolderMemberMenu
         }
 
         return new NoMenu();
-    }
-
-    private static boolean canManagePermissions(Permissions localUserPermissions)
-    {
-        /**
-         * FIXME Edge case: Team Servers show the menu to update ACL even though the Team Server may
-         * not necessarily have the permission to update the ACL.
-         *
-         * It occurs when the Team Server sees a particular shared folder because someone in the
-         * organization is a member but none of the owners of the said shared folder is in the
-         * organization.
-         *
-         * TODO: Team Servers should get "effective" ACLs from SP which would neatly solve this mess
-         */
-        return L.isMultiuser() ||
-                localUserPermissions != null && localUserPermissions.covers(Permission.MANAGE);
     }
 
     public void open(Control parent)
