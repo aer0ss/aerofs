@@ -13,17 +13,16 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.defects.Defect;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.sharing.SharedFolderMember.*;
 import com.aerofs.gui.sharing.Subject.*;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply.PBUserAndState;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
+import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.proto.Sp.PBGroup;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
@@ -127,11 +126,11 @@ public class SharingModel
     {
         return _executor.submit(() -> {
             _ritualProvider.getBlockingClient().shareFolder(path.toPB(), subjects.stream()
-                            .map(subject -> PBSubjectPermissions.newBuilder()
-                                    .setSubject(subject.toPB())
-                                    .setPermissions(permissions.toPB())
-                                    .build())
-                            .collect(toList()), note, suppressSharedFolderRulesWarnings);
+                    .map(subject -> PBSubjectPermissions.newBuilder()
+                            .setSubject(subject.toPB())
+                            .setPermissions(permissions.toPB())
+                            .build())
+                    .collect(toList()), note, suppressSharedFolderRulesWarnings);
             return null;
         });
     }
@@ -139,15 +138,26 @@ public class SharingModel
     public ListenableFuture<MemberListResult> load(Path path)
     {
         return _executor.submit(() -> {
-            SID sid = getSIDImpl(path);
+            ElapsedTimer timer = new ElapsedTimer().start();
 
-            List<SharedFolderMember> members = getSharedFolderMembersImpl(sid).stream()
+            SID sid = getSIDImpl(path);
+            PBSharedFolder pbSharedFolder = getSharedFolderImpl(sid);
+
+            List<SharedFolderMember> members = getSharedFolderMembersImpl(sid, pbSharedFolder);
+            List<SharedFolderMember> listMembers = members.stream()
                     .filter(member -> member.getState() != SharedFolderState.LEFT)
                     .collect(toList());
 
-            Permissions permissions = getLocalUserPermissions(members);
+            Permissions permissions = getLocalUserPermissions(pbSharedFolder);
 
-            return new MemberListResult(sid, members, permissions);
+            Defects.newMetric("gui.sharing.members")
+                    .addData("elapsed_time", timer.elapsed())
+                    .addData("user_count", pbSharedFolder.getUserPermissionsAndStateCount())
+                    .addData("group_count", pbSharedFolder.getGroupPermissionsCount())
+                    .addData("total_count", members.size())
+                    .sendAsync();
+
+            return new MemberListResult(sid, listMembers, permissions);
         });
     }
 
@@ -162,30 +172,27 @@ public class SharingModel
                 .orElseThrow(() -> new ExNotFound("Shared folder not found."));
     }
 
-    private List<SharedFolderMember> getSharedFolderMembersImpl(SID sid)
+    private PBSharedFolder getSharedFolderImpl(SID sid)
             throws Exception
     {
-        Defect metric = Defects.newMetric("gui.sharing.members");
-        ElapsedTimer timer = new ElapsedTimer().start();
-
-        List<PBSharedFolder> pbSharedFolders = _spClient.get()
-                .listSharedFolders(ImmutableList.of(sid.toPB()))
-                .getSharedFolderList();
+        ListSharedFoldersReply reply = _spClient.get()
+                .listSharedFolders(ImmutableList.of(sid.toPB()));
 
         // assert the contract of the sp call is upheld
-        checkArgument(pbSharedFolders.size() == 1);
+        checkArgument(reply.getSharedFolderCount() == 1);
 
-        PBSharedFolder pbSharedFolder = pbSharedFolders.get(0);
+        return reply.getSharedFolder(0);
+    }
 
-        metric.addData("user_count", pbSharedFolder.getUserPermissionsAndStateCount());
-
+    private List<SharedFolderMember> getSharedFolderMembersImpl(SID sid,
+            PBSharedFolder pbSharedFolder)
+            throws Exception
+    {
         List<SharedFolderMember> members = newArrayList();
 
         for (PBUserPermissionsAndState pbups : pbSharedFolder.getUserPermissionsAndStateList()) {
             members.add(_factory.fromPB(pbups));
         }
-
-        metric.addData("group_count", pbSharedFolder.getGroupPermissionsCount());
 
         for (PBGroupPermissions pbgp : pbSharedFolder.getGroupPermissionsList()) {
             GroupPermissions gp = _factory.fromPB(pbgp);
@@ -201,19 +208,13 @@ public class SharingModel
             }
         }
 
-        metric.addData("total_count", members.size())
-                .addData("elapsed_time", timer.elapsed())
-                .sendAsync();
-
         return members;
     }
 
-    private Permissions getLocalUserPermissions(List<SharedFolderMember> members)
+    private Permissions getLocalUserPermissions(PBSharedFolder pbSharedFolder)
     {
-        return members.stream()
-                .filter(member -> member.getSubject().isLocalUser())
-                .map(SharedFolderMember::getPermissions)
-                .reduce(Permissions.allOf(), Permissions::union);
+        return Permissions.fromPB(pbSharedFolder.getRequestedUsersPermissionsAndState()
+                .getPermissions());
     }
 
     public ListenableFuture<Void> setSubjectPermissions(SID sid, Subject subject,
