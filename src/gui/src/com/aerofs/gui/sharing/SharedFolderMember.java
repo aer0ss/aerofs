@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.gui.sharing.Subject.Group;
 import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.sp.common.SharedFolderState;
+import org.eclipse.swt.graphics.Image;
 
 import javax.annotation.Nullable;
 
@@ -19,6 +20,21 @@ import static java.util.Objects.hash;
 public interface SharedFolderMember
 {
     public Subject getSubject();
+
+    default public String getLabel()
+    {
+        return getSubject().getLabel();
+    }
+
+    default public String getDescription()
+    {
+        return getSubject().getDescription();
+    }
+
+    default public Image getImage()
+    {
+        return getSubject().getImage();
+    }
 
     public Permissions getPermissions();
 
@@ -112,6 +128,12 @@ public interface SharedFolderMember
         }
 
         @Override
+        public String getLabel()
+        {
+            return _group.getLabel() + " (" + _children.size() + ")";
+        }
+
+        @Override
         public Permissions getPermissions()
         {
             return _permissions;
@@ -141,14 +163,13 @@ public interface SharedFolderMember
             return this == o
                     || (o instanceof GroupPermissions
                                 && _group.equals(((GroupPermissions)o)._group)
-                                && _permissions.equals(((GroupPermissions)o)._permissions)
-                                && _children.equals(((GroupPermissions)o)._children));
+                                && _permissions.equals(((GroupPermissions)o)._permissions));
         }
 
         @Override
         public int hashCode()
         {
-            return hash(_group, _permissions, _children);
+            return hash(_group, _permissions);
         }
     }
 

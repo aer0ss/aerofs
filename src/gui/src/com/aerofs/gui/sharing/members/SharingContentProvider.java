@@ -36,12 +36,10 @@ public class SharingContentProvider implements ITreeContentProvider
     @Override
     public boolean hasChildren(Object element)
     {
-        boolean ans = _input.stream()
+        return _input.stream()
                 .filter(member -> Objects.equals(member.getParent(), element))
                 .findAny()
                 .isPresent();
-
-        return ans;
     }
 
     @Override

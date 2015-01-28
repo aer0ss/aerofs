@@ -196,7 +196,7 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is an user
     static class ManageUserMenu extends SharedFolderMemberMenu
     {
-        private final CanSetPermissions _member;
+        private final CanSetPermissions     _member;
         private final User                  _user;
 
         public ManageUserMenu(CanSetPermissions member, User user)
@@ -225,7 +225,7 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is a group
     static class ManageGroupMenu extends SharedFolderMemberMenu
     {
-        private final CanSetPermissions _member;
+        private final CanSetPermissions     _member;
         private final Group                 _group;
 
         public ManageGroupMenu(CanSetPermissions member, Group group)

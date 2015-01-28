@@ -7,7 +7,9 @@ package com.aerofs.gui.sharing;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.gui.Images;
 import com.aerofs.lib.cfg.InjectableCfg;
+import org.eclipse.swt.graphics.Image;
 
 import static java.util.Objects.hash;
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -26,6 +28,8 @@ public interface Subject
     public String getDescription();
 
     public boolean isLocalUser();
+
+    public Image getImage();
 
     public static class User implements Subject
     {
@@ -78,6 +82,12 @@ public interface Subject
         public boolean isLocalUser()
         {
             return _cfg.user().equals(_userID);
+        }
+
+        @Override
+        public Image getImage()
+        {
+            return Images.get(Images.ICON_USER);
         }
 
         @Override
@@ -135,6 +145,12 @@ public interface Subject
         }
 
         @Override
+        public Image getImage()
+        {
+            return Images.get(Images.ICON_GROUP);
+        }
+
+        @Override
         public boolean equals(Object o)
         {
             return this == o || (o instanceof Group && _groupID.equals(((Group)o)._groupID));
@@ -184,6 +200,12 @@ public interface Subject
         public boolean isLocalUser()
         {
             return false;
+        }
+
+        @Override
+        public Image getImage()
+        {
+            return Images.get(Images.ICON_ERROR);
         }
     }
 }

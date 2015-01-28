@@ -7,7 +7,6 @@ package com.aerofs.gui.sharing.members;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.sharing.SharedFolderMember;
-import com.aerofs.gui.sharing.Subject.Group;
 import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.sp.common.SharedFolderState;
 import com.swtdesigner.SWTResourceManager;
@@ -55,7 +54,7 @@ public class SharingLabelProviders
         public String getToolTipText(Object element)
         {
             if (element instanceof SharedFolderMember) {
-                return ((SharedFolderMember)element).getSubject().getDescription() +
+                return ((SharedFolderMember)element).getDescription() +
                         (isPendingUser(element) ? "\nThis user hasn't accepted the invitation yet."
                                  : "");
             } else {
@@ -80,14 +79,10 @@ public class SharingLabelProviders
             if (element instanceof Exception) {
                 return Images.get(Images.ICON_WARNING);
             } else if (element instanceof SharedFolderMember) {
-                if (((SharedFolderMember)element).getSubject() instanceof User) {
-                    return Images.get(Images.ICON_USER);
-                } else if (((SharedFolderMember)element).getSubject() instanceof Group) {
-                    return Images.get(Images.ICON_GROUP);
-                }
+                return ((SharedFolderMember)element).getImage();
+            } else {
+                return null;
             }
-
-            return null;
         }
 
         @Override
@@ -96,7 +91,7 @@ public class SharingLabelProviders
             if (element instanceof Exception) {
                 return ((Exception) element).getMessage();
             } else if (element instanceof SharedFolderMember) {
-                return ((SharedFolderMember)element).getSubject().getLabel();
+                return ((SharedFolderMember)element).getLabel();
             } else {
                 return element.toString();
             }

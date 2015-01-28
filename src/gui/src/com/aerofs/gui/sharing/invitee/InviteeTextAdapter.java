@@ -10,9 +10,7 @@ import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.sharing.SharingModel;
 import com.aerofs.gui.sharing.Subject;
-import com.aerofs.gui.sharing.Subject.Group;
 import com.aerofs.gui.sharing.Subject.InvalidSubject;
-import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -128,13 +126,11 @@ public class InviteeTextAdapter
 
     private final Color COLOR_FOREGROUND    = SWTResourceManager.getColor(SWT.COLOR_BLACK);
     private final Color COLOR_BACKGROUND    = SWTResourceManager.getColor(0x71, 0xC9, 0xF1);
-    private final Image ICON_USER           = Images.get(Images.ICON_USER);
-    private final Image ICON_GROUP          = Images.get(Images.ICON_GROUP);
-    private final Image ICON_ERROR          = Images.get(Images.ICON_ERROR);
 
-    // N.B. these cannot be static because they depends on ICON_USER having being initialized
-    private final int ICON_WIDTH            = ICON_USER.getImageData().width;
-    private final int ICON_HEIGHT           = ICON_USER.getImageData().height;
+    // N.B. these cannot be static because they depends on ICON_BASE having being initialized
+    private final Image ICON_BASE           = Images.get(Images.ICON_USER);
+    private final int ICON_WIDTH            = ICON_BASE.getImageData().width;
+    private final int ICON_HEIGHT           = ICON_BASE.getImageData().height;
 
     private final SharingModel          _model;
     private final StyledText            _text;
@@ -487,10 +483,11 @@ public class InviteeTextAdapter
         @Override
         public Image getImage(Object element)
         {
-            return element instanceof User ? ICON_USER
-                    : element instanceof Group ? ICON_GROUP
-                    : element instanceof InvalidSubject ? ICON_ERROR
-                    : null;
+            if (element instanceof Subject) {
+                return ((Subject)element).getImage();
+            } else {
+                return null;
+            }
         }
     }
 }

@@ -195,7 +195,9 @@ public class SharingModel
 
             members.add(gp);
             for (PBUserAndState pbus : pbuss) {
-                members.add(_factory.fromPB(gp, pbus));
+                GroupPermissionUserAndState member = _factory.fromPB(gp, pbus);
+                members.add(member);
+                gp._children.add(member);
             }
         }
 
