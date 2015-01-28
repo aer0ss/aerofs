@@ -30,6 +30,7 @@ import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.protobuf.GeneratedMessageLite;
@@ -750,6 +751,14 @@ public abstract class Util
             return path.substring(0, path.length() - 1);
         } else {
             return path;
+        }
+    }
+
+    public static String returnNullIfEmpty(String value) {
+        if (Strings.isNullOrEmpty(value)) {
+            return null;
+        } else {
+            return value;
         }
     }
 }

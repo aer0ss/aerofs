@@ -229,6 +229,11 @@ public class LibParam extends BaseParam
                 InetSocketAddress.createUnresolved(
                         getNonEmptyStringPropery("redis.host", "localhost"),
                         getIntegerProperty("redis.port", 6379));
+
+        // jedisConnectionPool doesn't treat an empty string the same as having no password,
+        // so we convert an empty property to null
+        public static final String PASSWORD =
+                Util.returnNullIfEmpty(getStringProperty("redis.password", ""));
     }
 
     public static class MYSQL

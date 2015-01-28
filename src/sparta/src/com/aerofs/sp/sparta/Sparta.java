@@ -196,12 +196,7 @@ public class Sparta extends Service
             protected void configure()
             {
                 PooledJedisConnectionProvider jedisConn = new PooledJedisConnectionProvider();
-                String redisHost =
-                        getStringProperty("sparta.redis.host", REDIS.AOF_ADDRESS.getHostName());
-                short redisPort =
-                        getIntegerProperty("sparta.redis.port", REDIS.AOF_ADDRESS.getPort())
-                                .shortValue();
-                jedisConn.init_(redisHost, redisPort);
+                jedisConn.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 
                 bind(new TypeLiteral<IDatabaseConnectionProvider<JedisPooledConnection>>() {})
                         .toInstance(jedisConn);
