@@ -7,6 +7,7 @@ package com.aerofs.gui.sharing.members;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.sharing.SharedFolderMember;
+import com.aerofs.gui.sharing.SharedFolderMember.SharedFolderMemberWithPermissions;
 import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.sp.common.SharedFolderState;
 import com.swtdesigner.SWTResourceManager;
@@ -103,8 +104,8 @@ public class SharingLabelProviders
         @Override
         public String getText(Object element)
         {
-            if (element instanceof SharedFolderMember) {
-                return ((SharedFolderMember)element).getPermissions().roleName();
+            if (element instanceof SharedFolderMemberWithPermissions) {
+                return ((SharedFolderMemberWithPermissions)element).getPermissions().roleName();
             } else {
                 return "";
             }

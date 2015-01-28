@@ -9,7 +9,7 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.sharing.SharedFolderMember;
-import com.aerofs.gui.sharing.SharedFolderMember.CanSetPermissions;
+import com.aerofs.gui.sharing.SharedFolderMember.SharedFolderMemberWithPermissions;
 import com.aerofs.gui.sharing.SharingModel;
 import com.aerofs.gui.sharing.SharingModel.MemberListResult;
 import com.aerofs.gui.sharing.Subject.User;
@@ -174,10 +174,10 @@ public class CompUserList extends Composite
 
                 if (!menu.hasContextMenu()) return;
 
-                if (member instanceof CanSetPermissions) {
+                if (member instanceof SharedFolderMemberWithPermissions) {
                     menu.setRoleChangeListener(
-                            permissions -> setRole(_sid, (CanSetPermissions)member, permissions,
-                                    false));
+                            permissions -> setRole(_sid, (SharedFolderMemberWithPermissions)member,
+                                    permissions, false));
                 }
 
                 menu.open(_tree);
@@ -294,7 +294,7 @@ public class CompUserList extends Composite
     /**
      * {@paramref sid} needs to be passed in because _sid can change while ISWTWorker does work
      */
-    private void setRole(final SID sid, final CanSetPermissions member,
+    private void setRole(final SID sid, final SharedFolderMemberWithPermissions member,
             final Permissions permissions, final boolean suppressSharedFolderRulesWarnings)
     {
         _tree.setEnabled(false);

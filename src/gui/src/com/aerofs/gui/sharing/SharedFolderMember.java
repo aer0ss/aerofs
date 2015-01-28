@@ -36,19 +36,19 @@ public interface SharedFolderMember
         return getSubject().getImage();
     }
 
-    public Permissions getPermissions();
-
     public SharedFolderState getState();
 
     // returns null when the member has no parents
     public @Nullable SharedFolderMember getParent();
 
-    public static interface CanSetPermissions extends SharedFolderMember
+    public static interface SharedFolderMemberWithPermissions extends SharedFolderMember
     {
+        public Permissions getPermissions();
+
         public void setPermissions(Permissions permissions);
     }
 
-    public static class UserPermissionsAndState implements CanSetPermissions
+    public static class UserPermissionsAndState implements SharedFolderMemberWithPermissions
     {
         public final User               _user;
         public Permissions              _permissions;
@@ -108,7 +108,7 @@ public interface SharedFolderMember
         }
     }
 
-    public static class GroupPermissions implements CanSetPermissions
+    public static class GroupPermissions implements SharedFolderMemberWithPermissions
     {
         public final Group                              _group;
         public Permissions                              _permissions;
@@ -191,12 +191,6 @@ public interface SharedFolderMember
         public Subject getSubject()
         {
             return _user;
-        }
-
-        @Override
-        public Permissions getPermissions()
-        {
-            return _parent._permissions;
         }
 
         @Override

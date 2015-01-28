@@ -5,6 +5,7 @@
 package com.aerofs.gui.sharing.members;
 
 import com.aerofs.gui.sharing.SharedFolderMember;
+import com.aerofs.gui.sharing.SharedFolderMember.SharedFolderMemberWithPermissions;
 import com.aerofs.gui.sharing.Subject;
 import com.aerofs.gui.sharing.Subject.Group;
 import com.google.common.collect.ComparisonChain;
@@ -64,14 +65,22 @@ public class SharedFolderMemberComparators
                     Subject s1 = m1.getSubject();
                     Subject s2 = m2.getSubject();
 
-                    return ComparisonChain.start()
+                    ComparisonChain chain = ComparisonChain.start()
                             .compareTrueFirst(s1.isLocalUser(), s2.isLocalUser())
                             .compareTrueFirst(m1.getState() == JOINED, m2.getState() == JOINED)
-                            .compareTrueFirst(s1 instanceof Group, s2 instanceof Group)
-                            // we want to sort the permissions such that Pa < Pb iff Pb is a subset
-                            // of Pa. This order is opposite from the order defined in Permissions,
-                            // thus we reverse the comparison order
-                            .compare(m2.getPermissions(), m1.getPermissions())
+                            .compareTrueFirst(s1 instanceof Group, s2 instanceof Group);
+
+                    if (m1 instanceof SharedFolderMemberWithPermissions
+                            && m2 instanceof SharedFolderMemberWithPermissions) {
+                        // we want to sort the permissions such that Pa < Pb iff Pb is a subset
+                        // of Pa. This order is opposite from the order defined in Permissions,
+                        // thus we reverse the comparison order
+                        chain = chain.compare(
+                                ((SharedFolderMemberWithPermissions)m2).getPermissions(),
+                                ((SharedFolderMemberWithPermissions)m1).getPermissions());
+                    }
+
+                    return chain
                             .compareTrueFirst(s1.hasName(), s2.hasName())
                             .compare(s1.getLabel(), s2.getLabel())
                             .result();

@@ -9,7 +9,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.sharing.SharedFolderMember;
-import com.aerofs.gui.sharing.SharedFolderMember.CanSetPermissions;
+import com.aerofs.gui.sharing.SharedFolderMember.SharedFolderMemberWithPermissions;
 import com.aerofs.gui.sharing.Subject;
 import com.aerofs.gui.sharing.Subject.Group;
 import com.aerofs.gui.sharing.Subject.User;
@@ -28,10 +28,10 @@ import javax.annotation.Nullable;
 
 public abstract class SharedFolderMemberMenu
 {
-    protected Populator _populator;
-    protected Menu _menu;
+    protected Populator         _populator;
+    protected Menu              _menu;
 
-    private RoleChangeListener _listener;
+    private RoleChangeListener  _listener;
 
     public static SharedFolderMemberMenu get(@Nullable Permissions localUserPermissions,
             SharedFolderMember member)
@@ -40,12 +40,14 @@ public abstract class SharedFolderMemberMenu
 
         if (subject.isLocalUser()) {
             return new NoMenu();
-        } else if (member instanceof CanSetPermissions
+        } else if (member instanceof SharedFolderMemberWithPermissions
                 && canManagePermissions(localUserPermissions)) {
             if (subject instanceof User) {
-                return new ManageUserMenu((CanSetPermissions)member, (User)subject);
+                return new ManageUserMenu((SharedFolderMemberWithPermissions)member,
+                        (User)subject);
             } else if (subject instanceof Group) {
-                return new ManageGroupMenu((CanSetPermissions)member, (Group)subject);
+                return new ManageGroupMenu((SharedFolderMemberWithPermissions)member,
+                        (Group)subject);
             }
         } else if (member.getSubject() instanceof User) {
             return new EmailUserMenu((User)member.getSubject());
@@ -134,7 +136,7 @@ public abstract class SharedFolderMemberMenu
             new MenuItem(_menu, SWT.SEPARATOR);
         }
 
-        public void addSetPermissions(CanSetPermissions member)
+        public void addSetPermissions(SharedFolderMemberWithPermissions member)
         {
             Permissions.ROLE_NAMES.keySet()
                     .stream()
@@ -196,10 +198,10 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is an user
     static class ManageUserMenu extends SharedFolderMemberMenu
     {
-        private final CanSetPermissions     _member;
-        private final User                  _user;
+        private final SharedFolderMemberWithPermissions _member;
+        private final User                              _user;
 
-        public ManageUserMenu(CanSetPermissions member, User user)
+        public ManageUserMenu(SharedFolderMemberWithPermissions member, User user)
         {
             _member = member;
             _user   = user;
@@ -225,10 +227,10 @@ public abstract class SharedFolderMemberMenu
     // when the local user has permissions to manage and the selected member is a group
     static class ManageGroupMenu extends SharedFolderMemberMenu
     {
-        private final CanSetPermissions     _member;
-        private final Group                 _group;
+        private final SharedFolderMemberWithPermissions _member;
+        private final Group                             _group;
 
-        public ManageGroupMenu(CanSetPermissions member, Group group)
+        public ManageGroupMenu(SharedFolderMemberWithPermissions member, Group group)
         {
             _member = member;
             _group  = group;
