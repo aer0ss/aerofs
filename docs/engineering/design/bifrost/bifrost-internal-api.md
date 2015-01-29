@@ -1,6 +1,6 @@
 # Bifrost addendum: Managing OAuth Clients and Listing Tokens
 
-    Note: this API is not public; see docs/user_docs/bifrost_api.md for
+    Note: this API is not public; see docs/user-docs/bifrost_api.md for
     the public Bifrost API.
 
 The client is the application that will be authorizing users and providing the access_token to a Resource Server as evidence-of-authority.

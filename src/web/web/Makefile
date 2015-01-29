@@ -1,7 +1,7 @@
 SRC=static-src
 DEST=static
 MARKETING_DEST=../../../web
-DOCS_DEST=../../../docs/user_docs/api
+DOCS_DEST=../../../docs/user-docs/api
 LESS=less
 JS=js
 

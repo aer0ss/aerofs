@@ -2,7 +2,7 @@
 set -e -u
 
 SOURCE_DIR=../src/web
-API_SOURCE_DIR=../docs/user_docs/api
+API_SOURCE_DIR=../docs/user-docs/api
 OUTPUT_DIR=build/web
 mkdir -p $OUTPUT_DIR
 
