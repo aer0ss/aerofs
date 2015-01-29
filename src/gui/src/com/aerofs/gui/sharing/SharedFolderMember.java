@@ -44,8 +44,6 @@ public interface SharedFolderMember
     public static interface SharedFolderMemberWithPermissions extends SharedFolderMember
     {
         public Permissions getPermissions();
-
-        public void setPermissions(Permissions permissions);
     }
 
     public static class UserPermissionsAndState implements SharedFolderMemberWithPermissions
@@ -83,12 +81,6 @@ public interface SharedFolderMember
         public @Nullable SharedFolderMember getParent()
         {
             return null;
-        }
-
-        @Override
-        public void setPermissions(Permissions permissions)
-        {
-            _permissions = permissions;
         }
 
         @Override
@@ -149,12 +141,6 @@ public interface SharedFolderMember
         public @Nullable SharedFolderMember getParent()
         {
             return null;
-        }
-
-        @Override
-        public void setPermissions(Permissions permissions)
-        {
-            _permissions = permissions;
         }
 
         @Override

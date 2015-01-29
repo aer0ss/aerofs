@@ -5,15 +5,12 @@
 package com.aerofs.gui.sharing;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.sharing.invitee.DlgInviteUsers;
 import com.aerofs.gui.sharing.members.CompUserList;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -113,18 +110,16 @@ class MemberList extends Composite
         layout(true, true);
     }
 
+    /**
+     * pre: GUI state needs to assert that local user has permissions to invite.
+     */
     void showInvitationDialog()
     {
         if (_path == null) {
             l.error("invite to a null folder?");
-
-        } else if (_userList._isPrivileged) {
+        } else {
             new DlgInviteUsers(getShell(), getLabelByName(_name), _path, _name, true).openDialog();
             refreshAsync();
-
-        } else {
-            l.warn(ObfuscatingFormatters.formatPathMessage("non admin user attempts to invite {}",
-                    _path)._obfuscated);
         }
     }
 }

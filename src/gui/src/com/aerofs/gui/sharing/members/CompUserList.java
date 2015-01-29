@@ -91,6 +91,8 @@ public class CompUserList extends Composite
     // whether the GUI state should be for privileged users or non-privileged users
     public boolean                  _isPrivileged;
 
+    public Path                     _path;
+
     public interface StateChangedListener
     {
         void onStateChanged();
@@ -242,6 +244,27 @@ public class CompUserList extends Composite
         notifyStateChangedListener();
     }
 
+    private void setUIBusyState(boolean isBusy)
+    {
+        checkState(GUI.get().isUIThread());
+
+        if (!_tree.isDisposed()) {
+            _tree.setEnabled(!isBusy);
+
+            if (!isBusy) {
+                _tree.setFocus();
+            }
+        }
+
+        if (_compSpin != null && !_compSpin.isDisposed()) {
+            if (isBusy) {
+                _compSpin.start();
+            } else {
+                _compSpin.stop();
+            }
+        }
+    }
+
     public void setStateChangedListener(@Nullable StateChangedListener listener)
     {
         _stateChangedListener = listener;
@@ -257,22 +280,34 @@ public class CompUserList extends Composite
     /**
      * @pre must be invoked from the UI thread.
      */
-    public void load(final Path path)
+    public void load(Path path)
     {
         checkState(GUI.get().isUIThread());
 
-        if (path == null) {
+        _path = path;
+
+        if (_path == null) {
             setState("");
             return;
         }
 
         setState(S.GUI_LOADING);
+        setUIBusyState(true);
+        loadImpl();
+    }
 
-        addCallback(_model.load(path), new FutureCallback<MemberListResult>() {
+    /**
+     * post: UIBusyState will be set to false when the call finishes.
+     */
+    private void loadImpl()
+    {
+        addCallback(_model.load(_path), new FutureCallback<MemberListResult>() {
             @Override
             public void onSuccess(@Nullable MemberListResult result)
             {
                 setState(result._members, result._sid, result._isPrivileged);
+                setUIBusyState(false);
+
                 layoutTreeColumns();
             }
 
@@ -280,6 +315,7 @@ public class CompUserList extends Composite
             public void onFailure(Throwable t)
             {
                 setState("");
+                setUIBusyState(false);
 
                 ErrorMessages.show(getShell(), t, "Failed to retrieve user list.",
                         new ErrorMessage(ExNoPerm.class,
@@ -296,9 +332,7 @@ public class CompUserList extends Composite
     private void setRole(final SID sid, final SharedFolderMemberWithPermissions member,
             final Permissions permissions, final boolean suppressSharedFolderRulesWarnings)
     {
-        _tree.setEnabled(false);
-
-        if (_compSpin != null) _compSpin.start();
+        setUIBusyState(true);
 
         ListenableFuture<Void> task = permissions == null
                 ? _model.removeSubject(sid, member.getSubject())
@@ -309,30 +343,13 @@ public class CompUserList extends Composite
             @Override
             public void onSuccess(@Nullable Void result)
             {
-                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
-
-                if (!_tree.isDisposed()) {
-                    _tree.setEnabled(true);
-                    _tree.setFocus();
-
-                    if (permissions == null) {
-                        _members.remove(member);
-                    } else {
-                        member.setPermissions(permissions);
-                    }
-
-                    _tv.refresh();
-
-                    notifyStateChangedListener();
-                }
+                loadImpl();
             }
 
             @Override
             public void onFailure(Throwable t)
             {
-                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
-
-                if (!_tree.isDisposed()) _tree.setEnabled(true);
+                setUIBusyState(false);
 
                 l.warn(Util.e(t));
 
