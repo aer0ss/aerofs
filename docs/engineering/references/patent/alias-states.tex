@@ -1,0 +1,170 @@
+\subsection*{Object State Model}
+
+The method is first presented as a state transition model, before pseudo code
+implementation. The model summarizes the initial state and expected result of the
+algorithm. Defined first is a simplified model of the logical states which
+can represent a physical object at a {\bf single} device. The model considers
+only the metadata of a physical object, not content.
+% TODO add a subsection on Content?
+We begin with simple annotations, then definitions of state and transition. We
+explain how they are represented in the state transition diagrams to follow.
+
+Let $(n,o)$ represent physical object with path $n$, and logical object (id)
+$o$; the object $o$ is called a non-aliased object. If logical object $o_a$ is
+known to alias to $o$, then we write $o_a \rightarrow o$, knowing that $o_a$ is
+an alias object for target $o$. Notice there is no path associated with $o_a$;
+only the alias relationship (i.e.~\ the pointer) is stored for an aliased
+object.
+
+\subsubsection*{State}
+In the case above, where object $o_a$ aliases to $(n,o)$, we write that the
+state of physical object $n$ is $\{(n,o), o_a \rightarrow o\}$, which means that
+file/directory $n$ is logically represented by object $o$, and any system
+references to $o_a$ will alias (or are derefenced) to object $o$. Resulting from
+transitions, the name-conflict resolution strategy permits only ``acceptable"
+states which abide by the following two invariants:
+\begin{enumerate}
+\item all states must include one and only one non-aliased object; and
+\item the target of all aliases must be the non-aliased object---alias ``chains"
+are not permitted
+\end{enumerate}
+These invariants simplify the verification of correctness. The first invariant
+means that a device cannot download information about an aliased object $o_a$ if
+its target $o_t$ does not exist locally. This is somewhat analogous to avoiding
+dangling pointers in C. The second invariant avoids creating chains of aliases,
+e.g., $\{o_1 \rightarrow o_2, o_2 \rightarrow o_3\}$. Since $o_2$ is not a
+non-aliased or target object locally, $o_1$ should not refer to it. In the
+algorithm of the later section, when referring to a target object, one can be
+sure it exists locally as a non-aliased object. In subsequent state transition
+diagrams, acceptable states are represented as large circles or nodes, including
+the non-aliased object, $(n,o)$, and any objects aliased to $o$. For example, at
+the center of Figure~\ref{fig:aliasstate2} is a node representing the state
+$\{(n,o_2), o_1 \rightarrow o_2\}$. The other nodes in the figure represent
+states $\{(n,o_1)\}$ and $\{(n,o_2)\}$.
+
+\subsubsection*{Transitions and Messages}
+Since name conflicts are discovered when downloading an update about an object,
+the transitions among states are spurred by messages between devices. In the
+claimed name-conflict resolution method, the local device can receive two types
+of messages about any object in the system from any other device:
+\begin{inparaenum}[(i)]
+\item a non-alias message, or
+\item an alias message.
+\end{inparaenum}
+A non-alias message is labeled and contains meta-data of the form $(n,o)$,
+implying that the sender device has provided the local device with an update
+about file/directory $n$ with logical object $o$ that is not aliased on the
+sender. An alias message is of the form $o_a \rightarrow o_t$, implying
+that there is an update about $o_a$, and the remote device thinks its target is
+$o_t$.
+%TODO talk about versions?
+
+In the subsequent state transition diagrams, an arrow (directed edge) shows the
+expected transition from a state when a particular message about an object has
+been received. The state transitions are agnostic about the source device.
+Recall that the arrows represent transitions, not messages, but they are labeled
+by the message that induces the transition. Sample transitions can be seen in
+Figure~\ref{fig:aliasstate2}, such as when a device in state $\{(n,o_1)\}$
+receives an alias message $o_1 \rightarrow o_2$, then subsequently transitions
+to state $\{(n,o_2), o_1 \rightarrow o_2\}$.
+
+\commented{
+It is worth noting that we discovered only 13 unique types of transitions that
+the algorithm must handle, and these are labeled “TA” to “TN” in Figure 2.  All
+transitions fit into one of these 13 categories (a formal theorem and proof
+could be made eventually), so only 13 test cases need be developed when testing
+against this simplified model.
+}
+
+\subsubsection*{Object State Transition Diagrams}
+
+The following three diagrams show all possible states that a physical object
+$n$ can occupy given a replication factor, and all expected transitions across
+those states.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/alias_state_2.pdf}
+\caption{State transition diagram for resolving name conflicts with two distinct
+object ids}
+\label{fig:aliasstate2}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\textwidth]{figs/alias_state_3.pdf}
+\caption{State transition diagram for resolving name conflicts with three distinct
+object ids}
+\label{fig:aliasstate3}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/alias_state_4.pdf}
+\caption{State transition diagram for resolving name conflicts with four distinct
+object ids}
+\label{fig:aliasstate4}
+\end{figure}
+
+
+
+
+Figure~\ref{fig:aliasstate2} considers a system where physical object $n$ has
+two replicated logical objects, which are ordered such that $o_1 < o_2$. Thus
+$o_2$ is the eventual target, and $o_1$ should become the alias. The center node
+represents state $\{(n,o_2), o_1\rightarrow o_2\}$, which implies that the name
+conflict on $(n,o_1)$ and $(n,o_2)$ has been fully resolved. The resulting
+transition is shown for all three possible types of messages ($(n,o_1)$,
+$(n,o_2)$, $o_1\rightarrow o_2$) from each state. Notice that if all three
+messages are eventually received, the final resulting state is the
+fully-resolved state.
+
+
+Figure~\ref{fig:aliasstate3} considers a scenario where physical
+object $n$ has three replicated logical objects, which are ordered such that
+$o_1 < o_2 < o_3$. In this scenario, $o_3$ is the eventual target, with $o_1$
+and $o_2$ becoming the aliases. The center node represents fully-resolved state
+$\{(n,o_3), o_1\rightarrow o_3, o_2 \rightarrow o_3\}$. From this center state,
+receipt of messages $(n,o_3)$, $o_1\rightarrow o_3$, $o_1\rightarrow o_2$, or
+$o_2 \rightarrow o_3$ will transition back to the same state (omitted from the
+diagram for brevity). The three states from Figure~\ref{fig:aliasstate2} can be
+seen in the left part of Figure~\ref{fig:aliasstate3}. The state transitions
+among them that were previously shown are hidden for brevity, but would
+otherwise exist in this figure for completeness. The bottom three states,
+$\{(n,o_2)\}$, $\{(n,o_3)\}$, and $\{(n,o_3), o_2\rightarrow o_3\}$, model
+another 2-object conflict resolution, and thus share identical transitions to
+those in Figure~\ref{fig:aliasstate2}, by simply replacing references to $o_2$
+with $o_3$, and $o_1$ with $o_2$. Likewise with the three states in the right
+side of Figure~\ref{fig:aliasstate3}. Thus in the latter figure, we opt to omit
+all transitions that are described in a 2-object conflict scenario to avoid
+redundancy, but they remain intrinsic to the state model.
+
+Figure~\ref{fig:aliasstate4} extends the latter two scenarios to four replicated
+objects with ordering $o_1 < o_2 < o_3 < o_4$. In this diagram, there are four
+outer states with one non-alias object and two aliases, three outer states with
+one non-alias and one alias, and at the center is the fully-resolved state with
+one non-alias $(n,o_4)$ and three aliases to $o_4$.  As seen in the previous
+name-conflict resolution state diagrams, some redundant transitions and states
+are omitted in Figure~\ref{fig:aliasstate4} for clarity. The top state
+$\{(n,o_3), o_1\rightarrow o_3, o_2 \rightarrow o_3\}$ is equivalent to that in
+Figure~\ref{fig:aliasstate3}. All states and transitions that describe a 2- or
+3-object resolution should additionally appear in this figure, but are omitted
+as they are redundant when considering the previous figures. Note that the three
+other 2-alias states of Figure~\ref{fig:aliasstate4} can be surrounded with
+identical state hexagons with one of the objects replaced. The figure includes
+states with one alias object (e.g.~\ $\{(n,o_2), o_1\rightarrow o_2\}$) because
+after receipt of a particular alias message ($o_3 \rightarrow o_4$), the local
+device should transition to the center, fully-resolved state. In contrast, from
+a state with no alias objects (e.g.~\ $\{(n,o_2)\}$ which is not pictured),
+there is no single alias nor non-alias message that will transition to the
+fully-resolved 4-object state. From the center state, receipt of the following
+messages will restore to the same state: $(n,o_4), o_1\rightarrow o_2, o_1
+\rightarrow o_3, o_1 \rightarrow o_4, o_2\rightarrow o_3, o_2\rightarrow o_4,
+o_3\rightarrow o_4$.
+
+The presented state transition diagrams can be further extrapolated for five,
+six, or more replicated objects. A scenario with five replicated objects would
+have a center state with four aliases and one non-alias. The center of
+Figure~\ref{fig:aliasstate4} would be among the five surrounding states with
+three alias objects. One must also consider the states which can transition to
+the fully-resolved state through one alias message.

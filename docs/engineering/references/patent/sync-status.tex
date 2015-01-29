@@ -1,0 +1,28 @@
+\section*{Sync Status}
+
+To inform users whether a file on their local device has been synchronized with
+other devices, the system provides a method to determine the {\em sync status}
+of each file and folder by comparing version vectors across multiple devices. In
+one embodiment, given an object and two devices sharing it, the method reports
+whether both devices have the same version or a different version. The sync
+status is recorded as a set of devices that are in or out of sync with the local
+device.
+%(e.g. stored as a bit vector).
+To show meaningful status for a directory, the sync status is recursively
+aggregated from all descendent files and folders. Via a file-system GUI icon
+overlay, three possible sync status states are presented to the user for each
+file or folder:
+% TODO Weihan would like the aggregation algorithm described
+\begin{itemize}
+ \item in-sync: all devices are in sync
+ \item partial sync: at least one device is in sync and at least one is out of sync
+ \item out of sync: all devices are out of sync
+\end{itemize}
+
+In one embodiment, the method takes a centralized structure where a single
+server stores the hash of the current version vector of every object for every
+device. On update, these version vectors are broadcasted to those client devices
+interested in the given object, ensuring the Sync Statuses remain up-to-date. In
+another embodiment, a decentralized structure is employed, where client devices
+record the version vector of every object and every device, or some partition of
+that data.

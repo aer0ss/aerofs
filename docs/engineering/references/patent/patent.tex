@@ -1,0 +1,35 @@
+\documentclass[11pt]{article}
+
+\usepackage{fullpage}
+\usepackage{enumerate}
+\usepackage{paralist}
+\usepackage{graphicx}
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{url}
+
+
+\begin{document}
+
+\newcommand{\commented}[1]{}
+\newcommand{\definitionparagraph}[1]{\vspace{0.1in}\noindent {\bf #1} \/\/}
+
+\title{Algorithms to efficiently manage files in a cloud}
+\date{\today}
+\author{Mark C. Jeffrey and Weihan Wang}
+
+\maketitle
+
+\input{introduction}
+\input{collector}
+\input{aliasing}
+\input{expulsion}
+\input{migration}
+\input{conflicts}
+\input{team_server}
+\input{vers_history}
+\input{sync_status}
+
+\bibliographystyle{IEEEtran}
+\bibliography{patent}
+\end{document}

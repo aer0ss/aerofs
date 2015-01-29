@@ -1,0 +1,21 @@
+\section*{File Conflict Presentation and Resolution in the UI}
+
+When a file is updated concurrently on two separate devices, a file conflict
+results. In the base system~\cite{wang:patent2012}, the updates made locally to
+this file $o$ on a given device are present on the local file system, and any
+downloaded conflicting versions of the file are logically recorded as {\em
+branches} of $o$. That prior patent provides more details, e.g. how to apply
+subsequent updates to specific branches. In this patent, the extended system
+additionally provides a graphical user interface (GUI) to present the
+conflicting branches to the user. The GUI visualizes these conflict files
+branching from a common ancestor, including the device and user who contributed
+to creating each branch. Users are provided a button to open any files in a
+conflict branch to view its contents; these files are stored in a hidden
+directory. To resolve a file conflict, users can open all conflict branches, and
+their main local copy, and manually correct the conflict. Users are presented a
+button to choose branches to discard. Discarding a branch of object $o$ creates
+a deletion update (see the Expulsion section) for that branch, and this update
+will be propagated to all other devices sharing that file.
+% TODO the hypothetical common ancestor is derived by min(version vectors)
+% - Weihan posits that the concept of common ancestor is mentioned in the base
+%   patent.

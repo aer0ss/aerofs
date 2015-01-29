@@ -1,0 +1,236 @@
+\section*{Migration: moving files across store boundaries}
+
+Recall the concept of a store from the base system~\cite{wang:patent2012} and
+Background section of this patent. A store defines a set of users who are
+sharing a directory and its contents. Moving an object between stores deserves
+special consideration. The system supports the ability to delete files when
+moved out of a store, or move files among stores, depending on the context. The
+problem is illustrated in Figure~\ref{fig:migrationgoal}. Additionally, the
+system maintains cross-store version history, providing a causal history for an
+object that crosses store boundaries, as seen in
+Figure~\ref{fig:migrationhistory}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/migration_goal.pdf}
+\caption{Expected behavior following a migration across stores for devices
+subscribing to a different set of stores}
+\label{fig:migrationgoal}
+\end{figure}
+
+Figure~\ref{fig:migrationgoal} shows the state of two stores, $S_1$ and $S_2$
+on four devices, $d_1, d_2, d_3, d_4$, after moving an object between stores.
+Devices $d_1$ and $d_2$ are subscribed to both stores. Device $d_3$ is
+subscribed to $S_1$ only, and $d_4$ to $S_2$ only. Initially object $o_1$ is
+under the root directory of store $S_1$, and all devices are consistent with
+this state. Device $d_1$ moves $o_1$ into store $S_2$. The system supports the
+following state transitions when each of devices $d_2, d_3,$ and $d_4$ receives
+the update of the cross-store object movement.
+\begin{itemize}
+\item on $d_2$, the object is physically moved, without deleting and
+re-downloading the content of $o_1$;
+\item on $d_3$ the object is physically deleted; and
+\item on $d_4$ the object is downloaded and physically created.
+\end{itemize}
+The Collector, Expulsion, and update propagation algorithms are store-centric,
+thus what should be a simple move operation between stores on $d_2$ could be
+naively implemented atop these algorithms as separate deletion and creation
+operation. A device receiving the deletion and creation updates would thus
+naively re-download the file, even if the content had not changed. Through the
+method of {\em migrating} a logical object between stores, the system avoids
+naively deleting the object from $S_1$, then re-downloading the object into
+$S_2$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.6\textwidth]{figs/migration_history_goal.pdf}
+\caption{An update to the content of $o_1$ under store $S_1$ is successfully
+propagated, despite $o_1$ being moved to store $S_2$ concurrently}
+\label{fig:migrationhistory}
+\end{figure}
+
+Figure~\ref{fig:migrationhistory} illustrates the goal for cross-store version
+history. Initially, object $o_1$ is consistent under store $S_1$, on both
+devices $d_1$ and $d_2$. During a network partition, device $d_2$ modifies the
+content of $o_1$ (indicated by the modified pattern of the node), but leaves the
+object in store $S_1$. Concurrently, device $d_1$ moves the object to store
+$S_2$ with the original content. The network partition then disappears and the
+two devices propagate their updates. By maintaining the identity of $o_1$ across
+stores, and maintaining the version history, a final state can be achieved where
+$o_1$ is under store $S_2$ with the new content applied while it was under
+$S_1$. Without tracking identity and the cross-store version history, there
+would be two files, one in each store, and only one would have the updated
+content.
+
+The system observes the migration of the object id $o_1$ and maintains the
+consistency algorithm version history of the file, through
+\begin{inparaenum}[(i)]
+\item respecting the invariant that a given object can be admitted in only one
+store at any time (as in the Expulsion algorithm), and
+\item an extension to the versioning system of the consistency algorithm, called
+{\em immigrant versions}.
+\end{inparaenum}
+
+\subsection*{State Change When Instigating Migration}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/migration_instigator.pdf}
+\caption{}
+\label{fig:migrationinstigator}
+\end{figure}
+
+Figure~\ref{fig:migrationinstigator} shows the logical state change after an
+object $o_1$ is physically moved between stores $S_1$ and $S_2$ on the local
+device. Initially object $o_1$ with name $n$ is under the root folder of $S_1$,
+and $S_2$ has no child object. Following the physical move, under store $S_1$
+the object is effectively deleted as indicated in the Expulsion section of this
+patent, by logically being moved under the trash folder, and thus expelled.
+Notably, under the trash folder, the name of the object is the store id of
+$S_2$, the target store to which $o_1$ was moved. Under store $S_2$, object
+$o_1$ is created in the admitted state. As with the usual consistency algorithm,
+these two logical state changes generate two updates which are propagated to
+other devices:
+\begin{itemize}
+\item $o_1$ was moved under the $S_1$ trash folder with name $S_2$, and
+\item $o_1$ was created under the $S_2$ root folder with name $n$.
+\end{itemize}
+The physical object maintains its logical object id across stores in an effort
+to easily identify migration, and maintain its version history despite store
+migrations.
+
+\subsection*{On Deletion Update}
+
+Consider a device which subscribes to store $S_1$; it will receive
+the first update, that $o_1$ was moved to the trash folder. Because the new name
+of $o_1$ under store $S_1$ identifies the store to which $o_1$ {\em emigrated},
+the device receiving this update can infer the new store of $o_1$. The following
+pseudo-code enumerates the steps taken to migrate an object $o$ on receipt of a
+deletion update under store $S$.
+\begin{algorithmic}
+\Function{HandleDeleteUpdate}{$S$: store id, $o$: object id: $n$: name}
+\If{$o$ is locally admitted in $S$ and has not been emigrated and $n$ encodes a store id}
+    \State $S_{target} \gets$ decoded store id from $n$
+    \State attempt download of $S_{target}$ and its ancestor stores from remote
+    \If{store $S_{target}$ is not present locally}
+        \State \Return
+            \Comment{do not migrate as the target store cannot be downloaded}
+    \EndIf
+    \If{$o$ is a file}
+        \State download $o$ under $S_{target}$ from remote
+    \Else
+        \State download $o$ and its children under $S_{target}$ from remote
+    \EndIf
+\Else
+    \State process the deletion update for $o$ as usual
+\EndIf
+\EndFunction
+\end{algorithmic}
+This method to handle migration-induced deletions determines the target
+store of the object to be migrated, then defers to the handler of creation
+updates (to follow). Because migrated objects keep the same logical identifier,
+once the deletion handler has determined the target store, it can simply request
+the object under that store. A non migration-induced deletion will be
+handled by the Expulsion algorithm described earlier.
+
+\subsection*{On Creation Update}
+
+Now consider a device which subscribes to store $S_2$; it receives the second
+update, that $o_1$ was created under $S_2$ with name $n$. In a typical work
+flow the object is physically downloaded, but to avoid redundant transfers,
+the local device first determines whether $o_1$ is admitted in any other
+store. If $o_1$ is admitted in another store, the local device migrates
+$o_1$ under $S_2$ by physical file movement. The following pseudo-code
+details the steps taken to migrate an object $o$ on receipt of a creation
+update under store $S$. The annotation $(S,o)$ is used to identify object $o$
+under $S$. The creation of immigrant versions is explained in the following
+subsection.
+\begin{algorithmic}
+\Function{HandleCreationUpdate}{$S$: store id, $o$: object id: $n$ name}
+\If{$\exists S_{source}$ where $o$ is locally admitted in store $S_{source}$}
+    \For{each content conflict branch $b$ of $(S_{source},o)$}
+        \State copy modification time, file length, content hash of $b$
+               to $(S,o)$
+        \State physically move the branch to its corresponding location
+                under $S$
+    \EndFor
+    \State create immigrant versions from $(S_{source},o)$ to $(S,o)$
+    \State move $o$ in $S_{source}$ under the trash folder
+    \State logically rename $o$ to an encoding of $S$
+\Else
+    \State process the creation update for $o$ as usual
+\EndIf
+\EndFunction
+\end{algorithmic}
+
+Note that the creation update handler concludes by deleting $o$ from the source
+store, and recording its migrated target store. This action implicitly will
+create a new version update for $(S_{source},O)$ on the local device, which will
+be propagated to other devices. However all devices that subscribe to the target
+store $S$ will perform the same action, generating false version conflicts. The
+base system~\cite{wang:patent2012} discusses an approach to automatically
+resolve such conflicts.
+
+\subsection*{Immigrant Versions: Cross-Store Consistency}
+
+The background section of this patent briefly summarizes update propagation in
+the base system~\cite{wang:patent2012}. This section is mainly concerned with
+pull requests. Naively, a device could respond to a pull request by sending its
+entire local set of version vectors. However, the two devices may share many of
+those versions, resulting in much redundant bandwidth waste. The base system
+further proposes the concept of stability of version vectors, by defining a {\em
+knowledge vector}, present locally on a device, one knowledge version vector for
+every store. All integer counts below the knowledge vector of the local device
+are assumed to be stable---no new version needs to be requested whose integer
+count is below the knowledge vector. Because of this invariant, when issuing a
+pull request, a device X can send its knowledge vector to device Y, and device Y
+can respond with only those versions which are above the given knowledge vector.
+Additionally, device Y responds with its knowledge vector after the version
+exchange so that device X can increase its own vector accordingly. See the prior
+patent for examples and details.
+
+The migration of an object across stores requires special consideration with
+regard to the knowledge vector. The system cannot simply move versions for an
+object in one store to its new target store, as this naive approach could move
+a version from the source store to the target store that is under the knowledge
+vector of the target store. This in turn would break the invariant that all
+versions below a knowledge vector are stable, and thus we could no longer assume
+that pull-based update propagation will guarantee to receive all new updates
+from the pulled device.
+
+To ensure that pull-based update propagation guarantees the propagation of all
+updates in the face of store migration, this patent presents {\em immigrant
+version vectors}. Whereas each regular version vector ({\em native} version
+vector) is associated with the update of one logical object, an immigrant
+version vector is associated with the migration of a native version vector.
+The concurrency control subsystem thus has two version management systems, one
+for native versions which track object updates, and one for immigrant versions,
+which track native version. Immigrant versions similarly have a knowledge
+vector, and stability of immigrant versions. When an object $o$ is locally
+migrated from store $S_{s}$ to $S_t$ on device $d$, a new immigrant version is
+created for $o$ on $d$, recording the version of $o$ that was migrated from
+$S_s$. As part of the pull-based update propagation strategy, immigrant versions
+are requested that are above the immigrant knowledge vector. If a received
+immigrant version was previously unknown to the local device, then the native
+version tracked by the immigrant version is persisted in the local device's native
+version table. The immigrant version subsystem can thus insert native versions
+under the native knowledge vector, but no native versions are at risk of loss
+because of cross-store object migration.
+
+%\begin{itemize}
+%\item immigrant max tick is bumped
+%\item immTick = tick above
+%\item immDid = local did
+%\item (did, tick) = original pair to be migrated from old store
+%\item associated with $(S_t, o)$.
+%\end{itemize}
+%How is it used...
+%
+%\begin{itemize}
+%\item GetVersCall rpc: send kwlg and imm kwlg
+%\item GetVersCall process: reply with all versions above remote kwlg and
+%immigrant versions above remote imm kwlg
+%\item GetVersReply process: if receive immigrant tick that is new to this local
+%device, assign the tick/did pair (not the immigrating device/tick), to the
+%target object. TODO determine why that is safe, and what it signifies
+%\end{itemize}

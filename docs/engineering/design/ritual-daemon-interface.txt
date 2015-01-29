@@ -1,0 +1,147 @@
+In the night,
+the fires are burning bright.
+The ritual has begun,
+Satan's work is done!
+http://www.youtube.com/watch?v=rrSiIqCpxB8
+
+Ritual - a suggestion on how to work with the daemon
+====================================================
+
+1. Conventions
+--------------
+
+- Verbs
+Whenever possible, we try to restrict ourselves to those verbs: {get, update, create, delete}
+
+- Nouns
+{Store, User, Permission, Device, ObjectAttributes, Path, Revision, Branch, etc..}
+Noun in the plural == List<Noun>
+
+- [mutable]
+field that can be changed with a call to updateXxx
+
+- Case conventions:
+	- names that start with an uppercase letter are a Type
+	- names that start with a lowercase letter are a variable name.
+	- If a variable name doesn't have a type specified, it is a primitive type (string, int, etc..)
+
+- Ids:
+	- if an object has an "id" field, this field alone is sufficient to identify the object in the system
+	- Outside of the object, this id field is referred to as <object name>Id. For example: userId, deviceId, etc...
+
+- Methods:
+	- methods should take the smallest object they need to perform a task.
+		Example 1: to delete a store, we don't need a full Store object. The storeID is enough.
+		--> deleteStore(storeId)
+		Example2: to delete a branch, since branches don't have unique ids, we need to pass a Branch object:
+		--> deleteBranch(Branch) is better than deleteBranch(Path, branchIndex)
+
+
+2. Methods
+----------
+TODO REMOVE THIS LIST OF METHODS. 
+WE DO NOT WANT TO DUPLICATE DOCUMENTATION WITH THE ACTUAL METHOD LIST 
+
+## Users
+	User getUser(userId)
+	List<User> findUsers(query)		// find user by email address
+	User updateUser(User)
+	User createUser(User)			// to invite a user
+
+## Stores
+	List<Store> getStores()			// List all stores
+	Ack createStore(Path)           // Create a store from a local directory
+	Store updateStore(Store)		// Update the path to move a store
+    Ack addRemoteStore(storeId, Name)
+	bool deleteStore(storeId)
+
+## Permissions
+	List<Permission> getPermissions(storeId)
+	Permission createPermission(Permission)		// adds a user to a store
+	Permission updatePermission(Permission)
+
+## Files and Directories (Object Attributes or OAs)
+	List<ObjectAttributes> getChildren(Path)   // Lists the children of a directory.
+	ObjectAttributes getObjectAttributes(Path) // Get the attributes for a specific path
+    Ack expelObject(Path)           // Expel ("unsync") the object at Path
+    Ack admitObject(objectId)
+    List<Object> getExpelledObjects
+    # Deprecated: only the shell formerly needed to read/write files
+	Bytes readFile(Path)
+	bool writeFile(Path, Bytes)
+
+## Revisions
+	List<Revision> getRevisions(Path)
+	Bytes readRevision(Revision)
+
+## Conflict branches
+	bool hasBranches(Path)
+	List<Branch> getBranches(Path)	// If path points to a directory, recursively list branches
+	Bytes readBranch(Branch)
+	void deleteBranch(Branch)
+
+3. Objects
+----------
+
+Store
+{
+	id
+	path [mutable]
+}
+
+Permission
+{
+	storeId
+	userId
+	rights = {Owner, Editor, Read-only} [mutable]
+
+	dateInvited  // maybe not practical to have those two because they come from SP
+	dateJoined
+}
+
+User
+{
+	id
+	name [mutable]
+	email
+}
+
+Path
+{
+	string storeId
+	repeated string element
+}
+
+ObjectAttributes // Holds metadata about a file/directory/anchor
+{
+	Path
+	size
+	isDirectory
+	...
+}
+
+Device
+{
+	id
+}
+
+Revision
+{
+	deviceId
+	Path
+	index
+
+	date
+	size
+	author (userId)
+}
+
+Branch
+{
+	Path
+	index
+
+	author (userId)
+	date
+	size
+}

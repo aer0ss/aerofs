@@ -1,0 +1,25 @@
+\section*{Team Server: Multiple User Accounts on One Device}
+
+For a team of users who wish to use a shared device to back up their files,
+the system provides a Team Server type account which permits multiple stores
+from multiple users on the same device. This Team Server account would be
+among those in the Access Control Lists (ACLs) for all stores shared by the team
+members, including the root store for all team member users. The Team Server
+account is concerned with stores, and thus need only synchronize one copy of a
+store as it is shared by multiple users. Whereas the support of file migration
+across stores for a single-user device necessitates the invariant that an object
+id can be admitted in only one store on a device, on a Team Server, an object id
+may be admitted in multiple stores, because Team Servers are not concerned with
+migration.
+% TODO describe ACLs
+%  - from Weihan: "describe ACL triggered store join/leave"
+
+One source of backup is often insufficient, thus the system offers a
+self-replicating server farm, via multiple Team Servers. In one embodiment,
+one Team Server account is installed on $n$ devices, and the algorithms of this
+patent and the base system~\cite{wang:patent2012} synchronize the files and
+folders of those servers, providing a replication factor of $n$. In another
+embodiment, multiple devices are installed with the same account, but each
+device stores a partition of the total team space requirements, permitting a
+scalable replication factor from 1 to n. This is achieved atop the Selective
+Sync algorithm, by setting the "expelled" flag on some devices.

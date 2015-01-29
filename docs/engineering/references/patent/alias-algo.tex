@@ -1,0 +1,152 @@
+\subsection*{Aliasing Algorithm Pseudo-Code}
+
+In one embodiment of the invention, the following algorithm facilitates the
+transitions between acceptable states, providing two main routines for a device
+to locally handle receipt of the two message types. Recall that the two types
+of incoming messages are:
+\begin{enumerate}
+\item $(o, v(o), n(o), \ldots)$ an object, its version, its path, and other
+  meta-data
+\item $(o_t, v(o_t), n(o_t), o_a, v(o_a), \ldots)$
+  an alias message with same content as above, additionally stating that
+  $o_a$ aliases to $o_t$.
+\end{enumerate}
+Some noteworthy annotations for the following pseudocode:
+\begin{itemize}
+\item {\bf $vr(o) =$} version of object $o$, received remotely
+\item {\bf $vl(o) =$} version of object $o$, retrieved locally
+\item {\bf $nr(o) =$} name of object $o$, received remotely
+\item {\bf $nl(o) =$} name of object $o$, retrieved locally
+\end{itemize}
+Logical objects must represent the same type of physical object in order to be
+aliased (i.e.~\ both the remote and local objects must be a file or both must be
+a directory).
+
+\subsubsection*{Common Routines}
+
+Both message handlers share a common routine to logically receive a non-alias
+object that was previously locally unknown. If receipt of the new object will
+create an alias object, the argument $o_{nonewvers}$ is used to decide whether
+to publish a new version/update about the alias action. Some callers of this
+handler do not need to publish the creation of the alias object, such as when
+an alias message is being processed; the update for the aliasing operation was
+created at some other device, hence why the local device is now processing an
+alias message.
+\begin{algorithmic}
+\Function{ReceiveNewObject}{$o$: object id, $vr(o)$, $nr(o)$, $o_{nonewvers}$}
+\If{locally $\exists o_{nr}$
+such that $nr(o) == nl(o_{nr}) $ and $o \neq o_{nr}$}
+    \Comment{a name conflict exists}
+    \If{have not queried sender about $o_{nr}$}
+        \State query sender for meta-data of $o_{nr}$ and retry $o$ later
+        \State \Return
+    \EndIf
+    \If{$o_{nr} \neq \max(o, o_{nr})$}
+        \State swap($o$,$o_{nr}$)
+        \Comment{ensure $o_{nr}$ is the target}
+    \EndIf
+    \State MergeAliasIntoTarget($o$, $o_{nr}$)
+    \If{$o \neq o_{nonewvers}$}
+        %\State \Comment{Create a new version for $o$ to notify other devices
+            %that $o$ has been aliased}
+        \State $vl(o) =$ new version from alias version space
+    \Else
+        \State $vl(o) = \emptyset$
+        \Comment{the caller has indicated that the version of $o$ need not be
+            incremented}
+    \EndIf
+\Else
+    \State perform typical non-name-conflict execution
+\EndIf
+\EndFunction
+\end{algorithmic}
+The latter routine defers to the following subroutine to merge the alias and
+target objects.
+\begin{algorithmic}
+\Function{MergeAliasIntoTarget}{$o_a$, $o_t$}
+\State merge non-alias versions of $o_a$ into $o_t$
+\If{$o_a$ is a file}
+    \State move conflicting content branches from $o_a$ to $o_t$
+    \State merge content branches with identical content in $o_t$
+\ElsIf{$o_a$ is a directory}
+    \State move children of $o_a$ into $o_t$, renaming if a name-conflict would
+result
+    \State delete physical directory of $o_a$
+\EndIf
+\State locally record $o_a \rightarrow o_t$
+\For{$o \in \{o | o\rightarrow o_a$ is recorded locally$\}$}
+    \State replace $o\rightarrow o_a$ with $o\rightarrow o_t$
+    \Comment{must resolve chaining of existing alias objects}
+\EndFor
+%\State delete remaining meta-data for $o_a$
+\EndFunction
+\end{algorithmic}
+
+\subsubsection*{Non-Alias Messages}
+
+The non-alias message handler is relatively straightforward, in some branches
+dispatching to the standard file syncing algorithm, not the name-conflict
+resolution strategy.
+\begin{algorithmic}
+\Function{HandleNonAliasMsg}{$o$, $vr(o)$, $nr(o)$}
+\If{locally $o$ is non-aliased}
+    \State perform typical non-name-conflict handling
+\ElsIf{locally $\exists o_t$ such that $o\rightarrow o_t$}
+    \State no-op
+    \Comment{remote updates on $o$ will later be sent via $o_t$}
+\Else
+    \State ReceiveNewObject($o$, $vr(o)$, $nr(o)$, null)
+\EndIf
+%\State respond success to sender for message processing
+\EndFunction
+\end{algorithmic}
+
+\subsubsection*{Alias Messages}
+
+The alias message handler is more involved. As stated at the beginning of this
+section, the data of a non-alias message is actually embedded in an alias
+message, where this data represents the target. This protocol is required to
+satisfy the first invariant for our object states: a consistent state for
+physical object $n$ must logically have one non-aliased object. When an alias
+message is received such that the target was previously unknown to the local
+device, the target object must be accepted into the local system before
+processing the aliased object. This represents the first phase of the routine.
+With the target object handled correctly, the alias object is then processed.
+
+\begin{algorithmic}
+\Function{HandleAliasMsg}{$o_t$, $vr(o_t)$, $nr(o_t)$, $o_a$, $vr(o_a)$}
+\If{locally $o_t$ is not known}
+    \Comment{as aliased or non-aliased object}
+    \State ReceiveNewObject($o_t$, $vr(o_t)$, $nr(o_t)$, $o_a$)
+    \Comment{do not create new version for $o_a$}
+\EndIf
+\If{locally $\exists o_e$ such that $o_t\rightarrow o_e$}
+    \State $o_t = o_e$
+    \Comment{avoid alias chains; reset $o_t$ to its target}
+\EndIf
+%\Ensure{locally $o_t$ is now a non-aliased object}
+\If{locally $o_a$ is non-aliased}
+    \State MergeAliasIntoTarget($o_a$, $o_t$)
+\ElsIf{locally $\exists o_e$ such that $o_a \rightarrow o_e$}
+    \If{$o_e \neq o_t$}
+        \If{$o_t \neq \max(o_e, o_t)$}
+            \State swap($o_t$, $o_e$)
+        \EndIf
+        \State MergeAliasIntoTarget($o_e$, $o_t$)
+        \Comment{resolve alias chain of $o_a$, $o_e$, and $o_t$}
+    \EndIf
+\Else
+    \Comment{locally $o_a$ is not known}
+    \State locally record $o_a\rightarrow o_t$
+    \State $vl(o_a) = \emptyset$
+\EndIf
+\State $vl(o_a) = vl(o_a) \cup vr(o_a)$
+\EndFunction
+\end{algorithmic}
+
+%\begin{itemize}
+%\item comment on subtleties of branches as in the aerofs algo-doc?
+%\item describe version vector union?
+%\item describe persistence of objects in OA table?
+%\item describe persistence of alias table?
+%\end{itemize}

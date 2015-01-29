@@ -1,0 +1,166 @@
+#####################################################
+#
+# SafetyNet: Avoiding Reinstall Situations Early
+#
+#####################################################
+
+Introduction
+============
+SafetyNet is an extra step in the build/deploy process. It runs right after AeroFS is built,
+packaged and uploaded to the release server. SafetyNet is meant to simulate a production
+release by having company-controlled AeroFS clients receive a production update, and then
+run selected tests to ensure everything is working correctly. If the tests pass,
+the deploy process continues with the publishing of the AeroFS client binaries to
+the production S3 bucket, available to all users.
+
+Terms
+========
+- AeroFS release candidate (ARC): The AeroFS release version that has been built, packaged
+                                  and is ready to be deployed and tested by SafetyNet.
+- SafetyNet client (SN): An AeroFS installation on a machine that will receive an update from
+                         the SafetyNet S3 bucket and be subjected to SafetyNet tests.
+
+Requirements
+============
+- The AeroFS client binaries, packages and update methods must be identical to that of
+  a real production user's setup.
+- The AeroFS client must communicate with production servers.
+- The updater must be tested. This includes testing whether or not a subsequent update
+  will succeed.
+- The following platforms must be tested: OSX Snow Leopard, OSX Mountain Lion, Windows XP,
+  Windows 7, Ubuntu 32-bit, Ubuntu 64-bit.
+- SafetyNet must pass before a full deployment to production can occur.
+
+Architecture
+============
+The goal of SafetyNet is to simulate an average user's AeroFS environment. In that regard, the AeroFS client binaries
+being tested should be identical to the binaries a user would install. Because of this requirement, the method in which
+the SafetyNet clients receive updates must not touch any AeroFS code or packaging.
+
+
+                DNS Lookup of
+          nocache.client.aerofs.com   |--------|
+|------| ---------------------------> | Custom |
+|      |                              |        |
+|  SN  |  IP address of safetynet S3  |   DNS  |
+|Client| <--------------------------- |--------|
+|      |
+|      |       Check for update
+|      | ---------------------------> |------------|  Forward check for update request
+|      |                              |   Man-in-  | -----------------------------------> |-----------|
+|      |                              | the-middle |                                      | SafetyNet |
+|      |     Return version number    |            |        Return ARC version number     | S3 bucket |
+|------| <--------------------------- |------------| <----------------------------------- |-----------|
+
+
+In that regard, an AeroFS release candidate (ARC) will check for updates and download them from an S3 bucket, much like
+the production client. The difference is that a custom DNS service will give the SafetyNet client an IP address which points to
+a special SafetyNet S3 bucket, where the ARC binaries are hosted. Due to certificate issues using HTTPS, a man-in-the-middle
+attack is performed on the SafetyNet clients so they believe they are getting the updates from a trusted source.
+
+At the time of writing, the SafetyNet clients each run in their own VM, hosted on one machine.
+
+Implementation
+==============
+SafetyNet is implemented using a series of SyncDET tests to carry out actions and test for invariants on the remote
+SafetyNet systems. A configuration file tells SyncDET where each machine is located (IP address), along with their
+login usernames and other important details.
+
+The command server, along with Verkehr, are used to notify the SafetyNet clients that an update is ready to download.
+This feature is included in the production release of AeroFS and simply serves to minimize the time spent waiting for
+a client to update automatically. The email addresses of the users to notify are extracted from the configuration file
+mentioned above.
+
+The following is a tree representation of the SafetyNet directory:
+
+tools/build/safetynet
+├── README          # The file you are reading right now
+├── config.yaml     # The configuration file specifying the location and details of each SafetyNet machine
+├── constants       # Constants to be used when running the SafetyNet deployment scripts
+├── decrease_versions   # Script used to decrease the version numbers of each SafetyNet client. Useful for retrying deployment of an ARC
+├── extract_users.py    # Helper script that extracts user emails from the configuration file 'config.yaml'
+├── rollback_clients    # Copies back previously backed-up AeroFS installations on each of the SafetyNet machines
+├── safetynet           # The main script that kicks off the ARC deployment and SyncDET tests
+├── syncdet_deploy      # The directory that gets deployed to each SafetyNet machine. Used for SyncDET tests
+│   ├── assert_updated.scn
+│   ├── decrease_version.scn
+│   ├── rollback.scn
+│   ├── safetynet
+│   │   ├── __init__.py
+│   │   ├── assert
+│   │   │   ├── __init__.py
+│   │   │   ├── client_will_update.py
+│   │   │   ├── launched.py
+│   │   │   ├── updated.py
+│   │   ├── client.py
+│   │   ├── manage
+│   │   │   ├── __init__.py
+│   │   │   ├── backup_installation.py
+│   │   │   ├── decrease_version.py
+│   │   │   ├── ensure_clients_running.py
+│   │   │   ├── rollback_installation.py
+│   │   │   ├── start_aerofs.py
+│   │   │   ├── stop_aerofs.py
+│   │   ├── param.py
+│   └── tools
+│       └── windows_launch_server.py
+└── update_syncdet_ip.py                # A helper script that reads in the config.yaml file and returns it unmodified except
+                                        # for an updated controller_address field.
+
+The main script 'safetynet' is called from the build process' 'exec_prepublish_checks' script.
+The steps in the process are as follows:
+
+1) Push the ARC binaries to the SafetyNet S3 bucket
+2) Check that each SafetyNet client's version is less than the ARC version, or the clients won't update
+3) Backup each SafetyNet client's installation (approot and rtroot)
+4) Launch any AeroFS instance that is not already running
+5) Use the command server to tell the SafetyNet clients to update
+6) Wait for the version file on each client to change to the ARC version number
+7) Check for the existence of the AeroFS GUI process and ping the daemon
+8) Decrease the version numbers on each SafetyNet client
+9) Repeat steps 4, 5, 6, and 7
+10) Success!
+
+Usage
+=====
+Building and deploying production should happen as usual. SafetyNet is executed automatically.
+$ ant deploy -Dmode=PUBLIC
+
+Troubleshooting
+===============
+If anything goes wrong with the SafetyNet test that isn't directly related to a bug in the AeroFS client, a few
+steps can be taken to resolve the issue.
+
+To run the SafetyNet step alone (assuming an ARC package is already built and uploaded to the release server), execute:
+$ tools/build/bootstrap safetynet/safetynet RELEASE_VERSION
+
+NOTE: SafetyNet always runs assuming the MODE is PUBLIC.
+
+The 'tools/build/bootstrap' script simply sets up required paths and helper functions to help with Bash scripting. It is used to launch all scripts
+in the tools/build directory.
+
+If the clients already updated, but need to be rolled back due to a problem in the ARC, execute:
+$ tools/build/bootstrap safetynet/rollback_clients
+
+If something else went wrong and the clients updated but you want them to update again (without necessarily reverting anything), you can
+make them think they need to update by decreasing their local version numbers:
+$ tools/build/bootstrap safetynet/decrease_versions
+
+Caveats
+========
+- Windows Vista and up don't allow launching a GUI application from a Windows service (including sshd, via which SyncDET operates). A separate
+  server needs to be launched on the Windows SafetyNet machine from the GUI (not through ssh). The server is located in the deploy directory,
+  under tools.
+- If the rt_root gets large, or the SafetyNet machines slow down, backing up and rolling back may take a long time. The timeouts for those
+  actions are 5 minutes each, but time is a fickle mistress.
+- The full Windows installer requires UAC privileges to install. UAC must be disabled on the SafetyNet test machine.
+- Support for an OSX SafetyNet client is temporarily not available as there are issues with our custom DNS solution for that platform.
+
+Future Improvements
+===================
+- Much work can be done on SyncDET to better support Windows. Perhaps a SyncDET daemon running on each actor
+  would help solve the many issues faced with running GUI applications from within the sshd process tree.
+- Support passing arguments to SyncDET tests.
+- Build a ritual like API for the GUI, or effectively create CLI processes for all platforms.
+- Include 'silent' options for everything to help automate processes like installation.
+- Include SafetyNet with CI so that the deployment process is simply a matter of pushing binaries that have passed to S3.

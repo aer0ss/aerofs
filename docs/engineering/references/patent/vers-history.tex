@@ -1,0 +1,16 @@
+\section*{Collaborative version history}
+Whenever a remote file update is downloaded (including modifications and
+deletions), the local copy of the file is saved to a special location,
+creating a local version history for every file. Through a GUI display, users
+can restore files from this version history. The version history is
+truncated after some time period.
+
+One can also consider the global version history for a file in the
+distributed system of devices, which includes these local saves across all
+devices. In another embodiment, each version history file is tagged with its
+corresponding version vector, and the user id and device id which instigated the
+update. Users can visualize the system aggregate version history tree, and if a
+desired file version is not locally present, the device can request that version
+from the device that performed the backup. When requesting remote version
+history, the local device can avoid presenting duplicate version history items
+by detecting duplicate version vectors.

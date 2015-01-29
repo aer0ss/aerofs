@@ -1,0 +1,115 @@
+\section*{Aliasing: Name-Conflict Resolution Of Object IDs}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/alias_problem.pdf}
+\caption{Concurrent creation of a file generates two logical object ids for the
+same path, yielding a name conflict between $o_1$ and $o_2$.}
+\label{fig:aliasproblem}
+\end{figure}
+
+As stated earlier, the base file syncing system generates an object identifier
+for every file and folder created on a device. The system thus maintains logical
+objects that internally represent the physical objects on the local file system.
+At a local device, there must be a one-to-one mapping between the logical and
+physical objects, however remotely received updates can point two logical
+objects to the same physical path; these {\em name conflicts} result in two
+specific ways:
+\begin{itemize}
+\item
+concurrent creation of a physical object (same pathname) on at least two
+peers, resulting in more than one distinct logical object (e.g.
+Figure~\ref{fig:aliasproblem}); and
+\item
+when one peer locally renames an existing physical object to the same path
+as a physical object created on another peer.
+\end{itemize}
+Henceforth in this section, the term {\em object} will refer to logical object
+for brevity, and physical object will be stated outright.
+
+When peers exchange information about distinct logical objects that represent
+the same-named physical object, as in Figure~\ref{fig:aliasproblem}, this
+name conflict must be resolved. In the figure, devices $d_1$ and $d_2$ are
+initially separated by a network partition. In that partition, they both
+create a physical file (or directory) with equivalent path ``f", which yields
+two distinct object ids, $o_1$ and $o_2$. Subsequently, the network partition
+disappears, and device $d_1$ sends its update that object $o_1$ has been created
+with path ``f". Device $d_2$ discovers that it already has a logical object
+$o_2$ for path ``f", violating the invariant that logical and physical objects
+must have a one-to-one mapping.
+
+%\subsection*{Alternate resolution strategies}
+
+One approach to resolve a name conflict is to deterministically rename one of
+the two objects involved in the name conflict. However, it is conceivable
+that some users of the system could already have files replicated on multiple
+devices, leading to name conflicts on several files, and this rename
+approach will then create $n$ copies of the same file, where $n$ is
+number of peers with the replicated file. This leads to poor user experience.
+Striving for a better user experience, a method is presented below to avoid
+renaming and duplicating files/directories, instead opting to {\em alias} one of
+the name-conflicting objects as the other.
+
+%Another approach would be to avoid name conflicts altogether by generating the
+%object id of a newly-created physical object, not randomly, but as a function
+%of the path (e.g. hashing). In a scenario such as Figure~\ref{fig:aliasproblem},
+%the two logical objects would be equal, and a name-conflict wouldn't exist.
+%Unfortunately this generation of
+
+\subsection*{Merging alias and target objects}
+
+During a name conflict, specifically it is the differing object ids for the same
+physical object that conflict. The claimed resolution strategy labels one of the
+object ids as the {\em target}, and the other as the {\em alias}. The device
+observing the name conflict merges all meta-data describing the alias object
+into the target, (i.e.~consistency algorithm versions), then subsequently
+replaces all meta-data about the alias object with a pointer relationship, and
+shares that pointer relationship with other devices. The assignment of alias and
+target objects must be deterministic, so that all devices which encounter the
+same name conflict will label the same object as the target, and other objects
+as aliased. To this end, since object ids can form a total order by value, the
+value of object ids is used to determine the target and alias assignment.
+Specifically, given a set of $n$ object ids involved in a name conflict, in one
+embodiment of resolving the name conflict, the object id which will become the
+target, $o_t$, has the maximum value in the set: $o_t = \max\left(\{o_1, \ldots,
+o_n\}\right)$.
+% TODO technically max should define over what values
+
+\subsubsection*{Alias Version Updates}
+
+Nearly all meta-data for the aliased object is merged into the target, including
+version vectors, except for the versions associated with the aliasing operation
+itself. When $o_a$ is aliased to $o_t$ at the local device, this change in state
+must be propagated to all other devices to achieve a consistent global state.
+Therefore a new version must be created for $o_a$, but all other versions
+describing the previous file updates on $o_a$ must be merged into $o_t$, so that
+$o_t$ covers the version history of its alias objects. In this patent, the
+system updates version vectors by drawing from two spaces, one for alias
+updates, and the other for all other object updates. When merging versions from
+the alias object into the target, only versions from the non-alias space are
+merged; the alias object keeps its alias version history.
+
+In one embodiment, version vectors for the alias update space have odd-valued integer
+counts, whereas version vectors for the non-alias update space have even-valued
+integer counts. As with classic version vectors, the integer counts must be
+monotonically increasing for events with a happens-before relationship.
+
+\input{alias_states}
+\input{alias_algo}
+
+%\subsection*{Implementation Details}
+%
+%\subsubsection*{Alias vs Non-alias ticks}
+%If the consistency algorithm receives a non-alias tick for a locally aliased
+%object, that non-alias tick is moved to the local target object.
+%\subsubsection*{Alias interaction with AntiEntropy}
+%\subsubsection*{Replace n(o) with name(o), parent(o)}
+%Would require describing the local "dereferencing" of a remote parent object, if
+%it is aliased locally.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%TODO Bankim's paragraph below explains the combination of content conflict
+%resolution w aliasing.  The system uses a combination of version vectors and
+%content hashing to detect and resolve concurrent updates on a file viz. update
+%conflict. The aliasing algorithm, along with update conflict resolution helps
+%resolve name conflicts without renaming objects.

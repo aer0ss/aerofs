@@ -1,0 +1,188 @@
+Sync status design
+------------------
+
+Sync status is essential to building user trust and must therefore be as
+accurate as possible and updated as fast as possible, hence the decision to use
+a centralized implementation.
+
+We provide a very simple sync status: given an object and two devices sharing it
+we want to know if both devices have the same version or a different version.
+It would be possible to provide a much more precise picture to the user (same
+version, older version, newer version, diverging version) but that would incur
+a much larger storage cost (on the server and more importantly on the client) as
+well as more cpu and network bandwidth usage.
+
+Because version vectors provide much more information than is required to derive
+this simple status and also because they can become very large when files are
+shared across many devices, we compute the MD5 hash of version vectors and
+compare these hash to determine whether two device are in sync. The probability
+of false positives should be extremely small (NB: it would be interesting to use
+knowledge of the structure of the version vector to bound that probability but
+it's outside the scope of this design document).
+
+To reduce storage requirements and avoid wasting CPU time on the client side the
+version hashes are sent to the syncstatus server which stores them in a giant DB
+(16bytes/object/device) and derive the actual sync status from them.
+
+
+Client
+------
+
+The sync status of a given object is a bit vector where each bit corresponds to
+the relative status of a remote device. The mapping of DID to bitvector index is
+defined on a per-store basis. Because sync status is inherently tied to a given
+object it is stored in a new column of the object attribute table. The BitVector
+data is stored as a blob without any clever encoding.
+
+The sync status is kept up-to-date by:
+ * piggy-backing on the activity log to detect changes and send version hash of
+ modified objects to the server
+ * reacting to verkehr notifications caused by a version hash by set by one of
+ the devices sharing the file
+ * pulling sync status changes whenever there is reason to believe that verkehr
+ notifications may have been lost
+For more details, refer to SyncStatusSynchronizer.java
+
+We want to aggregate sync status recursively to show a meaningful status for
+directories and we want that aggregation to scale well for massive folder
+hierarchies. To achieve that we need some kind of persistent caching of the
+aggregated status. For the sake of simplicity (both of the code and the storage
+schema) we only keep store-level aggregation in the DB and perform the final
+cross-store aggregation upon lookup. This allow us to reuse the DID<->index
+mapping introduced for the regular sync status (which wouldn't otherwise be
+possible as the device list varies across stores).
+
+The aggregate sync status is stored in the object attribute table, alongside
+the regular sync status, but it is only set for folders. To allow fast updates,
+we store a vector of counters (the number of in-sync children) instead of a
+bitvector (see AggregateSyncStatus.java for more details). To reduce the storage
+footprint we use protobuf's varint encoding (40% to 75% gain). The basic update
+operation of the aggregate sync status is a nice purely-functional recursive
+upward propagation but the way to trigger this update varies widely depending
+on the cause of the update (creation/deletion/move/expulsion/sync status change)
+and can be seen in all their gory glory in AggregateSyncStatus.java
+
+The fully aggregated sync status is exposed through the Ritual API after some
+transformations for user-friendlyness:
+ * DIDs are turned into device names
+ * status of devices belonging to other users are aggregated under the name of
+ that user
+ * instead of a binary IN_SYNC/OUT_SYNC status we distinguish OUT_SYNC into
+ two case depending on the online status of the device/user in question which
+ gives IN_PROGRESS and OUT_SYNC
+
+Icon overlay
+------------
+
+The detailed per-device sync status is further aggregated to the following three
+states before being displayed as an icon overlay:
+ * in-sync: all devices are in sync
+ * partial sync: at least one device is in sync and at least one is out of sync
+ * out of sync: all devices are out of sync
+
+Notifications are sent to the shell extension whenever the aggregated sync
+status of an object changes. This is achieved through a TransLocal map that maps
+affected Path to their new status. The map is populated by all operations
+affecting the aggregate sync status and notifications are sent immediately after
+the transaction is committed.
+
+The previous icon overlay infrastructure worked fine for upload/download and any
+low density overlay (i.e only a very small number of files have overlays at any
+given time) but couldn't scale to the needs of sync status (which assigns an
+overlay to every file/folder under the AeroFS root). Instead of performing state
+propagation in the shellext and keep an authoritative copy of the overlay data
+there it was decided to do all aggregation and state propagation in the daemon
+and only keep a cache of the overlay state in the shellext.
+
+This new design is more scalable, more flexible and reduces code duplication but
+it also slightly increases the latency of overlay updates as the shellext has to
+explicitely pull state from the daemon on a cache miss. This does not block the
+file manager but in the case of Finder which does not provide a way to notify of
+an overlay change asynchronously it delays the overlay update by 1 or 2 seconds.
+
+An important benefit of this new design is that it merges the different status
+notifications sent to the shell extension (upload/download/syncstatus) and makes
+it extremely easy to add new status information in the future (conflict state
+is coming next). For more details, refer to PathStatus.java
+
+Server
+------
+
+The server initially used a simple SQL schema which proved impossible to scale,
+hence the decision to use Redis which allows much more flexible schemas and
+offers better asymptotic complexity for many operations.
+
+The schema is as follows (see SyncStatDatabase.java for details):
+
+    h:SID:DID -> Hash<OID,VH>
+        Version hashes for each object, partitionned by store id and device id.
+
+    s:DID -> SortedSet<SID:OID, server epoch>
+        Set of modified objects, ordered by last modification, partitioned by
+        store id and device id.
+
+    e:DID -> server epoch
+        Server epoch for last version hash received for a given device.
+
+    c:DID -> client epoch
+        Client epoch for last version hash received for a given device. this is
+        user to force the client to resend version hashes in case of server data
+        loss.
+
+Partitioning by store is key to horizontal scaling as it allows easy sharding
+while keeping the data for interested devices in the same shard. Note the "s"
+set was originally designed to use key s:SID:DID, so sharing can occur on the
+SID, so information for one share can be stored on one shard. We moved to the
+s:DID key to eliminate the need for a mysql call followed by two redis calls;
+once (if?) horizontal scaling is required, we can investigate the feasibility of
+moving back to the s:SID:DID schema.
+
+When the client receives a sign in request it creates a session for the given
+user and device and replies with the last known client epoch for that user, to
+ensure any server-side data loss will be fixed by the client re-sending the lost
+version hashes.
+
+When the server receives a new version hash, it updates the relevant entry in
+the "h" table, gathers the set of interested devices, bump their epoch numbers
+and adds an entry to their "s" table. The client epoch is then updated to ensure
+proper recovery in case of server-side data loss. Once the changes are written,
+a verkher notification is sent to each interested device. Only relevant
+information is sent to the clients on the fast path. For example, suppose client
+A, B and C all sync object O. Client A makes an update to O and calls set
+version hash. B and C will receive a vk notification for this change which will
+only contain the sync status of A (not all peers in the share, only relevant
+peers). Similarly when B and C eventually update their sync status as well.
+
+When the server receives a getSyncStatus call, it removes from the "s" set of
+the relevant devices all entries older than the epoch sent by the client and
+sends the first N entries newer than said epoch. When the server receives an
+epoch acknowledgement (sent by the client after a series of verkehr
+notifications) it simply removes old entry from the "s" table, as in the
+getSyncStatus case, but doesn't send any reply.
+
+TLDR
+----
+
+Protos of significant interest
+ * syncstatus.proto                 [client<->server]
+ * pathstatus.proto                 [daemon->shellext]
+
+Client pipeline
+ * SyncStatusSynchronizer.java      : keep sync status up-to-date
+ * AggregateSyncStatus.java         : keep aggregate sync status up-to-date
+ * LocalSyncStatus.java             : final aggregation on lookup
+ * HdGetSyncStatus.java             : user-friendliness, prettification
+
+Shellext push pipeline
+ * PathStatus.java                  : aggregate status sources
+ * PathStatusNotifier.java          : reacts to change of status sources
+ * PathStatusNotificationForwarder  : forwards daemon notifications to shellext
+
+Shellext pull pipeline
+ * ShellextService.java             : forwards shellext requests to daemon
+ * HdGetPathStatus.java             : queries PathStatus
+
+Server pipeline
+ * SyncStatusServlet.java           : HTTP servlet (login, session, DB conf)
+ * SyncStatusService.java           : impl of RPC defined in syncstatus.proto
+ * SyncStatusDatabase.java          : DB schema and related operations

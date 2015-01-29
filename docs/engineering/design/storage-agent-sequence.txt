@@ -1,0 +1,25 @@
+# Visit https://www.websequencediagrams.com/
+# and enter the commands below to render the sequence diagram.
+
+title Storage Agent Sequence, v1
+
+participant Polaris
+participant Core
+participant Peer
+participant Block Storage
+
+opt new content
+Polaris->Core: new knowledge
+Core->+Peer: GetComponentRequest
+Peer->-Core: GetComponentResponse
+Core->Block Storage: content
+Core->Polaris: content available
+end
+
+opt get content
+Peer->+Core: GetComponentRequest
+Core->Core: checks ACL
+Core->+Block Storage: get content
+Block Storage->-Core: content
+Core->-Peer: content
+end

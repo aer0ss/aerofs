@@ -1,0 +1,79 @@
+Presented is a set of algorithms for efficient sharing of files among devices
+in a peer-to-peer configuration. These algorithms are intended to build upon the
+system and methods claimed in Patent US 2012/0005159 A1~\cite{wang:patent2012},
+which shall herein be referred to as the base system.
+
+The algorithms assume such a system that identifies files and folders
+(concisely referred to as {\em objects}) via globally unique object identifiers
+or ids (e.g. 128-bit UUID). An {\em update} to an object signifies the
+creation, deletion, modification, or renaming of a file or folder. In the base
+system, a consistency algorithm exists for the propagation of these updates
+among devices (i.e. eventual consistency is guaranteed). The system is modeled
+to perform optimistic replication. The base system describes a {\em store} (aka
+a ``Library") that is a special folder with which a specified group of users can
+share and collaborate on the folder's contents. Conceptually, through object
+ids, the base system maintains and synchronizes a logical representation of the
+physical file system tree. Updates to the logical file system are persisted to
+the physical file system.
+
+The algorithms presented here extend the base system by enabling:
+\begin{enumerate}
+\item optimized network queries to download a file
+\item resolution of duplication/conflict of object ids for the same file path
+during a network partition
+\item propagation of object deletion updates, and ability to selectively
+synchronize files to a subset of devices for a given user
+\item avoiding re-downloading a file when it exists locally but has remotely been
+moved from one shared folder to another
+\item presentation and resolution of concurrent updates to files on multiple
+devices
+\item one device synchronizing the stores of multiple users
+\item version history for every file
+\item presentation of the sync status of every file and folder
+\end{enumerate}
+
+\section*{Background}
+
+\subsection*{Logical Object Generation}
+
+When a device physically creates a new file or folder, the base system dictates
+that the local device randomly generates a new object id to logically represent
+that physical object. This local generation is applied to obviate centralized
+coordination of assigning logical object ids; centralized assignment would
+impede optimistic replication. Because update propagation tracks logical
+objects, there must be a one-to-one mapping between a physical file/directory
+and its logical object representation. The distributed approach to mapping
+logical and physical objects can result in conflicts where, in a distributed
+system of many devices, more than one logical object may refer to the same
+physical object. This problem is addressed in the ``Aliasing" section of this
+patent.
+%TODO explain why logical object ids are generated locally
+% * alternatives are pathnames and/or content hashing
+% * these both rely on the file's own info (its name or content) but if that
+%   file information changes, then the identity changes
+
+\subsection*{Update Propagation}
+
+The base system achieves update propagation through push and pull of {\em
+version vectors}~\cite{wang:patent2012, parker:dmi1983}. A version vector is a
+data structure used in optimistic replication systems; it consists of a mapping
+of device ids to integer version counts per id (see the base system for further
+details). For each new update, a device will push the version vector
+corresponding to that change via a multicast, to a number of online devices. To
+ensure no updates are missed, each device periodically pulls all other devices
+for their known updates (i.e. version vectors).
+
+\subsection*{Stores: Shared Folders}
+
+The system permits distinct users to collaborate on a shared folder and its
+contents. Such a shared folder is herein referred to as a store, which defines
+the set of users who may share its contents, as specified by the store's Access
+Control List (ACL). An ACL is a mapping from user id to permission on the
+contents of the store. A device is permitted to sync the files and folders of a
+store if its owning user id in the Access Control List (ACL) of the store.
+Each device has a root store with only the owning user in the ACL; this root
+store thus syncs only with devices owned by the user.
+
+An object $o$ may be moved between stores, say $S_1$, and $S_2$. In some
+algorithms, it is important to distinguish $o$ under $S_1$ vs $S_2$, and we thus
+annotate $(S_1, o)$ to reference object $o$ under store $S_1$.

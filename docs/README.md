@@ -19,4 +19,5 @@ continuously monitors changes and compiles modified files in the doc folder.
 Name convention
 ---
 
-All file in this folder should follow the naming convention of "lower_case_letters_with_underscores.ext."
+All file in this folder should follow the naming convention of
+`lower-case-letters-with-dashes.ext`.

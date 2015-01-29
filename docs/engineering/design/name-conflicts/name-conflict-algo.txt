@@ -1,0 +1,176 @@
+//============================================================================
+// Pseudo-code algorithm for resolving name conflicts
+// Author: Mark Jeffrey
+// Contributor: Bankim Bhavsar
+// Created  Dec 16, 2011
+// Modified Dec 20, 2011
+// Modified Jan 31, 2012
+//
+// Two types of remote messages are handled:
+//  1) (o, v(o), n(o), ...) an object, its version, its name, and other meta
+//  2) (o_a, v(o_a), o_t, v(o_t), n(o_t), ...) 
+//         an alias message stating that o_a aliases to o_t
+// Noteworthy definitions:
+//  vr(o) = version of object o, received remotely
+//  vl(o) = version of object o, lookedup locally
+//  nr(o) = name of object o, received remotely
+//  nl(o) = name of object o, lookedup locally
+//============================================================================
+
+
+
+// Method to handle the first type of message, 
+// an object, its version, and name
+hdObjectReceiveMsg(o, vr(o), nr(o))
+    lookup o in m table
+    if found o non-aliasing
+        if nl(o) != nr(o):
+            // Deal with different name, same oid
+        elif vl(o) != vr(o):
+            // Deal with different versions, same n,oid
+            // i.e., depending on vr(o), apply the update
+
+    elif found o -> o_t:  // any o_t
+        // No action required, because anti-entropy will 
+        // ensure that the remote updates on o
+        // are sent via o_t later, when the sender knows
+        // o -> o_t
+        return that the message was digested correctly;
+    else: // o is not found on this device
+        receiveNewObject(o, vr(o), nr(o), null);
+       
+
+
+// Method to handle the second type of message, 
+// an alias message: o_a -> o_t 
+hdAliasMsg(o_a, vr(o_a), o_t, vr(o_t), nr(o_t))
+
+    lookup o_t in m table and alias table;
+    if o_t not found in m table or alias table: // not alias nor non-alias
+        // If the target is not known locally, must
+        // ensure it does not name-conflict with any other 
+        // local objects. 
+        // If an alias is subsequently generated of o_a->o_t,
+        // do not create a new version for it, since this
+        // message already exists.
+        receiveNewObject(o_t, vr(o_t), nr(o_t), o_a);
+        lookup o_t in m table;
+            
+    if there exists o_e s.t. o_t -> o_e in m table:
+        // If the target has already been aliased,
+        // our new target of interest is its target
+        o_t = o_e; 
+
+    //---------
+    // At this point 
+    // - o_t represents some non-aliasing object
+    //---------
+    lookup o_a in m table and alias table.
+    if found o_a non-alasing: 
+        // i.e., we already had an object, (o_a, n(o_a), vl(o_a))
+        aliasObjects(o_a, o_t);
+    elif there exists o_e s.t. o_a -> o_e in m table:
+        if o_e == o_t:
+            // Locally, already know about o_a -> o_t alias,
+            // so no action required.
+        else: // o_e != o_t:
+            // this is a new alias
+            // need to alias o_e and o_t
+            if (o_t != winner(o_e, o_t));
+                swap(o_t, o_e);
+    
+            // Now that we know the winner and loser,
+            // merge the version vectors of the two
+            // (previously) targets
+            aliasObjects(o_e, o_t);
+            // Note at this point vl(o_e) = nil, 
+            // but this is fine, when o_e -> o_t is received,
+            // version will be updated.
+    
+            // TODO Ensure that vl(o_a) is kept/left alone
+            // to be merged with vr below
+ 
+    else // o_a not found 
+        create o_a entry in the alias table; // vl(o_a) = nil implicitly
+        write o_a -> o_t in the alias table;
+        
+
+    // Merge local alias version with received remote;
+    // if the alias previously had no version, treat as empty set.
+    // Following this is an implicit anti-entropy push of the version
+    vl(o_a) = vl(o_a) U vr(o_a); 
+    // note that if vl(o_a) was nil prior to this statement, the
+    // version of o_a is not different between the remote and local peer
+
+
+
+// Helper method to receive a non-local object o, 
+// sent from a remote peer, given its remote version, remote name.
+// - i.e., assumes o was previously not found on this device.
+// - o_no_newvers is the oid for which we should not create a
+//   new version if o_no_newvers -> o is discovered
+receiveNewObject(o, vr(o), nr(o), o_no_newvers);
+
+    // Determine whether some other OID shares the same name
+    o_nr = lookup nr(o) in some name->oid table
+    if some o_nr is found:  // note: o_nr != o
+
+        // TODO Query sender about o_nr
+
+        // There exists some object o_nr with name conflict
+        if (o_nr != winner(o, o_nr):
+            swap(o, o_nr);
+        aliasObjects(o, o_nr);
+        // Other peers must learn that o is now aliased,
+        // so create a new version for o, forcing an
+        // implicit anti-entropy on object o.
+        if o != o_no_newvers:
+            vl(o) = new_version; 
+        else:
+            vl(o) = nil;
+    else:
+        // No problem, unique oid for unique name
+        // Do something normal
+ 
+
+
+
+// Helper method used by both message handlers.
+// Note that if n(o_a) != n(o_t) entering this subroutine,
+// the file name for n(o_a) will be discarded, and n(o_t) adopted.
+aliasObjects(o_a, o_t)
+    vl(o_t) = vl(o_t) U vl(o_a);
+    vkml(o_t) = (vkml(o_a) U vkml(o_t)) - vl(o_t)
+
+    // Meta-data component of files/dirs don't have conflict branches
+    // and hence versions can be merged straightaway.
+    // However content component of files can have conflict branches.
+
+    Merge meta-data component of alias into target.
+
+    When alias and target are directories, all files/sub-directories
+    under alias will be moved under target. If moving files in turn
+    would lead to a name conflict then files/dirs from the alias 
+    will be renamed. This is done to simplify the implementation
+    of aliasing objects.
+
+    Compare every CA branch of alias to CA branch of target and merge
+    alias branch into a matching target branch. Corresponding alias branch
+    can be deleted if a match is found. If no matching target branch is found
+    then create new branch on the target.
+
+    Mark the alias entry o_a -> o_t in separate alias table.
+    vl(o_a) = nil;
+    vkml(o_a) = nil;
+
+    Handle other tables as necessary.
+
+    Remove attribute in the OA table for alias.
+
+    Invalidate all db-caches
+
+    // Must update any existing aliases
+    // to resolve chaining.
+    for each o in {o | o -> o_a is in the alias table}:
+        write o -> o_t in the alias table;
+

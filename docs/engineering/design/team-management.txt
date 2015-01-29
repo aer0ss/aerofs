@@ -1,0 +1,36 @@
+Managing shared folders of team members
+---------------------------------------
+
+(Please read sharing_and_migration.txt first to understand basic mechanisms of sharing.)
+
+(Note that all the following features are under development.)
+
+* Team admins can list folders shared with team members, and see external collaborators 
+  on these folders, regardless of the privilege and status of the members on the folders.
+* The privilege of team admins on a shared folder is identical to the highest privilege 
+  team members has on the folder. For example, if all the team members on a folder are
+  non-owners, admins cannot manage the folder, either. The admin can manage the folder
+  (e.g. invite and remove users and destroy the folder).
+
+The above mechanism has a potential security issue: If a member shares an folder internal 
+to the company and then transfers ownership to an external user immediately after, the
+admin will lose the ability to control that folder. This is the issue with box.com as 
+well.
+
+In the future, we can allow admins to block users from sharing files with external 
+users or to limit sharing to specific domains.
+
+Team migration
+--------------
+
+When a user is invited to another team:
+
+* If the user is a non-admin of another team, he can accept and join the team. Durign joining,
+  The ACL of all the folders shared with the user will remain unchanged. (Should the admin
+  of the current team approve first?)
+* If the user is an admin of another team with a single member, he can accept the invite.
+  The team's information (team server user info, etc) will be completely deleted from the
+  database.
+* If the user is a sole admin of another team with multiple members, he is not allowed to
+  accept the invite until he assigns more admins or removes all other members.
+

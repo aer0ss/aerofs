@@ -1,0 +1,41 @@
+# Visit https://www.websequencediagrams.com/
+# and enter the commands below to render the sequence diagram.
+
+title OpenId Authentication Sequence, v3
+
+participant Client
+participant SP
+participant Browser
+participant IdentityServlet
+participant IDP
+
+Client->+SP: OpenIdBeginTransaction()
+note right of SP: generate two tokens
+SP-->-Client: (sessionNonce, delegateNonce)
+
+Client->+Browser: open(SP_URL + "openid/oa?token=<delegateNonce>")
+Browser->+IdentityServlet: GET openid/os?token=<delegateNonce>
+
+note right of IdentityServlet: look up openid endpoint
+
+IdentityServlet-->-Browser: redirect(OP_endpoint)
+Browser->+IDP: GET <openId request>
+
+note right of Browser: [ user signs in with provider; steps vary... ]
+IDP-->-Browser: redirect(SP_URL+"/openid/os?<AuthResponse>")
+Browser->+IdentityServlet: GET "/openid/os?<AuthResponse>"
+
+IdentityServlet->+IDP: client_authenticate(sig, contents)
+IDP-->-IdentityServlet: Ok
+note right of IdentityServlet: update Session state: authorized
+
+IdentityServlet->-Browser: redirect(closeWindow())
+destroy Browser
+
+note right of Client: async w.r.t. Browser interaction...
+Client->+SP: OpenIdGetSessionAttributes(sessionNonce)
+SP-->-Client: null
+
+Client->+SP: OpenIdGetSessionAttributes(sessionNonce)
+SP-->-Client: {email, firstname, lastname}
+

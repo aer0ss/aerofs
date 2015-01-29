@@ -1,0 +1,163 @@
+#####################################################
+#
+# SafetyNet: Setting up the environment
+#
+#####################################################
+
+NOTE: Unless otherwise specified, all paths in this document are assumed to be relative to the AeroFS git
+      root directory.
+
+Current Setup Overview
+======================
+The details and connection settings for each SafetyNet VM are listed in the SafetyNet config file located at
+
+    tools/build/safetynet/config.yaml
+
+This is a great place to see what is currently configured and describes
+each system quite well. Whenever adding or changing a VM, please update this file as well.
+
+Virtual Machines
+================
+At the time of writing, every SafetyNet client is running in its own Virtual Machine (VM). All of the SafetyNet
+VMs are hosted by one Dell box running Windows 7 with VMWare's Workstation 8. The "Man in the Middle" server
+is, for convenience, running in its own VM alongside the SafetyNet VMs. Figure 1 shows this topology.
+
++-----------------------------------------------------------------------+
+|                          Windows 7 Host Machine                       |
+|-----------------------------------------------------------------------|
+|  +------------------+  +--------------------+ +--------------------+  |
+|  |                  |  |                    | |                    |  |
+|  | SafetyNet VM 1   |  |   SafetyNet VM 2   | | Man in the Middle  |  |
+|  |  (Windows 7)     |  |  (Ubuntu x86_64)   | |                    |  |
+|  |                  |  |                    | |                    |  |
+|  +------------------+  +--------------------+ +--------------------+  |
++-----------------------------------------------------------------------+
+                           Figure 1: VM Topology
+
+Host Software
+=============
+We use WMWare's Workstation 8 to host the VMs. Instructions on where to download and how to install
+Workstation 8 are located in the Air Computing Team shared folder in AeroFS, under software. Make sure
+to follow the instructions under
+
+    aerofs://Air Computing Team/software/VMWare OSX Unlocker
+
+or you won't be able to host OSX VMs.
+
+Ensure that the host machine is connected to the network and reachable from the machines where SafetyNet
+will be initiated.
+
+Summary:
+- Get Windows 7 host machine (can be any other OS but this guide assumes Windows 7)
+- Install VMWare Workstation 8 and OSX Unlocker (aerofs://Air Computing Team/software/)
+- Ensure machine is reachable via unicast
+
+Man-in-the-Middle
+=================
+In order to trick the SafetyNet clients into thinking they are downloading updates from the production
+S3 bucket, we need to perform a "Man in the Middle" attack on our clients.
+
+You will need a linux-based OS installed in a VM on the host machine. Specific instructions for setting
+up a Man-in-the-Middle server are located here:
+
+    packaging/middleman/opt/middleman/README
+
+The Man-in-the-Middle VM must be addressable with a static IP address, so assign one either via the router
+or via the /etc/network/interfaces configuration file.
+
+Summary:
+- Create Linux VM on host
+- Install and configure Man-in-the-middle (see packaging/middleman/opt/middleman/README)
+- Give the VM a static IP
+
+SafetyNet VMs
+=============
+The process for setting up SafetyNet VMs may differ between guest OS's, but the following steps summarize the
+general process.
+
+1)  Create VM running OS of choice
+
+2)  Ensure all SyncDET requirements are met -- see the syncdet docs in the syncdet repository at
+
+        g.arrowfs.org:syncdet.git
+
+    NOTE: In order to use pip to install the necessary Python dependencies, you need to have setuptools installed. *nix
+    OS's already have this installed but Cygwin on Windows may not. To install setuptools, run the following:
+
+        wget http://pypi.python.org/packages/2.6/s/setuptools/setuptools-0.6c11-py2.6.egg
+        sh setuptools-0.6c11-py2.6.egg
+
+    Note that the version may differ according to release version and python interpreter version. Finally, run
+
+        easy_install pip
+
+    to install pip. At this point the dependencies listed for SyncDET can be installed via pip.
+
+3)  Set networking to bridged
+
+4)  Set a static IP (or hostname) for this VM so it is reachable via a constant address. See the config file located at
+
+        tools/build/safetynet/config.yaml
+
+    and set an appropriate IP address that is not taken. Try pinging the chosen IP to make sure it's not taken.
+
+5)  Install an ssh server
+
+6)  Ensure that this VM is reachable by enabling firewall exceptions for port 22 (SSH traffic). Mostly important on Windows.
+
+7)  Add the ssh-keys of any user who will be using SafetyNet to the file
+
+        ~/.ssh/authorized_keys
+
+8)  Download an AeroFS production client, just like any user would
+
+        https://aerofs.com/download
+
+9)  Install the AeroFS production client. During setup, choose an account that will be used for all
+    SafetyNet VMs (they must sync amongst each other).
+
+10) Set the Domain Name Server on this VM to the IP address of the Man-in-the-Middle server
+
+11) Add the necessary certificates for Man-in-the-Middle to the local Java keystore -- see
+
+        packaging/middleman/opt/middleman/README
+
+12) Restart AeroFS to load the new certificates
+
+13) Add this VM's address and details to
+
+        tools/build/safetynet/config.yaml
+
+    Please be descriptive. And by please, I mean BE DESCRIPTIVE OR ELSE!
+
+14) Add the 'noautoupdate' file to the AeroFS installation's approot.
+
+Windows VMs
+============
+Additional Steps For Windows VMs (Rationale behind these extra steps is included in docs/design/build_system/safetynet.txt):
+
+15) Install python for Windows. This is in addition to the python installation in Cygwin.
+
+16) Add python to your PATH variable.
+
+15) Run SafetyNet once, running the
+
+        tools/build/bootstrap safetynet/decrease_versions
+
+    utility to deploy the SyncDET files to each VM.
+
+16) Now the Windows VM should have a little launch server located at
+
+        ${SYNCDET_DIRECTORY}/deploy/tools/windows_launch_server.py
+
+17) Run the windows_launch_server.py script with python from the Windows Command Prompt. Do this from the GUI not via ssh.
+
+18) Leave the server running in an open terminal.
+
+NOTE: Windows VMs require cygwin to be present or SyncDET will not be able to run.
+
+OSX VMs
+========
+NOTE: When setting the static IP address, do not allow partial DHCP (having some fields automatically detected). Not manually
+setting all fields will allow OS X to use the router for DNS resolution, thus circumventing the redirection to
+man-in-the-middle.
