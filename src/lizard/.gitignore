@@ -1,1 +1,6 @@
 MANIFEST
+
+# this directory was created when packaging lizard.
+# I don't really understand whether we need this once packaging is done
+# nor why this isn't cleaned up if it's not needed
+lizard.egg-info
