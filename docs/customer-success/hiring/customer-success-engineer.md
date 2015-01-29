@@ -28,9 +28,7 @@ type role.
 
 ## Minumum Requirements
 
-The following requirements are catered toward the technical support aspect of
-the position, which is the emphasis currently. Expect revision when the
-emphasis shifts toward the other two areas in the future.
+At a minimum we should like:
 
 1. 2+ years experience in a customer facing, technical role.
 2. B.S. in Computer Science, Computer Engineering, or equivalent work
