@@ -28,6 +28,10 @@ type role.
 
 ## Minumum Requirements
 
+The following requirements are catered toward the technical support aspect of
+the position, which is the emphasis currently. Expect revision when the
+emphasis shifts toward the other two areas in the future.
+
 1. 2+ years experience in a customer facing, technical role.
 2. B.S. in Computer Science, Computer Engineering, or equivalent work
    experience.
@@ -37,10 +41,8 @@ type role.
 
 The first two points are evaluated during the "fit" interview (currently
 conducted by Matt). The last two are evaluated during the technical phone
-screen.
-
-Of course, all four points + cultural fit + general intelligence + analytical
-ability are evaluated during the on-site as well.
+screen. Of course, all four points + cultural fit + general intelligence +
+analytical ability are evaluated during the on-site as well.
 
 ## Technical Phone Screen Questions
 
