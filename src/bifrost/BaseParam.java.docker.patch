@@ -1,0 +1,36 @@
+@@ -40,7 +40,7 @@
+                 "config.loader.base_ca_certificate", null);
+ 
+         // TODO (MP) need create ServerParam.java (or something) and move this there.
+-        public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
++        public static final String FILE = "/opt/bifrost/cacert.pem";
+     }
+ 
+     public static class XMPP
+@@ -124,7 +124,15 @@
+         public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");
+     }
+ 
+-    public static class SP
++    static URL getURL() {
++        try {
++            return new URL("http://sp.service:8080");
++        } catch (java.net.MalformedURLException e) {
++            throw com.google.common.base.Throwables.propagate(e);
++        }
++    }
++
++    public static class SP
+     {
+         public static final String SP_POST_PARAM_PROTOCOL = "protocol_vers";
+         public static final String SP_POST_PARAM_DATA = "data";
+@@ -132,8 +140,7 @@
+         // See comment in sp.proto
+         public static final int SP_PROTOCOL_VERSION = 21;
+ 
+-        public static final URL URL = getUrlProperty("base.sp.url",
+-                "https://sp.aerofs.com/sp/");
++        public static final URL URL = getURL();
+     }
+ 
+     public static class Verkehr

@@ -2,25 +2,21 @@ IMAGE_NAME = aerofs/havre
 DST_DIR = buildroot/opt/havre
 RSC_DIR = resources
 
-image: .backup-source .fix-source .gradle .restore-source $(DST_DIR)/havre.properties $(DST_DIR)/logback.xml
+image: .fix-source .gradle .restore-source $(DST_DIR)/havre.properties $(DST_DIR)/logback.xml
 	docker build -t $(IMAGE_NAME) .
 
 HAVRE = src/com/aerofs/havre/Havre.java
-FIXES = $(HAVRE)
+FIXES = $(abspath $(HAVRE))
 
 .gradle:
 	gradle --daemon dist
 	../../tools/lazy-copy.sh ../../out.gradle/havre/dist $(DST_DIR)
 
-.backup-source:
-	for i in $(FIXES); do cp $$i /tmp/$$(basename $$i); done
-
 .restore-source:
-	for i in $(FIXES); do mv /tmp/$$(basename $$i) $$i; done
+	for i in $(FIXES); do patch -R $$i < $$(basename $$i).docker.patch; done
 
 .fix-source:
-	sed -i '' -e 's`getStringProperty("havre.oauth.url", "http://localhost:8700/tokeninfo")`"http://bifrost.service:8700/tokeninfo"`' \
-		$(HAVRE)
+	for i in $(FIXES); do patch $$i < $$(basename $$i).docker.patch; done
 
 $(DST_DIR)/%: $(RSC_DIR)/%
 	mkdir -p $(@D)

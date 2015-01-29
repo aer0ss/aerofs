@@ -12,11 +12,11 @@
 # do not compare file content.
 
 is_gzip() {
-    [[ $(file -bI "$1") =~ application/x-gzip ]] && echo 1 || echo 0
+    [[ $(file --brief --mime "$1") =~ application/x-gzip ]] && echo 1 || echo 0
 }
 
 is_tar() {
-    [[ $(file -bI "$1") =~ application/x-tar ]] && echo 1 || echo 0
+    [[ $(file --brief --mime "$1") =~ application/x-tar ]] && echo 1 || echo 0
 }
 
 NO_DIFF=0
@@ -36,9 +36,9 @@ function deep_diff() {
 
     echo "deep-diff: gunzipping $1"
     # Both $1 and $2 are gzip. Decompress to a temp folder
-    UNZIP1=$(mktemp -t deep-diff-unzip)
+    UNZIP1=$(mktemp -t deep-diff-unzip-XXX)
     gunzip -c "$1" > ${UNZIP1}
-    UNZIP2=$(mktemp -t deep-diff-unzip)
+    UNZIP2=$(mktemp -t deep-diff-unzip-XXX)
     gunzip -c "$2" > ${UNZIP2}
 
     if [ $(is_tar ${UNZIP1}) = 0 ]; then
@@ -51,9 +51,9 @@ function deep_diff() {
     fi
 
     echo "deep-diff: untarring $1"
-    UNTAR1=$(mktemp -dt deep-diff-untar)
+    UNTAR1=$(mktemp -dt deep-diff-untar-XXX)
     tar xf ${UNZIP1} -C ${UNTAR1}
-    UNTAR2=$(mktemp -dt deep-diff-untar)
+    UNTAR2=$(mktemp -dt deep-diff-untar-XXX)
     tar xf ${UNZIP2} -C ${UNTAR2}
     [[ $(diff -r ${UNTAR1} ${UNTAR2}) ]] && return ${DIFF} || return ${NO_DIFF}
 }

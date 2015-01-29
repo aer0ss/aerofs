@@ -6,7 +6,7 @@ set -ex
 
 LOADER_IMAGE=aerofs/loader
 TAG="$(docker run --rm ${LOADER_IMAGE} tag)"
-SHIP_YML="$(mktemp -t ship-aerofs)"
+SHIP_YML="$(mktemp -t ship-aerofs-XXX)"
 THIS_DIR="$(dirname ${BASH_SOURCE[0]})"
 
 sed -e "s,{{ tag }},${TAG}," \

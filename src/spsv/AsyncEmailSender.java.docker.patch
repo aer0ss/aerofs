@@ -7,12 +7,3 @@
          String port = getStringProperty("email.sender.public_port",
                                          p.getProperty("port", "25"));
          String username = getStringProperty("email.sender.public_username",
-@@ -80,7 +80,7 @@
-     public static AsyncEmailSender createDeprecatedForLogEmails()
-     {
-         Properties p = loadPropsFromDisk();
--        String host     = p.getProperty("internal_host", "localhost");
-+        String host     = p.getProperty("internal_host", "postfix.service");
-         String port     = p.getProperty("internal_port", "25");
-         String username = p.getProperty("internal_username", "");
-         String password = p.getProperty("internal_password", "");
