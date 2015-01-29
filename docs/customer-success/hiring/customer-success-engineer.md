@@ -95,13 +95,13 @@ Possible solution:
 
     void removeHead (node *head)
     {
-        if(head == Null) return;
+        if (head == null) return;
         node *newHead = head -> next;
         free(head);
         head = newHead;
     }
 
-### 3. Unix
+### 3. Unix Proficiency
 
 * Evaluate basic command line proficiency.
     1. How do you list the contents of a directory? (`ls`)
