@@ -138,8 +138,10 @@ def _has_permission(folder, user, permission):
 def json_get_user_shared_folders(request, is_me=False):
     if is_me:
         specified_user = authenticated_userid(request)
+        privileger = _session_user_privileger
     else:
         specified_user = request.params[URL_PARAM_USER]
+        privileger = _session_team_privileger
 
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
@@ -147,7 +149,8 @@ def json_get_user_shared_folders(request, is_me=False):
     reply = sp.list_user_shared_folders(specified_user)
     folders = [f for f in reply.shared_folder if (not _is_pending(f, specified_user))]
     return _sp_reply2json(folders,
-        _session_team_privileger, authenticated_userid(request), request, is_mine=is_me, specified_user=specified_user)
+        privileger, authenticated_userid(request), request,
+        is_mine=is_me, specified_user=specified_user)
 
 
 @view_config(

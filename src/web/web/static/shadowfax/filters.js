@@ -102,3 +102,7 @@ shadowfaxFilters.filter('myMembers', ['$rootScope', '$log', function($rootScope,
         return str;
     };
 }]);
+
+shadowfaxFilters.filter('encodeUri', function() {
+    return window.encodeURIComponent;
+});

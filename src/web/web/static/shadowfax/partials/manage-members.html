@@ -34,13 +34,13 @@
                     </span>
                 </div>
                 <div class="col-sm-6 col-xs-4">
-                    <span ng-hide="canAdminister || (is_privileged && person.email != me)">
-                        <span ng-show="person.is_owner && person.can_edit">Owner</span>
-                        <span ng-show="!person.is_owner && person.can_edit">Editor</span>
-                        <span ng-show="!person.is_owner && !person.can_edit">Viewer</span>
-                        <span ng-show="person.is_owner && !person.can_edit">Manager</span>
+                    <span ng-hide="canAdminister || (is_privileged && entity.email != me)">
+                        <span ng-show="entity.is_owner && entity.can_edit">Owner</span>
+                        <span ng-show="!entity.is_owner && entity.can_edit">Editor</span>
+                        <span ng-show="!entity.is_owner && !entity.can_edit">Viewer</span>
+                        <span ng-show="entity.is_owner && !entity.can_edit">Manager</span>
                     </span>
-                    <div class="btn-group" ng-show="canAdminister || (is_privileged && person.email != me)">
+                    <div class="btn-group" ng-show="canAdminister || (is_privileged && entity.email != me)">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                             <span ng-show="entity.is_owner && entity.can_edit">Owner</span>
                             <span ng-show="!entity.is_owner && entity.can_edit">Editor</span>

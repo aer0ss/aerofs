@@ -28,8 +28,8 @@
                     Actions <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu pull-right" role="menu">
-                    <li><a href="{{userFoldersURL}}?user={{user.email}}&full_name={{user|fullName}}">View Shared Folders</a></li>
-                    <li><a href="{{userDevicesURL}}?user={{user.email}}&full_name={{user|fullName}}">View Devices</a></li>
+                    <li><a href="{{userFoldersURL}}?user={{user.email|encodeUri}}&full_name={{user|fullName|encodeUri}}">View Shared Folders</a></li>
+                    <li><a href="{{userDevicesURL}}?user={{user.email|encodeUri}}&full_name={{user|fullName|encodeUri}}">View Devices</a></li>
 
                     <li ng-if="user.email != me" class="divider"></li>
                     <li ng-if="user.email != me">
