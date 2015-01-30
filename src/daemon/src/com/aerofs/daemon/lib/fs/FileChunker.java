@@ -63,6 +63,7 @@ public class FileChunker implements AutoCloseable
     public FileChunker(IReadableFile file, long mtime, long fileLength,
             long startPos, long endPos, int chunkSize, boolean isWindows)
     {
+        checkState(chunkSize > 0);
         checkState(startPos <= endPos);
         checkState(endPos <= fileLength);
 

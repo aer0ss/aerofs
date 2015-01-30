@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
@@ -166,7 +167,7 @@ public class HashQueue
 
         private synchronized FileChunker chunker()
         {
-            return new FileChunker(f, mtime, length, 0L, 0, OSUtil.isWindows());
+            return new FileChunker(f, mtime, length, 0L, 16 * C.KB, OSUtil.isWindows());
         }
 
         private ContentHash hash()
