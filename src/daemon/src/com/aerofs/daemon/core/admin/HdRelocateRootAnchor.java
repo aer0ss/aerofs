@@ -270,7 +270,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                 boolean distinct = !(g.exists()
                                              && g.isFile()
                                              && f.lastModified() == g.lastModified()
-                                             && f.getLengthOrZeroIfNotFile() == g.getLengthOrZeroIfNotFile());
+                                             && f.lengthOrZeroIfNotFile() == g.lengthOrZeroIfNotFile());
                 f.deleteIgnoreError();
                 return distinct;
             } catch (IOException e) {

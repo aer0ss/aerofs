@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import javax.annotation.Nullable;
 
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.IReadableFile;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -33,7 +34,7 @@ import com.google.inject.Inject;
  * A wrapper class of java.io.File for common file operations. This class also
  * makes file objects compatible with dependency injection.
  */
-public class InjectableFile
+public class InjectableFile implements IReadableFile
 {
     public static class Factory
     {
@@ -156,6 +157,7 @@ public class InjectableFile
     /**
      * @return the mtime of a file. the file must not be a folder.
      */
+    @Override
     public long lastModified() throws IOException
     {
         return FileUtil.lastModified(winSafe());
@@ -195,16 +197,18 @@ public class InjectableFile
         w.setWritable(true);
     }
 
-    public long getLength() throws IOException
+    public long length() throws IOException
     {
         return FileUtil.getLength(winSafe());
     }
 
-    public long getLengthOrZeroIfNotFile()
+    @Override
+    public long lengthOrZeroIfNotFile()
     {
         return FileUtil.getLengthOrZeroIfNotFile(winSafe());
     }
 
+    @Override
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
         return FileUtil.wasModifiedSince(winSafe(), mtime, len);
@@ -425,6 +429,7 @@ public class InjectableFile
         return winSafe().getUsableSpace();
     }
 
+    @Override
     public InputStream newInputStream() throws FileNotFoundException
     {
         return new FileInputStream(winSafe());

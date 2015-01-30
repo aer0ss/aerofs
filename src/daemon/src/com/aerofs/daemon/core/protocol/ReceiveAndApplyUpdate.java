@@ -242,7 +242,7 @@ public class ReceiveAndApplyUpdate
 
                 try {
                     TCB tcb = tk.pseudoPause_("cp-prefix");
-                    try (InputStream is = file.newInputStream_()) {
+                    try (InputStream is = file.newInputStream()) {
                         // release core lock to avoid blocking while copying a large prefix
                         ByteStreams.copy(is, prefixStream);
                     } finally {
@@ -410,7 +410,7 @@ public class ReceiveAndApplyUpdate
             pf.onUnexpectedModification_(ca.mtime());
             throw new ExAborted(k + " has changed locally: expected=("
                     + ca.mtime() + "," + ca.length() + ") actual=("
-                    + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
+                    + pf.lastModified() + "," + pf.lengthOrZeroIfNotFile() + ")");
         }
 
         assert response.hasMtime();

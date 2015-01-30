@@ -433,7 +433,7 @@ class MightCreateOperations
     private void applyModification_(SOID soid, InjectableFile f, Trans t)
             throws IOException, SQLException
     {
-        final long length = f.getLength();
+        final long length = f.length();
         final long mtime = f.lastModified();
 
         if (_hq.requestHash_(soid, f, length, mtime, t)) {

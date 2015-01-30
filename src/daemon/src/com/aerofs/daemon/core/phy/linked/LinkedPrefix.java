@@ -33,7 +33,7 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     @Override
     public long getLength_()
     {
-        return _f.getLengthOrZeroIfNotFile();
+        return _f.lengthOrZeroIfNotFile();
     }
 
     @Override

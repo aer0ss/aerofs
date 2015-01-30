@@ -481,7 +481,7 @@ class BlockStorage implements IPhysicalStorage
 
         Chunker(InjectableFile f, Token tk, IBlockStorageBackend bsb)
         {
-            super(Files.asByteSource(f.getImplementation()), f.getLengthOrZeroIfNotFile(),
+            super(Files.asByteSource(f.getImplementation()), f.lengthOrZeroIfNotFile(),
                     bsb);
             _tk = tk;
         }
