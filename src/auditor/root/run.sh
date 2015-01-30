@@ -12,4 +12,4 @@ ulimit -H -n 1024000
 echo Starting up Auditor...
 cd /opt/auditor
 java -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/auditor -Xmx500m \
-    -jar aerofs-auditor.jar auditor.properties
+    -jar aerofs-auditor.jar auditor.yml

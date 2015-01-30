@@ -15,12 +15,9 @@ public final class AeroPrincipal implements Principal {
 
     private final String device;
 
-    private final String provenance;
-
-    AeroPrincipal(String user, String device, String provenance) {
+    public AeroPrincipal(String user, String device) {
         this.user = user;
         this.device = device;
-        this.provenance = provenance;
     }
 
     @Override
@@ -32,22 +29,18 @@ public final class AeroPrincipal implements Principal {
         return device;
     }
 
-    public String getProvenance() {
-        return provenance;
-    }
-
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         AeroPrincipal other = (AeroPrincipal) o;
-        return Objects.equal(provenance, other.provenance) && Objects.equal(user, other.user) && Objects.equal(device, other.device);
+        return Objects.equal(user, other.user) && Objects.equal(device, other.device);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(provenance, user, device);
+        return Objects.hashCode(user, device);
     }
 
     @Override
@@ -56,7 +49,6 @@ public final class AeroPrincipal implements Principal {
                 .toStringHelper(this)
                 .add("user", user)
                 .add("device", device)
-                .add("provenance", provenance)
                 .toString();
     }
 }

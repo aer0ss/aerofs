@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.auditor.server;
+
+import com.aerofs.auditor.downstream.Downstream.AuditChannel;
+import com.aerofs.baseline.config.Configuration;
+import com.aerofs.testlib.AbstractTest;
+import com.google.common.io.Resources;
+import com.jayway.restassured.RestAssured;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.DefaultChannelFuture;
+import org.junit.After;
+import org.junit.Before;
+
+import java.io.FileInputStream;
+
+import static com.jayway.restassured.config.RedirectConfig.redirectConfig;
+import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+
+public class AuditorTest extends AbstractTest
+{
+    protected final static String AUDIT_URL = "/event";
+
+    Auditor _service;
+    protected int _port;
+    protected WhiteBoxedDownstream _downstream = new WhiteBoxedDownstream();
+
+    static class WhiteBoxedDownstream implements AuditChannel
+    {
+        public WhiteBoxedDownstream() { _failureCause = null; }
+
+        @Override
+        public ChannelFuture doSend(String message)
+        {
+            ChannelFuture future = new DefaultChannelFuture(null, false);
+            if (_failureCause == null) {
+                future.setSuccess();
+            } else {
+                future.setFailure(_failureCause);
+            }
+            return future;
+        }
+
+        @Override
+        public boolean isConnected() { return true; }
+        public Exception _failureCause;
+    }
+
+    @Before
+    public void setUp() throws Exception
+    {
+        _service = new Auditor();
+        _service.setDownstream(_downstream); // FIXME (AG): I like the guice way of defining prod vs. test scopes
+        _service.runWithConfiguration(ConfigurationReference.CONFIGURATION);
+        _port = ConfigurationReference.CONFIGURATION.getService().getPort();
+        _downstream._failureCause = null;
+
+        RestAssured.baseURI = "http://localhost";
+        RestAssured.port = _port;
+        RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
+        l.info("Auditor service started at {}", RestAssured.port);
+    }
+
+    @After
+    public void tearDown()
+    {
+        _service.shutdown();
+    }
+
+    private static final class ConfigurationReference
+    {
+        private static final String TEST_CONFIGURATION_FILENAME = "auditor_test_server.yml";
+        private static AuditorConfiguration CONFIGURATION = load();
+
+        private static AuditorConfiguration load()
+        {
+            try(FileInputStream in = new FileInputStream(Resources.getResource(TEST_CONFIGURATION_FILENAME).getFile())) {
+                return Configuration.loadYAMLConfigurationFromStream(Auditor.class, in);
+            } catch (Exception e) {
+                throw new RuntimeException("failed to load configuration", e);
+            }
+        }
+    }
+}

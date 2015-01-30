@@ -56,7 +56,7 @@ public abstract class TestUtilities {
     }
 
     private static String newDNameHeader(String device, String user) {
-        return String.format("G=test.aerofs.com/CN=%s", AeroClientCertBasedAuthenticator.getCertificateCName(device, user));
+        return String.format("G=test.aerofs.com/CN=%s", AeroAuthHeaders.getCertificateCName(user, device));
     }
 
     //

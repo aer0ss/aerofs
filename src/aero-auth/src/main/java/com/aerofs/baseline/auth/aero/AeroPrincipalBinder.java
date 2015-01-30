@@ -39,8 +39,13 @@ public final class AeroPrincipalBinder extends AbstractBinder {
         @Override
         public AeroPrincipal provide() {
             Principal principal = securityContext.getUserPrincipal();
-            Preconditions.checkArgument(principal instanceof AeroPrincipal, "principal is %s instead of an AeroPrincipal", principal.getClass().getSimpleName());
-            return (AeroPrincipal) principal;
+
+            if (principal == null) {
+                return null;
+            } else {
+                Preconditions.checkArgument(principal instanceof AeroPrincipal, "principal is %s instead of an AeroPrincipal", principal.getClass().getSimpleName());
+                return (AeroPrincipal) principal;
+            }
         }
 
         @Override

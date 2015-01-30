@@ -1,0 +1,17 @@
+admin:
+  host: localhost
+  port: 9299
+
+service:
+  host: localhost
+  port: 9300
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: false
+
+  file:
+    enabled: true
+    logfile: /var/log/auditor/auditor.log

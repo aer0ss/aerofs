@@ -23,7 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
-@RolesAllowed(Roles.CLIENT)
+@RolesAllowed(Roles.USER)
 @Singleton
 public final class LocationResource {
 

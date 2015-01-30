@@ -13,8 +13,8 @@ public final class AeroSecurityContext implements SecurityContext {
     private final String role;
     private final String authenticationScheme;
 
-    AeroSecurityContext(String user, String did, String provenance, String role, String authenticationScheme) {
-        this.principal = new AeroPrincipal(user, did, provenance);
+    public AeroSecurityContext(String user, String device, String role, String authenticationScheme) {
+        this.principal = new AeroPrincipal(user, device);
         this.role = role;
         this.authenticationScheme = authenticationScheme;
     }

@@ -8,7 +8,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 
-@RolesAllowed(Roles.CLIENT)
+@RolesAllowed(Roles.USER)
 @Singleton
 public final class VersionsResource {
 

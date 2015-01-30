@@ -24,7 +24,7 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-@RolesAllowed(Roles.CLIENT)
+@RolesAllowed(Roles.USER)
 @Singleton
 public final class ObjectResource {
 
