@@ -43,7 +43,7 @@ public class HdExportConflict extends AbstractHdExport<EIExportConflict>
 
         File dst = createTempFileWithSameExtension(oa.name());
 
-        exportOrDeleteDest_(pf.newInputStream(), dst);
+        exportOrDeleteDest_(pf.newInputStream_(), dst);
 
         // Make sure users won't try to make changes to the temp file: their changes would be lost
         dst.setReadOnly();

@@ -75,7 +75,7 @@ public class TestFileResource extends AbstractRestTest
     {
         IPhysicalFile pf = mock(IPhysicalFile.class);
         when(pf.exists_()).thenReturn(true);
-        when(pf.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(content));
+        when(pf.newInputStream_()).thenAnswer(invocation -> new ByteArrayInputStream(content));
         when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, path)))),
                 eq(KIndex.MASTER)))
                 .thenReturn(pf);
@@ -294,7 +294,7 @@ public class TestFileResource extends AbstractRestTest
         mds.root().file("foobar").caMaster(12, FILE_MTIME);
         IPhysicalFile pf = mock(IPhysicalFile.class);
         when(pf.exists_()).thenReturn(false);
-        when(pf.newInputStream()).thenThrow(new IOException());
+        when(pf.newInputStream_()).thenThrow(new IOException());
         when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, "foobar")))),
                 eq(KIndex.MASTER)))
                 .thenReturn(pf);

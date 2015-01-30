@@ -60,7 +60,7 @@ class BlockFile implements IPhysicalFile
     }
 
     @Override
-    public long lengthOrZeroIfNotFile()
+    public long getLength_()
     {
         try {
             return checkNotNull(info_())._length;
@@ -71,7 +71,7 @@ class BlockFile implements IPhysicalFile
     }
 
     @Override
-    public long lastModified() throws IOException
+    public long getLastModificationOrCurrentTime_() throws IOException
     {
         try {
             return checkNotNull(info_())._mtime;
@@ -112,7 +112,7 @@ class BlockFile implements IPhysicalFile
     }
 
     @Override
-    public InputStream newInputStream() throws IOException
+    public InputStream newInputStream_() throws IOException
     {
         try {
             FileInfo info = info_();

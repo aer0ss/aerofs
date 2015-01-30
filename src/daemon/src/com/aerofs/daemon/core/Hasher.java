@@ -180,7 +180,7 @@ public class Hasher
                     try {
                         // Compute the IO intensive hash of the file.
                         assert h == null;
-                        InputStream in = res._pf.newInputStream();
+                        InputStream in = res._pf.newInputStream_();
                         try {
                             h = computeHashImpl(in, res._fileLen, res._aborter);
                         } finally {
@@ -302,8 +302,8 @@ public class Hasher
     {
         final IPhysicalFile pf = _ps.newFile_(_ds.resolveThrows_(k.soid()), k.kidx());
 
-        final long len = pf.lengthOrZeroIfNotFile();
-        final long mtime = pf.lastModified();
+        final long len = pf.getLength_();
+        final long mtime = pf.getLastModificationOrCurrentTime_();
         IAborter aborter = () -> {
             try {
                 if (pf.wasModifiedSince(mtime, len)) {
@@ -333,7 +333,7 @@ public class Hasher
         SOCKID k = new SOCKID(sokid.soid(), CID.CONTENT, sokid.kidx());
         PrepareToComputeHashResult res = prepareToComputeHash_(k);
 
-        try (InputStream in = res._pf.newInputStream()) {
+        try (InputStream in = res._pf.newInputStream_()) {
             h = computeHashImpl(in, res._fileLen, res._aborter);
         }
         checkState(h != null);

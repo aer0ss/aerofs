@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -33,13 +33,13 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Map;
@@ -163,25 +163,26 @@ public class HashQueue
             _requests.remove(soid, this);
         }
 
-        private synchronized FileChunker chunker()
+        private synchronized InputStream inputStream() throws IOException
         {
-            return new FileChunker(f, mtime, length, 0L, 0, OSUtil.isWindows());
+            return f.newInputStream();
         }
 
         private ContentHash hash()
         {
             MessageDigest md = BaseSecUtil.newMessageDigest();
             // TODO: pipeline I/O and CPU?
-            try (FileChunker chunker = chunker()) {
+            try (InputStream is = inputStream()) {
+                int n;
                 long total = 0;
-                byte[] bs;
-                while ((bs = chunker.getNextChunk_()) != null) {
-                    total += bs.length;
+                byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
+                while ((n = is.read(bs)) >= 0) {
+                    total += n;
                     if (total > length) {
                         l.debug("file larger than expected {}", soid);
                         return null;
                     }
-                    md.update(bs);
+                    md.update(bs, 0, n);
                     if (aborted) {
                         l.debug("hash computation aborted {}", soid);
                         return null;
@@ -191,7 +192,7 @@ public class HashQueue
                     l.debug("file smaller than expected {}", soid);
                     return null;
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 l.debug("hash computation failed {}", soid, e);
                 return null;
             }
@@ -208,7 +209,7 @@ public class HashQueue
                 // last chance for race-condition check with the physical filesystem
                 if (f.wasModifiedSince(mtime, length)) {
                     l.info("phy diff, abort hash update {} ({}, {}) != ({}, {})",
-                            soid, length, mtime, f.length(), f.lastModified());
+                            soid, length, mtime, f.getLength(), f.lastModified());
                     return;
                 }
 

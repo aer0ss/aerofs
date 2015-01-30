@@ -4,7 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.lib.fs.FileChunker;
+import com.aerofs.daemon.core.protocol.FileChunker;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.restless.stream.ContentStream;
 import com.google.common.base.Preconditions;

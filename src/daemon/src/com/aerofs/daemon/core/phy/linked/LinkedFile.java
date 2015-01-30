@@ -203,19 +203,19 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     }
 
     @Override
-    public long lengthOrZeroIfNotFile()
+    public long getLength_()
     {
-        return _f.lengthOrZeroIfNotFile();
+        return _f.getLengthOrZeroIfNotFile();
     }
 
     @Override
-    public long lastModified() throws IOException
+    public long getLastModificationOrCurrentTime_() throws IOException
     {
         return _f.lastModified();
     }
 
     @Override
-    public InputStream newInputStream() throws IOException
+    public InputStream newInputStream_() throws IOException
     {
         try {
             return new FileInputStream(_f.getImplementation());
@@ -243,7 +243,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         // and reinstalling.
         if (!(_path.isRepresentable() && _f.wasModifiedSince(mtime, len))) return false;
         l.warn("{} has changed locally: expect=({},{}) actual=({},{})", _sokid, mtime, len,
-                _f.lastModified(), _f.lengthOrZeroIfNotFile());
+                _f.lastModified(), _f.getLengthOrZeroIfNotFile());
         return true;
     }
 

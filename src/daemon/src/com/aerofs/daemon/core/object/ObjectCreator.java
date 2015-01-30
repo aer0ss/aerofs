@@ -57,8 +57,8 @@ public class ObjectCreator
             IPhysicalFile pf = _ps.newFile_(_ds.resolve_(soid), kidx);
             pf.create_(op, t);
 
-            _ds.setCA_(new SOKID(soid, kidx), pf.lengthOrZeroIfNotFile(),
-                    pf.lastModified(), null, t);
+            _ds.setCA_(new SOKID(soid, kidx), pf.getLength_(),
+                    pf.getLastModificationOrCurrentTime_(), null, t);
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
