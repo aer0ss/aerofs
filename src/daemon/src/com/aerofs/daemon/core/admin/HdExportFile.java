@@ -41,7 +41,7 @@ public class HdExportFile extends AbstractHdExport<EIExportFile>
 
         File dst = createTempFileWithSameExtension(ev._src.last());
 
-        exportOrDeleteDest_(pf.newInputStream_(), dst);
+        exportOrDeleteDest_(pf.newInputStream(), dst);
 
         ev.setResult_(dst);
     }

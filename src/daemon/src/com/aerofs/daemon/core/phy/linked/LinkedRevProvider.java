@@ -196,19 +196,19 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             // into the directory
             fParent.ensureDirExists();
             _fOrg.moveInSameFileSystem(_fRev);
-            changeSpace(_fRev.getLength());
+            changeSpace(_fRev.length());
         }
 
         void rollback_() throws IOException
         {
             _fRev.moveInSameFileSystem(_fOrg);
             deleteEmptyParentRecursively(_path.sid(), _fRev.getParentFile());
-            changeSpace(-_fOrg.getLength());
+            changeSpace(-_fOrg.length());
         }
 
         void delete_() throws IOException
         {
-            long sz = _fRev.getLength();
+            long sz = _fRev.length();
             _fRev.delete();
             changeSpace(-sz);
         }
@@ -355,7 +355,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             if (info != null) {
                 revisions.put(info,
                         new Revision(BaseUtil.string2utf(file.getName()), info._mtime,
-                                file.getLengthOrZeroIfNotFile()));
+                                file.lengthOrZeroIfNotFile()));
             }
         }
         return revisions.values();
@@ -382,7 +382,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         RevisionInfo suffix = RevisionInfo.fromHexEncodedNullable(BaseUtil.utf2string(index));
         if (suffix == null) throw new ExInvalidRevisionIndex();
         InjectableFile file = getExistingRevFile_(path, index);
-        return new RevInputStream(file.newInputStream(), file.getLength(), suffix._mtime);
+        return new RevInputStream(file.newInputStream(), file.length(), suffix._mtime);
     }
 
     @Override
@@ -716,7 +716,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             String revName = file.getName();
             RevisionInfo info = RevisionInfo.fromHexEncodedNullable(revName);
             if (info == null) return null;
-            long length = file.getLengthOrZeroIfNotFile();
+            long length = file.lengthOrZeroIfNotFile();
             // Check for file disappearance while we where building the RevInfo (support-143)
             return file.isFile() ? new RevInfo(file.getAbsolutePath(), info, length) : null;
         }

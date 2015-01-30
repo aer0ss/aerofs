@@ -2,11 +2,12 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.protocol;
+package com.aerofs.daemon.lib.fs;
 
 import com.aerofs.base.C;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 import org.junit.internal.ArrayComparisonFailure;
@@ -183,7 +184,7 @@ public class TestFileChunker extends AbstractTest
         IPhysicalFile getFile()
                 throws IOException
         {
-            when(file.newInputStream_()).thenReturn(testStream);
+            when(file.newInputStream()).thenReturn(testStream);
             return file;
         }
 

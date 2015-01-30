@@ -21,6 +21,7 @@ import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
@@ -240,7 +241,7 @@ public class ComponentContentSender
             os.write(hash.toPB().toByteArray());
         }
         // the file might not exist if len is 0
-        InputStream is = len == 0 ? null : pf.newInputStream_();
+        InputStream is = len == 0 ? null : pf.newInputStream();
 
         MessageDigest md = SecUtil.newMessageDigest();
         if (is != null) is = new DigestInputStream(is, md);
@@ -251,7 +252,7 @@ public class ComponentContentSender
             if (copied != len || pf.wasModifiedSince(mtime, len)) {
                 throw new ExUpdateInProgress(k + " has changed locally: expected=("
                         + mtime + "," + len + ") actual=("
-                        + pf.getLastModificationOrCurrentTime_() + "," + pf.getLength_() + ")");
+                        + pf.lastModified() + "," + pf.lengthOrZeroIfNotFile() + ")");
             }
 
             _trl.sendUnicast_(ep, CoreProtocolUtil.typeString(reply), reply.getRpcid(), os);
@@ -272,7 +273,7 @@ public class ComponentContentSender
         MessageDigest md = SecUtil.newMessageDigest();
         if (prefixLen == 0) return md;
 
-        try (InputStream is = pf.newInputStream_()) {
+        try (InputStream is = pf.newInputStream()) {
             ByteStreams.copy(ByteStreams.limit(is, prefixLen),
                     new DigestOutputStream(ByteStreams.nullOutputStream(), md));
         }

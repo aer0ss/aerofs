@@ -2,10 +2,10 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.protocol;
+package com.aerofs.daemon.lib.fs;
 
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.lib.IReadableFile;
 import com.google.common.collect.Queues;
 
 import java.io.IOException;
@@ -18,11 +18,11 @@ import static com.google.common.base.Preconditions.checkState;
  * Simple helper class that reads a IPhysicalFile into chunks, while taking into account some
  * platform specificities.
  */
-public class FileChunker
+public class FileChunker implements AutoCloseable
 {
     static final int QUEUE_SIZE_WINDOWS = 128; // See comment below
 
-    private final IPhysicalFile _file;
+    private final IReadableFile _file;
     private final long _mtime;
     private final long _fileLength;
 
@@ -54,13 +54,13 @@ public class FileChunker
      * @param isWindows  Whether we are on the Windows platform. We do not use OSUtil to make this
      *                   class testable.
      */
-    public FileChunker(IPhysicalFile file, long mtime, long fileLength,
+    public FileChunker(IReadableFile file, long mtime, long fileLength,
             long startPos, int chunkSize, boolean isWindows)
     {
         this(file, mtime, fileLength, startPos, fileLength, chunkSize, isWindows);
     }
 
-    public FileChunker(IPhysicalFile file, long mtime, long fileLength,
+    public FileChunker(IReadableFile file, long mtime, long fileLength,
             long startPos, long endPos, int chunkSize, boolean isWindows)
     {
         checkState(startPos <= endPos);
@@ -97,7 +97,7 @@ public class FileChunker
     {
         // Open the stream if it has been closed (or if this is the first time)
         if (_is == null) {
-            _is = _file.newInputStream_();
+            _is = _file.newInputStream();
             if (_is.skip(_readPosition) != _readPosition) {
                 throw new ExUpdateInProgress("skip() fell short");
             }
@@ -122,7 +122,7 @@ public class FileChunker
         if (_file.wasModifiedSince(_mtime, _fileLength)) {
             throw new ExUpdateInProgress("mtime,length changed: expected=("
                     + _mtime +  "," + _fileLength + ") actual=("
-                    + _file.getLastModificationOrCurrentTime_() + "," + _file.getLength_() + ")");
+                    + _file.lastModified() + "," + _file.lengthOrZeroIfNotFile() + ")");
         }
 
         // On Windows, a FileInputStream holds a shared read lock and a delete lock on the file,
@@ -144,5 +144,11 @@ public class FileChunker
             total += read;
         }
         return total;
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        close_();
     }
 }

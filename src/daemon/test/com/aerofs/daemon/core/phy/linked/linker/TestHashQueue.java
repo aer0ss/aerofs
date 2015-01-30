@@ -4,12 +4,10 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
@@ -17,8 +15,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
@@ -90,8 +86,8 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mock(InjectableFile.class);
 
         when(f.lastModified()).thenReturn(mtime);
-        when(f.getLength()).thenReturn((long)c.length);
-        when(f.getLengthOrZeroIfNotFile()).thenReturn((long)c.length);
+        when(f.length()).thenReturn((long)c.length);
+        when(f.lengthOrZeroIfNotFile()).thenReturn((long)c.length);
         when(f.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(c));
         return f;
     }
@@ -129,7 +125,7 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         try {
             trans(t -> {
-                hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t);
+                hq.requestHash_(soid, f, f.length(), f.lastModified(), t);
                 throw new Exception();
             });
             fail();
@@ -146,7 +142,7 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
 
         ev.get().handle_();
 
@@ -164,7 +160,7 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
 
         ev.get().handle_();
 
@@ -183,9 +179,9 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("");
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
-        trans(t -> assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
-        trans(t -> assertFalse(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
+        trans(t -> assertFalse(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
+        trans(t -> assertFalse(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
 
         ev.get().handle_();
 
@@ -204,13 +200,13 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("foo");
         Future<AbstractEBSelfHandling> evAborted = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
         InjectableFile g = mockContent(EMPTY_CONTENT, 42L);
         when(g.getAbsolutePath()).thenReturn("bar");
-        trans(t -> assertTrue(hq.requestHash_(soid, g, g.getLength(), g.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, g, g.length(), g.lastModified(), t)));
 
         evAborted.get().handle_();
 
@@ -235,12 +231,12 @@ public class TestHashQueue extends AbstractTest
         when(f.getAbsolutePath()).thenReturn("");
         Future<AbstractEBSelfHandling> evAborted = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
         InjectableFile g = mockContent(EMPTY_CONTENT, 43L);
-        trans(t -> assertTrue(hq.requestHash_(soid, g, g.getLength(), g.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, g, g.length(), g.lastModified(), t)));
 
         evAborted.get().handle_();
 
@@ -263,7 +259,7 @@ public class TestHashQueue extends AbstractTest
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
         Future<AbstractEBSelfHandling> ev = whenHashed();
 
-        trans(t -> assertTrue(hq.requestHash_(soid, f, f.getLength(), f.lastModified(), t)));
+        trans(t -> assertTrue(hq.requestHash_(soid, f, f.length(), f.lastModified(), t)));
         ev.get();
         when(f.wasModifiedSince(42L, 0L)).thenReturn(true);
         ev.get().handle_();

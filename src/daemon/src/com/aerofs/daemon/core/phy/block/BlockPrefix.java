@@ -35,7 +35,7 @@ class BlockPrefix implements IPhysicalPrefix
     @Override
     public long getLength_()
     {
-        return _f.getLengthOrZeroIfNotFile();
+        return _f.lengthOrZeroIfNotFile();
     }
 
     @Override

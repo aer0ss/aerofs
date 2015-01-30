@@ -182,7 +182,7 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
         try {
-            file.newInputStream_().close();
+            file.newInputStream().close();
         } catch (FileNotFoundException e) {
             return false;
         }
@@ -208,7 +208,7 @@ public class TestBlockStorage extends AbstractBlockTest
     private byte[] fetch(String path, SOKID sokid) throws Exception
     {
         IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
-        InputStream in = file.newInputStream_();
+        InputStream in = file.newInputStream();
         return ByteStreams.toByteArray(in);
     }
 
