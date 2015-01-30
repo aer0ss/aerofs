@@ -31,6 +31,7 @@ import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +41,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Random;
 import java.util.Set;
@@ -126,13 +133,25 @@ public abstract class Util
 
     private static String getAllThreadStackTraces(Thread[] threads)
     {
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         StringBuilder builder = new StringBuilder();
 
-        for (Thread t : threads) {
-            if (t == null) break;
+        // Remove all null values.
+        threads = Arrays.stream(threads)
+                .filter(t -> (t != null))
+                .toArray(Thread[]::new);
 
+        // This will sort threads in ascending order of CPU time used.
+        Arrays.sort(threads, (Thread t1, Thread t2) ->
+                Long.compare(threadBean.getThreadCpuTime(t1.getId()), threadBean.getThreadCpuTime(t2.getId())));
+
+        for (Thread t : threads) {
             builder.append(t.getId()).append(":").append(t.getName())
-                    .append(" [").append(t.getState()).append("]");
+                    .append(" [")
+                    .append(t.getState())
+                    .append("]")
+                    .append(". CPU time (in nanosecs): ")
+                    .append(threadBean.getThreadCpuTime(t.getId()));
             builder.append(System.getProperty("line.separator"));
             builder.append(convertStackTraceToString(t.getStackTrace()));
             builder.append(System.getProperty("line.separator"));
