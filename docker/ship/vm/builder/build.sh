@@ -28,7 +28,6 @@ setup_preload_registry() {
 
     # This function assumes:
     #
-    #    - a boot2docker setup (for REPO_URL to work).
     #    - Local insecure registries are allowed (i.e. the "--insecure-registry 127.0.0.0/8" docker daemon
     #      option, which should be the default as of Docker 1.3.2.
     #    - all the container images including the loader are locally available on the `latest` tag.
@@ -42,8 +41,24 @@ setup_preload_registry() {
         docker create -P --name ${REPO_CONTAINER} registry
     fi
     docker start ${REPO_CONTAINER}
+
+    # Find the registry's hostname
+    local REPO_HOST
+    if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
+        # Use the hostname specified in DOCKER_HOST
+        REPO_HOST=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
+    else
+        # Find out the IP address of the local bridge
+        local IFACE=$(ip route show 0.0.0.0/0 | awk '{print $5}')
+        REPO_HOST=$(ip addr show ${IFACE} | grep '^ *inet ' | tr / ' ' | awk '{print $2}')
+    fi
+    if [ -z "${REPO_HOST}" ]; then
+        echo "ERROR: can't identify the registry's IP address" >&2
+        exit 22
+    fi
+
     local REPO_PORT=$(docker port ${REPO_CONTAINER} 5000 | sed -e s'/.*://')
-    local REPO_URL=$(boot2docker ip 2> /dev/null):${REPO_PORT}
+    local REPO_URL=${REPO_HOST}:${REPO_PORT}
     echo "The Preload Registry is listening at ${REPO_URL}"
 
     if [ ${PUSH} = 1 ]; then

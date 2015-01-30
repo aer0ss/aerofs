@@ -2,7 +2,8 @@ repo: registry.aerofs.com
 loader-image: {{ loader }}
 
 # Sizes are in MB
-vm-image-name: aerofs-appliance-{{ tag }}
+# TODO (WW) rename to aerofs-appliance once the legacy appliance is phased out.
+vm-image-name: docker-appliance-{{ tag }}
 vm-host-name: aerofs
 vm-disk-size: 102400
 vm-ram-size: 3072

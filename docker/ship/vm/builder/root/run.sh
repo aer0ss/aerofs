@@ -24,3 +24,8 @@ mkdir -p "${OUT}/preloaded"
 qemu-img convert -O vdi /coreos.bin "${OUT}/preloaded/disk.vdi"
 
 # Skip bare image generation for now
+
+# If $OUT is a shared volume with the host, files & folders written to this folder might belong to the host's root user.
+# We allow everyone to write them so later build steps that run as non-root may succeed.
+# Don't use umask as some commands don't respect it.
+chmod -R a+w "${OUT}"
