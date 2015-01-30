@@ -4,19 +4,13 @@ import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.PolarisConfiguration;
-import com.aerofs.polaris.acl.Access;
-import com.aerofs.polaris.acl.AccessException;
-import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.Transform;
-import com.aerofs.polaris.logical.DAO;
-import com.aerofs.polaris.logical.LogicalObjectStore;
-import com.aerofs.polaris.logical.Transactional;
+import com.aerofs.polaris.logical.ObjectStore;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -31,30 +25,27 @@ import java.util.List;
 @Singleton
 public final class TransformsResource {
 
-    private final LogicalObjectStore objectStore;
-    private final AccessManager accessManager;
+    private final ObjectStore store;
     private final int maxReturnedTransforms;
 
-    public TransformsResource(@Context LogicalObjectStore objectStore, @Context AccessManager accessManager, @Context PolarisConfiguration configuration) {
-        this.objectStore = objectStore;
-        this.accessManager = accessManager;
+    public TransformsResource(@Context ObjectStore store, @Context PolarisConfiguration configuration) {
+        this.store = store;
         this.maxReturnedTransforms = configuration.getMaxReturnedTransforms();
     }
 
     @Path("/{oid}")
     @Produces(MediaType.APPLICATION_JSON)
     @GET
-    public AppliedTransforms getTransformsSince(@Context @NotNull AeroUserDevicePrincipal principal, @PathParam("oid") @NotNull @Identifier String oid, @QueryParam("since") @Min(-1) long since, @QueryParam("count") @Min(1) int resultCount) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.READ);
-
-        final int actualResultCount = Math.min(resultCount, maxReturnedTransforms);
-        return objectStore.inTransaction(new Transactional<AppliedTransforms>() {
-            @Override
-            public AppliedTransforms execute(DAO dao) throws Exception {
-                int transformCount = objectStore.getTransformCount(dao, oid);
-                List<Transform> transforms = objectStore.getTransformsSince(dao, oid, since, actualResultCount);
-                return new AppliedTransforms(transformCount, transforms);
-            }
+    public AppliedTransforms getTransforms(
+            @Context AeroUserDevicePrincipal principal,
+            @PathParam("oid") @Identifier String oid,
+            @QueryParam("since") @Min(-1) long since,
+            @QueryParam("count") @Min(1) int requestedResultCount) {
+        return store.inTransaction(dao -> {
+            int transformCount = store.getTransformCount(dao, principal.getUser(), oid);
+            int actualResultCount = Math.min(requestedResultCount, maxReturnedTransforms);
+            List<Transform> transforms = store.getTransforms(dao, principal.getUser(), oid, since, actualResultCount);
+            return new AppliedTransforms(transformCount, transforms);
         });
     }
 }

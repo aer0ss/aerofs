@@ -1,7 +1,8 @@
-package com.aerofs.polaris.api.batch;
+package com.aerofs.polaris.api.batch.location;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -11,25 +12,25 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
-public final class TransformBatch {
+public final class LocationBatchResult {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    private List<TransformBatchOperation> operations;
+    private List<LocationBatchOperationResult> results;
 
-    public TransformBatch(List<TransformBatchOperation> operations) {
-        this.operations = operations;
+    public LocationBatchResult(int resultCount) {
+        this.results = Lists.newArrayListWithCapacity(resultCount);
     }
 
-    private TransformBatch() {}
+    private LocationBatchResult() { }
 
-    public List<TransformBatchOperation> getOperations() {
-        return operations;
+    public List<LocationBatchOperationResult> getResults() {
+        return results;
     }
 
-    private void setOperations(List<TransformBatchOperation> operations) {
-        this.operations = operations;
+    private void setResults(List<LocationBatchOperationResult> results) {
+        this.results = results;
     }
 
     @Override
@@ -37,20 +38,20 @@ public final class TransformBatch {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TransformBatch other = (TransformBatch) o;
-        return Objects.equal(operations, other.operations);
+        LocationBatchResult other = (LocationBatchResult) o;
+        return Objects.equal(results, other.results);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(operations);
+        return results.hashCode();
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("operations", operations)
+                .add("results", results)
                 .toString();
     }
 }

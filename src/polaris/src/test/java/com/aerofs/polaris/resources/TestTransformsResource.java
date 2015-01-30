@@ -2,8 +2,8 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.core.Identifiers;
+import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
-import com.aerofs.polaris.TestUtilities;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.api.types.Transform;
@@ -28,11 +28,11 @@ import static org.hamcrest.Matchers.nullValue;
 public final class TestTransformsResource {
 
     static {
-        RestAssured.config = TestUtilities.newRestAssuredConfig();
+        RestAssured.config = PolarisHelpers.newRestAssuredConfig();
     }
 
     private final String device = Identifiers.newRandomDevice();
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", device);
+    private final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec("test@aerofs.com", device);
 
     @Rule
     public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
@@ -40,9 +40,9 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsInserted() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
+        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
 
-        AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(1));
         assertThat(applied.getMaxTransformCount(), is(1L));
 
@@ -53,10 +53,10 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsRemoved() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
-        TestUtilities.removeFileOrFolder(verified, sharedFolder, folder);
+        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
+        PolarisHelpers.removeFileOrFolder(verified, sharedFolder, folder);
 
-        AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(2));
         assertThat(applied.getMaxTransformCount(), is(2L));
 
@@ -67,12 +67,12 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsMoved() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder1 = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
-        String folder2 = TestUtilities.newFolder(verified, sharedFolder, "folder_2");
-        String file = TestUtilities.newFile(verified, folder1, "file");
-        TestUtilities.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
+        String folder1 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
+        String folder2 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_2");
+        String file = PolarisHelpers.newFile(verified, folder1, "file");
+        PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
-        AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(5));
         assertThat(applied.getMaxTransformCount(), is(5L));
 
@@ -86,11 +86,11 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsRenamed() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
-        String file = TestUtilities.newFile(verified, folder, "file");
-        TestUtilities.moveFileOrFolder(verified, folder, folder, file, "renamed");
+        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
+        String file = PolarisHelpers.newFile(verified, folder, "file");
+        PolarisHelpers.moveFileOrFolder(verified, folder, folder, file, "renamed");
 
-        AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(3));
         assertThat(applied.getMaxTransformCount(), is(3L));
 
@@ -102,10 +102,10 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenContentIsAddedForAnObject() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String file = TestUtilities.newFile(verified, sharedFolder, "file");
-        TestUtilities.newFileContent(verified, file, 0, "HASH", 100, 1024);
+        String file = PolarisHelpers.newFile(verified, sharedFolder, "file");
+        PolarisHelpers.newFileContent(verified, file, 0, "HASH", 100, 1024);
 
-        AppliedTransforms applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(2));
         assertThat(applied.getMaxTransformCount(), is(2L));
 
@@ -116,14 +116,14 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnNoTransformsWhenDeviceHasReceivedAllAvailableTransforms() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder1 = TestUtilities.newFolder(verified, sharedFolder, "folder_1");
-        String folder2 = TestUtilities.newFolder(verified, sharedFolder, "folder_2");
-        String file = TestUtilities.newFile(verified, folder1, "file");
-        TestUtilities.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
+        String folder1 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
+        String folder2 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_2");
+        String file = PolarisHelpers.newFile(verified, folder1, "file");
+        PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
         AppliedTransforms applied;
 
-        applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 10);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.getTransforms(), hasSize(5));
         assertThat(applied.getMaxTransformCount(), is(5L));
 
@@ -133,7 +133,7 @@ public final class TestTransformsResource {
         assertThat(applied.getTransforms().get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
         assertThat(applied.getTransforms().get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
 
-        applied = TestUtilities.getTransforms(verified, sharedFolder, 5, 10);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, 5, 10);
         assertThat(applied.getTransforms(), nullValue()); // i.e. no transforms
         assertThat(applied.getMaxTransformCount(), is(5L));
     }
@@ -142,25 +142,25 @@ public final class TestTransformsResource {
     public void shouldReturnBoundedListOfTransformsIfResultCountIsTooHigh() {
         String sharedFolder = Identifiers.newRandomSharedFolder();
         String[] folders = {
-                TestUtilities.newFolder(verified, sharedFolder, "folder_1"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_2"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_3"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_4"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_5"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_6"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_7"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_8"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_9"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_10"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_11"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_12"),
-                TestUtilities.newFolder(verified, sharedFolder, "folder_13"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_1"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_2"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_3"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_4"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_5"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_6"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_7"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_8"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_9"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_10"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_11"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_12"),
+                PolarisHelpers.newFolder(verified, sharedFolder, "folder_13"),
         };
 
         AppliedTransforms applied;
         int count;
 
-        applied = TestUtilities.getTransforms(verified, sharedFolder, -1, 100);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 100);
         assertThat(applied.getTransforms(), hasSize(10));
         assertThat(applied.getMaxTransformCount(), is(13L));
 
@@ -169,7 +169,7 @@ public final class TestTransformsResource {
             assertThat(applied.getTransforms().get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
         }
 
-        applied = TestUtilities.getTransforms(verified, sharedFolder, 10, 100);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, 10, 100);
         assertThat(applied.getTransforms(), hasSize(3));
         assertThat(applied.getMaxTransformCount(), is(13L));
 

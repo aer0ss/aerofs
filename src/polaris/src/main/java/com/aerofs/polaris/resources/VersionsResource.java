@@ -12,14 +12,14 @@ import javax.ws.rs.core.Context;
 @Singleton
 public final class VersionsResource {
 
-    private final ResourceContext resourceContext;
+    private final ResourceContext context;
 
-    public VersionsResource(@Context ResourceContext resourceContext) {
-        this.resourceContext = resourceContext;
+    public VersionsResource(@Context ResourceContext context) {
+        this.context = context;
     }
 
     @Path("/{version}")
-    public final VersionResource get() {
-        return resourceContext.getResource(VersionResource.class);
+    public VersionResource get() {
+        return context.getResource(VersionResource.class);
     }
 }

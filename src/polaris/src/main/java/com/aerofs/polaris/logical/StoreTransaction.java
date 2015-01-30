@@ -1,6 +1,6 @@
 package com.aerofs.polaris.logical;
 
-public interface Transactional<ReturnType> {
+public interface StoreTransaction<ReturnType> {
 
     ReturnType execute(DAO dao) throws Exception;
 }

@@ -13,19 +13,19 @@ import javax.ws.rs.core.Context;
 @Singleton
 public final class BatchResource {
 
-    private final ResourceContext resourceContext;
+    private final ResourceContext context;
 
-    public BatchResource(@Context ResourceContext resourceContext) {
-        this.resourceContext = resourceContext;
+    public BatchResource(@Context ResourceContext context) {
+        this.context = context;
     }
 
     @Path("/transforms")
     public TransformBatchResource performObjectTransforms() {
-        return resourceContext.getResource(TransformBatchResource.class);
+        return context.getResource(TransformBatchResource.class);
     }
 
     @Path("/locations")
     public LocationBatchResource performLocationUpdates() {
-        return resourceContext.getResource(LocationBatchResource.class);
+        return context.getResource(LocationBatchResource.class);
     }
 }

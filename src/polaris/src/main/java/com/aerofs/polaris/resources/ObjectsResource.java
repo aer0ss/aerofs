@@ -13,14 +13,14 @@ import javax.ws.rs.core.Context;
 @Singleton
 public final class ObjectsResource {
 
-    private final ResourceContext resourceContext;
+    private final ResourceContext context;
 
-    public ObjectsResource(@Context ResourceContext resourceContext) {
-        this.resourceContext = resourceContext;
+    public ObjectsResource(@Context ResourceContext context) {
+        this.context = context;
     }
 
     @Path("/{oid}")
     public ObjectResource operation() {
-        return resourceContext.getResource(ObjectResource.class);
+        return context.getResource(ObjectResource.class);
     }
 }

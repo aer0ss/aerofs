@@ -23,3 +23,7 @@ Polaris exposes the following routes:
 ### GET    /transforms/{oid}
 
 ## Types
+
+## TODO
+
+* Have a validator that checks not null

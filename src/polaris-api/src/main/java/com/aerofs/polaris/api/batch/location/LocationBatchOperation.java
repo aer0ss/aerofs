@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api.batch;
+package com.aerofs.polaris.api.batch.location;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
@@ -11,11 +11,6 @@ import javax.validation.constraints.Size;
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class LocationBatchOperation {
-
-    public static enum LocationUpdateType {
-        INSERT,
-        REMOVE,
-    }
 
     @NotNull
     @Size(min = 1)

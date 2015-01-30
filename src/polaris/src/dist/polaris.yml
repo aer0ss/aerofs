@@ -11,6 +11,18 @@ database:
   driverClass: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost/polaris
 
+verkehr:
+  url: http://localhost:9079
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
+sparta:
+  url: http://localhost:8085
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
 logging:
   level: DEBUG
 

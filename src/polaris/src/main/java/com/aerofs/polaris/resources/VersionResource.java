@@ -12,14 +12,14 @@ import javax.ws.rs.core.Context;
 @Singleton
 public final class VersionResource {
 
-    private final ResourceContext resourceContext;
+    private final ResourceContext context;
 
-    public VersionResource(@Context ResourceContext resourceContext) {
-        this.resourceContext = resourceContext;
+    public VersionResource(@Context ResourceContext context) {
+        this.context = context;
     }
 
     @Path("/locations")
     public LocationsResource locations() {
-        return resourceContext.getResource(LocationsResource.class);
+        return context.getResource(LocationsResource.class);
     }
 }

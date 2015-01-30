@@ -1,5 +1,10 @@
-package com.aerofs.polaris.api.operation;
+package com.aerofs.polaris.api;
 
+import com.aerofs.polaris.api.operation.InsertChild;
+import com.aerofs.polaris.api.operation.MoveChild;
+import com.aerofs.polaris.api.operation.Operation;
+import com.aerofs.polaris.api.operation.RemoveChild;
+import com.aerofs.polaris.api.operation.UpdateContent;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;

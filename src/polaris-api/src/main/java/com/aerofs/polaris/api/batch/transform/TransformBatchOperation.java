@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api.batch;
+package com.aerofs.polaris.api.batch.transform;
 
 import com.aerofs.polaris.api.operation.Operation;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;

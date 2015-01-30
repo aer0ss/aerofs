@@ -1,4 +1,4 @@
-package com.aerofs.polaris.api.batch;
+package com.aerofs.polaris.api.batch.transform;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.base.Objects;
@@ -11,24 +11,24 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
-public final class LocationBatch {
+public final class TransformBatch {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    private List<LocationBatchOperation> operations;
+    private List<TransformBatchOperation> operations;
 
-    public LocationBatch(List<LocationBatchOperation> operations) {
+    public TransformBatch(List<TransformBatchOperation> operations) {
         this.operations = operations;
     }
 
-    private LocationBatch() {}
+    private TransformBatch() {}
 
-    public List<LocationBatchOperation> getOperations() {
+    public List<TransformBatchOperation> getOperations() {
         return operations;
     }
 
-    private void setOperations(List<LocationBatchOperation> operations) {
+    private void setOperations(List<TransformBatchOperation> operations) {
         this.operations = operations;
     }
 
@@ -37,7 +37,7 @@ public final class LocationBatch {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LocationBatch other = (LocationBatch) o;
+        TransformBatch other = (TransformBatch) o;
         return Objects.equal(operations, other.operations);
     }
 

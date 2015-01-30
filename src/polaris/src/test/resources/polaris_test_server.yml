@@ -20,6 +20,18 @@ database:
   driverClass: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost/test
 
+verkehr:
+  url: http://localhost:9700
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
+sparta:
+  url: http://localhost:8700
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
 logging:
   level: ALL
 

@@ -25,12 +25,12 @@ public final class TreeCommand implements Command {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TreeCommand.class);
 
-    private final LogicalObjectStore objectStore;
+    private final ObjectStore store;
     private final ObjectMapper mapper;
 
     @Inject
-    public TreeCommand(LogicalObjectStore objectStore, ObjectMapper mapper) {
-        this.objectStore = objectStore;
+    public TreeCommand(ObjectStore store, ObjectMapper mapper) {
+        this.store = store;
         this.mapper = mapper;
     }
 
@@ -39,7 +39,7 @@ public final class TreeCommand implements Command {
         final String root = queryParameters.getFirst("root");
         final ObjectNode forest = mapper.createObjectNode();
 
-        objectStore.inTransaction(new Transactional<Object>() {
+        store.inTransaction(new StoreTransaction<Object>() {
             @Override
             public Void execute(DAO dao) throws Exception {
                 if (root != null) {
@@ -53,14 +53,11 @@ public final class TreeCommand implements Command {
 
             private void dumpObjects(DAO dao) {
                 // iterate over all known roots
-                ResultIterator<String> iterator = dao.objectTypes.getByType(ObjectType.ROOT);
-                try {
+                try (ResultIterator<String> iterator = dao.objectTypes.getByType(ObjectType.ROOT)) {
                     while (iterator.hasNext()) {
                         String root = iterator.next();
                         dumpObjects(dao, root);
                     }
-                } finally {
-                    iterator.close();
                 }
 
                 // iterate over unrooted objects

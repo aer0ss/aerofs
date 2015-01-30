@@ -3,16 +3,16 @@ package com.aerofs.polaris.resources;
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.validation.Identifier;
-import com.aerofs.polaris.acl.Access;
-import com.aerofs.polaris.acl.AccessException;
-import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
-import com.aerofs.polaris.logical.LogicalObjectStore;
+import com.aerofs.polaris.api.operation.Updated;
+import com.aerofs.polaris.logical.ObjectStore;
+import com.aerofs.polaris.notification.UpdatePublisher;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -21,32 +21,45 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Set;
 
 @RolesAllowed(Roles.USER)
 @Singleton
 public final class ObjectResource {
 
-    private final LogicalObjectStore objectStore;
-    private final AccessManager accessManager;
-    private final ResourceContext resourceContext;
+    private final ObjectStore store;
+    private final UpdatePublisher publisher;
+    private final ResourceContext context;
 
-    public ObjectResource(@Context LogicalObjectStore objectStore, @Context AccessManager accessManager, @Context ResourceContext resourceContext) {
-        this.objectStore = objectStore;
-        this.accessManager = accessManager;
-        this.resourceContext = resourceContext;
+    public ObjectResource(@Context ObjectStore store, @Context UpdatePublisher publisher, @Context ResourceContext context) {
+        this.store = store;
+        this.publisher = publisher;
+        this.context = context;
     }
 
     @Path("/versions")
     public VersionsResource getVersions() {
-        return resourceContext.getResource(VersionsResource.class);
+        return context.getResource(VersionsResource.class);
     }
 
     // NOTE (AG): order the JAX-RS annotations first
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public OperationResult update(@Context @NotNull AeroUserDevicePrincipal principal, @PathParam("oid") @NotNull @Identifier String oid, @NotNull Operation operation) throws AccessException {
-        accessManager.checkAccess(principal.getUser(), oid, Access.READ, Access.WRITE);
-        return objectStore.inTransaction(dao -> new OperationResult(objectStore.performOperation(dao, principal.getDevice(), oid, operation)));
+    public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") @Identifier String oid, Operation operation) {
+        OperationResult result = store.inTransaction(dao -> new OperationResult(store.performTransform(dao, principal.getUser(), principal.getDevice(), oid, operation)));
+
+        Preconditions.checkState(result.getUpdated() != null, "no updates made for %s", operation);
+        Set<String> updatedRoots = Sets.newHashSet();
+
+        for (Updated updated : result.getUpdated()) {
+            updatedRoots.add(updated.getObject().getRoot());
+        }
+
+        for (String root : updatedRoots) {
+            publisher.publishUpdate(root);
+        }
+
+        return result;
     }
 }
