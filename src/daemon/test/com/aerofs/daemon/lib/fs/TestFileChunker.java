@@ -61,7 +61,6 @@ public class TestFileChunker extends AbstractTest
 
                 // Corner cases
                 new TestParams(0, 0, 10, "empty file"),
-                new TestParams(0, 0, 0, "empty file, 0-sized chunks"),
                 new TestParams(1, 1, 10, "prefix reaches EOF"),
         };
 
