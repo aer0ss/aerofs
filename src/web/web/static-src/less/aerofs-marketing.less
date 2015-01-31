@@ -42,7 +42,7 @@
     color: #000;
     font-weight: 600;
     &:hover {
-        background-color: lighten(@gold, 5%);
+        background-color: lighten(@gold, 7%);
     }
     &:active {
         border-color: @gold;
@@ -497,10 +497,26 @@ body {
         }
         h4 {
             color: @haze;
+            padding-top: 10px;
         }
         header {
             background: @darkestblue;
-            padding-top: 10px;
+            button {
+              width: 100%;
+            }
+        }
+        .btn {
+          background-color: @darkblue;
+          &:hover {
+            background-color: @medblue;
+          }
+        }
+        .btn.yellow {
+            .gold-button();
+
+            h2 {
+              color: #000;
+            }
         }
     }
     .price-tag {
@@ -520,9 +536,6 @@ body {
         width: 100%;
         td {
             padding: 11px 0;
-        }
-        .btn.yellow {
-            .gold-button();
         }
 
         .try-me {

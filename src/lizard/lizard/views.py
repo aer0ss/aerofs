@@ -72,6 +72,10 @@ def signup_request_page():
     POST /request_signup
     """
     form = forms.SignupForm(csrf_enabled=False)
+    email_address = request.args.get("email_address", None)
+    if email_address:
+        form.email.data = email_address
+
     if form.validate_on_submit():
         # If email already in Admin table, noop (but return success).
         # We don't want to leak that an account bound to an email exists by
