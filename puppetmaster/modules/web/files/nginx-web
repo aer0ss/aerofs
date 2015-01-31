@@ -97,8 +97,8 @@ server {
     # the browser must hit Bifrost directly--submitting authorization for an
     # app through the consent page. That call is made by the browser to webadmin
     # and this section routes it to Bifrost to bypass the security group settings.
-    location /auth/authorize$ {
-        proxy_pass http://api.aerofs.com:8700/auth/authorize;
+    location = /auth/authorize {
+        proxy_pass http://api.aerofs.com:8700/authorize;
         proxy_cache off;
         proxy_buffering off;
         proxy_cookie_path / /auth/;
