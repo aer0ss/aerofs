@@ -73,6 +73,7 @@ subprojects {
 
     configurations.all {
         resolutionStrategy {
+            cacheChangingModulesFor 0, "seconds"
 
             // force a specific version of the following groups of libraries
             eachDependency { DependencyResolveDetails details ->
