@@ -47,7 +47,13 @@ if (os.contains('windows')) {
 
     sharedLibrarySearchPathVariable = 'LD_LIBRARY_PATH'
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/linux/${arch}", "${clientResourcesDir}/linux/${arch}/lib"]
-    ext.bootstrapClassPath = '/usr/lib/jvm/java-6-openjdk/jre/lib/rt.jar'
+    new ByteArrayOutputStream().withStream { out ->
+        def result = exec {
+            executable = "${rootDir}/tools/bootclasspath.sh"
+            standardOutput = out
+        }
+        ext.bootstrapClassPath = out.toString().trim()
+    }
 }
 
 //-----------------------------------------------------------------------------
