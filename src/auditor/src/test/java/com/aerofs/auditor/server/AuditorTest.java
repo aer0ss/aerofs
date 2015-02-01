@@ -5,10 +5,14 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.auditor.downstream.Downstream.AuditChannel;
+import com.aerofs.baseline.AdminEnvironment;
+import com.aerofs.baseline.RootEnvironment;
+import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.junit.After;
@@ -23,50 +27,52 @@ public class AuditorTest extends AbstractTest
 {
     protected final static String AUDIT_URL = "/event";
 
-    Auditor _service;
-    protected int _port;
-    protected WhiteBoxedDownstream _downstream = new WhiteBoxedDownstream();
-
-    static class WhiteBoxedDownstream implements AuditChannel
+    protected static class WhiteBoxedDownstream implements AuditChannel
     {
-        public WhiteBoxedDownstream() { _failureCause = null; }
+        protected Exception _failureCause = null;
 
         @Override
         public ChannelFuture doSend(String message)
         {
             ChannelFuture future = new DefaultChannelFuture(null, false);
+
             if (_failureCause == null) {
                 future.setSuccess();
             } else {
                 future.setFailure(_failureCause);
             }
+
             return future;
         }
 
         @Override
-        public boolean isConnected() { return true; }
-        public Exception _failureCause;
+        public boolean isConnected()
+        {
+            return true;
+        }
     }
 
-    @Before
-    public void setUp() throws Exception
+    protected static class TestAuditor extends Auditor
     {
-        _service = new Auditor();
-        _service.setDownstream(_downstream); // FIXME (AG): I like the guice way of defining prod vs. test scopes
-        _service.runWithConfiguration(ConfigurationReference.CONFIGURATION);
-        _port = ConfigurationReference.CONFIGURATION.getService().getPort();
-        _downstream._failureCause = null;
+        protected final WhiteBoxedDownstream _downstream = new WhiteBoxedDownstream();
 
-        RestAssured.baseURI = "http://localhost";
-        RestAssured.port = _port;
-        RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
-        l.info("Auditor service started at {}", RestAssured.port);
-    }
+        @Override
+        public void init(AuditorConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service)
+                throws Exception
+        {
+            super.init(configuration, root, admin, service);
 
-    @After
-    public void tearDown()
-    {
-        _service.shutdown();
+            service.addProvider(new AbstractBinder()
+            {
+                @Override
+                protected void configure()
+                {
+                    // hk2 prefers objects bound *earlier* over those bound later
+                    // to override this default we explicitly rank this implementation higher than the default '0'
+                    bind(_downstream).to(AuditChannel.class).ranked(1);
+                }
+            });
+        }
     }
 
     private static final class ConfigurationReference
@@ -82,5 +88,27 @@ public class AuditorTest extends AbstractTest
                 throw new RuntimeException("failed to load configuration", e);
             }
         }
+    }
+
+    TestAuditor _service;
+    protected int _port;
+
+    @Before
+    public void setUp() throws Exception
+    {
+        _service = new TestAuditor();
+        _service.runWithConfiguration(ConfigurationReference.CONFIGURATION);
+        _port = ConfigurationReference.CONFIGURATION.getService().getPort();
+        _service._downstream._failureCause = null;
+
+        RestAssured.baseURI = "http://localhost";
+        RestAssured.port = _port;
+        RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
+    }
+
+    @After
+    public void tearDown()
+    {
+        _service.shutdown();
     }
 }

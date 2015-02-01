@@ -4,5 +4,5 @@ import com.aerofs.baseline.config.Configuration;
 
 public class AuditorConfiguration extends Configuration
 {
-    // nothing to add
+    // FIXME (AG): specify downstream configuration here
 }

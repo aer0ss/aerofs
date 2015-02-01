@@ -11,13 +11,13 @@ import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.inject.Inject;
 import org.jboss.netty.channel.ChannelFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -49,7 +49,7 @@ public class EventResource
 
     private static Logger l = LoggerFactory.getLogger(EventResource.class);
 
-    @Context
+    @Inject
     private Downstream.AuditChannel _auditChannel;
 
     /**
