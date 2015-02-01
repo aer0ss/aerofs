@@ -17,6 +17,11 @@ if [ $(whoami) != root ]; then
     exit 22
 fi
 
+# A potential bug in docker causes very slow pulls. Running seemingly unrelated activities in the background
+# mysterically reduces total pulling from couple of hours to 20 mins.
+# TODO (WW) fix the root cause. The workaround doesn't work well on CI anyways.
+vmstat 1 1>/dev/null &
+
 # Add a drop-in to allow pulling from the insecure preload repo
 DROP_IN=/etc/systemd/system/docker.service.d/50-insecure-preload-registry.conf
 mkdir -p $(dirname ${DROP_IN})

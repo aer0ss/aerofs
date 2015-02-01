@@ -10,12 +10,16 @@ WORKDIR /opt/web
 
 CMD [ "/run.sh" ]
 
-ADD root buildroot /
+COPY requirements-exact.txt /
 
 RUN \
-    pip install --requirement /opt/web/requirements-exact.txt &&\
+    pip install --requirement /requirements-exact.txt &&\
+    rm /requirements-exact.txt &&\
     #
     # PREDOCKER forward logs to docker log collector
     #
     mkdir -p /var/log/web &&\
     ln -s /dev/stdout /var/log/web/web.log
+
+# Add source files last
+COPY root buildroot /

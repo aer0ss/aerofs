@@ -12,4 +12,4 @@ CMD [ "/run.sh" ]
 
 EXPOSE 5222
 
-ADD root buildroot /
+COPY root buildroot /

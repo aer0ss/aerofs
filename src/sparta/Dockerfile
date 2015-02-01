@@ -12,7 +12,7 @@ RUN \
     ln -sf /dev/stdout /var/log/sparta/sparta.log
 
 # Import files
-ADD root buildroot /
+COPY root buildroot /
 
 # Expose ports
 EXPOSE 8085

@@ -15,9 +15,7 @@ OUTPUT="$2"
 
 # Absolute paths are required by docker. (the realpath command is unavailable on OSX)
 abspath() {
-    pushd "$1" > /dev/null
-    echo "$(pwd -P)"
-    popd > /dev/null
+    (cd "$1" && pwd)
 }
 
 THIS_DIR=$(abspath "$(dirname ${BASH_SOURCE[0]})")
@@ -135,9 +133,11 @@ create_vm() {
 delete_vm() {
     local VM=$1
     local VM_BASE_DIR="$2"
+    # Why suppress stderr? When no such VM is running, error output is annonying and we ignore the errors anyway
     VBoxManage controlvm ${VM} poweroff 2>/dev/null || true
     VBoxManage unregistervm ${VM} 2>/dev/null || true
-    # We don't use 'unregistervm --delete' as it may delete the vdi file we just created.
+    # Don't use 'unregistervm --delete' as the VM may refer to the vdi file we just created. Deleting the VM would
+    # delete this file.
     rm -rf "${VM_BASE_DIR}"
 }
 
@@ -167,7 +167,7 @@ preload() {
         while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
     )
 
-    # Run preload in the VM
+    # Copy preload script to VM
     local PRELOAD_SCRIPT=/tmp/preload-guest.sh
     ssh ${SSH_ARGS} "cat > ${PRELOAD_SCRIPT} && chmod u+x ${PRELOAD_SCRIPT}" < "${THIS_DIR}/preload-guest.sh"
     local START=$(date +%s)
@@ -180,6 +180,7 @@ preload() {
         echo
     )
 
+    # Run preload script in VM
     ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader-image') $(yml 'repo')"
 
     (set +x
@@ -213,9 +214,25 @@ update_nic() {
 
 convert_to_ova() {
     local VM="$1"
-    local OVA="$2"
+    local FINAL_VM="$2"
+    local OVA="$3"
 
-    VBoxManage export ${VM} --manifest --output "${OVA}"
+    # Design notes:
+    #
+    # Don't create the VM using FINAL_VM as its name: FINAL_VM may differ at each build (e.g. changing version nubmers).
+    # Using a constant VM name (the VM variable) allows us to cleanly remove the previous VM from a failed build.
+    #
+    # We therefore rename the VM to FINAL_NAME only before converting it to OVA, and rename it back when done, so later
+    # steps can refer to the VM.
+    #
+    # Since the user may be running a VM with the same name as FINAL_VM, we use UUID to avoid confusing VirtualBox.
+    #
+    local UUID=$(VBoxManage list vms | grep "^\"${VM}\"" | tr '{' ' ' | tr '}' ' ' | awk '{print $2}')
+
+    VBoxManage modifyvm ${UUID} --name ${FINAL_VM}
+    VBoxManage export ${UUID} --manifest --output "${OVA}"
+    VBoxManage modifyvm ${UUID} --name ${VM}
+
     "${THIS_DIR}/../../../../packaging/bakery/private-deployment/remove_vbox_section_from_ova.py" "${OVA}"
 }
 
@@ -247,10 +264,11 @@ main() {
     OUTPUT=$(abspath "${OUTPUT}")
 
     local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
-    local VM=$(yml 'vm-image-name')
+    local VM=shipenterprise-build-vm
+    local FINAL_VM=$(yml 'vm-image-name')
     local VM_BASE_DIR="${OUTPUT}/preloaded/vm"
     local VDI="${OUTPUT}/preloaded/disk.vdi"
-    local OVA="${OUTPUT}/preloaded/${VM}.ova"
+    local OVA="${OUTPUT}/preloaded/${FINAL_VM}.ova"
 
     setup_preload_registry ${PRELOAD_REPO_CONTAINER} $(yml 'loader-image') ${PUSH}
 
@@ -265,7 +283,7 @@ main() {
     create_vm ${VM} $(yml 'vm-cpus') $(yml 'vm-ram-size') "${VDI}" "${VM_BASE_DIR}" ${SSH_FORWARD_PORT} ${SSH_FORWARD_RULE}
     preload ${VM} ${SSH_FORWARD_PORT} ${GLOBAL_PRELOAD_REPO_URL}
     update_nic ${VM} ${SSH_FORWARD_RULE}
-    convert_to_ova ${VM} "${OVA}"
+    convert_to_ova ${VM} ${FINAL_VM} "${OVA}"
     delete_vm ${VM} "${VM_BASE_DIR}"
 
     teardown_preload_registry ${PRELOAD_REPO_CONTAINER}

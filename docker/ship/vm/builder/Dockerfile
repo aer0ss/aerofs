@@ -12,4 +12,4 @@ RUN \
 RUN pip install Jinja2 pyyaml
 RUN apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/*
 
-ADD root /
+COPY root /

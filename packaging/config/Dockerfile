@@ -9,7 +9,7 @@ CMD [ "/run.sh" ]
 RUN apt-get update && apt-get install -y libgpgme11 libgpgme11-dev &&\
     rm -rf /var/lib/apt/lists/*
 
-ADD root buildroot /
+COPY root buildroot /
 
 RUN \
     pip install --requirement /opt/config/requirements-exact.txt &&\

@@ -7,6 +7,6 @@ image: $(ROOT)/auditor.yml
 	../../tools/lazy-copy.sh ../../out.gradle/auditor/dist $(ROOT)
 	docker build -t $(IMAGE_NAME) .
 
-$(ROOT)/%: src/dist/%
+$(ROOT)/auditor.yml: src/dist/auditor.yml
 	mkdir -p $(@D)
-	cp $< $@
+	sed -e 's/localhost/0.0.0.0/' $< > $@

@@ -25,7 +25,10 @@ RUN apt-get update && apt-get install -y p7zip-full zip &&\
     apt-get purge --auto-remove -y cmake &&\
     rm -rf /var/lib/apt/lists/* 
 
-ADD root buildroot /
+COPY root/opt/repackaging/api/requirements.txt /
 
-RUN pip install -r /opt/repackaging/api/requirements.txt &&\
-    rm -rf /sdist
+RUN pip install -r /requirements.txt &&\
+    rm -rf /sdist && rm /requirements.txt
+
+# Add source files last
+COPY root buildroot /

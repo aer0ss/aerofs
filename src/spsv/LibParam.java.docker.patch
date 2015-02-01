@@ -24,7 +24,7 @@
          public static final InetSocketAddress AOF_ADDRESS =
                  InetSocketAddress.createUnresolved(
 -                        getStringProperty("sp.redis.service.host", "localhost"),
-+                        getStringProperty("sp.redis.service.host", "redis.service"),
++                        "redis.service",
                          getIntegerProperty("sp.redis.service.port", 6379));
      }
  

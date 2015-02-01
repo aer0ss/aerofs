@@ -13,4 +13,4 @@ EXPOSE 8888
 
 CMD [ "/run.sh" ]
 
-ADD root buildroot /
+COPY root buildroot /

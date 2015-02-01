@@ -3,7 +3,7 @@ FROM aerofs/base.jre8
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
 # Import files
-ADD root buildroot /
+COPY root buildroot /
 
 # Use a single RUN statement to minimize image size. Alternatively, run a shell script
 # which would be much cleaner.

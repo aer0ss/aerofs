@@ -12,12 +12,14 @@ import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.auth.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.cert.AeroDevicePrincipalBinder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import com.aerofs.lib.properties.Configuration;
 
 public class Auditor extends Service<AuditorConfiguration>
 {
     public static void main(String[] args)
             throws Exception
     {
+        Configuration.Server.initialize();
         Auditor auditor = new Auditor();
         auditor.run(args);
     }

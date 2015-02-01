@@ -2,7 +2,7 @@ IMAGE_NAME = aerofs/web
 
 # PREDOCKER
 DST_DIR = buildroot/opt/web
-FILES = $(shell find -L requirements-exact.txt web -type f)
+FILES = $(shell find -L web -type f)
 VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
 
 image: .make-source $(FILES:%=$(DST_DIR)/%) $(VERSION_FILE) $(DST_DIR)/production.ini.template

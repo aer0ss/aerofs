@@ -12,7 +12,7 @@ RUN \
     ln -sf /dev/stdout /var/log/polaris/polaris.log
 
 # Import files
-ADD root buildroot /
+COPY root buildroot /
 
 # Expose ports
 EXPOSE 8086 8087

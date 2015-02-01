@@ -12,7 +12,7 @@ RUN \
     ln -sf /dev/stdout /var/log/auditor/auditor.log
 
 # Import files
-ADD root buildroot /
+COPY root buildroot /
 
 # Expose ports
 EXPOSE 9300

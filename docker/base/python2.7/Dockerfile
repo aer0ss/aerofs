@@ -5,6 +5,6 @@ MAINTAINER Weihan Wang "weihan@aerofs.com"
 
 ENTRYPOINT [ "/container-scripts/service-barrier" ]
 
-ADD buildroot /
+COPY buildroot /
 
 RUN pip install /sdist/* && rm -rf /sdist

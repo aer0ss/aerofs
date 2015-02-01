@@ -13,7 +13,7 @@ CMD [ "/run.sh" ]
 # mysql-client for backup scripts, docker for collecting docker logs
 RUN apt-get update && apt-get install -y mysql-client docker.io && rm -rf /var/lib/apt/lists/*
 
-ADD buildroot/requirements-exact.txt /
+COPY buildroot/requirements-exact.txt /
 
 RUN \
     pip install -r /requirements-exact.txt &&\
@@ -24,5 +24,5 @@ RUN \
     ln -sf /dev/stdout /var/log/bunker/bunker.log
 
 # Add source files last
-ADD root buildroot /
+COPY root buildroot /
 

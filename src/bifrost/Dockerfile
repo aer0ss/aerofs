@@ -12,7 +12,7 @@ RUN \
     ln -sf /dev/stdout /var/log/bifrost/bifrost.log
 
 # Import files
-ADD root buildroot /
+COPY root buildroot /
 
 # Expose port
 EXPOSE 8700
