@@ -1,4 +1,4 @@
-package com.aerofs.baseline.auth.aero;
+package com.aerofs.auth.cert;
 
 import com.google.common.base.Objects;
 
@@ -9,13 +9,13 @@ import java.security.Principal;
  * A specialization of {@link Principal} that
  * identifies an AeroFS device.
  */
-public final class AeroPrincipal implements Principal {
+public final class AeroDevicePrincipal implements Principal {
 
     private final String user;
 
     private final String device;
 
-    public AeroPrincipal(String user, String device) {
+    public AeroDevicePrincipal(String user, String device) {
         this.user = user;
         this.device = device;
     }
@@ -34,7 +34,7 @@ public final class AeroPrincipal implements Principal {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        AeroPrincipal other = (AeroPrincipal) o;
+        AeroDevicePrincipal other = (AeroDevicePrincipal) o;
         return Objects.equal(user, other.user) && Objects.equal(device, other.device);
     }
 

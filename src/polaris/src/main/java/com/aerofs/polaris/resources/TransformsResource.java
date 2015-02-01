@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.Access;
@@ -45,7 +45,7 @@ public final class TransformsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     public AppliedTransforms getTransformsSince(
-            @Context @NotNull AeroPrincipal principal,
+            @Context @NotNull AeroDevicePrincipal principal,
             @PathParam("oid") @NotNull @Identifier final String oid,
             @QueryParam("since") @Min(-1) final long since,
             @QueryParam("count") @Min(1) int resultCount) throws AccessException {

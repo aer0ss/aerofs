@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -47,7 +47,7 @@ public final class ObjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public OperationResult update(@Context @NotNull final AeroPrincipal principal, @PathParam("oid") @NotNull @Identifier final String oid, @NotNull final Operation operation) throws AccessException {
+    public OperationResult update(@Context @NotNull final AeroDevicePrincipal principal, @PathParam("oid") @NotNull @Identifier final String oid, @NotNull final Operation operation) throws AccessException {
         accessManager.checkAccess(principal.getDevice(), oid, Access.READ, Access.WRITE);
 
         return objectStore.inTransaction(new Transactional<OperationResult>() {

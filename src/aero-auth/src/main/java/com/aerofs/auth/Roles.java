@@ -1,4 +1,4 @@
-package com.aerofs.baseline.auth.aero;
+package com.aerofs.auth;
 
 public abstract class Roles {
 

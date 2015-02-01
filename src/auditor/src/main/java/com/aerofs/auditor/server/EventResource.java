@@ -5,8 +5,8 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.auditor.downstream.Downstream;
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -70,7 +70,7 @@ public class EventResource
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/event")
-    public Response event(@Nullable @Context AeroPrincipal principal, Map<String, Object> contents)
+    public Response event(@Nullable @Context AeroDevicePrincipal principal, Map<String, Object> contents)
     {
         // let's make sure the required elements were provided...
         if ((contents == null)

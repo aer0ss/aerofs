@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.baseline.db.DBIExceptions;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
@@ -44,7 +44,7 @@ public final class TransformBatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public TransformBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final TransformBatch batch) {
+    public TransformBatchResult submitBatch(@Context @NotNull final AeroDevicePrincipal principal, @NotNull final TransformBatch batch) {
         List<TransformBatchOperation> operations = batch.getOperations();
         final TransformBatchResult batchResult = new TransformBatchResult(operations.size());
 

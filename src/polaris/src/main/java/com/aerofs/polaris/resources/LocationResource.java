@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -38,7 +38,7 @@ public final class LocationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<String> getLocationsForContent(
-            @Context @NotNull AeroPrincipal principal,
+            @Context @NotNull AeroDevicePrincipal principal,
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
@@ -55,7 +55,7 @@ public final class LocationResource {
 
     @POST
     public void markContentAtLocation(
-            @Context @NotNull AeroPrincipal principal,
+            @Context @NotNull AeroDevicePrincipal principal,
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {
@@ -73,7 +73,7 @@ public final class LocationResource {
 
     @DELETE
     public void unmarkContentAtLocation(
-            @Context @NotNull AeroPrincipal principal,
+            @Context @NotNull AeroDevicePrincipal principal,
             @PathParam("oid") @NotNull @Identifier final String oid,
             @PathParam("version") @Min(0) final long version,
             @PathParam("did") @NotNull @Identifier final String did) throws AccessException {

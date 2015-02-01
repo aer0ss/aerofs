@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.auth.aero.AeroPrincipal;
-import com.aerofs.baseline.auth.aero.Roles;
+import com.aerofs.auth.cert.AeroDevicePrincipal;
+import com.aerofs.auth.Roles;
 import com.aerofs.baseline.db.DBIExceptions;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
@@ -43,7 +43,7 @@ public final class LocationBatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LocationBatchResult submitBatch(@Context @NotNull final AeroPrincipal principal, @NotNull final LocationBatch batch) {
+    public LocationBatchResult submitBatch(@Context @NotNull final AeroDevicePrincipal principal, @NotNull final LocationBatch batch) {
         List<LocationBatchOperation> operations = batch.getOperations();
         final LocationBatchResult batchResult = new LocationBatchResult(operations.size());
 

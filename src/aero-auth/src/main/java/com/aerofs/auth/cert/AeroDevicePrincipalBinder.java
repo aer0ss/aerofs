@@ -1,4 +1,4 @@
-package com.aerofs.baseline.auth.aero;
+package com.aerofs.auth.cert;
 
 import com.google.common.base.Preconditions;
 import org.glassfish.hk2.api.Factory;
@@ -10,10 +10,10 @@ import java.security.Principal;
 
 /**
  * HK2 {@link org.glassfish.hk2.utilities.Binder} that injects
- * instances of {@link com.aerofs.baseline.auth.aero.AeroPrincipal} derived from the incoming
+ * instances of {@link AeroDevicePrincipal} derived from the incoming
  * {@link javax.ws.rs.core.Request} object's {@link SecurityContext}.
  */
-public final class AeroPrincipalBinder extends AbstractBinder {
+public final class AeroDevicePrincipalBinder extends AbstractBinder {
 
     @Override
     protected void configure() {
@@ -23,33 +23,33 @@ public final class AeroPrincipalBinder extends AbstractBinder {
         // because we want the SecurityContext object injected
         // into the factory. then, we extract the principal from
         // that object to return to the caller
-        bindFactory(AeroPrincipalFactory.class).to(AeroPrincipal.class);
+        bindFactory(AeroDevicePrincipalFactory.class).to(AeroDevicePrincipal.class);
     }
 
-    private static final class AeroPrincipalFactory implements Factory<AeroPrincipal> {
+    private static final class AeroDevicePrincipalFactory implements Factory<AeroDevicePrincipal> {
 
         private final SecurityContext securityContext;
 
         // inject the security context instance associated with this request
         @Inject
-        AeroPrincipalFactory(SecurityContext securityContext) {
+        AeroDevicePrincipalFactory(SecurityContext securityContext) {
             this.securityContext = securityContext;
         }
 
         @Override
-        public AeroPrincipal provide() {
+        public AeroDevicePrincipal provide() {
             Principal principal = securityContext.getUserPrincipal();
 
             if (principal == null) {
                 return null;
             } else {
-                Preconditions.checkArgument(principal instanceof AeroPrincipal, "principal is %s instead of an AeroPrincipal", principal.getClass().getSimpleName());
-                return (AeroPrincipal) principal;
+                Preconditions.checkArgument(principal instanceof AeroDevicePrincipal, "principal is %s instead of an AeroPrincipal", principal.getClass().getSimpleName());
+                return (AeroDevicePrincipal) principal;
             }
         }
 
         @Override
-        public void dispose(AeroPrincipal instance) {
+        public void dispose(AeroDevicePrincipal instance) {
             // nothing to be done here
         }
     }
