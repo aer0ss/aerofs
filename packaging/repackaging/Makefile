@@ -23,5 +23,5 @@ ifneq '$(words $(PKGS))' '15'
 	$(error $(words $(PKGS)) files were found in $(SRC_PKGS_DIR). I expect 15)
 endif
 	# Remove old files from buildroot. TODO (WW) use the buildroot-syncroot approach
-	rm -r $(DST_PKGS_DIR)/*
+	rm -rf $(DST_PKGS_DIR)/*
 	../../tools/lazy-copy.sh $(SRC_PKGS_DIR) $(DST_PKGS_DIR)
