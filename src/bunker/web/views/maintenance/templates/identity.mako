@@ -464,8 +464,8 @@
                 if not value: value = default
             %>
             <label for="ldap-server-schema-group-name" class="control-label">LDAP Group name attribute:</label>
-            <input class="form-control" id="ldap-server-schema-group-base"
-                   name="ldap_server_schema_group_base" type="text"
+            <input class="form-control" id="ldap-server-schema-group-name"
+                   name="ldap_server_schema_group_name" type="text"
                    value="${value}">
             <div class="help-block">Default is <code>${default}</code>.</div>
         </div>
