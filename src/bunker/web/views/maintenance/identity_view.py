@@ -59,6 +59,7 @@ def json_verify_ldap(request):
               "settings. The error is:\n" + r.text)
 
     # Server failure. No human readable error message is available.
+    log.warn("received server failure response with status code " + r.status_code + " and contents " + r.text)
     error("Could not communicate with the LDAP server, please check your settings.")
 
 

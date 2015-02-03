@@ -143,7 +143,7 @@ public class LdapAuthority implements IAuthority
         LDAPConnection conn = _connector.getConnectionFromPool(pool);
         try {
             return conn.search(
-                    _cfg.USER_BASE, _cfg.USER_SCOPE, buildFilter(userID, useExtraFilter), _cfg.USER_RDN)
+                    _cfg.USER_BASE, _cfg.USER_SCOPE, buildFilter(userID, useExtraFilter), _cfg.USER_EMAIL)
                     .getEntryCount() > 0;
         } finally {
             _connector.getPool().releaseAndReAuthenticateConnection(conn);

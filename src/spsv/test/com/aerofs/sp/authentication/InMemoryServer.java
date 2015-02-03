@@ -68,7 +68,6 @@ public abstract class InMemoryServer
         cfg.USER_FIRSTNAME = "givenName";
         cfg.USER_LASTNAME = "sn";
         cfg.USER_OBJECTCLASS = "inetOrgPerson";
-        cfg.USER_RDN = "dn";
 
         cfg.GROUP_OBJECTCLASSES = Lists.newArrayList("groupOfNames", "groupOfUniqueNames",
                 "groupOfEntries", "groupOfURLs", "groupOfUniqueURLs", "posixGroup");

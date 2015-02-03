@@ -41,6 +41,7 @@ public class LdapVerificationServlet extends HttpServlet
         String parameter = req.getParameter(parameterName);
 
         if (parameter == null) {
+            l.error("POST request missing required parameter " + parameterName);
             throw new IOException("Missing required parameter " + parameterName);
         }
 
@@ -68,7 +69,6 @@ public class LdapVerificationServlet extends HttpServlet
             lcfg.USER_FIRSTNAME    = getParameter(req, "ldap_server_schema_user_field_firstname");
             lcfg.USER_LASTNAME     = getParameter(req, "ldap_server_schema_user_field_lastname");
             lcfg.USER_EMAIL        = getParameter(req, "ldap_server_schema_user_field_email");
-            lcfg.USER_RDN          = getParameter(req, "ldap_server_schema_user_field_rdn");
             lcfg.USER_OBJECTCLASS  = getParameter(req, "ldap_server_schema_user_class");
             lcfg.SERVER_CA_CERT    = getParameter(req, "ldap_server_ca_certificate");
             lcfg.USER_ADDITIONALFILTER = getParameter(req, "ldap_server_schema_user_filter");
@@ -77,6 +77,7 @@ public class LdapVerificationServlet extends HttpServlet
 
             try {
                 lauth.testConnection();
+                resp.setStatus(200);
             } catch (ExExternalServiceUnavailable | LDAPException e) {
                 l.error("Error connecting to LDAP server: " + Exceptions.getStackTraceAsString(e));
                 resp.setStatus(400);

@@ -72,7 +72,7 @@ public class LdapConfiguration
      *
      */
     public SecurityType                             SERVER_SECURITY =
-            convertPropertyNameToSecurityType("ldap.server.security", "TLS");
+            convertPropertyNameToSecurityType(      "ldap.server.security", "TLS");
 
     /**
      * Maximum number of LDAP connection instances to keep in the pool.
@@ -90,7 +90,7 @@ public class LdapConfiguration
      * Timeout, in seconds, after which a server connect attempt will be abandoned.
      */
     public Integer                                  SERVER_TIMEOUT_CONNECT =
-            getIntegerProperty("ldap.server.timeout.connect", 5);
+            getIntegerProperty(                     "ldap.server.timeout.connect", 5);
 
     /**
      * Principal on the LDAP server to use for the initial user search.
@@ -137,13 +137,6 @@ public class LdapConfiguration
      */
     public String                                   USER_EMAIL =
             getStringProperty(                      "ldap.server.schema.user.field.email", "");
-
-    /**
-     * The name of the field that contains the user's relative distinguished name - that is,
-     * the field that will be used in the bind attempt.
-     */
-    public String                                   USER_RDN =
-            getStringProperty(                      "ldap.server.schema.user.field.rdn", "");
 
     /**
      * The required object class of the user record. This will be used in the user search.
@@ -240,7 +233,7 @@ public class LdapConfiguration
         case "subtree":
             return SearchScope.SUB;
         default:
-            _l.error("unrecognized scope {}, defaulting to subtree", propertyValue);
+            _l.info("unrecognized scope {}, defaulting to subtree", propertyValue);
             return SearchScope.SUB;
         }
     }
