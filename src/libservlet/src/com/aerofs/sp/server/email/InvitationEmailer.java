@@ -190,7 +190,7 @@ public class InvitationEmailer
                     nf.nameAndEmail() + " has added you to the group " + quotedGroupName + ".\n" +
                     "From now on you will be invited to any shared folders that " +
                     quotedGroupName + " joins.\n" +
-                    "Click on this link to view and accept any pending invitations: " +
+                    "Click on this link to view and accept any pending invitations:\n " +
                     ACCEPT_INVITATION_LINK;
             String title = "You Are Now a Member of The Group " + quotedGroupName;
 
@@ -232,7 +232,7 @@ public class InvitationEmailer
                     " shared " + folderOrFolders + ".\n" +
                     "From now on you will also be invited to any shared folders that " +
                     quotedGroupName + " joins.\n\n" +
-                    "Click on this link to view and accept the " + inviteOrInvites + ": " +
+                    "Click on this link to view and accept the " + inviteOrInvites + ":\n " +
                     ACCEPT_INVITATION_LINK;
 
             String title = "You Are Now a Member of The Group " + quotedGroupName;
@@ -262,7 +262,7 @@ public class InvitationEmailer
             String body = "\n" +
                     ns.nameAndEmail() + " has invited you to join their organization on AeroFS.\n" +
                     "\n" +
-                    "Click on this link to view the invitation: " + ACCEPT_INVITATION_LINK + "\n" +
+                    "Click on this link to view the invitation:\n " + ACCEPT_INVITATION_LINK + "\n" +
                     "\n" +
                     "If you do not wish to join the organization, simply ignore this email.";
 
