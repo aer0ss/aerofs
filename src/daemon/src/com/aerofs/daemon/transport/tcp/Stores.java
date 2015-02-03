@@ -352,8 +352,10 @@ class Stores implements IStores, IDevicePresenceListener
     @Override
     public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
-        PerDeviceStoreMembership membership = isPotentiallyAvailable ? _memberships.get(did) : _memberships.remove(did);
-
+        PerDeviceStoreMembership membership;
+        synchronized (this) {
+            membership = isPotentiallyAvailable ? _memberships.get(did) : _memberships.remove(did);
+        }
         if (membership == null || (membership._onlineSids.isEmpty())) return;
         sendPresence_(did, isPotentiallyAvailable, membership._onlineSids);
     }
