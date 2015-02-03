@@ -72,7 +72,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     public void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception
     {
         // NB: do not immediately delete non-root stores to avoid intermediate states with broken
-        // store hiearchy ("dangling pointer"-style). By virtue of the implicit refcount in the
+        // store hierarchy ("dangling pointer"-style). By virtue of the implicit refcount in the
         // store hierarchy they will automatically be deleted when all anchors pointing to them
         // disappear
         if (_sidx2sid.getNullable_(sidx) != null && _stores.isRoot_(sidx)) {

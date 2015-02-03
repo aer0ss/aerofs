@@ -65,6 +65,9 @@ public class StoreDeleter
         Set<SIndex> parents = _ss.getParents_(sidx);
         if (parents.size() == 1 && canDeleteUnanchored_(sidx)) {
             assert parents.contains(sidxParent);
+            if (L.isMultiuser()) {
+                pathOld = ResolvedPath.root(_sidx2sid.get_(sidx));
+            }
             deleteRecursively_(sidx, pathOld, op, t);
         }
 
