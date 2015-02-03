@@ -10,6 +10,7 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     // website.html
     
     enableLinksharing = true;
+    currentUser = '';
     var root_folder_obj = {id:"root", name:"AeroFS", is_shared:false};
     var empty_folder_obj = {id:"01a01a01a", name:"empty_folder", is_shared:false};
     var other_folder_obj = {id:"9f89f89f8", name:"other_folder", is_shared:false};

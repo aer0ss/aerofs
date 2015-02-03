@@ -246,7 +246,6 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             $http.post('/url_info/' + $scope.currentShare.token, {
                 password: $rootScope.linkPasswordEntered
             }).success(function(response){
-                console.log(response);
                 $scope.currentShare.link = response;
 
                 $scope.requestHeaders.Authorization = response.Authorization;
