@@ -1,18 +1,17 @@
 #!/bin/bash
 set -e
 
-if [ $# != 3 ]; then
-    echo "This script launches the preloaded AeroFS OVA at the given IP. 8.8.8.8 will be used as the VM's DNS nameserver."
-    echo "An /etc/hosts entry is added to resolve the given hostname to the VM's IP."
-    echo "Usage: $0 <hostname> <ip> <gateway>"
+if [ $# != 2 ]; then
+    echo "This script launches the preloaded AeroFS appliance VM at the given IP. A NAT interface is also created so"
+    echo "the VM can use the CI host's dnsmasq nameserver to resolve its own hostname (e.g. share.syncfs.com)"
+    echo "Usage: $0 <ip> <gateway>"
     echo
-    echo "e.g.   $0 share.syncfs.com 1.2.3.4/8 1.1.1.1"
+    echo "e.g.   $0 1.2.3.4/8 1.1.1.1"
     exit 11
 fi
-HOST="$1"
-IP_AND_PREFIX="$2"
+IP_AND_PREFIX="$1"
 IP=$(sed -e 's!/.*!!' <<< ${IP_AND_PREFIX})
-GATEWAY="$3"
+GATEWAY="$2"
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
@@ -26,7 +25,6 @@ create_cloud_config_drive() {
 
     sed -e "s!{{ ip_and_prefix }}!${IP_AND_PREFIX}!" \
         -e "s!{{ ip }}!${IP}!" \
-        -e "s!{{ hostname }}!${HOST}!" \
         -e "s!{{ gateway }}!${GATEWAY}!" \
         -e "s!{{ ssh_pub }}!${SSH_PUB}!" \
         "${THIS_DIR}/ci-cloud-config.jinja" \
@@ -62,6 +60,9 @@ launch_vm() {
     VBoxManage import "${OVA}" --vsys 0 --vmname ${VM}
     # Assume the OVA already has an IDE controller
     VBoxManage storageattach ${VM} --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium "${CLOUD_DRIVE_ISO}"
+    # Create a NAT iface so the VM can use the CI host's dnsmasq nameserver to resolve its own hostname
+    VBoxManage modifyvm ${VM} --nic8 nat
+
     VBoxManage startvm ${VM} --type headless
 }
 
@@ -93,7 +94,7 @@ main() {
     # The "docker-appliance-" prefix must be consistent with ship.yml.jinja
     local OVA=${THIS_DIR}/../../out.ship/preloaded/docker-appliance-*.ova
 
-    # For some reaon "vboxmanage import" doesn't handle .. very well. So convert to real path.
+    # For some reaon "vboxmanage import" doesn't handle '..' in paths very well. So convert to real path.
     # (OSX has no realpath command.)
     OVA="$(cd $(dirname "${OVA}"); pwd)/$(basename "${OVA}")"
 

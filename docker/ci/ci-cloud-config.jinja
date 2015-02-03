@@ -5,11 +5,11 @@ coreos:
     - name: 00-ci-static.network
       content: |
         [Match]
-        Name=en*
+        # enp0s17 refers to the VM's first NIC. Since another interface enp0s19 is used for NAT we can't use 'en*'
+        Name=enp0s17
         [Network]
         Address={{ ip_and_prefix }}
         Gateway={{ gateway }}
-        DNS=8.8.8.8
 
     # signup-decoder is a Web service listening at <appliance-hostname>:5775 to return signup codes stored in mysql.
     # It's used by CI to sign up users automatically. It's a container because containers are the only thing CoreOS supports.
@@ -23,10 +23,6 @@ coreos:
         ExecStop=/usr/bin/docker rm -fv decoder
 
 write_files:
-  - path: /etc/hosts
-    content: |
-      {{ ip }} {{ hostname }}
-
   - path: /signup-decoder/run
     permissions: 0755
     content: |
