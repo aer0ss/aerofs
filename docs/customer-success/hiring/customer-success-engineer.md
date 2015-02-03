@@ -28,19 +28,37 @@ type role.
 
 ## Minumum Requirements
 
-At a minimum we should like:
+Publicly we are asking for the following minimum requirements:
 
-1. 2+ years experience in a customer facing, technical role.
-2. B.S. in Computer Science, Computer Engineering, or equivalent work
-   experience.
-3. Strong knowledge of at least one programming language (Shell scripting is a
-   great bonus).
-4. Familiarity with the Unix working environment.
+* 2+ years experience in a customer facing, technical role.
+* B.S. in Computer Science, Computer Engineering, or equivalent work
+  experience.
+* Strong knowledge of at least one programming language (Shell scripting is a
+  great bonus).
+* Familiarity with the Unix working environment.
 
-The first two points are evaluated during the "fit" interview (currently
-conducted by Matt). The last two are evaluated during the technical phone
-screen. Of course, all four points + cultural fit + general intelligence +
-analytical ability are evaluated during the on-site as well.
+And the following bonus points:
+
+* Experience in B2B software
+* Experience in enterprise software
+
+The first two points (as well as general communication skills, cultural fit,
+work ethic, and a high level of the remaining items) are evaluated during the
+"fit" interview (currently conducted by Matt). The latter two of the minimum
+requirements are evaluated in more depth during the technical phone screen.
+
+Of course, all of the above points + general intelligence + analytical ability
+are evaluated during the on-site as well (if the candidate gets to that stage).
+
+To summarize, at a high level we are looking for:
+
+* Strong communication skills
+* Cultural fit (and work ethic)
+* Technical skills (baseline programming, unix) and intelligence/analytical
+  ability
+* Experience (customer facing, B2B)
+
+Canditates will be evaluated in all of these areas.
 
 ## Technical Phone Screen Questions
 
@@ -125,7 +143,7 @@ Possible solution:
 * Example question: Find all user emails of users who are affected by a certain
   assertion error or exception.
 
-## Final Notes
+### Final Notes
 
 If the candidate hits it out of the park and you finish early -- great. Take
 some time to answer any of their questions and sell them on AeroFS. For now,
