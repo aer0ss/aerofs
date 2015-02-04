@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -62,7 +63,7 @@ class Stores implements IStores, IDevicePresenceListener
     private final ARP _arp;
     private final Multicast _multicast;
     private final Map<SID, int[]> _sid2filterIndex = Maps.newTreeMap();
-    private final Map<DID, PerDeviceStoreMembership> _memberships = Maps.newHashMap();
+    private final Map<DID, PerDeviceStoreMembership> _memberships = new ConcurrentHashMap<>();
 
     private BFSID _filter = new BFSID(); // _filter contains all the stores the local device cares about (immutable)
     private int _filterSeq = FILTER_SEQ_INVALID;
@@ -349,6 +350,7 @@ class Stores implements IStores, IDevicePresenceListener
         // noop. do nothing
     }
 
+    // NB: can't synchronize on this or will deadlock with PresenceService
     @Override
     public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
