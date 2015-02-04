@@ -157,6 +157,31 @@ public class SSLEngineFactory implements ISslHandlerFactory
         }
 
         engine.setUseClientMode(_clientMode);
+        // Lock things down to TLSv1.2 and ciphersuites with:
+        //   - forward security in key exchange
+        //   - preferably modern, non-broken ciphers (no RC4, no 3DES)
+        //   - sha256 or stronger MAC, or AEAD
+        engine.setEnabledProtocols(new String[]{"TLSv1.2"});
+        engine.setEnabledCipherSuites(new String[]{
+                "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+                "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+                "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+                "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+                "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+        });
 
         // IMPORTANT
         // If we are in server mode and we have been provided with a CA cert to trust, make sure we
