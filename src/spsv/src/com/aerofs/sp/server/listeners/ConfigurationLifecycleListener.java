@@ -14,7 +14,7 @@ public class ConfigurationLifecycleListener
 
     public ConfigurationLifecycleListener()
     {
-        _pathToPropertiesFile = "";
+        _pathToPropertiesFile = null;
     }
 
     protected ConfigurationLifecycleListener(String pathToPropertiesFile)
@@ -30,8 +30,12 @@ public class ConfigurationLifecycleListener
         //
         // Initialize Configuration Properties.
         try {
-            Configuration.Server.initialize(
-                    PropertiesHelper.readPropertiesFromFile(_pathToPropertiesFile));
+            if (_pathToPropertiesFile != null) {
+                Configuration.Server.initialize(
+                        PropertiesHelper.readPropertiesFromFile(_pathToPropertiesFile));
+            } else {
+                Configuration.Server.initialize();
+            }
         } catch (Exception e) {
             throw new RuntimeException("Configuration server init error: " + Util.e(e));
         }
