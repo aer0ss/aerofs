@@ -17,8 +17,6 @@ sourceSets {
     }
 }
 
-compileJava.dependsOn(':generateAllProtoClasses')
-
 dependencies {
     compile 'commons-cli:commons-cli:1.2'
     compile 'com.aerofs:jline:2.13'

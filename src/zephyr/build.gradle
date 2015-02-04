@@ -23,9 +23,6 @@ configurations {
     client.extendsFrom clientCompile
 }
 
-compileJava.dependsOn(':generateAllProtoClasses')
-compileClientJava.dependsOn(':generateAllProtoClasses')
-
 dependencies {
     compile project(':src/lib')
     clientCompile project(':src/lib')

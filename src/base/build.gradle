@@ -86,9 +86,6 @@ configurations {
     testRuntime.extendsFrom(testCompile, testutilRuntime)
 }
 
-// start off by ensuring that the protobuf classes are built before any of the java code
-compileJava.dependsOn(':generateAllProtoClasses')
-
 // specify dependencies for our configurations
 dependencies {
     compile 'com.google.code.findbugs:jsr305:2.0.+'

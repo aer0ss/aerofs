@@ -22,8 +22,6 @@ sourceSets {
     }
 }
 
-compileJava.dependsOn(':generateAllProtoClasses')
-
 dependencies {
     compile name: 'smack'
     compile name: 'smackx'

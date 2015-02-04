@@ -154,8 +154,6 @@ subprojects {
     // tasks
     //-------------------------------------------------------------------------
 
-    clean.dependsOn(':cleanAllProtoClasses')
-
     task dist(type: Copy, description: "Assemble all runtime dependencies for ${name}") {
         from configurations.runtime
         from jar
@@ -165,18 +163,3 @@ subprojects {
     task deps(type: DependencyReportTask) {}
 }
 
-//-----------------------------------------------------------------------------
-// tasks
-//-----------------------------------------------------------------------------
-
-task generateAllProtoClasses(type: Exec, description: "run invoke to build the protobuf plugins and generate all Java and Python protobuf classes") {
-    workingDir "${rootDir}"
-    executable "python"
-    args "${rootDir}/invoke", 'build_protoc_plugins', 'proto'
-}
-
-task cleanAllProtoClasses(type: Exec, description: "run invoke to delete generated Java and Python protobuf classes") {
-    workingDir "${rootDir}"
-    executable 'python'
-    args "${rootDir}/invoke", 'clean'
-}

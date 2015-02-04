@@ -42,8 +42,6 @@ configurations {
     testRuntime.extendsFrom(testCompile, testutilRuntime)
 }
 
-compileJava.dependsOn(':generateAllProtoClasses')
-
 dependencies {
     compile 'ch.qos.logback:logback-core:1.1.+'
     compile 'ch.qos.logback:logback-classic:1.1.+'
