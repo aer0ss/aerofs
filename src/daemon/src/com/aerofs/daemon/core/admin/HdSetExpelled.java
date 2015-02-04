@@ -37,7 +37,6 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
     {
         SOID soid = _ds.resolveThrows_(ev._path);
         Trans t = _tm.begin_();
-        Throwable rollbackCause = null;
         _analytics.track(ev._expelled ? SimpleEvents.EXCLUDE_FOLDER : SimpleEvents.INCLUDE_FOLDER);
         try {
             // explicit expulsion is used to save space so we should not simply move files to rev
@@ -46,16 +45,11 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
 
             _expulsion.setExpelled_(ev._expelled, soid, t);
             t.commit_();
-
-        // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
-        } catch (Exception e) {
-            rollbackCause = e;
-            throw e;
-        } catch (Error e) {
-            rollbackCause = e;
+        } catch (Exception|Error e) {
+            l.warn("rollback triggered ", e);
             throw e;
         } finally {
-            t.end_(rollbackCause);
+            t.end_();
         }
     }
 }

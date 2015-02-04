@@ -391,13 +391,14 @@ public class LinkedStorage implements IPhysicalStorage
         // downloaded, we first create an empty file in the target location, use ReplaceFile
         // and then delete the dummy file from revision history
         if (!wasPresent) {
-            f.createNewFile_(t);
+            f._f.createNewFile();
         }
 
         // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
         final String revPath = _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
                 f._sokid.kidx());
-        _factFile.create(revPath).getParentFile().ensureDirExists();
+        InjectableFile rf = _factFile.create(revPath);
+        rf.getParentFile().ensureDirExists();
         try {
             _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
         } catch (ReplaceFileException e) {
@@ -415,6 +416,12 @@ public class LinkedStorage implements IPhysicalStorage
                 move_(p, f, t);
                 return;
             }
+            l.warn("replace failed", BaseLogUtil.suppress(e));
+            if (!wasPresent) {
+                if (!f._f.deleteIgnoreError() && f._f.exists()) {
+                    l.warn("failed to delete dummy file {}", f._f);
+                }
+            }
             throw e;
         }
 
@@ -424,7 +431,7 @@ public class LinkedStorage implements IPhysicalStorage
                 @Override
                 public void committed_()
                 {
-                    if (deleteRev) _factFile.create(revPath).deleteIgnoreError();
+                    if (deleteRev) rf.deleteIgnoreError();
                 }
 
                 @Override
@@ -441,8 +448,11 @@ public class LinkedStorage implements IPhysicalStorage
                 }
             });
         } else {
-            // delete dummy file immediately
-            _factFile.create(revPath).deleteIgnoreError();
+            TransUtil.onRollback_(f._f, t, () -> f._f.moveInSameFileSystem(p._f));
+            // delete dummy file from rev history immediately
+            if (!rf.deleteIgnoreError() && rf.exists()) {
+                l.warn("failed to delete dummy rev file {}", f._f);
+            }
         }
     }
 

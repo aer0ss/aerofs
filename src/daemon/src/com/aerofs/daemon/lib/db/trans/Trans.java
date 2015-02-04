@@ -8,10 +8,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Lists;
-import com.google.common.collect.ObjectArrays;
 import com.google.inject.Inject;
-
-import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -114,34 +111,6 @@ public class Trans implements AutoCloseable
 
         for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).aborted_();
         _tm.aborted_();
-    }
-
-    /**
-     * Concat the stack trace of {@code b} to that of {@code a}
-     */
-    private void concatStackTrace(Throwable a, Throwable b)
-    {
-        a.setStackTrace(ObjectArrays.concat(
-                a.getStackTrace(), b.getStackTrace(), StackTraceElement.class));
-    }
-
-    /**
-     * abort the transaction if commit_() hasn't been called after begin_().
-     * otherwise commit the transaction.
-     *
-     * If the rollback fails due to an exception, append to its the stack trace that of the
-     * {@code rollbackCause}, if any, to avoid loosing valuable debugging information
-     *
-     * @param rollbackCause rollback cause, if any
-     */
-    public void end_(@Nullable Throwable rollbackCause) throws SQLException
-    {
-        try {
-            end_();
-        } catch (Error|RuntimeException|SQLException e) {
-            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
-            throw e;
-        }
     }
 
     public void commit_()

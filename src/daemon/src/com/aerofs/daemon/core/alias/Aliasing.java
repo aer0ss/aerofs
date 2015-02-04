@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.CID;
@@ -226,7 +225,6 @@ public class Aliasing
                 vRemoteAliasMeta, target, vRemoteTargetMeta, oidParent);
 
         Trans t = _tm.begin_();
-        Throwable rollbackCause = null;
         try {
             if (!_ds.hasAliasedOA_(target)) {
                 fetchTarget_(alias, target, vRemoteTargetMeta, oidParent, metaDiff, meta, cxt, t);
@@ -310,18 +308,11 @@ public class Aliasing
 
             t.commit_();
             l.debug("Done processing alias message");
-
-        // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
-        } catch (Exception e) {
-            rollbackCause = e;
-            l.warn("triggered rollback: {}", Util.e(rollbackCause));
-            throw e;
-        } catch (Error e) {
-            rollbackCause = e;
-            l.warn("triggered rollback: {}", Util.e(rollbackCause));
+        } catch (Exception|Error e) {
+            l.warn("rollback triggered ", e);
             throw e;
         } finally {
-            t.end_(rollbackCause);
+            t.end_();
         }
     }
 

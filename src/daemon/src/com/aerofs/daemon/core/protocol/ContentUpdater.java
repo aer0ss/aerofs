@@ -176,7 +176,6 @@ public class ContentUpdater
         }
 
         Trans t = _tm.begin_();
-        Throwable rollbackCause = null;
         try {
             updateVersion_(new SOCKID(targetBranch, CID.CONTENT), vRemote, cr, t);
             if (prefix != null) {
@@ -184,10 +183,10 @@ public class ContentUpdater
             }
             t.commit_();
         } catch (Exception | Error e) {
-            rollbackCause = e;
+            l.warn("rollback triggered ", e);
             throw e;
         } finally {
-            t.end_(rollbackCause);
+            t.end_();
         }
         l.info("{} ok {}", msg.ep(), socid);
     }

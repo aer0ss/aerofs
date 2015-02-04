@@ -201,8 +201,6 @@ public class MetaUpdater
 
         final boolean wasPresent = _ds.isPresent_(targetBranch);
 
-        Throwable rollbackCause = null;
-
         Trans t = _tm.begin_();
         try {
             if (metaDiff != 0) {
@@ -228,10 +226,10 @@ public class MetaUpdater
             l.info("{} ok {}", msg.ep(), socid);
 
         } catch (Exception | Error e) {
-            rollbackCause = e;
+            l.warn("rollback triggered ", e);
             throw e;
         } finally {
-            t.end_(rollbackCause);
+            t.end_();
         }
     }
 
