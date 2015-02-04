@@ -31,6 +31,19 @@ containers:
     run:
       detach: true
 
+  ntp:
+    image: aerofs/ntp
+    run:
+      # ntpdate needs privilege
+      privileged: true
+      volume:
+        # datatimectl needs dbus access
+        - /var/run/dbus:/var/run/dbus
+        - /etc/systemd/timesyncd.conf.d:/etc/systemd/timesyncd.conf.d
+      detach: true
+      link:
+        - config:config.service
+
   ejabberd:
     image: aerofs/ejabberd
     run:
@@ -85,6 +98,7 @@ containers:
         - repackaging:repackaging.service
         - bifrost:bifrost.service
         - status:status.service
+        - ntp:ntp.service
 
   enforcer:
     image: aerofs/enforcer
@@ -149,7 +163,7 @@ containers:
       publish:
         - "29438:29438"
       detach: true
-      # the sysctl call from start.sh requires privilege
+      # sysctl requires privilege
       privileged: true
       # for copying cacert only
       volumes-from:
@@ -296,6 +310,7 @@ containers:
         - config:config.service
         - loader:loader.service
         - verification:verification.service
+        - ntp:ntp.service
         # For db backup
         - mysql:mysql.service
 

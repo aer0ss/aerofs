@@ -61,7 +61,7 @@ def is_running():
 
 def banner():
     return '''
-Service Usage:
+API Usage:
 
     GET /       Return the status of the repackaging task. Response:
                 {

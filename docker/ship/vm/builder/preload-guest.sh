@@ -17,11 +17,6 @@ if [ $(whoami) != root ]; then
     exit 22
 fi
 
-# A potential bug in docker causes very slow pulls. Running seemingly unrelated activities in the background
-# mysterically reduces total pulling from couple of hours to 20 mins.
-# TODO (WW) fix the root cause. The workaround doesn't work well on CI anyways.
-vmstat 1 1>/dev/null &
-
 # Add a drop-in to allow pulling from the insecure preload repo
 DROP_IN=/etc/systemd/system/docker.service.d/50-insecure-preload-registry.conf
 mkdir -p $(dirname ${DROP_IN})
@@ -30,8 +25,14 @@ cat >> ${DROP_IN} <<< "Environment=DOCKER_OPTS='--insecure-registry=\"${PRELOAD_
 systemctl daemon-reload
 systemctl restart docker.service
 
+# Surpress stdout otherwise for some reason pulling is extremely slow (20+ images can take several hours).
+pull_image() {
+    docker pull "$1" > /dev/null
+}
+
 # Fetch and verify image list
 LOADER="${PRELOAD_REPO}/${LOADER_IMAGE}"
+pull_image "${LOADER}"
 IMAGES=$(docker run --rm "${LOADER}" images)
 TAG=$(docker run --rm "${LOADER}" tag)
 if [ x"$(echo "${IMAGES}" | grep "${LOADER_IMAGE}")" = x ]; then
@@ -39,9 +40,9 @@ if [ x"$(echo "${IMAGES}" | grep "${LOADER_IMAGE}")" = x ]; then
     exit 22
 fi
 
-# Pull images
+# Pull all the images
 for i in ${IMAGES}; do
-    docker pull "${PRELOAD_REPO}/${i}"
+    pull_image "${PRELOAD_REPO}/${i}"
 done
 
 # Remove drop-in

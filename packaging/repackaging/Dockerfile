@@ -27,8 +27,7 @@ RUN apt-get update && apt-get install -y p7zip-full zip &&\
 
 COPY root/opt/repackaging/api/requirements.txt /
 
-RUN pip install -r /requirements.txt &&\
-    rm -rf /sdist && rm /requirements.txt
+RUN pip install -r /requirements.txt && rm /requirements.txt
 
 # Add source files last
 COPY root buildroot /

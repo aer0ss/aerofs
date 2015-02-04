@@ -5,7 +5,7 @@ from tempfile import mkstemp
 import yaml
 import requests
 from util import ElementCSSSelector
-
+from urllib import urlencode
 
 def upload_license(e, d, wait, license_file):
 
@@ -109,12 +109,12 @@ def apply_config(e, wait):
     wait.until_display('#email-sent-modal')
 
 
-def get_signup_code(hostname):
-    url = "http://{}:5775".format(hostname)
+def get_signup_code(hostname, user_id):
+    url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'user': user_id}))
     print "Getting signup code via Signup Decoder at {}...".format(url)
     r = requests.get(url)
     r.raise_for_status()
-    return r.content.strip()
+    return r.json()['signup_code']
 
 
 def create_account(e, wait, password):
@@ -148,7 +148,7 @@ def run_all(d, wait, hostname, license_file, appliance_setup_yml_file):
     apply_config(e, wait)
 
     # Create first admin account
-    code = get_signup_code(hostname)
+    code = get_signup_code(hostname, y['admin-email'])
     url = "https://{}/signup?c={}".format(hostname, code)
     print "Interacting with {}...".format(url)
     d.get(url)

@@ -19,6 +19,7 @@ DIRS = \
 	maintenance-nginx \
 	mysql \
 	nginx \
+	ntp \
 	postfix \
 	../src/polaris \
 	redis \

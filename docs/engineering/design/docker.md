@@ -59,9 +59,9 @@ The following tasks are necessary to completely containerize AeroFS services.
 Even if we end up with not adopting Docker, these changes would improve service 
 decoupling and pave the road for scaling the appliance in the future.
 
-0. in maintenance mode, :8484/ returns 500
-
 0. console service may start before dhcp init is done.
+
+0. db password (rudy's work)
 
 0. vk calls Identity to retrieve CRL on launch.
 
@@ -71,8 +71,6 @@ decoupling and pave the road for scaling the appliance in the future.
     update-monitoring-password
     bifrost-sanity-check
     sanity-check
-
-0. reconfigure-ntp (see https://coreos.com/docs/cluster-management/setup/configuring-date-and-timezone/)
 
 0. TS sanity check? Change-Id: Ic70edc0ce09096d67d2bd0a2ec083895d49d407d
 
@@ -96,6 +94,8 @@ copied or duplicated in the new system.
 
 
 ### Items after initial release
+
+- update "Archive Appliance Logs" CI target and remove "Run build even if dependency has failed" from its dependents
 
 - reliably delete files from buildroot using a master buildroot. Use plain copying to populate buildroot and then lazy-rsync (rsync with lazy-copy) to sync to target buildroot.
 

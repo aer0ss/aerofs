@@ -30,9 +30,6 @@ create_cloud_config_drive() {
         "${THIS_DIR}/ci-cloud-config.jinja" \
         > "${USER_DATA}"
 
-    echo "Cloud drive's user-data content as follows:"
-    cat "${USER_DATA}"
-
     # Label "config-2" is mantatory
     genisoimage -R -V config-2 -o "${CLOUD_DRIVE_ISO}" "${TMP}"
     rm -rf "${TMP}"
@@ -121,7 +118,7 @@ main() {
     echo "    vm$ systemctl status -l signup-decoder"
     echo "    vm$ journald -fu signup-decoder"
     echo
-    wait_for_url 5775
+    wait_for_url 21337
 }
 
 main

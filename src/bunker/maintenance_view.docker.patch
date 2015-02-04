@@ -6,7 +6,7 @@
  
  log = logging.getLogger(__name__)
  
-@@ -78,15 +79,30 @@
+@@ -78,15 +79,42 @@
  
  @view_config(
      route_name='maintenance_home',
@@ -18,8 +18,17 @@
 -    # Redirect to the setup page if the system is not initialized
 -    if is_configuration_initialized(request.registry.settings):
 -        redirect = 'status'
--    else:
-+    return HTTPFound(location=request.route_path('status'))
++    """
++    The default page of the maintenance site http://host.name:8484
++    """
++    if not is_configuration_initialized(request.registry.settings):
++        redirect = 'setup'
++    elif is_maintenance_mode(request.registry.settings):
++        # The status page is inaccessible during maintenance
++        redirect = 'toggle_maintenance_mode'
+     else:
++        redirect = 'status'
++    return HTTPFound(location=request.route_path(redirect))
 +
 +
 +@view_config(
@@ -28,11 +37,13 @@
 +)
 +def maintenance_redirect(request):
 +    """
-+    Depending on the system's state, it redirects to appropriate pages.
++    Nginx redirects the user to this route when they access the appliance's main URL http{,s}://host.name.
++    Depending on the system's state, this route redirects to an appropriate page.
 +    """
 +    if not is_configuration_initialized(request.registry.settings):
          redirect = 'setup'
 +    elif is_maintenance_mode(request.registry.settings):
++        # The status page is inaccessible during maintenance
 +        redirect = 'maintenance_mode'
 +    else:
 +        r = requests.get('http://config.service:5434/is_license_valid')
