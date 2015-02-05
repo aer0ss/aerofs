@@ -23,6 +23,7 @@ then
 fi
 
 echo "Signing code..."
+security unlock-keychain -p "$(cat /Volumes/aerofskeys/keychain_passphrase.txt)" /Volumes/aerofskeys/aerofs.keychain
 codesign -f -s "Air Computing, Inc." $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax
 if [ $? -ne 0 ] ; then
     echo "Codesigning failed.  Do you have the keys installed in your keychain?"
