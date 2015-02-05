@@ -10,8 +10,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPooledConnection;
 
-import javax.annotation.Nullable;
-
 public class PooledJedisConnectionProvider
         implements IDatabaseConnectionProvider<JedisPooledConnection>
 {
@@ -31,7 +29,7 @@ public class PooledJedisConnectionProvider
         return _jedisPool.getResource();
     }
 
-    public void init_(String host, int port, @Nullable String password)
+    public void init_(String host, int port)
     {
         // Cannot call init more than once.
         assert _jedisPool == null;
@@ -71,7 +69,6 @@ public class PooledJedisConnectionProvider
         // when exausted action is set to WHEN_EXAUSTED_BLOCK
         config.setMaxWait(3000);
 
-        // 2000 is the default timeout, there's no constructor that takes password without timeout
-        _jedisPool = new JedisPool(config, host, port, 2000, password);
+        _jedisPool = new JedisPool(config, host, port);
     }
 }

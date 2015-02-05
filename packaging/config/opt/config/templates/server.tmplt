@@ -7,7 +7,6 @@ base.ca.url=http://localhost:1029/prod
 
 redis.host={{ redis_host }}
 redis.port={{ redis_port }}
-redis.password={{ redis_password }}
 mysql.url={{ mysql_url }}
 mysql.user={{ mysql_user }}
 mysql.password={{ mysql_password }}

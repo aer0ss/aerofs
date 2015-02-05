@@ -49,7 +49,7 @@ public class AbstractTestWithDatabase extends AbstractTest
     public void setupAbstractTestWithDatabaseJedis()
             throws ExDbInternal
     {
-        jedisProvider.init_("localhost", 6379, null);
+        jedisProvider.init_("localhost", (short) 6379);
 
         jedisTrans.begin();
         jedisTrans.get().flushAll();
