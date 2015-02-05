@@ -46,7 +46,7 @@ public class EndpointVersionDetector implements ChannelPipelineFactory
     {
         ChannelPipeline p = Channels.pipeline();
         p.addLast("http", new HttpClientCodec());
-        p.addLast("aggregator", new HttpChunkAggregator(128));
+        p.addLast("aggregator", new HttpChunkAggregator(1 << 22));
         p.addLast("handler", new Handler());
         return p;
     }
