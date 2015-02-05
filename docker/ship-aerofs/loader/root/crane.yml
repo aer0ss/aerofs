@@ -76,7 +76,7 @@ containers:
         - sparta:sparta.service
         - bifrost:bifrost.service
         - auditor:auditor.service
-        - identity:identity.service
+        - openid:openid.service
         - polaris:polaris.service
 
   bunker:
@@ -172,7 +172,7 @@ containers:
       link:
         - config:config.service
         - ca:ca.service
-        - identity:identity.service
+        - mysql:mysql.service
 
   havre:
     image: aerofs/havre
@@ -250,8 +250,8 @@ containers:
       link:
         - redis:redis.service
 
-  identity:
-    image: aerofs/identity
+  openid:
+    image: aerofs/openid
     run:
       detach: true
       link:
@@ -270,7 +270,7 @@ containers:
         - charlie:charlie.service
         - ejabberd:ejabberd.service
         - havre:havre.service
-        - identity:identity.service
+        - openid:openid.service
         - mysql:mysql.service
         - polaris:polaris.service
         - postfix:postfix.service

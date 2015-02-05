@@ -63,27 +63,17 @@ decoupling and pave the road for scaling the appliance in the future.
 
 0. db password (rudy's work)
 
-0. vk calls Identity to retrieve CRL on launch.
-
-0. dryad
-
 0. following bootstrap tasks:
     update-monitoring-password
-    bifrost-sanity-check
-    sanity-check
 
 0. TS sanity check? Change-Id: Ic70edc0ce09096d67d2bd0a2ec083895d49d407d
 
 0. redis: how to run "sysctl vm.overcommit_memory = 1"?
 
-0. fallback to last target when boot fails.
-
 Logistic items:
 
 0. Use stable rather than alpha CoreOS release channel (by the time of writing 
 stable doesn't support gz+b64 cloud-config encoding.
-
-0. Some images may be unofficial builds. We should only use official images.
 
 0. Right before release, verify all the code/scripts that duplicate 
 with the original source are still consistent with the original. In particular, 
@@ -94,6 +84,10 @@ copied or duplicated in the new system.
 
 
 ### Items after initial release
+
+- dryad?
+
+- fallback to last target when boot fails.
 
 - update "Archive Appliance Logs" CI target and remove "Run build even if dependency has failed" from its dependents
 

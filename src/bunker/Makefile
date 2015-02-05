@@ -30,6 +30,9 @@ $(REQUIREMENTS_FILE): requirements-exact.txt
 	cp $< $@
 	echo psutil >> $@
 
+$(ROOT)/web/views/maintenance/status_view.py: web/views/maintenance/status_view.py status_view.py.docker.patch
+	$(call patch,$@,$<,$(@F))
+
 $(ROOT)/web/views/maintenance/timekeeping_view.py: web/views/maintenance/timekeeping_view.py timekeeping_view.docker.patch
 	$(call patch,$@,$<,timekeeping_view)
 

@@ -12,7 +12,7 @@ SITES = sp \
 	sparta \
 	bifrost \
 	auditor \
-	identity \
+	openid \
 	polaris
 	# remember to update the deps below when adding sites
 
@@ -30,5 +30,7 @@ $(DIR)/havre: ../../packaging/havre/etc/nginx/backends-available/aerofs-havre
 $(DIR)/sparta: ../../packaging/sparta/etc/nginx/backends-available/aerofs-sparta
 $(DIR)/bifrost: ../../packaging/bifrost/etc/nginx/backends-available/aerofs-bifrost
 $(DIR)/auditor: ../../packaging/auditor/etc/nginx/backends-available/aerofs-auditor
-$(DIR)/identity: ../../packaging/identity/etc/nginx/backends-available/aerofs-identity
 $(DIR)/polaris: ../../packaging/polaris/etc/nginx/backends-available/aerofs-polaris
+
+$(DIR)/openid: ../../packaging/identity/etc/nginx/backends-available/aerofs-identity
+	sed -e 's/127.0.0.1/openid.service/' $< > $@

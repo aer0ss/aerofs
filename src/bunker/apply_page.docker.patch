@@ -14,7 +14,7 @@
  
      <script>
          $(document).ready(function() {
-@@ -114,26 +114,79 @@
+@@ -114,26 +114,117 @@
              ## Show the progress modal
              $('#${progress_modal.id()}').modal('show');
  
@@ -23,7 +23,45 @@
 -                hideAllModals();
 -                trackError();
 -            });
-+            reboot('current', 'current', 'default', waitForPreviousRepackaging, onFailure);
++            reboot('current', 'current', 'default', waitForServicesReady, onFailure);
++        }
++
++        function waitForServicesReady() {
++            console.log('wait for all services to be ready');
++            var count = 0;
++            var poll = function() {
++                $.get("${request.route_path('json-status')}")
++                .done(function (resp) {
++                    count++;
++                    for (var i = 0; i < resp['statuses'].length; i++) {
++                        var status = resp['statuses'][i];
++                        var service = status['service'];
++                        ## Ignores Team Server errors as these are not relevant
++                        if (service == 'team-servers') continue;
++
++                        if (!status['is_healthy']) {
++                            console.log('service ' + service + ' is unhealthy.');
++                            ## Wait for ~10 seconds
++                            if (count > 10) {
++                                console.log('waitForHealthyServices() timed out');
++                                hideAllModals();
++                                showErrorMessage('Service ' + service + ' failed to start.');
++                                trackError();
++                            } else {
++                                console.log('wait');
++                                window.setTimeout(poll, 1000);
++                            }
++                            return;
++                        }
++                    }
++
++                    ## All services are ready
++                    waitForPreviousRepackaging();
++
++                }).fail(onFailure);
++            };
++
++            poll();
 +        }
 +
 +        ## I know we just booted up but someone else might kicked off repackaging right before us.

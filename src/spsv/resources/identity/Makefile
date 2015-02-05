@@ -1,4 +1,4 @@
-IMAGE_NAME = aerofs/identity
+IMAGE_NAME = aerofs/openid
 
 WEB_INF_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF
 
