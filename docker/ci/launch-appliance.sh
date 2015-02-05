@@ -116,7 +116,7 @@ main() {
     echo "SSH into the VM via the above command and to monitor progress using:"
     echo
     echo "    vm$ systemctl status -l signup-decoder"
-    echo "    vm$ journald -fu signup-decoder"
+    echo "    vm$ journalctl -fu signup-decoder"
     echo
     wait_for_url 21337
 }

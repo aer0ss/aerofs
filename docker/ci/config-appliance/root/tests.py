@@ -95,7 +95,7 @@ def apply_config(e, wait):
 
     # Click Apply
     e.get('.btn-primary').click()
-    print "It may take some time for the system to finish configuration..."
+    print "The next step may take a while but should be less than five minutes:"
 
     # Click Create First User
     wait.until_display('#success-modal', timeout=30 * 60)

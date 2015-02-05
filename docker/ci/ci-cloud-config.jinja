@@ -49,8 +49,8 @@ write_files:
 
       @app.route("/get_code", methods=["GET"])
       def get():
-          user = request.args.get('user')
-          if not user: return "Must specify user id in the form of 'user=email@address'", 400
+          user = request.args.get('userid')
+          if not user: return "Must specify user id in the form of 'userid=email@address'", 400
 
           # Find mysql container
           container = None
@@ -64,7 +64,9 @@ write_files:
 
           # Run SQL in mysql container to print the last signup code of the given user
           script = 'mysql -N aerofs_sp <<< "select t_code from sp_signup_code where t_to=\'{}\' order by t_ts desc limit 1"'.format(user)
-          p = Popen(['docker', 'exec', container, 'bash', '-c', script], stdout=PIPE, stderr=PIPE)
+          cmd = ['docker', 'exec', container, 'bash', '-c', script]
+          print cmd
+          p = Popen(cmd, stdout=PIPE, stderr=PIPE)
           out, err = p.communicate()
           if err:
             return err, 400
