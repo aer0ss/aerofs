@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -112,7 +113,7 @@ public class MetaUpdater
         int metaDiff;
 
         PBMeta meta = pbResponse.getMeta();
-        oidParent = new OID(meta.getParentObjectId());
+        oidParent = new OID(BaseUtil.fromPB(meta.getParentObjectId()));
 
         // "Dereference" the parent OID if it has been aliased locally, otherwise:
         // *  the parent's OA is not present (aliased objects don't have
@@ -154,7 +155,7 @@ public class MetaUpdater
             _al.processAliasMsg_(
                     socid.soid(),                                           // alias
                     Version.fromPB(pbResponse.getVersion()),                // vRemoteAlias
-                    new SOID(socid.sidx(), new OID(meta.getTargetOid())),   // target
+                    new SOID(socid.sidx(), new OID(BaseUtil.fromPB(meta.getTargetOid()))),   // target
                     Version.fromPB(meta.getTargetVersion()),                // vRemoteTarget
                     oidParent,
                     metaDiff, meta, cxt);

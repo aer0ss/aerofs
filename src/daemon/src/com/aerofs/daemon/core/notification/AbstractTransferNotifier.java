@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -163,7 +164,7 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
         PBSOCID pbsocid = PBSOCID
                 .newBuilder()
                 .setSidx(socid.sidx().getInt())
-                .setOid(socid.oid().toPB())
+                .setOid(BaseUtil.toPB(socid.oid()))
                 .setCid(socid.cid().getInt())
                 .build();
 
@@ -171,7 +172,7 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
                 .newBuilder()
                 .setUpload(isUpload)
                 .setSocid(pbsocid)
-                .setDeviceId(did.toPB())
+                .setDeviceId(BaseUtil.toPB(did))
                 .setDisplayName(formatDisplayName_(did))
                 .setDone(progress._done)
                 .setTotal(progress._total)

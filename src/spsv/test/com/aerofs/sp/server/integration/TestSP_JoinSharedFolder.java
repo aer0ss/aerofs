@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -115,7 +116,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         setSession(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
         assertEquals(USER_1.id().getString(), inv.getSharer());
-        assertEquals(SID_1, new SID(inv.getShareId()));
+        assertEquals(SID_1, new SID(BaseUtil.fromPB(inv.getShareId())));
 
         service.ignoreSharedFolderInvitation(inv.getShareId());
     }
@@ -125,7 +126,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         setSession(USER_1);
         try {
-            service.ignoreSharedFolderInvitation(SID_1.toPB());
+            service.ignoreSharedFolderInvitation(BaseUtil.toPB(SID_1));
             fail();
         } catch (ExNotFound e) {}
     }
@@ -137,7 +138,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 
         setSession(USER_3);
         try {
-            service.ignoreSharedFolderInvitation(SID_1.toPB());
+            service.ignoreSharedFolderInvitation(BaseUtil.toPB(SID_1));
             fail();
         } catch (ExNotFound e) {}
     }
@@ -149,7 +150,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 
         setSession(USER_1);
         try {
-            service.ignoreSharedFolderInvitation(SID_1.toPB());
+            service.ignoreSharedFolderInvitation(BaseUtil.toPB(SID_1));
             fail();
         } catch (ExNotFound e) {}
     }

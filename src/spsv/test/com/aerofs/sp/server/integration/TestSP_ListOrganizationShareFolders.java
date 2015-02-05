@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
@@ -42,7 +43,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
-            assertFalse(new SID(sf.getStoreId()).isUserRoot());
+            assertFalse(new SID(BaseUtil.fromPB(sf.getStoreId())).isUserRoot());
         }
     }
 
@@ -112,7 +113,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
         setSession(admin);
         for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0)
                 .get().getSharedFolderList()) {
-            SID sid = new SID(sf.getStoreId());
+            SID sid = new SID(BaseUtil.fromPB(sf.getStoreId()));
             if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
             if (sid2.equals(sid)) assertTrue(sf.getOwnedByTeam());
         }

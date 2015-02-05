@@ -5,11 +5,11 @@
 package com.aerofs.daemon.transport.xmpp.multicast;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.transport.ITransport;
@@ -194,7 +194,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
         return at == -1 ? room : room.substring(0, at);
     }
 
-    private void recvMessage(Message msg) throws IOException, ExFormatError,
+    private void recvMessage(Message msg) throws IOException, ExInvalidID,
             ExNoResource
     {
         String[] tokens = JabberID.tokenize(msg.getFrom());

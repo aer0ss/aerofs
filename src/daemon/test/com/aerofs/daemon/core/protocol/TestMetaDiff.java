@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -40,7 +41,7 @@ public class TestMetaDiff extends AbstractTest
 
         mockedMeta = PBMeta.newBuilder()
             .setType(PBMeta.Type.FILE)
-            .setParentObjectId(parent.toPB())
+            .setParentObjectId(BaseUtil.toPB(parent))
             .setName(name)
             .setFlags(0x0)
             .build();

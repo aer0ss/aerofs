@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.gui.AeroFSDialog;
@@ -239,7 +240,7 @@ public class PreferencesHelper
                     r = newMutualAuthClientFactory()
                             .create()
                             .signInRemote()
-                            .getUserPreferences(Cfg.did().toPB());
+                            .getUserPreferences(BaseUtil.toPB(Cfg.did()));
                 } catch (ExBadCredential ebc) {
                     l.warn("ExBadCredential", LogUtil.suppress(ebc));
                 } catch (Exception e2) {
@@ -297,7 +298,7 @@ public class PreferencesHelper
                             .create()
                             .signInRemote()
                             .setUserPreferences(Cfg.user().getString(), null, null,
-                                    Cfg.did().toPB(), deviceNameToSend);
+                                    BaseUtil.toPB(Cfg.did()), deviceNameToSend);
                     e = null;
                 } catch (Exception e2) {
                     e = e2;

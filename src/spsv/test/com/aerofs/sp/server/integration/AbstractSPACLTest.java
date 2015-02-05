@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
@@ -78,7 +79,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
     protected List<PBSubjectPermissions> getSingleACL(SID sid, GetACLReply getACLReply)
     {
         assertEquals(1, getACLReply.getStoreAclCount());
-        assertEquals(sid.toPB(), getACLReply.getStoreAcl(0).getStoreId());
+        assertEquals(BaseUtil.toPB(sid), getACLReply.getStoreAcl(0).getStoreId());
         return getACLReply.getStoreAcl(0).getSubjectPermissionsList();
     }
 

@@ -6,6 +6,7 @@
 
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -374,7 +375,7 @@ public class TCP implements ITransport, IAddressResolver
             {
                 TCPDevice.Builder deviceBuilder = TCPDevice
                         .newBuilder()
-                        .setDid(did.toPB())
+                        .setDid(BaseUtil.toPB(did))
                         .setDeviceAddress(TransportUtil.fromInetSockAddress(arp.remoteAddress, false));
 
                 for (Message message : unicast.getChannelDiagnostics(did)) {

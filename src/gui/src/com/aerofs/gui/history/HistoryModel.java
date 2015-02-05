@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.history;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
@@ -200,7 +201,7 @@ public class HistoryModel
                 List<ModelIndex> list = Lists.newArrayList();
                 // use user roots as top level
                 for (UserRoot userRoot : ritual().listUserRoots().getRootList()) {
-                    list.add(new ModelIndex(this, new Path(new SID(userRoot.getSid())),
+                    list.add(new ModelIndex(this, new Path(new SID(BaseUtil.fromPB(userRoot.getSid()))),
                             userRoot.getName()));
                 }
                 // need to list shared folders too:

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
@@ -130,8 +131,8 @@ public class GetComponentRequest
         // by our local versions)
         PBGetComponentRequest.Builder bd = PBGetComponentRequest
                 .newBuilder()
-                .setStoreId(_sidx2sid.getThrows_(socid.sidx()).toPB())
-                .setObjectId(socid.oid().toPB())
+                .setStoreId(BaseUtil.toPB(_sidx2sid.getThrows_(socid.sidx())))
+                .setObjectId(BaseUtil.toPB(socid.oid()))
                 .setComId(socid.cid().getInt());
 
         boolean polaris = _cedb.getChangeEpoch_(socid.sidx()) != null;
@@ -252,7 +253,7 @@ public class GetComponentRequest
         Util.checkPB(msg.pb().hasGetComponentRequest(), PBGetComponentRequest.class);
         PBGetComponentRequest request = msg.pb().getGetComponentRequest();
 
-        SID sid = new SID(request.getStoreId());
+        SID sid = new SID(BaseUtil.fromPB(request.getStoreId()));
         SIndex sidx = _sid2sidx.getThrows_(sid);
 
         // see Rule 3 in acl.md
@@ -267,7 +268,7 @@ public class GetComponentRequest
             throw new ExNoPerm();
         }
 
-        SOCID socid = new SOCID(sidx, new OID(request.getObjectId()), new CID(request.getComId()));
+        SOCID socid = new SOCID(sidx, new OID(BaseUtil.fromPB(request.getObjectId())), new CID(request.getComId()));
         Version vRemote = Version.fromPB(request.getLocalVersion());
         SOCKID k = new SOCKID(socid, findBranchNotDominatedBy_(socid, vRemote));
         l.info("{} receive gcc request for {} {} over {}", msg.did(), k, vRemote, msg.tp());
@@ -401,7 +402,7 @@ public class GetComponentRequest
 
         PBMeta.Builder bdMeta = PBMeta.newBuilder()
             .setType(toPB(oa.type()))
-            .setParentObjectId(oa.parent().toPB())
+            .setParentObjectId(BaseUtil.toPB(oa.parent()))
             .setName(oa.name())
             .setFlags(0);
 
@@ -411,7 +412,7 @@ public class GetComponentRequest
         OID targetOID = _a2t.getNullable_(k.soid());
         if (targetOID != null) {
             assert !k.oid().equals(targetOID); // k is alias here.
-            bdMeta.setTargetOid(targetOID.toPB());
+            bdMeta.setTargetOid(BaseUtil.toPB(targetOID));
             Version vTarget = _nvc.getLocalVersion_(new SOCKID(k.sidx(), targetOID, CID.META));
             bdMeta.setTargetVersion(vTarget.toPB_());
             l.debug("{} send target oid: {} target version: {} alias SOCKID: {} over {}", ep.did(), targetOID, vTarget, k, ep.tp());
@@ -421,7 +422,7 @@ public class GetComponentRequest
         // send emigration info
 
         for (SID sid : _emc.getEmigrantTargetAncestorSIDsForMeta_(oa.parent(), oa.name())) {
-            bdMeta.addEmigrantTargetAncestorSid(sid.toPB());
+            bdMeta.addEmigrantTargetAncestorSid(BaseUtil.toPB(sid));
         }
 
         bdResponse.setMeta(bdMeta);

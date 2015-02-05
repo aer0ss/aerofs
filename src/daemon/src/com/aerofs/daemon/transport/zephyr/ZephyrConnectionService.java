@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.zephyr;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -493,7 +494,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
             ZephyrDevice device = ZephyrDevice
                     .newBuilder()
-                    .setDid(did.toPB())
+                    .setDid(BaseUtil.toPB(did))
                     .addChannel(channelBd)
                     .build();
 

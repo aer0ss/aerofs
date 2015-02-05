@@ -4,6 +4,7 @@
 
 package com.aerofs.defects;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defect.Priority;
@@ -131,7 +132,8 @@ public abstract class PriorityDefect
 
         _spFactory.create()
                 .signInRemote()
-                .sendPriorityDefectEmail(defectID, _contactEmail, _message, _cfg.ver(), _cfg.did());
+                .sendPriorityDefectEmail(defectID, _contactEmail, _message, _cfg.ver(),
+                        BaseUtil.toPB(_cfg.did()));
     }
 
     private void saveContactEmail(@Nonnull String contactEmail)

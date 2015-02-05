@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.DID;
@@ -80,7 +81,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
     public void shouldSucceedWhenUsersShareFiles()
             throws Exception
     {
-        GetDeviceInfoReply reply = service.getDeviceInfo(ImmutableList.of(_deviceB01.id().toPB())).get();
+        GetDeviceInfoReply reply = service.getDeviceInfo(ImmutableList.of(BaseUtil.toPB(_deviceB01.id()))).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();
         assertEquals(deviceInfoList.size(), 1);
@@ -111,7 +112,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
             throws Exception
     {
         LinkedList<ByteString> dids = new LinkedList<ByteString>();
-        dids.add(_deviceC01.id().toPB());
+        dids.add(BaseUtil.toPB(_deviceC01.id()));
         GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();
@@ -136,8 +137,8 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
         throws Exception
     {
         LinkedList<ByteString> dids = new LinkedList<ByteString>();
-        dids.add(_deviceB01.id().toPB());
-        dids.add(_deviceC01.id().toPB());
+        dids.add(BaseUtil.toPB(_deviceB01.id()));
+        dids.add(BaseUtil.toPB(_deviceC01.id()));
         GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();

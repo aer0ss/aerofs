@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -33,7 +34,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     public void setupTestSP_Unlink()
         throws Exception
     {
-        String cert = service.registerDevice(device.id().toPB(), newCSR(TEST_1_USER, device),
+        String cert = service.registerDevice(BaseUtil.toPB(device.id()), newCSR(TEST_1_USER, device),
                 "", "", "", null).get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
@@ -64,7 +65,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
 
         // Unlinking should still work.
         setSession(USER_1);
-        service.unlinkDevice(did.toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(did), false);
     }
 
     @Test
@@ -72,7 +73,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Follow a typical certify-revoke cycle.
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
         // Verify that only one certificate has been revoked, as expected.
         GetCRLReply reply = service.getCRL().get();
@@ -84,8 +85,8 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     public void shouldNotThrowIfUnlinkDeviceCertificateMoreThanOnce()
             throws Exception
     {
-        service.unlinkDevice(device.id().toPB(), false);
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
     }
 
     @Test(expected = ExNotFound.class)
@@ -93,7 +94,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Try to revoke the certificate without first certifying the device
-        service.unlinkDevice(new DID(UniqueID.generate()).toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(new DID(UniqueID.generate())), false);
     }
 
     @Test(expected = ExNoPerm.class)
@@ -102,7 +103,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     {
         // Switch to a different user and try to revoke the previous user's device.
         setSession(TEST_2_USER);
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
     }
 
     @Test
@@ -111,14 +112,14 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     {
         // Verify we can get device info before unlinking.
         GetDeviceInfoReply reply =
-                service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
+                service.getDeviceInfo(Collections.nCopies(1, BaseUtil.toPB(device.id()))).get();
         assertEquals(1, reply.getDeviceInfoCount());
         assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
 
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
         // Verify we can get device info after unlinking.
-        reply = service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
+        reply = service.getDeviceInfo(Collections.nCopies(1, BaseUtil.toPB(device.id()))).get();
         assertEquals(1, reply.getDeviceInfoCount());
         assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
     }
@@ -133,7 +134,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 0);
 
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
         // And after one revocation, the list will be of length 1.
         reply = service.getCRL().get();
@@ -152,7 +153,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         sqlTrans.commit();
         assertEquals(1, devices.size());
 
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
         sqlTrans.begin();
         devices = TEST_1_USER.getPeerDevices();
@@ -171,7 +172,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         sqlTrans.commit();
         assertEquals(1, devices.size());
 
-        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
         sqlTrans.begin();
         devices = TEST_1_USER.getDevices();

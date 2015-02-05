@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.BaseParam.XMPP;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -284,12 +285,12 @@ public final class Zephyr implements ITransport
 
         // remove all devices that we know for which we have connections
         for (ZephyrDevice device : connectedDevices) {
-            availableDevices.remove(new DID(device.getDid()));
+            availableDevices.remove(new DID(BaseUtil.fromPB(device.getDid())));
         }
 
         // add these 'empty' devices first
         for (DID did : availableDevices) {
-            diagnostics.addReachableDevices(ZephyrDevice.newBuilder().setDid(did.toPB()));
+            diagnostics.addReachableDevices(ZephyrDevice.newBuilder().setDid(BaseUtil.toPB(did)));
         }
 
         // now add all the devices for which we have connections

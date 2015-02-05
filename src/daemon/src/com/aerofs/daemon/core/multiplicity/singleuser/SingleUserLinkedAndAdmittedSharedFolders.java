@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -56,7 +57,7 @@ public class SingleUserLinkedAndAdmittedSharedFolders implements IListLinkedAndE
                     .setName(_ss.getName_(sidx))
                     .setPath(new Path(sid).toPB())
                     .setAdmittedOrLinked(true)
-                    .setStoreId(sid.toPB())
+                    .setStoreId(BaseUtil.toPB(sid))
                     .build();
         } else {
             // In the case that the store isn't a root, use OA of the anchor to the store to compute
@@ -75,7 +76,7 @@ public class SingleUserLinkedAndAdmittedSharedFolders implements IListLinkedAndE
                 .setName(oa.name())
                 .setPath(_ds.resolve_(oa).toPB())
                 .setAdmittedOrLinked(!oa.isExpelled())
-                .setStoreId(sid.toPB())
+                .setStoreId(BaseUtil.toPB(sid))
                 .build();
         }
     }

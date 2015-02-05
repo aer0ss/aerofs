@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.acl.Permissions;
@@ -71,7 +72,7 @@ public class SharingModel
     public ListenableFuture<String> getLocalUserFirstname()
     {
         return _executor.submit(() -> _spClient.get()
-                .getUserPreferences(_cfg.did().toPB())
+                .getUserPreferences(BaseUtil.toPB(_cfg.did()))
                 .getFirstName());
     }
 
@@ -170,7 +171,7 @@ public class SharingModel
                 .getSharedFolderList().stream()
                 .filter(folder -> path.equals(Path.fromPB(folder.getPath())))
                 .findAny()
-                .map(folder -> new SID(folder.getStoreId()))
+                .map(folder -> new SID(BaseUtil.fromPB(folder.getStoreId())))
                 .orElseThrow(() -> new ExNotFound("Shared folder not found."));
     }
 
@@ -178,7 +179,7 @@ public class SharingModel
             throws Exception
     {
         ListSharedFoldersReply reply = _spClient.get()
-                .listSharedFolders(ImmutableList.of(sid.toPB()));
+                .listSharedFolders(ImmutableList.of(BaseUtil.toPB(sid)));
 
         // assert the contract of the sp call is upheld
         checkArgument(reply.getSharedFolderCount() == 1);
@@ -199,7 +200,7 @@ public class SharingModel
         for (PBGroupPermissions pbgp : pbSharedFolder.getGroupPermissionsList()) {
             GroupPermissions gp = _factory.fromPB(pbgp);
             List<PBUserAndState> pbuss = _spClient.get()
-                    .listGroupStatusInSharedFolder(gp._group._groupID.getInt(), sid.toPB())
+                    .listGroupStatusInSharedFolder(gp._group._groupID.getInt(), BaseUtil.toPB(sid))
                     .getUserAndStateList();
 
             members.add(gp);
@@ -239,7 +240,7 @@ public class SharingModel
             Permissions permissions, boolean suppressSharedFolderRulesWarnings)
     {
         return _executor.submit(() -> {
-            _spClient.get().updateACL(sid.toPB(), subject.toPB(), permissions.toPB(),
+            _spClient.get().updateACL(BaseUtil.toPB(sid), subject.toPB(), permissions.toPB(),
                     suppressSharedFolderRulesWarnings);
             return null;
         });
@@ -248,7 +249,7 @@ public class SharingModel
     public ListenableFuture<Void> removeSubject(SID sid, Subject subject)
     {
         return _executor.submit(() -> {
-            _spClient.get().deleteACL(sid.toPB(), subject.toPB());
+            _spClient.get().deleteACL(BaseUtil.toPB(sid), subject.toPB());
             return null;
         });
     }

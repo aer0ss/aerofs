@@ -2,8 +2,7 @@ package com.aerofs.base.id;
 
 import java.util.Arrays;
 
-import com.aerofs.base.ex.ExFormatError;
-import com.google.protobuf.ByteString;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * object id
@@ -24,12 +23,6 @@ public class OID extends UniqueID
         ROOT = new OID(UniqueID.ZERO);
     }
 
-    public OID(ByteString bstr)
-    {
-        super(bstr);
-        assertIsValid();
-    }
-
     public OID(UniqueID id)
     {
         super(id);
@@ -37,7 +30,7 @@ public class OID extends UniqueID
 
         // should use one of the conversion methods below to convert between
         // OID and SID
-        assert !(id instanceof SID);
+        checkArgument(!(id instanceof SID));
     }
 
     public OID(byte[] bs)
@@ -46,7 +39,7 @@ public class OID extends UniqueID
         assertIsValid();
     }
 
-    public OID(String str) throws ExFormatError
+    public OID(String str) throws ExInvalidID
     {
         super(str);
         assertIsValid();

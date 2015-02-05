@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -100,7 +101,7 @@ class Stores implements IStores, IDevicePresenceListener
                             .setFilter(_filter.toPB())
                             .setSequence(_filterSeq)));
 
-        if (multicast) bd.setTcpMulticastDeviceId(_did.toPB());
+        if (multicast) bd.setTcpMulticastDeviceId(BaseUtil.toPB(_did));
         return bd.build();
     }
 

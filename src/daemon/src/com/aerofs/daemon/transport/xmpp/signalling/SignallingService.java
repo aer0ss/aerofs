@@ -5,9 +5,9 @@
 package com.aerofs.daemon.transport.xmpp.signalling;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.OutArg;
@@ -110,7 +110,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
 
                     try {
                         processMessage(m);
-                    } catch (ExFormatError e) {
+                    } catch (ExInvalidID e) {
                         logXmppProcessingError(packet, "unrecognized message", e);
                     } catch (Exception e) {
                         logXmppProcessingError(packet, "fail process valid signalling message", e);
@@ -119,7 +119,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
             }
 
             private void processMessage(Message m)
-                    throws ExFormatError
+                    throws ExInvalidID
             {
                 try {
                     DID did = JabberID.jid2did(m.getFrom(), xmppServerDomain);

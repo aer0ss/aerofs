@@ -4,9 +4,9 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -119,11 +119,8 @@ public class Cfg
     static {
         long pst;
         try {
-            Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.PROFILER)));
-            try {
+            try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.PROFILER)))) {
                 pst = Integer.parseInt(s.nextLine());
-            } finally {
-                s.close();
             }
         } catch (Exception e) {
             pst = 0;
@@ -136,7 +133,7 @@ public class Cfg
      * @throws ExNotSetup if the device.conf is not found
      */
     public static synchronized void init_(String rtRoot, boolean readPasswd)
-            throws ExFormatError, IOException, ExBadCredential, SQLException, ExNotSetup,
+            throws ExInvalidID, IOException, ExBadCredential, SQLException, ExNotSetup,
             CertificateException
     {
         // initialize rtroot first so it's available even if the method failed later
@@ -279,21 +276,15 @@ public class Cfg
     public static void writePortbase(String rtRoot, int portbase) throws IOException
     {
         File file = new File(rtRoot, LibParam.PORTBASE);
-        PrintStream ps = new PrintStream(new FileOutputStream(file));
-        try {
+        try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
             ps.println(portbase);
-        } finally {
-            ps.close();
         }
     }
 
     private static int readPortbase() throws IOException
     {
-        Scanner s = new Scanner(new File(_absRTRoot, LibParam.PORTBASE));
-        try {
+        try (Scanner s = new Scanner(new File(_absRTRoot, LibParam.PORTBASE))) {
             return Integer.parseInt(s.nextLine());
-        } finally {
-            s.close();
         }
     }
 
@@ -301,11 +292,8 @@ public class Cfg
     {
         if (_ver == null) {
             try {
-                Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)));
-                try {
+                try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)))) {
                     _ver = s.nextLine();
-                } finally {
-                    s.close();
                 }
             } catch (FileNotFoundException e) {
                 _ver = Versions.ZERO;

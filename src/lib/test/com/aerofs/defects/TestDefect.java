@@ -4,8 +4,8 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.cfg.InjectableCfg;
@@ -48,7 +48,7 @@ public class TestDefect extends AbstractTest
      *  either.
      */
     @Test
-    public void shouldMakeWellFormedDefects() throws ExFormatError
+    public void shouldMakeWellFormedDefects() throws ExInvalidID
     {
         final Exception cause = new IOException("this is the cause");
         final Exception wrapper = new Exception(cause);

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -36,7 +37,7 @@ public class MultiUserLinkedAndExpelledSharedFolders implements IListLinkedAndEx
             .setName(_ss.getName_(sidx))
             .setPath(new Path(sid).toPB())
             .setAdmittedOrLinked(true)
-            .setStoreId(sid.toPB())
+            .setStoreId(BaseUtil.toPB(sid))
             .build();
     }
 }

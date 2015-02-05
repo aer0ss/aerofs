@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -74,7 +75,7 @@ public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransfer
 
             TransferredObject.Builder objectBuilder = TransferredObject.newBuilder();
             objectBuilder.setStoreIndex(socid.sidx().getInt());
-            objectBuilder.setOid(socid.oid().toPB());
+            objectBuilder.setOid(BaseUtil.toPB(socid.oid()));
             objectBuilder.setComponentIndex(socid.cid().getInt());
 
             Endpoint ep = en.getKey()._ep;
@@ -83,7 +84,7 @@ public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransfer
             long percent = total == 0 ? 0 : (done * 100 / total);
 
             transferBuilder.setObject(objectBuilder);
-            transferBuilder.setDid(ep.did().toPB());
+            transferBuilder.setDid(BaseUtil.toPB(ep.did()));
             transferBuilder.setUsingTransportId(ep.tp().id());
             transferBuilder.setBytesCompleted(done);
             transferBuilder.setTotalBytes(total);

@@ -5,10 +5,10 @@
 package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,7 +57,7 @@ public class EmigrantUtil
             // FIXME: we should not use a string store id
             return new SID(new UniqueID(name, EMIGRANT_NAME_LEN - SID_STRING_LEN,
                     EMIGRANT_NAME_LEN));
-        } catch (ExFormatError e) {
+        } catch (ExInvalidID e) {
             Loggers.getLogger(EmigrantUtil.class)
                     .debug("name format error. ignored for emigration: " + name);
             return null;

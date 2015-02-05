@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -72,9 +73,9 @@ class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpuls
                     final SPBlockingClient client = newMutualAuthClientFactory().create()
                             .signInRemote();
                     if (op instanceof LeaveOp){
-                        client.leaveSharedFolder(op.getSID().toPB());
+                        client.leaveSharedFolder(BaseUtil.toPB(op.getSID()));
                     } else if (op instanceof RenameOp){
-                        client.setSharedFolderName(op.getSID().toPB(), ((RenameOp)op).getName());
+                        client.setSharedFolderName(BaseUtil.toPB(op.getSID()), ((RenameOp)op).getName());
                     } else {
                         throw new IllegalArgumentException("Unrecognized operation: " + op);
                     }

@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.j.Jid;
 
 abstract class JingleUtils
@@ -27,7 +27,7 @@ abstract class JingleUtils
         return new Jid(JabberID.did2user(did), xmppServerDomain, JINGLE_RESOURCE_NAME);
     }
 
-    static DID jid2did(Jid jid) throws ExFormatError
+    static DID jid2did(Jid jid) throws ExInvalidID
     {
         return JabberID.user2did(jid.node());
     }
@@ -36,7 +36,7 @@ abstract class JingleUtils
     {
         try {
             return JabberID.user2did(jid.node());
-        } catch (ExFormatError e) {
+        } catch (ExInvalidID e) {
             return new DID(DID.ZERO);
         }
     }

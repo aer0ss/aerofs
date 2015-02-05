@@ -4,6 +4,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -29,12 +30,8 @@ import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.RestObject;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.base.id.*;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
@@ -771,7 +768,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
-            throws ExNotAuthenticated, ExNoPerm, SQLException, ExFormatError, ExNotFound,
+            throws ExNotAuthenticated, ExNoPerm, SQLException, ExInvalidID, ExNotFound,
             ExEmptyEmailAddress, ExSecondFactorRequired, ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
@@ -783,7 +780,7 @@ public class SPService implements ISPService
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
         for (Device device : user.getDevices()) {
             builder.addDevice(PBDevice.newBuilder()
-                    .setDeviceId(device.id().toPB())
+                    .setDeviceId(BaseUtil.toPB(device.id()))
                     .setDeviceName(device.getName())
                     .setOsFamily(device.getOSFamily())
                     .setOsName(device.getOSName()));
@@ -840,7 +837,7 @@ public class SPService implements ISPService
             if (sf.id().isUserRoot()) continue;
 
             PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
-                    .setStoreId(sf.id().toPB())
+                    .setStoreId(BaseUtil.toPB(sf.id()))
                     .setName(sf.getName(user))
                     .setOwnedByTeam(false);
 
@@ -1502,7 +1499,7 @@ public class SPService implements ISPService
             throws Exception
     {
         external = firstNonNull(external, false);
-        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+        SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
 
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
@@ -1576,7 +1573,7 @@ public class SPService implements ISPService
     }
 
     private void refreshCRLs(User user)
-            throws SQLException, ExFormatError, ExecutionException, InterruptedException
+            throws SQLException, ExInvalidID, ExecutionException, InterruptedException
     {Collection<Device> peerDevices = user.getPeerDevices();
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
         // map may have changed).
@@ -1593,7 +1590,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+        SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
 
         l.info(user + " ignore " + sf);
 
@@ -1620,7 +1617,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+        SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
 
         l.info("{} leaves {}", user, sf);
 
@@ -1663,7 +1660,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+        SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
 
         l.info("{} renames {} to {}", user, sf, name);
 
@@ -1705,7 +1702,7 @@ public class SPService implements ISPService
         for (PBStoreUsage storeUsage : stores) {
             SharedFolder store = _factSharedFolder.create(storeUsage.getSid());
             responseBuilder.addStore(PBStoreShouldCollect.newBuilder()
-                    .setSid(store.id())
+                    .setSid(BaseUtil.toPB(store.id()))
                     .setCollectContent(storesThatShouldCollectContent.contains(store))
                     .build());
         }
@@ -2056,7 +2053,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        SharedFolder sf = _factSharedFolder.create(new SID(sharedId));
+        SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sharedId)));
         l.info("{} destroys {}", caller, sf);
         if (!sf.exists()) throw new ExNotFound("The folder does not exist");
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot leave root folder");
@@ -2140,7 +2137,7 @@ public class SPService implements ISPService
         User caller = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
 
         SID sid = sharedId.isValidUtf8() && sharedId.toStringUtf8().equals("root") ?
-                SID.rootSID(caller.id()) : new SID(sharedId);
+                SID.rootSID(caller.id()) : new SID(BaseUtil.fromPB(sharedId));
 
         SharedFolder sf = _factSharedFolder.create(sid);
         if (!sf.exists()) throw new ExNotFound("The folder does not exist");
@@ -2262,7 +2259,7 @@ public class SPService implements ISPService
                 ListPendingFolderInvitationsReply.newBuilder();
         for (PendingSharedFolder psf : psfs) {
             builder.addInvitation(PBFolderInvitation.newBuilder()
-                    .setShareId(psf._sf.id().toPB())
+                    .setShareId(BaseUtil.toPB(psf._sf.id()))
                     .setFolderName(psf._sf.getName(user))
                     .setSharer(psf._sharer.getString()));
         }
@@ -2680,7 +2677,7 @@ public class SPService implements ISPService
             for (SharedFolder sf : user.getJoinedFolders()) {
                 l.debug("add store {}", sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
-                aclBuilder.setStoreId(sf.id().toPB());
+                aclBuilder.setStoreId(BaseUtil.toPB(sf.id()));
                 aclBuilder.setExternal(sf.isExternal(user));
                 aclBuilder.setName(sf.getName(user));
                 for (Entry<User, Permissions> en : sf.getJoinedUsersAndRoles().entrySet()) {
@@ -3140,7 +3137,7 @@ public class SPService implements ISPService
         Device device;
         try {
             device = _factDevice.create(DID.fromExternal(did.toByteArray()));
-        } catch (ExFormatError e) {
+        } catch (ExInvalidID e) {
             l.error(user + ": did malformed");
             throw new ExBadCredential();
         }

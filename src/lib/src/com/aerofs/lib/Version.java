@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Common.PBVer;
@@ -47,7 +48,7 @@ public class Version
         assert pb.getDeviceIdCount() == pb.getTickCount();
 
         for (int i = 0; i < pb.getDeviceIdCount(); i++) {
-            DID did = new DID(pb.getDeviceId(i));
+            DID did = new DID(BaseUtil.fromPB(pb.getDeviceId(i)));
             v.set_(did, pb.getTick(i));
         }
         return v;
@@ -115,7 +116,7 @@ public class Version
         PBVer.Builder builder = PBVer.newBuilder();
 
         for (Entry<DID, Tick> en : _map.entrySet()) {
-            builder.addDeviceId(en.getKey().toPB());
+            builder.addDeviceId(BaseUtil.toPB(en.getKey()));
             builder.addTick(en.getValue().getLong());
         }
 

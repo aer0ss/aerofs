@@ -4,6 +4,7 @@
 
 package com.aerofs.shell;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import org.apache.commons.cli.CommandLine;
@@ -39,7 +40,7 @@ public class CmdInvitations extends AbstractShellCommand<ShProgram>
         s.out().println("Shared Folder Identifier         Shared Folder Name    Sharer");
         s.out().println("-------------------------------------------------------------");
         for (PBFolderInvitation inv : invitations) {
-            s.out().println(new SID(inv.getShareId()).toStringFormal() + " " +
+            s.out().println(new SID(BaseUtil.fromPB(inv.getShareId())).toStringFormal() + " " +
                     inv.getFolderName() + " " + inv.getSharer() + " ");
         }
     }

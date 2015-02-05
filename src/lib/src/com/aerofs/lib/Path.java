@@ -60,7 +60,7 @@ public class Path implements Comparable<Path>
     {
         String[] elems = new String[pb.getElemCount()];
         for (int i = 0; i < elems.length; i++) elems[i] = pb.getElem(i);
-        return new Path(new SID(pb.getSid()), elems);
+        return new Path(new SID(BaseUtil.fromPB(pb.getSid())), elems);
     }
 
     private void assertNoEmptyElement()
@@ -138,7 +138,7 @@ public class Path implements Comparable<Path>
     public PBPath toPB()
     {
         PBPath.Builder bd = PBPath.newBuilder();
-        bd.setSid(_sid.toPB());
+        bd.setSid(BaseUtil.toPB(_sid));
         for (String elem : _elems) bd.addElem(elem);
         return bd.build();
     }

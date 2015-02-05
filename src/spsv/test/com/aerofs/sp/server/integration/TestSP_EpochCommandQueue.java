@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
@@ -46,7 +47,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
                 .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
                 .id()
                 .getString(),
-                null, null, _device.id().toPB(), "New Test Device");
+                null, null, BaseUtil.toPB(_device.id()), "New Test Device");
     }
 
     private void updateUserAndDeviceName()
@@ -56,7 +57,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
                 .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
                 .id()
                 .getString(),
-                "New First", "New Last", _device.id().toPB(), "New Test Device");
+                "New First", "New Last", BaseUtil.toPB(_device.id()), "New Test Device");
     }
 
     //
@@ -125,7 +126,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
             throws Exception
     {
         updateUserName();
-        GetCommandQueueHeadReply reply = service.getCommandQueueHead(_device.id().toPB()).get();
+        GetCommandQueueHeadReply reply = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
 
         Assert.assertTrue(reply.hasCommand());
         Assert.assertEquals(CommandType.INVALIDATE_USER_NAME_CACHE, reply.getCommand().getType());
@@ -136,7 +137,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
             throws Exception
     {
         updateDeviceName();
-        GetCommandQueueHeadReply reply = service.getCommandQueueHead(_device.id().toPB()).get();
+        GetCommandQueueHeadReply reply = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
 
         Assert.assertTrue(reply.hasCommand());
         Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, reply.getCommand().getType());
@@ -150,10 +151,10 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         GetCommandQueueHeadReply headReply;
         AckCommandQueueHeadReply ackReply;
 
-        headReply = service.getCommandQueueHead(_device.id().toPB()).get();
-        ackReply = service.ackCommandQueueHead(_device.id().toPB(),
+        headReply = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
+        ackReply = service.ackCommandQueueHead(BaseUtil.toPB(_device.id()),
                 headReply.getCommand().getEpoch(), false).get();
-        headReply = service.getCommandQueueHead(_device.id().toPB()).get();
+        headReply = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
 
         Assert.assertFalse(ackReply.hasCommand());
         Assert.assertFalse(headReply.hasCommand());
@@ -167,10 +168,10 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         GetCommandQueueHeadReply headReply1, headReply2;
         AckCommandQueueHeadReply ackReply;
 
-        headReply1 = service.getCommandQueueHead(_device.id().toPB()).get();
-        ackReply = service.ackCommandQueueHead(_device.id().toPB(),
+        headReply1 = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
+        ackReply = service.ackCommandQueueHead(BaseUtil.toPB(_device.id()),
                 headReply1.getCommand().getEpoch(), true).get();
-        headReply2 = service.getCommandQueueHead(_device.id().toPB()).get();
+        headReply2 = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
 
         Assert.assertTrue(ackReply.hasCommand());
         Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, ackReply.getCommand().getType());
@@ -195,10 +196,10 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         AckCommandQueueHeadReply ackReply;
 
         // Get the head of the command queue (the first command).
-        headReply = service.getCommandQueueHead(_device.id().toPB()).get();
+        headReply = service.getCommandQueueHead(BaseUtil.toPB(_device.id())).get();
         // Process first command...
 
-        ackReply = service.ackCommandQueueHead(_device.id().toPB(),
+        ackReply = service.ackCommandQueueHead(BaseUtil.toPB(_device.id()),
                 headReply.getCommand().getEpoch(), false).get();
 
         // Process the second command...
@@ -206,7 +207,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         Assert.assertTrue(ackReply.hasCommand());
 
         // Ack the second command.
-        ackReply = service.ackCommandQueueHead(_device.id().toPB(),
+        ackReply = service.ackCommandQueueHead(BaseUtil.toPB(_device.id()),
                 ackReply.getCommand().getEpoch(), false).get();
 
         // And make sure no command are left.

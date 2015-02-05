@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
@@ -47,7 +48,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
 
                 setSession(sessionUser);
                 ListSharedFoldersReply reply =
-                        service.listSharedFolders(ImmutableList.of(sid.toPB())).get();
+                        service.listSharedFolders(ImmutableList.of(BaseUtil.toPB(sid))).get();
 
                 assertEquals(1, reply.getSharedFolderCount());
             }
@@ -68,7 +69,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
 
         setSession(ts);
         ListSharedFoldersReply reply =
-                service.listSharedFolders(ImmutableList.of(sid.toPB())).get();
+                service.listSharedFolders(ImmutableList.of(BaseUtil.toPB(sid))).get();
 
         assertEquals(1, reply.getSharedFolderCount());
     }
@@ -93,7 +94,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         setSession(sessionUser);
 
         try {
-            service.listSharedFolders(ImmutableList.of(sid1.toPB(), sid2.toPB()));
+            service.listSharedFolders(ImmutableList.of(BaseUtil.toPB(sid1), BaseUtil.toPB(sid2)));
             fail();
         } catch (ExNoPerm e) {
             // expected
@@ -132,7 +133,7 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
         setSession(ts);
 
         try {
-            service.listSharedFolders(ImmutableList.of(sid.toPB(), sid2.toPB()));
+            service.listSharedFolders(ImmutableList.of(BaseUtil.toPB(sid), BaseUtil.toPB(sid2)));
             fail();
         } catch (ExNoPerm e) {
             // expected

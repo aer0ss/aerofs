@@ -4,15 +4,16 @@
 
 package com.aerofs.sp.server.lib.sf;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -67,7 +68,7 @@ public class SharedFolder
 
         public SharedFolder create(ByteString sid)
         {
-            return create(new SID(sid));
+            return create(new SID(BaseUtil.fromPB(sid)));
         }
 
         public SharedFolder create(SID sid)
@@ -79,7 +80,7 @@ public class SharedFolder
         {
             try {
                 return create(s.contains("@") ? SID.rootSID(UserID.fromExternal(s)) : new SID(s));
-            } catch (ExEmptyEmailAddress|ExFormatError e) {
+            } catch (ExEmptyEmailAddress|ExInvalidID e) {
                 throw new IllegalArgumentException("Invalid SID");
             }
         }

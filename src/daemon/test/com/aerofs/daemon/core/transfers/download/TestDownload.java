@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
@@ -160,7 +161,7 @@ public class TestDownload extends AbstractDownloadTest
                         PBMeta.newBuilder()
                                 .setType(Type.FILE)
                                 .setName("foo")
-                                .setParentObjectId(p.oid().toPB())
+                                .setParentObjectId(BaseUtil.toPB(p.oid()))
                                 .setFlags(0)
                                 .build(),
                         o2.soid());
@@ -207,7 +208,7 @@ public class TestDownload extends AbstractDownloadTest
                 PBMeta.newBuilder()
                         .setType(Type.FILE)
                         .setName("foo")
-                        .setParentObjectId(p.oid().toPB())
+                        .setParentObjectId(BaseUtil.toPB(p.oid()))
                         .setFlags(0)
                         .build(), o2.soid()))
                 .when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
@@ -333,7 +334,7 @@ public class TestDownload extends AbstractDownloadTest
                 PBMeta.newBuilder()
                         .setType(Type.FILE)
                         .setName("foo")
-                        .setParentObjectId(p.oid().toPB())
+                        .setParentObjectId(BaseUtil.toPB(p.oid()))
                         .setFlags(0)
                         .build(),
                 o2.soid()))

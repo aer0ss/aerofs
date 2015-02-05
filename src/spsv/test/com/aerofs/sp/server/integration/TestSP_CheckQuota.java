@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
@@ -115,7 +116,7 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
 
         Map<SID, Boolean> shouldSync = new HashMap<SID, Boolean>(6);
         for (PBStoreShouldCollect store: response.getStoreList()) {
-            shouldSync.put(new SID(store.getSid()), store.getCollectContent());
+            shouldSync.put(new SID(BaseUtil.fromPB(store.getSid())), store.getCollectContent());
         }
         return shouldSync;
     }
@@ -135,14 +136,19 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         }
     }
 
+    private static PBStoreUsage.Builder usage(SID sid)
+    {
+        return PBStoreUsage.newBuilder().setSid(BaseUtil.toPB(sid));
+    }
+
     @Test
     public void responseShouldContainSameStoresAsRequest() throws Exception
     {
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(4);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(10L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(1000L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(10L).build());
+        request.add(usage(sid2).setBytesUsed(100L).build());
+        request.add(usage(sidAll).setBytesUsed(1000L).build());
 
         Map<SID, Boolean> response = getResponse(request);
         assertEquals(response.keySet(), Sets.newHashSet(sidA, sid1, sid2, sidAll));
@@ -156,12 +162,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 400
         // 2: 300
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(100L).build());
+        request.add(usage(sidA).setBytesUsed(100L).build());
+        request.add(usage(sid1).setBytesUsed(100L).build());
+        request.add(usage(sid2).setBytesUsed(100L).build());
+        request.add(usage(sidAll).setBytesUsed(100L).build());
+        request.add(usage(sidA1).setBytesUsed(100L).build());
+        request.add(usage(sid12).setBytesUsed(100L).build());
 
         sqlTrans.begin();
         admin.getOrganization().setQuotaPerUser(null);
@@ -181,12 +187,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 0
         // 2: 0
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(0L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(0L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
         for (Boolean should : shouldSync.values()) assertTrue(should);
@@ -202,12 +208,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 0
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(100L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(0L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
 
@@ -230,12 +236,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 100
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(100L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(0L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(0L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(100L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
 
@@ -258,12 +264,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 100
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(100L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(0L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(100L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
 
@@ -280,12 +286,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 30
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(40L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(30L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(40L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(0L).build());
+        request.add(usage(sidA1).setBytesUsed(30L).build());
+        request.add(usage(sid12).setBytesUsed(30L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
 
@@ -308,12 +314,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 70
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(50L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(50L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(0L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(50L).build());
+        request.add(usage(sidA1).setBytesUsed(50L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldSync = getResponse(request);
 
@@ -335,12 +341,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 100
         // 2: 70
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(50L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(30L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(20L).build());
+        request.add(usage(sid1).setBytesUsed(20L).build());
+        request.add(usage(sid2).setBytesUsed(20L).build());
+        request.add(usage(sidAll).setBytesUsed(50L).build());
+        request.add(usage(sidA1).setBytesUsed(30L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldCollect = getResponse(request);
 
@@ -362,12 +368,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 85
         // 2: 85
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(85L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(0L).build());
+        request.add(usage(sid1).setBytesUsed(0L).build());
+        request.add(usage(sid2).setBytesUsed(0L).build());
+        request.add(usage(sidAll).setBytesUsed(85L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldCollect = getResponse(request);
 
@@ -389,12 +395,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 85
         // 2: 85
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(85L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(85L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(85L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(0L).build());
+        request.add(usage(sidA).setBytesUsed(85L).build());
+        request.add(usage(sid1).setBytesUsed(85L).build());
+        request.add(usage(sid2).setBytesUsed(85L).build());
+        request.add(usage(sidAll).setBytesUsed(0L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(0L).build());
 
         Map<SID, Boolean> shouldCollect = getResponse(request);
 
@@ -416,12 +422,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 90
         // 2: 90
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+        request.add(usage(sidA).setBytesUsed(20L).build());
+        request.add(usage(sid1).setBytesUsed(20L).build());
+        request.add(usage(sid2).setBytesUsed(20L).build());
+        request.add(usage(sidAll).setBytesUsed(40L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(30L).build());
 
         Map<SID, Boolean> shouldCollect = getResponse(request);
 
@@ -443,12 +449,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 90
         // 2: 90
         List<PBStoreUsage> request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+        request.add(usage(sidA).setBytesUsed(20L).build());
+        request.add(usage(sid1).setBytesUsed(20L).build());
+        request.add(usage(sid2).setBytesUsed(20L).build());
+        request.add(usage(sidAll).setBytesUsed(40L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(30L).build());
 
         Map<SID, Boolean> shouldCollect = getResponse(request);
 
@@ -468,12 +474,12 @@ public class TestSP_CheckQuota extends AbstractSPFolderTest
         // 1: 90
         // 2: 90
         request = new ArrayList<PBStoreUsage>(6);
-        request.add(PBStoreUsage.newBuilder().setSid(sidA).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid1).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid2).setBytesUsed(20L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidAll).setBytesUsed(40L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sidA1).setBytesUsed(0L).build());
-        request.add(PBStoreUsage.newBuilder().setSid(sid12).setBytesUsed(30L).build());
+        request.add(usage(sidA).setBytesUsed(20L).build());
+        request.add(usage(sid1).setBytesUsed(20L).build());
+        request.add(usage(sid2).setBytesUsed(20L).build());
+        request.add(usage(sidAll).setBytesUsed(40L).build());
+        request.add(usage(sidA1).setBytesUsed(0L).build());
+        request.add(usage(sid12).setBytesUsed(30L).build());
 
         shouldCollect = getResponse(request);
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
@@ -36,7 +37,7 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
     {
         String cert;
         cert = service.registerDevice(
-                device.id().toPB(), newCSR(device), "", "", "", null).get().getCert();
+                BaseUtil.toPB(device.id()), newCSR(device), "", "", "", null).get().getCert();
 
         sqlTrans.begin();
         assertTrue(device.exists());
@@ -59,7 +60,7 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
         ByteString csr = newCSR(factUser.createFromExternalID("garbage"), device);
-        service.registerDevice(device.id().toPB(), csr, "", "", "", null).get().getCert();
+        service.registerDevice(BaseUtil.toPB(device.id()), csr, "", "", "", null).get().getCert();
     }
 
     @Test
@@ -69,7 +70,7 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
         // Certify device1
         Device device1 = device;
         String cert1;
-        cert1 = service.registerDevice(device1.id().toPB(), newCSR(device1), "", "", "", null)
+        cert1 = service.registerDevice(BaseUtil.toPB(device1.id()), newCSR(device1), "", "", "", null)
                 .get().getCert();
         assertTrue(cert1.equals(RETURNED_CERT));
 
@@ -79,7 +80,7 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
         // Certify device2
         Device device2 = factDevice.create(getNextDID(Sets.<DID>newHashSet(device.id())));
         String cert2;
-        cert2 = service.registerDevice(device2.id().toPB(), newCSR(device2), "", "", "", null)
+        cert2 = service.registerDevice(BaseUtil.toPB(device2.id()), newCSR(device2), "", "", "", null)
                 .get().getCert();
         assertTrue(cert2.equals(RETURNED_CERT));
     }
@@ -89,8 +90,8 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         Device device = factDevice.create(new DID(UniqueID.generate()));
-        service.registerDevice(device.id().toPB(), newCSR(device), "", "", "", null);
-        service.registerDevice(device.id().toPB(), newCSR(device), "", "", "", null);
+        service.registerDevice(BaseUtil.toPB(device.id()), newCSR(device), "", "", "", null);
+        service.registerDevice(BaseUtil.toPB(device.id()), newCSR(device), "", "", "", null);
     }
 
     private ByteString newCSR(Device device)

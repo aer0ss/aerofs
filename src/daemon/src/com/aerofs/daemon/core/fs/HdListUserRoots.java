@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -37,7 +38,7 @@ public class HdListUserRoots extends AbstractHdIMC<EIListUserRoots>
         for (SIndex sidx : all) {
 
             if (!_sidx2sid.get_(sidx).isUserRoot()) continue;
-            userRoots.put(new SID(_sidx2sid.get_(sidx).toPB()), _ss.getName_(sidx));
+            userRoots.put(new SID(BaseUtil.fromPB(BaseUtil.toPB(_sidx2sid.get_(sidx)))), _ss.getName_(sidx));
         }
 
         ev.setResult_(userRoots);

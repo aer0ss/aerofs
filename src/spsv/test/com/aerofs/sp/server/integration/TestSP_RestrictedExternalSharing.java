@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.config.ConfigurationProperties;
@@ -658,13 +659,13 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     private void updateACL(User user, Permissions permissions)
             throws Exception
     {
-        service.updateACL(sid.toPB(), user.id().getString(), permissions.toPB(), false);
+        service.updateACL(BaseUtil.toPB(sid), user.id().getString(), permissions.toPB(), false);
     }
 
     private void updateACLSuppressWarnings(User user, Permissions permissions)
             throws Exception
     {
-        service.updateACL(sid.toPB(), user.id().getString(), permissions.toPB(), true);
+        service.updateACL(BaseUtil.toPB(sid), user.id().getString(), permissions.toPB(), true);
     }
 
     private void addExternalMemberToGroup(User external, Group group)

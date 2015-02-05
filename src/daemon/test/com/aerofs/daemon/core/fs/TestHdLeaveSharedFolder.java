@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -140,7 +141,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
     {
         handle(Path.fromString(rootSID, "a"));
 
-        verify(sp).leaveSharedFolder(shared.toPB());
+        verify(sp).leaveSharedFolder(BaseUtil.toPB(shared));
     }
 
     @Test
@@ -148,6 +149,6 @@ public class TestHdLeaveSharedFolder extends AbstractTest
     {
         handle(Path.root(extSID));
 
-        verify(sp).leaveSharedFolder(extSID.toPB());
+        verify(sp).leaveSharedFolder(BaseUtil.toPB(extSID));
     }
 }

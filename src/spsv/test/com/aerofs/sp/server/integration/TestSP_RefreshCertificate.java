@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -30,7 +31,7 @@ public class TestSP_RefreshCertificate extends AbstractSPCertificateBasedTest
 
         mockCertificateAuthenticatorSetAuthenticatedState(TEST_1_USER, dev);
 
-        String cert = service.recertifyDevice(dev.id().toPB(), newCSR(TEST_1_USER, dev))
+        String cert = service.recertifyDevice(BaseUtil.toPB(dev.id()), newCSR(TEST_1_USER, dev))
                 .get()
                 .getCert();
 
@@ -52,7 +53,7 @@ public class TestSP_RefreshCertificate extends AbstractSPCertificateBasedTest
 
         mockCertificateAuthenticatorSetAuthenticatedState(tsUser, dev);
 
-        String cert = service.recertifyTeamServerDevice(dev.id().toPB(), newCSR(tsUser, dev))
+        String cert = service.recertifyTeamServerDevice(BaseUtil.toPB(dev.id()), newCSR(tsUser, dev))
                 .get()
                 .getCert();
 
@@ -77,6 +78,6 @@ public class TestSP_RefreshCertificate extends AbstractSPCertificateBasedTest
 
         mockCertificateAuthenticatorSetAuthenticatedState(TEST_1_USER, dev);
 
-        service.recertifyDevice(dev2.id().toPB(), newCSR(TEST_1_USER, dev));
+        service.recertifyDevice(BaseUtil.toPB(dev2.id()), newCSR(TEST_1_USER, dev));
     }
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
@@ -20,8 +21,6 @@ import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -51,15 +50,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         // to be returned in the tests.
         when(_bifrostClient.getBifrostToken(
                 any(String.class), any(Long.class)))
-                .thenAnswer(new Answer<String>()
-                {
-                    @Override
-                    public String answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        return mockToken;
-                    }
-                });
+                .thenAnswer(invocation -> mockToken);
 
         doNothing().when(_bifrostClient).deleteToken(any(String.class));
     }
@@ -656,7 +647,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
         setSession(editor);
         try {
-            service.listUrlsForStore(sid);
+            service.listUrlsForStore(BaseUtil.toPB(sid));
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -667,7 +658,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     public void listUrlsForStore_shouldThrowIfStoreDoesNotExist() throws Exception
     {
         try {
-            service.listUrlsForStore(SID.generate());
+            service.listUrlsForStore(BaseUtil.toPB(SID.generate()));
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -709,7 +700,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         service.createUrl(ro3.toStringFormal());
 
         // list Urls
-        ListUrlsForStoreReply reply = service.listUrlsForStore(sid.toPB()).get();
+        ListUrlsForStoreReply reply = service.listUrlsForStore(BaseUtil.toPB(sid)).get();
         for (PBRestObjectUrl url : reply.getUrlList()) {
             if (token1.equals(url.getToken())) {
                 assertEquals(ro1.toStringFormal(), url.getSoid());

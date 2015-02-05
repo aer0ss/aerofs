@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.BaseLogUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreQueue;
@@ -214,7 +215,7 @@ public class FirstLaunch
             ImmutableMap.Builder<SID, Boolean> stores = ImmutableMap.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
                 // the external flag is meaningless on TS
-                stores.put(new SID(sacl.getStoreId()), sacl.getExternal() && !L.isMultiuser());
+                stores.put(new SID(BaseUtil.fromPB(sacl.getStoreId())), sacl.getExternal() && !L.isMultiuser());
             }
             _as._accessibleStores = stores.build();
         } catch (Exception e) {

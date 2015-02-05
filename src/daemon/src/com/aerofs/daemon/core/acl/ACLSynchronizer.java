@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.acl;
 
 import com.aerofs.base.BaseLogUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
@@ -353,7 +354,7 @@ public class ACLSynchronizer
         l.info("server return acl server epoch {} local epoch {}", serverEpoch, localEpoch);
 
         for (PBStoreACL store : aclReply.getStoreAclList()) {
-            SID sid = new SID(store.getStoreId());
+            SID sid = new SID(BaseUtil.fromPB(store.getStoreId()));
 
             Set<UserID> externalMembers = Sets.newHashSet();
             ImmutableMap.Builder<UserID, Permissions> builder = ImmutableMap.builder();
@@ -401,7 +402,7 @@ public class ACLSynchronizer
         // local database if the SP call fails)
         _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl", () -> _factSP.create()
                         .signInRemote()
-                        .updateACL(sid.toPB(), subject.getString(), permissions.toPB(),
+                        .updateACL(BaseUtil.toPB(sid), subject.getString(), permissions.toPB(),
                                 suppressSharingRulesWarnings));
 
         // add new entries to the local database
@@ -420,7 +421,7 @@ public class ACLSynchronizer
         // make the SP call
 
         _tokenManager.inPseudoPause_(Cat.UNLIMITED, "spacl",
-                () -> _factSP.create().signInRemote().deleteACL(sid.toPB(), subject.getString()));
+                () -> _factSP.create().signInRemote().deleteACL(BaseUtil.toPB(sid), subject.getString()));
 
         //
         // for faster UI refresh and banning the removed users, immediately add the entries to

@@ -4,7 +4,6 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 
 import java.util.regex.Pattern;
@@ -33,7 +32,7 @@ public abstract class JabberID
         return did.toStringFormal();
     }
 
-    public static DID user2did(String user) throws ExFormatError
+    public static DID user2did(String user) throws ExInvalidID
     {
         return new DID(user);
     }
@@ -77,13 +76,13 @@ public abstract class JabberID
     /**
      * split the jid using "/" and "-" (form A (jingle), form B)
      */
-    public static String[] tokenize(String jid) throws ExFormatError
+    public static String[] tokenize(String jid) throws ExInvalidID
     {
         // split using "/"
 
         String components[] = SLASH_PATTERN.split(jid);
         if (components.length != 2) {
-            throw new ExFormatError("wrong # of /'s: " + jid);
+            throw new ExInvalidID("wrong # of /'s: " + jid);
         }
 
         // split using "-"
@@ -101,13 +100,13 @@ public abstract class JabberID
     /**
      * convert either form A or form B jid to did
      */
-    public static DID jid2did(String jid, String xmppServerDomain) throws ExFormatError
+    public static DID jid2did(String jid, String xmppServerDomain) throws ExInvalidID
     {
         return jid2did(tokenize(jid), xmppServerDomain);
     }
 
     public static DID jid2did(String[] tokens, String xmppServerDomain)
-        throws ExFormatError
+        throws ExInvalidID
     {
         if (isMUCAddress(tokens, xmppServerDomain)) {
             // form B
@@ -115,7 +114,7 @@ public abstract class JabberID
         } else {
             // form A
             int at = tokens[0].indexOf('@');
-            if (at < 0) throw new ExFormatError("@ not found");
+            if (at < 0) throw new ExInvalidID("@ not found");
             return new DID(tokens[0], 0, at);
         }
     }
@@ -126,18 +125,18 @@ public abstract class JabberID
         return tokens[0].contains(getConferenceAddress(xmppServerDomain));
     }
 
-    public static SID muc2sid(String muc) throws ExFormatError
+    public static SID muc2sid(String muc) throws ExInvalidID
     {
         int at = muc.indexOf('@');
         if (at < 0) {
-            throw new ExFormatError("not a valid muc name: " + muc);
+            throw new ExInvalidID("not a valid muc name: " + muc);
         }
 
         // FIXME: we should not use a string store address - instead we should use a binary sid
         try {
             return new SID(muc, 0, at);
         } catch (ExInvalidID e) {
-            throw new ExFormatError("invalid SID muc:" + muc);
+            throw new ExInvalidID("invalid SID muc:" + muc);
         }
     }
 

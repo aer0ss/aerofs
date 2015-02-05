@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
@@ -33,7 +34,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         // now have the second guy delete the third
 
         setSession(USER_2);
-        service.deleteACL(SID_1.toPB(), USER_3.id().getString()).get();
+        service.deleteACL(BaseUtil.toPB(SID_1), USER_3.id().getString()).get();
 
         // expect first, second and third guy all to be notified
 
@@ -75,7 +76,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         setSession(USER_1);
 
         try {
-            service.deleteACL(SID_1.toPB(), USER_2.id().getString()).get();
+            service.deleteACL(BaseUtil.toPB(SID_1), USER_2.id().getString()).get();
             // must not reach here
             fail();
         } catch (ExNotFound e) {
@@ -103,7 +104,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
         setSession(USER_2);
 
         try {
-            service.deleteACL(SID_1.toPB(), USER_1.id().getString()).get();
+            service.deleteACL(BaseUtil.toPB(SID_1), USER_1.id().getString()).get();
             // must not reach here
             fail();
         } catch (ExNoPerm e) {}

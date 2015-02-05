@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
@@ -39,8 +40,8 @@ public class TestSP_Preferences extends AbstractSPTest
                         .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
                         .id()
                         .getString(),
-                "   first ", " last   ", device.id().toPB(), "  device names  ").get();
-        GetUserPreferencesReply reply = service.getUserPreferences(device.id().toPB()).get();
+                "   first ", " last   ", BaseUtil.toPB(device.id()), "  device names  ").get();
+        GetUserPreferencesReply reply = service.getUserPreferences(BaseUtil.toPB(device.id())).get();
 
         assertTrimmed(reply.getDeviceName());
         assertTrimmed(reply.getFirstName());
@@ -55,7 +56,7 @@ public class TestSP_Preferences extends AbstractSPTest
                         .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
                         .id()
                         .getString(),
-                "first", "last", new DID(UniqueID.generate()).toPB(), "device").get();
+                "first", "last", BaseUtil.toPB(new DID(UniqueID.generate())), "device").get();
     }
 
     @Test
@@ -63,7 +64,7 @@ public class TestSP_Preferences extends AbstractSPTest
             throws Exception
     {
         GetUserPreferencesReply reply = service.getUserPreferences(
-                new DID(UniqueID.generate()).toPB()).get();
+                BaseUtil.toPB(new DID(UniqueID.generate()))).get();
         assertTrue(reply.getDeviceName().isEmpty());
     }
 

@@ -4,7 +4,6 @@
 
 package com.aerofs.rest.auth;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.MDID;
 import com.aerofs.base.id.RestObject;
@@ -38,7 +37,7 @@ public class OAuthToken implements IUserAuthToken
     public DID did() { return did; }
     public String app() { return app; }
 
-    public OAuthToken(VerifyTokenResponse response) throws ExFormatError
+    public OAuthToken(VerifyTokenResponse response) throws UniqueID.ExInvalidID
     {
         issuer = response.principal.getIssuingUserID();
         user = response.principal.getEffectiveUserID();

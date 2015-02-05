@@ -11,19 +11,16 @@ import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExLicenseLimit;
 import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExSecondFactorSetupRequired;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.*;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.OAuthRequestFilter;
@@ -38,7 +35,6 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
@@ -326,7 +322,7 @@ public class User
      * Peer devices are all devices that you sync with, including your own devices.
      */
     public Collection<Device> getPeerDevices()
-            throws SQLException, ExFormatError
+            throws SQLException, ExInvalidID
     {
         // Get joined shared folders and all users who sync those shared folders.
         Collection<SharedFolder> joinedSharedFolders = getJoinedFolders();
@@ -354,7 +350,7 @@ public class User
     }
 
     public ImmutableList<Device> getDevices()
-            throws SQLException, ExFormatError
+            throws SQLException, ExInvalidID
     {
         ImmutableList.Builder<Device> builder = ImmutableList.builder();
 
@@ -467,7 +463,7 @@ public class User
      */
     public ImmutableSet<UserID> deactivate(ImmutableSet.Builder<Long> revokedSerials,
             @Nullable User newOwner)
-            throws SQLException, ExNotFound, ExFormatError, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExInvalidID, ExNoAdminOrOwner
     {
         Preconditions.checkArgument(newOwner == null || !_id.equals(newOwner.id()));
 
@@ -566,7 +562,7 @@ public class User
      * or missing user.
      */
     public void throwIfBadCertificate(CertificateAuthenticator certauth, Device device)
-            throws SQLException, ExBadCredential, ExNotFound, ExFormatError
+            throws SQLException, ExBadCredential, ExNotFound, ExInvalidID
     {
         if (!certauth.isAuthenticated())
         {

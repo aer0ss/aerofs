@@ -12,7 +12,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -132,13 +131,10 @@ public class SharedFolderTagFileAndIcon
         // which would cause writing the file to fail.
         deleteTagFile(absPathTagFile);
 
-        PrintStream ps = new PrintStream(absPathTagFile);
-        try {
+        try (PrintStream ps = new PrintStream(absPathTagFile)) {
             // this may be called during store creation, when the store might not be fully
             // initialized locally.
             ps.print(sid.toStringFormal());
-        } finally {
-            ps.close();
         }
 
         OSUtil.get().markHiddenSystemFile(absPathTagFile);
@@ -237,16 +233,11 @@ public class SharedFolderTagFileAndIcon
     {
         try {
             FileInputStream in = new FileInputStream(absPathTagFile);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            try {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 String line = reader.readLine();
                 return line != null ? new SID(line, 0, line.length()) : null;
-            } finally {
-                reader.close();
             }
         } catch (IOException e) {
-            return null;
-        } catch (ExFormatError e) {
             return null;
         } catch (ExInvalidID e) {
             return null;

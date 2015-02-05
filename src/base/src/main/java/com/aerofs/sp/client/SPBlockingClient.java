@@ -1,6 +1,7 @@
 package com.aerofs.sp.client;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
@@ -96,7 +97,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     public SPBlockingClient signInRemote() throws Exception
     {
         try {
-            super.signInDevice(_f._user.getString(), _f._did.toPB());
+            super.signInDevice(_f._user.getString(), BaseUtil.toPB(_f._did));
             return this;
         } catch (ExBadCredential e) {
             if (_bcl != null) {

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
@@ -152,7 +153,7 @@ public class GetVersionsRequest
     private PBGetVersionsRequestBlock.Builder makeBlock_(SIndex sidx, DID didTo) throws SQLException
     {
         PBGetVersionsRequestBlock.Builder bd = PBGetVersionsRequestBlock.newBuilder();
-        bd.setStoreId(_sidx2sid.get_(sidx).toPB());
+        bd.setStoreId(BaseUtil.toPB(_sidx2sid.get_(sidx)));
 
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
         Version vImmKwlgLocalES = _ivc.getKnowledgeExcludeSelf_(sidx);
@@ -173,7 +174,7 @@ public class GetVersionsRequest
         }
 
         for (Entry<DID, TickPair> en : map.entrySet()) {
-            bd.addDeviceId(en.getKey().toPB());
+            bd.addDeviceId(BaseUtil.toPB(en.getKey()));
             TickPair tp = en.getValue();
             bd.addKnowledgeTick(tp._native == null ? 0 : tp._native.getLong());
             bd.addImmigrantKnowledgeTick(tp._imm == null ? 0 : tp._imm.getLong());
@@ -258,7 +259,7 @@ public class GetVersionsRequest
     private void processRequestBlock_(DID from, UserID user, PBGetVersionsRequestBlock requestBlock, BlockSender sender)
             throws Exception
     {
-        SID sid = new SID(requestBlock.getStoreId());
+        SID sid = new SID(BaseUtil.fromPB(requestBlock.getStoreId()));
         SIndex sidx = _sid2sidx.getNullable_(sid);
 
         // ignore store that is not locally present
@@ -292,7 +293,7 @@ public class GetVersionsRequest
         Version vImmKwlgRemote = Version.empty();
         // Load vKwlgRemote and vImmKwlgRemote with the contents of msg
         for (int i = 0; i < requestBlock.getDeviceIdCount(); i++) {
-            DID did = new DID(requestBlock.getDeviceId(i));
+            DID did = new DID(BaseUtil.fromPB(requestBlock.getDeviceId(i)));
             long tick = requestBlock.getKnowledgeTick(i);
             long tickImm = requestBlock.getImmigrantKnowledgeTick(i);
             checkState(tick != 0 || tickImm != 0);
@@ -466,7 +467,7 @@ public class GetVersionsRequest
         for (DeviceEntry de : desExcludeTo) {
             PBGetVersionsResponseBlock.Builder bdBlock = PBGetVersionsResponseBlock
                     .newBuilder()
-                    .setDeviceId(de._did.toPB());
+                    .setDeviceId(BaseUtil.toPB(de._did));
 
             if (!headerSent) bdBlock.setStore(h);
 
@@ -490,7 +491,7 @@ public class GetVersionsRequest
                     socidLast = socid;
                     tickLast = tr._tick;
 
-                    bdBlock.addObjectId(tr._oid.toPB());
+                    bdBlock.addObjectId(BaseUtil.toPB(tr._oid));
                     bdBlock.addComId(tr._cid.getInt());
                     bdBlock.addTick(tr._tick.getLong());
 
@@ -523,10 +524,10 @@ public class GetVersionsRequest
             try {
                 while (it_imm.next_()) {
                     ImmigrantTickRow tr = it_imm.get_();
-                    bdBlock.addImmigrantObjectId(tr._oid.toPB());
+                    bdBlock.addImmigrantObjectId(BaseUtil.toPB(tr._oid));
                     bdBlock.addImmigrantComId(tr._cid.getInt());
                     bdBlock.addImmigrantImmTick(tr._immTick.getLong());
-                    bdBlock.addImmigrantDeviceId(tr._did.toPB());
+                    bdBlock.addImmigrantDeviceId(BaseUtil.toPB(tr._did));
                     bdBlock.addImmigrantTick(tr._tick.getLong());
                     immTickLast = tr._immTick;
 

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
@@ -149,7 +150,7 @@ public class GetVersionsResponse
          */
         boolean newStore_(PBStoreHeader h) throws SQLException
         {
-            SID sid = new SID(h.getStoreId());
+            SID sid = new SID(BaseUtil.fromPB(h.getStoreId()));
             _sidx = _sid2sidx.getNullable_(sid);
 
             l.info("{} receive gv response for {} {}", _from, sid, _filter);
@@ -356,7 +357,7 @@ public class GetVersionsResponse
                 block.getImmigrantDeviceIdCount(),
                 block.getImmigrantTickCount());
 
-        if (block.hasDeviceId()) didBlock = new DID(block.getDeviceId());
+        if (block.hasDeviceId()) didBlock = new DID(BaseUtil.fromPB(block.getDeviceId()));
 
         if (didBlock != null && didBlock.equals(Cfg.did())) throw new ExProtocolError();
 
@@ -380,10 +381,10 @@ public class GetVersionsResponse
 
         Tick immTickPrev = Tick.ZERO;  // for debugging only
         for (int i = 0; i < block.getImmigrantObjectIdCount(); i++) {
-            OID oid = new OID(block.getImmigrantObjectId(i));
+            OID oid = new OID(BaseUtil.fromPB(block.getImmigrantObjectId(i)));
             CID cid = new CID(block.getImmigrantComId(i));
             Tick immTick = new Tick(block.getImmigrantImmTick(i));
-            DID did = new DID(block.getImmigrantDeviceId(i));
+            DID did = new DID(BaseUtil.fromPB(block.getImmigrantDeviceId(i)));
             Tick tick = new Tick(block.getImmigrantTick(i));
             SOCID socid = new SOCID(sidx, oid, cid);
 

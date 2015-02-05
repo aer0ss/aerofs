@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
@@ -97,11 +98,10 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
 
     private void callSPToCreateSharedFolder_(String name, SID sid) throws Exception
     {
-        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share-ext", () ->
-            _factSP.create()
-                    .signInRemote()
-                    .shareFolder(name, sid.toPB(),
-                            Collections.<PBSubjectPermissions>emptyList(), "", true, false)
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share-ext", () -> _factSP.create()
+                .signInRemote()
+                .shareFolder(name, BaseUtil.toPB(sid),
+                        Collections.<PBSubjectPermissions>emptyList(), "", true, false)
         );
     }
 

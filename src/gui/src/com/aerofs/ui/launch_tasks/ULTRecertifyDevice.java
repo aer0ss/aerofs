@@ -5,6 +5,7 @@
 package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -65,7 +66,7 @@ public class ULTRecertifyDevice extends UILaunchTask
                 l.info("Attempting to refresh the device certificate...");
 
                 SPBlockingClient mutualAuthClient = newMutualAuthClientFactory().create();
-                mutualAuthClient.signInDevice(_userId.getString(), _deviceId.toPB());
+                mutualAuthClient.signInDevice(_userId.getString(), BaseUtil.toPB(_deviceId));
                 CredentialUtil.recertifyDevice(_userId, mutualAuthClient);
 
                 l.info("Successfully refreshed the device certificate.");

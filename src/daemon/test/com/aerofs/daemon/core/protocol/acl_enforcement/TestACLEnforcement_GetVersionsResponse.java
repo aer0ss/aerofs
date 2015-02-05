@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol.acl_enforcement;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
@@ -98,9 +99,9 @@ public class TestACLEnforcement_GetVersionsResponse extends AbstractTest
                 .newBuilder()
                 .setStore(PBStoreHeader
                         .newBuilder()
-                        .setStoreId(_sidViewer.toPB()))
-                .setDeviceId(DID.generate().toPB())
-                .addObjectId(OID.generate().toPB())
+                        .setStoreId(BaseUtil.toPB(_sidViewer)))
+                .setDeviceId(BaseUtil.toPB(DID.generate()))
+                .addObjectId(BaseUtil.toPB(OID.generate()))
                 .addComId(CID.CONTENT.getInt())
                 .addTick(123)
                 .setKnowledgeTick(123)

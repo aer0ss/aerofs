@@ -5,6 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -43,7 +44,7 @@ public class CheckQuotaHelper
     {
         Map<SID, Long> map = Maps.newHashMap();
         for (PBStoreUsage storeUsage : storeUsages) {
-            SID sid = new SID(storeUsage.getSid());
+            SID sid = new SID(BaseUtil.fromPB(storeUsage.getSid()));
             if (map.containsKey(sid)) throw new ExBadArgs("List contains duplicates");
             map.put(sid, storeUsage.getBytesUsed());
         }

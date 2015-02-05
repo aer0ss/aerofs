@@ -4,6 +4,7 @@
 
 package com.aerofs.shell;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import org.apache.commons.cli.CommandLine;
@@ -27,7 +28,7 @@ public class CmdSeed extends AbstractShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
-        CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile(s.d().getPwd_().sid().toPB());
+        CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile(BaseUtil.toPB(s.d().getPwd_().sid()));
         s.out().println("seed file: " + reply.getPath());
     }
 

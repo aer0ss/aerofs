@@ -1,5 +1,6 @@
 package com.aerofs.lib.id;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 
@@ -11,7 +12,7 @@ public class SOCID implements Comparable<SOCID> {
 
     public SOCID(PBSOCID pb)
     {
-        this(new SIndex(pb.getSidx()), new OID(pb.getOid()), new CID(pb.getCid()));
+        this(new SIndex(pb.getSidx()), new OID(BaseUtil.fromPB(pb.getOid())), new CID(pb.getCid()));
     }
 
 

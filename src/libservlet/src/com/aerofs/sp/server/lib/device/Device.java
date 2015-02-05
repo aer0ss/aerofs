@@ -4,9 +4,11 @@
 
 package com.aerofs.sp.server.lib.device;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
@@ -65,15 +67,15 @@ public class Device
 
         public Device create(@Nonnull ByteString did)
         {
-            return create(new DID(did));
+            return create(new DID(BaseUtil.fromPB(did)));
         }
 
         @ParamFactory
         public Device _create(String s)
         {
             try {
-                return create(DID.fromStringFormal(s));
-            } catch (ExFormatError e) {
+                return create(new DID(UniqueID.fromStringFormal(s)));
+            } catch (ExInvalidID e) {
                 throw new IllegalArgumentException("Invalid DID");
             }
         }
@@ -129,13 +131,13 @@ public class Device
     }
 
     public ImmutableList<Certificate> certificates()
-            throws SQLException, ExNotFound, ExFormatError
+            throws SQLException, ExNotFound, ExInvalidID
     {
         return _f._factCert.list(_id);
     }
 
     public boolean hasValidCertWithSerial(long serial)
-            throws ExFormatError, SQLException, ExNotFound
+            throws ExInvalidID, SQLException, ExNotFound
     {
         for (Certificate cert : certificates()) {
             if (cert.serial() == serial) {
@@ -201,7 +203,7 @@ public class Device
      * @return serial number(s) of revoked certificate(s), if any
      */
     public ImmutableSet<Long> delete()
-            throws SQLException, ExNotFound, ExFormatError
+            throws SQLException, ExNotFound, ExInvalidID
     {
         if (!exists()) {
             throw new ExNotFound();

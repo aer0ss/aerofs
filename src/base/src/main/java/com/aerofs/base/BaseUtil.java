@@ -5,6 +5,9 @@
 package com.aerofs.base;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.UniqueID;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.LeanByteString;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -14,6 +17,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -23,7 +27,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 public class BaseUtil
 {
-    public static final Charset CHARSET_UTF = Charset.forName("UTF-8");
+    public static final Charset CHARSET_UTF = StandardCharsets.UTF_8;
     public static final char[] VALID_EMAIL_CHARS =
         new char[] { '.', '!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
                      '=', '?', '^', '_', '`', '{', '|', '}', '~' };
@@ -236,5 +240,15 @@ public class BaseUtil
         if (a > b) return 1;
         else if (a == b) return 0;
         else return -1;
+    }
+
+    public static UniqueID fromPB(ByteString b)
+    {
+        return new UniqueID(new LeanByteString(b).getInternalByteArray());
+    }
+
+    public static ByteString toPB(UniqueID id)
+    {
+        return new LeanByteString(id.getBytes());
     }
 }

@@ -5,10 +5,10 @@
 package com.aerofs.daemon.transport.xmpp.presence;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
@@ -98,7 +98,8 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
                     try {
                         processPresence((Presence)packet);
                     } catch (Exception e) {
-                        l.warn("{} fail process presence over {}", packet.getFrom(), transportId, suppress(e, ExFormatError.class));
+                        l.warn("{} fail process presence over {}", packet.getFrom(), transportId,
+                                suppress(e, ExInvalidID.class));
                     }
                 }
             }
@@ -122,17 +123,17 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
      *
      * @param presence {@link org.jivesoftware.smack.packet.Presence} packet to process
      * @return true if the packet was processed, false otherwise
-     * @throws ExFormatError if any required field cannot be parsed
+     * @throws ExInvalidID if any required field cannot be parsed
      */
     boolean processPresenceForUnitTests(Presence presence)
-            throws ExFormatError
+            throws ExInvalidID
     {
         return processPresence(presence);
     }
 
     // return 'true' if processed, 'false' otherwise
     // the return aids in unit tests
-    private boolean processPresence(Presence presence) throws ExFormatError
+    private boolean processPresence(Presence presence) throws ExInvalidID
     {
         if (l.isTraceEnabled()) l.trace("receive presence p:{}", presence.toXML());
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.acl;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
@@ -135,7 +136,7 @@ public class TestACLSynchronizer extends AbstractTest
     private PBStoreACL storeACL(SID sid, SubjectPermissions... roles)
     {
         PBStoreACL.Builder bd = PBStoreACL.newBuilder()
-                .setStoreId(sid.toPB())
+                .setStoreId(BaseUtil.toPB(sid))
                 .setExternal(external)
                 .setName(SHARED_FOLDER_NAME);
         for (SubjectPermissions r : roles) bd.addSubjectPermissions(r.toPB());
@@ -181,7 +182,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.update_(sidx, user1, Permissions.allOf(Permission.WRITE), false);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class),
+        verify(spClient).updateACL(eq(BaseUtil.toPB(sid1)), any(String.class), any(PBPermissions.class),
                 any(Boolean.class));
         assertEquals(ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), lacl.get_(sidx));
     }
@@ -203,7 +204,7 @@ public class TestACLSynchronizer extends AbstractTest
         }
         assertTrue(ok);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBPermissions.class), any(Boolean.class));
+        verify(spClient).updateACL(eq(BaseUtil.toPB(sid1)), any(String.class), any(PBPermissions.class), any(Boolean.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 
@@ -216,7 +217,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.delete_(sidx, user1);
 
-        verify(spClient).deleteACL(eq(sid1.toPB()), any(String.class));
+        verify(spClient).deleteACL(eq(BaseUtil.toPB(sid1)), any(String.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 
@@ -238,7 +239,7 @@ public class TestACLSynchronizer extends AbstractTest
         }
         assertTrue(ok);
 
-        verify(spClient).deleteACL(eq(sid1.toPB()), any(String.class));
+        verify(spClient).deleteACL(eq(BaseUtil.toPB(sid1)), any(String.class));
         assertEquals(ImmutableMap.of(user1, Permissions.allOf(Permission.WRITE)), lacl.get_(sidx));
     }
 

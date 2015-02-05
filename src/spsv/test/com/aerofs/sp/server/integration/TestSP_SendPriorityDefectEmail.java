@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
@@ -88,7 +89,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
             throws Exception
     {
         service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                "100.0.0", DID.ZERO);
+                "100.0.0", BaseUtil.toPB(DID.ZERO));
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),

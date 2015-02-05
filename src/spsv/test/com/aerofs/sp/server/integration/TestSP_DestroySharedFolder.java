@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
@@ -45,11 +46,11 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     public void shouldAllowManagerToDestroySharedFolder() throws Exception
     {
         setSession(owner);
-        service.destroySharedFolder(sid);
+        service.destroySharedFolder(BaseUtil.toPB(sid));
 
         // verify that the store is not found
         try {
-            service.setSharedFolderName(sid, "new_name");
+            service.setSharedFolderName(BaseUtil.toPB(sid), "new_name");
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -60,11 +61,11 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     public void shouldAllowAdminToDestroySharedFolder() throws Exception
     {
         setSession(admin);
-        service.destroySharedFolder(sid);
+        service.destroySharedFolder(BaseUtil.toPB(sid));
 
         // verify that the store is not found
         try {
-            service.setSharedFolderName(sid, "new_name");
+            service.setSharedFolderName(BaseUtil.toPB(sid), "new_name");
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -76,7 +77,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     {
         setSession(editor);
         try {
-            service.destroySharedFolder(sid);
+            service.destroySharedFolder(BaseUtil.toPB(sid));
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -88,7 +89,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     {
         setSession(owner);
         try {
-            service.destroySharedFolder(SID.rootSID(owner.id()));
+            service.destroySharedFolder(BaseUtil.toPB(SID.rootSID(owner.id())));
             fail();
         } catch (ExBadArgs ignored) {
             // success
@@ -100,7 +101,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     {
         setSession(owner);
         try {
-            service.destroySharedFolder(SID.generate());
+            service.destroySharedFolder(BaseUtil.toPB(SID.generate()));
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -116,7 +117,7 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
         sqlTrans.commit();
         setSession(otherAdmin);
         try {
-            service.destroySharedFolder(sid);
+            service.destroySharedFolder(BaseUtil.toPB(sid));
             fail();
         } catch (ExNoPerm ignored) {
             // success

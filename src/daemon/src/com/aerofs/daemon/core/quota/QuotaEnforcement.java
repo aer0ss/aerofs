@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.quota;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -134,7 +135,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
         List<PBStoreUsage> pbUsage = Lists.newArrayListWithCapacity(sid2usage.size());
         for (Entry<SID, Long> en : sid2usage.entrySet()) {
             pbUsage.add(PBStoreUsage.newBuilder()
-                    .setSid(en.getKey().toPB())
+                    .setSid(BaseUtil.toPB(en.getKey()))
                     .setBytesUsed(en.getValue())
                     .build());
         }
@@ -148,7 +149,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
     {
         Map<SID, Boolean> sid2result = Maps.newHashMap();
         for (PBStoreShouldCollect en : pbReply) {
-            sid2result.put(new SID(en.getSid()), en.getCollectContent());
+            sid2result.put(new SID(BaseUtil.fromPB(en.getSid())), en.getCollectContent());
         }
         return sid2result;
     }

@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.transport_diagnostics;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUIUtil;
@@ -78,7 +79,7 @@ public class CompZephyr extends AbstractCompTransport
 
             String[] deviceIDs = new String[d.getReachableDevicesCount()];
             for (int i = 0; i < deviceIDs.length; i++) {
-                deviceIDs[i] = new DID(d.getReachableDevices(i).getDid()).toStringFormal();
+                deviceIDs[i] = new DID(BaseUtil.fromPB(d.getReachableDevices(i).getDid())).toStringFormal();
             }
             _decDevices.setItems(deviceIDs);
 

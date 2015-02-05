@@ -5,6 +5,7 @@
 package com.aerofs.base.ssl;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -107,7 +108,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
 
         CNameVerificationInfo verificationInfo = CNameVerificationInfo.newBuilder()
                 .setUser(_user.getString())
-                .setDid(_did.toPB())
+                .setDid(BaseUtil.toPB(_did))
                 .build();
 
         ChannelFuture f = Channels.future(ctx.getChannel());
@@ -136,7 +137,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
 
             // Compute the expected cname
             UserID user = UserID.fromInternalThrowIfNotNormalized(verificationInfo.getUser());
-            DID did = new DID(verificationInfo.getDid());
+            DID did = new DID(BaseUtil.fromPB(verificationInfo.getDid()));
             String expected = BaseSecUtil.getCertificateCName(user, did);
 
             // Compare against the actual cname from the certificate

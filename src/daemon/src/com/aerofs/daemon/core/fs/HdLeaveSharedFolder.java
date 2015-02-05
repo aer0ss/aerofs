@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
@@ -57,10 +58,9 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 
         l.info("leave: {} {}", sid, ev._path);
 
-        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-leave", () ->
-            _factSP.create()
-                    .signInRemote()
-                    .leaveSharedFolder(sid.toPB())
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-leave", () -> _factSP.create()
+                .signInRemote()
+                .leaveSharedFolder(BaseUtil.toPB(sid))
         );
 
         /**

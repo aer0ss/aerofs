@@ -5,6 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
@@ -169,7 +170,7 @@ public class CredentialUtil
             throws Exception
     {
         byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
-        return caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
+        return caller.call(sp, BaseUtil.toPB(did), ByteString.copyFrom(csr)).getCert();
     }
 
     private static String recertify(UserID certUserId, DID did, PublicKey pubKey,
@@ -177,7 +178,7 @@ public class CredentialUtil
             throws Exception
     {
         byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
-        return caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
+        return caller.call(sp, BaseUtil.toPB(did), ByteString.copyFrom(csr)).getCert();
     }
 
     private static void writeCertificate(String cert)

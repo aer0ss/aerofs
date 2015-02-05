@@ -6,6 +6,7 @@ package com.aerofs.controller;
 
 import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.BaseParam.Verkehr;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
@@ -222,7 +223,7 @@ public final class CommandNotificationSubscriber
 
             // Get the command at the head of the queue and init loop variables.
             SPBlockingClient spUnauthenticated = newUnauthenticatedSPClient();
-            GetCommandQueueHeadReply head = spUnauthenticated.getCommandQueueHead(Cfg.did().toPB());
+            GetCommandQueueHeadReply head = spUnauthenticated.getCommandQueueHead(BaseUtil.toPB(Cfg.did()));
 
             long initialQueueSize = head.getQueueSize();
             boolean more = head.hasCommand();
@@ -255,7 +256,7 @@ public final class CommandNotificationSubscriber
 
                 SPBlockingClient spAuthenticated = newAuthenticatedSPClient();
                 AckCommandQueueHeadReply ack = spAuthenticated.ackCommandQueueHead(
-                        Cfg.did().toPB(), command.getEpoch(), error);
+                        BaseUtil.toPB(Cfg.did()), command.getEpoch(), error);
 
                 more = ack.hasCommand();
                 if (more) {
@@ -299,7 +300,7 @@ public final class CommandNotificationSubscriber
                     AckCommandQueueHeadReply ack = null;
                     try {
                         SPBlockingClient sp = newAuthenticatedSPClient();
-                        ack = sp.ackCommandQueueHead(Cfg.did().toPB(), command.getEpoch(), error);
+                        ack = sp.ackCommandQueueHead(BaseUtil.toPB(Cfg.did()), command.getEpoch(), error);
                     } catch (Exception e) {
                         error = true;
                         l.error("cmd: unable to ack: " + e.toString());
@@ -413,7 +414,7 @@ public final class CommandNotificationSubscriber
             for (SID sid : roots) {
                 // try creating a seed file (use async ritual API to leverage SP call latency)
                 ListenableFuture<CreateSeedFileReply> reply = UIGlobals.ritualNonBlocking()
-                        .createSeedFile(sid.toPB());
+                        .createSeedFile(BaseUtil.toPB(sid));
 
                 try {
                     // give the daemon some room to create the seed file before making the SP call

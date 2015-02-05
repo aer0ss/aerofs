@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.transport_diagnostics;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
@@ -168,7 +169,7 @@ public class CompTCP extends AbstractCompTransport
         {
             Preconditions.checkArgument(element instanceof TCPDevice);
 
-            return new DID(((TCPDevice)element).getDid()).toStringFormal();
+            return new DID(BaseUtil.fromPB(((TCPDevice) element).getDid())).toStringFormal();
         }
     }
 

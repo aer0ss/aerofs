@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
@@ -106,7 +107,7 @@ public class NewUpdates implements IVersionControlListener
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         CoreProtocolUtil.newCoreMessage(Type.NEW_UPDATES)
                 .setNewUpdates(PBNewUpdates.newBuilder()
-                        .setStoreId(sid.toPB()))
+                        .setStoreId(BaseUtil.toPB(sid)))
                 .build()
                 .writeDelimitedTo(os);
 
@@ -122,7 +123,7 @@ public class NewUpdates implements IVersionControlListener
         l.debug("{} process incoming nu over {}", msg.did(), msg.tp());
 
         if (!msg.pb().hasNewUpdates()) throw new ExProtocolError();
-        SIndex sidx = _sid2sidx.getThrows_(new SID(msg.pb().getNewUpdates().getStoreId()));
+        SIndex sidx = _sid2sidx.getThrows_(new SID(BaseUtil.fromPB(msg.pb().getNewUpdates().getStoreId())));
 
         // see Rule 2 in acl.md. Note that the maxcast sender can forge the device id
         // (unless maxcast messages are signed). therefore this is not a security measure.

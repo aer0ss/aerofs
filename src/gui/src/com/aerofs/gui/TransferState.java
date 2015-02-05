@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -84,7 +85,7 @@ public class TransferState
     private void updateTransferState_(PBTransferEvent pb)
     {
         SOCID socid = new SOCID(pb.getSocid());
-        DID did = new DID(pb.getDeviceId());
+        DID did = new DID(BaseUtil.fromPB(pb.getDeviceId()));
 
         if (pb.getDone() == pb.getTotal()) {
             _states.remove(socid, did);

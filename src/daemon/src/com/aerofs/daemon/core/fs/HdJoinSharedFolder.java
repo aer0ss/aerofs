@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.tc.Cat;
@@ -32,11 +33,9 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
     {
         l.info("join: {}", ev._sid);
 
-        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-join", () ->
-            // join the shared folder through SP
-            newMutualAuthClientFactory().create()
-                    .signInRemote()
-                    .joinSharedFolder(ev._sid.toPB(), false)
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-join", () -> newMutualAuthClientFactory().create()
+                .signInRemote()
+                .joinSharedFolder(BaseUtil.toPB(ev._sid), false)
         );
 
         /**

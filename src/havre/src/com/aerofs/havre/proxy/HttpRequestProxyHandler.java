@@ -1,9 +1,9 @@
 package com.aerofs.havre.proxy;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
@@ -104,7 +104,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     {
         try {
             return route != null ? new DID(route) : null;
-        } catch (ExFormatError e) {
+        } catch (ExInvalidID e) {
             return null;
         }
     }

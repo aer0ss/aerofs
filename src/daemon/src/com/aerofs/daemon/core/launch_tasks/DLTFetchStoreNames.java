@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.launch_tasks;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -90,7 +91,7 @@ class DLTFetchStoreNames extends DaemonLaunchTask
     {
         try (Trans t = _tm.begin_()) {
             for (PBStoreACL store : reply.getStoreAclList()) {
-                SID sid = new SID(store.getStoreId());
+                SID sid = new SID(BaseUtil.fromPB(store.getStoreId()));
                 SIndex sidx = _sid2sidx.getNullable_(sid);
 
                 if (sidx != null) setName_(sidx, store.getName());

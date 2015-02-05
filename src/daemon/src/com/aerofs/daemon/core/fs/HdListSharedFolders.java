@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -90,7 +91,7 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
                     .setName(unlinkedRoots.get(sid))
                     .setPath(new Path(sid).toPB())
                     .setAdmittedOrLinked(false)
-                    .setStoreId(sid.toPB())
+                    .setStoreId(BaseUtil.toPB(sid))
                     .build();
         } else {
             return _llesf.getSharedFolder(sidx, sid);

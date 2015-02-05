@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
@@ -41,7 +42,7 @@ public class UpdateSenderFilter
     {
         PBCore pb = CoreProtocolUtil.newCoreMessage(Type.UPDATE_SENDER_FILTER)
             .setUpdateSenderFilter(PBUpdateSenderFilter.newBuilder()
-                    .setStoreId(_sidx2sid.getThrows_(sidx).toPB())
+                    .setStoreId(BaseUtil.toPB(_sidx2sid.getThrows_(sidx)))
                     .setSenderFilterIndex(sfidx)
                     .setSenderFilterUpdateSeq(updateSeq))
                     .build();
@@ -55,7 +56,7 @@ public class UpdateSenderFilter
                 PBUpdateSenderFilter.class);
 
         PBUpdateSenderFilter sf = msg.pb().getUpdateSenderFilter();
-        SIndex sidx = _sid2sidx.getThrows_(new SID(sf.getStoreId()));
+        SIndex sidx = _sid2sidx.getThrows_(new SID(BaseUtil.fromPB(sf.getStoreId())));
         _sidx2s.getThrows_(sidx).senderFilters().update_(msg.did(), new SenderFilterIndex(
                 sf.getSenderFilterIndex()), sf.getSenderFilterUpdateSeq());
     }

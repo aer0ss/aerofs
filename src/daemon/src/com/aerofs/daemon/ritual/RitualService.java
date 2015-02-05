@@ -1,5 +1,6 @@
 package com.aerofs.daemon.ritual;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
@@ -165,14 +166,14 @@ public class RitualService implements IRitualService
     {
         EICreateRoot ev = new EICreateRoot(path);
         ev.execute(PRIO);
-        return createReply(CreateRootReply.newBuilder().setSid(ev.sid().toPB()).build());
+        return createReply(CreateRootReply.newBuilder().setSid(BaseUtil.toPB(ev.sid())).build());
     }
 
     @Override
     public ListenableFuture<Void> linkRoot(String path, ByteString sid)
             throws Exception
     {
-        EILinkRoot ev = new EILinkRoot(path, new SID(sid));
+        EILinkRoot ev = new EILinkRoot(path, new SID(BaseUtil.fromPB(sid)));
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -185,7 +186,7 @@ public class RitualService implements IRitualService
         ListUnlinkedRootsReply.Builder bd = ListUnlinkedRootsReply.newBuilder();
         for (Entry<SID, String> e : ev.unlinked().entrySet()) {
             bd.addRoot(UnlinkedRoot.newBuilder()
-                    .setSid(e.getKey().toPB())
+                    .setSid(BaseUtil.toPB(e.getKey()))
                     .setName(e.getValue()));
         }
         return createReply(bd.build());
@@ -234,7 +235,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> joinSharedFolder(ByteString sid)
             throws Exception
     {
-        new EIJoinSharedFolder(new SID(sid)).execute(PRIO);
+        new EIJoinSharedFolder(new SID(BaseUtil.fromPB(sid))).execute(PRIO);
         return createVoidReply();
     }
 
@@ -355,7 +356,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> unlinkRoot(ByteString sid)
             throws Exception
     {
-        new EIUnlinkRoot(new SID(sid)).execute(PRIO);
+        new EIUnlinkRoot(new SID(BaseUtil.fromPB(sid))).execute(PRIO);
         return createVoidReply();
     }
 
@@ -417,7 +418,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<CreateSeedFileReply> createSeedFile(ByteString sid)
             throws Exception
     {
-        EICreateSeedFile ev = new EICreateSeedFile(new SID(sid), Core.imce());
+        EICreateSeedFile ev = new EICreateSeedFile(new SID(BaseUtil.fromPB(sid)), Core.imce());
         ev.execute(PRIO);
         return createReply(CreateSeedFileReply.newBuilder().setPath(ev._path).build());
     }
@@ -471,7 +472,7 @@ public class RitualService implements IRitualService
         ListUserRootsReply.Builder bd = ListUserRootsReply.newBuilder();
         for (Entry<SID, String> e : ev.getUserRoots().entrySet()) {
             bd.addRoot(UserRoot.newBuilder()
-                    .setSid(e.getKey().toPB())
+                    .setSid(BaseUtil.toPB(e.getKey()))
                     .setName(e.getValue()));
         }
         return createReply(bd.build());
@@ -614,7 +615,7 @@ public class RitualService implements IRitualService
 
         TestGetObjectIdentifierReply reply = TestGetObjectIdentifierReply.newBuilder()
                 .setSidx(oa.soid().sidx().getInt())
-                .setOid(oa.soid().oid().toPB())
+                .setOid(BaseUtil.toPB(oa.soid().oid()))
                 .build();
 
         return createReply(reply);
@@ -672,7 +673,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> relocate(String newAbsRootAnchor, @Nullable ByteString sid) throws Exception
     {
-        new EIRelocateRootAnchor(newAbsRootAnchor, sid == null ? null : new SID(sid), Core.imce())
+        new EIRelocateRootAnchor(newAbsRootAnchor, sid == null ? null : new SID(BaseUtil.fromPB(sid)), Core.imce())
                 .execute(PRIO);
         return createVoidReply();
     }

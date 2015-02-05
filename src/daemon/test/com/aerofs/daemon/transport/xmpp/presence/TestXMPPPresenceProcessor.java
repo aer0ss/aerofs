@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.transport.xmpp.presence;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
@@ -89,14 +89,14 @@ public final class TestXMPPPresenceProcessor
     }
 
     private void beInTheMoment(DID remotedid, SID sid)
-            throws ExFormatError
+            throws ExInvalidID
     {
         boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, TRANSPORT_ID, true));
         assertThat(processed, equalTo(true));
     }
 
     private void leaveTheMoment(DID remotedid, SID sid)
-            throws ExFormatError
+            throws ExInvalidID
     {
         boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, TRANSPORT_ID, false));
         assertThat(processed, equalTo(true));

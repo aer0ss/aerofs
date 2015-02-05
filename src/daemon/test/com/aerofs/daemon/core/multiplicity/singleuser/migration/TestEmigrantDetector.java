@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
@@ -124,8 +125,8 @@ public class TestEmigrantDetector extends AbstractTest
         mockStore(null, sidTargetGrandParent, sidxTargetGrandParent, sidxRoot, null, null, sid2sidx, null);
 
         sidsTargetAncestor = new ArrayList<>();
-        sidsTargetAncestor.add(sidTargetParent.toPB());
-        sidsTargetAncestor.add(sidTargetGrandParent.toPB());
+        sidsTargetAncestor.add(BaseUtil.toPB(sidTargetParent));
+        sidsTargetAncestor.add(BaseUtil.toPB(sidTargetGrandParent));
 
         when(ds.getOANullable_(soidSource)).thenReturn(oa);
 

@@ -4,8 +4,6 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.ex.ExFormatError;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -19,7 +17,7 @@ public class MDID extends DID
         checkArgument(isMobileDevice());
     }
 
-    public MDID(byte[] bs)
+    protected MDID(byte[] bs)
     {
         super(bs);
         checkArgument(isMobileDevice());
@@ -32,12 +30,11 @@ public class MDID extends DID
         return new MDID(uuid);
     }
 
-    public static MDID fromExternal(byte[] bs) throws ExFormatError
+    public static MDID fromExternal(byte[] bs) throws ExInvalidID
     {
         if (bs.length != UniqueID.LENGTH || getVersionNibble(bs) != MDID_VERSION_NIBBLE) {
-            throw new ExFormatError();
+            throw new ExInvalidID();
         }
-
         return new MDID(bs);
     }
 

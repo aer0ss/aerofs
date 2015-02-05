@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -45,7 +46,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             throws Exception
     {
         setSession(USER_1);
-        service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
+        service.shareFolder(SID_1.toStringFormal(), BaseUtil.toPB(SID_1),
                 Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
     }
 
@@ -54,7 +55,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             throws Exception
     {
         setSession(USER_1);
-        service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
+        service.shareFolder(SID_1.toStringFormal(), BaseUtil.toPB(SID_1),
                 Collections.<PBSubjectPermissions>emptyList(), "", true, false).get();
     }
 
@@ -100,7 +101,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         User user = newUser();
         shareFolder(USER_1, SID_1, user, Permissions.allOf(Permission.WRITE));
 
-        service.updateACL(SID_1.toPB(), user.id().getString(), Permissions.allOf().toPB(), false);
+        service.updateACL(BaseUtil.toPB(SID_1), user.id().getString(), Permissions.allOf().toPB(), false);
 
         verify(sharedFolderNotificationEmailer, times(1)).sendRoleChangedNotificationEmail(
                 eq(factSharedFolder.create(SID_1)), eq(USER_1), eq(user),

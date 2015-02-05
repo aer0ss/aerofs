@@ -1,8 +1,5 @@
 package com.aerofs.base.id;
 
-import com.aerofs.base.ex.ExFormatError;
-import com.google.protobuf.ByteString;
-
 /**
  * device id
  */
@@ -10,11 +7,6 @@ import com.google.protobuf.ByteString;
 public class DID extends UniqueID
 {
     protected static final int MDID_VERSION_NIBBLE = 8;
-
-    public DID(ByteString bstr)
-    {
-        super(bstr);
-    }
 
     public DID(UniqueID id)
     {
@@ -26,12 +18,12 @@ public class DID extends UniqueID
         super(bs);
     }
 
-    public DID(String str, int start, int end) throws ExFormatError
+    public DID(String str, int start, int end) throws ExInvalidID
     {
         super(str, start, end);
     }
 
-    public DID(String str) throws ExFormatError
+    public DID(String str) throws ExInvalidID
     {
         super(str);
     }
@@ -41,18 +33,17 @@ public class DID extends UniqueID
         return new DID(UniqueID.generate());
     }
 
-    public static DID fromExternal(byte[] bs) throws ExFormatError
+    public static DID fromExternal(byte[] bs) throws ExInvalidID
     {
         if (bs.length != UniqueID.LENGTH) {
-            throw new ExFormatError();
+            throw new ExInvalidID();
         }
-
         return new DID(bs);
     }
 
-    public static DID fromInternal(byte[] bs) throws ExFormatError
+    public static DID fromInternal(byte[] bs)
     {
-        return fromExternal(bs);
+        return new DID(bs);
     }
 
     public boolean isMobileDevice()

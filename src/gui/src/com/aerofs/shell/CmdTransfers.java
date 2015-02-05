@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
@@ -84,7 +85,7 @@ public class CmdTransfers extends AbstractShellCommand<ShProgram>
 
         // print device id and sockid
         if (debug) {
-            ps.print(new DID(ev.getDeviceId()).toStringFormal() + "\t| ");
+            ps.print(new DID(BaseUtil.fromPB(ev.getDeviceId())).toStringFormal() + "\t| ");
             ps.print(new SOCID(ev.getSocid()) + "\t| ");
         }
 

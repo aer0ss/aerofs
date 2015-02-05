@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
@@ -250,7 +251,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         shareFolder(owner, sid, group, Permissions.VIEWER);
 
         ListGroupStatusInSharedFolderReply reply = service.listGroupStatusInSharedFolder(
-            group.id().getInt(), sid.toPB()).get();
+            group.id().getInt(), BaseUtil.toPB(sid)).get();
         // user 2 and TS
         assertEquals(reply.getUserAndStateCount(), 2);
     }
@@ -262,7 +263,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         service.addGroupMembers(group.id().getInt(), emails(user2));
         shareFolder(owner, sid, group, Permissions.VIEWER);
         joinSharedFolder(user2, sid);
-        service.updateACL(sid.toPB(), SubjectPermissions.getStringFromSubject(group.id()),
+        service.updateACL(BaseUtil.toPB(sid), SubjectPermissions.getStringFromSubject(group.id()),
                 Permissions.EDITOR.toPB(), false);
 
         sqlTrans.begin();
@@ -279,7 +280,7 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         service.addGroupMembers(group.id().getInt(), emails(user2));
         shareFolder(owner, sid, group, Permissions.VIEWER);
         joinSharedFolder(user2, sid);
-        service.deleteACL(sid.toPB(), SubjectPermissions.getStringFromSubject(group.id()));
+        service.deleteACL(BaseUtil.toPB(sid), SubjectPermissions.getStringFromSubject(group.id()));
         sqlTrans.begin();
         assertEquals(sf.getJoinedGroups().size(), 0);
         assertEquals(group.listSharedFolders().size(), 0);

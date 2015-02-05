@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.quota;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -151,7 +152,7 @@ public class TestQuotaEnforcement extends AbstractTest
         // import the SP parameter to a map
         Map<SID, Long> params = Maps.newHashMap();
         for (PBStoreUsage su : captorSPParam.getValue()) {
-            params.put(new SID(su.getSid()), su.getBytesUsed());
+            params.put(new SID(BaseUtil.fromPB(su.getSid())), su.getBytesUsed());
         }
 
         // Verify the values in the parameter are expected
@@ -172,14 +173,14 @@ public class TestQuotaEnforcement extends AbstractTest
             throws Exception
     {
         buildSPReply(
-                PBStoreShouldCollect.newBuilder().setSid(sids[0].toPB()).setCollectContent(true)
+                PBStoreShouldCollect.newBuilder().setSid(BaseUtil.toPB(sids[0])).setCollectContent(true)
                         .build());
         quota.start_();
 
         verify(ss[0]).startCollectingContent_(any(Trans.class));
 
         buildSPReply(PBStoreShouldCollect.newBuilder()
-                        .setSid(sids[0].toPB())
+                        .setSid(BaseUtil.toPB(sids[0]))
                         .setCollectContent(false)
                         .build()
         );
@@ -195,7 +196,7 @@ public class TestQuotaEnforcement extends AbstractTest
         // Inject an arbitrary SID into the SP reply. The test passes as long as the system doesn't
         // crash.
         SID sid = SID.generate();
-        buildSPReply(PBStoreShouldCollect.newBuilder().setSid(sid.toPB()).setCollectContent(false)
+        buildSPReply(PBStoreShouldCollect.newBuilder().setSid(BaseUtil.toPB(sid)).setCollectContent(false)
                 .build());
 
         quota.start_();

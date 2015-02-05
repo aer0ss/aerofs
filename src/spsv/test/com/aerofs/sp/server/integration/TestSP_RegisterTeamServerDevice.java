@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
@@ -63,6 +64,6 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
         mockCertificateGeneratorAndIncrementSerialNumber();
 
         service.registerTeamServerDevice(
-                tsDevice.id().toPB(), newCSR(tsUser, tsDevice), "", "", "", null);
+                BaseUtil.toPB(tsDevice.id()), newCSR(tsUser, tsDevice), "", "", "", null);
     }
 }

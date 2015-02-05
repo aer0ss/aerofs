@@ -1,8 +1,8 @@
 package com.aerofs.sp.server.lib.cert;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
@@ -23,7 +23,7 @@ public class Certificate
         }
 
         public ImmutableList<Certificate> list(DID did)
-                throws SQLException, ExNotFound, ExFormatError
+                throws SQLException, ExNotFound, ExInvalidID
         {
             List<Long> serials = _certdb.getAllSerialsIssuedFor(did);
             Builder<Certificate> builder = ImmutableList.builder();

@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.SID;
 import org.apache.commons.cli.CommandLine;
 
@@ -14,7 +15,7 @@ public class CmdAccept extends AbstractShellCommand<ShProgram>
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            s.d().getRitualClient_().joinSharedFolder(new SID(arg, 0, arg.length()).toPB());
+            s.d().getRitualClient_().joinSharedFolder(BaseUtil.toPB(new SID(arg, 0, arg.length())));
         }
     }
 

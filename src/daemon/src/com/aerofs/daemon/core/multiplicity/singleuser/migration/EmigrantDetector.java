@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -134,7 +135,7 @@ public class EmigrantDetector implements IEmigrantDetector
         Queue<SID> sids = new ArrayDeque<>(sidsEmigrantTargetAncestor.size() + 1);
         sids.add(sidTarget);
         for (ByteString bstr : sidsEmigrantTargetAncestor) {
-            SID sidAncestor = new SID(bstr);
+            SID sidAncestor = new SID(BaseUtil.fromPB(bstr));
             // sid == sidAncestor if the emigrant object is under the root store of the remote peer
             if (!sidTarget.equals(sidAncestor)) sids.add(sidAncestor);
         }

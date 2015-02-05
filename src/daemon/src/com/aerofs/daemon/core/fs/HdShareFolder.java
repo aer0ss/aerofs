@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.ex.ExBadArgs;
@@ -223,12 +224,10 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void callSP_(SID sid, String folderName, List<PBSubjectPermissions> roles,
             String emailNote, boolean suppressSharingRulesWarnings) throws Exception
     {
-        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share", () ->
-            // NB: external shared folders are create by HdCreateRoot only
-            _factSP.create()
-                    .signInRemote()
-                    .shareFolder(folderName, sid.toPB(), roles, emailNote, false,
-                            suppressSharingRulesWarnings)
+        _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-share", () -> _factSP.create()
+                .signInRemote()
+                .shareFolder(folderName, BaseUtil.toPB(sid), roles, emailNote, false,
+                        suppressSharingRulesWarnings)
         );
     }
 

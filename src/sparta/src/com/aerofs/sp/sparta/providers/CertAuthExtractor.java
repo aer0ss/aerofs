@@ -7,9 +7,9 @@ package com.aerofs.sp.sparta.providers;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.rest.api.Error;
@@ -141,8 +141,8 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
             // Check validity of device id header
             DID did;
             try {
-                did = DID.fromExternal(BaseUtil.hexDecode(did_string));
-            } catch (ExFormatError e) {
+                did = new DID(DID.fromStringFormal(did_string));
+            } catch (ExInvalidID e) {
                 throw new CertAuthFailureException("Couldn't decode device id " + did_string);
             }
 

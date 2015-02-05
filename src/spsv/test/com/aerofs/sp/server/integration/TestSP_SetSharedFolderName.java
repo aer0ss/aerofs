@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
@@ -31,7 +32,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
 
         // USER_1 renames the folder
         setSession(USER_1);
-        service.setSharedFolderName(SID_1.toPB(), NEW_NAME);
+        service.setSharedFolderName(BaseUtil.toPB(SID_1), NEW_NAME);
 
         // Check that USER_1 has the new name
         assertEquals(NEW_NAME, getSharedFolderName(SID_1, USER_1));
@@ -47,7 +48,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
         setSession(USER_1);
-        service.setSharedFolderName(SID_1.toPB(), "");
+        service.setSharedFolderName(BaseUtil.toPB(SID_1), "");
     }
 
     @Test(expected = ExNotFound.class)
@@ -55,7 +56,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
             throws Exception
     {
         setSession(USER_1);
-        service.setSharedFolderName(SID_1.toPB(), "aaaa");
+        service.setSharedFolderName(BaseUtil.toPB(SID_1), "aaaa");
     }
 
     /**
@@ -72,7 +73,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
 
         // USER_2 renames the folder
         setSession(USER_2);
-        service.setSharedFolderName(SID_1.toPB(), NEW_NAME);
+        service.setSharedFolderName(BaseUtil.toPB(SID_1), NEW_NAME);
 
         // Check that USER_1 and USER_2 have different names for the folder
         assertNotEquals(getSharedFolderName(SID_1, USER_1), getSharedFolderName(SID_1, USER_2));
@@ -96,7 +97,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
                 .getSharedFolderList();
 
         for (PBSharedFolder folder : folders) {
-            if (new SID(folder.getStoreId()).equals(sid)) return folder.getName();
+            if (new SID(BaseUtil.fromPB(folder.getStoreId())).equals(sid)) return folder.getName();
         }
 
         throw new ExNotFound();

@@ -1,5 +1,6 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
@@ -151,7 +152,7 @@ public class TransferLabelProvider extends LabelProvider implements ITableLabelP
 
     private String formatDevice(ByteString pbDID, @Nullable String displayName)
     {
-        return (_showDID ? (pbDID == null ? "<null>" : new DID(pbDID).toString()) + " - " : "")
+        return (_showDID ? (pbDID == null ? "<null>" : new DID(BaseUtil.fromPB(pbDID)).toString()) + " - " : "")
                 + Objects.firstNonNull(displayName, S.LBL_UNKNOWN_DEVICE);
     }
 

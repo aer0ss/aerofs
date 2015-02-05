@@ -5,9 +5,9 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
@@ -84,15 +84,12 @@ public class CertificateDatabase extends AbstractSQLDatabase
                 C_CERT_EXPIRE_TS + " > current_timestamp and " + C_CERT_REVOKE_TS + " != 0",
                 C_CERT_SERIAL));
 
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             Builder<Long> builder = ImmutableList.builder();
             while (rs.next()) {
                 builder.add(rs.getLong(1));
             }
             return builder.build();
-        } finally {
-            rs.close();
         }
     }
 
@@ -102,32 +99,26 @@ public class CertificateDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
                 C_CERT_DEVICE_ID + " = ?", C_CERT_SERIAL ));
         ps.setString(1, did.toStringFormal());
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             Builder<Long> builder = ImmutableList.builder();
             while (rs.next()) {
                 builder.add(rs.getLong(1));
             }
             return builder.build();
-        } finally {
-            rs.close();
         }
     }
 
     public DID getDid(long serial)
-            throws SQLException, ExNotFound, ExFormatError
+            throws SQLException, ExNotFound, ExInvalidID
     {
         PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
                 C_CERT_SERIAL + " = ?", C_CERT_DEVICE_ID));
         ps.setLong(1, serial);
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
                 throw new ExNotFound();
             }
             return new DID(rs.getString(1));
-        } finally {
-            rs.close();
         }
     }
 
@@ -137,16 +128,13 @@ public class CertificateDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_CERT, C_CERT_SERIAL + " =?", C_CERT_REVOKE_TS));
         ps.setLong(1, serial);
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
                 throw new ExNotFound();
             }
             long revokeTime = rs.getLong(1);
             // If the revoke timestamp is greater than 0, then the certificate has been revoked.
             return revokeTime > 0;
-        } finally {
-            rs.close();
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
@@ -106,7 +107,7 @@ class Multicast implements IMaxcast, ILinkStateListener
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_GO_OFFLINE)
-                .setTcpMulticastDeviceId(localdid.toPB())
+                .setTcpMulticastDeviceId(BaseUtil.toPB(localdid))
                 .build();
     }
 
@@ -202,7 +203,7 @@ class Multicast implements IMaxcast, ILinkStateListener
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_PING)
-                .setTcpMulticastDeviceId(localdid.toPB())
+                .setTcpMulticastDeviceId(BaseUtil.toPB(localdid))
                 .build();
     }
 
@@ -235,7 +236,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 checkArgument(h.hasTcpMulticastDeviceId());
 
                 // ignore messages from myself
-                DID did = new DID(h.getTcpMulticastDeviceId());
+                DID did = new DID(BaseUtil.fromPB(h.getTcpMulticastDeviceId()));
                 if (did.equals(localdid)) continue;
 
                 if (h.getType() == Type.DATAGRAM)
@@ -272,7 +273,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 .newBuilder()
                 .setType(Type.DATAGRAM)
                 .setMcastId(mcastid)
-                .setTcpMulticastDeviceId(localdid.toPB())
+                .setTcpMulticastDeviceId(BaseUtil.toPB(localdid))
                 .build();
         send(h, buf);
     }

@@ -1,11 +1,13 @@
 package com.aerofs.shell;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.cli.CLI;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
@@ -186,7 +188,7 @@ public class ShProgram implements IProgram, ICallback
                 if (L.isMultiuser() && isUserRoot(r)) {
                     try {
                         r = Path.root(SID.fromStringFormal(token));
-                    } catch (ExFormatError e) { throw new ExBadArgs("invalid path"); }
+                    } catch (ExInvalidID e) { throw new ExBadArgs("invalid path"); }
                 } else {
                     r = r.append(token);
                 }
@@ -230,13 +232,13 @@ public class ShProgram implements IProgram, ICallback
             Map<SID, String> roots = Maps.newHashMap();
             // use user roots as top level
             for (UserRoot userRoot : getRitualClient_().listUserRoots().getRootList()) {
-                roots.put(new SID(userRoot.getSid()), userRoot.getName());
+                roots.put(new SID(BaseUtil.fromPB(userRoot.getSid())), userRoot.getName());
             }
             // need to list shared folders too:
             // 1. otherwise we might miss folders created on a linked TS of the same org
             // 2. otherwise the UX would be inconsistent with linked TS
             for (PBSharedFolder sf : getRitualClient_().listSharedFolders().getSharedFolderList()) {
-                roots.put(new SID(sf.getPath().getSid()), sf.getName());
+                roots.put(new SID(BaseUtil.fromPB(sf.getPath().getSid())), sf.getName());
             }
             return roots;
         }

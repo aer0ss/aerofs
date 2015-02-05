@@ -4,16 +4,15 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
-import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.user.User;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -92,7 +91,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
             throws Exception
     {
         setSession(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
+        service.shareFolder(sid.toStringFormal(), BaseUtil.toPB(sid), toPB(sharee, permissions), "", external,
                 suppressWarnings);
     }
 
@@ -101,7 +100,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
             throws Exception
     {
         setSession(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, permissions), "", external,
+        service.shareFolder(sid.toStringFormal(), BaseUtil.toPB(sid), toPB(sharee, permissions), "", external,
                 suppressWarnings);
     }
 
@@ -122,7 +121,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
                 null;
 
         setSession(sharee);
-        service.joinSharedFolder(sid.toPB(), ext);
+        service.joinSharedFolder(BaseUtil.toPB(sid), ext);
 
         if (oldUser != null) setSession(oldUser);
     }
@@ -134,7 +133,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
                 null;
 
         setSession(sharee);
-        service.leaveSharedFolder(sid.toPB());
+        service.leaveSharedFolder(BaseUtil.toPB(sid));
 
         if (oldUser != null) setSession(oldUser);
     }

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.device;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -326,11 +327,11 @@ public class Devices implements IDiagnosable
 
             // then, add an entry for the sidx=>sid mapping
             storeBuilder.setStoreIndex(sidx.getInt());
-            storeBuilder.setSid(sid.toPB());
+            storeBuilder.setSid(BaseUtil.toPB(sid));
 
             // finally, add all the dids that 'have' that sidx
             for (DID did : devices) {
-                storeBuilder.addKnownOnDids(did.toPB());
+                storeBuilder.addKnownOnDids(BaseUtil.toPB(did));
             }
         } catch (SQLException e) {
             l.error("fail get SID from db for sidx:{}", sidx.getInt(), e);

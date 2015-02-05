@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.test;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -35,7 +36,7 @@ public class HdTestGetAliasObject extends AbstractHdIMC<EITestGetAliasObject>
         IDBIterator<OID> it = _aldb.getAliases_(_ds.resolveNullable_(ev._path));
         try {
             List<ByteString> l = Lists.newArrayList();
-            while (it.next_()) l.add(it.get_().toPB());
+            while (it.next_()) l.add(BaseUtil.toPB(it.get_()));
             ev.setResult_(l);
         } finally {
             it.close_();

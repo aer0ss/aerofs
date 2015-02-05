@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
@@ -71,8 +72,8 @@ public class ComputeHash
     {
         PBComputeHashRequest.Builder bd = PBComputeHashRequest
                 .newBuilder()
-                .setStoreId(_sidx2sid.getThrows_(soid.sidx()).toPB())
-                .setObjectId(soid.oid().toPB())
+                .setStoreId(BaseUtil.toPB(_sidx2sid.getThrows_(soid.sidx())))
+                .setObjectId(BaseUtil.toPB(soid.oid()))
                 .setRemoteVersion(vRemote.toPB_());
 
         PBCore request = CoreProtocolUtil
@@ -99,8 +100,8 @@ public class ComputeHash
         Util.checkPB(msg.pb().hasComputeHashRequest(), PBComputeHashRequest.class);
         PBComputeHashRequest request = msg.pb().getComputeHashRequest();
 
-        SID sid = new SID(request.getStoreId());
-        SOID soid = new SOID(_sid2sidx.getThrows_(sid), new OID(request.getObjectId()));
+        SID sid = new SID(BaseUtil.fromPB(request.getStoreId()));
+        SOID soid = new SOID(_sid2sidx.getThrows_(sid), new OID(BaseUtil.fromPB(request.getObjectId())));
 
         Version vRemote = Version.fromPB(request.getRemoteVersion());
         if (!vRemote.isNonAliasOnly_()) {

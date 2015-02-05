@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.update.uput;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defects;
 import com.aerofs.lib.cfg.Cfg;
@@ -24,7 +25,7 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
             IOSUtil osu = OSUtil.get();
             newMutualAuthClientFactory().create()
                     .signInRemote()
-                    .setDeviceOSFamilyAndName(Cfg.did().toPB(),
+                    .setDeviceOSFamilyAndName(BaseUtil.toPB(Cfg.did()),
                             osu.getOSFamily().getString(), osu.getFullOSName());
         } catch (Throwable e) {
             l.warn("Failed to set Device OS Family and Name");

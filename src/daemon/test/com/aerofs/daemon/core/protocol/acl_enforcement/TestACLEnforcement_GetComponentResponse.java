@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol.acl_enforcement;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
@@ -176,8 +177,8 @@ public class TestACLEnforcement_GetComponentResponse extends AbstractTest
                 .newRequest(Type.GET_COMPONENT_REQUEST)
                 .setGetComponentRequest(PBGetComponentRequest
                         .newBuilder()
-                        .setStoreId(replier._sidx2sid.getThrows_(k.sidx()).toPB())
-                        .setObjectId(k.oid().toPB())
+                        .setStoreId(BaseUtil.toPB(replier._sidx2sid.getThrows_(k.sidx())))
+                        .setObjectId(BaseUtil.toPB(k.oid()))
                         .setComId(k.cid().getInt())
                         .setLocalVersion(Version.empty().toPB_()))
                 .build();

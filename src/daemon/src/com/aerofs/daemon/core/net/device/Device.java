@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.device;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.transport.ITransport;
@@ -234,7 +235,7 @@ public class Device implements Comparable<Device>
     {
         Diagnostics.Device.Builder deviceBuilder = Diagnostics.Device.newBuilder();
 
-        deviceBuilder.setDid(did().toPB());
+        deviceBuilder.setDid(BaseUtil.toPB(did()));
 
         ITransport preferredTransport = getPreferredTransport();
         if (preferredTransport != null) {

@@ -1,12 +1,12 @@
 package com.aerofs.base.id;
 
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
-import com.aerofs.base.ex.ExFormatError;
-import com.google.protobuf.ByteString;
-
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Store IDs
@@ -29,10 +29,13 @@ public class SID extends UniqueID
     private static final byte[] ROOT_SID_SALT = new byte[]
             { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };
 
-    public SID(ByteString bstr)
+    private static MessageDigest newMessageDigestMD5()
     {
-        super(bstr);
-        assertIsValid();
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
     }
 
     public SID(UniqueID id)
@@ -42,10 +45,10 @@ public class SID extends UniqueID
 
         // should use one of the conversion methods below to convert between
         // OID and SID
-        assert !(id instanceof OID);
+        checkState(!(id instanceof OID));
     }
 
-    public SID(String str, int start, int end) throws ExFormatError, ExInvalidID
+    public SID(String str, int start, int end) throws ExInvalidID
     {
         super(str, start, end);
 
@@ -58,7 +61,7 @@ public class SID extends UniqueID
         assertIsValid();
     }
 
-    public SID(String str) throws ExFormatError
+    public SID(String str) throws ExInvalidID
     {
         super(str);
         assertIsValid();
@@ -72,7 +75,7 @@ public class SID extends UniqueID
 
     private void assertIsValid()
     {
-        assert isValid() : toStringFormal();
+        checkState(isValid(), this);
     }
 
     public boolean isUserRoot()
@@ -94,11 +97,11 @@ public class SID extends UniqueID
      */
     public static SID folderOID2legacyConvertedStoreSID(OID oid)
     {
-        assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
-        byte[] bs = BaseSecUtil.newMessageDigestMD5().digest(oid.getBytes());
+        checkArgument(!oid.isRoot() && !oid.isTrash() && !oid.isAnchor(), oid);
+        byte[] bs = newMessageDigestMD5().digest(oid.getBytes());
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
-        assert !sid.isUserRoot();
+        checkState(!sid.isUserRoot());
         return sid;
     }
 
@@ -107,11 +110,11 @@ public class SID extends UniqueID
      */
     public static SID folderOID2convertedStoreSID(OID oid)
     {
-        assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
+        checkArgument(!oid.isRoot() && !oid.isTrash() && !oid.isAnchor(), oid);
         byte[] bs = Arrays.copyOf(oid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
-        assert !sid.isUserRoot();
+        checkState(!sid.isUserRoot());
         return sid;
     }
 
@@ -120,11 +123,11 @@ public class SID extends UniqueID
      */
     public static OID anchorOID2folderOID(OID anchor)
     {
-        assert anchor.isAnchor() : anchor.toStringFormal();
+        checkArgument(anchor.isAnchor(), anchor);
         byte[] bs = Arrays.copyOf(anchor.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 4);
         OID oid = new OID(bs);
-        assert !oid.isAnchor();
+        checkState(!oid.isAnchor());
         return oid;
     }
 
@@ -133,11 +136,11 @@ public class SID extends UniqueID
      */
     public static OID convertedStoreSID2folderOID(SID sid)
     {
-        assert !sid.isUserRoot() : sid.toStringFormal();
+        checkArgument(!sid.isUserRoot(), sid);
         byte[] bs = Arrays.copyOf(sid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 4);
         OID oid = new OID(bs);
-        assert !oid.isAnchor();
+        checkState(!oid.isAnchor());
         return oid;
     }
 
@@ -146,9 +149,9 @@ public class SID extends UniqueID
      */
     public static OID storeSID2anchorOID(SID sid)
     {
-        assert !sid.isUserRoot() : sid.toStringFormal();
+        checkArgument(!sid.isUserRoot(), sid);
         OID oid = new OID(sid.getBytes());
-        assert oid.isAnchor();
+        checkState(oid.isAnchor());
         return oid;
     }
 
@@ -158,9 +161,9 @@ public class SID extends UniqueID
      */
     public static SID anchorOID2storeSID(OID oid)
     {
-        assert oid.isAnchor() : oid.toStringFormal();
+        checkArgument(oid.isAnchor(), oid);
         SID sid = new SID(oid.getBytes());
-        assert !sid.isUserRoot();
+        checkState(!sid.isUserRoot());
         return sid;
     }
 
@@ -169,12 +172,12 @@ public class SID extends UniqueID
      */
     public static SID rootSID(UserID userId)
     {
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        md.update(BaseUtil.string2utf(userId.getString()));
+        MessageDigest md = newMessageDigestMD5();
+        md.update(userId.getString().getBytes(StandardCharsets.UTF_8));
         byte[] bs = md.digest(ROOT_SID_SALT);
         setVersionNibble(bs, 3);
         SID sid = new SID(bs);
-        assert sid.isUserRoot();
+        checkState(sid.isUserRoot());
         return sid;
     }
 
@@ -184,7 +187,7 @@ public class SID extends UniqueID
         return toStringImpl('$', 2, '$');
     }
 
-    public static SID fromStringFormal(String hex) throws ExFormatError
+    public static SID fromStringFormal(String hex) throws ExInvalidID
     {
         return new SID(UniqueID.fromStringFormal(hex));
     }

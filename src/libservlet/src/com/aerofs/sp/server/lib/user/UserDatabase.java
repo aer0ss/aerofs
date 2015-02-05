@@ -10,16 +10,15 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -316,7 +315,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * List all devices belonging to a the provided user.
      */
     public ImmutableList<DID> getDevices(UserID userId)
-            throws SQLException, ExFormatError
+            throws SQLException, ExInvalidID
     {
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_UNLINKED + "=0",

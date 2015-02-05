@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.TaskDialog;
@@ -79,7 +80,7 @@ class AddSharedFolderDialogs
 
     private Path shareExternalFolder(String path) throws Exception
     {
-        SID sid = new SID(UIGlobals.ritual().createRoot(path).getSid());
+        SID sid = new SID(BaseUtil.fromPB(UIGlobals.ritual().createRoot(path).getSid()));
         return new Path(sid);
     }
 

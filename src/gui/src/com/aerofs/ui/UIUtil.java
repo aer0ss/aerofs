@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.controller.ExLaunchAborted;
@@ -88,7 +89,7 @@ public class UIUtil
     {
         newMutualAuthClientFactory().create()
                 .signInRemote()
-                .unlinkDevice(Cfg.did().toPB(), false);
+                .unlinkDevice(BaseUtil.toPB(Cfg.did()), false);
     }
 
     private static String getUserFriendlyID(PBSOCID pbsocid)

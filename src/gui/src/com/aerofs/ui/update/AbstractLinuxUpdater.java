@@ -3,6 +3,7 @@ package com.aerofs.ui.update;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 
@@ -74,7 +75,7 @@ abstract class AbstractLinuxUpdater extends Updater
                 try {
                     SPBlockingClient sp = newMutualAuthClientFactory().create()
                             .signInRemote();
-                    String deviceName = sp.getUserPreferences(Cfg.did().toPB()).getDeviceName();
+                    String deviceName = sp.getUserPreferences(BaseUtil.toPB(Cfg.did())).getDeviceName();
 
                     final String subject = "[Action Required] Update " + L.product() +
                                 " on " + Util.quote(deviceName);

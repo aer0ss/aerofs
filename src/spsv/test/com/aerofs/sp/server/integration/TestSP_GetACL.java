@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.id.SID;
@@ -41,7 +42,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
         assertEquals(2, reply.getStoreAclCount());
 
         for (PBStoreACL storeACL : reply.getStoreAclList()) {
-            SID aclSID = new SID(storeACL.getStoreId());
+            SID aclSID = new SID(BaseUtil.fromPB(storeACL.getStoreId()));
             if (aclSID.equals(SID_1)) {
                 assertACLOnlyContains(storeACL.getSubjectPermissionsList(),
                         new UserAndRole(USER_1, Permissions.allOf(Permission.WRITE,
@@ -186,7 +187,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
         setSession(user);
         GetACLReply reply = service.getACL(0L).get();
         for (PBStoreACL sacl : reply.getStoreAclList()) {
-            if (new SID(sacl.getStoreId()).equals(sid)) return sacl.getExternal();
+            if (new SID(BaseUtil.fromPB(sacl.getStoreId())).equals(sid)) return sacl.getExternal();
         }
         throw new IllegalStateException();
     }

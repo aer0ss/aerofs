@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.BaseParam.XMPP;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -301,7 +302,7 @@ public class Jingle implements ITransport
         for (DID did : available) {
             JingleDevice.Builder deviceBuilder = JingleDevice
                     .newBuilder()
-                    .setDid(did.toPB());
+                    .setDid(BaseUtil.toPB(did));
 
             for (Message message : unicast.getChannelDiagnostics(did)) {
                 deviceBuilder.addChannel((JingleChannel) message);

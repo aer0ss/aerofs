@@ -1,5 +1,6 @@
 package com.aerofs.gui.exclusion;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
@@ -178,7 +179,7 @@ public class CompExclusion extends Composite
                 if (_ssf._newlyExcludedFolders.get(path)._isInternal) {
                     _ritual.getBlockingClient().excludeFolder(path.toPB());
                 } else {
-                    _ritual.getBlockingClient().unlinkRoot(path.sid());
+                    _ritual.getBlockingClient().unlinkRoot(BaseUtil.toPB(path.sid()));
                }
             }
             for (Entry<Path, FolderData> included : _ssf._newlyIncludedFolders.entrySet()) {

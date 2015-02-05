@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
@@ -195,7 +196,7 @@ public class UserAndDeviceNames
     {
         return _tokenManager.inPseudoPause_(Cat.UNLIMITED, "sp-devinfo", () -> {
             List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
-            for (DID did : dids) pb.add(did.toPB());
+            for (DID did : dids) pb.add(BaseUtil.toPB(did));
             return _factSP.create().signInRemote().getDeviceInfo(pb);
         });
     }

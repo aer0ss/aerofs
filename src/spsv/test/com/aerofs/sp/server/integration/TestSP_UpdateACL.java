@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.GetACLReply;
@@ -28,7 +29,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
-        service.updateACL(SID_1.toPB(), USER_3.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
         // check that notifications were published on update
@@ -55,7 +56,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
-        service.updateACL(SID_1.toPB(), USER_3.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
         sqlTrans.begin();
@@ -78,7 +79,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // update ACL for user 3 as user 1
         setSession(USER_1);
-        service.updateACL(SID_1.toPB(), USER_3.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_3.id().getString(),
                 Permissions.OWNER.toPB(), false);
 
         sqlTrans.begin();
@@ -102,7 +103,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         setSession(USER_1);
         try {
             // should fail with ExNotFound
-            service.updateACL(SID_1.toPB(), USER_3.id().getString(),
+            service.updateACL(BaseUtil.toPB(SID_1), USER_3.id().getString(),
                     Permissions.OWNER.toPB(), false);
             // must not reach here
             fail();
@@ -131,7 +132,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // try to edit user 1's ACL entry for store 1 as user 3
         setSession(USER_3);
         try {
-            service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+            service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                     Permissions.EDITOR.toPB(), false);
             fail();
         } catch (ExNoPerm e) {
@@ -163,7 +164,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSession(admin);
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         // switch to USER_3 so we can verify epoch number increments below.
@@ -188,7 +189,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSession(admin);
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         setSession(USER_1);
@@ -211,7 +212,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSession(admin);
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         setSession(USER_1);
@@ -229,11 +230,11 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         shareAndJoinFolder(USER_1, SID_1, USER_3, Permissions.OWNER);
 
         setSession(USER_3);
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         // the second call to updateACL with the same role should send no notification email
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(),
+        service.updateACL(BaseUtil.toPB(SID_1), USER_1.id().getString(),
                 Permissions.EDITOR.toPB(), false);
 
         verify(sharedFolderNotificationEmailer, times(1)).sendRoleChangedNotificationEmail(
