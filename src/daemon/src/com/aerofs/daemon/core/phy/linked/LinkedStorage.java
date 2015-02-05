@@ -391,7 +391,10 @@ public class LinkedStorage implements IPhysicalStorage
         // downloaded, we first create an empty file in the target location, use ReplaceFile
         // and then delete the dummy file from revision history
         if (!wasPresent) {
-            f._f.createNewFile();
+            _rh.try_(f, t, () -> {
+                // NB: do NOT replace with method reference as f._f may be changed
+                f._f.createNewFile();
+            });
         }
 
         // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
