@@ -9,6 +9,7 @@ node "sp.aerofs.com" inherits default {
 
     include public-email-creds
     include public-zelda-creds
+    include public-deployment-secret
 
     # Install sp servlet.
     include servlet

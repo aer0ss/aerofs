@@ -5,4 +5,5 @@ node /^api\.aerofs\.com$/ inherits default {
 
     include havre
     include bifrost
+    include public-deployment-secret
 }

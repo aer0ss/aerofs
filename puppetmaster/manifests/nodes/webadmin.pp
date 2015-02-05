@@ -8,6 +8,8 @@ node "webadmin.aerofs.com" inherits default {
     include web::nginx
     include web::prod
 
+    include public-deployment-secret
+
     users::add_user {
         [ hiera('dev_users') ]:
     }

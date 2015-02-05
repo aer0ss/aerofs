@@ -5,4 +5,5 @@ node "joan.aerofs.com" inherits default {
     }
 
     include ca
+    include public-deployment-secret
 }

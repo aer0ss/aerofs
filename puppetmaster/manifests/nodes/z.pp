@@ -45,7 +45,8 @@ node "z.arrowfs.org" inherits default {
   pagerduty::probe::base{[
     # Production
     "rocklog url http://rocklog.aerofs.com/",
-    "web url http://www.aerofs.com",
+    "web url https://www.aerofs.com",
+    "web url https://www.aerofs.com/login",
     "pc url https://privatecloud.aerofs.com/login",
     "sp url-internalcert https://sp.aerofs.com/sp",
     "api port api.aerofs.com 443",

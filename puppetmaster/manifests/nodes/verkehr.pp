@@ -7,6 +7,8 @@ node /^verkehr\.aerofs\.com$/ inherits default {
     include firewall
     include verkehr::firewall_rules
 
+    include public-deployment-secret
+
     users::add_user {
         [ hiera('dev_users') ]:
     }
