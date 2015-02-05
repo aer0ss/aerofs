@@ -43,7 +43,12 @@ public class VersionResource
         public TeamServerInfo(List<UserID> users)
         {
             super(HIGHEST_SUPPORTED_VERSION.major, HIGHEST_SUPPORTED_VERSION.minor);
-            this.users = users;
+            // NB: havre will reject response bodies larger than 4Mb so we need to be proactive about
+            // clipping the list if it is too large: better a TS that serves API request for a subset
+            // of users in the shard than no requests at all
+            // In practice the size of a shard will most likely be well under 10k users as a number of
+            // other components would probably fail before that number can be reached...
+            this.users = users.subList(0, Math.min(users.size(), 10000));
         }
     }
 
@@ -52,13 +57,8 @@ public class VersionResource
     @Inject
     public VersionResource()
     {
-        // NB: havre will reject response bodies larger than 4Mb so we need to be proactive about
-        // clipping the list if it is too large: better a TS that serves API request for a subset
-        // of users in the shard than no requests at all
-        // In practice the size of a shard will most likely be well under 10k users as a number of
-        // other components would probably fail before that number can be reached...
         _version = L.isMultiuser()
-                ? new TeamServerInfo(Cfg.usersInShard().subList(0, 10000))
+                ? new TeamServerInfo(Cfg.usersInShard())
                 : HIGHEST_SUPPORTED_VERSION;
     }
 
