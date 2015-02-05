@@ -148,7 +148,6 @@ public class Main
         try {
             // initializes configuration
             initializeConfigurationSystem(appRoot);
-            writeCACertToFile(appRoot);
         } catch (Exception e) {
             // WARNING: the following logic is fragile, the root problem is that
             // initializeConfigurationSystem() needs to be reworked and updates its signature to
@@ -271,16 +270,5 @@ public class Main
         ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
         ConfigurationProperties.setProperties(loader.loadConfiguration(appRoot));
         l.debug("Client configuration initialized");
-    }
-
-    private static void writeCACertToFile(String approot) throws IOException
-    {
-        // Write the new cacert.pem to the approot for use by other parts of the system.
-        // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT)
-        {
-            Files.write(PrivateDeploymentConfig.BASE_CA_CERTIFICATE.getBytes(),
-                    new File(approot, LibParam.CA_CERT));
-        }
     }
 }
