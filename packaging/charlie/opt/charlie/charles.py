@@ -39,7 +39,9 @@ def magichash(username, did):
     return h.digest()
 ##### end of secutil stuff
 
-PATTERN = r"Aero-Device-Cert ([0-9a-fA-F]{32}) (.*)"
+LEGACY_PATTERN = r"Aero-Device-Cert ([0-9a-fA-F]{32}) (.*)"
+PATTERN = r"Aero-Device-Cert ([0-9a-zA-Z\+/=]+) ([0-9a-fA-F]{32})"
+LEGACY_AUTH_HEADER_REGEX = re.compile(LEGACY_PATTERN)
 AUTH_HEADER_REGEX = re.compile(PATTERN)
 
 class CheckinHandler(RequestHandler):
@@ -84,13 +86,25 @@ class CheckinHandler(RequestHandler):
         if "Authorization" not in self.request.headers:
             raise HTTPError(401, "Expected Authorization header.\n")
         auth_header = self.request.headers["Authorization"]
-        match = AUTH_HEADER_REGEX.match(auth_header)
-        if not match:
-            raise HTTPError(401, "Authorization header must match {}\n".format(PATTERN))
 
-        did = match.group(1)
-        did_raw = did.decode('hex')
-        userid = match.group(2)
+        userid = None
+        did_raw = None
+
+        match = AUTH_HEADER_REGEX.match(auth_header)
+        if match:
+            userid_base64 = match.group(1)
+            userid = userid_base64.decode('base64')
+            did = match.group(2)
+            did_raw = did.decode('hex')
+        else:
+            # possibly an older client - try the LEGACY_AUTH_HEADER_REGEX format
+            legacy_match = LEGACY_AUTH_HEADER_REGEX.match(auth_header)
+            if legacy_match:
+                did = legacy_match.group(1)
+                did_raw = did.decode('hex')
+                userid = legacy_match.group(2)
+            else:
+                raise HTTPError(401, "Authorization header must match {}\n".format(PATTERN))
 
         # check that the username/did pair matches that expected for this certificate cname
         expected_cname = alphabet_encode(magichash(userid.decode('utf-8'), did_raw))

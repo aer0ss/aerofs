@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.charlie;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.Charlie;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
@@ -106,7 +107,9 @@ public class CharlieClient
         connection.setUseCaches(false);
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        connection.addRequestProperty(CHARLIE_AUTH_KEY, String.format(CHARLIE_AUTH_VALUE, localDID.toStringFormal(), localUser.getString()));
+        connection.addRequestProperty(CHARLIE_AUTH_KEY, String.format(CHARLIE_AUTH_VALUE,
+                    Base64.encodeBytes(localUser.getString().getBytes("UTF-8")),
+                    localDID.toStringFormal()));
         connection.setRequestMethod("POST");
         connection.setConnectTimeout((int) CONNECT_TIMEOUT);
         connection.setReadTimeout((int) READ_TIMEOUT);
