@@ -6,7 +6,7 @@ SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_DIR=build/polaris
 RESOURCES=../src/polaris/src/dist
 
-CONFIG="$RESOURCES/polaris.yml.tmplt"
+CONFIG="$RESOURCES/polaris.yml"
 JAVA_ARGS="-Xmx1536m"
 SERVICE_ARGS="polaris.yml"
 

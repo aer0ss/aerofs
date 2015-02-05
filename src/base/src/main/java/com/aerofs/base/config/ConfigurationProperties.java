@@ -18,8 +18,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 /**
  * Wrapper class around Properties. provides URL parsing, Address parsing, and cert reading.
  */
@@ -64,17 +62,6 @@ public class ConfigurationProperties
     public static String getStringProperty(String key, String defaultValue)
     {
         return _properties.getProperty(key, defaultValue);
-    }
-
-    // necessary when you want to get a string property with a default value, using getStringProperty
-    // will return an empty string for any values in *.tmplt that do not have a value set in
-    // external.properties
-    // e.g. use this if you add a configurable value to server.tmplt and you want to get a default
-    // value back before the user has a chance to configure it themselves
-    public static String getNonEmptyStringPropery(String key, String defaultValue)
-    {
-        String value = _properties.getProperty(key);
-        return isNullOrEmpty(value) ? defaultValue : value;
     }
 
     public static Optional<String> getOptionalStringProperty(String key)

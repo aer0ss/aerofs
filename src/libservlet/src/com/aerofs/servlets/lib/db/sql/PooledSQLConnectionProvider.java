@@ -4,56 +4,55 @@
 
 package com.aerofs.servlets.lib.db.sql;
 
-import com.aerofs.lib.LibParam;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.apache.tomcat.jdbc.pool.DataSource;
+import com.google.common.base.Preconditions;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class PooledSQLConnectionProvider implements IDatabaseConnectionProvider<Connection>
 {
-    final DataSource _ds = dataSource();
+    String _dbResourceName = null;
+
+    public void init_(String dbResourceName)
+    {
+        _dbResourceName = dbResourceName;
+    }
 
     @Override
     public Connection getConnection() throws ExDbInternal
     {
         try {
-            return _ds.getConnection();
+            return getDataSource().getConnection();
         } catch (SQLException e) {
             throw new ExDbInternal(e);
         }
     }
 
-    private static DataSource dataSource()
+    public DataSource getDataSource() throws ExDbInternal
     {
-        PoolProperties p = new PoolProperties();
-        p.setUrl("jdbc:mysql://" + LibParam.MYSQL.MYSQL_ADDRESS + "/aerofs_sp");
-        p.setUsername(LibParam.MYSQL.MYSQL_USER);
-        p.setPassword(LibParam.MYSQL.MYSQL_PASS);
+        // Must call init with a tomcat resource name before getting connections.
+        Preconditions.checkNotNull(_dbResourceName);
 
-        p.setDriverClassName(LibParam.MYSQL.MYSQL_DRIVER);
-        p.setTestWhileIdle(false);
-        p.setTestOnBorrow(true);
-        p.setTestOnReturn(false);
-        p.setValidationQuery("SELECT 1");
-        p.setValidationQueryTimeout(30000);
-        p.setMaxActive(8);
-        p.setMaxIdle(4);
-        p.setLogAbandoned(true);
-        p.setRemoveAbandoned(true);
-        p.setRemoveAbandonedTimeout(30);
-        p.setConnectionProperties(
-                "cachePrepStmts=true; autoReconnect=true; " +
-                "useUnicode=true; characterEncoding=utf8;");
+        try {
+            // The following is based on the example found here:
+            // http://tomcat.apache.org/tomcat-6.0-doc/jndi-resources-howto.html#JDBC_Data_Sources
+            //
+            // N.B. all pooling parameters are pulled from the tomcat context (params include max
+            // active connections, max idle connections, etc).
 
-        return new DataSource(p);
-    }
-
-    public DataSource getDataSource()
-    {
-        return _ds;
+            Context initCtx = new InitialContext();
+            Context envCtx = (Context) initCtx.lookup("java:comp/env");
+            return (DataSource) envCtx.lookup(_dbResourceName);
+        } catch (NamingException e) {
+            // Turn NamingExceptions into ExDbInternals to prevent everyone from needing to throw
+            // naming exceptions.
+            throw new ExDbInternal(e);
+        }
     }
 }

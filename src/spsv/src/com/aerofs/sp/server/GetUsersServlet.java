@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 import static com.aerofs.base.id.OrganizationID.PRIVATE_ORGANIZATION;
+import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
 
 public class GetUsersServlet extends HttpServlet
@@ -42,6 +43,10 @@ public class GetUsersServlet extends HttpServlet
         super.init(config);
 
         PooledSQLConnectionProvider sqlConnProvider = new PooledSQLConnectionProvider();
+        String dbResourceName = getServletContext()
+                .getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
+        sqlConnProvider.init_(dbResourceName);
+
         _sqlTrans = new SQLThreadLocalTransaction(sqlConnProvider);
         _odb = new OrganizationDatabase(_sqlTrans);
 

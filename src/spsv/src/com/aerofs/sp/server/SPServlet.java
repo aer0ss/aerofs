@@ -75,6 +75,7 @@ import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
+import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
@@ -228,11 +229,19 @@ public class SPServlet extends AeroServlet
         _service.setUserTracker(getUserTracker());
         _service.setSessionInvalidator(getSessionInvalidator());
         _service.setSessionExtender(getSessionExtender());
+
+        String dbResourceName =
+                getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
+
+        _sqlConProvider.init_(dbResourceName);
         migrate();
 
         String redisHost = REDIS.AOF_ADDRESS.getHostName();
         int redisPort = REDIS.AOF_ADDRESS.getPort();
         _jedisConProvider.init_(redisHost, (short) redisPort);
+
+        PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
+        erConProvider.init_(dbResourceName);
 
         InvitationReminder er = new InvitationReminder(_esdb, _sqlTrans, _invitationReminderEmailer);
         er.start();
@@ -243,7 +252,12 @@ public class SPServlet extends AeroServlet
      */
     private void migrate() throws ServletException
     {
-        DataSource dataSource = _sqlConProvider.getDataSource();
+        DataSource dataSource;
+        try {
+            dataSource = _sqlConProvider.getDataSource();
+        } catch (ExDbInternal e) {
+            throw new ServletException(e);
+        }
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

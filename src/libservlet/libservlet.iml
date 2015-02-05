@@ -25,6 +25,5 @@
     <orderEntry type="library" exported="" name="scrypt:1.4.0" level="project" />
     <orderEntry type="library" exported="" name="unboundid-ldapsdk-se" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="subethasmtp:3.1.7" level="project" />
-    <orderEntry type="library" exported="" name="tomcat-jdbc:7.0.50" level="project" />
   </component>
 </module>

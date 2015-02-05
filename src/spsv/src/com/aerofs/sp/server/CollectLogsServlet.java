@@ -39,6 +39,7 @@ import java.util.List;
 
 import static com.aerofs.sp.server.CommandUtil.createUploadLogsToAeroFSCommandMessage;
 import static com.aerofs.sp.server.CommandUtil.createUploadLogsToOnSiteCommandMessage;
+import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 import static com.google.common.base.Objects.equal;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -64,6 +65,10 @@ public class CollectLogsServlet extends HttpServlet
         super.init(config);
 
         PooledSQLConnectionProvider _sqlConnProvider = new PooledSQLConnectionProvider();
+        String dbResourceName = getServletContext()
+                .getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
+        _sqlConnProvider.init_(dbResourceName);
+
         _sqlTrans = new SQLThreadLocalTransaction(_sqlConnProvider);
         _udb = new UserDatabase(_sqlTrans);
 

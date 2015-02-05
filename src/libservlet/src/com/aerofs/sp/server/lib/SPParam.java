@@ -13,6 +13,9 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SPParam
 {
+    // Init parameters.
+    public static final String SP_DATABASE_REFERENCE_PARAMETER = "sp_database_resource_reference";
+
     // Context attributes.
     public static final String VERKEHR_CLIENT_ATTRIBUTE = "verkehr_client";
     public static final String AUDIT_CLIENT_ATTRIBUTE = "audit_client";

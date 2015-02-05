@@ -48,7 +48,6 @@ dependencies {
     compile 'mysql:mysql-connector-java:5.1.+'
     compile 'org.bouncycastle:bcprov-jdk15on:1.50+'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.50+'
-    compile 'org.apache.tomcat:tomcat-jdbc:7.0.+'
     compile name: 'dyuproject-openid-1.1'
     compile name: 'unboundid-ldapsdk-se'
     compile name: 'jedis-2.2.5'
