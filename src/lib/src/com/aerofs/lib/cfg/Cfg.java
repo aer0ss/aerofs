@@ -8,15 +8,9 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.*;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
@@ -31,14 +25,7 @@ import com.google.protobuf.LeanByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -442,15 +429,27 @@ public class Cfg
     public static String nativeSocketFilePath(NativeSocketType type)
     {
         Preconditions.checkState(_absRTRoot != null);
-        // The NativeSocket file name is a combination of the the user name of the user running
-        // AeroFS + what the socket is for(ritual/RNS/shellext) + the client type(TS or Single).
-        // This helps us create unique socket file names per user per client type.
-        String clientType = L.isMultiuser() ? "ts" : "single";
-        String userName = System.getProperty("user.name");
-        String completeFileName = Joiner.on("_").join(userName, type.getFileName(), clientType);
 
-        return OSUtil.isWindows() ? Util.join("\\\\.\\pipe", completeFileName) :
-                Util.join(_absRTRoot, completeFileName);
+        // In Windows all named pipes are created under a special path i.e. \\.\pipe\.
+        // Hence to differentiate between different users we need to add the user name to the pipe
+        // name. We further add the type i.e. ritual/rns/shellext to the pipe name and
+        // "ts" or "single" to differentiate between the different types of AeroFS clients a
+        // user might have. The combination of these gives us a unique windows named pipe file path
+        // per user per client type.
+
+        // In OSX/Linux the unix domain socket files are created under the user's rtroot.
+        // Hence, as they are created under seperate folders we don't need to add the user name
+        // to socket file's name. The socket file only consists of the socket type with the
+        // extension .sock.
+
+        if (OSUtil.isWindows()) {
+            String parentDir = "\\\\.\\pipe";
+            String userName =  System.getProperty("user.name");
+            String clientType = L.isMultiuser() ? "ts" : "single";
+            return Util.join(parentDir, Joiner.on("_").join(userName, type.getFileName(), clientType));
+        } else {
+            return Util.join(_absRTRoot, type.getFileName() + ".sock");
+        }
     }
 
     public static boolean lotsOfLog(String rtRoot)

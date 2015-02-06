@@ -12,7 +12,8 @@
 
 // The part of file path after the HOME dir.
 NSString * const DEFAULT_RTROOT = @"Library/Application Support/AeroFS";
-NSString * const DEFAULT_SOCKET_NAME_SUFFIX = @"_ritual_single";
+
+NSString * const DEFAULT_SOCKET_FILE_NAME = @"shellext.sock";
 
 static Overlay overlayForStatus(PBPathStatus* status)
 {
@@ -67,7 +68,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     NSString *socketFile = [[desc descriptorForKeyword: SOCK] stringValue];
     if (socketFile == nil) {
         NSLog(@"Warning: AeroFS didn't specify which native socket file it's listening to, using default.");
-        socketFile = [NSString stringWithFormat:@"%@/%@%@", NSHomeDirectory(), NSUserName(), DEFAULT_SOCKET_NAME_SUFFIX];
+        socketFile = [NSString stringWithFormat:@"%@/%@/%@", NSHomeDirectory(), DEFAULT_RTROOT, DEFAULT_SOCKET_FILE_NAME];
     }
 
     [[AeroFinderExt instance] reconnect:socketFile];
