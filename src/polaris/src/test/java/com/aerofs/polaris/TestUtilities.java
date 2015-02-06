@@ -1,6 +1,6 @@
 package com.aerofs.polaris;
 
-import com.aerofs.auth.cert.AeroDeviceCert;
+import com.aerofs.auth.server.cert.AeroDeviceCert;
 import com.aerofs.ids.core.Identifiers;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.operation.InsertChild;
@@ -45,17 +45,17 @@ public abstract class TestUtilities {
                         }));
     }
 
-    public static RequestSpecification newVerifiedAeroUserSpecification(String device, String user) {
+    public static RequestSpecification newVerifiedAeroUserSpecification(String userid, String device) {
         return new RequestSpecBuilder().addHeaders(
                 ImmutableMap.of(
-                        AeroDeviceCert.AERO_AUTHORIZATION_HEADER, String.format(AeroDeviceCert.AERO_DEVICE_CERT_HEADER_FORMAT, device, user),
-                        AeroDeviceCert.AERO_DNAME_HEADER, newDNameHeader(device, user),
-                        AeroDeviceCert.AERO_VERIFY_HEADER, AeroDeviceCert.AERO_VERIFY_HEADER_OK_VALUE
+                        HttpHeaders.AUTHORIZATION, com.aerofs.auth.client.cert.AeroDeviceCert.getHeaderValue(userid, device),
+                        AeroDeviceCert.AERO_DNAME_HEADER, newDNameHeader(userid, device),
+                        AeroDeviceCert.AERO_VERIFY_HEADER, AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE
                 )).build();
     }
 
-    private static String newDNameHeader(String device, String user) {
-        return String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(user, device));
+    private static String newDNameHeader(String userid, String device) {
+        return String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(userid, device));
     }
 
     //

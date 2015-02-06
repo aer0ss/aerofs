@@ -50,7 +50,7 @@ public class TestEventResource extends AuditorTest
         postBody.addProperty("a float", 1.234);
         postBody.addProperty("a bool", true);
 
-        _service._downstream._failureCause = new IOException("shouldDetectSendFailure");
+        setDownstreamFailureCause(new IOException("shouldDetectSendFailure"));
 
         expect()
                 .statusCode(500)

@@ -1,7 +1,17 @@
 <root>
-  <item name='com.google.common.base.Preconditions void checkArgument(boolean, java.lang.String, java.lang.Object...)'>
-      <annotation name='org.jetbrains.annotations.Contract'>
-          <val val="&quot;false, _, _ -&gt; fail&quot;"/>
-      </annotation>
-  </item>
+    <item name='com.google.common.base.Preconditions void checkArgument(boolean, java.lang.Object)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _ -&gt; fail&quot;"/>
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkArgument(boolean, java.lang.String, java.lang.Object...)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;false, _, _ -&gt; fail&quot;"/>
+        </annotation>
+    </item>
+    <item name='com.google.common.base.Preconditions void checkState(boolean, java.lang.String, java.lang.Object...)'>
+          <annotation name='org.jetbrains.annotations.Contract'>
+              <val val="&quot;false, _, _ -&gt; fail&quot;"/>
+          </annotation>
+      </item>
 </root>

@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.auth.cert.AeroDevicePrincipal;
-import com.aerofs.auth.Roles;
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
+import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.Access;
@@ -44,12 +44,8 @@ public final class TransformsResource {
     @Path("/{oid}")
     @Produces(MediaType.APPLICATION_JSON)
     @GET
-    public AppliedTransforms getTransformsSince(
-            @Context @NotNull AeroDevicePrincipal principal,
-            @PathParam("oid") @NotNull @Identifier final String oid,
-            @QueryParam("since") @Min(-1) final long since,
-            @QueryParam("count") @Min(1) int resultCount) throws AccessException {
-        accessManager.checkAccess(principal.getDevice(), oid, Access.READ);
+    public AppliedTransforms getTransformsSince(@Context @NotNull AeroUserDevicePrincipal principal, @PathParam("oid") @NotNull @Identifier String oid, @QueryParam("since") @Min(-1) long since, @QueryParam("count") @Min(1) int resultCount) throws AccessException {
+        accessManager.checkAccess(principal.getUser(), oid, Access.READ);
 
         final int actualResultCount = Math.min(resultCount, maxReturnedTransforms);
         return objectStore.inTransaction(new Transactional<AppliedTransforms>() {

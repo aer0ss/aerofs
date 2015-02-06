@@ -4,6 +4,8 @@ public abstract class Constants {
 
     public static final int MAX_RETURNED_TRANSFORMS = 100;
 
+    public static final String DEPLOYMENT_SECRET_ABSOLUTE_PATH = "/data/deployment_secret";
+
     //
     // default parameters
     //

@@ -1,0 +1,16 @@
+admin:
+  host: localhost
+  port: 6767
+
+service:
+  host: localhost
+  port: 6868
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: true
+
+  file:
+    enabled: false

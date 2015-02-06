@@ -1,6 +1,6 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.auth.Roles;
+import com.aerofs.auth.server.Roles;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;

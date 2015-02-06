@@ -4,6 +4,42 @@
 
 archivesBaseName = 'aero-auth'
 
+sourceSets {
+    client {
+        java {
+            srcDirs 'src/main/java'
+            exclude 'com/aerofs/auth/server/**'
+        }
+    }
+}
+
+configurations {
+    client.extendsFrom clientCompile
+}
+
 dependencies {
-    compile 'com.aerofs.baseline:baseline-service:0.2.1'
+    compile 'com.aerofs.baseline:baseline-service:0.3.0'
+    clientCompile 'com.google.code.findbugs:jsr305:2.0.+'
+    clientCompile 'com.google.guava:guava:17.+'
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile 'com.aerofs.baseline:baseline-testlib:0.3.0'
+}
+
+task clientJar(type: Jar) {
+    baseName 'aero-auth-client'
+    from sourceSets.client.output
+}
+
+artifacts {
+    client clientJar
+    archives clientJar
+}
+
+// reduce netty buffer pool size
+test {
+    systemProperties.put "io.netty.leakDetectionLevel", "paranoid"
+    systemProperties.put "io.netty.allocator.numHeapArenas", 1
+    systemProperties.put "io.netty.allocator.numDirectArenas", 1
+    systemProperties.put "io.netty.allocator.maxOrder", 4
 }

@@ -29,7 +29,7 @@ public final class TestObjectResource {
         RestAssured.config = TestUtilities.newRestAssuredConfig();
     }
 
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(Identifiers.newRandomDevice(), "test@aerofs.com");
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", Identifiers.newRandomDevice());
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Rule

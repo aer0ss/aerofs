@@ -4,6 +4,7 @@
 
 package com.aerofs.auditor.server;
 
+import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -15,13 +16,13 @@ import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.expect;
 
-/** Tests that check the behavior of HttpRequestAuthenticator as a guard for EventResource. */
-public class TestHttpRequestAuthenticator extends AuditorTest
+/*
+ * Tests both the LegacyAuthenticator and the non-legacy authenticator.
+ */
+public class TestAuthenticators extends AuditorTest
 {
     protected static final UserID user = UserID.fromInternal("foo@bar.baz");
     protected static final DID did = DID.generate();
-
-    // FIXME (AG): it's not 100% clear to me that jersey is in the right in returning 403 instead of 403
 
     @Test
     public void shouldRequireAuthFields()
@@ -121,6 +122,19 @@ public class TestHttpRequestAuthenticator extends AuditorTest
                 .header("AeroFS-Auth-Required", "True")
                 .header("AeroFS-UserID", user.getString())
                 .header("AeroFS-DeviceID", did.toStringFormal())
+                .header("Verify", "SUCCESS")
+                .header("DName", getDName())
+                .body(getMinimalEvent().toString())
+        .when().post(AUDIT_URL);
+    }
+
+    @Test
+    public void shouldAuthenticateUsingNonLegacyAuthenticator()
+    {
+        expect()
+                .statusCode(200)
+        .given().contentType(ContentType.JSON)
+                .header("Authorization", AeroDeviceCert.getHeaderValue(user.getString(), did.toStringFormal()))
                 .header("Verify", "SUCCESS")
                 .header("DName", getDName())
                 .body(getMinimalEvent().toString())

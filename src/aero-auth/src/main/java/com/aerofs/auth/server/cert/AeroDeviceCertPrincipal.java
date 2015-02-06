@@ -1,30 +1,48 @@
-package com.aerofs.auth.cert;
+package com.aerofs.auth.server.cert;
 
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
-import java.security.Principal;
 
 /**
- * A specialization of {@link Principal} that
- * identifies an AeroFS device.
+ * Identifies the AeroFS device that made the request.
  */
-public final class AeroDevicePrincipal implements Principal {
+public final class AeroDeviceCertPrincipal implements AeroUserDevicePrincipal {
 
     private final String user;
-
     private final String device;
 
-    public AeroDevicePrincipal(String user, String device) {
+    /**
+     * Constructor.
+     *
+     * @param user user id of the user that made the request
+     * @param device DID (32 character hex string) of the device that made the request
+     */
+    public AeroDeviceCertPrincipal(String user, String device) {
         this.user = user;
         this.device = device;
     }
 
+    /**
+     * Return the tuple {@code user:device} of the entity that made the request
+     *
+     * @return a tuple of the form {@code user:device} of the entity that made the request
+     *
+     * @see #getUser()
+     * @see #getDevice()
+     */
     @Override
     public String getName() {
+        return String.format("%s:%s", user, device);
+    }
+
+    @Override
+    public String getUser() {
         return user;
     }
 
+    @Override
     public String getDevice() {
         return device;
     }
@@ -34,7 +52,7 @@ public final class AeroDevicePrincipal implements Principal {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        AeroDevicePrincipal other = (AeroDevicePrincipal) o;
+        AeroDeviceCertPrincipal other = (AeroDeviceCertPrincipal) o;
         return Objects.equal(user, other.user) && Objects.equal(device, other.device);
     }
 

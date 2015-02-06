@@ -1,8 +1,25 @@
 # Polaris
 
-Polaris is the AeroFS centralized metadata server. It is built on top of baseline.
+Polaris is AeroFS' centralized version-metadata server.
 
-# Bugs
+# API
 
-* Publish notifications via verkehr
-* Include JSON parsing failure issues in response entities
+## Methods
+
+Polaris exposes the following routes:
+
+### POST   /batch/transforms
+
+### POST   /batch/locations
+
+### POST   /objects/{oid}
+
+### GET    /objects/{oid}/versions/{version}/locations/{did}
+
+### POST   /objects/{oid}/versions/{version}/locations/{did}
+
+### DELETE /objects/{oid}/versions/{version}/locations/{did}
+
+### GET    /transforms/{oid}
+
+## Types

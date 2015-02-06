@@ -1,11 +1,12 @@
 package com.aerofs.polaris;
 
+import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
+import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
+import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
 import com.aerofs.baseline.AdminEnvironment;
 import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
-import com.aerofs.auth.cert.AeroDeviceCertAuthenticator;
-import com.aerofs.auth.cert.AeroDevicePrincipalBinder;
 import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DBIInstances;
@@ -60,8 +61,10 @@ public final class Polaris extends Service<PolarisConfiguration> {
 
         // setup resource authorization
         root.addAuthenticator(new AeroDeviceCertAuthenticator());
-        admin.addProvider(new AeroDevicePrincipalBinder());
-        service.addProvider(new AeroDevicePrincipalBinder());
+        admin.addProvider(new AeroDeviceCertPrincipalBinder());
+        admin.addProvider(new AeroUserDevicePrincipalBinder());
+        service.addProvider(new AeroDeviceCertPrincipalBinder());
+        service.addProvider(new AeroUserDevicePrincipalBinder());
 
         // register singleton providers
         service.addProvider(new DBIBinder(dbi));

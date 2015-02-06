@@ -33,7 +33,7 @@ public final class TestTransformBatchResource {
         RestAssured.config = TestUtilities.newRestAssuredConfig();
     }
 
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(Identifiers.newRandomDevice(), "test@aerofs.com");
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", Identifiers.newRandomDevice());
 
     @Rule
     public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());

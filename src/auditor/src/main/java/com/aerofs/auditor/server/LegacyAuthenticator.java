@@ -1,30 +1,70 @@
 package com.aerofs.auditor.server;
 
+import com.aerofs.auth.server.AeroAuth;
+import com.aerofs.auth.server.AeroSecurityContext;
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
+import com.aerofs.auth.server.Roles;
+import com.aerofs.auth.server.cert.AeroDeviceCert;
+import com.aerofs.auth.server.shared.AeroServicePrincipal;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
-import com.aerofs.auth.cert.AeroDeviceCert;
-import com.aerofs.auth.AeroSecurityContext;
-import com.aerofs.auth.Roles;
 
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.SecurityContext;
 import java.util.List;
 
 /**
  * Implementation of the first authentication scheme
  * created for REST services. Auditor-specific, and
- * replaced by {@link com.aerofs.auth.cert.AeroDeviceCertAuthenticator}.
+ * replaced by {@link com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator}.
  */
-public class LegacyAuthenticator implements Authenticator {
+public class LegacyAuthenticator implements Authenticator
+{
+    /**
+     * Implementation of {@link AeroUserDevicePrincipal}
+     * that represents an entity authorized using the legacy
+     * Aero-Device-Cert authentication mechanism (auditor only).
+     */
+    private static class LegacyUserDevicePrincipal implements AeroUserDevicePrincipal
+    {
+        private final String _user;
+        private final String _device;
 
+        private LegacyUserDevicePrincipal(String user, String device)
+        {
+            _user = user;
+            _device = device;
+        }
+
+        @Override
+        public String getName()
+        {
+            return String.format("%s:%s", _user, _device);
+        }
+
+        @Override
+        public String getUser()
+        {
+            return _user;
+        }
+
+        @Override
+        public String getDevice()
+        {
+            return _device;
+        }
+    }
+
+    private static final String AUTHENTICATION_SCHEME = "Legacy-Aero-Device-Cert";
     private static final String HEADER_AUTH_REQ = "AeroFS-Auth-Required";
     private static final String HEADER_AUTH_USER = "AeroFS-UserId";
     private static final String HEADER_AUTH_DEVICE = "AeroFS-DeviceId";
+    private static final String HEADER_AUTH_VERIFY = "Verify";
+    private static final String HEADER_AUTH_DNAME = "DName";
 
     @Override
     public String getName() {
-        return "aero-client-cert";
+        return AUTHENTICATION_SCHEME;
     }
 
     @Override
@@ -32,11 +72,9 @@ public class LegacyAuthenticator implements Authenticator {
         List<String> authHeaders = headers.get(HEADER_AUTH_REQ);
 
         if (authHeaders == null || authHeaders.size() == 0) {
-            // if no headers are present we assume
-            // that it's a backend service (namely SP)
-            // that's talking to us
             // this is a dangerous hack
-            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext("NONE", "NONE", Roles.SERVICE, "NONE"));
+            // if no headers are present we assume that it's a backend service (namely SP) that's talking to us
+            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal("UNKNOWN"), Roles.SERVICE, AUTHENTICATION_SCHEME));
         } else if (authHeaders.size() > 1) {
             throw new AuthenticationException("invalid value for hdr:" + HEADER_AUTH_REQ);
         }
@@ -46,15 +84,15 @@ public class LegacyAuthenticator implements Authenticator {
             return AuthenticationResult.UNSUPPORTED;
         }
 
-        String user = AeroDeviceCert.getSingleHeaderValue(HEADER_AUTH_USER, headers);
-        String device = AeroDeviceCert.getSingleHeaderValue(HEADER_AUTH_DEVICE, headers);
-        String dname = AeroDeviceCert.getSingleHeaderValue(AeroDeviceCert.AERO_DNAME_HEADER, headers);
-        String verify = AeroDeviceCert.getSingleHeaderValue(AeroDeviceCert.AERO_VERIFY_HEADER, headers);
+        String user = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_USER, headers);
+        String device = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DEVICE, headers);
+        String dname = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DNAME, headers);
+        String verify = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_VERIFY, headers);
 
-        if (verify.equals(AeroDeviceCert.AERO_VERIFY_HEADER_OK_VALUE)) {
+        if (verify.equals(AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE)) {
             String cname = getCName(dname);
             if (cname.equals(AeroDeviceCert.getCertificateCName(user, device))) {
-                return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(user, device, Roles.USER, SecurityContext.CLIENT_CERT_AUTH));
+                return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new LegacyUserDevicePrincipal(user, device), Roles.USER, AUTHENTICATION_SCHEME));
             }
         }
 

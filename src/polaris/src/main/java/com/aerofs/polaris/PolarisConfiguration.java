@@ -3,6 +3,7 @@ package com.aerofs.polaris;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.google.common.base.Objects;
+import org.hibernate.validator.constraints.NotBlank;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -55,7 +56,7 @@ public final class PolarisConfiguration extends Configuration {
         return Objects
                 .toStringHelper(this)
                 .add("maxReturnedTransforms", getMaxReturnedTransforms())
-                .add("app", getService())
+                .add("service", getService())
                 .add("admin", getAdmin())
                 .add("logging", getLogging())
                 .add("database", getDatabase())

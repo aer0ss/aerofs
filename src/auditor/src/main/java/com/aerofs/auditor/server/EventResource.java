@@ -5,8 +5,9 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.auditor.downstream.Downstream;
-import com.aerofs.auth.cert.AeroDevicePrincipal;
-import com.aerofs.auth.Roles;
+import com.aerofs.auth.server.AeroPrincipal;
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
+import com.aerofs.auth.server.Roles;
 import com.aerofs.lib.log.LogUtil;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -19,6 +20,7 @@ import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -35,13 +37,13 @@ import java.util.Map;
 @Path("/")
 public class EventResource
 {
-    static class VerifiedSubmitter
+    public static final class VerifiedSubmitter
     {
+        // public so that gson can use these fields in serialization
         public final String userId;
         public final String deviceId;
 
-        public VerifiedSubmitter(String userId, String deviceId)
-        {
+        public VerifiedSubmitter(String userId, String deviceId) {
             this.userId = userId;
             this.deviceId = deviceId;
         }
@@ -66,11 +68,11 @@ public class EventResource
      * the document was not accepted, a brief error message will be returned in the JSON doc.
      */
     @POST
-    @RolesAllowed({Roles.USER, Roles.SERVICE})
+    @RolesAllowed({Roles.SERVICE, Roles.USER})
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/event")
-    public Response event(@Nullable @Context AeroDevicePrincipal principal, Map<String, Object> contents)
+    public Response event(@NotNull @Context AeroPrincipal principal, @Nullable Map<String, Object> contents)
     {
         // let's make sure the required elements were provided...
         if ((contents == null)
@@ -82,10 +84,9 @@ public class EventResource
                     .build();
         }
 
-        if (principal != null) {
-            String userId = principal.getName();
-            String deviceId = principal.getDevice();
-            contents.put("verified_submitter", new VerifiedSubmitter(userId, deviceId));
+        if (principal instanceof AeroUserDevicePrincipal) {
+            AeroUserDevicePrincipal actual = (AeroUserDevicePrincipal) principal;
+            contents.put("verified_submitter", new VerifiedSubmitter(actual.getUser(), actual.getDevice()));
         }
 
         String parsed = _gson.toJson(contents);

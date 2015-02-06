@@ -1,7 +1,7 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.auth.cert.AeroDevicePrincipal;
-import com.aerofs.auth.Roles;
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
+import com.aerofs.auth.server.Roles;
 import com.aerofs.baseline.db.DBIExceptions;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
@@ -43,7 +43,7 @@ public final class LocationBatchResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public LocationBatchResult submitBatch(@Context @NotNull final AeroDevicePrincipal principal, @NotNull final LocationBatch batch) {
+    public LocationBatchResult submitBatch(@Context @NotNull final AeroUserDevicePrincipal principal, @NotNull final LocationBatch batch) {
         List<LocationBatchOperation> operations = batch.getOperations();
         final LocationBatchResult batchResult = new LocationBatchResult(operations.size());
 
@@ -52,7 +52,7 @@ public final class LocationBatchResource {
         try {
             for (int i = 0; i < operations.size(); i++) {
                 operation = operations.get(i);
-                accessManager.checkAccess(principal.getDevice(), operation.getOid(), Access.WRITE);
+                accessManager.checkAccess(principal.getUser(), operation.getOid(), Access.WRITE);
 
                 final LocationBatchOperation submitted = operation;
                 objectStore.inTransaction(dao -> {

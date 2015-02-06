@@ -9,8 +9,8 @@ import com.aerofs.baseline.AdminEnvironment;
 import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.config.Configuration;
+import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.testlib.AbstractTest;
-import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.jboss.netty.channel.ChannelFuture;
@@ -18,18 +18,16 @@ import org.jboss.netty.channel.DefaultChannelFuture;
 import org.junit.After;
 import org.junit.Before;
 
-import java.io.FileInputStream;
-
 import static com.jayway.restassured.config.RedirectConfig.redirectConfig;
 import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
 
 public class AuditorTest extends AbstractTest
 {
-    protected final static String AUDIT_URL = "/event";
+    private static final AuditorConfiguration CONFIGURATION = Configuration.loadYAMLConfigurationFromResourcesUncheckedThrow(Auditor.class, "auditor_test_server.yml");
 
-    protected static class WhiteBoxedDownstream implements AuditChannel
+    private static final class WhiteBoxedDownstream implements AuditChannel
     {
-        protected Exception _failureCause = null;
+        private Exception _failureCause = null;
 
         @Override
         public ChannelFuture doSend(String message)
@@ -52,9 +50,9 @@ public class AuditorTest extends AbstractTest
         }
     }
 
-    protected static class TestAuditor extends Auditor
+    private static final class TestAuditor extends Auditor
     {
-        protected final WhiteBoxedDownstream _downstream = new WhiteBoxedDownstream();
+        private final WhiteBoxedDownstream _downstream = new WhiteBoxedDownstream();
 
         @Override
         public void init(AuditorConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service)
@@ -75,40 +73,40 @@ public class AuditorTest extends AbstractTest
         }
     }
 
-    private static final class ConfigurationReference
-    {
-        private static final String TEST_CONFIGURATION_FILENAME = "auditor_test_server.yml";
-        private static AuditorConfiguration CONFIGURATION = load();
-
-        private static AuditorConfiguration load()
-        {
-            try(FileInputStream in = new FileInputStream(Resources.getResource(TEST_CONFIGURATION_FILENAME).getFile())) {
-                return Configuration.loadYAMLConfigurationFromStream(Auditor.class, in);
-            } catch (Exception e) {
-                throw new RuntimeException("failed to load configuration", e);
-            }
-        }
-    }
-
-    TestAuditor _service;
-    protected int _port;
+    protected static final String AUDIT_URL = "/event";
+    protected final TestAuditor _service = new TestAuditor();
 
     @Before
-    public void setUp() throws Exception
+    public void setUp()
+            throws Throwable
     {
-        _service = new TestAuditor();
-        _service.runWithConfiguration(ConfigurationReference.CONFIGURATION);
-        _port = ConfigurationReference.CONFIGURATION.getService().getPort();
-        _service._downstream._failureCause = null;
+        try {
+            _service.runWithConfiguration(CONFIGURATION);
+            _service._downstream._failureCause = null;
 
-        RestAssured.baseURI = "http://localhost";
-        RestAssured.port = _port;
-        RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
+            RestAssured.baseURI = "http://localhost";
+            RestAssured.port = CONFIGURATION.getService().getPort();
+            RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
+        } catch (Throwable t) {
+            MetricRegistries.unregisterMetrics();
+            throw t;
+        }
     }
 
     @After
     public void tearDown()
     {
         _service.shutdown();
+    }
+
+    @SuppressWarnings("unused")
+    protected final Exception getDownstreamFailureCause()
+    {
+        return _service._downstream._failureCause;
+    }
+
+    protected final void setDownstreamFailureCause(Exception cause)
+    {
+        _service._downstream._failureCause = cause;
     }
 }

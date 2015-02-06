@@ -1,6 +1,4 @@
-package com.aerofs.auth;
-
-import com.aerofs.auth.cert.AeroDevicePrincipal;
+package com.aerofs.auth.server;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -11,12 +9,19 @@ import java.security.Principal;
  */
 public final class AeroSecurityContext implements SecurityContext {
 
-    private final AeroDevicePrincipal principal;
+    private final AeroPrincipal principal;
     private final String role;
     private final String authenticationScheme;
 
-    public AeroSecurityContext(String user, String device, String role, String authenticationScheme) {
-        this.principal = new AeroDevicePrincipal(user, device);
+    /**
+     * Constructor.
+     *
+     * @param principal entity identified using an AeroFS-defined authentication scheme
+     * @param role type of role (defined in {@link Roles}) associated with this entity
+     * @param authenticationScheme method by which the entity was authenticated
+     */
+    public AeroSecurityContext(AeroPrincipal principal, String role, String authenticationScheme) { // FIXME (AG): may have to support multiple roles per principal
+        this.principal = principal;
         this.role = role;
         this.authenticationScheme = authenticationScheme;
     }
@@ -33,7 +38,7 @@ public final class AeroSecurityContext implements SecurityContext {
 
     @Override
     public boolean isSecure() {
-        return true; // FIXME (AG): unsure what this should be and how it should be set
+        return false; // FIXME (AG): unsure how to determine and set this
     }
 
     @Override

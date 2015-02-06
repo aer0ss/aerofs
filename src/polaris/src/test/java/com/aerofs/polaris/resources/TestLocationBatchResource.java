@@ -32,7 +32,7 @@ public final class TestLocationBatchResource {
     }
 
     private final String device = Identifiers.newRandomDevice();
-    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification(device, "test@aerofs.com");
+    private final RequestSpecification verified = TestUtilities.newVerifiedAeroUserSpecification("test@aerofs.com", device);
 
     @Rule
     public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
