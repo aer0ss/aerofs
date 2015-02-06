@@ -110,7 +110,7 @@ def apply_config(e, wait):
 
 
 def get_signup_code(hostname, user_id):
-    url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'user': user_id}))
+    url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'userid': user_id}))
     print "Getting signup code via Signup Decoder at {}...".format(url)
     r = requests.get(url)
     r.raise_for_status()

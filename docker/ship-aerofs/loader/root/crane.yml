@@ -156,7 +156,8 @@ containers:
     image: aerofs/zephyr
     run:
       detach: true
-      publish: "8888:8888"
+      publish:
+        - "8888:8888"
 
   verkehr:
     image: aerofs/verkehr

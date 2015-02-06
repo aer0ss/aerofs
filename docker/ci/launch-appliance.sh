@@ -53,12 +53,13 @@ launch_vm() {
     local VM=$1
     local OVA="$2"
     local CLOUD_DRIVE_ISO="$3"
+    local SSH_FORWARD_PORT="$4"
 
     VBoxManage import "${OVA}" --vsys 0 --vmname ${VM}
     # Assume the OVA already has an IDE controller
     VBoxManage storageattach ${VM} --storagectl "IDE Controller" --port 1 --device 0 --type dvddrive --medium "${CLOUD_DRIVE_ISO}"
     # Create a NAT iface so the VM can use the CI host's dnsmasq nameserver to resolve its own hostname
-    VBoxManage modifyvm ${VM} --nic8 nat
+    VBoxManage modifyvm ${VM} --nic8 nat --natpf8 ssh,tcp,,${SSH_FORWARD_PORT},,22
 
     VBoxManage startvm ${VM} --type headless
 }
@@ -95,7 +96,8 @@ main() {
     # (OSX has no realpath command.)
     OVA="$(cd $(dirname "${OVA}"); pwd)/$(basename "${OVA}")"
 
-    launch_vm ${VM} ${OVA} ${CLOUD_DRIVE_ISO}
+    local SSH_FORWARD_PORT=54365
+    launch_vm ${VM} ${OVA} ${CLOUD_DRIVE_ISO} ${SSH_FORWARD_PORT}
 
     # Use absolute path so users of the echo'ed command below can run the command anywhere.
     local KEY_FILE="$(cd "${THIS_DIR}" && pwd)/ci-ssh.key"
@@ -105,7 +107,7 @@ main() {
     echo
     echo ">>> VM has launched. You may access it from another terminal via:"
     echo
-    echo "    $ ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KEY_FILE} core@${IP}"
+    echo "    $ ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KEY_FILE} -p ${SSH_FORWARD_PORT} core@$localhost"
     echo
 
     # Not until the Web UIs is ready we can declare a success launch.
