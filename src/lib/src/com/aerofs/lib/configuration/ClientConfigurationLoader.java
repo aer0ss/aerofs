@@ -44,12 +44,17 @@ public class ClientConfigurationLoader
     static final String SITE_CONFIG_FILE = "site-config.properties";
     static final String HTTP_CONFIG_CACHE = "config-service-cache.properties";
 
-    private HttpsDownloader _downloader;
-    private PropertiesHelper _propertiesHelper = new PropertiesHelper();
+    private final HttpsDownloader _downloader;
+    private final PropertiesHelper _propertiesHelper = new PropertiesHelper();
 
-    public ClientConfigurationLoader(HttpsDownloader downloader)
+    private final String _approot;
+    private final String _rtroot;
+
+    public ClientConfigurationLoader(HttpsDownloader downloader, String approot, String rtroot)
     {
         _downloader = downloader;
+        _approot = approot;
+        _rtroot = rtroot;
     }
 
     /**
@@ -58,17 +63,15 @@ public class ClientConfigurationLoader
      * Throws ConfigurationException if this is a private deployment and we are unable to load
      *   site config or http config.
      */
-    public Properties loadConfiguration(String approot)
+    public Properties loadConfiguration()
             throws ConfigurationException
     {
-        Properties compositeProperties;
-
         try {
-            Properties staticProperties;
             Properties siteConfigProperties = new Properties();
             Properties httpProperties = new Properties();
+            Properties staticProperties = getStaticProperties();
 
-            staticProperties = getStaticProperties();
+            File siteConfigFile = getSiteConfigFile();
 
             if (staticProperties.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals(
                     "true")) {
@@ -82,25 +85,21 @@ public class ClientConfigurationLoader
                     // construct relative path from approot:
                     File codesigningEvadingFile = new File(
                             new File(
-                                    new File(approot).getParentFile(),
+                                    new File(_approot).getParentFile(),
                                     "site-config.lproj"
                             ),
                             "locversion.plist"
                     );
                     if (codesigningEvadingFile.isFile()) {
-                        try (FileInputStream stream = new FileInputStream(codesigningEvadingFile)) {
-                            siteConfigProperties.load(stream);
-                            loaded = true;
-                        }
-                    }
-                }
-                // Load config from site-config.properties, if it exists
-                File siteConfigFile = new File(approot, SITE_CONFIG_FILE);
-                if (siteConfigFile.isFile()) {
-                    try (FileInputStream stream = new FileInputStream(siteConfigFile)) {
-                        siteConfigProperties.load(stream);
+                        loadPropertiesFromFile(siteConfigProperties, codesigningEvadingFile);
                         loaded = true;
                     }
+                }
+
+                // Load config from site-config.properties, if it exists
+                if (siteConfigFile.isFile()) {
+                    loadPropertiesFromFile(siteConfigProperties, siteConfigFile);
+                    loaded = true;
                 }
 
                 if (!loaded) throw new FileNotFoundException("Missing " + siteConfigFile);
@@ -108,32 +107,53 @@ public class ClientConfigurationLoader
                 siteConfigProperties = _propertiesHelper.parseProperties(siteConfigProperties);
 
                 // Load HTTP configuration, warning if it cannot be loaded.
-                downloadHttpConfig(approot, staticProperties, siteConfigProperties);
-                // FIXME: HTTP_CONFIG_CACHE should get placed in rtroot, not approot
-                httpProperties.load(new FileInputStream(new File(approot, HTTP_CONFIG_CACHE)));
+                File httpConfigFile = getHttpConfigFile();
+                downloadHttpConfig(staticProperties, siteConfigProperties, httpConfigFile);
+                // N.B. we load the http config properties from cache even when we've failed download http config from
+                // the config server; this is intended as a fail-safe mechanism in case the client cannot reach the
+                // config server.
+                // However, this also opens up a hole where an adversary can edit the http config cache and then
+                // launch the client with no internet connection to configure the client with arbitrary configuration.
+                loadPropertiesFromFile(httpProperties, httpConfigFile);
                 httpProperties = _propertiesHelper.parseProperties(httpProperties);
 
-            } else if (new File(approot, SITE_CONFIG_FILE).exists()) {
+            } else if (siteConfigFile.exists()) {
                 // This ignores the repackaged OSX case, but I'm okay with this
                 throw new IncompatibleModeException();
             }
 
             // Join all properties together, logging a warning if any property is specified twice.
-            compositeProperties = _propertiesHelper.unionOfThreeProperties(staticProperties,
+            return _propertiesHelper.unionOfThreeProperties(staticProperties,
                     siteConfigProperties, httpProperties);
         } catch (Exception e) {
             throw new ConfigurationException(e);
         }
+    }
 
-        return compositeProperties;
+    protected void loadPropertiesFromFile(Properties properties, File file)
+            throws IOException
+    {
+        try (InputStream in = new FileInputStream(file)) {
+            properties.load(in);
+        }
+    }
+
+    protected File getSiteConfigFile()
+    {
+        return new File(_approot, SITE_CONFIG_FILE);
+    }
+
+    protected File getHttpConfigFile()
+    {
+        return new File(_rtroot, HTTP_CONFIG_CACHE);
     }
 
     /**
-     * Download http configuration from the configuration server. And surpress any exception
+     * Download http configuration from the configuration server. And suppress any exception
      *   because we'll be falling back to the cache file if this fails.
      */
-    protected void downloadHttpConfig(String approot, Properties staticProperties,
-            Properties siteConfigProperties)
+    protected void downloadHttpConfig(Properties staticProperties,
+            Properties siteConfigProperties, File httpConfigFile)
     {
         Properties preHttpProperties = new Properties();
         preHttpProperties.putAll(staticProperties);
@@ -145,9 +165,8 @@ public class ClientConfigurationLoader
             String certificate = preHttpProperties.getProperty(PROPERTY_BASE_CA_CERT, "");
             ICertificateProvider certificateProvider = StringUtils.isBlank(certificate) ? null
                     : new StringBasedCertificateProvider(certificate);
-            File cache = new File(approot, HTTP_CONFIG_CACHE);
 
-            _downloader.download(url, certificateProvider, cache);
+            _downloader.download(url, certificateProvider, httpConfigFile);
         } catch (Throwable t) {
             // N.B. the best we can do is log the occurrence because if at this stage, none of the
             // services are available and there's no way to report the defect back home.

@@ -147,7 +147,7 @@ public class Main
         // First things first, initialize the configuration subsystem.
         try {
             // initializes configuration
-            initializeConfigurationSystem(appRoot);
+            initializeConfigurationSystem(appRoot, rtRoot);
         } catch (Exception e) {
             // WARNING: the following logic is fragile, the root problem is that
             // initializeConfigurationSystem() needs to be reworked and updates its signature to
@@ -264,11 +264,11 @@ public class Main
         }
     }
 
-    private static void initializeConfigurationSystem(String appRoot)
+    private static void initializeConfigurationSystem(String appRoot, String rtroot)
             throws ConfigurationException
     {
-        ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
-        ConfigurationProperties.setProperties(loader.loadConfiguration(appRoot));
+        ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader(), appRoot, rtroot);
+        ConfigurationProperties.setProperties(loader.loadConfiguration());
         l.debug("Client configuration initialized");
     }
 }

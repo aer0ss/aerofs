@@ -9,21 +9,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.ConfigurationException;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -47,6 +39,9 @@ public class TestClientConfigurationLoader
     @Rule public TemporaryFolder _approotFolder;
     String _approot;
 
+    @Rule public TemporaryFolder _rtrootFolder;
+    String _rtroot;
+
     MockHttpsDownloader _downloader;
     ClientConfigurationLoader _loader;
 
@@ -58,8 +53,12 @@ public class TestClientConfigurationLoader
         _approotFolder.create();
         _approot = _approotFolder.getRoot().getAbsolutePath();
 
+        _rtrootFolder = new TemporaryFolder();
+        _rtrootFolder.create();
+        _rtroot = _rtrootFolder.getRoot().getAbsolutePath();
+
         _downloader = new MockHttpsDownloader();
-        _loader = spy(new ClientConfigurationLoader(_downloader));
+        _loader = spy(new ClientConfigurationLoader(_downloader, _approot, _rtroot));
     }
 
     @Test
@@ -74,7 +73,7 @@ public class TestClientConfigurationLoader
         Files.append("conflict=site\nconflict2=site\nconflict3=site",
                 siteConfigFile, Charset.defaultCharset());
 
-        Properties properties = _loader.loadConfiguration(_approot);
+        Properties properties = _loader.loadConfiguration();
 
         assertEquals("http", properties.getProperty("conflict"));
         assertEquals("http", properties.getProperty("conflict2"));
@@ -87,7 +86,7 @@ public class TestClientConfigurationLoader
     {
         setupStaticProperties(false);
 
-        _loader.loadConfiguration(_approot);
+        _loader.loadConfiguration();
     }
 
     @Test
@@ -97,7 +96,7 @@ public class TestClientConfigurationLoader
         setupStaticProperties(true);
 
         try {
-            _loader.loadConfiguration(_approot);
+            _loader.loadConfiguration();
             fail("Expected exception.");
         } catch (ConfigurationException e) {
             assert(e.getCause().getClass() == FileNotFoundException.class);
@@ -112,7 +111,7 @@ public class TestClientConfigurationLoader
         createSiteConfigFile(BAD_URL, CERT);
 
         try {
-            _loader.loadConfiguration(_approot);
+            _loader.loadConfiguration();
             fail("Expected exception.");
         } catch (ConfigurationException e) {
             assert(e.getCause().getClass() == FileNotFoundException.class);
@@ -127,9 +126,16 @@ public class TestClientConfigurationLoader
         createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
         createHttpConfigCache("is_cache=true");
 
-        Properties config = _loader.loadConfiguration(_approot);
+        Properties config = _loader.loadConfiguration();
 
+        // the end configuration should use the downloaded http config over the config persisted in the cache
         assertFalse(config.containsKey("is_cache"));
+
+        Properties cachedConfig = new Properties();
+        _loader.loadPropertiesFromFile(cachedConfig, _loader.getHttpConfigFile());
+
+        // the cache should be updated to match the downloaded http config
+        assertFalse(cachedConfig.containsKey("is_cache"));
     }
 
     @Test
@@ -140,7 +146,7 @@ public class TestClientConfigurationLoader
         createSiteConfigFile(BAD_URL, CERT);
         createHttpConfigCache("is_cache=true");
 
-        Properties config = _loader.loadConfiguration(_approot);
+        Properties config = _loader.loadConfiguration();
 
         assert config.containsKey("is_cache") && config.getProperty("is_cache").equals("true");
     }
@@ -153,23 +159,26 @@ public class TestClientConfigurationLoader
         createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
 
         try {
-            _loader.loadConfiguration(_approot);
+            _loader.loadConfiguration();
             fail("Expected exception.");
         } catch (ConfigurationException e) {
             assert(e.getCause().getClass() == IncompatibleModeException.class);
         }
     }
 
-    protected File getSiteConfigFile()
-            throws IOException
+    @Test
+    public void shouldUseCorrectSiteConfigFile()
     {
-        return new File(_approot, ClientConfigurationLoader.SITE_CONFIG_FILE);
+        assertEquals(new File(_approot, SITE_CONFIG_FILE).getAbsolutePath(),
+                _loader.getSiteConfigFile().getAbsolutePath());
     }
 
-    protected File getHttpConfigCache()
-            throws IOException
+    @Test
+    public void shouldUseCorrectHttpConfigFile()
     {
-        return new File(_approot, ClientConfigurationLoader.HTTP_CONFIG_CACHE);
+        assertEquals(new File(_rtroot, HTTP_CONFIG_CACHE).getAbsolutePath(),
+                _loader.getHttpConfigFile().getAbsolutePath());
+
     }
 
     protected Properties setupStaticProperties(boolean httpConfigRequired)
@@ -188,7 +197,7 @@ public class TestClientConfigurationLoader
     {
         cert = cert.replace("\n", "\\n");
 
-        File siteConfigFile = getSiteConfigFile();
+        File siteConfigFile = _loader.getSiteConfigFile();
         Files.write(PROPERTY_CONFIG_SERVICE_URL + '=' + url + '\n' +
                 PROPERTY_BASE_CA_CERT + '=' + cert + '\n',
                 siteConfigFile, Charset.defaultCharset());
@@ -198,7 +207,7 @@ public class TestClientConfigurationLoader
     protected File createHttpConfigCache(String content)
             throws IOException
     {
-        File cache = getHttpConfigCache();
+        File cache = _loader.getHttpConfigFile();
         Files.write(content, cache, Charset.defaultCharset());
         return cache;
     }
