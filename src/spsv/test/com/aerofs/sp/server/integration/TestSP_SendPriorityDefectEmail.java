@@ -9,7 +9,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.LicenseProperties;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
@@ -134,15 +133,13 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
             throws Exception
     {
         Object[][] testCases = {
-                { UniqueID.ZERO, "00000000000000000000000000000000" },
-                { DID.fromStringFormal("feedbeef31415926deadbead11111111"),
-                        "feedbeef31415926deadbead11111111" },
                 // NOTE: 0x30 is the UTF-8 for the character 0
                 { ByteString.copyFromUtf8("0000000000000000"), "30303030303030303030303030303030" },
                 { ByteString.copyFromUtf8("did1 in disguise"), "6469643120696e206469736775697365" },
                 { null, "unknown" },
                 { ByteString.copyFromUtf8(""), "unknown" },
                 { ByteString.copyFromUtf8("rogue did"), "unknown" },
+                { ByteString.copyFromUtf8("a really really really long did"), "unknown" },
         };
 
         for (Object[] testCase : testCases) {
