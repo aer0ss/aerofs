@@ -9,6 +9,9 @@ public class GUIParam {
     // the spacing between major composites
     public static final int MAJOR_SPACING = MARGIN;
 
+    // the margin used for horizontal margin on vertically centred dialogs
+    public static final int WIDE_MARGIN = 2 * MARGIN;
+
     public static final long STAT_UPDATE_INTERVAL = 1 * C.SEC;
 
     // the spacing between widgets on a vertical grid

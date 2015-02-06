@@ -249,6 +249,12 @@ public class GUIUtil
         }
     }
 
+    public static Font makeEmphasis(Font org)
+    {
+        FontData fd = org.getFontData()[0];
+        return  SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 3 / 2, SWT.BOLD);
+    }
+
     public static Font makeBold(Font org)
     {
         FontData fd = org.getFontData()[0];
@@ -417,6 +423,43 @@ public class GUIUtil
                 launch(url);
             }
         };
+    }
+
+    public static RowLayout newCentredRowLayout(int style)
+    {
+        RowLayout layout = new RowLayout(style);
+
+        // SWT RowLayout has, by default, 0 margin width/height and 3 margin top/bottom/left/right
+        layout.marginTop = 0;
+        layout.marginBottom = 0;
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.spacing = 0;
+        layout.center = true;
+
+        return layout;
+    }
+
+    public static GridLayout newGridLayout()
+    {
+        return newGridLayout(1, false);
+    }
+
+    public static GridLayout newGridLayout(int numCols, boolean equalWidth)
+    {
+        GridLayout layout = new GridLayout(numCols, equalWidth);
+
+        // SWT GridLayout has, by default, 0 margin top/bottom/left/right and 5 margin width/height
+        layout.marginTop = 0;
+        layout.marginBottom = 0;
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+
+        return layout;
     }
 
     /**
