@@ -31,8 +31,8 @@ $(ETC)/ejabberd.cfg: ../../puppetmaster/modules/ejabberd/templates/ejabberd.cfg.
 	sed -e 's/<%= @port %>/5222/' \
 	    -e 's/<%= @mysql_host %>/mysql.service/' \
 	    -e 's/<%= @mysql_db %>/ejabberd/' \
-	    -e 's/<%= @mysql_user %>/root/' \
-	    -e 's/<%= @mysql_password %>//' $< > $@
+	    -e 's/<%= @mysql_user %>/ejabberd/' \
+	    -e 's/<%= @mysql_password %>/password/' $< > $@
 
 $(ROOT)/etc/default/ejabberd: ../../puppetmaster/modules/ejabberd/files/default_ejabberd
 	mkdir -p $(@D)
@@ -46,3 +46,8 @@ $(ROOT)/ejabberd_check: ../../puppetmaster/modules/ejabberd/files/ejabberd_check
 $(ETC)/%: ../../puppetmaster/modules/ejabberd/files/%
 	mkdir -p $(@D)
 	cp $< $@
+
+$(ETC)/auth_all: ../../puppetmaster/modules/ejabberd/files/auth_all
+	mkdir -p $(@D)
+	cp $< $@
+	chmod +x $@

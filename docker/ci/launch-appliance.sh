@@ -107,7 +107,7 @@ main() {
     echo
     echo ">>> VM has launched. You may access it from another terminal via:"
     echo
-    echo "    $ ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KEY_FILE} -p ${SSH_FORWARD_PORT} core@$localhost"
+    echo "    $ ssh -q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KEY_FILE} -p ${SSH_FORWARD_PORT} core@localhost"
     echo
 
     # Not until the Web UIs is ready we can declare a success launch.

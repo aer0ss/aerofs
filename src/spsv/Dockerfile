@@ -7,20 +7,17 @@
 #
 # TODO (WW) upgrade to tomcat7 or kill tomcat entirely, and use aeofs/base
 #
-FROM ubuntu:15.04
+FROM aerofs/base.ubuntu
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
 RUN apt-get update && apt-get install -y \
-        curl \
         mysql-client \
         openjdk-8-jre-headless \
         tomcat6 \
     &&\
     rm -rf /var/lib/apt/lists/* &&\
     ln -s /etc/tomcat6 /usr/share/tomcat6/conf
-
-ENTRYPOINT [ "/container-scripts/service-barrier" ]
 
 CMD [ "/run.sh" ]
 

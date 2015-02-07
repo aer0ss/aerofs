@@ -13,7 +13,6 @@ FIXES = \
 	src/com/aerofs/sp/server/listeners/SPLifecycleListener.java
 
 image: .fix-source .gradle .unfix-source $(CONF_PROP) $(FLAG_FILE)
-	$(MAKE) -f ../../docker/container-scripts/Makefile
 	docker build -t $(IMAGE_NAME) .
 
 DIRS =  sp \

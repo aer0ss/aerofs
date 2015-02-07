@@ -1,5 +1,6 @@
 BASE_DIRS = \
 	base/base \
+	base/ubuntu \
 	base/jre8 \
 	base/jre8-and-mysql-client \
 	base/python2.7
