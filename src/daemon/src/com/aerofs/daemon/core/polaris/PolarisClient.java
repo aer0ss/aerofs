@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris;
 
+import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
@@ -77,7 +78,7 @@ public class PolarisClient
 
         Auth(UserID user, DID did)
         {
-            auth = "Aero-Device-Cert " + did.toStringFormal() + " " + user;
+            auth = AeroDeviceCert.getHeaderValue(user.getString(), did.toStringFormal());
             cname = "CN=" + BaseSecUtil.getCertificateCName(user, did);
         }
 

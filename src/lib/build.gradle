@@ -54,6 +54,7 @@ dependencies {
     compile name: 'netty-native-socket'
     compile name: 'junixsocket-1.3'
     compile project(':src/base')
+    compile project(path:':src/aero-auth', configuration:'client')
     testutilCompile project(path:':src/base', configuration:'testutil')
 }
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.charlie;
 
-import com.aerofs.base.Base64;
+import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseParam.Charlie;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
@@ -19,6 +19,7 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.io.Closeables;
+import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.aerofs.base.BaseParam.Charlie.CHARLIE_AUTH_KEY;
-import static com.aerofs.base.BaseParam.Charlie.CHARLIE_AUTH_VALUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CharlieClient
@@ -107,9 +106,7 @@ public class CharlieClient
         connection.setUseCaches(false);
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        connection.addRequestProperty(CHARLIE_AUTH_KEY, String.format(CHARLIE_AUTH_VALUE,
-                    Base64.encodeBytes(localUser.getString().getBytes("UTF-8")),
-                    localDID.toStringFormal()));
+        connection.addRequestProperty(HttpHeaders.AUTHORIZATION, AeroDeviceCert.getHeaderValue(localUser.getString(), localDID.toStringFormal()));
         connection.setRequestMethod("POST");
         connection.setConnectTimeout((int) CONNECT_TIMEOUT);
         connection.setReadTimeout((int) READ_TIMEOUT);

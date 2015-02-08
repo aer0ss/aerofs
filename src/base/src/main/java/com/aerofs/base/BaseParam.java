@@ -63,8 +63,6 @@ public class BaseParam
 
     public static class Charlie
     {
-        public static final String CHARLIE_AUTH_KEY = "Authorization";
-        public static final String CHARLIE_AUTH_VALUE = "Aero-Device-Cert %s %s";
         public static final URL CHARLIE_URL = getUrlProperty("base.charlie.url", "https://charlie.aerofs.com/checkin");
     }
 

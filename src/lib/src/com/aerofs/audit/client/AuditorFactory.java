@@ -4,6 +4,7 @@
 
 package com.aerofs.audit.client;
 
+import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -88,8 +89,7 @@ public class AuditorFactory
                     conn.setReadTimeout(Audit.READ_TIMEOUT);
                     conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
                     conn.setSSLSocketFactory(socketFactory.get());
-                    conn.addRequestProperty(AuditClient.HEADER_UID, Cfg.user().getString());
-                    conn.addRequestProperty(AuditClient.HEADER_DID, Cfg.did().toStringFormal());
+                    conn.addRequestProperty(HttpHeaders.AUTHORIZATION, AeroDeviceCert.getHeaderValue(Cfg.user().getString(), Cfg.did().toStringFormal()));
                     conn.setDoOutput(true);
                     conn.connect();
 
