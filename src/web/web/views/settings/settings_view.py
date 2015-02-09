@@ -1,12 +1,10 @@
 import logging
+
 from pyramid.security import authenticated_userid
-
 from pyramid.view import view_config
+
 from web.util import get_rpc_stub
-
-from web.oauth import get_new_oauth_token
-from web.oauth import delete_oauth_token
-
+from web.oauth import get_bifrost_client
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +13,10 @@ def get_new_settings_token(request):
     client_id = 'aerofs-settings'
     client_secret = request.registry.settings["oauth.settings_client_secret"]
     # Explicitly request all the scopes, except organization.admin.
-    return get_new_oauth_token(request, client_id, client_secret, scopes=[
+    sp_client = get_rpc_stub(request)
+    access_code = sp_client.get_mobile_access_code().accessCode
+    bifrost_client = get_bifrost_client(request)
+    return bifrost_client.get_new_oauth_token(access_code, client_id, client_secret, scopes=[
         'files.read',
         'files.write',
         'files.appdata',
@@ -24,7 +25,8 @@ def get_new_settings_token(request):
         'user.password',
         'acl.read',
         'acl.write',
-        'acl.invitations'])
+        'acl.invitations'
+    ])
 
 
 @view_config(
@@ -74,7 +76,9 @@ def json_delete_access_token(request):
     user_settings_token = sp.get_user_settings_token().token
     # If the user has a token delete it in bifrost.
     if len(user_settings_token) > 0:
-        delete_oauth_token(request, user_settings_token)
+        bifrost_client = get_bifrost_client(request)
+        bifrost_client.delete_oauth_token(user_settings_token)
+        bifrost_client.flash_on_error(request)
     # Delete the persistent store of the token on SP.
     sp.delete_user_settings_token()
     return {}

@@ -1,5 +1,5 @@
 import logging
-from pyramid.httpexceptions import HTTPInternalServerError, HTTPOk
+from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 import requests
 from web.error import error

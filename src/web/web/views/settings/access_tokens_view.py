@@ -1,14 +1,13 @@
+import binascii
+import json
 import logging
+
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest, HTTPInternalServerError
 from pyramid.security import authenticated_userid
-import requests
-import json
-import binascii
-
 from pyramid.view import view_config
+
 from web import util
-from web.oauth import flash_error_for_bifrost_response, get_bifrost_url, \
-    raise_error_for_bifrost_response, is_valid_access_token, is_builtin_client_id
+from web.oauth import get_bifrost_client, is_valid_access_token, is_builtin_client_id
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +41,9 @@ def app_authorization(request):
     client_id = get_exactly_one_or_throw_400(request.params, "client_id")
     user_redirect_uri = get_exactly_one_or_throw_400(request.params, "redirect_uri")
 
-    r = requests.get(get_bifrost_url(request) + "/clients/" + client_id)
+    # verify that the client id is for a valid app
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.get_app_info(client_id)
     if r.status_code == 404:
         raise HTTPBadRequest(detail="client_id {} not found".format(client_id))
     if not r.ok:
@@ -148,15 +149,14 @@ def app_authorization(request):
     request_method='GET'
 )
 def access_tokens(request):
-    r = requests.get(get_bifrost_url(request) + '/tokenlist', params={
-        'owner': authenticated_userid(request)
-    })
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.get_access_tokens_for(authenticated_userid(request))
     if r.ok:
         # Skip builtin clients (e.g. android, ios, web acess tokens)
         tokens = [t for t in r.json()['tokens'] if not is_builtin_client_id(t['client_id'])]
     else:
         tokens = []
-        flash_error_for_bifrost_response(request, r)
+        bifrost_client.flash_on_error(request, r)
 
     return {
         'tokens': tokens
@@ -179,7 +179,7 @@ def json_delete_access_token(request):
         log.error('json_delete_access_token(): invalid token: ' + token)
         util.error('The application ID is invalid.')
 
-    r = requests.delete(get_bifrost_url(request) + '/token/{}'.format(token))
-    if not r.ok:
-        raise_error_for_bifrost_response(r)
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.delete_access_token(token)
+    bifrost_client.raise_on_error()
     return {}

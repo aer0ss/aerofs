@@ -163,7 +163,7 @@ def send_sales_email(from_email, subject, body):
     # envelope header.
     try:
         s = smtplib.SMTP('localhost')
-        s.sendmail(from_email, [toEmail], msg.as_string())
+        s.sendmail(from_email, [to_email], msg.as_string())
         s.quit()
     except Exception, e:
         log.error("send_sales_email failed and ignored", exc_info=e)

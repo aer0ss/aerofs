@@ -11,7 +11,7 @@ from pyramid.httpexceptions import HTTPNoContent, HTTPBadRequest, HTTPFound, HTT
 import requests
 
 from web.util import get_rpc_stub
-from web.oauth import get_bifrost_url, is_aerofs_mobile_client_id
+from web.oauth import get_bifrost_client, is_aerofs_mobile_client_id
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
@@ -171,7 +171,7 @@ def _jsonable_device_mobile(device):
     request_method='GET'
 )
 def json_get_devices(request):
-    requester = authenticated_userid(request)
+    authenticated_userid(request)
     user = request.params["user"]
     return get_devices_for_user(request, user)
 
@@ -179,9 +179,13 @@ def get_devices_for_user(request, user):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    r = requests.get(get_bifrost_url(request) + '/tokenlist',
-            params={'owner': user})
-    r.raise_for_status()
+    # Note well: the access check here depends on having first made the above
+    # list_user_devices call against SP, which will refuse if the requester is
+    # not permitted to ask about the target user.  Bifrost currently lacks
+    # access controls for this.
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.get_access_tokens_for(user)
+    bifrost_client.raise_on_error()
     mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
 
     last_seen_data = {}

@@ -3,9 +3,7 @@
 import logging
 import shutil
 import os
-import socket
 import re
-import markupsafe
 from web.util import str2bool
 from pyramid.security import NO_PERMISSION_REQUIRED, remember
 

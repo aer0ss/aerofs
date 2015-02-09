@@ -1,5 +1,4 @@
 import logging
-import base64
 
 from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config

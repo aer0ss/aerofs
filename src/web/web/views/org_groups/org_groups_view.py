@@ -117,7 +117,7 @@ def json_edit_org_group(request):
     common_name = request.json_body['name']
     members = request.json_body['members']
 
-    reply = exception2error(sp.set_group_common_name, [group_id, common_name], {})
+    exception2error(sp.set_group_common_name, [group_id, common_name], {})
 
     current_members = [member['email'] for member in _get_members(request, group_id)]
     to_add = list(set(members) - set(current_members))
@@ -125,7 +125,7 @@ def json_edit_org_group(request):
 
     if len(to_add) > 0:
         sp = util.get_rpc_stub(request)
-        reply = exception2error(sp.add_group_members, [group_id, to_add], {
+        exception2error(sp.add_group_members, [group_id, to_add], {
             PBException.NOT_FOUND:
                 _("Sorry, members of group '" + common_name + "' could not be added because " +
                     "one of the provided member email addresses has no user in " +
@@ -134,7 +134,7 @@ def json_edit_org_group(request):
         )
     if len(to_remove) > 0:
         sp = util.get_rpc_stub(request)
-        reply = exception2error(sp.remove_group_members, [group_id, to_remove], {})
+        exception2error(sp.remove_group_members, [group_id, to_remove], {})
     return HTTPOk()
 
 
@@ -148,7 +148,7 @@ def json_remove_org_group(request):
     sp = util.get_rpc_stub(request)
     group_id = request.json_body['id']
 
-    reply = sp.delete_group(group_id)
+    sp.delete_group(group_id)
     return HTTPOk()
 
 @view_config(

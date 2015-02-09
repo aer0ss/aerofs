@@ -83,7 +83,6 @@ def _do_login(request):
     renderer='login.mako'
 )
 def login_view(request):
-    _ = request.translate
     settings = request.registry.settings
 
     if request.method == "POST":
@@ -193,7 +192,7 @@ def login_second_factor_post(request):
     # If correct, redirect to next
     # If incorrect, flash message and redirect to self
     try:
-        result = sp.provide_second_factor(code)
+        sp.provide_second_factor(code)
     except ExceptionReply as e:
         log.info("SP rejected attempt to provide second factor: {}".format(e.get_type_name()))
         if e.get_type_name() == "SECOND_FACTOR_REQUIRED":
@@ -233,7 +232,7 @@ def login_backup_code_post(request):
     code = request.POST.get(URL_PARAM_CODE)
     sp = get_rpc_stub(request)
     try:
-        result = sp.provide_backup_code(code)
+        sp.provide_backup_code(code)
     except ExceptionReply as e:
         log.info("SP rejected attempt to provide backup code: {}".format(e.get_type_name()))
         if e.get_type_name() == "SECOND_FACTOR_REQUIRED":

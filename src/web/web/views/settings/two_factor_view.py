@@ -32,7 +32,7 @@ def two_factor_intro(request):
     try:
         prefs = sp.get_user_preferences(None)
         tfa_enforcing = prefs.two_factor_enforced
-    except Exception as e:
+    except Exception:
         # Silence exceptions; warning is opportunistic
         pass
     is_mandatory = sp.get_two_factor_setup_enforcement().level == MANDATORY
@@ -149,7 +149,7 @@ def two_factor_disable_post(request):
     try:
         sp.set_two_factor_enforcement(False, None, None)
         flash_success(request, "Disabled two-factor authentication")
-    except ExceptionReply as e:
+    except ExceptionReply:
         flash_error(request, "Failed to disable two-factor authentication")
     return HTTPFound(location=request.route_path('settings'))
 

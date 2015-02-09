@@ -1,12 +1,11 @@
 import logging
-from pyramid.httpexceptions import HTTPFound
-import requests
 
+from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
+
 from web import util
 from web.util import flash_error, flash_success
-from web.oauth import raise_error_for_bifrost_response, flash_error_for_bifrost_response, \
-    is_builtin_client_id, get_bifrost_url, is_valid_non_builtin_client_id
+from web.oauth import get_bifrost_client, is_builtin_client_id, is_valid_non_builtin_client_id
 from maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
@@ -19,7 +18,8 @@ log = logging.getLogger(__name__)
     request_method='GET'
 )
 def registered_apps(request):
-    r = requests.get(get_bifrost_url(request) + '/clients')
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.get_registered_apps()
     if r.ok:
         # clients is an array of registered clients
         clients = r.json()['clients']
@@ -27,7 +27,7 @@ def registered_apps(request):
         clients = [cli for cli in clients if not is_builtin_client_id(cli['client_id'])]
     else:
         clients = []
-        flash_error_for_bifrost_response(request, r)
+        bifrost_client.flash_on_error(request, r)
 
     conf = get_conf(request)
     return {
@@ -64,13 +64,10 @@ def register_app_post(request):
         flash_error(request, 'The redirect URI is required.')
         raise HTTPFound(request.route_path('register_app'))
 
-    r = requests.post(get_bifrost_url(request) + '/clients', data = {
-        'resource_server_key': 'oauth-havre',
-        'client_name': client_name,
-        'redirect_uri': redirect_uri
-    })
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.register_app(client_name, redirect_uri)
     if not r.ok:
-        flash_error_for_bifrost_response(request, r)
+        bifrost_client.flash_on_error(request, r)
         raise HTTPFound(request.route_path('register_app'))
 
     flash_success(request, 'The application is registered.')
@@ -90,8 +87,7 @@ def json_delete_app(request):
         log.error('json_delete_app(): invalid client_id: ' + client_id)
         util.error('The application ID is invalid.')
 
-    r = requests.delete(get_bifrost_url(request) + '/clients/{}'
-            .format(client_id))
-    if not r.ok:
-        raise_error_for_bifrost_response(r)
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.delete_app(client_id)
+    bifrost_client.raise_on_error()
     return {}

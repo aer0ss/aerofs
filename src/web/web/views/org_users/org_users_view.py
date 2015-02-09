@@ -1,18 +1,19 @@
 import logging
+
 import markupsafe
 from pyramid.httpexceptions import HTTPOk
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
-from pyramid.renderers import render
 from aerofs_sp.gen.common_pb2 import PBException
+from aerofs_sp.gen.sp_pb2 import USER, ADMIN
+
 from web import util
-from web.oauth import flash_error_for_bifrost_response, delete_all_tokens, delete_delegated_tokens
+from web.oauth import get_bifrost_client
 from web.sp_util import exception2error
-from web.util import error_on_invalid_email, get_rpc_stub, is_private_deployment, str2bool, is_restricted_external_sharing_enabled
+from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled
 from web.auth import is_admin
 from web.views.payment import stripe_util
 from web.views.org_groups.org_groups_view import json_list_org_groups
-from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
 # URL param keys
 URL_PARAM_USER = 'user'
@@ -171,10 +172,11 @@ def json_set_auth_level(request):
 
     # When demoting a user, remove any admin tokens they may have auth'ed:
     log.warn('set auth level to %' + str(level))
-    r = delete_delegated_tokens(request, user)
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.delete_delegated_tokens(user)
     if not r.ok:
         log.error('bifrost returned error:' + str(r))
-        flash_error_for_bifrost_response(request, r)
+        bifrost_client.flash_on_error(request, r)
 
     sp.set_authorization_level(user, level)
     return HTTPOk()
@@ -202,10 +204,11 @@ def json_deactivate_user(request):
     user = request.json_body[URL_PARAM_USER]
     erase_devices = str2bool(request.json_body[URL_PARAM_ERASE_DEVICES])
 
-    r = delete_all_tokens(request, user)
+    bifrost_client = get_bifrost_client(request)
+    r = bifrost_client.delete_all_tokens(user)
     if not r.ok:
         log.error('bifrost returned error:' + str(r))
-        flash_error_for_bifrost_response(request, r)
+        bifrost_client.flash_on_error(request, r)
 
     sp = get_rpc_stub(request)
     stripe_data = sp.deactivate_user(user, erase_devices).stripe_data
