@@ -32,7 +32,13 @@ def _audit(request, topic, event, data=None):
     host = request.registry.settings["base.audit.service.host"]
     port = request.registry.settings["base.audit.service.port"]
     path = request.registry.settings["base.audit.service.path"]
-    headers = {'Content-type': 'application/json'}
+    deployment_secret_file = request.registry.settings['deployment.secret_file']
+    secret = None
+    with open(deployment_secret_file) as f:
+        secret = f.read().strip()
+    auth_header_value = 'Aero-Service-Shared-Secret {} {}'.format('web', secret)
+    headers = {'Content-type': 'application/json',
+               'Authorization': auth_header_value}
     requests.post("http://{}:{}{}".format(host, port, path), data=json.dumps(data), headers=headers)
 
 
