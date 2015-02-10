@@ -87,7 +87,7 @@
       </div>
 
       <div class="my-row row" 
-        ng-if="!objects.length">
+        ng-show="!objects.length && outstandingRequests === 0">
         <div class="col-sm-12 object dir-status">
           <div ng-hide="error.status == 503 && !(currentShare.isSingleObject)">
             <div class='icon'>&nbsp;</div>
