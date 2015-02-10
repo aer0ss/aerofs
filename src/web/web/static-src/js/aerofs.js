@@ -85,7 +85,11 @@ function normalizeMessage(message) {
 }
 
 function showErrorMessageFromResponse(xhr) {
-    showErrorMessageWith($.parseJSON(xhr.responseText), xhr.status);
+    var data;
+    if (xhr.responseText) {
+        data = $.parseJSON(xhr.responseText);
+    }
+    showErrorMessageWith(data, xhr.status);
 }
 
 function showErrorMessageWith(data, status) {
