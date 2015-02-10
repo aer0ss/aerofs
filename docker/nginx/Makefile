@@ -13,8 +13,8 @@ SITES = sp \
 	bifrost \
 	auditor \
 	openid \
-	polaris
-	# remember to update the deps below when adding sites
+	polaris \
+	status
 
 .fix-site-confs: $(DIR) $(SITES:%=$(DIR)/%)
 
@@ -24,6 +24,7 @@ $(DIR):
 $(DIR)/%:
 	sed -e 's/127.0.0.1/$*.service/' ../../packaging/$*/etc/nginx/backends-available/aerofs-$* > $(DIR)/$*
 
+# TODO (WW) Do not duplicate common configurations so f****** many times in these files
 # Is there an easy way to specify the deps?
 $(DIR)/sp: ../../packaging/sp/etc/nginx/backends-available/aerofs-sp
 $(DIR)/havre: ../../packaging/havre/etc/nginx/backends-available/aerofs-havre
@@ -31,6 +32,10 @@ $(DIR)/sparta: ../../packaging/sparta/etc/nginx/backends-available/aerofs-sparta
 $(DIR)/bifrost: ../../packaging/bifrost/etc/nginx/backends-available/aerofs-bifrost
 $(DIR)/auditor: ../../packaging/auditor/etc/nginx/backends-available/aerofs-auditor
 $(DIR)/polaris: ../../packaging/polaris/etc/nginx/backends-available/aerofs-polaris
+
+$(DIR)/status: ../../packaging/sanity/etc/nginx/backends-available/aerofs-sanity
+	sed -e 's/127.0.0.1/status.service/' \
+	    -e 's`/opt/sanity/htpasswd`/status.htpasswd`' $< > $@
 
 $(DIR)/openid: ../../packaging/identity/etc/nginx/backends-available/aerofs-identity
 	sed -e 's/127.0.0.1/openid.service/' $< > $@

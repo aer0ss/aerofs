@@ -19,6 +19,7 @@ image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP) $(FLAG_FILE)
 DIRS =  sp \
 	log-collection \
 	identity \
+	probe \
 	verification
 
 subdirs: $(DIRS:%=dockerize-%)

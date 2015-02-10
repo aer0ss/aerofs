@@ -1,0 +1,44 @@
+@@ -2,7 +2,7 @@
+ <%! page_title = "Monitoring" %>
+ 
+ <%namespace name="csrf" file="csrf.mako"/>
+-<%namespace name="bootstrap" file="bootstrap.mako"/>
++<%namespace name="loader" file="loader.mako"/>
+ <%namespace name="modal" file="modal.mako"/>
+ <%namespace name="spinner" file="spinner.mako"/>
+ <%namespace name="progress_modal" file="progress_modal.mako"/>
+@@ -79,10 +79,10 @@
+ </%progress_modal:html>
+ 
+ <%block name="scripts">
+-    <%bootstrap:scripts/>
+     <%progress_modal:scripts/>
+     ## spinner support is required by progress_modal
+     <%spinner:scripts/>
++    <%loader:scripts/>
+ 
+     <script>
+         $(document).ready(function() {
+@@ -123,15 +123,16 @@
+         }
+ 
+         function updateMonitoringPassword(always) {
+-            runBootstrapTask('update-monitoring-password',
+-                ## done
+-                function() {
++            ## Reboot the entire system so nginx can pick up the change.
++            ## TODO (WW) only reboot nginx and its dependents
++            reboot('current', 'current', 'default', function() {
+                     ## redirect back to the monitoring page so the updated creds show
+                     window.location.assign('${request.route_path('monitoring')}');
+                     always();
+-                },
+-                ## fail
+-                always);
++                }, function(xhr) {
++                    showErrorMessageFromResponse(xhr);
++                    always();
++                });
+         }
+     </script>
+ </%block>

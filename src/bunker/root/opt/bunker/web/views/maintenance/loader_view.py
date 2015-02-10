@@ -33,7 +33,9 @@ def get_boot(request):
     """
     Get the boot id
     """
-    return requests.get(LOADER_URL + '/boot').json()
+    r = requests.get(LOADER_URL + '/boot')
+    r.raise_for_status()
+    return r.json()
 
 
 @view_config(
@@ -46,9 +48,10 @@ def post_boot(request):
     """
     Reboot
     """
-    requests.post(LOADER_URL + '/boot/{}/{}/{}'.format(
+    r = requests.post(LOADER_URL + '/boot/{}/{}/{}'.format(
         request.matchdict['repo'],
         request.matchdict['tag'],
         request.matchdict['target'],
     ))
+    r.raise_for_status()
     return {}

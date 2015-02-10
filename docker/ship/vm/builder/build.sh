@@ -183,8 +183,10 @@ preload() {
         while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
     )
 
-    # Copy preload script to VM
-    local PRELOAD_SCRIPT=/tmp/preload-guest.sh
+    # Copy preload script to VM. Note:
+    # 1. Don't save the script to /tmp. For some reaon CoreOS may delete it while it's running.
+    # 2. The "./" in the path is for the "sudo $PRELOAD_SCRIPT" below to work.
+    local PRELOAD_SCRIPT=./preload-guest.sh
     ssh ${SSH_ARGS} "cat > ${PRELOAD_SCRIPT} && chmod u+x ${PRELOAD_SCRIPT}" < "${THIS_DIR}/preload-guest.sh"
     local START=$(date +%s)
 
@@ -198,13 +200,13 @@ preload() {
 
     # Run preload script in VM. This step can take a while, and some times for some reason ssh may disconnect in the
     # middle. So we retry a few times.
-    local DONE_FILE=/repload.done
+    local DONE_FILE=repload.done
     local RETRY=0
     while true; do
         # Ignore exit code so the current script doesn't exit if ssh disconnect.
         ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader-image') $(yml 'repo') ${DONE_FILE}" || true
         if [ "$(ssh ${SSH_ARGS} "ls ${DONE_FILE}")" ]; then
-            ssh ${SSH_ARGS} "sudo rm ${DONE_FILE}"
+            ssh ${SSH_ARGS} "sudo rm ${DONE_FILE} ${PRELOAD_SCRIPT}"
             break
         elif [ ${RETRY} = 3 ]; then
             cecho ${RED} "Preloading in SSH failed. Tried too many times. Gave up."
@@ -227,7 +229,7 @@ preload() {
 
     # Overwrite cloud-config.yml, disable ssh, & shut donw
     ssh ${SSH_ARGS} 'cat > tmp && sudo mv -f tmp /usr/share/oem/cloud-config.yml' < "${OUTPUT}/cloud-config.yml"
-    ssh ${SSH_ARGS} "rm ${PRELOAD_SCRIPT} && rm -rf ~core/.ssh && sudo shutdown 0"
+    ssh ${SSH_ARGS} "rm -rf ~core/.ssh && sudo shutdown 0"
 
     (set +x
         echo "Wait for VM to shutdown..."

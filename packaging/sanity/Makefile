@@ -4,7 +4,7 @@ ROOT = buildroot
 FILES = $(shell find -L opt -type f)
 
 DST_PROBES_DIR = $(ROOT)/opt/sanity/probes
-PROBES = ca mysql redis bifrost charlie ejabberd havre polaris sparta verkehr zephyr
+PROBES = ca mysql redis bifrost charlie ejabberd havre polaris sparta verkehr zephyr team-servers
 PROBES := $(PROBES:%=$(DST_PROBES_DIR)/%.sh)
 
 image: $(FILES:%=$(ROOT)/%) $(PROBES)
@@ -17,6 +17,11 @@ $(ROOT)/%: %
 $(DST_PROBES_DIR)/%.sh:
 	mkdir -p $(@D)
 	sed -e 's`localhost`$*.service`' $< > $@
+	chmod a+x $@
+
+$(DST_PROBES_DIR)/team-servers.sh:
+	mkdir -p $(@D)
+	sed -e 's`localhost:8080/probe`probe.service:8080`' $< > $@
 	chmod a+x $@
 
 PERSISTENT_DIR = ../../puppetmaster/modules/persistent/files/probes
@@ -33,3 +38,4 @@ $(DST_PROBES_DIR)/polaris.sh: $(TRANSIENT_DIR)/polaris.sh
 $(DST_PROBES_DIR)/sparta.sh: $(TRANSIENT_DIR)/sparta.sh
 $(DST_PROBES_DIR)/verkehr.sh: $(TRANSIENT_DIR)/verkehr.sh
 $(DST_PROBES_DIR)/zephyr.sh: $(TRANSIENT_DIR)/zephyr.sh
+$(DST_PROBES_DIR)/team-servers.sh: $(TRANSIENT_DIR)/team-servers.sh

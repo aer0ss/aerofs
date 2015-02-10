@@ -59,16 +59,11 @@ The following tasks are necessary to completely containerize AeroFS services.
 Even if we end up with not adopting Docker, these changes would improve service 
 decoupling and pave the road for scaling the appliance in the future.
 
-0. console service may start before dhcp init is done.
-
 0. db password (rudy's work)
 
-0. following bootstrap tasks:
-    update-monitoring-password
-
-0. TS sanity check? Change-Id: Ic70edc0ce09096d67d2bd0a2ec083895d49d407d
-
 0. redis: how to run "sysctl vm.overcommit_memory = 1"?
+
+0. console service may start before dhcp init is done.
 
 Logistic items:
 
@@ -84,6 +79,8 @@ copied or duplicated in the new system.
 
 
 ### Items after initial release
+
+- remove repload retry loop from docker/ship/vm/builder/build.sh if preloading no longer fails.
 
 - dryad?
 

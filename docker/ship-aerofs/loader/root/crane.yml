@@ -78,6 +78,7 @@ containers:
         - auditor:auditor.service
         - openid:openid.service
         - polaris:polaris.service
+        - status:status.service
 
   bunker:
     image: aerofs/bunker
@@ -245,6 +246,14 @@ containers:
         - postfix:postfix.service
         - config:config.service
 
+  probe:
+    image: aerofs/probe
+    run:
+      detach: true
+      link:
+        - mysql:mysql.service
+        - config:config.service
+
   logcollection:
     image: aerofs/logcollection
     run:
@@ -276,6 +285,7 @@ containers:
         - mysql:mysql.service
         - polaris:polaris.service
         - postfix:postfix.service
+        - probe:probe.service
         - redis:redis.service
         - repackaging:repackaging.service
         - sp:sp.service

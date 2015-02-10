@@ -1,10 +1,10 @@
 IMAGE_NAME = aerofs/maintenance-nginx
-RUN = buildroot/get-browser-cert-and-run-nginx.sh
+RUN = buildroot/run-common.sh
 
 image: $(RUN)
 	$(MAKE) -f ../container-scripts/Makefile
 	docker build -t $(IMAGE_NAME) .
 
-$(RUN): ../nginx/root/get-browser-cert-and-run-nginx.sh
+$(RUN): ../nginx/root/run-common.sh
 	mkdir -p $(@D)
 	cp $< $@
