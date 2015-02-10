@@ -1,6 +1,6 @@
 # Support Rotation
 
-TODO define and implement.
+The following articles are related to the idea of "support rotation".
 
 ## Articles
 
