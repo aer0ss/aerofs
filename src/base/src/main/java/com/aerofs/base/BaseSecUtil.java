@@ -541,6 +541,18 @@ public abstract class BaseSecUtil
         return equality == 0;
     }
 
+    public static boolean constantTimeIsEqual(String a, String b)
+    {
+        if (a.length() != b.length()) {
+            return false;
+        }
+        int equality = 0;
+        for (int i = 0 ; i < a.length(); i++) {
+            equality |= a.charAt(i) ^ b.charAt(i);
+        }
+        return equality == 0;
+    }
+
     /**
      * OBSOLETE. USE CipherFactory instead
      *

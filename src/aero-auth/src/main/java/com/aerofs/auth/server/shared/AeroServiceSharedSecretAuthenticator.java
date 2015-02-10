@@ -2,6 +2,7 @@ package com.aerofs.auth.server.shared;
 
 import com.aerofs.auth.server.AeroSecurityContext;
 import com.aerofs.auth.server.Roles;
+import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
@@ -31,7 +32,7 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
 
     private static final Pattern COMPILED_REGEX = Pattern.compile(AeroService.AERO_SERVICE_SHARED_SECRET_HEADER_REGEX);
 
-    private final String deploymentSecret;
+    private final SharedSecret deploymentSecret;
 
     /**
      * Constructor.
@@ -40,7 +41,7 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
      *                         all backend services in this AeroFS
      *                         installation
      */
-    public AeroServiceSharedSecretAuthenticator(String deploymentSecret) {
+    public AeroServiceSharedSecretAuthenticator(SharedSecret deploymentSecret) {
         this.deploymentSecret = deploymentSecret;
     }
 
@@ -80,7 +81,7 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
         String reportedSecret = matcher.group(2);
 
         // does their secret match ours?
-        if (reportedSecret.equals(deploymentSecret)) {
+        if (deploymentSecret.constantTimeEquals(reportedSecret)) {
             return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal(service), Roles.SERVICE, AeroService.AUTHENTICATION_SCHEME));
         }
 

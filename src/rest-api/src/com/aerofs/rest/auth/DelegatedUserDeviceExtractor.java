@@ -1,5 +1,6 @@
 package com.aerofs.rest.auth;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
@@ -47,7 +48,7 @@ public class DelegatedUserDeviceExtractor implements AuthTokenExtractor<IUserAut
 
         if (!m.matches()) return null;
 
-        if (!secret.equals(m.group(2))) {
+        if (!BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
             throw AuthTokenExtractor.unauthorized("invalid secret", challenge());
         }
 

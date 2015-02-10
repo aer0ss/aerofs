@@ -2,11 +2,7 @@ package com.aerofs.auth.server.delegated;
 
 import com.aerofs.auth.Server;
 import com.aerofs.auth.ServerResource;
-import com.aerofs.auth.server.AeroPrincipal;
-import com.aerofs.auth.server.AeroPrincipalBinder;
-import com.aerofs.auth.server.AeroUserDevicePrincipal;
-import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
-import com.aerofs.auth.server.Roles;
+import com.aerofs.auth.server.*;
 import com.aerofs.baseline.AdminEnvironment;
 import com.aerofs.baseline.RootEnvironment;
 import com.aerofs.baseline.ServiceEnvironment;
@@ -107,7 +103,7 @@ public final class TestAeroDelegatedUserDeviceAuthenticator {
         public void init(Server.ServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
             super.init(configuration, root, admin, service);
 
-            root.addAuthenticator(new AeroDelegatedUserDeviceAuthenticator(DEPLOYMENT_SECRET));
+            root.addAuthenticator(new AeroDelegatedUserDeviceAuthenticator(new SharedSecret(DEPLOYMENT_SECRET)));
 
             service.addProvider(new AeroPrincipalBinder());
             service.addProvider(new AeroUserDevicePrincipalBinder());

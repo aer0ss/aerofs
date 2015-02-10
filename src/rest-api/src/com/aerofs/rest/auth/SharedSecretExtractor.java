@@ -1,5 +1,6 @@
 package com.aerofs.rest.auth;
 
+import com.aerofs.base.BaseSecUtil;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.core.HttpRequestContext;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -40,7 +41,7 @@ public class SharedSecretExtractor implements AuthTokenExtractor<ServiceToken>
 
         if (!m.matches()) return null;
 
-        if (!secret.equals(m.group(2))) {
+        if (!BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
             throw AuthTokenExtractor.unauthorized("invalid secret", challenge());
         }
 

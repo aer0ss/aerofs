@@ -2,6 +2,7 @@ package com.aerofs.auth.server.delegated;
 
 import com.aerofs.auth.server.AeroSecurityContext;
 import com.aerofs.auth.server.Roles;
+import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
@@ -33,7 +34,7 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
 
     private static final Pattern COMPILED_REGEX = Pattern.compile(AeroDelegatedUserDevice.AERO_DELEGATED_USER_DEVICE_HEADER_REGEX);
 
-    private final String deploymentSecret;
+    private final SharedSecret deploymentSecret;
 
     /**
      * Constructor.
@@ -42,7 +43,7 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
      *                         all backend services in this AeroFS
      *                         installation
      */
-    public AeroDelegatedUserDeviceAuthenticator(String deploymentSecret) {
+    public AeroDelegatedUserDeviceAuthenticator(SharedSecret deploymentSecret) {
         this.deploymentSecret = deploymentSecret;
     }
 
@@ -92,7 +93,7 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
         }
 
         // does their secret match ours?
-        if (reportedSecret.equals(this.deploymentSecret)) {
+        if (deploymentSecret.constantTimeEquals(reportedSecret)) {
             return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroDelegatedUserDevicePrincipal(service, user, device), Roles.USER, AeroDelegatedUserDevice.AUTHENTICATION_SCHEME));
         }
 
