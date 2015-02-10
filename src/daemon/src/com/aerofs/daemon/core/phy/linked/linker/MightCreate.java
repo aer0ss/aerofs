@@ -103,7 +103,7 @@ public class MightCreate
             // present, we are most likely hitting a race between expulsion and creation so we
             // should ignore the notification and wait for the one about the new parent, which
             // will in turn trigger a scan
-            l.warn("expel/create race under {}", parent);
+            l.warn("expel/create race under {} {}", parent, pc._path);
             return true;
         }
         return _filter.shouldIgnoreChilren_(pc, oaParent);
@@ -156,7 +156,7 @@ public class MightCreate
         if (fnt == null) return Result.IGNORED;
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
-        if (shouldIgnoreChildren_(pcPhysical,  parent)) {
+        if (shouldIgnoreChildren_(pcPhysical, parent)) {
             l.debug("ignored under {} {}:{}", parent, pcPhysical, fnt._fid);
             return Result.IGNORED;
         }
