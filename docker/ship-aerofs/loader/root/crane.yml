@@ -204,6 +204,7 @@ containers:
         - mysql:mysql.service
         - redis:redis.service
         - bifrost:bifrost.service
+        - verkehr:verkehr.service
 
   auditor:
     image: aerofs/auditor

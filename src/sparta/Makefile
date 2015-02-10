@@ -1,12 +1,26 @@
 IMAGE_NAME = aerofs/sparta
 DST_DIR = buildroot/opt/sparta
 
-image: .gradle $(DST_DIR)/logback.xml $(DST_DIR)/sparta.properties
+FIXES = src/com/aerofs/sp/sparta/Sparta.java
+
+image: .fix-source .gradle .unfix-source $(DST_DIR)/logback.xml $(DST_DIR)/sparta.properties
 	docker build -t $(IMAGE_NAME) .
 
 .gradle:
 	gradle --daemon dist
 	../../tools/lazy-copy.sh ../../out.gradle/sparta/dist $(DST_DIR)
+
+.fix-source: $(FIXES)
+$(FIXES): .force
+	patch $(abspath $@) < $(@F).docker.patch
+
+.force:
+
+UNFIXES = $(FIXES:%=unfix-%)
+.unfix-source: $(UNFIXES)
+$(UNFIXES):
+	patch -R $(abspath $(@:unfix-%=%)) < $(notdir $(@:unfix-%=%)).docker.patch
+
 
 $(DST_DIR)/%: resources/%
 	cp $< $@
