@@ -1,7 +1,7 @@
 import base64
 import requests
 import tempfile
-from cStringIO import StringIO
+from StringIO import StringIO
 
 import properties
 
