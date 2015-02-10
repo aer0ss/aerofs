@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.sparta.providers;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
@@ -11,23 +12,16 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.rest.api.Error;
-import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.auth.AuthTokenExtractor;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.CertAuthToken;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.core.HttpRequestContext;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
@@ -63,7 +57,7 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
     // We expect a header that looks like:
     // Authorization: Aero-Device-Cert <base64(userid)> <hex(did)>
     private final static Pattern DEVICE_CERT_PATTERN =
-            Pattern.compile("Aero-Device-Cert ([0-9a-zA-Z+/]+=*) ([0-9a-fA-F]{32})");
+            Pattern.compile("Aero-Device-Cert ([0-9a-zA-Z+/]+=*) ([0-9a-f]{32})");
 
     @Inject
     public CertAuthExtractor(CertificateDatabase certdb)
@@ -181,7 +175,7 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
 
             // Check that the certificate's DName matches what we'd expect for that UserID/DID pair
             String cname = getCN(ctx.distinguishedName);
-            String expectedCN = SecUtil.getCertificateCName(ctx.userid, ctx.did);
+            String expectedCN = BaseSecUtil.getCertificateCName(ctx.userid, ctx.did);
             if (!expectedCN.equals(cname)) {
                 throw invalidAuthorizationException("mismatching cname and purported identity");
             }
@@ -259,11 +253,6 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
     // A 401 for when the user fails to authorize correctly
     private WebApplicationException invalidAuthorizationException(String message)
     {
-        return new WebApplicationException(Response
-                .status(Status.UNAUTHORIZED)
-                .header(Names.WWW_AUTHENTICATE, challenge())
-                .header(Names.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                .entity(new Error(Type.UNAUTHORIZED, message))
-                .build());
+        return AuthTokenExtractor.unauthorized(message, challenge());
     }
 }
