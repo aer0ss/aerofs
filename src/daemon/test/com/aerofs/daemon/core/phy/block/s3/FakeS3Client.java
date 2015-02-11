@@ -82,6 +82,7 @@ import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.SetBucketTaggingConfigurationRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import com.amazonaws.services.s3.model.SetBucketWebsiteConfigurationRequest;
+import com.amazonaws.services.s3.model.SetObjectAclRequest;
 import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
@@ -416,6 +417,12 @@ public class FakeS3Client implements AmazonS3
 
     @Override
     public void setS3ClientOptions(S3ClientOptions s3ClientOptions)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setObjectAcl(SetObjectAclRequest request)
     {
         throw new UnsupportedOperationException();
     }
