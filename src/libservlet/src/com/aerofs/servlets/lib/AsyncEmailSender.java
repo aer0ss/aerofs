@@ -55,7 +55,12 @@ public class AsyncEmailSender extends AbstractEmailSender
         // We need to be able to load email properties from the filesystem for prod, because prod
         // doesn't have a config server yet and we don't want to embed credentials in the source
         // code that gets shipped for local prod.
-        Properties p = PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE);
+        Properties p = null;
+        if (new File(EMAIL_PROPERTIES_FILE).exists()) {
+            p = PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE);
+        } else {
+            p = new Properties();
+        }
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
         // We wish there was no default value here, so we could fail loudly if no production
