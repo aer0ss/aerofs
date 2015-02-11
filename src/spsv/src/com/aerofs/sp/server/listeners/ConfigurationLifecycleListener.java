@@ -6,6 +6,7 @@ import com.aerofs.lib.Util;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.File;
 
 public class ConfigurationLifecycleListener
         implements ServletContextListener
@@ -30,7 +31,7 @@ public class ConfigurationLifecycleListener
         //
         // Initialize Configuration Properties.
         try {
-            if (_pathToPropertiesFile != null) {
+            if (_pathToPropertiesFile != null && new File(_pathToPropertiesFile).exists()) {
                 Configuration.Server.initialize(
                         PropertiesHelper.readPropertiesFromFile(_pathToPropertiesFile));
             } else {
