@@ -35,17 +35,4 @@ public class TestOrganizationInvitation extends AbstractBusinessObjectTest
         oi.delete();
         assertFalse(oi.exists());
     }
-
-    @Test
-    public void deleteSignupCodes_shouldDelete()
-            throws Exception
-    {
-        User user = newUser();
-        Organization org = saveOrganization();
-        OrganizationInvitation oi = factOrgInvite.save(saveUser(), user, org, user.addSignUpCode());
-        assertTrue(oi.exists());
-        saveUser(user);
-        user.deleteAllSignUpCodes();
-        assertFalse(oi.exists());
-    }
 }

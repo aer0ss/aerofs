@@ -38,33 +38,7 @@ import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
-import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
-import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
-import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_BYTES_USED;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_TWO_FACTOR_ENFORCED;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_USAGE_WARNING_SENT;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
-import static com.aerofs.sp.server.lib.SPSchema.T_AC;
-import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
-import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
-import static com.aerofs.sp.server.lib.SPSchema.T_USER;
+import static com.aerofs.sp.server.lib.SPSchema.*;
 
 /**
  * N.B. only User.java may refer to this class
@@ -418,7 +392,16 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?"));
+                DBUtil.deleteWhereEquals(T_SIGNUP_CODE, C_SIGNUP_CODE_TO));
+
+        ps.setString(1, userID.getString());
+        ps.executeUpdate();
+    }
+
+    public void deleteAllOrganizationInvitations(UserID userID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.deleteWhereEquals(T_OI, C_OI_INVITEE));
 
         ps.setString(1, userID.getString());
         ps.executeUpdate();

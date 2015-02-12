@@ -198,7 +198,6 @@ def json_remove_user(request):
     permission = 'admin',
     request_method = 'POST'
 )
-
 def json_deactivate_user(request):
     user = request.json_body[URL_PARAM_USER]
     erase_devices = str2bool(request.json_body[URL_PARAM_ERASE_DEVICES])

@@ -3,7 +3,7 @@
 -- Sharing Group Shares Table: used to track group membership in shares.
 --
 -- Fields:
---   gs_gid: unique grup identifier.
+--   gs_gid: unique group identifier.
 --   gs_sid: share identifier.
 --   gs_role: group's role in the share (see ACL table for details on roles).
 CREATE TABLE IF NOT EXISTS `sp_sharing_group_shares` (

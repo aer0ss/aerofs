@@ -14,7 +14,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class TestSP_deleteOrganizationInvitationForUser extends AbstractSPFolderTest
+public class TestSP_DeleteOrganizationInvitationForUser extends AbstractSPFolderTest
 {
     @Test
     public void shouldDeleteAllSignupCodesAndEmailSubscriptionInPrivateDeployment()
@@ -32,7 +32,6 @@ public class TestSP_deleteOrganizationInvitationForUser extends AbstractSPFolder
                 user.addSignUpCode(),
         };
 
-        user.save(new byte[0], new FullName("", ""));
         for (String code : codes) {
             assertEquals(db.getSignUpCode(code), user.id());
         }

@@ -486,6 +486,7 @@ public class User
         }
 
         // to prevent the user from signing up again using old codes
+        deleteAllOrganizationInvitations();
         deleteAllSignUpCodes();
 
         _f._udb.deactivate(id());
@@ -731,15 +732,17 @@ public class User
         }
     }
 
-    public void deleteAllSignUpCodes()
-            throws SQLException, ExNotFound
+    private void deleteAllOrganizationInvitations()
+            throws SQLException
     {
-        for (OrganizationInvitation orgInvite : getOrganizationInvitations()) {
-            if (orgInvite.getCode() != null) {
-                // to avoid violating foreign key constraints
-                orgInvite.delete();
-            }
-        }
+        _f._udb.deleteAllOrganizationInvitations(_id);
+    }
+
+    // N.B. the caller is responsible for ensuring all organization invites using these sign-up
+    //   codes are deleted.
+    public void deleteAllSignUpCodes()
+            throws SQLException
+    {
         _f._udb.deleteAllSignUpCodes(_id);
     }
 

@@ -10,6 +10,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableSet;
@@ -168,6 +170,26 @@ public class TestUser_Deactivate extends AbstractBusinessObjectTest
                 db.getSignUpCode(code);
                 fail();
             } catch (ExNotFound e) {}
+        }
+    }
+
+    @Test
+    public void shouldDeleteAllOrganizationInvitations()
+            throws Exception
+    {
+        // covers both organization invitations with or without sign-up codes
+        for (int i = 0; i < 2; i++) {
+            User user = newUser();
+            Organization org = saveOrganization();
+            // organization invitation may or may not have an associated sign-up code
+            OrganizationInvitation invite = i == 0
+                    ? factOrgInvite.save(saveUser(), user, org, user.addSignUpCode())
+                    : factOrgInvite.save(saveUser(), user, org, null);
+
+            user.save(new byte[0], new FullName("firsto", "lasto"));
+            assertTrue(invite.exists());
+            user.deactivate(ImmutableSet.<Long>builder(), null);
+            assertFalse(invite.exists());
         }
     }
 }

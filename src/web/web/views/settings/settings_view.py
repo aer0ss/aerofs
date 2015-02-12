@@ -72,7 +72,7 @@ def json_create_access_token(request):
 def json_delete_access_token(request):
     sp = get_rpc_stub(request)
     user_settings_token = sp.get_user_settings_token().token
-    # If the user has a token delete it in biforst.
+    # If the user has a token delete it in bifrost.
     if len(user_settings_token) > 0:
         delete_oauth_token(request, user_settings_token)
     # Delete the persistent store of the token on SP.

@@ -2490,6 +2490,16 @@ public class SPService implements ISPService
         //
         // See also docs/design/sign_up_workflow.md.
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
+            /**
+             * N.B. we implicitly assumed that there is only one organization invitation for this
+             * user in private deployment because:
+             *
+             * 1. there can only be one invitation to an user from each organization.
+             * 2. there is only one organization in private deployment.
+             *
+             * Note that single invitation was deleted above, so it should be safe to delete
+             * all sign up codes for this user.
+             */
             invitee.deleteAllSignUpCodes();
             _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         }
