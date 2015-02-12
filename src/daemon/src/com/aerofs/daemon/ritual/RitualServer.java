@@ -60,6 +60,7 @@ public class RitualServer
 
     public void start_()
     {
+        l.info("Starting Ritual server");
         _bootstrap.bind(new NativeSocketAddress(_ritualSocketFile));
         l.info("Ritual server bound to {}", _ritualSocketFile);
     }

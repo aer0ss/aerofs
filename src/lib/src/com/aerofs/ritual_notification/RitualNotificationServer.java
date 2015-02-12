@@ -46,6 +46,7 @@ public class RitualNotificationServer
 
     public void start_()
     {
+        l.info("Starting Ritual Notification server");
         _channel = _bootstrap.bind(new NativeSocketAddress(_rnsSocketFile));
         l.info("Ritual Notification server bound to {}", _rnsSocketFile);
     }
