@@ -22,12 +22,13 @@
    to install this as a non-root user, e.g.:
 
         sudo su
+        apt-get update && apt-get install -y git
         git clone https://git.openstack.org/openstack-dev/devstack
         ./devstack/tools/create-stack-user.sh
         rm -rf devstack
         su stack
         cd
-        !git # clone again, in stack user home directory
+        git clone https://git.openstack.org/openstack-dev/devstack # clone again, in stack user home directory
         cd devstack && ./stack.sh # this time it will work; takes a long time.
 
    At this point your Openstack cluster is available via `http://127.0.0.1`
