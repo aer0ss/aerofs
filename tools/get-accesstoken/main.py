@@ -34,6 +34,7 @@ def _get_accesstoken(cfg, access_code):
         'code_type': 'device_authorization',
         'client_id': cfg.get('client', 'id'),
         'client_secret': cfg.get('client', 'secret'),
+        'scope': 'organization.admin,files.read,files.write,files.appdata,user.read,user.write,user.password,acl.read,acl.write,acl.invitations'
     }
     resp = requests.post(bifrost_url, post_body)
 
