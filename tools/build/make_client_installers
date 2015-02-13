@@ -255,7 +255,6 @@ function make_osx_packages() {
     local local_OSX_LOCAL_MAC_APP_DIR=Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java
     local local_OSX_INSTALLER_VOLUME_DIR="/Volumes/${AEROFS_PRODUCT_SPACEFREE} Installer"
     local local_OSX_TEMPLATE_APP_FILENAME="osx/${AEROFS_PRODUCT_UNIX}.app.template"
-    local local_OSX_TEMPLATE_DMG_FILENAME="osx/${AEROFS_PRODUCT_UNIX}.dmg.template"
 
     readonly local_VERSIONED_MAC_ZIP_FILENAME
     readonly local_VERSIONED_MAC_DMG_FILENAME
@@ -263,7 +262,6 @@ function make_osx_packages() {
     readonly local_OSX_LOCAL_MAC_APP_DIR
     readonly local_OSX_INSTALLER_VOLUME_DIR
     readonly local_OSX_TEMPLATE_APP_FILENAME
-    readonly local_OSX_TEMPLATE_DMG_FILENAME
 
     # Create a temporary directory to work in
     local DMG_TEMP_DIR="$PACKAGE_BUILD_DIR/osx-dmg"
@@ -273,8 +271,6 @@ function make_osx_packages() {
     mkdir -p "${DMG_TEMP_DIR}/Release"
     cp -a "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_APP_FILENAME}" \
         "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
-    cp "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_DMG_FILENAME}" \
-        "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
 
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
@@ -307,22 +303,48 @@ function make_osx_packages() {
     zip -9 --symlinks --quiet --recurse-paths "${PACKAGE_DIR}/$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
     popd > /dev/null
 
+    # Add DMG-specific contents
+    ln -s /Applications "${DMG_TEMP_DIR}/Release/Applications"
+    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/"{.background,.VolumeIcon.icns} "${DMG_TEMP_DIR}/Release/"
+    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/${AEROFS_PRODUCT_UNIX}/DS_Store" "${DMG_TEMP_DIR}/Release/.DS_Store"
+
+    # Build the installer DMG
     case $(uname) in
         Darwin)
-            hdiutil mount -quiet "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
-            rm -rf "${local_OSX_INSTALLER_VOLUME_DIR}/${AEROFS_PRODUCT_SPACEFREE}.app"
-            cp -a "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "${local_OSX_INSTALLER_VOLUME_DIR}"
-            hdiutil eject -quiet "${local_OSX_INSTALLER_VOLUME_DIR}"
-            hdiutil convert -quiet -format UDBZ -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
+            # Create read-write DMG
+            # TODO: make the volume name not spacefree (requires fixing DS_Store for aerofsts)
+            hdiutil create -fs HFS+ -volname "${AEROFS_PRODUCT} Installer" \
+                -srcfolder "${DMG_TEMP_DIR}/Release/" \
+                -format UDRW \
+                -o "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg"
+            # Mount DMG
+            MOUNTPOINT="${DMG_TEMP_DIR}/mnt"
+            hdiutil attach -readwrite -noautoopen "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" -mountpoint "$MOUNTPOINT"
+            # Set volume icon creator to 'icnC' (icon creator)
+            SetFile -c icnC "${MOUNTPOINT}/.VolumeIcon.icns"
+            # Set volume icon enabled
+            SetFile -a C "${MOUNTPOINT}"
+            # Unmount DMG
+            hdiutil detach "$MOUNTPOINT"
+            # Convert RW DMG to bzip2-compressed DMG
+            hdiutil convert "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" -format UDBZ -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
             ;;
         Linux)
-            # N.B. THIS DOES NOT PRODUCE A WORKING .dmg file!! That requires a little more work. This will produce
-            # junk that will let the packaging continue, so long as you don't try to execute the .dmg
+            # Create HFS filesystem
             HFS_IMAGE="${DMG_TEMP_DIR}/img.hfs"
-            dd if=/dev/zero of=$HFS_IMAGE bs=1024 seek=102400 count=1
-            mkfs.hfsplus "$HFS_IMAGE"
+            dd if=/dev/zero of=$HFS_IMAGE bs=1024 seek=153600 count=1
+            mkfs.hfsplus -v "${AEROFS_PRODUCT} Installer" "$HFS_IMAGE"
+            # Add image contents
+            hfsplus "$HFS_IMAGE" mkdir "/.background"
+            hfsplus "$HFS_IMAGE" addall "${DMG_TEMP_DIR}/Release/.background" "/.background"
+            hfsplus "$HFS_IMAGE" add "${DMG_TEMP_DIR}/Release/.VolumeIcon.icns" "/.VolumeIcon.icns"
+            hfsplus "$HFS_IMAGE" add "${DMG_TEMP_DIR}/Release/.DS_Store" "/.DS_Store"
             hfsplus "$HFS_IMAGE" mkdir "/${AEROFS_PRODUCT_SPACEFREE}.app"
             hfsplus "$HFS_IMAGE" addall "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "/${AEROFS_PRODUCT_SPACEFREE}.app"
+            hfsplus "$HFS_IMAGE" symlink "/Applications" "/Applications"
+            # Enable custom icon on drive root
+            hfsplus "$HFS_IMAGE" attr / C
+            # Wrap the HFS+ filesystem up in a DMG
             dmg build "$HFS_IMAGE" "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
             rm "$HFS_IMAGE"
             ;;
