@@ -26,7 +26,14 @@ cat >> ${DROP_IN} <<< "Environment=DOCKER_OPTS='--insecure-registry=\"${PRELOAD_
 systemctl daemon-reload
 systemctl restart docker.service
 
-# Surpress stdout otherwise for some reason pulling is extremely slow (20+ images can take several hours).
+# A potential bug in docker causes very slow pulls. Running seemingly unrelated activities in the background
+# mysterically reduces total pulling from couple of hours to 20 mins. Surpressing docker pull's output also
+# helps the speed. Unfortunately, neither mechanism works reliably on both WW's dev computer and CI, So we employ
+# both workarounds.
+# TODO (WW) find and fix the root cause
+vmstat 1 1>/dev/null &
+
+# See the comment above
 pull_image() {
     docker pull "$1" > /dev/null
 }

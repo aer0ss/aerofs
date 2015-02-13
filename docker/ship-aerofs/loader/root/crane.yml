@@ -201,6 +201,9 @@ containers:
     image: aerofs/sparta
     run:
       detach: true
+      volumes-from:
+        # For /data/deployment_secret
+        - data
       link:
         - mysql:mysql.service
         - redis:redis.service

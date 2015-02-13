@@ -98,7 +98,7 @@ def apply_config(e, wait):
     print "The next step may take a while but should be less than five minutes:"
 
     # Click Create First User
-    wait.until_display('#success-modal', timeout=30 * 60)
+    wait.until_display('#success-modal', timeout=10 * 60)
     e.get('#success-modal .btn-primary').click()
 
     # Wait for "Create First User" to show up then Click Continue
@@ -128,9 +128,9 @@ def create_account(e, wait, password):
     wait.until(EC.title_contains('Download'))
 
 
-def run_all(d, wait, hostname, license_file, appliance_setup_yml_file):
+def run_all(d, wait, hostname, license_file, appliance_yml):
 
-    with open(appliance_setup_yml_file) as f:
+    with open(appliance_yml) as f:
         y = yaml.load(f)
 
     url = "http://" + hostname

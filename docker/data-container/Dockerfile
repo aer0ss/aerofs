@@ -1,4 +1,4 @@
-FROM aerofs/base
+FROM aerofs/base.python2.7
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
@@ -29,5 +29,6 @@ VOLUME /var/lib/mysql
 # TODO (WW) remove this.
 VOLUME /opt/bootstrap/public
 
-# No-op entry point
-CMD [ "true" ]
+CMD [ "/run.sh" ]
+
+COPY root /

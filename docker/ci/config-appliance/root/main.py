@@ -9,7 +9,7 @@ from tests import run_all
 
 if len(argv) != 5:
     print >>stderr, "Usage: {} <hostname-of-appliance-under-test> <screenshot-output-dir> <path-to-license-file> " \
-                    "<path-to-appliance-setup.yml>".format(argv[0])
+                    "<path-to-appliance.yml>".format(argv[0])
     exit(11)
 
 print "Loading Firefox driver..."
