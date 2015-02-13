@@ -1,4 +1,4 @@
-@@ -72,7 +72,7 @@
+@@ -79,7 +79,7 @@
          Executor nioExecutor = Executors.newCachedThreadPool();
          NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
          return VerkehrClient.create(

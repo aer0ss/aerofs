@@ -7,11 +7,10 @@
      }
  
      public static class XMPP
-@@ -124,7 +124,15 @@
+@@ -122,6 +122,14 @@
          public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");
      }
  
--    public static class SP
 +    static URL getURL() {
 +        try {
 +            return new URL("http://sp.service:8080");
@@ -20,11 +19,10 @@
 +        }
 +    }
 +
-+    public static class SP
+     public static class SP
      {
          public static final String SP_POST_PARAM_PROTOCOL = "protocol_vers";
-         public static final String SP_POST_PARAM_DATA = "data";
-@@ -132,8 +140,7 @@
+@@ -130,8 +138,7 @@
          // See comment in sp.proto
          public static final int SP_PROTOCOL_VERSION = 21;
  

@@ -13,7 +13,7 @@ The customer success engineer (CSE) will be reponsible for:
 * <u>Technical support</u>
     * Responding to customer questions and diagnosing bug reports.
     * Fixing bugs in our software.
-* <u>Professional services<u>
+* <u>Professional services</u>
     * Designing and implementing customer-specific solutions.
 
 The ideal candidate is an mixture of software engineer, product manager, and
@@ -143,7 +143,7 @@ Possible solution:
     8. What are hard links and what are soft links? How do you create them?
        (`ln` and `ln -s` respectively).
     9. How do you check if a filesystem is full? (`df`).
-    10. How do you mount a block device? (`mount`)
+   10. How do you mount a block device? (`mount`)
 
 ### 4. Scripting and Regular Expressions
 
