@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.lib.id.*;

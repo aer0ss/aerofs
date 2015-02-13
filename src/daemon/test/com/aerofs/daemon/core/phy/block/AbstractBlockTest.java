@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.UnitTestTempDir;
 import com.google.common.io.ByteStreams;

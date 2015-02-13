@@ -1,9 +1,9 @@
 package com.aerofs.base.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 
 import javax.annotation.Nullable;
@@ -127,7 +127,7 @@ public final class SubjectPermissions
     {
         try {
             return UserID.fromExternal(subject);
-        } catch (ExEmptyEmailAddress e) {
+        } catch (ExInvalidID e) {
             throw new ExBadArgs("The e-mail address of an user subject cannot be empty.");
         }
     }

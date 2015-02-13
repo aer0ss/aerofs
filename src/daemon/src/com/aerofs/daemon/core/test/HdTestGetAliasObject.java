@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.test;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;

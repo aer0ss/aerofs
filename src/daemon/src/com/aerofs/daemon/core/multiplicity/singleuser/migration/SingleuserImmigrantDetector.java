@@ -26,7 +26,7 @@ import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 
 import javax.annotation.Nonnull;
 

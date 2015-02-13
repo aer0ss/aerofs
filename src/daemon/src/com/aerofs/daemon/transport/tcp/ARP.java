@@ -3,7 +3,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.google.common.collect.ImmutableMap;

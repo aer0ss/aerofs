@@ -1,7 +1,7 @@
 package com.aerofs.gui.history;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.AeroFSMessageBox.IconType;

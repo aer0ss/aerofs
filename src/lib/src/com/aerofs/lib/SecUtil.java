@@ -1,8 +1,8 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.scrypt.Scrypt;
 

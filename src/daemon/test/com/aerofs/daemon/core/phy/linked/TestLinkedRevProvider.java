@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;

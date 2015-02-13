@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExExpelled;

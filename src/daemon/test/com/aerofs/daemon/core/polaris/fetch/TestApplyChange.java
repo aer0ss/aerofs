@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.polaris.fetch;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.OA;

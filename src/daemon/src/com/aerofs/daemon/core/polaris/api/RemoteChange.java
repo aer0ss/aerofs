@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.polaris.api;
 
 import com.aerofs.base.NoObfuscation;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
 
 @NoObfuscation

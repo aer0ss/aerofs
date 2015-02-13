@@ -2,10 +2,10 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import java.sql.SQLException;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;

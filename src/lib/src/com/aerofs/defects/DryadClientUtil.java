@@ -4,8 +4,8 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;

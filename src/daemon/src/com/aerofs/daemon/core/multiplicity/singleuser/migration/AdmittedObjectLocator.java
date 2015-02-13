@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.lib.db;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;

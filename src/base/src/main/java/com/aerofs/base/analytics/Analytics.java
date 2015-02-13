@@ -5,8 +5,8 @@
 package com.aerofs.base.analytics;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;

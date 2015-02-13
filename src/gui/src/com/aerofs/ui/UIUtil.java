@@ -3,7 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.Launcher;
 import com.aerofs.gui.GUI;

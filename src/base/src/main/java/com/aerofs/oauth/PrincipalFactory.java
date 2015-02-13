@@ -6,7 +6,7 @@ package com.aerofs.oauth;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.sp.client.SPBlockingClient;
 

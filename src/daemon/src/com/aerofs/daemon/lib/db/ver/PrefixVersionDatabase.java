@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.db.ver;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;

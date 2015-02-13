@@ -1,4 +1,4 @@
-package com.aerofs.base.bf;
+package com.aerofs.ids;
 
 import java.nio.ByteBuffer;
 

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.ds;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableList;

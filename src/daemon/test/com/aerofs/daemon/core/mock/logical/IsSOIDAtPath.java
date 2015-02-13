@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.mock.logical;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.Path;

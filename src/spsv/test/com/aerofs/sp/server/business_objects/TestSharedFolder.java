@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.group.Group;

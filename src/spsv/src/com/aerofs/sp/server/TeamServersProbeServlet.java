@@ -5,9 +5,9 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;

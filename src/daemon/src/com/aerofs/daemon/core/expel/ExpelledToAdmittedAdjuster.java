@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;

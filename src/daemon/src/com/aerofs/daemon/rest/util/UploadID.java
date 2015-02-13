@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.rest.util;
 
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 
 import javax.annotation.Nullable;
 

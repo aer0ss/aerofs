@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;

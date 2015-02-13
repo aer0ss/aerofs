@@ -6,10 +6,10 @@ package com.aerofs.daemon.core.protocol.acl_enforcement;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;

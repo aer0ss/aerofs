@@ -6,9 +6,9 @@ package com.aerofs.bifrost.server;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
@@ -463,7 +463,7 @@ public class TestTokenResource extends BifrostTest
         assertEquals("1 tokens", 1, _accessTokenRepository.findByOwner(USERNAME).size());
     }
 
-    private String createTokenForUser(boolean isAdmin) throws ExEmptyEmailAddress
+    private String createTokenForUser(boolean isAdmin) throws ExInvalidID
     {
         String tokenVal = String.valueOf(Math.random());
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets.lib.db.jedis;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.proto.Cmd.CommandType;
 import com.google.common.collect.Iterables;

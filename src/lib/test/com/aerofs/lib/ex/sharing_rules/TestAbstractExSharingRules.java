@@ -5,7 +5,7 @@
 package com.aerofs.lib.ex.sharing_rules;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription;
 import com.aerofs.proto.Common.PBException;

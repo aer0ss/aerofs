@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;

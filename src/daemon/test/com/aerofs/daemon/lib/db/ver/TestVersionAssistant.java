@@ -2,7 +2,7 @@ package com.aerofs.daemon.lib.db.ver;
 
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.Tick;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -15,10 +15,10 @@ import static org.junit.Assert.*;
 
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
 import java.sql.SQLException;

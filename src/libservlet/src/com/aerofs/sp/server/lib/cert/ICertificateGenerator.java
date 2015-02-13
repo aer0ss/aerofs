@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.lib.cert;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 

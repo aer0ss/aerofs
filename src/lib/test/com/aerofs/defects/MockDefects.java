@@ -4,7 +4,7 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.defects.AutoDefect;
 import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.Defects;

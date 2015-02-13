@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;

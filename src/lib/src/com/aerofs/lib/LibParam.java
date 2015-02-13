@@ -6,7 +6,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.google.common.base.Optional;
 
 import java.net.InetAddress;

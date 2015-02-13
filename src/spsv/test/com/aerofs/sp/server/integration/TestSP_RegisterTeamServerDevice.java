@@ -5,9 +5,9 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;

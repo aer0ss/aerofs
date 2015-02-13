@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;

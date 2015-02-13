@@ -5,8 +5,8 @@
 package com.aerofs.base;
 
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 

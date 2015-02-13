@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.polaris;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;

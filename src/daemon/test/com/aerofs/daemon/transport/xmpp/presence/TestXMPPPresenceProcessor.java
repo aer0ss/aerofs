@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.transport.xmpp.presence;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;

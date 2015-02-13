@@ -12,7 +12,7 @@ import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 
 public class DBCheckCA

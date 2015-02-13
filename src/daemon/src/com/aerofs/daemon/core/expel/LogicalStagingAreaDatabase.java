@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.expel;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;

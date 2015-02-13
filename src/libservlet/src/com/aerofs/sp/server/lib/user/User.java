@@ -7,20 +7,13 @@ package com.aerofs.sp.server.lib.user;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExLicenseLimit;
-import com.aerofs.base.ex.ExSecondFactorRequired;
-import com.aerofs.base.ex.ExSecondFactorSetupRequired;
+import com.aerofs.base.ex.*;
 import com.aerofs.base.id.*;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.*;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.OAuthRequestFilter;
@@ -112,8 +105,8 @@ public class User
         {
             try {
                 return createFromExternalID(userid);
-            } catch (ExEmptyEmailAddress e) {
-                throw new IllegalArgumentException("empty email address");
+            } catch (ExBadArgs e) {
+                throw new IllegalArgumentException(e.getMessage());
             }
         }
 
@@ -123,9 +116,13 @@ public class User
         }
 
         public User createFromExternalID(@Nonnull String str)
-                throws ExEmptyEmailAddress
+                throws ExBadArgs
         {
-            return create(UserID.fromExternal(str));
+            try {
+                return create(UserID.fromExternal(str));
+            } catch (ExInvalidID e) {
+                throw new ExBadArgs("invalid userid");
+            }
         }
 
         /**

@@ -6,9 +6,9 @@ package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;

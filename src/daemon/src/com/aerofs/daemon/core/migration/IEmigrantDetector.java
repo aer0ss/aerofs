@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.migration;
 
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.protobuf.ByteString;
 

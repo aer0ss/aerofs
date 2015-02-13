@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.notification;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;

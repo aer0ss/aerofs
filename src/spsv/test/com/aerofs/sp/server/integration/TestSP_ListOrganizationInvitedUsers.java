@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;

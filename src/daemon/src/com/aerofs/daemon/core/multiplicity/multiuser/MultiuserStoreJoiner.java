@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -18,7 +18,7 @@ import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;

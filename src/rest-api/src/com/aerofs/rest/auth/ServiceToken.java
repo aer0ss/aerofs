@@ -1,6 +1,6 @@
 package com.aerofs.rest.auth;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.oauth.Scope;
 
 import static com.google.common.base.Preconditions.checkState;

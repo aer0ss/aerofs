@@ -3,7 +3,7 @@ package com.aerofs.lib.bf;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import com.aerofs.base.bf.IBFKey;
+import com.aerofs.ids.IBFKey;
 
 public class BFHashPartBitSelect<E extends IBFKey> implements IBFHash<E> {
 

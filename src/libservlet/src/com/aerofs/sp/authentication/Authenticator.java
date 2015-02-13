@@ -6,7 +6,7 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;

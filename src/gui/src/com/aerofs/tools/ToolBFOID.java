@@ -1,7 +1,7 @@
 package com.aerofs.tools;
 
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 
 public class ToolBFOID implements ITool {
 

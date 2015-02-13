@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 
 import java.util.NoSuchElementException;
 

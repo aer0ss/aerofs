@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 

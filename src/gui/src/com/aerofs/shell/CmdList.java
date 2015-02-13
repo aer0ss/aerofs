@@ -3,7 +3,7 @@ package com.aerofs.shell;
 import java.util.List;
 import java.util.Map.Entry;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;

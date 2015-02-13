@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.polaris.api;
 
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 
 public class LogicalObject
 {

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.quota;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.lib.id.KIndex;

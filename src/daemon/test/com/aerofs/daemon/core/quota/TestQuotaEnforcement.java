@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;

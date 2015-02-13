@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.net.rx;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 

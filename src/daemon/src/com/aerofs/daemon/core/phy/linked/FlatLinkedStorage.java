@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;

@@ -5,9 +5,9 @@
 package com.aerofs.daemon.transport.xmpp.signalling;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.OutArg;

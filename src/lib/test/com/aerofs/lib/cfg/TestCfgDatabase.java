@@ -2,7 +2,7 @@ package com.aerofs.lib.cfg;
 
 import java.sql.SQLException;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;

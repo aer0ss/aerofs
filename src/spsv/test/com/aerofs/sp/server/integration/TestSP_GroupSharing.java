@@ -10,7 +10,7 @@ import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Sp.CreateGroupReply;
 import com.aerofs.proto.Sp.ListGroupMembersReply;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply;

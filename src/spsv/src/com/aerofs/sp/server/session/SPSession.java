@@ -9,7 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExSecondFactorSetupRequired;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.lib.session.ISession;

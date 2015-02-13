@@ -5,9 +5,9 @@
 package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;

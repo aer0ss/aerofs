@@ -5,8 +5,8 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.integration.AbstractSPTest;
@@ -44,7 +44,7 @@ public class TestSP_LocalAuthority extends AbstractSPTest
     }
 
     @Test
-    public void canAuthenticate_shouldAcceptAll() throws ExEmptyEmailAddress
+    public void canAuthenticate_shouldAcceptAll() throws ExInvalidID
     {
         LocalAuthority local = new LocalAuthority();
         assertTrue(local.managesLocalCredential());

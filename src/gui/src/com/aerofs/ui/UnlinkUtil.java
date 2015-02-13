@@ -1,6 +1,6 @@
 package com.aerofs.ui;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;

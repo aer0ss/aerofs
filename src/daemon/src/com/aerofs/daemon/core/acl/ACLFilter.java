@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.acl;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.inject.Inject;

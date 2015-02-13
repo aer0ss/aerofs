@@ -5,10 +5,10 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.sp.server.lib.device.Device;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;

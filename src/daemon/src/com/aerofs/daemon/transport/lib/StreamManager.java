@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;

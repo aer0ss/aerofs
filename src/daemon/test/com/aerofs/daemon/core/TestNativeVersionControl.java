@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;

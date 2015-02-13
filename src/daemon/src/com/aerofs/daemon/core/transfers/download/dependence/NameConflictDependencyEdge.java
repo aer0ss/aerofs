@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.transfers.download.dependence;
 
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.lib.Version;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBMeta;

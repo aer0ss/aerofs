@@ -5,7 +5,7 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.sp.server.lib.user.User;

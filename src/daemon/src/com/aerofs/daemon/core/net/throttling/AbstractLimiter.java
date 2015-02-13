@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SOCID;
 
 import java.util.Map;

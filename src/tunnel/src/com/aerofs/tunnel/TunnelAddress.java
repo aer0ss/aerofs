@@ -1,7 +1,7 @@
 package com.aerofs.tunnel;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Objects;
 
 import java.net.SocketAddress;

@@ -7,7 +7,7 @@ package com.aerofs.sp.server;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.email.UserQuotaUsageEmailer;
 import com.aerofs.sp.server.lib.user.User;

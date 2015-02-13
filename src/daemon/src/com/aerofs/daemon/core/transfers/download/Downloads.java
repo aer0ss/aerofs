@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;

@@ -3,7 +3,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;

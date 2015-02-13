@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.transfers.download.dependence;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.protocol.MetaUpdater;
 import com.aerofs.daemon.core.protocol.MetaUpdater.CausalityResult;

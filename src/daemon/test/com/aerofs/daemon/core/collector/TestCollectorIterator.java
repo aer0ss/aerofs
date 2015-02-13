@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.collector;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;

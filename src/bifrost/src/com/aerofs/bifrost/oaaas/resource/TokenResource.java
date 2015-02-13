@@ -19,7 +19,7 @@
 package com.aerofs.bifrost.oaaas.resource;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.bifrost.oaaas.auth.MobileDeviceManagement;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;

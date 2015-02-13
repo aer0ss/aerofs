@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.net;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.event.IEvent;
 
 /**

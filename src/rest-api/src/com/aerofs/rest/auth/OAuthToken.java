@@ -4,12 +4,8 @@
 
 package com.aerofs.rest.auth;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.MDID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.Scope;
 import com.aerofs.oauth.VerifyTokenResponse;
@@ -37,7 +33,7 @@ public class OAuthToken implements IUserAuthToken
     public DID did() { return did; }
     public String app() { return app; }
 
-    public OAuthToken(VerifyTokenResponse response) throws UniqueID.ExInvalidID
+    public OAuthToken(VerifyTokenResponse response) throws ExInvalidID
     {
         issuer = response.principal.getIssuingUserID();
         user = response.principal.getEffectiveUserID();

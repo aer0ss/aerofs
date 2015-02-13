@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;

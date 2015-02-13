@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 
 import org.junit.Test;

@@ -1,9 +1,9 @@
 package com.aerofs.havre.proxy;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;

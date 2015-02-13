@@ -4,7 +4,7 @@
 
 package com.aerofs.havre;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;

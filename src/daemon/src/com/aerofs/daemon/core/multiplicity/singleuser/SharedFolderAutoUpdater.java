@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
 import com.aerofs.daemon.core.expel.Expulsion;

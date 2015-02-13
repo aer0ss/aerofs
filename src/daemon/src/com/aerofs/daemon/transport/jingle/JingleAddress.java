@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.j.Jid;
 
 import java.net.SocketAddress;

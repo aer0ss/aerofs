@@ -10,14 +10,14 @@ import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.api.*;
@@ -247,7 +247,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         User user;
         try {
             user = _factUser.create(UserID.fromExternal(member.email));
-        } catch (ExEmptyEmailAddress e) {
+        } catch (ExInvalidID e) {
             throw new ExBadArgs("Invalid member email");
         }
         throwIfNotAMember(sf, caller, "No such shared folder");

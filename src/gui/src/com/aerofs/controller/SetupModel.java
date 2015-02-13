@@ -4,9 +4,8 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.LibParam;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgRestService;
@@ -94,7 +93,7 @@ public class SetupModel
     public String getDeviceName()           { return _devAlias; }
     public void setDeviceName(String name)  { _devAlias = name; }
 
-    public byte[] getScrypted() throws ExEmptyEmailAddress
+    public byte[] getScrypted() throws ExInvalidID
                                             { return SecUtil.scrypt(
                                                 getPasswordValue().toCharArray(),
                                                 getUserID());
@@ -112,7 +111,7 @@ public class SetupModel
                                             { _needSecondFactorSetup = needed; }
 
     public String getUsername()             { return _username; }
-    public UserID getUserID() throws ExEmptyEmailAddress
+    public UserID getUserID() throws ExInvalidID
                                             { return UserID.fromExternal(_username); }
     public void setUserID(String username)  { _username = username; }
 

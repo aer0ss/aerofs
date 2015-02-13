@@ -2,7 +2,7 @@ package com.aerofs.sp.server.authorization;
 
 import java.io.OutputStream;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;

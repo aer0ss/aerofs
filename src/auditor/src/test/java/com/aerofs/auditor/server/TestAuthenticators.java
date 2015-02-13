@@ -6,8 +6,8 @@ package com.aerofs.auditor.server;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.gson.JsonObject;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;

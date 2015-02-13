@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.alias;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.protocol.MetaUpdater;

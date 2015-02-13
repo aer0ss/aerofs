@@ -6,8 +6,8 @@ package com.aerofs.lib;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.swig.pkcs10.PKCS10;
 import com.aerofs.swig.pkcs10.SWIGTYPE_p__req_context;
 import com.google.common.base.Preconditions;

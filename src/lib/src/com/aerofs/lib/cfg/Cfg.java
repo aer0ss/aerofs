@@ -3,11 +3,10 @@ package com.aerofs.lib.cfg;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
@@ -316,7 +315,7 @@ public class Cfg
                 while (s.hasNext()) {
                     try {
                         l.add(UserID.fromExternal(s.next()));
-                    } catch (ExEmptyEmailAddress e) {}
+                    } catch (ExInvalidID e) {}
                 }
             } finally {
                 s.close();

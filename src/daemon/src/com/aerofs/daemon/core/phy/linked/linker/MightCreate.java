@@ -12,7 +12,7 @@ import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;

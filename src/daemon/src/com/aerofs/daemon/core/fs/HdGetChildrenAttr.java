@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;

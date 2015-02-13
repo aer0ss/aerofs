@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.net;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.event.IEvent;
 import com.google.common.collect.ImmutableMap;

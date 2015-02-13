@@ -3,7 +3,7 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;

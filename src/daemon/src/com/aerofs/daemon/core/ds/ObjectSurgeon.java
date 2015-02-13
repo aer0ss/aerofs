@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;

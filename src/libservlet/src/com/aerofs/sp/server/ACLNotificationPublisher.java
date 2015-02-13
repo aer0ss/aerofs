@@ -5,7 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.Topics;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.verkehr.client.rest.VerkehrClient;

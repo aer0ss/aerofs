@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;

@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.activity;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;

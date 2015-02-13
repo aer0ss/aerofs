@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

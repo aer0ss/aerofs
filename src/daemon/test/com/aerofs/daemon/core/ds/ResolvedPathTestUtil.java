@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.ds;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;

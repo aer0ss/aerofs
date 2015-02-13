@@ -1,4 +1,4 @@
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
 /**
  * device id

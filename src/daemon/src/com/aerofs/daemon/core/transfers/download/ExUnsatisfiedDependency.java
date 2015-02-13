@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.lib.id.SOCID;
 

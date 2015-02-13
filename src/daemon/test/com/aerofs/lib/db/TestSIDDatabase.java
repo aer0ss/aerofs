@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.Representability;

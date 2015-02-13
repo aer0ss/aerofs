@@ -5,7 +5,7 @@
 package com.aerofs.command.server.resources;
 
 import com.aerofs.base.BaseParam;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.validation.Identifier;
 import com.aerofs.proto.Cmd;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;

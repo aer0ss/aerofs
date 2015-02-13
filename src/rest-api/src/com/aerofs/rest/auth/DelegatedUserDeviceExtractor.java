@@ -1,9 +1,9 @@
 package com.aerofs.rest.auth;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.core.HttpRequestContext;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -56,7 +56,7 @@ public class DelegatedUserDeviceExtractor implements AuthTokenExtractor<IUserAut
             return new DelegatedUserDeviceToken(m.group(1),
                     UserID.fromExternal(new String(base64.decode(m.group(3)), StandardCharsets.UTF_8)),
                     UniqueID.fromStringFormal(m.group(4)));
-        } catch (ExEmptyEmailAddress| UniqueID.ExInvalidID e) {
+        } catch (ExInvalidID e) {
             throw AuthTokenExtractor.unauthorized("could not verify purported identity", challenge());
         }
     }

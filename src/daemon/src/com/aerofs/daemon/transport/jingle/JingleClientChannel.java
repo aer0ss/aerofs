@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.jingle.JingleStream.IJingleStreamListener;

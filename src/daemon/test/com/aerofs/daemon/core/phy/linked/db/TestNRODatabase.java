@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.db;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;

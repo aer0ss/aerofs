@@ -2,7 +2,7 @@ package com.aerofs.cli;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;

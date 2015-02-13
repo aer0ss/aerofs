@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.launch_tasks;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ResolvedPath;

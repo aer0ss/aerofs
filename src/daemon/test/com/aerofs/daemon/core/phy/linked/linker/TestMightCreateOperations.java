@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;

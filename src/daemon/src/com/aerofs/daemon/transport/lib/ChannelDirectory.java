@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;

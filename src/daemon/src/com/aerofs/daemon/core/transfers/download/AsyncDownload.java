@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;

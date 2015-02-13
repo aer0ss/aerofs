@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.protocol.acl_enforcement;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.protocol.class_under_test.GetComponentRequestWithMocks;
 import com.aerofs.daemon.core.tc.Token;

@@ -2,8 +2,8 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IStores;

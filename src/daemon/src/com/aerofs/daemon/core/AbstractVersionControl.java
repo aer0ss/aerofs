@@ -3,7 +3,7 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;

@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.net.device;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;

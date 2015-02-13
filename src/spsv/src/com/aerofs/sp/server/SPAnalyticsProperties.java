@@ -5,8 +5,8 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 

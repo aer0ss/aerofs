@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.object;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

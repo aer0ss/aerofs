@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.store.MapSIndex2Store;

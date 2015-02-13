@@ -1,11 +1,10 @@
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
-import com.aerofs.base.bf.IBFKey;
 import com.google.common.io.BaseEncoding;
 
 import javax.annotation.Nonnull;
@@ -53,20 +52,6 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
     protected int getVersionNibble()
     {
         return getVersionNibble(_bs);
-    }
-
-    /**
-     * UniqueID subclasses may restrict the range of valid values. When such IDs are constructed
-     * from internal values, asserts should be used to enforce the restrictions. However, when such
-     * IDs are received from the outside the network, it should be possible to simply ignore invalid
-     * IDs to avoid DoS by remote peers so exceptions should be preferred in that case.
-     */
-    public static class ExInvalidID extends Exception
-    {
-        private static final long serialVersionUID = 0L;
-        public ExInvalidID() { super(); }
-        public ExInvalidID(String reason) { super(reason); }
-        public ExInvalidID(Throwable cause) { super(cause); }
     }
 
     public static final UniqueID ZERO = new UniqueID(new byte[LENGTH]);

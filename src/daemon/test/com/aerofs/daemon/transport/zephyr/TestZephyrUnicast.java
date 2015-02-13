@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
 
 import static com.google.common.base.Preconditions.checkNotNull;

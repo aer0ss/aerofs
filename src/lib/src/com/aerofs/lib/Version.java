@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 

@@ -6,7 +6,7 @@ package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.lib.S;

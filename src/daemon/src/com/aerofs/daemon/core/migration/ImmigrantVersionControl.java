@@ -13,7 +13,7 @@ import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 

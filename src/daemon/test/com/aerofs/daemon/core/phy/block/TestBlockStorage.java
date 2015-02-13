@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -33,11 +33,11 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

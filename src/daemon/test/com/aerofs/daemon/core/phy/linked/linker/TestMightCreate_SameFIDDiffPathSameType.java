@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.lib.Util;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOID;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 

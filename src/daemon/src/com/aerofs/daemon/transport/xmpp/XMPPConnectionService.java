@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.Listeners;
 import com.aerofs.daemon.link.ILinkStateListener;

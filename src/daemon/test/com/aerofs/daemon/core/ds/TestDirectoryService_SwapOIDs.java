@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.ds;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;

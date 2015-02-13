@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 

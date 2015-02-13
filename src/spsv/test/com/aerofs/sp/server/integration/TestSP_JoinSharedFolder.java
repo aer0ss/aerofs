@@ -7,7 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.sp.common.SharedFolderState;
 import org.junit.Test;

@@ -5,6 +5,7 @@
 package com.aerofs.base.id;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.ids.UserID;
 
 /**
  * Organization ID.

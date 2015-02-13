@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.lib.Path;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Sets;

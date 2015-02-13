@@ -5,7 +5,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;

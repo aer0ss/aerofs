@@ -7,7 +7,7 @@ package com.aerofs.gui.history;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;

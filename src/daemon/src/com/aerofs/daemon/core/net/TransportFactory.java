@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;

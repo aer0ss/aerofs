@@ -10,7 +10,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.defects.Defect;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;

@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.Util;

@@ -1,7 +1,7 @@
 package com.aerofs.daemon.rest.stream;
 
 import com.aerofs.base.C;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;

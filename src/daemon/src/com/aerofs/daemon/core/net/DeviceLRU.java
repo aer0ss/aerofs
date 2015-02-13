@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.LRUCache;
 import org.slf4j.Logger;

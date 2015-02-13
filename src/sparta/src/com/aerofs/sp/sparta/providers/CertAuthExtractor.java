@@ -7,11 +7,10 @@ package com.aerofs.sp.sparta.providers;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.rest.auth.AuthTokenExtractor;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.CertAuthToken;
@@ -144,7 +143,7 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
             UserID userid;
             try {
                 userid = UserID.fromExternal(BaseUtil.utf2string(base64.decode(userid_string)));
-            } catch (IllegalArgumentException|ExEmptyEmailAddress e) {
+            } catch (IllegalArgumentException|ExInvalidID e) {
                 throw new CertAuthFailureException("Couldn't decode user id " + userid_string);
             }
 

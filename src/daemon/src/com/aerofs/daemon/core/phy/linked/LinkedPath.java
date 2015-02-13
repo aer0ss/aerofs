@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;

@@ -1,7 +1,7 @@
 package com.aerofs.lib.id;
 
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 
 /** Store index, Object id, KIndex */
 public class SOKID implements Comparable<SOKID> {

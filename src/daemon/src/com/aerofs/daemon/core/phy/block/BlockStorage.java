@@ -10,7 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;

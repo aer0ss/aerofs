@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.lib.db;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;

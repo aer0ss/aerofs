@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.phy;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.trans.Trans;

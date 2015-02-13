@@ -1,7 +1,7 @@
 package com.aerofs.rest.auth;
 
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 
 class DelegatedUserDeviceToken extends ServiceToken implements IUserAuthToken
 {

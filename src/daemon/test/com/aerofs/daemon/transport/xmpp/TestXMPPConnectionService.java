@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.LoggingRule;

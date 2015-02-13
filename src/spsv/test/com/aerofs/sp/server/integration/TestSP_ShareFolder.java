@@ -11,7 +11,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectPermissions;

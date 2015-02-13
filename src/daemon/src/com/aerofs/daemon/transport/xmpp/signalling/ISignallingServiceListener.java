@@ -5,7 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.signalling;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 
 
 /**

@@ -12,7 +12,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

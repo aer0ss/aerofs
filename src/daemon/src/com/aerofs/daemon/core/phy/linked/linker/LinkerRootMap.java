@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber.ProbeException;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;

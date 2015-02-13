@@ -10,7 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.analytics.AnalyticsEvents.UpdateEvent;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;

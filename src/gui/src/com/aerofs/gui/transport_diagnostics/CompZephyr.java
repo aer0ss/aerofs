@@ -6,7 +6,7 @@ package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;

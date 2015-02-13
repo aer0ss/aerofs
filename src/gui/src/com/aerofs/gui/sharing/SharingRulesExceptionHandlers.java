@@ -4,7 +4,7 @@
 
 package com.aerofs.gui.sharing;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.FullName;

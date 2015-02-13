@@ -2,8 +2,8 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;

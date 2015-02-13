@@ -14,7 +14,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.OCID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;

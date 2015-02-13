@@ -3,7 +3,7 @@ package com.aerofs.sp.server.listeners;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.BaseParam.Verkehr;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;

@@ -1,6 +1,6 @@
 package com.aerofs.lib.cfg;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 
 /**
  * The local peer's user id

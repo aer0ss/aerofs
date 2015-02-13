@@ -6,8 +6,8 @@ package com.aerofs.metriks;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.net.HttpHeaders;

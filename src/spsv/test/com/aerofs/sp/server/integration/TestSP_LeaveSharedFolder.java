@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import org.junit.Test;

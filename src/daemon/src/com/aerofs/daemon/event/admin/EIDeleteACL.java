@@ -3,7 +3,7 @@ package com.aerofs.daemon.event.admin;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 
 public class EIDeleteACL extends AbstractEBIMC
 {

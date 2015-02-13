@@ -18,7 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.collect.ImmutableSet;

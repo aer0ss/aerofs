@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
 public class StringID implements Comparable<StringID>
 {
@@ -38,7 +38,7 @@ public class StringID implements Comparable<StringID>
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && _i.equals(((StringID) o)._i));
+        return this == o || (o != null && o instanceof StringID && _i.equals(((StringID) o)._i));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 
 /**
  * See MockRoot for usage.

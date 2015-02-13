@@ -2,8 +2,8 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.DirectoryService;

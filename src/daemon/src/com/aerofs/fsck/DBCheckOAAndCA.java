@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;

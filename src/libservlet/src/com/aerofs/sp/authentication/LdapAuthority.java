@@ -9,7 +9,7 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;

@@ -1,6 +1,6 @@
 package com.aerofs.sp.server.authorization;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;

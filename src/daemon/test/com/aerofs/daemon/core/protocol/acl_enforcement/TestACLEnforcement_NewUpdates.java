@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.protocol.acl_enforcement;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.protocol.class_under_test.NewUpdatesWithMocks;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.id.SIndex;

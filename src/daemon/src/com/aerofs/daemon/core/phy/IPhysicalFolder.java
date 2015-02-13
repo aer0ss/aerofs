@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.phy;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
 

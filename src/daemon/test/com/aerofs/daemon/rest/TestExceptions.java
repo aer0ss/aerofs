@@ -5,7 +5,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.id.SIndex;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;

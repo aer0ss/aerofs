@@ -4,7 +4,7 @@
 
 package com.aerofs.havre;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Joiner;
 
 import java.util.List;

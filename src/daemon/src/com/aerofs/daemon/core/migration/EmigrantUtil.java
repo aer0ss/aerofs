@@ -5,10 +5,10 @@
 package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.ExInvalidID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -5,10 +5,10 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalAuthFailure;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
@@ -219,7 +219,7 @@ public class IdentitySessionManager
      * authorizing devices.
      */
     UserID getAuthorizedDevice(String deviceAuthNonce)
-            throws ExExternalAuthFailure, ExEmptyEmailAddress
+            throws ExExternalAuthFailure, ExInvalidID
     {
         String userid = getAndDelete(toDeviceAuthKey(deviceAuthNonce));
         assert userid != null : "Impossible backing-store state";

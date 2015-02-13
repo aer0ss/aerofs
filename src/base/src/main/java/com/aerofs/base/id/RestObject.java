@@ -1,7 +1,7 @@
 package com.aerofs.base.id;
 
 import com.aerofs.base.ParamFactory;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.ids.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -42,7 +42,7 @@ public class RestObject
         if (id.contains("@")) {
             try {
                 return new RestObject(SID.rootSID(UserID.fromExternal(id)));
-            } catch (ExEmptyEmailAddress e) { checkArgument(false); }
+            } catch (ExInvalidID e) { checkArgument(false); }
         }
         return new RestObject(new SID(decode(id, 0, HEXID_LENGTH)),
                 new OID(decode(id, HEXID_LENGTH, 2 * HEXID_LENGTH)));

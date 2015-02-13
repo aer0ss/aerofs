@@ -2,7 +2,7 @@ package com.aerofs.daemon.rest.resources;
 
 
 import com.aerofs.base.NoObfuscation;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.restless.Version;

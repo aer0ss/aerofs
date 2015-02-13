@@ -6,8 +6,8 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.Channel;

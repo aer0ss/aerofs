@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;

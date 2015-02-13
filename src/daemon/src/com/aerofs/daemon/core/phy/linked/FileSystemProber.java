@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;

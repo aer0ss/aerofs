@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.IIncomingStreamChunkListener;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.Metrics;

@@ -4,14 +4,15 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import org.junit.Test;
 
 public class TestUserID
 {
-    @Test(expected = ExEmptyEmailAddress.class)
+    @Test(expected = ExInvalidID.class)
     public void fromExternal_shouldThrowOnEmptyID()
-            throws ExEmptyEmailAddress
+            throws ExInvalidID
     {
         UserID.fromExternal("");
     }

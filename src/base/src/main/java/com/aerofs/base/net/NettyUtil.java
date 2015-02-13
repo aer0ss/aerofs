@@ -1,7 +1,7 @@
 package com.aerofs.base.net;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import org.jboss.netty.buffer.ChannelBuffer;

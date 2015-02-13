@@ -18,7 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.model;
 
-import com.aerofs.base.id.MDID;
+import com.aerofs.ids.MDID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;

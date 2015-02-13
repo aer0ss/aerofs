@@ -7,7 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.SubjectPermissions;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;

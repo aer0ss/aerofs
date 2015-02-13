@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.ElapsedTimer;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;

@@ -10,7 +10,7 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;

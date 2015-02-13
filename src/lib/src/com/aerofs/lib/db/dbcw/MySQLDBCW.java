@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 
 public class MySQLDBCW extends AbstractDBCW implements IDBCW
 {

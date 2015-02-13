@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.base.C;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.IOutgoingStreamFeedback;
 import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;

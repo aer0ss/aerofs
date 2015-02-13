@@ -6,7 +6,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSortedMap;
 

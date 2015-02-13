@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.sparta.resources;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.auth.IAuthToken;

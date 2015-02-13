@@ -8,7 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.organization.Organization;

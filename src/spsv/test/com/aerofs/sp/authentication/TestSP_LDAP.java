@@ -5,7 +5,7 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;

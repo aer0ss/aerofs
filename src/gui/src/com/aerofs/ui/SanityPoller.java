@@ -5,7 +5,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.cli.CLI;
 import com.aerofs.cli.CLIRootAnchorUpdater;
 import com.aerofs.gui.GUI;

@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.id;
 
-import com.aerofs.base.id.StringID;
+import com.aerofs.ids.StringID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

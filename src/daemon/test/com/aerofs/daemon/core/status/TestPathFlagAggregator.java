@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -12,11 +12,11 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Assert;
 import org.junit.After;

@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;

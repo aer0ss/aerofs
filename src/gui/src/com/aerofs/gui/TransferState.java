@@ -1,7 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;

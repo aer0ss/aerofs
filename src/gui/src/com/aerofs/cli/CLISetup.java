@@ -2,7 +2,6 @@ package com.aerofs.cli;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.controller.InstallActor;
@@ -17,7 +16,6 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
@@ -159,7 +157,7 @@ public class CLISetup
     }
 
     private void getUser(CLI cli)
-            throws ExNoConsole, ExEmptyEmailAddress
+            throws ExNoConsole
     {
         if (!LibParam.OpenId.enabled()) {
             _model.setUserID(cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));

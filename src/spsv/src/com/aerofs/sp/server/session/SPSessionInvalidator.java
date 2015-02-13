@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.session;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import org.slf4j.Logger;
 

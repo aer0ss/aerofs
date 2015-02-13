@@ -3,7 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.store.MapSIndex2Store;

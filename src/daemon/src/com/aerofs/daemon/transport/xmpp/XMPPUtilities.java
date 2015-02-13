@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;

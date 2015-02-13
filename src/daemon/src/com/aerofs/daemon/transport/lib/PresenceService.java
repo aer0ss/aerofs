@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import org.slf4j.Logger;
 
 import java.util.List;

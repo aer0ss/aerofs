@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.session;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;

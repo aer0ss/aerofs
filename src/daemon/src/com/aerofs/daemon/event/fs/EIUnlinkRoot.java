@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.fs;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 

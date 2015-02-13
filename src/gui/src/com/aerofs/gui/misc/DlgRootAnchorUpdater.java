@@ -4,7 +4,7 @@
 
 package com.aerofs.gui.misc;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;

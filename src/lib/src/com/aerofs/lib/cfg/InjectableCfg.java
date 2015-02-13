@@ -4,9 +4,9 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 

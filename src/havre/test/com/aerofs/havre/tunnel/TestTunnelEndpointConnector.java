@@ -5,9 +5,9 @@
 package com.aerofs.havre.tunnel;
 
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.havre.TeamServerInfo;
 import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;

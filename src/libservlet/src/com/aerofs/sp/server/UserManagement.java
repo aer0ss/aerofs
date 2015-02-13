@@ -6,7 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;

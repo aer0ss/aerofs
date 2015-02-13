@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.collector.IExPermanentError;
 import com.aerofs.daemon.core.ex.ExWrapped;

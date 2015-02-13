@@ -4,8 +4,8 @@
 
 package com.aerofs.servlets.lib.db.jedis;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.servlets.lib.db.AbstractJedisTest;

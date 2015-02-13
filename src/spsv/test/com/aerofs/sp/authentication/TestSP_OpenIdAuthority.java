@@ -6,8 +6,7 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.integration.AbstractSPTest;
@@ -49,7 +48,7 @@ public class TestSP_OpenIdAuthority extends AbstractSPTest
     }
 
     @Test
-    public void shouldNotBeLocal() throws ExEmptyEmailAddress
+    public void shouldNotBeLocal()
     {
         OpenIdAuthority openid = new OpenIdAuthority();
         assertFalse(openid.managesLocalCredential());

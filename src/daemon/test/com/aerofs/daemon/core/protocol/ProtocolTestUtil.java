@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.protocol;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;

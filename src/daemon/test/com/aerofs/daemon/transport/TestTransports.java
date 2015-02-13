@@ -6,9 +6,9 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.defects.MockDefects;

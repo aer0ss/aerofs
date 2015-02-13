@@ -5,7 +5,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import org.apache.commons.cli.CommandLine;
 

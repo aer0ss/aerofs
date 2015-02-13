@@ -6,7 +6,7 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.cfg.InjectableCfg;
 import org.eclipse.swt.graphics.Image;

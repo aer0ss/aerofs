@@ -8,13 +8,12 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.auth.IUserAuthToken;
@@ -80,7 +79,7 @@ public class SharedFolder
         {
             try {
                 return create(s.contains("@") ? SID.rootSID(UserID.fromExternal(s)) : new SID(s));
-            } catch (ExEmptyEmailAddress|ExInvalidID e) {
+            } catch (ExInvalidID e) {
                 throw new IllegalArgumentException("Invalid SID");
             }
         }

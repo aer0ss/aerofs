@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 
 /**
  * Implemented by classes that provide basic identifying

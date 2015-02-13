@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.acl.ACLFilter;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;

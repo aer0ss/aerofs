@@ -6,10 +6,10 @@ package com.aerofs.defects;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;

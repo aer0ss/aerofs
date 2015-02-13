@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreContributorsDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;

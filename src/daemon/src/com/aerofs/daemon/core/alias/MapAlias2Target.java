@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.alias;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;

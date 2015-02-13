@@ -6,8 +6,8 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.google.common.base.Joiner;

@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExWrapped;

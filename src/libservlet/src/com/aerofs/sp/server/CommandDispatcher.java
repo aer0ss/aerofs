@@ -5,7 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.Topics;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;

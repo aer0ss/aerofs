@@ -7,7 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.server.lib.user.User;

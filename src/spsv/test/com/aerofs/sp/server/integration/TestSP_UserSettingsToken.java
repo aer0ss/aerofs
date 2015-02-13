@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;

@@ -10,11 +10,11 @@ import com.aerofs.base.LazyChecked;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.sharing.SharedFolderMember.*;
 import com.aerofs.gui.sharing.Subject.*;
@@ -276,7 +276,7 @@ public class SharingModel
         }
 
         private User fromPB(PBUser pb)
-                throws ExEmptyEmailAddress, ExBadArgs
+                throws ExInvalidID, ExBadArgs
         {
             return new User(UserID.fromExternal(pb.getUserEmail()), pb.getFirstName(),
                     pb.getLastName(), _cfg);
@@ -287,7 +287,7 @@ public class SharingModel
         {
             try {
                 return fromPB(pb);
-            } catch (ExEmptyEmailAddress | ExBadArgs e) {
+            } catch (ExInvalidID | ExBadArgs e) {
                 return null;
             }
         }
@@ -309,7 +309,7 @@ public class SharingModel
         }
 
         private UserPermissionsAndState fromPB(PBUserPermissionsAndState pb)
-                throws ExEmptyEmailAddress, ExBadArgs
+                throws ExInvalidID, ExBadArgs
         {
             return new UserPermissionsAndState(fromPB(pb.getUser()),
                     Permissions.fromPB(pb.getPermissions()),
@@ -325,7 +325,7 @@ public class SharingModel
 
         private GroupPermissionUserAndState fromPB(GroupPermissions groupPermissions,
                 PBUserAndState pb)
-                throws ExEmptyEmailAddress, ExBadArgs
+                throws ExInvalidID, ExBadArgs
         {
             return new GroupPermissionUserAndState(groupPermissions, fromPB(pb.getUser()),
                     SharedFolderState.fromPB(pb.getState()));

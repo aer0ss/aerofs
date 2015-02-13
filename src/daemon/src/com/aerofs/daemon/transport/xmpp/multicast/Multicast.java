@@ -6,10 +6,10 @@ package com.aerofs.daemon.transport.xmpp.multicast;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.transport.ITransport;

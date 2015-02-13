@@ -6,7 +6,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;

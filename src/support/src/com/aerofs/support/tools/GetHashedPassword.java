@@ -5,7 +5,7 @@
 package com.aerofs.support.tools;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.properties.Configuration;

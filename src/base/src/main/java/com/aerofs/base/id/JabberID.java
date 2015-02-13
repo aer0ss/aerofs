@@ -4,7 +4,9 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
 
 import java.util.regex.Pattern;
 

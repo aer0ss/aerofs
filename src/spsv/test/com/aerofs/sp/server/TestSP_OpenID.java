@@ -6,7 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.Topics;
 import com.aerofs.base.ex.ExExternalAuthFailure;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.server.integration.AbstractSPTest;

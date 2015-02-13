@@ -8,7 +8,7 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;

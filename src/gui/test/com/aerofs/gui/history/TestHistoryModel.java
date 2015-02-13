@@ -4,8 +4,8 @@
 
 package com.aerofs.gui.history;
 
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;

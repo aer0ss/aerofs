@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;
 import com.aerofs.daemon.transport.lib.StreamManager.OutgoingStream;

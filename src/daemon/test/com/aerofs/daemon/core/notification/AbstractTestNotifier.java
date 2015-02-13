@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;

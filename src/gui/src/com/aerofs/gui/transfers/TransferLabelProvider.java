@@ -1,7 +1,7 @@
 package com.aerofs.gui.transfers;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;

@@ -5,7 +5,7 @@ import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.Base62CodeGenerator;

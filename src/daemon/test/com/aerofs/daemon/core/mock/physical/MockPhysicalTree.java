@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.mock.physical;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;

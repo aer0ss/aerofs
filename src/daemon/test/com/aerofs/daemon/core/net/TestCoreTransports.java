@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;

@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.LoggerSetup;

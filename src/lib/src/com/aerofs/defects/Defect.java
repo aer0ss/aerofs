@@ -5,8 +5,8 @@
 package com.aerofs.defects;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
 import org.slf4j.Logger;

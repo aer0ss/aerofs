@@ -4,7 +4,7 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 

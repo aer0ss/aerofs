@@ -4,7 +4,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 
 import java.sql.SQLException;
 import java.util.Map;

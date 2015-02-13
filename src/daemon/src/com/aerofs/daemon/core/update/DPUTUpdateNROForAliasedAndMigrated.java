@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;

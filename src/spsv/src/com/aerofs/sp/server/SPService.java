@@ -17,9 +17,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
@@ -31,7 +29,7 @@ import com.aerofs.base.ex.ExSecondFactorSetupRequired;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.*;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.*;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
@@ -769,7 +767,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
             throws ExNotAuthenticated, ExNoPerm, SQLException, ExInvalidID, ExNotFound,
-            ExEmptyEmailAddress, ExSecondFactorRequired, ExSecondFactorSetupRequired
+            ExBadArgs, ExSecondFactorRequired, ExSecondFactorSetupRequired
     {
         _sqlTrans.begin();
 
@@ -3023,7 +3021,7 @@ public class SPService implements ISPService
      *
      * == Remove this; review after January 2014. ==
      *
-     * @throws ExEmptyEmailAddress if the user id is empty
+     * @throws ExBadArgs if the user id is empty
      * @throws com.aerofs.base.ex.ExLicenseLimit if a seat limit prevents this new user from signing in
      * @throws ExBadCredential if username/password combination is incorrect
      */
@@ -3084,7 +3082,7 @@ public class SPService implements ISPService
      * A signed-in user can certify devices.
      * Does not require a mutually-auth'ed session.
      *
-     * @throws ExEmptyEmailAddress if the user id is empty
+     * @throws ExBadArgs if the user id is empty
      * @throws ExBadCredential if username/credential combination is incorrect
      */
     @Override
@@ -3743,7 +3741,6 @@ public class SPService implements ISPService
             ExNoPerm,
             ExNotLocallyManaged,
             ExWrongOrganization,
-            ExEmptyEmailAddress,
             ExAlreadyExist,
             IOException,
             LDAPSearchException,
@@ -3821,7 +3818,7 @@ public class SPService implements ISPService
             ExNotFound,
             ExNoPerm,
             ExNotLocallyManaged,
-            ExEmptyEmailAddress,
+            ExBadArgs,
             ExSecondFactorSetupRequired,
             Exception
     {

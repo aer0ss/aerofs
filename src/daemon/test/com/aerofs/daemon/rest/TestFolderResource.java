@@ -2,10 +2,10 @@ package com.aerofs.daemon.rest;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.labeling.L;

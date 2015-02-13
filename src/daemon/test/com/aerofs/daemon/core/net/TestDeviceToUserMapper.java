@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.db.DID2UserDatabase;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;

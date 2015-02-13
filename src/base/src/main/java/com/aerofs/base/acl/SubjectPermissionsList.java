@@ -5,8 +5,6 @@
 package com.aerofs.base.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.google.common.collect.Lists;
 
@@ -21,7 +19,7 @@ import static java.util.stream.Collectors.toList;
 public final class SubjectPermissionsList
 {
     public static List<SubjectPermissions> listFromPB(List<PBSubjectPermissions> pbl)
-            throws ExBadArgs, ExEmptyEmailAddress
+            throws ExBadArgs
     {
         List<SubjectPermissions> l = Lists.newArrayListWithCapacity(pbl.size());
         for (PBSubjectPermissions pb : pbl) l.add(SubjectPermissions.fromPB(pb));

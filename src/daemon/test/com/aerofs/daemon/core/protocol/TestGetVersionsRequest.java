@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.protocol;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Metrics;

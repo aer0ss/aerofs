@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 
 public interface IMaxcast
 {

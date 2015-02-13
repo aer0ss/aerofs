@@ -3,10 +3,10 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.lib.LibParam;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -123,7 +123,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 
     // FIXME: [sigh] think up a more efficient way
     private void assertACLContains(List<PBSubjectPermissions> pairs, User subject, Permissions permissions)
-            throws ExEmptyEmailAddress
+            throws ExInvalidID
     {
         boolean found = false;
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;

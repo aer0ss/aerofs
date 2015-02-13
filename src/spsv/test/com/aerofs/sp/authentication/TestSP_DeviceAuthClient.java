@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
 import com.aerofs.sp.server.authorization.DeviceAuthClient;
 import com.aerofs.sp.server.authorization.IDeviceAuthEndpoint;

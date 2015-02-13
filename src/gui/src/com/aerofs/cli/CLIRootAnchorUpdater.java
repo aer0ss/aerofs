@@ -4,7 +4,7 @@
 
 package com.aerofs.cli;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.RootAnchorUtil;

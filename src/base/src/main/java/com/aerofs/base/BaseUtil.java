@@ -5,7 +5,7 @@
 package com.aerofs.base;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.UniqueID;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.LeanByteString;
 

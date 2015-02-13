@@ -1,4 +1,4 @@
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 

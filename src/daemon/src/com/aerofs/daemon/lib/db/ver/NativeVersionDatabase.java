@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -21,7 +21,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;

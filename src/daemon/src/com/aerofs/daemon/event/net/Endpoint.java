@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.net;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ITransport;
 
 public class Endpoint

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.tcp;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ChannelFactories;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.testlib.LoggerSetup;

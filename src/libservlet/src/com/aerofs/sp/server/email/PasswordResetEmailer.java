@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;

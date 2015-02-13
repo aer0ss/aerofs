@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 
 /**
  * This interface is for internal use within the transport only

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;

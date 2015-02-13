@@ -5,7 +5,7 @@
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;

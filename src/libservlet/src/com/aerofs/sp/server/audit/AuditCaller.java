@@ -5,8 +5,8 @@
 package com.aerofs.sp.server.audit;
 
 import com.aerofs.base.NoObfuscation;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

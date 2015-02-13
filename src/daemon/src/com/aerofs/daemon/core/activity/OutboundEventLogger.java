@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.activity;
 
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;

@@ -1,7 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.id.SOCID;

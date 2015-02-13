@@ -10,7 +10,7 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;

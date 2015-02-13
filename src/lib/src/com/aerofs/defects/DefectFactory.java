@@ -4,7 +4,7 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.injectable.TimeSource;

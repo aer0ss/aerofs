@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.notification;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
 import com.aerofs.daemon.core.ds.OA;

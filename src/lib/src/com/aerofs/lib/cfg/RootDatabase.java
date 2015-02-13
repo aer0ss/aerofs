@@ -5,7 +5,7 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.TransportUtil;

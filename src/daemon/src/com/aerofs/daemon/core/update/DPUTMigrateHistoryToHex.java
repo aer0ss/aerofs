@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.PathType;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionInfo;
 import com.aerofs.lib.LibParam.AuxFolder;

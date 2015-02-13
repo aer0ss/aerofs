@@ -7,9 +7,9 @@ package com.aerofs.sp.server;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.AbstractEmailSender;
@@ -146,7 +146,7 @@ public class CollectLogsServlet extends HttpServlet
         for (String user : users) {
             try {
                 userIDs.add(UserID.fromExternal(user));
-            } catch (ExEmptyEmailAddress e) {
+            } catch (ExInvalidID e) {
                 l.warn("Invalid User ID: {}", user);
             }
         }

@@ -2,10 +2,8 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.base.id;
+package com.aerofs.ids;
 
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.ex.ExFormatError;
 import com.google.common.base.Preconditions;
 
 public class UserID extends StringID
@@ -32,12 +30,12 @@ public class UserID extends StringID
      * Use this constructor to hold UserIDs provided by external input channels like APIs, UI, etc.
      */
     public static UserID fromExternal(String str)
-            throws ExEmptyEmailAddress
+            throws ExInvalidID
     {
         str = str.trim();
         // Don't check for validity of email address characters. It is too expensive. Do the check
         // at API entry points.
-        if (str.isEmpty()) throw new ExEmptyEmailAddress();
+        if (str.isEmpty()) throw new ExInvalidID();
         return new UserID(str.toLowerCase());
     }
 
@@ -60,9 +58,9 @@ public class UserID extends StringID
      * normalized. This is to prevent DoS attacks where the peer sends an unnormalized string.
      */
     public static UserID fromInternalThrowIfNotNormalized(String str)
-            throws ExFormatError
+            throws ExInvalidID
     {
-        if (!isNormalized(str)) throw new ExFormatError("unnormalized user ID");
+        if (!isNormalized(str)) throw new ExInvalidID("unnormalized user ID");
         return fromInternal(str);
     }
 

@@ -5,8 +5,8 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;

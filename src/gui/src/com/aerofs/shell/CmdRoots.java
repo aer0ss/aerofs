@@ -4,7 +4,7 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import org.apache.commons.cli.CommandLine;

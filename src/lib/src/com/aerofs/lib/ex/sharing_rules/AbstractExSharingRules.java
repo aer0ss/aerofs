@@ -6,8 +6,8 @@ package com.aerofs.lib.ex.sharing_rules;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.proto.Common.PBException;
 import com.google.common.base.Preconditions;
@@ -131,7 +131,7 @@ public abstract class AbstractExSharingRules extends AbstractExWirable
         {
             try {
                 return UserID.fromExternal(elem.getAsJsonPrimitive().getAsString());
-            } catch (ExEmptyEmailAddress e) {
+            } catch (ExInvalidID e) {
                 throw new JsonParseException(e);
             }
         }

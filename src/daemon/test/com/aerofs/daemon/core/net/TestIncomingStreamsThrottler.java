@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.throttling.IncomingStreamsThrottler;
 import com.aerofs.daemon.core.net.throttling.LimitMonitor;

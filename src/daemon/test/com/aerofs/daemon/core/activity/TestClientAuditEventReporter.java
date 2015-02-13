@@ -6,10 +6,10 @@ package com.aerofs.daemon.core.activity;
 
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ex.ExAborted;

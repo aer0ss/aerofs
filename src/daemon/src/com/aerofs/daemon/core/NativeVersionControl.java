@@ -8,7 +8,7 @@ import java.util.SortedMap;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.StoreCreationOperators;

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.mock.logical;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;

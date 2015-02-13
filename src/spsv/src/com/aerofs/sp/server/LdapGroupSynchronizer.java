@@ -5,11 +5,11 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.LdapAuthority;
@@ -465,7 +465,7 @@ public class LdapGroupSynchronizer
             if (_ldapAuthority.canAuthenticate(ldapEmail)) {
                 emails.add(ldapEmail);
             }
-        } catch (ExEmptyEmailAddress e) {
+        } catch (ExInvalidID e) {
             _l.warn("invalid email address of: {} for user in ldap group",
                     entry.getAttributeValue(_cfg.USER_EMAIL));
         } catch (ExExternalServiceUnavailable e) {

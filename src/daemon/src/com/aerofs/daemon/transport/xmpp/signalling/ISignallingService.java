@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.xmpp.signalling;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 
 /**
  * Implemented by classes that provide an out-of-band control, or signalling,

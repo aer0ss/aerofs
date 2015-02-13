@@ -6,7 +6,7 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.labeling.L;

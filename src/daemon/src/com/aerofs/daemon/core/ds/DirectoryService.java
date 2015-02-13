@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.admin.Dumpables;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;

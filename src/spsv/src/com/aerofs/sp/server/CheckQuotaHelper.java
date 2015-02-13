@@ -8,7 +8,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;

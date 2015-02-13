@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.event.admin.EIListUserRoots;

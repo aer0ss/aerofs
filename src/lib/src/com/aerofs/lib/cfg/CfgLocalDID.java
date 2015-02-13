@@ -1,6 +1,6 @@
 package com.aerofs.lib.cfg;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 
 /**
  * The local peer's device id.

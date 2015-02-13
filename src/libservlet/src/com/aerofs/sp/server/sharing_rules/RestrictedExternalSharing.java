@@ -8,7 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.polaris.db;
 
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;

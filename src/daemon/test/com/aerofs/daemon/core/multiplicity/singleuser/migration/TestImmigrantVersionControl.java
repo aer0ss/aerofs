@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.AbstractTestVersionControl;
 import com.aerofs.daemon.core.AbstractVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;

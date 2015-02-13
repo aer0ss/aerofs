@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 
 /**
  * Shared Folder Operation indicating that user should leave shared folder

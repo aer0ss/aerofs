@@ -5,7 +5,7 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
 import com.aerofs.bifrost.module.ClientDAO;

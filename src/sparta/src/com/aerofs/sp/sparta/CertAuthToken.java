@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.sparta;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.auth.IUserAuthToken;
 

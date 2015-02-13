@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;

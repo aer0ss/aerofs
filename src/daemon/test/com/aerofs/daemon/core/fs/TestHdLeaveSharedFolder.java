@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;

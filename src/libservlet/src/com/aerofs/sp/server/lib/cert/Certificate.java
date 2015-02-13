@@ -1,8 +1,8 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 

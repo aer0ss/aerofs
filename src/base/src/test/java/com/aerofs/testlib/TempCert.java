@@ -1,8 +1,8 @@
 package com.aerofs.testlib;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 

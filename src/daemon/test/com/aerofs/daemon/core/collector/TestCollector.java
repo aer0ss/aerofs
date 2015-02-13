@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.collector;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;

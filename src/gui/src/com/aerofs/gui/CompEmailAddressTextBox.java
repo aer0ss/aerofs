@@ -5,8 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.SWT;
@@ -58,7 +58,7 @@ public class CompEmailAddressTextBox extends Composite
             } else if (Util.isValidEmailAddress(token)) {
                 try {
                     _userIDs.add(UserID.fromExternal(token));
-                } catch (ExEmptyEmailAddress e) {
+                } catch (ExInvalidID e) {
                     _invalidAddresses++;
                 }
             } else {

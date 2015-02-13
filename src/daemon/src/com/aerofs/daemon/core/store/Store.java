@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;

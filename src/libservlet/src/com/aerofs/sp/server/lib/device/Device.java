@@ -6,9 +6,9 @@ package com.aerofs.sp.server.lib.device;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;

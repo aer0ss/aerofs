@@ -6,7 +6,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.inject.Inject;
@@ -16,7 +16,7 @@ import com.aerofs.daemon.lib.db.ISenderFilterDatabase;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.id.OID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 
 import static com.aerofs.daemon.core.collector.SenderFilterIndex.BASE;

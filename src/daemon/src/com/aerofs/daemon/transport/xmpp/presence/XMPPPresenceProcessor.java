@@ -5,10 +5,10 @@
 package com.aerofs.daemon.transport.xmpp.presence;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
+import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;

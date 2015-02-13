@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.base.id.SID;
+import com.aerofs.ids.SID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

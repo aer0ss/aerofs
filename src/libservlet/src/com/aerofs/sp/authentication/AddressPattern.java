@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 
 import java.util.regex.Pattern;
