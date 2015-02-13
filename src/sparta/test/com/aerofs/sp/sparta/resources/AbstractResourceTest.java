@@ -14,6 +14,7 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
@@ -89,6 +90,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static Bifrost bifrost;
 
     protected Sparta sparta;
+    protected String deploymentSecret;
     protected Injector inj;
 
     protected static final UserID user = UserID.fromInternal("user@bar.baz");
@@ -270,7 +272,8 @@ public class AbstractResourceTest extends AbstractBaseTest
         o.setOrganization(org, AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        sparta = new Sparta(inj);
+        deploymentSecret = UniqueID.generate().toStringFormal();
+        sparta = new Sparta(inj, deploymentSecret);
         sparta.start();
 
         RestAssured.baseURI = "http://localhost";

@@ -10,6 +10,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.rest.api.Member;
@@ -20,6 +21,7 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Base64;
@@ -85,6 +87,22 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .header("Verify", "SUCCESS");
     }
 
+    private RequestSpecification givenSecret(String service, String secret, DID did, UserID user)
+    {
+        return given()
+                .header(Names.AUTHORIZATION,
+                        "Aero-Delegated-User-Device "
+                                + service + " " + secret + " "
+                                + encode(user) + " " + did.toStringFormal());
+    }
+
+    private RequestSpecification givenSecret(String service, String secret)
+    {
+        return given()
+                .header(Names.AUTHORIZATION,
+                        "Aero-Service-Shared-Secret " + service + " " + secret);
+    }
+
     @Test
     public void shouldReturn401WhenCertRevoked() throws Exception
     {
@@ -102,6 +120,50 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .statusCode(401)
                 .body("type", equalTo("UNAUTHORIZED"))
         .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenServiceSharedSecretInvalid() throws Exception
+    {
+        givenSecret("polaris", "notasharedsecret")
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenServiceSharedSecretMismatch() throws Exception
+    {
+        givenSecret("polaris", UniqueID.generate().toStringFormal())
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenDelegatedSharedSecretInvalid() throws Exception
+    {
+        givenSecret("polaris", "notasharedsecret", DID.generate(), user)
+                .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+                .when().log().everything()
+                .get(RESOURCE, SID.generate().toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn401WhenDelegatedSharedSecretMismatch() throws Exception
+    {
+        givenSecret("polaris", UniqueID.generate().toStringFormal(), DID.generate(), user)
+                .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+                .when().log().everything()
                 .get(RESOURCE, SID.generate().toStringFormal());
     }
 
@@ -146,6 +208,40 @@ public class TestSharedFolderResource extends AbstractResourceTest
         SID sid = SID.rootSID(user);
 
         givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("members.email", hasItem(user.getString()))
+                .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
+                .body("pending", emptyIterable())
+        .when()
+                .get(RESOURCE, sid.toStringFormal());
+    }
+
+    // FIXME: refactoring to accept non-user-bound tokens
+    @Ignore
+    @Test
+    public void shouldListRootStoreWithServiceSharedSecret() throws Exception
+    {
+        SID sid = SID.rootSID(user);
+
+        givenSecret("polaris", deploymentSecret)
+                .expect()
+                .statusCode(200)
+                .body("id", equalTo(sid.toStringFormal()))
+                .body("members.email", hasItem(user.getString()))
+                .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
+                .body("pending", emptyIterable())
+        .when().log().everything()
+                .get(RESOURCE, sid.toStringFormal());
+    }
+
+    @Test
+    public void shouldListRootStoreWithDelegatedSharedSecret() throws Exception
+    {
+        SID sid = SID.rootSID(user);
+
+        givenSecret("polaris", deploymentSecret, DID.generate(), user)
         .expect()
                 .statusCode(200)
                 .body("id", equalTo(sid.toStringFormal()))

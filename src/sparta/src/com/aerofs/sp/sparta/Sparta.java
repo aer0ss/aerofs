@@ -11,8 +11,10 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.rest.auth.DelegatedUserDeviceExtractor;
 import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.auth.OAuthRequestFilter;
+import com.aerofs.rest.auth.SharedSecretExtractor;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
@@ -44,6 +46,7 @@ import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -65,8 +68,11 @@ import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.Properties;
 import java.util.Set;
@@ -74,6 +80,7 @@ import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -91,7 +98,7 @@ public class Sparta extends Service
 
     private final ExecutionHandler _executionHandler;
 
-    public Sparta(Injector injector)
+    public Sparta(Injector injector, String deploymentSecret)
     {
         super("sparta", listenAddress(), injector);
 
@@ -104,7 +111,9 @@ public class Sparta extends Service
 
         addResource(new AuthProvider(
                 new OAuthExtractor(),
-                new CertAuthExtractor(injector.getInstance(CertificateDatabase.class))));
+                new CertAuthExtractor(injector.getInstance(CertificateDatabase.class)),
+                new DelegatedUserDeviceExtractor(deploymentSecret),
+                new SharedSecretExtractor(deploymentSecret)));
 
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
@@ -116,6 +125,17 @@ public class Sparta extends Service
     {
         return new InetSocketAddress(getStringProperty("sparta.host", "localhost"),
                 getIntegerProperty("sparta.port", 8085));
+    }
+
+    private static String deploymentSecret()
+    {
+        try (InputStream is = new FileInputStream("/data/deployment_secret")) {
+            String s = new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8).trim();
+            checkState(s.length() == 32, "Invalid deployment secret %s", s);
+            return s;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load deployment secret", e);
+        }
     }
 
     public static void main(String[] args) throws Exception
@@ -139,7 +159,7 @@ public class Sparta extends Service
 
 
         // NB: we expect nginx or similar to provide ssl termination...
-        new Sparta(inj)
+        new Sparta(inj, deploymentSecret())
                 .start();
     }
 
