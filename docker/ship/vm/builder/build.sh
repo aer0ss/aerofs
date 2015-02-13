@@ -196,8 +196,26 @@ preload() {
         echo
     )
 
-    # Run preload script in VM
-    ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader-image') $(yml 'repo')"
+    # Run preload script in VM. This step can take a while, and some times for some reason ssh may disconnect in the
+    # middle. So we retry a few times.
+    local DONE_FILE=/repload.done
+    local RETRY=0
+    while true; do
+        # Ignore exit code so the current script doesn't exit if ssh disconnect.
+        ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader-image') $(yml 'repo') ${DONE_FILE}" || true
+        if [ "$(ssh ${SSH_ARGS} "ls ${DONE_FILE}")" ]; then
+            ssh ${SSH_ARGS} "sudo rm ${DONE_FILE}"
+            break
+        elif [ ${RETRY} = 3 ]; then
+            cecho ${RED} "Preloading in SSH failed. Tried too many times. Gave up."
+            exit 33
+        else
+            RETRY=$[${RETRY} + 1]
+            cecho ${YELLOW} "Preloading in SSH failed. Retry #${RETRY}"
+            # Let the system breathe a bit before retrying
+            sleep 10
+        fi
+    done
 
     (set +x
         echo
@@ -263,9 +281,11 @@ find_free_local_port() {
     echo ${PORT}
 }
 
-# Colorful echo
+# Colorful echo. See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 GREEN='0;32'
 CYAN='0;36'
+YELLOW='1;33'
+RED='1;31'
 cecho() {
     (set +x
         echo -e "\033[$1m$2\033[0m"

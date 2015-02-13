@@ -1,4 +1,4 @@
-@@ -1,14 +1,14 @@
+@@ -1,15 +1,15 @@
  [app:main]
  paste.app_factory = web:main
  
@@ -13,6 +13,7 @@
 +deployment.oauth_server_uri = http://bifrost.service:8700
 +deployment.status_server_uri = http://status.service:8000
  deployment.bootstrap_server_uri = http://localhost:9070
+ deployment.secret_file = /data/deployment_secret
  deployment.flag_file_folder = /var/aerofs
 -deployment.state_folder = /opt/bunker/state
 +deployment.state_folder = /data/bunker

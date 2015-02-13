@@ -4,13 +4,14 @@ set -ex
 # This script runs inside the guest VM as root
 #
 
-if [ $# != 3 ]; then
-    echo "Usage: $0 <preload_repo> <loader_image> <repo>"
+if [ $# != 4 ]; then
+    echo "Usage: $0 <preload_repo> <loader_image> <repo> <done_file>"
     exit 11
 fi
-PRELOAD_REPO=$1
-LOADER_IMAGE=$2
-REPO=$3
+PRELOAD_REPO="$1"
+LOADER_IMAGE="$2"
+REPO="$3"
+DONE_FILE="$4"
 
 if [ $(whoami) != root ]; then
     echo "ERROR: please run $0 as root."
@@ -58,3 +59,6 @@ done
 
 # Create the loader tag which will be used by the sail script.
 docker tag "${REPO}/${LOADER_IMAGE}:${TAG}" "${REPO}/${LOADER_IMAGE}"
+
+# The caller can't use exit codes to detect failures (set -e is evil). So instead we use a flag file.
+touch "${DONE_FILE}"
