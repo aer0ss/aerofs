@@ -115,13 +115,22 @@ public class TeamServersProbeServlet extends HttpServlet
      */
     private void teamServersSanityCheck(HttpServletResponse resp) throws Exception
     {
+        List<DID> deviceIDs;
+
         _sqlTrans.begin();
+        try {
+            ImmutableList<OrganizationID> organizationIDs = _odb.getOrganizationIDs();
+            if (organizationIDs.size() == 0) {
+                l.debug("Org does not exist. Sanity check passed.");
+                return;
+            }
 
-        ImmutableList<OrganizationID> organizationIDs = _odb.getOrganizationIDs();
-        UserID tsUserID = organizationIDs.get(0).toTeamServerUserID();
-        List<DID> deviceIDs = _udb.getDevices(tsUserID);
+            UserID tsUserID = organizationIDs.get(0).toTeamServerUserID();
+            deviceIDs = _udb.getDevices(tsUserID);
 
-        _sqlTrans.commit();
+        }finally {
+            _sqlTrans.commit();
+        }
 
         if (deviceIDs.size() == 0) {
             l.debug("No linked Team Servers. Sanity check passed.");
