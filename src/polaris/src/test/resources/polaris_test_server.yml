@@ -19,7 +19,6 @@ database:
   password: temp123
   driverClass: com.mysql.jdbc.Driver
   url: jdbc:mysql://localhost/test
-  minIdleConnections: 1
 
 logging:
   level: ALL
