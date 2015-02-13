@@ -5,7 +5,7 @@
 archivesBaseName = 'aerofs-auditor'
 
 dependencies {
-    compile 'com.aerofs.baseline:baseline-service:0.3.0'
+    compile 'com.aerofs.baseline:baseline-service:0.4.1'
     compile project(':src/lib')
     compile project(':src/aero-auth')
     testCompile 'com.jayway.restassured:rest-assured:2.3.+'

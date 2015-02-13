@@ -5,7 +5,7 @@
 archivesBaseName = 'aerofs-dryad-baseline'
 
 dependencies {
-    compile 'com.aerofs.baseline:baseline-service:0.3.0'
+    compile 'com.aerofs.baseline:baseline-service:0.4.1'
     runtime 'ch.qos.logback:logback-core:1.1.+'
     runtime 'ch.qos.logback:logback-classic:1.1.+'
 }

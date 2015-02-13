@@ -9,9 +9,8 @@ import com.aerofs.baseline.Service;
 import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
-import com.aerofs.baseline.db.DBIInstances;
-import com.aerofs.baseline.db.DataSources;
 import com.aerofs.baseline.db.DatabaseConfiguration;
+import com.aerofs.baseline.db.Databases;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.dao.ObjectTypeArgument;
 import com.aerofs.polaris.dao.TransformTypeArgument;
@@ -41,7 +40,7 @@ public final class Polaris extends Service<PolarisConfiguration> {
     public void init(PolarisConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
-        DataSource dataSource = DataSources.newManagedDataSource(root, database);
+        DataSource dataSource = Databases.newManagedDataSource(root, database);
 
         // setup the database
         Flyway flyway = new Flyway();
@@ -49,7 +48,7 @@ public final class Polaris extends Service<PolarisConfiguration> {
         flyway.migrate(); // IMPORTANT: we use the default schema for the connection
 
         // setup JDBI
-        DBI dbi = DBIInstances.newDBI(dataSource);
+        DBI dbi = Databases.newDBI(dataSource);
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 

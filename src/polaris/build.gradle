@@ -6,8 +6,8 @@ archivesBaseName = 'aerofs-polaris'
 
 dependencies {
     compile 'org.flywaydb:flyway-core:3.0'
-    compile 'com.aerofs.baseline:baseline-service:0.3.0'
-    compile 'com.aerofs.baseline:baseline-db:0.3.0'
+    compile 'com.aerofs.baseline:baseline-service:0.4.1'
+    compile 'com.aerofs.baseline:baseline-db:0.4.1'
     compile 'org.apache.httpcomponents:httpclient:4.4'
     compile project(':src/aero-ids')
     compile project(':src/aero-auth')
@@ -15,7 +15,7 @@ dependencies {
     runtime 'mysql:mysql-connector-java:5.1.+'
     testCompile 'com.jayway.restassured:rest-assured:2.3.+'
     testCompile "org.mockito:mockito-core:1.10.+"
-    testCompile 'com.aerofs.baseline:baseline-testlib:0.3.0'
+    testCompile 'com.aerofs.baseline:baseline-testlib:0.4.1'
     testRuntime 'com.h2database:h2:1.4.+'
 }
 

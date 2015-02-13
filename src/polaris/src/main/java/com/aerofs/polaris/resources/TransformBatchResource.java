@@ -2,7 +2,7 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.baseline.db.DBIExceptions;
+import com.aerofs.baseline.db.Databases;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessManager;
@@ -63,7 +63,7 @@ public final class TransformBatchResource {
             }
         } catch (CallbackFailedException e) {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-            Throwable cause = DBIExceptions.findRootCause(e);
+            Throwable cause = Databases.findRootCause(e);
             TransformBatchOperationResult result = getBatchOperationErrorResult(cause);
             LOGGER.warn("fail transform batch operation {}", operation, e);
             batchResult.getResults().add(result);
