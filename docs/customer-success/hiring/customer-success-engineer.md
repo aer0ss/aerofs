@@ -101,7 +101,20 @@ them if you prefer.
 
 Given:
 
-    void removeHead (node *head)
+    class Node
+    {
+    public:
+        Node *next;
+    };
+
+    class LinkedList
+    {
+    public:
+        Node *head;
+        void removeHead();
+    };
+
+    void LinkedList::removeHead()
     {
         free(head);
         head = head -> next;
@@ -109,10 +122,10 @@ Given:
 
 Possible solution:
 
-    void removeHead (node *head)
+    void LinkedList::removeHead()
     {
-        if (head == null) return;
-        node *newHead = head -> next;
+        if (head == NULL) return;
+        Node *newHead = head -> next;
         free(head);
         head = newHead;
     }
