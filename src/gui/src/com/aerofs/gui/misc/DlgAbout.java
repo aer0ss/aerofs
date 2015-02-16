@@ -59,10 +59,8 @@ public class DlgAbout extends AeroFSDialog
         // N.B. HACK ALERT(AT): the extra white spaces at the start and end is necessary to make this the widest
         //   widget possible on the screen when rendered. We use this to control layout and to ensure the total
         //   width doesn't change when lblUpdateStatus's content changes.
-        linkWebsite.setText("    Visit " + L.brand() + " <a>Web site</a> and <a>Release Notes</a>.    ");
-
-        Link linkOss = new Link(compLinks, SWT.NONE);
-        linkOss.setText(L.brand() + " uses <a>free software</a>.");
+        linkWebsite.setText("    Visit the " + L.brand() + " <a>web site</a> or view the " + L.brand() +
+                " <a>release notes</a>.    ");
 
         Composite compUpdate = new Composite(compContent, SWT.NONE);
         _btnUpdate = createButton(newPackedButtonContainer(compUpdate), SWT.PUSH);
@@ -74,11 +72,11 @@ public class DlgAbout extends AeroFSDialog
 
         Label lblCopyright = createLabel(compCopyright, SWT.NONE);
         lblCopyright.setFont(makeSubtitle(lblCopyright.getFont()));
-        lblCopyright.setText("Copyright \u00a9 " + S.BASE_COPYRIGHT);
+        lblCopyright.setText("Copyright \u00a9 " + S.BASE_COPYRIGHT + " " + S.ALL_RIGHTS_RESERVED);
 
-        Label lblAllRights = createLabel(compCopyright, SWT.NONE);
-        lblAllRights.setFont(makeSubtitle(lblAllRights.getFont()));
-        lblAllRights.setText(S.ALL_RIGHTS_RESERVED);
+        Link linkOss = new Link(compCopyright, SWT.NONE);
+        linkOss.setFont(makeSubtitle(linkOss.getFont()));
+        linkOss.setText("This product uses third-party <a>free software</a>.");
 
         GridLayout shellLayout = newGridLayout();
         shellLayout.marginWidth = GUIParam.WIDE_MARGIN;
@@ -113,12 +111,12 @@ public class DlgAbout extends AeroFSDialog
 
             private String getLink(SelectionEvent e) {
                 switch (e.text) {
-                    case "Web site":
+                    case "web site":
                         return WWW.MARKETING_HOST_URL;
-                    case "Release Notes":
+                    case "release notes":
                         return "https://support.aerofs.com/entries/23864878";
                     case "free software":
-                        return "https://support.aerofs.com/hc/en-us/articles/202866484";
+                        return "https://www.aerofs.com/terms/#freesoftware";
                     default:
                         l.error("Invalid link: {}", e.text);
                         checkState(false); // illegal state, this indicates a programming error
