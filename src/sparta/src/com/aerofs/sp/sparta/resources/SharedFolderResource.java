@@ -7,10 +7,9 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.ids.ExInvalidID;
+import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
@@ -52,6 +51,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -68,7 +68,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
-import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
@@ -115,30 +114,31 @@ public class SharedFolderResource extends AbstractSpartaResource
                 .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
     }
 
+    private @Nullable User validateAuth(IAuthToken token, Scope scope, SharedFolder sf)
+            throws SQLException, ExNotFound
+    {
+        requirePermissionOnFolder(scope, token, sf.id());
+        if (token instanceof IUserAuthToken) {
+            User caller = _factUser.create(((IUserAuthToken)token).user());
+            throwIfNotAMember(sf, caller, "No such shared folder");
+            return caller;
+        }
+        return null;
+    }
+
     @Since("1.1")
     @GET
     @Path("/{id}")
-    public Response get(@Auth IUserAuthToken token,
-            @PathParam("id") SharedFolder sf,
-            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
+    public Response get(@Auth IAuthToken token,
+            @PathParam("id") SharedFolder sf)
             throws SQLException, ExNotFound
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
-        throwIfNotAMember(sf, caller, "No such shared folder");
-
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        List<PendingMember> pending = listPendingMembers(sf, md);
-        // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
-        EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
-        if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
-            return Response.notModified(etag).build();
-        }
+        User caller = validateAuth(token, Scope.READ_ACL, sf);
 
         return Response.ok()
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), pending, sf.isExternal(caller)))
-                .tag(etag)
+                        sf.getName(caller), listMembers(sf), listPendingMembers(sf),
+                        caller == null ? null : sf.isExternal(caller)))
                 .build();
     }
 
@@ -164,11 +164,6 @@ public class SharedFolderResource extends AbstractSpartaResource
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
         _aclNotifier.publish_(affected);
 
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        List<PendingMember> pending = listPendingMembers(sf, md);
-        // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
-        EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
-
         audit(sf, caller, token, "folder.create")
                 .publish();
 
@@ -178,27 +173,30 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(caller), listMembers(sf), pending, sf.isExternal(caller)))
-                .tag(etag)
+                        sf.getName(caller), listMembers(sf), listPendingMembers(sf),
+                        sf.isExternal(caller)))
                 .build();
     }
 
     @Since("1.1")
     @GET
     @Path("/{id}/members")
-    public Response listMembers(@Auth IUserAuthToken token,
+    public Response listMembers(@Auth IAuthToken token,
             @PathParam("id") SharedFolder sf,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws SQLException, ExNotFound
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
-        throwIfNotAMember(sf, caller, "No such shared folder");
+        User caller = validateAuth(token, Scope.READ_ACL, sf);
 
-        // TODO: consider more robust etag
-        EntityTag etag = new EntityTag(aclEtag(caller), true);
-        if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
-            return Response.notModified(etag).build();
+        EntityTag etag = null;
+        if (caller != null) {
+            throwIfNotAMember(sf, caller, "No such shared folder");
+
+            // TODO: consider more robust etag
+            etag = new EntityTag(aclEtag(caller), true);
+            if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
+                return Response.notModified(etag).build();
+            }
         }
 
         return Response.ok()
@@ -210,15 +208,13 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/members/{email}")
-    public Response getMember(@Auth IUserAuthToken token,
+    public Response getMember(@Auth IAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User member,
             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
             throws ExBadArgs, ExNotFound, SQLException
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
-        throwIfNotAMember(sf, caller, "No such shared folder");
+        validateAuth(token, Scope.READ_ACL, sf);
         Permissions p = throwIfNotAMember(sf, member, "No such member");
 
         // TODO: consider more robust etag
@@ -400,27 +396,14 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/pending")
-    public Response listPendingMembers(@Auth IUserAuthToken token,
-            @PathParam("id") SharedFolder sf,
-            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
+    public Response listPendingMembers(@Auth IAuthToken token,
+            @PathParam("id") SharedFolder sf)
             throws SQLException, ExNotFound
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
-        throwIfNotAMember(sf, caller, "No such shared folder");
-
-
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        List<PendingMember> pending = listPendingMembers(sf, md);
-        // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
-        EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
-        if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
-            return Response.notModified(etag).build();
-        }
+        validateAuth(token, Scope.READ_ACL, sf);
 
         return Response.ok()
-                .entity(pending)
-                .tag(etag)
+                .entity(listPendingMembers(sf))
                 .build();
     }
 
@@ -432,9 +415,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             @PathParam("email") User user)
             throws SQLException, ExNotFound
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
-        throwIfNotAMember(sf, caller, "No such shared folder");
+        validateAuth(token, Scope.READ_ACL, sf);
 
         Permissions p = sf.getPermissionsNullable(user);
         if (p == null  || sf.getStateNullable(user) != SharedFolderState.PENDING) {
@@ -631,7 +612,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                 p.toArray());
     }
 
-    static List<PendingMember> listPendingMembers(SharedFolder sf, MessageDigest md)
+    static List<PendingMember> listPendingMembers(SharedFolder sf)
             throws ExNotFound, SQLException
     {
         List<PendingMember> members = Lists.newArrayList();
@@ -642,14 +623,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             PendingMember pm = toPendingMember(ups._user, ups._permissions,
                     sf.getSharerNullable(ups._user));
             members.add(pm);
-            if (md != null) digest(pm, md);
         }
         return members;
-    }
-
-    private static void digest(PendingMember pm, MessageDigest md)
-    {
-        md.update(BaseUtil.string2utf(pm.email));
-        for (String p : pm.permissions) md.update(BaseUtil.string2utf(p));
     }
 }

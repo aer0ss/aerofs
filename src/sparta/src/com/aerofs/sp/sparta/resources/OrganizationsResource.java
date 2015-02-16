@@ -5,6 +5,7 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -31,10 +32,11 @@ public class OrganizationsResource extends AbstractSpartaResource
     @Since("1.2")
     @GET
     @Path("/{orgid}")
-    public Response get(@Auth IUserAuthToken token, @PathParam("orgid") Organization org)
+    public Response get(@Auth IAuthToken token, @PathParam("orgid") Organization org)
             throws SQLException, ExNotFound
     {
-        if (!token.user().equals(org.getTeamServerUser().id())) {
+        if (token instanceof IUserAuthToken
+                && !((IUserAuthToken)token).user().equals(org.getTeamServerUser().id())) {
             return Response.status(Status.NOT_FOUND).build();
         }
 

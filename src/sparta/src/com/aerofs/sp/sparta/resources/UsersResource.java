@@ -7,8 +7,6 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ex.ExBadArgs;
@@ -25,7 +23,6 @@ import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
-import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
@@ -47,15 +44,14 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -63,17 +59,14 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
-import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Collection;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -114,6 +107,17 @@ public class UsersResource extends AbstractSpartaResource
         return _audit.event(topic, event)
                 .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
     }
+    private @Nullable User validateAuth(IAuthToken token, Scope scope, User user)
+            throws SQLException, ExNotFound
+    {
+        requirePermission(scope, token);
+        if (token instanceof IUserAuthToken) {
+            User caller = _factUser.create(((IUserAuthToken)token).user());
+            throwIfNotSelfOrTSOf(caller, user);
+            return caller;
+        }
+        return null;
+    }
 
     @Since("1.1")
     @GET
@@ -122,51 +126,37 @@ public class UsersResource extends AbstractSpartaResource
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
-        requirePermission(Scope.READ_USER, token);
-        User caller = _factUser.create(token.user());
-        throwIfNotSelfOrTSOf(caller, user);
+        validateAuth(token, Scope.READ_USER, user);
 
         FullName n = user.getFullName();
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(user.id().getString(), n._first, n._last,
-                        listShares(user, null, token), listInvitations(user, token)))
+                        listShares(user, token), listInvitations(user, token)))
                 .build();
     }
 
     @Since("1.1")
     @GET
     @Path("/{email}/shares")
-    public Response listShares(@Auth IUserAuthToken token, @PathParam("email") User user,
-            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch)
+    public Response listShares(@Auth IAuthToken token,
+            @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
-        User caller = _factUser.create(token.user());
-        throwIfNotSelfOrTSOf(caller, user);
-
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        // TODO: it'd be nice if there was an epoch for pending members to avoid this hashing...
-        ImmutableCollection<com.aerofs.rest.api.SharedFolder> shares = listShares(user, md, token);
-        EntityTag etag = new EntityTag(aclEtag(caller) + BaseUtil.hexEncode(md.digest()), true);
-        if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
-            return Response.notModified(etag).build();
-        }
+        validateAuth(token, Scope.READ_ACL, user);
 
         return Response.ok()
-                .entity(shares)
-                .tag(etag)
+                .entity(listShares(user, token))
                 .build();
     }
 
     @Since("1.1")
     @GET
     @Path("/{email}/invitations")
-    public Response listInvitations(@Auth IUserAuthToken token,
+    public Response listInvitations(@Auth IAuthToken token,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
-        requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user());
-        throwIfNotSelfOrTSOf(caller, user);
+        validateAuth(token, Scope.MANAGE_INVITATIONS, user);
 
         return Response.ok()
                 .entity(listInvitations(user, token))
@@ -176,14 +166,12 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}/invitations/{sid}")
-    public Response getInvitation(@Auth IUserAuthToken token,
+    public Response getInvitation(@Auth IAuthToken token,
             @PathParam("email") User user,
             @PathParam("sid") SharedFolder sf)
             throws ExNotFound, SQLException
     {
-        requirePermission(Scope.MANAGE_INVITATIONS, token);
-        User caller = _factUser.create(token.user());
-        throwIfNotSelfOrTSOf(caller, user);
+        validateAuth(token, Scope.MANAGE_INVITATIONS, user);
 
         if (sf.getStateNullable(user) != SharedFolderState.PENDING) {
             throw new ExNotFound("No such invitation");
@@ -237,7 +225,7 @@ public class UsersResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(user), listMembers(sf), listPendingMembers(sf, null),
+                        sf.getName(user), listMembers(sf), listPendingMembers(sf),
                         sf.isExternal(user)))
                 .build();
     }
@@ -279,8 +267,7 @@ public class UsersResource extends AbstractSpartaResource
         if (!UserManagement.isSelfOrTSOf(caller, target)) throw new ExNotFound("No such user");
     }
 
-    static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user,
-            MessageDigest md, IAuthToken token)
+    static ImmutableCollection<com.aerofs.rest.api.SharedFolder> listShares(User user, IAuthToken token)
             throws ExNotFound, SQLException
     {
         ImmutableList.Builder<com.aerofs.rest.api.SharedFolder> bd = ImmutableList.builder();
@@ -290,7 +277,7 @@ public class UsersResource extends AbstractSpartaResource
             com.aerofs.rest.api.SharedFolder s = new com.aerofs.rest.api.SharedFolder(
                     sf.id().toStringFormal(), sf.getName(user),
                     SharedFolderResource.listMembers(sf),
-                    SharedFolderResource.listPendingMembers(sf, md),
+                    SharedFolderResource.listPendingMembers(sf),
                     sf.isExternal(user));
             if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) bd.add(s);
         }
@@ -365,7 +352,7 @@ public class UsersResource extends AbstractSpartaResource
                 + "/users/" + newUser.id().getString();
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.User(newUser.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(newUser, null, auth),
+                        attrs.lastName, listShares(newUser, auth),
                         listInvitations(newUser, auth)))
                 .build();
     }
@@ -402,7 +389,7 @@ public class UsersResource extends AbstractSpartaResource
         l.warn("Updated user {}", attrs);
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(target.id().getString(), attrs.firstName,
-                        attrs.lastName, listShares(target, null, auth),
+                        attrs.lastName, listShares(target, auth),
                         listInvitations(target, auth)))
                 .build();
     }
@@ -480,12 +467,10 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.2")
     @GET
     @Path("/{email}/quota")
-    public Response getQuota(@Auth IUserAuthToken auth, @PathParam("email") User user)
+    public Response getQuota(@Auth IAuthToken token, @PathParam("email") User user)
             throws SQLException, ExNotFound
     {
-        requirePermission(Scope.READ_USER, auth);
-        User caller = _factUser.create(auth.user());
-        throwIfNotSelfOrTSOf(caller, user);
+        validateAuth(token, Scope.READ_USER, user);
 
         return Response.ok()
                 .entity(new Quota(
@@ -506,12 +491,10 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.3")
     @GET
     @Path("/{email}/two_factor")
-    public Response getTwoFactorEnabled(@Auth IUserAuthToken auth, @PathParam("email") User user)
+    public Response getTwoFactorEnabled(@Auth IAuthToken token, @PathParam("email") User user)
             throws SQLException, ExNotFound
     {
-        requirePermission(Scope.READ_USER, auth);
-        User caller = _factUser.create(auth.user());
-        throwIfNotSelfOrTSOf(caller, user);
+        validateAuth(token, Scope.READ_USER, user);
 
         return Response.ok()
                 .entity(new TwoFactor(user.shouldEnforceTwoFactor()))

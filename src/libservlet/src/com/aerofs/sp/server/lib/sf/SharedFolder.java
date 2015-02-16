@@ -143,10 +143,10 @@ public class SharedFolder
      * @param user user for which we want to get this shared folder's name.
      * @throws ExNotFound if this shared folder isn't found in the db.
      */
-    public String getName(User user)
+    public String getName(@Nullable User user)
             throws ExNotFound, SQLException
     {
-        return _f._db.getName(_sid, user.id());
+        return _f._db.getName(_sid, user == null ? null : user.id());
     }
 
     /**

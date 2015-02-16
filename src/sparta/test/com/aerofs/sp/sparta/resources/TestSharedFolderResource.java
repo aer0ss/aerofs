@@ -40,11 +40,6 @@ import static org.hamcrest.Matchers.startsWith;
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
 {
-    static {
-        LogUtil.enableConsoleLogging();
-        LogUtil.setLevel(LogUtil.Level.DEBUG);
-    }
-
     private final String BASE_RESOURCE = "/v1.1/shares/";
     private final String RESOURCE = BASE_RESOURCE + "{sid}";
 
@@ -218,15 +213,13 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .get(RESOURCE, sid.toStringFormal());
     }
 
-    // FIXME: refactoring to accept non-user-bound tokens
-    @Ignore
     @Test
     public void shouldListRootStoreWithServiceSharedSecret() throws Exception
     {
         SID sid = SID.rootSID(user);
 
         givenSecret("polaris", deploymentSecret)
-                .expect()
+        .expect()
                 .statusCode(200)
                 .body("id", equalTo(sid.toStringFormal()))
                 .body("members.email", hasItem(user.getString()))
@@ -320,39 +313,6 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .body("members.email", hasItem(user.getString()))
                 .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
                 .body("pending", emptyIterable())
-        .when()
-                .get(RESOURCE, sid.toStringFormal());
-    }
-
-    @Test
-    public void shouldReturn304WhenGetSharedFolderWithEtagMatch() throws Exception
-    {
-        SID sid = mkShare("Test", user.getString());
-
-        givenReadAccess()
-                .header(Names.IF_NONE_MATCH, shareEtag(user, sid))
-        .expect()
-                .statusCode(304)
-                .header(Names.ETAG, shareEtag(user, sid))
-        .when()
-                .get(RESOURCE, sid.toStringFormal());
-    }
-
-    @Test
-    public void shouldGetSharedFolderWithEtagMismatch() throws Exception
-    {
-        SID sid = mkShare("Test", user.getString());
-
-        givenReadAccess()
-                .header(Names.IF_NONE_MATCH, "totallynotavalidetag")
-        .expect()
-                .statusCode(200)
-                .body("id", equalTo(sid.toStringFormal()))
-                .body("name", equalTo("Test"))
-                .body("members.email", hasItem(user.getString()))
-                .body("members.permissions", hasItem(hasItems("MANAGE", "WRITE")))
-                .body("pending", emptyIterable())
-                .header(Names.ETAG, shareEtag(user, sid))
         .when()
                 .get(RESOURCE, sid.toStringFormal());
     }

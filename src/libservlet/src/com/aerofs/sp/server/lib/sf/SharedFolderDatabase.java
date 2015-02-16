@@ -505,11 +505,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() > 0);
     }
 
-    public @Nonnull String getName(SID sid, UserID userID)
+    public @Nonnull String getName(SID sid, @Nullable UserID userID)
             throws SQLException, ExNotFound
     {
         // Return the user-specified name, if any
-        String name = getUserSpecifiedName(sid, userID);
+        String name = userID != null ? getUserSpecifiedName(sid, userID) : null;
         if (name != null) return name;
 
         // Otherwise, return the original name

@@ -131,40 +131,6 @@ public class TestUsersResources extends AbstractResourceTest
     }
 
     @Test
-    public void shouldReturn304WhenEtagMatch() throws Exception
-    {
-        mkShare("Test", user.getString());
-
-        String etag = sharesEtag(user);
-        givenReadAccess()
-                .header(Names.IF_NONE_MATCH, etag)
-        .expect()
-                .statusCode(304)
-                .header(Names.ETAG, etag)
-        .when().log().everything()
-                .get(RESOURCE + "/shares", user.getString());
-    }
-
-    @Test
-    public void shouldReturn200WhenEtagMismatch() throws Exception
-    {
-        SID sid = mkShare("Test", user.getString());
-
-        String etag = sharesEtag(user);
-        givenReadAccess()
-                .header(Names.IF_NONE_MATCH, "totallynotavalidetag")
-        .expect()
-                .statusCode(200)
-                .body("id", hasItem(equalTo(sid.toStringFormal())))
-                .body("name", hasItem(equalTo("Test")))
-                .body("members.email", hasItem(hasItem(user.getString())))
-                .body("members.permissions", hasItem(hasItem(hasItems("WRITE", "MANAGE"))))
-                .header(Names.ETAG, etag)
-        .when().log().everything()
-                .get(RESOURCE + "/shares", user.getString());
-    }
-
-    @Test
     public void shouldListSharesWhenAdminOf() throws Exception
     {
         SID sid = mkShare("Test", user.getString());

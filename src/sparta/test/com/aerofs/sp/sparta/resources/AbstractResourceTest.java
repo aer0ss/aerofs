@@ -344,11 +344,9 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected String shareEtag(UserID user, SID sid) throws SQLException, ExNotFound
     {
         sqlTrans.begin();
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        listPendingMembers(factSF.create(sid), md);
+        listPendingMembers(factSF.create(sid));
         String etag = "W/\""
                 + aclEtag(factUser.create(user))
-                + BaseUtil.hexEncode(md.digest())
                 + "\"";
         sqlTrans.commit();
         return etag;
@@ -357,13 +355,11 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected String sharesEtag(UserID user) throws SQLException, ExNotFound
     {
         sqlTrans.begin();
-        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         OAuthToken tok = mock(OAuthToken.class);
         when(tok.hasFolderPermission(any(Scope.class), any(SID.class))).thenReturn(true);
-        UsersResource.listShares(factUser.create(user), md, tok);
+        UsersResource.listShares(factUser.create(user), tok);
         String etag = "W/\""
                 + aclEtag(factUser.create(user))
-                + BaseUtil.hexEncode(md.digest())
                 + "\"";
         sqlTrans.commit();
         return etag;
