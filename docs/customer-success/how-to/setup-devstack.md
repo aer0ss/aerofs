@@ -6,7 +6,7 @@
 
         Vagrant.configure("2") do |config|
             config.vm.define :trusty64 do |box|
-                box.vm.network "public_network" # Optional: remove for NAT network configuration.
+                box.vm.network "public_network"
                 box.vm.box = "ubuntu/trusty64"
                 box.vm.hostname = "trusty64"
                 box.vm.provider :virtualbox do |vb|
