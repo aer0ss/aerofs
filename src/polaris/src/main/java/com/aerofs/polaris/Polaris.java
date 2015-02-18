@@ -51,12 +51,16 @@ public final class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
+        // register the command that dumps the object tree
+        environment.registerCommand("tree", TreeCommand.class);
+
         // setup the object store
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
         environment.addBinder(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(logicalObjectStore).to(LogicalObjectStore.class);
+                bind(TreeCommand.class).to(TreeCommand.class);
             }
         });
 
@@ -72,9 +76,6 @@ public final class Polaris extends Service<PolarisConfiguration> {
         environment.addServiceProvider(new SPAccessManagerBinder());
         environment.addServiceProvider(DBIExceptionMapper.class);
         environment.addServiceProvider(PolarisExceptionMapper.class);
-
-        // register the command that dumps the object tree
-        environment.registerCommand("tree", TreeCommand.class);
 
         // setup the api-object deserializer
         Operation.registerDeserializer(environment.getMapper());
