@@ -16,7 +16,7 @@ class SignupForm(Form):
     email = TextField('Email', validators = [InputRequired(), Email()])
     company_name = TextField('Organization Name', validators=[InputRequired()])
     phone_number = TextField("Phone Number", validators=[InputRequired()])
-    job_title = TextField("Job Title", validators=[Optional()])
+    job_title = TextField("Job Title", validators=[InputRequired()])
 
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[Length(min=6)])
