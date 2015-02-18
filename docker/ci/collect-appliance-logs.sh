@@ -11,7 +11,11 @@ OUTPUT="$1"
 
 SSH_FORWARD_PORT=54365
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
-SSH_OPTS="-q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${THIS_DIR}/ci-ssh.key"
+KEY_FILE="${THIS_DIR}/ci-ssh.key"
+SSH_OPTS="-q -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KEY_FILE}"
+
+# In case the permission is reverted (by git etc) restore it so ssh doesn't complain.
+chmod -f 400 "${KEY_FILE}"
 
 # Single quotes around END disables variable expansion in the heredoc
 ssh -p ${SSH_FORWARD_PORT} ${SSH_OPTS} core@localhost <<'END'

@@ -86,7 +86,7 @@ copied or duplicated in the new system.
 
 - fallback to last target when boot fails.
 
-- update "Archive Appliance Logs" CI target and remove "Run build even if dependency has failed" from its dependents
+- remove build catalyze script
 
 - reliably delete files from buildroot using a master buildroot. Use plain copying to populate buildroot and then lazy-rsync (rsync with lazy-copy) to sync to target buildroot.
 
