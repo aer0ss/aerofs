@@ -1,24 +1,20 @@
-# AeroFS Professional Services
+# AeroFS Solutions Team
 
-This document outlines our professional services offering.
+This document outlines our professional services offering (i.e. our solutions
+team).
 
-## Overview
+## Preface
 
 We are a product company, not a services company. We are focused on building a
 great product, with a great customer success team to support that product.
 
-## Bridges vs. Buildings
+## Policy: Bridges vs. Buildings
 
 Our professional services mentality is as follows: we will build bridges, but
 we will seldom design and construct new buildings on a per-customer basis.
-
 Helping our customers integrate the AeroFS Private Cloud (and our other
 products) into their systems is valuable for all of us. This is bridge
 building, and we will happily engage and participate in this activity.
-
-Constructing new buildings on a per-customer basis is not our expertise; we
-would rather help build out our existing products to meet the needs of the
-customer, if it makes sense in the context of the engineering roadmap.
 
 ## Marketing
 
@@ -28,4 +24,5 @@ message: we are a product company.
 
 ## Pricing
 
-TBD/evaluated on a case-by-case basis.
+TBD/evaluated on a case-by-case basis. Medium to high market rate (depending
+on the value-add to our organization); SOW required.
