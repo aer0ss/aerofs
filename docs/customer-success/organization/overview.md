@@ -15,7 +15,7 @@ To accomplish this goal, we break down team team into the following areas:
 
 Regardless of sub-team, team members should always consider the overall goal of
 the organization, and should always strive to look for ways to improve our
-customer's success.
+value-add to our customers.
 
 ## Team Profile
 
