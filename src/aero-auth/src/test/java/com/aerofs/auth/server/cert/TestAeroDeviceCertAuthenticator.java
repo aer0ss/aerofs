@@ -7,9 +7,7 @@ import com.aerofs.auth.server.AeroPrincipalBinder;
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
-import com.aerofs.baseline.ServiceEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.http.HttpUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
@@ -102,19 +100,19 @@ public final class TestAeroDeviceCertAuthenticator {
     private static final class TestServer extends Server {
 
         @Override
-        public void init(Server.ServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
-            super.init(configuration, root, admin, service);
+        public void init(Server.ServerConfiguration configuration, Environment environment) throws Exception {
+            super.init(configuration, environment);
 
-            root.addAuthenticator(new AeroDeviceCertAuthenticator());
+            environment.addAuthenticator(new AeroDeviceCertAuthenticator());
 
-            service.addProvider(new AeroPrincipalBinder());
-            service.addProvider(new AeroUserDevicePrincipalBinder());
-            service.addProvider(new AeroDeviceCertPrincipalBinder());
+            environment.addServiceProvider(new AeroPrincipalBinder());
+            environment.addServiceProvider(new AeroUserDevicePrincipalBinder());
+            environment.addServiceProvider(new AeroDeviceCertPrincipalBinder());
 
-            service.addResource(TestResource0.class);
-            service.addResource(TestResource1.class);
-            service.addResource(TestResource2.class);
-            service.addResource(TestResource3.class);
+            environment.addResource(TestResource0.class);
+            environment.addResource(TestResource1.class);
+            environment.addResource(TestResource2.class);
+            environment.addResource(TestResource3.class);
         }
     }
 

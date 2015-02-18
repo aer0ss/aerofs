@@ -7,10 +7,8 @@ package com.aerofs.auditor.server;
 import com.aerofs.auditor.downstream.Downstream;
 import com.aerofs.auth.server.AeroPrincipalBinder;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
-import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.lib.properties.Configuration;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
@@ -30,14 +28,14 @@ public class Auditor extends Service<AuditorConfiguration>
     }
 
     @Override
-    public void init(AuditorConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service)
+    public void init(AuditorConfiguration configuration, Environment environment)
             throws Exception
     {
-        root.addAuthenticator(new AeroDeviceCertAuthenticator());
-        root.addAuthenticator(new LegacyAuthenticator());
+        environment.addAuthenticator(new AeroDeviceCertAuthenticator());
+        environment.addAuthenticator(new LegacyAuthenticator());
 
-        service.addProvider(new AeroPrincipalBinder());
-        service.addProvider(new AbstractBinder()
+        environment.addServiceProvider(new AeroPrincipalBinder());
+        environment.addServiceProvider(new AbstractBinder()
         {
             @Override
             protected void configure()
@@ -46,6 +44,6 @@ public class Auditor extends Service<AuditorConfiguration>
             }
         });
 
-        service.addResource(EventResource.class);
+        environment.addResource(EventResource.class);
     }
 }

@@ -6,11 +6,9 @@ package com.aerofs.command.server;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
-import com.aerofs.baseline.Service;
-import com.aerofs.baseline.ServiceEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Managed;
+import com.aerofs.baseline.Service;
 import com.aerofs.command.server.config.CommandServerConfiguration;
 import com.aerofs.command.server.resources.CommandSubmissionResource;
 import com.aerofs.command.server.resources.CommandTypesResource;
@@ -46,7 +44,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
 
 
     @Override
-    public void init(CommandServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
+    public void init(CommandServerConfiguration configuration, Environment environment) throws Exception {
         // print some config info
         LOGGER.info("redis host={} port={}", configuration.getRedis().getHost(), configuration.getRedis().getPort());
         LOGGER.info("verkehr host={} port={}", configuration.getVerkehr().getHost(), configuration.getVerkehr().getPort());
@@ -63,7 +61,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
                 new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2));
 
         // have baseline manage its lifecycle
-        root.addManaged(new Managed() {
+        environment.addManaged(new Managed() {
             @Override
             public void start() throws Exception {
                 // noop
@@ -81,7 +79,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
         JedisThreadLocalTransaction transaction = new JedisThreadLocalTransaction(provider);
 
         // configure the service injector
-        service.addProvider(new AbstractBinder() {
+        environment.addServiceProvider(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(verkehrClient).to(VerkehrClient.class); // automatically singleton
@@ -90,7 +88,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
         });
 
         // add the resources we're exposing
-        service.addResource(CommandTypesResource.class);
-        service.addResource(CommandSubmissionResource.class);
+        environment.addResource(CommandTypesResource.class);
+        environment.addResource(CommandSubmissionResource.class);
     }
 }

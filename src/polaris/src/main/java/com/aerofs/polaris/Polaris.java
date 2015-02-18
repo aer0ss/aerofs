@@ -3,10 +3,8 @@ package com.aerofs.polaris;
 import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
-import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.db.DBIBinder;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DatabaseConfiguration;
@@ -21,6 +19,7 @@ import com.aerofs.polaris.resources.ObjectsResource;
 import com.aerofs.polaris.resources.TransformsResource;
 import com.aerofs.polaris.sp.SPAccessManagerBinder;
 import org.flywaydb.core.Flyway;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
 
 import javax.sql.DataSource;
@@ -37,10 +36,10 @@ public final class Polaris extends Service<PolarisConfiguration> {
     }
 
     @Override
-    public void init(PolarisConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
+    public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
-        DataSource dataSource = Databases.newManagedDataSource(root, database);
+        DataSource dataSource = Databases.newManagedDataSource(environment, database);
 
         // setup the database
         Flyway flyway = new Flyway();
@@ -54,32 +53,35 @@ public final class Polaris extends Service<PolarisConfiguration> {
 
         // setup the object store
         LogicalObjectStore logicalObjectStore = new LogicalObjectStore(dbi);
-
-        // configure the root injector (available to both admin and service)
-        root.addInjectableSingletonInstance(logicalObjectStore);
+        environment.addBinder(new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bind(logicalObjectStore).to(LogicalObjectStore.class);
+            }
+        });
 
         // setup resource authorization
-        root.addAuthenticator(new AeroDeviceCertAuthenticator());
-        admin.addProvider(new AeroDeviceCertPrincipalBinder());
-        admin.addProvider(new AeroUserDevicePrincipalBinder());
-        service.addProvider(new AeroDeviceCertPrincipalBinder());
-        service.addProvider(new AeroUserDevicePrincipalBinder());
+        environment.addAuthenticator(new AeroDeviceCertAuthenticator());
+        environment.addAdminProvider(new AeroDeviceCertPrincipalBinder());
+        environment.addAdminProvider(new AeroUserDevicePrincipalBinder());
+        environment.addServiceProvider(new AeroDeviceCertPrincipalBinder());
+        environment.addServiceProvider(new AeroUserDevicePrincipalBinder());
 
         // register singleton providers
-        service.addProvider(new DBIBinder(dbi));
-        service.addProvider(new SPAccessManagerBinder());
-        service.addProvider(DBIExceptionMapper.class);
-        service.addProvider(PolarisExceptionMapper.class);
+        environment.addServiceProvider(new DBIBinder(dbi));
+        environment.addServiceProvider(new SPAccessManagerBinder());
+        environment.addServiceProvider(DBIExceptionMapper.class);
+        environment.addServiceProvider(PolarisExceptionMapper.class);
 
         // register the command that dumps the object tree
-        admin.registerCommand("tree", TreeCommand.class);
+        environment.registerCommand("tree", TreeCommand.class);
 
         // setup the api-object deserializer
-        Operation.registerDeserializer(root.getMapper());
+        Operation.registerDeserializer(environment.getMapper());
 
         // register root resources
-        service.addResource(BatchResource.class);
-        service.addResource(ObjectsResource.class);
-        service.addResource(TransformsResource.class);
+        environment.addResource(BatchResource.class);
+        environment.addResource(ObjectsResource.class);
+        environment.addResource(TransformsResource.class);
     }
 }

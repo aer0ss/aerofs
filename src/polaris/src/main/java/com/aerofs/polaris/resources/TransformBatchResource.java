@@ -63,7 +63,7 @@ public final class TransformBatchResource {
             }
         } catch (CallbackFailedException e) {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-            Throwable cause = Databases.findRootCause(e);
+            Throwable cause = Databases.findExceptionRootCause(e);
             TransformBatchOperationResult result = getBatchOperationErrorResult(cause);
             LOGGER.warn("fail transform batch operation {}", operation, e);
             batchResult.getResults().add(result);

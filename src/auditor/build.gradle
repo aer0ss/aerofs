@@ -5,7 +5,7 @@
 archivesBaseName = 'aerofs-auditor'
 
 dependencies {
-    compile 'com.aerofs.baseline:baseline-service:0.4.1'
+    compile 'com.aerofs.baseline:baseline-service:0.5.0'
     compile project(':src/lib')
     compile project(':src/aero-auth')
     testCompile 'com.jayway.restassured:rest-assured:2.3.+'
@@ -17,12 +17,4 @@ jar {
         'Main-Class': 'com.aerofs.auditor.server.Auditor',
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
     )
-}
-
-// reduce netty buffer pool size
-test {
-    systemProperties.put "io.netty.leakDetectionLevel", "paranoid"
-    systemProperties.put "io.netty.allocator.numHeapArenas", 1
-    systemProperties.put "io.netty.allocator.numDirectArenas", 1
-    systemProperties.put "io.netty.allocator.maxOrder", 4
 }

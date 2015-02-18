@@ -8,6 +8,7 @@ import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
 import com.google.common.net.HttpHeaders;
 
+import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,6 +42,7 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
      *                         all backend services in this AeroFS
      *                         installation
      */
+    @Inject
     public AeroServiceSharedSecretAuthenticator(SharedSecret deploymentSecret) {
         this.deploymentSecret = deploymentSecret;
     }
@@ -81,7 +83,7 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
         String reportedSecret = matcher.group(2);
 
         // does their secret match ours?
-        if (deploymentSecret.constantTimeEquals(reportedSecret)) {
+        if (deploymentSecret.equalsString(reportedSecret)) {
             return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal(service), Roles.SERVICE, AeroService.AUTHENTICATION_SCHEME));
         }
 

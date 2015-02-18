@@ -6,9 +6,7 @@ import com.aerofs.auth.server.AeroPrincipal;
 import com.aerofs.auth.server.AeroPrincipalBinder;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.auth.server.SharedSecret;
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
-import com.aerofs.baseline.ServiceEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.http.HttpUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
@@ -86,17 +84,17 @@ public final class TestAeroServiceSharedSecretAuthenticator {
     private static final class TestServer extends Server {
 
         @Override
-        public void init(ServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
-            super.init(configuration, root, admin, service);
+        public void init(ServerConfiguration configuration, Environment environment) throws Exception {
+            super.init(configuration, environment);
 
-            root.addAuthenticator(new AeroServiceSharedSecretAuthenticator(new SharedSecret(DEPLOYMENT_SECRET)));
+            environment.addAuthenticator(new AeroServiceSharedSecretAuthenticator(new SharedSecret(DEPLOYMENT_SECRET)));
 
-            service.addProvider(new AeroServiceSharedSecretPrincipalBinder());
-            service.addProvider(new AeroPrincipalBinder());
+            environment.addServiceProvider(new AeroServiceSharedSecretPrincipalBinder());
+            environment.addServiceProvider(new AeroPrincipalBinder());
 
-            service.addResource(TestResource0.class);
-            service.addResource(TestResource1.class);
-            service.addResource(TestResource2.class);
+            environment.addResource(TestResource0.class);
+            environment.addResource(TestResource1.class);
+            environment.addResource(TestResource2.class);
         }
     }
 

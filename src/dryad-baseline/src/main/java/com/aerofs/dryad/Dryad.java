@@ -1,9 +1,7 @@
 package com.aerofs.dryad;
 
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
-import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.dryad.config.DryadConfiguration;
 import com.aerofs.dryad.resources.LogsResource;
 import com.aerofs.dryad.store.FileStore;
@@ -21,9 +19,9 @@ public final class Dryad extends Service<DryadConfiguration> {
     }
 
     @Override
-    public void init(DryadConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
-        // configure the service injector
-        service.addProvider(new AbstractBinder() {
+    public void init(DryadConfiguration configuration, Environment environment) throws Exception {
+        environment.addServiceProvider(BlacklistedExceptionMapper.class);
+        environment.addServiceProvider(new AbstractBinder() {
             final FileStore fileStore = new FileStore(configuration.getStorageDirectory());
 
             @Override
@@ -32,8 +30,6 @@ public final class Dryad extends Service<DryadConfiguration> {
             }
         });
 
-        // configure mappers and resources
-        service.addProvider(BlacklistedExceptionMapper.class);
-        service.addResource(LogsResource.class);
+        environment.addResource(LogsResource.class);
     }
 }

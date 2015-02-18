@@ -1,9 +1,7 @@
 package com.aerofs.auth;
 
-import com.aerofs.baseline.AdminEnvironment;
-import com.aerofs.baseline.RootEnvironment;
+import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
-import com.aerofs.baseline.ServiceEnvironment;
 import com.aerofs.baseline.config.Configuration;
 
 /**
@@ -22,7 +20,7 @@ public class Server extends Service<Server.ServerConfiguration> {
     }
 
     @Override
-    public void init(ServerConfiguration configuration, RootEnvironment root, AdminEnvironment admin, ServiceEnvironment service) throws Exception {
+    public void init(ServerConfiguration configuration, Environment environment) throws Exception {
         // nothing to configure by default...
     }
 

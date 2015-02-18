@@ -10,6 +10,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
 
+import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -43,6 +44,7 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
      *                         all backend services in this AeroFS
      *                         installation
      */
+    @Inject
     public AeroDelegatedUserDeviceAuthenticator(SharedSecret deploymentSecret) {
         this.deploymentSecret = deploymentSecret;
     }
@@ -93,7 +95,7 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
         }
 
         // does their secret match ours?
-        if (deploymentSecret.constantTimeEquals(reportedSecret)) {
+        if (deploymentSecret.equalsString(reportedSecret)) {
             return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroDelegatedUserDevicePrincipal(service, user, device), Roles.USER, AeroDelegatedUserDevice.AUTHENTICATION_SCHEME));
         }
 

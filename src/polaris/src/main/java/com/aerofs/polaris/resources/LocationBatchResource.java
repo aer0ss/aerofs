@@ -74,7 +74,7 @@ public final class LocationBatchResource {
             }
         } catch (CallbackFailedException e) {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-            Throwable cause = Databases.findRootCause(e);
+            Throwable cause = Databases.findExceptionRootCause(e);
             LocationBatchOperationResult result = getBatchOperationErrorResult(cause);
             LOGGER.warn("fail location batch operation {}", operation, e);
             batchResult.getResults().add(result);
