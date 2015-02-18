@@ -17,6 +17,12 @@ Regardless of sub-team, team members should always consider the overall goal of
 the organization, and should always strive to look for ways to improve our
 value-add to our customers.
 
+## Nomenclature
+
+In the past, this organization might have been referred to as "services". We
+prefer the more modern "customer success" terminology, because it better
+reflects our goal as opposed to our execution.
+
 ## Team Profile
 
 As defined in our [hiring guide](../hiring/customer-success-engineer.html), our
