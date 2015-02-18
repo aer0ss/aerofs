@@ -115,7 +115,7 @@ main() {
 
     echo
     echo ">>> About to wait for Signup Decoder service. It's being built from scratch and may take a while."
-    echo "SSH into the VM via the above command and to monitor progress using:"
+    echo "To monitor progress, SSH into the VM via the above command and run:"
     echo
     echo "    vm$ systemctl status -l signup-decoder"
     echo "    vm$ journalctl -fu signup-decoder"

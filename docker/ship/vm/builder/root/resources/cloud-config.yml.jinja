@@ -9,6 +9,7 @@
 {% set getty_restart = '/opt/ship/getty/restart' %}
 {% set getty_restarted = '/opt/ship/getty/restarted' %}
 {% set getty_run = '/opt/ship/getty/run' %}
+{% set enable_swap = '/opt/ship/enable-swap' %}
 {% set sail = '/opt/ship/sail' %}
 {% set loader_getty = '/opt/ship/loader/getty' %}
 {% set repo_file = '/opt/ship/loader/repo' %}
@@ -29,7 +30,7 @@ coreos:
     - name: {{ getty_restart_unit }}.service
       content: |
         [Unit]
-        Description=Getty Restart service
+        Description=Restart Getty
         [Service]
         ExecStart={{ getty_restart }}
 
@@ -37,10 +38,18 @@ coreos:
       command: start
       content: |
         [Unit]
-        Description=Ship service
+        Description=Ship Enterprise
         After=docker.service
         [Service]
         ExecStart={{ sail }}
+
+    - name: swap.service
+      command: start
+      content: |
+        [Unit]
+        Description=Enable Swap
+        [Service]
+        ExecStart={{ enable_swap }}
 
   oem:
     id: aerofs-ship
@@ -54,7 +63,7 @@ coreos:
 
 write_files:
   - path: {{ getty_restart }}
-    permissions: 0755
+    permissions: 0700
     content: |
       #!/bin/bash
       set -ex
@@ -70,7 +79,7 @@ write_files:
       ExecStart=-/sbin/agetty --noclear --skip-login --autologin root --login-program {{ getty_run }} %I $TERM
 
   - path: {{ getty_run }}
-    permissions: 0755
+    permissions: 0700
     content: |
       #!/bin/bash
       set -e
@@ -87,8 +96,21 @@ write_files:
       {# disable the service. #}
       while true; do {{ loader_getty }}/run; done
 
+  - path: {{ enable_swap }}
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+      if [ {{ swap_size }} = 0 ]; then exit 0; fi
+      if [ ! -f /swap ]; then
+        fallocate -l {{ swap_size }}m /swap
+        chmod 600 /swap
+        mkswap /swap
+      fi
+      swapon /swap
+
   - path: {{ sail }}
-    permissions: 0755
+    permissions: 0700
     content: |
       #!/bin/bash
       set -ex

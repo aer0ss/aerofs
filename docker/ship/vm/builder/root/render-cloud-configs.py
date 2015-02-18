@@ -28,8 +28,9 @@ if __name__ == "__main__":
         f.write(env.get_template('cloud-config.yml.jinja').render(
             hostname=y['vm-host-name'],
             loader_image=y['loader-image'],
+            swap_size=y['vm-swap-size'],
             repo=y['repo'],
-            target=y['target']
+            target=y['target'],
         ))
 
     # Render preload-cloud-config.yml
