@@ -49,6 +49,7 @@
         background-color: darken(@gold, 10%);
     }
 }
+
 /* Mixin */
 .link-with-arrow {
   &:after {
@@ -229,6 +230,10 @@ body {
   .btn, input, .form-control {
     border-radius: 0;
   }
+}
+
+body .gold-button {
+  .gold-button();
 }
 
 /* Navbar-related styling */
