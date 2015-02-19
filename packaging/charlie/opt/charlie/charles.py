@@ -1,4 +1,5 @@
 #!env/bin/python
+import base64
 import datetime
 import hashlib
 import json
@@ -123,8 +124,18 @@ class CheckinHandler(RequestHandler):
             "time": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
+        # Load shared secret from disk
+        with open("/data/deployment_secret") as f:
+            deployment_secret = f.read().strip()
+        auth_header = "Aero-Delegated-User-Device charlie {} {} {}".format(
+                deployment_secret, base64.b64encode(userid), did_raw.encode('hex')
+        )
+
         http_client = AsyncHTTPClient()
-        headers = HTTPHeaders({"Content-Type": "application/octet-stream"})
+        headers = HTTPHeaders({
+            "Content-Type": "application/octet-stream",
+            "Authorization": auth_header,
+        })
         request = HTTPRequest(topic_url, headers=headers, method="POST", body=json.dumps(payload))
         # Send request, continuation will send a reply to the requester
         http_client.fetch(request, self.on_verkehr_response)
