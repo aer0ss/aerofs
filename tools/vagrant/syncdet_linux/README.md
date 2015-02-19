@@ -1,1 +1,0 @@
-../../../docs/how-to/setup_syncdet_actors.md
