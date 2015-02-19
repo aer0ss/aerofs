@@ -95,8 +95,8 @@ function _package_clients()
 function _vm-deploy()
 {
     local package=$1
-    _package ${package/-/_}
-    _local-prod-cmd vm-ctrl deploy ${package/_/-}
+    _package ${package}
+    _local-prod-cmd vm-ctrl deploy ${package}
 }
 
 # -----------------------------------------------------------
