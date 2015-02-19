@@ -1,11 +1,9 @@
 from flask import Flask, json, jsonify, request
 from uuid import uuid4
-from os.path import exists
 from common import call_crane, my_container_name, my_image_name, MODIFIED_YML_PATH
 import yaml
 
 PREFIX = '/v1'
-DOCKER_SOCK_PATH = '/var/run/docker.sock'
 CURRENT = 'current'
 
 BOOT_ID = uuid4().hex
@@ -17,16 +15,18 @@ _current_target = None
 _repo_file = None
 _target_file = None
 _tag = None
+_simulate = None
 
 
-def start(current_repo, current_target, repo_file, target_file, tag):
-    global _current_repo, _current_target, _repo_file, _target_file, _tag
+def start(current_repo, current_target, repo_file, target_file, tag, simulate):
+    global _current_repo, _current_target, _repo_file, _target_file, _tag, _simulate
     # Save data in RAM rather than reading files on demand as their content may change _after_ we launch.
     _current_repo = current_repo
     _current_target = current_target
     _repo_file = repo_file
     _target_file = target_file
     _tag = tag
+    _simulate = simulate
 
     print "Starting API service..."
     app.run('0.0.0.0', 80)
@@ -57,14 +57,14 @@ def post_boot(repo=CURRENT, tag=CURRENT, target=CURRENT):
     if repo != CURRENT:
         return 'Supporting non-{} repos is not implemented yet'.format(CURRENT), 400
 
-    if exists(DOCKER_SOCK_PATH):
+    if _simulate:
+        print
+        print "WARNING: simulation mode. I dare not restart the appliance. Please do so manually."
+        print
+    else:
         call_crane('kill', _current_target)
         print 'Killing myself. Expecting external system to restart me...'
         shutdown_server()
-    else:
-        print
-        print "WARNING: {} is not available. Please restart the app manually.".format(DOCKER_SOCK_PATH)
-        print
 
     # For safety, update files _after_ everything shuts down.
     if repo != CURRENT:

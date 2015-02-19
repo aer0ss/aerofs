@@ -3,7 +3,7 @@ set -ex
 
 if [ $# != 1 ]; then
     echo "This script downloads relevant logs from the appliance VM to the host."
-    echo "Usage: $0 <log-archive-file-path>"
+    echo "Usage: $0 <log-archive-tgz-path>"
     exit 11
 fi
 

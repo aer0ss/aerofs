@@ -13,13 +13,13 @@ def load(repo_file, target_file):
     tag = get_tag()
     modify_yaml(repo, tag)
     call_crane('run', target)
-    start(repo, target, repo_file, target_file, tag)
+    start(repo, target, repo_file, target_file, tag, False)
 
 
-def simulate(repo, target):
+def simulate_api(repo, target):
     tag = get_tag()
     modify_yaml(repo, tag)
-    start(repo, target, '/dev/null', '/dev/null', tag)
+    start(repo, target, '/dev/null', '/dev/null', tag, True)
 
 
 def modify_yaml(repo, tag):

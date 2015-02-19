@@ -62,8 +62,8 @@ def main():
         install_getty('/tmp')
         subprocess.call('/tmp/run')
 
-    elif argv[1] == 'simulate':
-        loader.simulate(argv[2], argv[3])
+    elif argv[1] == 'simulate-api':
+        loader.simulate_api(argv[2], argv[3])
 
     else:
         raise Exception('Unknown command: {}'.format(argv[1]))

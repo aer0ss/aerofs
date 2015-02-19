@@ -65,6 +65,8 @@ decoupling and pave the road for scaling the appliance in the future.
 
 0. console service may start before dhcp init is done.
 
+0. on CI use --no-cache for CoreOS base images?
+
 Logistic items:
 
 0. Use stable rather than alpha CoreOS release channel (by the time of writing 
