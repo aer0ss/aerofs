@@ -25,3 +25,9 @@ within the organization. The implementation engineer has the resources
 customer's specific issues, and is responsible for diagnosing and fixing those
 issues in a proactive manner in collaboration with the sales team to foster
 upsell and renewal.
+
+## Training
+
+As a corollary of the above, the implementation engineer is also responsible
+for training the IT adminisrator and other individuals within the customer's
+organization.
