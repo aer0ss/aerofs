@@ -1,13 +1,12 @@
 #!/bin/bash
 
-CW=$(dirname "${BASH_SOURCE[0]}")/../crane-wrapper
-if [[ ! -f $CW ]]; then
-    echo "The crane-wrapper script (expected at $CW) was not found."
-fi
+DEV_DIR="$(dirname "${BASH_SOURCE[0]}")/../../docker/dev"
 
 # Run crane from any folder
-alias crane="$CW"
+alias crane="${DEV_DIR}/crane.sh"
 
-# `relaunch` with a container name, or no arguments to relaunch the entire system
-# (will destroy persistent data).
-alias relaunch="$CW run --recreate -aall" 
+alias dk-create="${DEV_DIR}/dk-create.sh"
+alias dk-reload="${DEV_DIR}/dk-reload.sh"
+alias dk-destroy="${DEV_DIR}/dk-destroy.sh"
+alias dk-start="${DEV_DIR}/crane.sh run -dall"
+alias dk-halt="${DEV_DIR}/crane.sh kill -dall"

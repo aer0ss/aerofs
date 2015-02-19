@@ -4,8 +4,10 @@ from selenium.webdriver.common.by import By
 from tempfile import mkstemp
 import yaml
 import requests
-from util import ElementCSSSelector
 from urllib import urlencode
+from sys import argv, stderr
+from webdriver_util import init
+
 
 def upload_license(e, d, wait, license_file):
 
@@ -81,7 +83,7 @@ def set_email(e, wait, admin_email):
     e.get_and_clear('#verification-code').send_keys(code)
     e.get('#continue-button').click()
 
-    # Click Continue
+    # Click "Continue"
     wait.until_display('#verify-succeed-modal')
     e.get('#verify-succeed-modal .btn-primary').click()
 
@@ -90,18 +92,23 @@ def _click_next(e):
     e.get('#next-btn').click()
 
 
-def apply_config(e, wait):
+def apply_config(e, wait, reboot_flag_file):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Please wait'))
 
-    # Click Apply
+    # Click "Apply"
     e.get('.btn-primary').click()
     print "The next step may take a while but should be less than five minutes:"
 
-    # Click Create First User
+    with open(reboot_flag_file, 'w') as f:
+        f.write('1')
+
+    # Wait for Apply Click "Create First User"
     wait.until_display('#success-modal', timeout=10 * 60)
     e.get('#success-modal .btn-primary').click()
 
-    # Wait for "Create First User" to show up then Click Continue
+
+def signup_first_user(e, wait):
+    # Wait for the Create First Account page to show up then Click Continue
     wait.until(EC.title_contains('Create First Account'))
     e.get('#create-user-btn').click()
 
@@ -128,16 +135,14 @@ def create_account(e, wait, password):
     wait.until(EC.title_contains('Download'))
 
 
-def run_all(d, wait, hostname, license_file, appliance_yml):
+def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_user):
 
-    with open(appliance_yml) as f:
+    with open('/appliance.yml') as f:
         y = yaml.load(f)
 
     url = "http://" + hostname
     print "Interacting with {}...".format(url)
     d.get(url)
-
-    e = ElementCSSSelector(d)
 
     # Set up appliance
     upload_license(e, d, wait, license_file)
@@ -145,13 +150,28 @@ def run_all(d, wait, hostname, license_file, appliance_yml):
     set_hostname(e, wait, hostname)
     set_browser_cert(e, wait, y['browser-cert'], y['browser-key'])
     set_email(e, wait, y['admin-email'])
-    apply_config(e, wait)
+    apply_config(e, wait, reboot_flag_file)
 
     # Create first admin account
-    code = get_signup_code(hostname, y['admin-email'])
-    url = "https://{}/signup?c={}".format(hostname, code)
-    print "Interacting with {}...".format(url)
-    d.get(url)
-    create_account(e, wait, y['admin-pass'])
+    if create_first_user:
+        signup_first_user(e, wait)
+        code = get_signup_code(hostname, y['admin-email'])
+        url = "https://{}/signup?c={}".format(hostname, code)
+        print "Interacting with {}...".format(url)
+        d.get(url)
+        create_account(e, wait, y['admin-pass'])
 
     wait.shoot('end')
+
+
+def main():
+    if len(argv) != 6:
+        print >>stderr, "Usage: {} <hostname-of-appliance-under-test> <screenshot-output-dir> <path-to-license-file> " \
+                        "<path-to-reboot-flag-file> <create-first-user>".format(argv[0])
+        exit(11)
+
+    driver, waiter, selector = init(argv[2])
+    run_all(driver, waiter, selector, argv[1], argv[3], argv[4], argv[5] == 'true')
+
+
+main()

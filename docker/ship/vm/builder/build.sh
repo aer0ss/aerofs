@@ -283,11 +283,11 @@ find_free_local_port() {
     echo ${PORT}
 }
 
-# Colorful echo. See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+# See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
 GREEN='0;32'
 CYAN='0;36'
 YELLOW='1;33'
-RED='1;31'
+RED='0;31'
 cecho() {
     (set +x
         echo -e "\033[$1m$2\033[0m"

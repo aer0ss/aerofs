@@ -1,3 +1,0 @@
-#!/bin/bash
-
-crane $@ -c $(dirname ${BASH_SOURCE[0]})/../docker/ship-aerofs/loader/root/crane.yml
