@@ -121,7 +121,7 @@ else
     cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
 
     if [ ! -e /opt/ca/prod/migrated ]; then
-        /opt/ca-server/migration.sh
+        /opt/bunker/migration.sh
         rm -rf /opt/ca/prod
         mkdir -p /opt/ca/prod
         touch /opt/ca/prod/migrated

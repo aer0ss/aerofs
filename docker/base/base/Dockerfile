@@ -10,4 +10,4 @@ RUN mkdir -p /etc/aerofs && touch /etc/aerofs/private-deployment-flag
 
 ENTRYPOINT [ "/container-scripts/service-barrier" ]
 
-COPY buildroot /
+COPY root buildroot /

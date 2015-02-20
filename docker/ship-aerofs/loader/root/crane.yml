@@ -52,6 +52,7 @@ containers:
       detach: true
       publish:
         - "5222:5222"
+      # For /data/deployment-secret
       volumes-from:
         - data
       link:
@@ -136,6 +137,9 @@ containers:
       detach: true
       volumes-from:
         - data
+      link:
+        - mysql:mysql.service
+        - config:config.service
 
   web:
     image: aerofs/web
@@ -153,8 +157,8 @@ containers:
     image: aerofs/bifrost
     run:
       detach: true
+      # For /data/deployment-secret
       volumes-from:
-        # for deployment secret
         - data
       link:
         - config:config.service
@@ -206,6 +210,7 @@ containers:
         # For /data/deployment_secret
         - data
       link:
+        - config:config.service
         - mysql:mysql.service
         - sparta:sparta.service
         - verkehr:verkehr.service
@@ -248,7 +253,7 @@ containers:
     image: aerofs/sp
     run:
       detach: true
-      # for deployment secret and private deployment flag
+      # for deployment secret
       volumes-from:
         - data
       link:

@@ -47,12 +47,15 @@ info "Launching 'maintenance' container group..."
 "${THIS_DIR}/crane.sh" run -dall maintenance
 
 IP=$(docker-machine ip dev)
-URL="http://${IP}:8484"
-info "Waiting for ${URL} readiness..."
-while true; do
-    BODY="$(curl -s --connect-timeout 1 ${URL} || true)"
-    [[ "${BODY}" ]] && break
-    sleep 1
+
+for PORT in {8484,80}; do
+    URL="http://${IP}:${PORT}"
+    info "Waiting for ${URL} readiness..."
+    while true; do
+        BODY="$(curl -s --connect-timeout 1 ${URL} || true)"
+        [[ "${BODY}" ]] && break
+        sleep 1
+    done
 done
 
 info "Configuring AeroFS..."

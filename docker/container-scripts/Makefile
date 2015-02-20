@@ -20,5 +20,5 @@ $(DST_DIR)/%: $(SRC_DIR)/%
 
 # PREDOCKER
 $(DST_DIR)/crt-create: $(SRC_DIR)/../../packaging/ca-tools/usr/bin/crt-create
-	sed -e 's|CA_HOST:1029/prod|CA_HOST:9002|' $< > $@
+	sed -e 's|CA_HOST:1029|CA_HOST:9002|' $< > $@
 	chmod a+x $@

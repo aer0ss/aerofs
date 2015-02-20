@@ -17,6 +17,7 @@ import com.aerofs.ca.server.resources.CAResource;
 import com.aerofs.ca.server.resources.CAInitializedCheck;
 import com.aerofs.ca.server.resources.InvalidCSRExceptionMapper;
 import com.aerofs.ca.utils.CertificateSigner;
+import com.aerofs.ca.utils.CertificateUtils;
 import com.aerofs.ca.utils.KeyUtils;
 import com.google.common.io.ByteStreams;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -29,9 +30,7 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.core.Context;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.Security;
@@ -41,6 +40,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class CAService extends Service<CAConfig>
 {
     private static final Logger l = Loggers.getLogger(CAService.class);
+    private static final String CA_CERT_PATH = "/opt/ca/prod/cacert.pem";
 
     public CAService()
     {
@@ -84,6 +84,12 @@ public class CAService extends Service<CAConfig>
             certificateSigner = CertificateSigner.certificateSignerWithKeys(keys);
             db.setKeyAndCert(keys.getPrivate(), certificateSigner.caCert());
         }
+
+        // save the cacert as a PEM to disk, needed by some other services that shouldn't depend on ca-server to be running
+        FileOutputStream caCert = new FileOutputStream(CA_CERT_PATH);
+        caCert.write(CertificateUtils.x509ToPEM(certificateSigner.caCert()));
+        caCert.flush();
+        caCert.close();
 
         environment.addResource(CAResource.class);
         environment.registerHealthCheck("initialized", CAInitializedCheck.class);

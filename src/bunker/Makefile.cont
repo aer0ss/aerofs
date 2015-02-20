@@ -7,8 +7,9 @@ PRODUCTION_INI = $(ROOT)/production.ini
 BACKUP_SH = buildroot/backup.sh
 RESTORE_SH = buildroot/restore.sh
 REQUIREMENTS_FILE = buildroot/requirements-exact.txt
+MIGRATION_SH = $(ROOT)/migration.sh
 
-image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH)
+image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH)
 	docker build -t $(IMAGE_NAME) .
 
 $(ROOT)/%: %

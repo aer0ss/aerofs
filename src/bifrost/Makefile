@@ -21,9 +21,5 @@ $(DST_DIR)/%: $(RSC_DIR)/%
 	mkdir -p $(@D)
 	cp $< $@
 
-$(DST_DIR)/bifrost.properties: $(RSC_DIR)/bifrost.properties
-	mkdir -p $(@D)
-	sed -e 's/localhost/mysql.service/' $< > $@
-
 .fix-source:
 	for i in $(FIXES); do patch $$i < $$(basename $$i).docker.patch; done

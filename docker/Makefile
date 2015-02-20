@@ -11,7 +11,7 @@ DIRS = \
 	../src/auditor \
 	../src/bifrost \
 	../src/bunker \
-	../packaging/ca-server \
+	../src/ca-server \
 	../packaging/config \
 	../packaging/charlie \
 	data-container \

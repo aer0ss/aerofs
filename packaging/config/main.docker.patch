@@ -1,13 +1,13 @@
-@@ -16,7 +16,7 @@
+@@ -17,7 +17,7 @@
  PWD = os.path.abspath(os.path.dirname(__file__))
  PROPERTIES_EXTERNAL = os.path.join(PWD, "properties", "external.properties")
  PROPERTIES_EXTERNAL_TMP = os.path.join(PWD, "properties","external.properties.tmp")
 -CACERT_PATH = "/etc/ssl/certs/AeroFS_CA.pem"
 +CACERT_PATH = "/opt/ca/prod/cacert.pem"
+ MODIFIED_TIME_KEY = "properties_modification_time"
  
  LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
- 
-@@ -115,12 +115,6 @@
+@@ -117,12 +117,6 @@
          d[k] = v
      return d
  
@@ -20,7 +20,7 @@
  # ----------------------------------------------------------------------
  # Routes
  # ----------------------------------------------------------------------
-@@ -165,6 +159,19 @@
+@@ -168,6 +162,19 @@
      """
      return Response("Correct sha1sum for current license.\n", status=200)
  
@@ -40,7 +40,7 @@
  # No authentication required; this path does its own checks.
  @app.route("/set_license_file", methods=["POST"])
  @returns_plaintext
-@@ -213,9 +220,6 @@
+@@ -216,9 +223,6 @@
          with open(LICENSE_FILE_PATH) as f:
              old_license_file_bytes = f.read()
          if license_file_bytes == old_license_file_bytes:
@@ -50,7 +50,7 @@
              return "Provided license file matches the currently-active license file.\n"
          old_license_file = BytesIO(old_license_file_bytes)
          old_license_info = license_file.verify_and_load(old_license_file)
-@@ -248,7 +252,6 @@
+@@ -251,7 +255,6 @@
      os.rename(new_license_tempfile_path, LICENSE_FILE_PATH)
  
      # return 200 OK

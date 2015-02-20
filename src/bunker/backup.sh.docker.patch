@@ -1,9 +1,9 @@
-@@ -14,7 +14,7 @@
- cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
+@@ -19,7 +19,7 @@
+     cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
  
- echo ">>> Backing up mysql database..."
--mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
-+mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
+     echo ">>> Backing up mysql database..."
+-    mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
++    mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
  
- echo ">>> Backing up CA files..."
- cp -a /opt/ca/prod aerofs-db-backup/ca-files
+     echo ">>> Backing up CA files..."
+     cp -a /opt/ca/prod aerofs-db-backup/ca-files

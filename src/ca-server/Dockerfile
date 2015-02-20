@@ -8,16 +8,14 @@ RUN \
     #
     # PREDOCKER forward logs to docker log collector
     #
-    mkdir -p /var/log/sparta &&\
-    ln -sf /dev/stdout /var/log/sparta/sparta.log
+    mkdir -p /var/log/ca-server &&\
+    ln -sf /dev/stdout /var/log/ca-server/ca.log
 
 # Import files
 COPY root buildroot /
 
-# Expose ports
-EXPOSE 8085
+# Expose port
+EXPOSE 9002 9003
 
 # Define default command
 CMD [ "/run.sh" ]
-
-RUN mkdir -p /etc/aerofs && touch /etc/aerofs/private-deployment-flag

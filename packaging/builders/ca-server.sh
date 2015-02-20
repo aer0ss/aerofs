@@ -6,7 +6,7 @@ SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_DIR=build/ca-server
 RESOURCES=../src/ca-server/src/dist
 
-CONFIG="$RESOURCES/ca.yml.tmplt $RESOURCES/migration.sh"
+CONFIG="$RESOURCES/ca.yml.tmplt ../src/bunker/migration.sh"
 JAVA_ARGS="-Xmx1536m"
 SERVICE_ARGS="ca.yml"
 

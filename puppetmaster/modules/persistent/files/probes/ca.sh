@@ -1,2 +1,2 @@
 #!/bin/bash -e
-/opt/sanity/probes/tools/port.sh localhost 9002
+/opt/sanity/probes/tools/url.sh localhost:9003/status
