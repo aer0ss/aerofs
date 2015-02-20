@@ -12,7 +12,7 @@ import requests
 
 from web import error
 from web.sp_util import exception2error
-from web.util import get_rpc_stub, is_private_deployment, str2bool
+from web.util import get_deployment_secret, get_rpc_stub, is_private_deployment, str2bool
 
 
 log = logging.getLogger(__name__)
@@ -31,10 +31,7 @@ def _audit(request, topic, event, data=None):
     host = request.registry.settings["base.audit.service.host"]
     port = request.registry.settings["base.audit.service.port"]
     path = request.registry.settings["base.audit.service.path"]
-    deployment_secret_file = request.registry.settings['deployment.secret_file']
-    secret = None
-    with open(deployment_secret_file) as f:
-        secret = f.read().strip()
+    secret = get_deployment_secret(request.registry.settings)
     auth_header_value = 'Aero-Service-Shared-Secret {} {}'.format('web', secret)
     headers = {'Content-type': 'application/json',
                'Authorization': auth_header_value}

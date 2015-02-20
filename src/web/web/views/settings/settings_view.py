@@ -77,7 +77,7 @@ def json_delete_access_token(request):
     # If the user has a token delete it in bifrost.
     if len(user_settings_token) > 0:
         bifrost_client = get_bifrost_client(request)
-        bifrost_client.delete_oauth_token(user_settings_token)
+        bifrost_client.delete_access_token(user_settings_token)
         bifrost_client.flash_on_error(request)
     # Delete the persistent store of the token on SP.
     sp.delete_user_settings_token()

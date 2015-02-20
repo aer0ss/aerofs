@@ -5,7 +5,7 @@ from pyramid.view import view_config
 
 from web import util
 from web.util import flash_error, flash_success
-from web.oauth import get_bifrost_client, is_builtin_client_id, is_valid_non_builtin_client_id
+from web.oauth import get_privileged_bifrost_client, is_builtin_client_id, is_valid_non_builtin_client_id
 from maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
     request_method='GET'
 )
 def registered_apps(request):
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request)
     r = bifrost_client.get_registered_apps()
     if r.ok:
         # clients is an array of registered clients
@@ -64,7 +64,7 @@ def register_app_post(request):
         flash_error(request, 'The redirect URI is required.')
         raise HTTPFound(request.route_path('register_app'))
 
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request)
     r = bifrost_client.register_app(client_name, redirect_uri)
     if not r.ok:
         bifrost_client.flash_on_error(request, r)
@@ -87,7 +87,7 @@ def json_delete_app(request):
         log.error('json_delete_app(): invalid client_id: ' + client_id)
         util.error('The application ID is invalid.')
 
-    bifrost_client = get_bifrost_client(request)
-    r = bifrost_client.delete_app(client_id)
+    bifrost_client = get_privileged_bifrost_client(request)
+    bifrost_client.delete_app(client_id)
     bifrost_client.raise_on_error()
     return {}

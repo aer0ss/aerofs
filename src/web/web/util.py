@@ -182,6 +182,11 @@ def str2bool(v):
     else:
         return v.lower() in ("yes", "true", "t", "1", "on")
 
+def get_deployment_secret(settings):
+    secret_file = settings['deployment.secret_file']
+    with open(secret_file) as f:
+        return f.read().strip()
+
 def is_private_deployment(settings):
     return str2bool(settings.get('config.loader.is_private_deployment', False))
 

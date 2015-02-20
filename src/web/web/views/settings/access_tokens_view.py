@@ -180,6 +180,6 @@ def json_delete_access_token(request):
         util.error('The application ID is invalid.')
 
     bifrost_client = get_bifrost_client(request)
-    r = bifrost_client.delete_access_token(token)
+    bifrost_client.delete_access_token(token)
     bifrost_client.raise_on_error()
     return {}
