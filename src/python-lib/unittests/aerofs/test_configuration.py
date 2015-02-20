@@ -18,10 +18,10 @@ class TestConfiguration(unittest.TestCase):
         res = Response()
         res.status_code = 200
         res._content = content
-        requests.get = lambda url: res
+        requests.get = lambda url, *args, **kwargs: res
 
     def _verify_fetch_result(self, expected):
-        config = Configuration("http://dummy:5434").server_properties()
+        config = Configuration("http://dummy:5434", deployment_secret='e2b48c04f544fccce830d3cf30e563b3').server_properties()
         self.assertEqual(config, expected)
 
 def test_suite():
