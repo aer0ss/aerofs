@@ -55,7 +55,7 @@ def set_license_file_and_attach_shasum_to_session(request, license_bytes):
 
     @param license_bytes: content of a license file
     """
-    conf_client = Configuration(request.registry.settings['deployment.config_server_uri'])
+    conf_client = Configuration(request.registry.settings['deployment.config_server_uri'], service_name='bunker')
     try:
         text = conf_client.set_license(license_bytes)
         log.info("set license file okay: {}".format(text))
@@ -103,7 +103,7 @@ def is_license_shasum_valid(request, shasum):
     Call the config server to verify the shasum saved in the session matches the
     current license data. This method assumes the shasum is non-null.
     """
-    client = Configuration(request.registry.settings['deployment.config_server_uri'])
+    client = Configuration(request.registry.settings['deployment.config_server_uri'], service_name='bunker')
     try:
         client.is_license_shasum_valid(shasum)
         return True

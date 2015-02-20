@@ -9,17 +9,34 @@ class Configuration(object):
     """
     Class that fetches and manages configuration.
     """
-    def __init__(self, base_url, custom_cert=None, custom_cert_bundle=None):
+    def __init__(self, base_url, custom_cert=None, custom_cert_bundle=None,
+            deployment_secret=None, service_name=None):
         self.base_url = base_url
         # To allow for custom certificate use, we allow a custom_cert parameter
         # (raw PEM-encoded bytes), or a custom_cert_bundle parameter (filename)
         self.custom_cert = custom_cert
         self.custom_cert_bundle = custom_cert_bundle
+        self.service_name = service_name or "python-config-client"
+        # The deployment secret, if not provided here, is lazy-loaded when
+        # server_properties() or set_external_property() are called.
+        self.deployment_secret = deployment_secret
 
-    def _get(self, url):
+    def _deployment_secret(self):
+        if self.deployment_secret is not None:
+            return self.deployment_secret
+        with open('/data/deployment_secret') as f:
+            return f.read().strip()
+
+    def _privileged_headers(self):
+        return {
+            'Authorization': 'Aero-Service-Shared-Secret {} {}'.format(self.service_name,
+                self._deployment_secret())
+        }
+
+    def _get(self, url, headers=None):
         r = None
         if self.custom_cert_bundle:
-            r = requests.get(url, verify=self.custom_cert_bundle)
+            r = requests.get(url, headers=headers, verify=self.custom_cert_bundle)
         elif self.custom_cert:
             # Python's urllib SSL bindings do not allow specifying cacerts/bundles
             # as bytebuffers; they allow only filenames.  So create a named tempfile
@@ -29,9 +46,9 @@ class Configuration(object):
             with tempfile.NamedTemporaryFile() as f:
                 f.write(self.custom_cert)
                 f.seek(0)
-                r = requests.get(url, verify=f.name)
+                r = requests.get(url, headers=headers, verify=f.name)
         else:
-            r = requests.get(url)
+            r = requests.get(url, headers=headers)
         if not r.ok:
             raise IOError("Couldn't reach configuration server: {}".format(
                 r.status_code))
@@ -68,7 +85,7 @@ class Configuration(object):
         dictionary of the config's key-value pairs.
         """
         url = "{}/server".format(self.base_url)
-        text = self._get(url)
+        text = self._get(url, headers=self._privileged_headers())
         configuration = self._parse_props(text)
         # Exclude the browser key to avoid keeping it around in the python
         # process's memory, in case a stacktrace somewhere winds up doing a
@@ -87,7 +104,7 @@ class Configuration(object):
         """
         payload = {'key': key, 'value': value}
         url = "{}/set".format(self.base_url)
-        requests.post(url, data=payload)
+        requests.post(url, headers=self._privileged_headers(), data=payload)
 
     def set_license(self, license_bytes):
         url = "{}/set_license_file".format(self.base_url)

@@ -15,7 +15,7 @@ def main(global_config, **settings):
     """
 
     if settings['deployment.mode'] == 'private':
-        configuration = Configuration(settings['deployment.config_server_uri'])
+        configuration = Configuration(settings['deployment.config_server_uri'], service_name='web')
         settings.update(configuration.server_properties())
 
     # Import template directories from views

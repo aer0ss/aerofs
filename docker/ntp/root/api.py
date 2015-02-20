@@ -23,7 +23,7 @@ def internal_error(error):
 
 
 def reload_ntp():
-    server = Configuration('http://config.service:5434').server_properties()['ntp.server']
+    server = Configuration('http://config.service:5434', service_name='ntp').server_properties()['ntp.server']
 
     print "Setting NTP server to '{}'...".format(server)
     if server:
@@ -39,7 +39,7 @@ def reload_ntp():
 
     if server:
         # Perform a possibly-large time adjustment, since set-ntp will only skew the clock, rather than forcing it to
-        # skip. "ntpdate" has been deprecate for "sntp" but the latter is not available in Dedian.
+        # skip. "ntpdate" has been deprecate for "sntp" but the latter is not available in Debian.
         # https://support.ntp.org/bin/view/Dev/DeprecatingNtpdate).
         print "Skipping clock..."
         call(['ntpdate', '-b', server])

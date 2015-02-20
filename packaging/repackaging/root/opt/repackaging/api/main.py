@@ -36,7 +36,7 @@ def post():
     # N.B. potential race condition between invoking is_running() and Popen(). Fortunately Flask
     # serializes requests.
 
-    config = Configuration('http://config.service:5434')
+    config = Configuration('http://config.service:5434', 'repackaging')
     config_service_public_url = config.server_properties()['config.loader.configuration_service_url']
     print 'Launch repackaging task (config service url:', config_service_public_url, ')'
 

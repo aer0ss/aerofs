@@ -168,9 +168,11 @@ if __name__ == "__main__":
     config_client = None
     if "CONFIG_SERVER_CERT" in config:
         config_client = Configuration(config["CONFIG_SERVER_BASE_URI"],
-                                      custom_cert=config["CONFIG_SERVER_CERT"])
+                                      custom_cert=config["CONFIG_SERVER_CERT"],
+                                      service_name='charlie')
     else:
-        config_client = Configuration(config["CONFIG_SERVER_BASE_URI"])
+        config_client = Configuration(config["CONFIG_SERVER_BASE_URI"],
+                                      service_name='charlie')
     aerofs_config = config_client.client_properties()
 
     port = 8701

@@ -88,7 +88,7 @@ def get_conf(request):
 
 
 def get_conf_client(request):
-    return Configuration(request.registry.settings["deployment.config_server_uri"])
+    return Configuration(request.registry.settings["deployment.config_server_uri"], service_name='bunker')
 
 
 def is_ipv4_address(string):
