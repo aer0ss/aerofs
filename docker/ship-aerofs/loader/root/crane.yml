@@ -36,11 +36,13 @@ containers:
     run:
       # ntpdate needs privilege
       privileged: true
+      detach: true
       volume:
         # datatimectl needs dbus access
         - /var/run/dbus:/var/run/dbus
         - /etc/systemd/timesyncd.conf.d:/etc/systemd/timesyncd.conf.d
-      detach: true
+      volumes-from:
+        - data
       link:
         - config:config.service
 
@@ -225,6 +227,8 @@ containers:
     image: aerofs/charlie
     run:
       detach: true
+      volumes-from:
+        - data
       link:
         - verkehr:verkehr.service
 
