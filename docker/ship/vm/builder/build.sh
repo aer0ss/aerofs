@@ -93,7 +93,7 @@ teardown_preload_registry() {
 
 build_vdi() {
     # Copy ship.yml to the output folder as the original file may be in a temp folder which can't be
-    # reliably bind mounted by boot2docker.
+    # reliably bind mounted by docker-machine.
     cp "${SHIP_YML}" "${OUTPUT}/ship.yml"
 
     # Build the builder (how meta)

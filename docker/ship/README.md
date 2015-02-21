@@ -34,9 +34,6 @@ deployment options:
 Building deliverables for your customers is a 3-step process: 0: create crane.yml.
 1: build the Loader. 2: generate one or more appropriate output formats (3. push through your CI).
 
-Note: currently Ship only supports OSX with boot2docker. See
-build.sh:setup_preload_registry().
-
 ### Step 0. Create crane.yml
 
 Create a standard [crane](https://github.com/michaelsauter/crane) yaml file to describe your

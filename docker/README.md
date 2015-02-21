@@ -1,49 +1,47 @@
 This folder contains Docker specific files, tools, and build scripts. For more 
-information, please see [this design doc](../docs/design/docker.md).
+information, please see [this design doc](../docs/design/docker.html).
 
-# Getting Started
+# Get started
 
-- Install software:
+1. Install build tools. You may run this script again at any time to upgrade the tools.
 
-    - [boot2docker](https://docs.docker.com/installation/mac/), and [increase its disk size](https://docs.docker.com/articles/b2d_volume_resize/) to at least 100GB. Building AeroFS
-doesn't need this much but it's just in case you become a heavy docker user later :)
+        $ ~/repos/aerofs/docker/dev/upgrade-tools.sh
+   
+2. Build and launch the appliance. The first run takes about 30 minutes. Follow-up instructions
+is printed at the end of the process. [Learn Docker](https://docs.docker.com/userguide/) while
+it's in progress.
 
-    - docker: `brew update && brew install --upgrade docker`
+        $ dk-create
+
+4. Now you can rebuild and reload individual service containers. Familiarize yourself with the
+`dk-*` command family.
+
+        $ make -C src/bifrost && dk-reload bifrost
+
+# Build appliance VM (optional)
+
+You do NOT need the VM for most development work. Follow the commands below to build appliance
+VM images. The output file's location is printed at the end of this step.
+
+        $ dk-create && make -C docker ship
+
+
+# Tips and tricks
+
+## Dependency graph
+
+Show the container dependency graph, with Bifrost's link dependency highlighted:
+
+    $ crane graph -dlink bifrost | dot -Tpng > /tmp/containers.png && open /tmp/containers.png
     
-    - [crane](https://github.com/michaelsauter/crane#installation)
+## Image graph
 
-- Build Docker images:
+Show the dependency graph of all local Docker images:
 
-      $ invoke proto build_client package_clients --mode PRIVATE --unsigned
-      $ cd ~/repos/aerofs/docker
-      $ make
+    $ docker images --viz | dot -Tpng > /tmp/images.png && open /tmp/images.png
 
-- Test images:
-
-      $ crane run -d all
-      $ open http://`boot2docker ip`
-
-- Build the appliance (after images are built):
-
-      $ cd ~/repos/aerofs/docker
-      $ make ship
-
-  Build artifacts including VM images and cloud-config files will be available at ~/repos/aerofs/out.ship.
-
-# Useful links
+## Useful links
 
 - [Dockerfile best practices](https://docs.docker.com/articles/dockerfile_best-practices/)
 
 - [Dockerfile IntelliJ plugin](https://github.com/masgari/docker-intellij-idea)
-
-# Ignore docker related files
-
-The docker build system introduced many scripts with the sole purpose of fixing up legacy source code, for example,  replacing "localhost" with "foo.service". These fixes will be removed once we switch away from the legacy system. For the time being, if you want to exclude docker related files from your search results, simply ignore the following file patterns when searching the code base:
-
-- Dockerfile
-- Makefile (the legacy system has Makefiles but doesn't use them extensively)
-- \*docker\*
-- /root/
-- /buildroot/
-
-`ag` users may simply place these patterns to their `.agignore` files.

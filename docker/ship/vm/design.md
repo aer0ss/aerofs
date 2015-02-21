@@ -48,10 +48,6 @@ the first and last step.
 
 # Tips and Tricks
 
-[CoreOS cloud-config 
-Reference](https://coreos.com/docs/cluster-management/setup/cloudinit-cloud-conf
-ig)
-
 Run cloud-init manually:
 
     $ sudo coreos-cloudinit --from-file /usr/share/oem/cloud-config.yml

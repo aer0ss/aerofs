@@ -38,7 +38,7 @@ info "Removing AeroFS containers..."
 info "Launching 'maintenance' container group..."
 "${THIS_DIR}/crane.sh" run -dall maintenance
 
-IP=$(boot2docker ip)
+IP=$(docker-machine ip dev)
 URL="http://${IP}:8484"
 info "Waiting for ${URL} readiness..."
 while true; do
@@ -48,7 +48,7 @@ while true; do
 done
 
 info "Configuring AeroFS..."
-# Create and clear the reboot flag file. Can't use mktemp since boot2docker can't bind mount /tmp folders to containers
+# Create and clear the reboot flag file. Can't use mktemp since docker-machine can't bind mount /tmp folders to containers
 REBOOT_FLAG=${THIS_DIR}/../../out.shell/dk-create-reboot-flag
 mkdir -p "$(dirname ${REBOOT_FLAG})"
 echo > "${REBOOT_FLAG}"
@@ -77,4 +77,7 @@ done
 # Wait for the script to finish
 wait ${PID}
 
-success "Services up and running. You may create the first user at http://${IP}"
+success 'Services up and running. You may create the first user using:'
+echo
+success '   $ open http://$(docker-machine ip dev)'
+echo

@@ -17,10 +17,3 @@ requests.
 # Source folder structure
 
 TODO
-
-# Tips and tricks
-
-Use this command to draw a image dependency graph (requires `brew install 
-graphviz`)
-
-    $ docker images --viz | dot -Tpng > graph.png
