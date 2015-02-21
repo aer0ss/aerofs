@@ -6,7 +6,6 @@ package com.aerofs.command.server.resources;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.ids.DID;
-import com.aerofs.ids.validation.Identifier;
 import com.aerofs.proto.Cmd;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
@@ -35,10 +34,9 @@ public final class CommandSubmissionResource {
     public void submitCommand(
             @Context JedisThreadLocalTransaction transaction,
             @Context VerkehrClient verkehr,
-            @PathParam("device") @Identifier String device,
+            @PathParam("device") DID device,
             @PathParam("queue" ) @NotNull @Size(min = 1) String commandType) throws Exception {
-        DID did = new DID(device);
-        String stringifiedDevice = did.toStringFormal();
+        String stringifiedDevice = device.toStringFormal();
         String commandMessage = CommandUtil.createCommandMessage(Cmd.CommandType.valueOf(commandType));
 
         LOGGER.info("ENQUEUE did={} message={}", stringifiedDevice, commandMessage);
@@ -46,7 +44,7 @@ public final class CommandSubmissionResource {
         JedisEpochCommandQueue queue = new JedisEpochCommandQueue(transaction);
         transaction.begin();
         try {
-            JedisEpochCommandQueue.Epoch epoch = queue.enqueue(did, commandMessage);
+            JedisEpochCommandQueue.Epoch epoch = queue.enqueue(device, commandMessage);
             transaction.commit(); // send to redis before publishing to vk
             Cmd.Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());
             verkehr.publish(BaseParam.Topics.getCMDTopic(stringifiedDevice, true), command.toByteArray()).get();

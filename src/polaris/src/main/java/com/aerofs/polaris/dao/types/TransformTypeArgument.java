@@ -1,4 +1,4 @@
-package com.aerofs.polaris.dao;
+package com.aerofs.polaris.dao.types;
 
 import com.aerofs.polaris.api.types.TransformType;
 import org.skife.jdbi.v2.StatementContext;

@@ -1,5 +1,8 @@
 package com.aerofs.auth.server;
 
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
+
 /**
  * Identifies an AeroFS end-user/device pair.
  * <br>
@@ -17,12 +20,12 @@ public interface AeroUserDevicePrincipal extends AeroPrincipal {
      *
      * @return unique user id of the user that made the request
      */
-    String getUser();
+    UserID getUser();
 
     /**
-     * Return the DID (32 character hex string) of the device that made the request
+     * Return the device id of the device that made the request
      *
-     * @return DID of the device that made the request
+     * @return device id of the device that made the request
      */
-    String getDevice();
+    DID getDevice();
 }

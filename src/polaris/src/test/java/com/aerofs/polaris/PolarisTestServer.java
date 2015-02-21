@@ -4,16 +4,18 @@ import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.http.HttpConfiguration;
 import com.aerofs.baseline.metrics.MetricRegistries;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.notification.UpdatePublisher;
 import com.aerofs.polaris.sparta.ManagedAccessManager;
 import com.aerofs.polaris.verkehr.ManagedUpdatePublisher;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
 import org.mockito.Mockito;
 
-import javax.inject.Singleton;
 import java.io.IOException;
 
 /**
@@ -38,24 +40,24 @@ public final class PolarisTestServer extends ExternalResource {
         return String.format("http://%s:%d", service.getHost(), service.getPort());
     }
 
-    public static String getObjectURL(String oid) {
-        return String.format("%s/objects/%s/", getServiceURL(), oid);
+    public static String getObjectURL(UniqueID object) {
+        return String.format("%s/objects/%s/", getServiceURL(), object.toStringFormal());
     }
 
     public static String getTransformBatchURL() {
         return String.format("%s/batch/transforms/", getServiceURL());
     }
 
-    public static String getTransformsURL(String root) {
-        return String.format("%s/transforms/%s/", getServiceURL(), root);
+    public static String getTransformsURL(SID root) {
+        return String.format("%s/transforms/%s/", getServiceURL(), root.toStringFormal());
     }
 
-    public static String getLocationsURL(String oid, long version) {
-        return String.format("%s/objects/%s/versions/%d/locations/", getServiceURL(), oid, version);
+    public static String getLocationsURL(OID object, long version) {
+        return String.format("%s/objects/%s/versions/%d/locations/", getServiceURL(), object.toStringFormal(), version);
     }
 
-    public static String getLocationURL(String oid, long version, String device) {
-        return String.format("%s/objects/%s/versions/%d/locations/%s", getServiceURL(), oid, version, device);
+    public static String getLocationURL(OID object, long version, DID device) {
+        return String.format("%s/objects/%s/versions/%d/locations/%s", getServiceURL(), object.toStringFormal(), version, device.toStringFormal());
     }
 
     public static String getLocationBatchURL() {

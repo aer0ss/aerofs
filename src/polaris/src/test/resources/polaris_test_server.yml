@@ -33,7 +33,7 @@ sparta:
   maxConnections: 10
 
 logging:
-  level: ALL
+  level: DEBUG
 
   console:
     enabled: true

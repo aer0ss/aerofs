@@ -1,8 +1,8 @@
 package com.aerofs.polaris.api.batch.location;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -10,26 +10,15 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class LocationBatchResult {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    private List<LocationBatchOperationResult> results;
+    public final List<LocationBatchOperationResult> results;
 
-    public LocationBatchResult(int resultCount) {
-        this.results = Lists.newArrayListWithCapacity(resultCount);
-    }
-
-    private LocationBatchResult() { }
-
-    public List<LocationBatchOperationResult> getResults() {
-        return results;
-    }
-
-    private void setResults(List<LocationBatchOperationResult> results) {
+    @JsonCreator
+    public LocationBatchResult(@JsonProperty("results") List<LocationBatchOperationResult> results) {
         this.results = results;
     }
 

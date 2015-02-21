@@ -1,6 +1,8 @@
 package com.aerofs.auth.server.cert;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -10,16 +12,16 @@ import javax.annotation.Nullable;
  */
 public final class AeroDeviceCertPrincipal implements AeroUserDevicePrincipal {
 
-    private final String user;
-    private final String device;
+    private final UserID user;
+    private final DID device;
 
     /**
      * Constructor.
      *
      * @param user user id of the user that made the request
-     * @param device DID (32 character hex string) of the device that made the request
+     * @param device device id of the device that made the request
      */
-    public AeroDeviceCertPrincipal(String user, String device) {
+    public AeroDeviceCertPrincipal(UserID user, DID device) {
         this.user = user;
         this.device = device;
     }
@@ -34,16 +36,16 @@ public final class AeroDeviceCertPrincipal implements AeroUserDevicePrincipal {
      */
     @Override
     public String getName() {
-        return String.format("%s:%s", user, device);
+        return String.format("%s:%s", user.getString(), device.toStringFormal());
     }
 
     @Override
-    public String getUser() {
+    public UserID getUser() {
         return user;
     }
 
     @Override
-    public String getDevice() {
+    public DID getDevice() {
         return device;
     }
 

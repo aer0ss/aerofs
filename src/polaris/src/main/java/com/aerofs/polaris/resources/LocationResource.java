@@ -2,7 +2,8 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.ids.validation.Identifier;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.polaris.api.batch.location.LocationUpdateType;
 import com.aerofs.polaris.logical.ObjectStore;
 
@@ -27,9 +28,9 @@ public final class LocationResource {
     @POST
     public void markContentAtLocation(
             @Context AeroUserDevicePrincipal principal,
-            @PathParam("oid") @Identifier String oid,
+            @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
-            @PathParam("did") @Identifier String did) {
+            @PathParam("did") DID did) {
         store.inTransaction(dao -> {
             store.performLocationUpdate(dao, principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
             return null;
@@ -39,9 +40,9 @@ public final class LocationResource {
     @DELETE
     public void unmarkContentAtLocation(
             @Context AeroUserDevicePrincipal principal,
-            @PathParam("oid") @Identifier String oid,
+            @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
-            @PathParam("did") @Identifier String did) {
+            @PathParam("did") DID did) {
         store.inTransaction(dao -> {
             store.performLocationUpdate(dao, principal.getUser(), LocationUpdateType.REMOVE, oid, version, did);
             return null;

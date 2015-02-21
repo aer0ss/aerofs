@@ -1,5 +1,6 @@
 package com.aerofs.polaris.dao;
 
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.Content;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -16,20 +17,20 @@ import java.sql.SQLException;
 public interface ObjectProperties {
 
     @SqlUpdate("insert into file_properties(oid, version, hash, size, mtime) values(:oid, :version, :hash, :size, :mtime)")
-    int add(@Bind("oid") String oid, @Bind("version") long version, @Bind("hash") String hash, @Bind("size") long size, @Bind("mtime") long mtime);
+    int add(@Bind("oid") UniqueID oid, @Bind("version") long version, @Bind("hash") byte[] hash, @Bind("size") long size, @Bind("mtime") long mtime);
 
     @Nullable
     @SqlQuery("select oid, version, hash, size, mtime, from file_properties where oid = :oid and version = :version")
-    Content get(@Bind("oid") String oid, @Bind("version") long version);
+    Content get(@Bind("oid") UniqueID oid, @Bind("version") long version);
 
     @Nullable
     @SqlQuery("select oid, version, hash, size, mtime from file_properties where oid = :oid order by version desc limit 1")
-    Content getLatest(@Bind("oid") String oid);
+    Content getLatest(@Bind("oid") UniqueID oid);
 
     @SuppressWarnings("unused")
     void close();
 
-    public final class ContentMapper implements ResultSetMapper<Content> {
+    final class ContentMapper implements ResultSetMapper<Content> {
 
         private static final int COL_OID     = 1;
         private static final int COL_VERSION = 2;
@@ -39,7 +40,7 @@ public interface ObjectProperties {
 
         @Override
         public Content map(int index, ResultSet r, StatementContext ctx) throws SQLException {
-            return new Content(r.getString(COL_OID), r.getLong(COL_VERSION), r.getString(COL_HASH), r.getLong(COL_SIZE), r.getLong(COL_MTIME));
+            return new Content(new UniqueID(r.getBytes(COL_OID)), r.getLong(COL_VERSION), r.getBytes(COL_HASH), r.getLong(COL_SIZE), r.getLong(COL_MTIME));
         }
     }
 }

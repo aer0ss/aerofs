@@ -1,5 +1,6 @@
 package com.aerofs.polaris.logical;
 
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
 
@@ -9,11 +10,11 @@ public final class VersionConflictException extends PolarisException {
 
     private static final long serialVersionUID = -7931192284107460967L;
 
-    private final String oid;
+    private final UniqueID oid;
     private final long expectedVersion;
     private final long actualVersion;
 
-    public VersionConflictException(String oid, long expectedVersion, long actualVersion) {
+    public VersionConflictException(UniqueID oid, long expectedVersion, long actualVersion) {
         super(PolarisError.VERSION_CONFLICT);
 
         this.oid = oid;

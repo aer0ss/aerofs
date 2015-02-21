@@ -1,6 +1,8 @@
 package com.aerofs.polaris.dao;
 
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -17,19 +19,20 @@ import java.sql.SQLException;
 public interface ObjectTypes {
 
     @SqlUpdate("insert into object_types(oid, object_type) values(:oid, :object_type)")
-    int add(@Bind("oid") String oid, @Bind("object_type") ObjectType objectType);
+    int add(@Bind("oid") UniqueID oid, @Bind("object_type") ObjectType objectType);
 
     @Nullable
     @SqlQuery("select oid, object_type from object_types where oid = :oid")
-    ObjectType get(@Bind("oid") String oid);
+    ObjectType get(@Bind("oid") UniqueID oid);
 
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
     @SqlQuery("select oid from object_types where object_type = :object_type")
-    ResultIterator<String> getByType(@Bind("object_type") ObjectType objectType);
+    ResultIterator<UniqueID> getByType(@Bind("object_type") ObjectType objectType);
 
     @SuppressWarnings("unused")
     void close();
 
-    public static final class ObjectTypeMapper implements ResultSetMapper<ObjectType> {
+    final class ObjectTypeMapper implements ResultSetMapper<ObjectType> {
 
         private static final int COL_OID         = 1;
         private static final int COL_OBJECT_TYPE = 2;

@@ -2,12 +2,15 @@ package com.aerofs.polaris.logical;
 
 import com.aerofs.baseline.admin.Command;
 import com.aerofs.baseline.admin.Commands;
-import com.aerofs.polaris.Constants;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.skife.jdbi.v2.ResultIterator;
 import org.slf4j.Logger;
@@ -36,8 +39,10 @@ public final class TreeCommand implements Command {
 
     @Override
     public void execute(MultivaluedMap<String, String> queryParameters, PrintWriter entityWriter) throws Exception {
-        final String root = queryParameters.getFirst("root");
-        final ObjectNode forest = mapper.createObjectNode();
+        ObjectNode forest = mapper.createObjectNode();
+
+        String rootValue = queryParameters.getFirst("root");
+        final OID root = rootValue == null ? null : new OID(rootValue);
 
         store.inTransaction(new StoreTransaction<Object>() {
             @Override
@@ -53,51 +58,52 @@ public final class TreeCommand implements Command {
 
             private void dumpObjects(DAO dao) {
                 // iterate over all known roots
-                try (ResultIterator<String> iterator = dao.objectTypes.getByType(ObjectType.ROOT)) {
+                try (ResultIterator<UniqueID> iterator = dao.objectTypes.getByType(ObjectType.ROOT)) {
                     while (iterator.hasNext()) {
-                        String root = iterator.next();
+                        UniqueID root = iterator.next();
                         dumpObjects(dao, root);
                     }
                 }
 
                 // iterate over unrooted objects
-                dumpObjects(dao, Constants.NO_ROOT);
+                dumpObjects(dao, OID.TRASH);
             }
 
-            private void dumpObjects(DAO dao, String root) {
+            private void dumpObjects(DAO dao, UniqueID root) {
                 ObjectNode node = mapper.createObjectNode();
-                forest.set(root, traverse(dao, root, node));
+                forest.set(root.toStringFormal(), traverse(dao, root, node));
             }
 
-            private ObjectNode traverse(DAO dao, String parent, ObjectNode parentNode) {
-                Map<String, ObjectNode> folders = Maps.newHashMap();
+            private ObjectNode traverse(DAO dao, UniqueID parent, ObjectNode parentNode) {
+                Map<UniqueID, ObjectNode> folders = Maps.newHashMap();
                 try (ResultIterator<Child> iterator = dao.children.getChildren(parent)) {
                     while (iterator.hasNext()) {
                         Child child = iterator.next();
                         LOGGER.debug("{} -> {}", parent, child);
 
                         ObjectNode node = mapper.createObjectNode();
-                        node.put("type", child.getObjectType().name());
+                        node.put("type", child.objectType.name());
 
-                        if (child.getObjectType() == ObjectType.FILE) {
-                            Content content = dao.objectProperties.getLatest(child.getOid());
+                        if (child.objectType == ObjectType.FILE) {
+                            Content content = dao.objectProperties.getLatest(child.oid);
                             if (content != null) {
-                                node.put("hash", content.getHash());
-                                node.put("size", content.getSize());
-                                node.put("mtime", content.getMtime());
+                                Preconditions.checkArgument(content.hash != null, "null content for o:%s v:%s", content.oid, content.version);
+                                node.put("hash", PolarisUtilities.hexEncode(content.hash));
+                                node.put("size", content.size);
+                                node.put("mtime", content.mtime);
                             }
                         }
 
-                        if (child.getObjectType() == ObjectType.FOLDER) {
-                            folders.put(child.getOid(), node);
+                        if (child.objectType == ObjectType.FOLDER) {
+                            folders.put(child.oid, node);
                         }
 
-                        parentNode.set(child.getName(), node);
+                        parentNode.set(PolarisUtilities.stringFromUTF8Bytes(child.name),node);
                     }
                 }
 
                 // recurse into contained folders and mount points
-                for (Map.Entry<String, ObjectNode> folder : folders.entrySet()) {
+                for (Map.Entry<UniqueID, ObjectNode> folder : folders.entrySet()) {
                     traverse(dao, folder.getKey(), folder.getValue());
                 }
 

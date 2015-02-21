@@ -2,7 +2,8 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.ids.validation.Identifier;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.polaris.logical.ObjectStore;
 
 import javax.annotation.security.RolesAllowed;
@@ -36,7 +37,7 @@ public final class LocationsResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<String> getLocationsForContent(@Context AeroUserDevicePrincipal principal, @PathParam("oid") @Identifier String oid, @PathParam("version") @Min(0) long version) {
+    public List<DID> getLocationsForContent(@Context AeroUserDevicePrincipal principal, @PathParam("oid") OID oid, @PathParam("version") @Min(0) long version) {
         return store.inTransaction(dao -> store.getLocations(dao, principal.getUser(), oid, version));
     }
 }

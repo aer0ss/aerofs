@@ -1,47 +1,27 @@
 package com.aerofs.polaris.api.batch.transform;
 
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.operation.Operation;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class TransformBatchOperation {
 
     @NotNull
-    @Size(min = 1)
-    private String oid;
+    public final UniqueID oid;
 
     @NotNull
     @Valid
-    private Operation operation;
+    public final Operation operation;
 
-
-    public TransformBatchOperation(String oid, Operation operation) {
+    @JsonCreator
+    public TransformBatchOperation(@JsonProperty("oid") UniqueID oid, @JsonProperty("operation") Operation operation) {
         this.oid = oid;
-        this.operation = operation;
-    }
-
-    private TransformBatchOperation() { }
-
-    public String getOid() {
-        return oid;
-    }
-
-    private void setOid(String oid) {
-        this.oid = oid;
-    }
-
-    public Operation getOperation() {
-        return operation;
-    }
-
-    private void setOperation(Operation operation) {
         this.operation = operation;
     }
 

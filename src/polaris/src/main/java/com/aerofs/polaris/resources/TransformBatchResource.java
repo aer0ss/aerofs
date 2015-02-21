@@ -3,6 +3,7 @@ package com.aerofs.polaris.resources;
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.baseline.db.Databases;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.batch.transform.TransformBatch;
@@ -12,6 +13,7 @@ import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
 import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.UpdatePublisher;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
@@ -45,38 +47,38 @@ public final class TransformBatchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public TransformBatchResult submitBatch(@Context AeroUserDevicePrincipal principal, TransformBatch batch) {
-        final TransformBatchResult batchResult = new TransformBatchResult(batch.getOperations().size());
+        List<TransformBatchOperationResult> results = Lists.newArrayListWithCapacity(batch.operations.size());
 
-        for (TransformBatchOperation operation: batch.getOperations()) {
+        for (TransformBatchOperation operation: batch.operations) {
             try {
                 store.inTransaction(dao -> {
-                    List<Updated> updated = store.performTransform(dao, principal.getUser(), principal.getDevice(), operation.getOid(), operation.getOperation());
-                    batchResult.getResults().add(new TransformBatchOperationResult(updated));
+                    List<Updated> updated = store.performTransform(dao, principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
+                    results.add(new TransformBatchOperationResult(updated));
                     return null;
                 });
             } catch (Exception e) {
                 TransformBatchOperationResult result = getBatchOperationErrorResult(e);
                 LOGGER.warn("fail transform batch operation {}", operation, e);
-                batchResult.getResults().add(result);
+                results.add(result);
                 break; // abort early if a batch operation fails
             }
         }
 
-        Set<String> updatedRoots = Sets.newHashSet();
+        Set<UniqueID> updatedRoots = Sets.newHashSet();
 
-        for (TransformBatchOperationResult result : batchResult.getResults()) {
-            if (result.getUpdated() == null) { // in error case; technically I can 'break' here...
+        for (TransformBatchOperationResult result : results) {
+            if (result.updated == null) { // in error case; technically I can 'break' here...
                 continue;
             }
 
-            for (Updated updated : result.getUpdated()) {
-                updatedRoots.add(updated.getObject().getRoot());
+            for (Updated updated : result.updated) {
+                updatedRoots.add(updated.object.root);
             }
         }
 
         updatedRoots.forEach(publisher::publishUpdate);
 
-        return batchResult;
+        return new TransformBatchResult(results);
     }
 
     private static TransformBatchOperationResult getBatchOperationErrorResult(Throwable cause) {

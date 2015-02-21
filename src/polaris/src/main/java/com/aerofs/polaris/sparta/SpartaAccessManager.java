@@ -1,6 +1,8 @@
 package com.aerofs.polaris.sparta;
 
 import com.aerofs.auth.client.shared.AeroService;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -97,8 +99,8 @@ public final class SpartaAccessManager implements ManagedAccessManager {
     }
 
     @Override
-    public void checkAccess(String user, String sharedFolderOid, Access... requested) throws AccessException {
-        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, sharedFolderOid, user));
+    public void checkAccess(UserID user, UniqueID root, Access... requested) throws AccessException {
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, root.toStringFormal(), user.getString()));
         get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
 
         try {
@@ -107,11 +109,11 @@ public final class SpartaAccessManager implements ManagedAccessManager {
 
                 // if we got a 404 then the user doesn't exist
                 if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    LOGGER.warn("user does not belong to shared folder {}", sharedFolderOid);
-                    throw new AccessException(user, sharedFolderOid, Access.READ);
+                    LOGGER.warn("user does not belong to shared folder {}", root);
+                    throw new AccessException(user, root, Access.READ);
                 } else if (statusCode != HttpStatus.SC_OK) {
                     LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
-                    throw new AccessException(user, sharedFolderOid, requested);
+                    throw new AccessException(user, root, requested);
                 }
 
                 boolean writeAccessRequested = isWriteAccessRequested(requested);
@@ -126,13 +128,13 @@ public final class SpartaAccessManager implements ManagedAccessManager {
                 try (InputStream content = response.getEntity().getContent()) {
                     Member member = mapper.readValue(content, Member.class);
                     if (!member.getPermissions().contains("WRITE")) {
-                        throw new AccessException(user, sharedFolderOid, Access.WRITE);
+                        throw new AccessException(user, root, Access.WRITE);
                     }
                 }
             }
         } catch (IOException e) {
             LOGGER.warn("fail retrieve ACL from sparta", e);
-            throw new AccessException(user, sharedFolderOid, requested);
+            throw new AccessException(user, root, requested);
         }
     }
 

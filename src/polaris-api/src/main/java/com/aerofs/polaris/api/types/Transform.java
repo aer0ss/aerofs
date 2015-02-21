@@ -1,15 +1,16 @@
 package com.aerofs.polaris.api.types;
 
-import com.aerofs.polaris.api.Filenames;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.Arrays;
 
 @SuppressWarnings("unused")
@@ -21,15 +22,13 @@ public final class Transform {
     private long logicalTimestamp = -1;
 
     @NotNull
-    @Size(min = 1)
-    private String originator = null;
+    private DID originator = null;
 
-    @JsonIgnore // not included in response
-    private String root = null;
+    // FIXME (AG): do not include in response - re-add @JsonIgnore
+    private UniqueID root = null;
 
     @NotNull
-    @Size(min = 1)
-    private String oid = null;
+    private UniqueID oid = null;
 
     @NotNull
     private TransformType transformType = null;
@@ -54,7 +53,7 @@ public final class Transform {
     // these parameters are set when the transform modifies a child
     //
 
-    private String child = null;
+    private UniqueID child = null;
 
     private ObjectType childObjectType = null;
 
@@ -65,18 +64,18 @@ public final class Transform {
     // these parameters are set when the transform modifies the content for an object
     //
 
-    private String contentHash = null;
+    private byte[] contentHash = Content.INVALID_HASH;
 
-    private long contentSize = -1;
+    private long contentSize = Content.INVALID_SIZE;
 
-    private long contentMtime = -1;
+    private long contentMtime = Content.INVALID_MODIFICATION_TIME;
 
     // constructor only includes parameters that must *always* be set
     public Transform(
             long logicalTimestamp,
-            String originator,
-            String root,
-            String oid,
+            DID originator,
+            UniqueID root,
+            UniqueID oid,
             TransformType transformType,
             long newVersion,
             long timestamp) {
@@ -97,13 +96,13 @@ public final class Transform {
         this.atomicOperationTotal = atomicOperationTotal;
     }
 
-    public void setChildParameters(String child, @Nullable ObjectType childObjectType, @Nullable byte[] childName) {
+    public void setChildParameters(UniqueID child, @Nullable ObjectType childObjectType, @Nullable byte[] childName) {
         this.child = child;
         this.childObjectType = childObjectType;
         this.childName = childName;
     }
 
-    public void setContentParameters(String hash, long size, long mtime) {
+    public void setContentParameters(byte[] hash, long size, long mtime) {
         this.contentHash = hash;
         this.contentSize = size;
         this.contentMtime = mtime;
@@ -117,27 +116,27 @@ public final class Transform {
         this.logicalTimestamp = logicalTimestamp;
     }
 
-    public String getOriginator() {
+    public DID getOriginator() {
         return originator;
     }
 
-    private void setOriginator(String originator) {
+    private void setOriginator(DID originator) {
         this.originator = originator;
     }
 
-    public String getRoot() {
+    public UniqueID getRoot() {
         return root;
     }
 
-    private void setRoot(String root) {
+    private void setRoot(UniqueID root) {
         this.root = root;
     }
 
-    public String getOid() {
+    public UniqueID getOid() {
         return oid;
     }
 
-    private void setOid(String oid) {
+    private void setOid(UniqueID oid) {
         this.oid = oid;
     }
 
@@ -189,11 +188,11 @@ public final class Transform {
         this.atomicOperationTotal = atomicOperationTotal;
     }
 
-    public String getChild() {
+    public UniqueID getChild() {
         return child;
     }
 
-    private void setChild(String child) {
+    private void setChild(UniqueID child) {
         this.child = child;
     }
 
@@ -205,25 +204,23 @@ public final class Transform {
         this.childObjectType = childObjectType;
     }
 
-    @Nullable
-    public String getChildName() {
-        return Filenames.fromBytes(childName);
-    }
-
-    @JsonIgnore
-    public byte[] getChildNameBytes() {
+    @JsonSerialize(using = AeroTypes.UTF8StringSerializer.class)
+    public @Nullable byte[] getChildName() {
         return childName;
     }
 
-    private void setChildName(String childName) {
-        this.childName = Filenames.toBytes(childName);
+    @JsonDeserialize(using = AeroTypes.UTF8StringDeserializer.class)
+    private void setChildName(@Nullable byte[] childName) {
+        this.childName = childName;
     }
 
-    public String getContentHash() {
+    @JsonSerialize(using = AeroTypes.Base16Serializer.class)
+    public byte[] getContentHash() {
         return contentHash;
     }
 
-    private void setContentHash(String contentHash) {
+    @JsonDeserialize(using = AeroTypes.Base16Deserializer.class)
+    private void setContentHash(byte[] contentHash) {
         this.contentHash = contentHash;
     }
 
@@ -262,7 +259,7 @@ public final class Transform {
                 && Objects.equal(child, other.child)
                 && Objects.equal(childObjectType, other.childObjectType)
                 && Arrays.equals(childName, other.childName)
-                && Objects.equal(contentHash, other.contentHash)
+                && Arrays.equals(contentHash, other.contentHash)
                 && contentSize == other.contentSize
                 && contentMtime == other.contentMtime;
     }

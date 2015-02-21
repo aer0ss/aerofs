@@ -67,24 +67,24 @@ public final class AeroServiceSharedSecretAuthenticator implements Authenticator
         }
 
         // it does - check if it's the "Aero-Service-Shared-Secret" one
-        String auth = authHeaders.get(0);
-        if (!auth.startsWith(AeroService.AUTHENTICATION_SCHEME)) {
+        String authValue = authHeaders.get(0);
+        if (!authValue.startsWith(AeroService.AUTHENTICATION_SCHEME)) {
             return AuthenticationResult.UNSUPPORTED;
         }
 
         // check if the authentication scheme format is correct
-        Matcher matcher = COMPILED_REGEX.matcher(auth);
+        Matcher matcher = COMPILED_REGEX.matcher(authValue);
         if (!matcher.matches()) {
             throw new AuthenticationException("invalid authentication scheme format"); // explicitly don't specify what's broken
         }
 
         // it matches - parse it out, and get the other header values
-        String service = matcher.group(1);
-        String reportedSecret = matcher.group(2);
+        String serviceValue = matcher.group(1);
+        String reportedSecretValue = matcher.group(2);
 
         // does their secret match ours?
-        if (deploymentSecret.equalsString(reportedSecret)) {
-            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal(service), Roles.SERVICE, AeroService.AUTHENTICATION_SCHEME));
+        if (deploymentSecret.equalsString(reportedSecretValue)) {
+            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal(serviceValue), Roles.SERVICE, AeroService.AUTHENTICATION_SCHEME));
         }
 
         return AuthenticationResult.FAILED;

@@ -1,9 +1,14 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
-import com.aerofs.ids.core.Identifiers;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
+import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.api.types.Transform;
@@ -19,6 +24,8 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -31,161 +38,166 @@ public final class TestTransformsResource {
         RestAssured.config = PolarisHelpers.newRestAssuredConfig();
     }
 
-    private final String device = Identifiers.newRandomDevice();
-    private final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec("test@aerofs.com", device);
+    private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
+    private static final DID DEVICE = DID.generate();
+    private final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
     @Rule
     public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsInserted() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
+        SID root = SID.generate();
+        OID folder = PolarisHelpers.newFolder(verified, root, "folder_1");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(1));
-        assertThat(applied.getMaxTransformCount(), is(1L));
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(1));
+        assertThat(applied.maxTransformCount, is(1L));
 
-        Transform transform = applied.getTransforms().get(0);
-        assertThat(transform, matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        Transform transform = applied.transforms.get(0);
+        assertThat(transform, matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
     }
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsRemoved() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
-        PolarisHelpers.removeFileOrFolder(verified, sharedFolder, folder);
+        SID root = SID.generate();
+        OID folder = PolarisHelpers.newFolder(verified, root, "folder_1");
+        PolarisHelpers.removeFileOrFolder(verified, root, folder);
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(2));
-        assertThat(applied.getMaxTransformCount(), is(2L));
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(2L));
 
-        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.REMOVE_CHILD, 2, folder, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, root, TransformType.REMOVE_CHILD, 2, folder, null, null));
     }
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsMoved() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder1 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
-        String folder2 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_2");
-        String file = PolarisHelpers.newFile(verified, folder1, "file");
+        SID root = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(verified, root, "folder_1");
+        OID folder2 = PolarisHelpers.newFolder(verified, root, "folder_2");
+        OID file = PolarisHelpers.newFile(verified, folder1, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(5));
-        assertThat(applied.getMaxTransformCount(), is(5L));
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(5));
+        assertThat(applied.maxTransformCount, is(5L));
 
-        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.getTransforms().get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.getTransforms().get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, root, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
     }
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsRenamed() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
-        String file = PolarisHelpers.newFile(verified, folder, "file");
+        SID root = SID.generate();
+        OID folder = PolarisHelpers.newFolder(verified, root, "folder_1");
+        OID file = PolarisHelpers.newFile(verified, folder, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder, folder, file, "renamed");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(3));
-        assertThat(applied.getMaxTransformCount(), is(3L));
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(3));
+        assertThat(applied.maxTransformCount, is(3L));
 
-        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed"));
     }
 
     @Test
     public void shouldReturnCorrectTransformsWhenContentIsAddedForAnObject() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(verified, sharedFolder, "file");
-        PolarisHelpers.newFileContent(verified, file, 0, "HASH", 100, 1024);
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(2));
-        assertThat(applied.getMaxTransformCount(), is(2L));
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(verified, root, "file");
+        PolarisHelpers.newFileContent(verified, file, 0, hash, 100, 1024);
 
-        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.getTransforms().get(1), matchesContentTransform(2, device, file, 1, "HASH", 100, 1024));
+        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(2L));
+
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(1), matchesContentTransform(2, DEVICE, file, 1, hash, 100, 1024));
     }
 
     @Test
     public void shouldReturnNoTransformsWhenDeviceHasReceivedAllAvailableTransforms() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String folder1 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_1");
-        String folder2 = PolarisHelpers.newFolder(verified, sharedFolder, "folder_2");
-        String file = PolarisHelpers.newFile(verified, folder1, "file");
+        SID root = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(verified, root, "folder_1");
+        OID folder2 = PolarisHelpers.newFolder(verified, root, "folder_2");
+        OID file = PolarisHelpers.newFile(verified, folder1, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
         AppliedTransforms applied;
 
-        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.getTransforms(), hasSize(5));
-        assertThat(applied.getMaxTransformCount(), is(5L));
+        applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        assertThat(applied.transforms, hasSize(5));
+        assertThat(applied.maxTransformCount, is(5L));
 
-        assertThat(applied.getTransforms().get(0), matchesMetaTransform(1, device, sharedFolder, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.getTransforms().get(1), matchesMetaTransform(2, device, sharedFolder, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.getTransforms().get(2), matchesMetaTransform(3, device, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.getTransforms().get(3), matchesMetaTransform(4, device, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.getTransforms().get(4), matchesMetaTransform(5, device, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, root, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, root, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
 
-        applied = PolarisHelpers.getTransforms(verified, sharedFolder, 5, 10);
-        assertThat(applied.getTransforms(), nullValue()); // i.e. no transforms
-        assertThat(applied.getMaxTransformCount(), is(5L));
+        applied = PolarisHelpers.getTransforms(verified, root, 5, 10);
+        assertThat(applied.transforms, nullValue()); // i.e. no transforms
+        assertThat(applied.maxTransformCount, is(5L));
     }
 
     @Test
     public void shouldReturnBoundedListOfTransformsIfResultCountIsTooHigh() {
-        String sharedFolder = Identifiers.newRandomSharedFolder();
-        String[] folders = {
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_1"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_2"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_3"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_4"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_5"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_6"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_7"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_8"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_9"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_10"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_11"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_12"),
-                PolarisHelpers.newFolder(verified, sharedFolder, "folder_13"),
+        SID root = SID.generate();
+        OID[] folders = {
+                PolarisHelpers.newFolder(verified, root, "folder_1"),
+                PolarisHelpers.newFolder(verified, root, "folder_2"),
+                PolarisHelpers.newFolder(verified, root, "folder_3"),
+                PolarisHelpers.newFolder(verified, root, "folder_4"),
+                PolarisHelpers.newFolder(verified, root, "folder_5"),
+                PolarisHelpers.newFolder(verified, root, "folder_6"),
+                PolarisHelpers.newFolder(verified, root, "folder_7"),
+                PolarisHelpers.newFolder(verified, root, "folder_8"),
+                PolarisHelpers.newFolder(verified, root, "folder_9"),
+                PolarisHelpers.newFolder(verified, root, "folder_10"),
+                PolarisHelpers.newFolder(verified, root, "folder_11"),
+                PolarisHelpers.newFolder(verified, root, "folder_12"),
+                PolarisHelpers.newFolder(verified, root, "folder_13"),
         };
 
         AppliedTransforms applied;
         int count;
 
-        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 100);
-        assertThat(applied.getTransforms(), hasSize(10));
-        assertThat(applied.getMaxTransformCount(), is(13L));
+        applied = PolarisHelpers.getTransforms(verified, root, -1, 100);
+        assertThat(applied.transforms, hasSize(10));
+        assertThat(applied.maxTransformCount, is(13L));
 
         count = 1;
-        for (int i = 0; i < applied.getTransforms().size(); i++) {
-            assertThat(applied.getTransforms().get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
+        for (int i = 0; i < applied.transforms.size(); i++) {
+            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, root, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
         }
 
-        applied = PolarisHelpers.getTransforms(verified, sharedFolder, 10, 100);
-        assertThat(applied.getTransforms(), hasSize(3));
-        assertThat(applied.getMaxTransformCount(), is(13L));
+        applied = PolarisHelpers.getTransforms(verified, root, 10, 100);
+        assertThat(applied.transforms, hasSize(3));
+        assertThat(applied.maxTransformCount, is(13L));
 
         count = 11;
-        for (int i = 0; i < applied.getTransforms().size(); i++) {
-            assertThat(applied.getTransforms().get(i), matchesMetaTransform(count + i, device, sharedFolder, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
+        for (int i = 0; i < applied.transforms.size(); i++) {
+            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, root, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
         }
     }
 
     private static Matcher<? super Transform> matchesMetaTransform(
             final long logicalTimestamp,
-            final String originator,
-            final String oid,
+            final DID originator,
+            final UniqueID oid,
             final TransformType transformType,
             final long newVersion,
-            @Nullable final String child,
+            @Nullable final OID child,
             @Nullable final ObjectType childObjectType,
             @Nullable final String childName
     ) {
@@ -199,7 +211,7 @@ public final class TestTransformsResource {
                         && newVersion == item.getNewVersion()
                         && Objects.equal(child, item.getChild())
                         && Objects.equal(childObjectType, item.getChildObjectType())
-                        && Objects.equal(childName, item.getChildName())
+                        && Objects.equal(childName, PolarisUtilities.stringFromUTF8Bytes(item.getChildName()))
                         && item.getContentHash() == null
                         && item.getContentSize() == -1
                         && item.getContentMtime() == -1;
@@ -222,10 +234,10 @@ public final class TestTransformsResource {
 
     private static Matcher<? super Transform> matchesContentTransform(
             final long logicalTimestamp,
-            final String originator,
-            final String oid,
+            final DID originator,
+            final UniqueID oid,
             final long newVersion,
-            final String contentHash,
+            final byte[] contentHash,
             final long contentSize,
             final long contentMtime
     ) {
@@ -240,7 +252,7 @@ public final class TestTransformsResource {
                         && item.getChild() == null
                         && item.getChildObjectType() == null
                         && item.getChildName() == null
-                        && Objects.equal(contentHash, item.getContentHash())
+                        && Arrays.equals(contentHash, item.getContentHash())
                         && contentSize == item.getContentSize()
                         && contentMtime == item.getContentMtime();
             }

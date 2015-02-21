@@ -1,7 +1,8 @@
 package com.aerofs.polaris.api.operation;
 
 import com.aerofs.polaris.api.types.Transform;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -10,38 +11,20 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class AppliedTransforms {
 
     @Min(0)
-    private long maxTransformCount;
+    public final long maxTransformCount;
 
-    // @JsonInclude(JsonInclude.Include.ALWAYS) [uncomment if we want to serialize the empty list]
     @NotNull
     @Valid
-    private List<Transform> transforms;
+    public final List<Transform> transforms;
 
-    public AppliedTransforms(long maxTransformCount, List<Transform> transforms) {
+    @JsonCreator
+    public AppliedTransforms(
+            @JsonProperty("max_transform_count") long maxTransformCount,
+            @JsonProperty("transforms") List<Transform> transforms) {
         this.maxTransformCount = maxTransformCount;
-        this.transforms = transforms;
-    }
-
-    private AppliedTransforms() { }
-
-    public long getMaxTransformCount() {
-        return maxTransformCount;
-    }
-
-    private void setMaxTransformCount(long maxTransformCount) {
-        this.maxTransformCount = maxTransformCount;
-    }
-
-    public List<Transform> getTransforms() {
-        return transforms;
-    }
-
-    private void setTransforms(List<Transform> transforms) {
         this.transforms = transforms;
     }
 

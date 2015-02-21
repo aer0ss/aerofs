@@ -1,7 +1,8 @@
 package com.aerofs.polaris.verkehr;
 
 import com.aerofs.baseline.Threads;
-import com.aerofs.polaris.api.UpdateTopics;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
@@ -78,7 +79,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
     }
 
     @Override
-    public ListenableFuture<Void> publishUpdate(String root) {
+    public ListenableFuture<Void> publishUpdate(UniqueID root) {
         LOGGER.debug("notify {}", root);
 
         SettableFuture<Void> returned = SettableFuture.create();
@@ -99,7 +100,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
         }
 
         try {
-            ListenableFuture<Void> publishFuture = verkehrClient.publish(UrlEscapers.urlPathSegmentEscaper().escape(UpdateTopics.getUpdateTopic(root)), EMPTY_PAYLOAD);
+            ListenableFuture<Void> publishFuture = verkehrClient.publish(UrlEscapers.urlPathSegmentEscaper().escape(PolarisUtilities.getVerkehrUpdateTopic(root.toStringFormal())), EMPTY_PAYLOAD);
             Futures.addCallback(publishFuture, new FutureCallback<Void>() {
 
                 @Override

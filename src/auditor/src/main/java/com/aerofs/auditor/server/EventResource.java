@@ -86,7 +86,7 @@ public class EventResource
 
         if (principal instanceof AeroUserDevicePrincipal) {
             AeroUserDevicePrincipal actual = (AeroUserDevicePrincipal) principal;
-            contents.put("verified_submitter", new VerifiedSubmitter(actual.getUser(), actual.getDevice()));
+            contents.put("verified_submitter", new VerifiedSubmitter(actual.getUser().getString(), actual.getDevice().toStringFormal()));
         }
 
         String parsed = _gson.toJson(contents);

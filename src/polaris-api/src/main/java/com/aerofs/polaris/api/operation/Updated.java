@@ -1,7 +1,8 @@
 package com.aerofs.polaris.api.operation;
 
 import com.aerofs.polaris.api.types.LogicalObject;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -9,37 +10,20 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class Updated {
 
     @Min(0)
-    private long transformTimestamp;
+    public final long transformTimestamp;
 
     @NotNull
     @Valid
-    private LogicalObject object;
+    public final LogicalObject object;
 
-    public Updated(long transformTimestamp, LogicalObject object) {
+    @JsonCreator
+    public Updated(
+            @JsonProperty("transform_timestamp") long transformTimestamp,
+            @JsonProperty("object") LogicalObject object) {
         this.transformTimestamp = transformTimestamp;
-        this.object = object;
-    }
-
-    private Updated() { }
-
-    public long getTransformTimestamp() {
-        return transformTimestamp;
-    }
-
-    private void setTransformTimestamp(long transformTimestamp) {
-        this.transformTimestamp = transformTimestamp;
-    }
-
-    public LogicalObject getObject() {
-        return object;
-    }
-
-    private void setObject(LogicalObject object) {
         this.object = object;
     }
 

@@ -10,6 +10,7 @@ import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
 import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
 import com.aerofs.polaris.api.batch.location.LocationBatchResult;
 import com.aerofs.polaris.logical.ObjectStore;
+import com.google.common.collect.Lists;
 import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @RolesAllowed(Roles.USER)
 @Singleton
@@ -38,24 +40,24 @@ public final class LocationBatchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public LocationBatchResult submitBatch(@Context final AeroUserDevicePrincipal principal, LocationBatch batch) {
-        final LocationBatchResult batchResult = new LocationBatchResult(batch.getOperations().size());
+        List<LocationBatchOperationResult> results = Lists.newArrayListWithCapacity(batch.operations.size());
 
-        for (LocationBatchOperation operation : batch.getOperations()) {
+        for (LocationBatchOperation operation : batch.operations) {
             try {
                 store.inTransaction(dao -> {
-                    store.performLocationUpdate(dao, principal.getUser(), operation.getLocationUpdateType(), operation.getOid(), operation.getVersion(), operation.getDid());
-                    batchResult.getResults().add(new LocationBatchOperationResult());
+                    store.performLocationUpdate(dao, principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
+                    results.add(new LocationBatchOperationResult());
                     return null;
                 });
             } catch (Exception e) {
                 LocationBatchOperationResult result = getBatchOperationErrorResult(e);
                 LOGGER.warn("fail location batch operation {}", operation, e);
-                batchResult.getResults().add(result);
+                results.add(result);
                 break; // abort batch processing early
             }
         }
 
-        return batchResult;
+        return new LocationBatchResult(results);
     }
 
     private static LocationBatchOperationResult getBatchOperationErrorResult(Throwable cause) {

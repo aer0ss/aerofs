@@ -1,4 +1,4 @@
-package com.aerofs.ids.core;
+package com.aerofs.ids;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.BaseEncoding;
@@ -26,21 +26,29 @@ public abstract class Identifiers {
 
     public static final int NUM_BYTES_IN_IDENTIFIER = 16;
 
-    public static boolean isRootStore(String identifier) {
-        return isRootStore(hexDecode(identifier));
+    public static boolean isRootStore(String oid) {
+        return isRootStore(hexDecode(oid));
     }
 
-    public static boolean isRootStore(byte[] identifier) {
-        int versionNibble = getVersionNibble(identifier);
+    public static boolean isRootStore(UniqueID oid) {
+        return isRootStore(oid.getBytes());
+    }
+
+    public static boolean isRootStore(byte[] oid) {
+        int versionNibble = getVersionNibble(oid);
         return versionNibble == 3;
     }
 
-    public static boolean isSharedFolder(String identifier) {
-        return isSharedFolder(hexDecode(identifier));
+    public static boolean isSharedFolder(String oid) {
+        return isSharedFolder(hexDecode(oid));
     }
 
-    public static boolean isSharedFolder(byte[] identifier) {
-        int versionNibble = getVersionNibble(identifier);
+    public static boolean isSharedFolder(UniqueID oid) {
+        return isSharedFolder(oid.getBytes());
+    }
+
+    public static boolean isSharedFolder(byte[] oid) {
+        int versionNibble = getVersionNibble(oid);
         return versionNibble == 0;
     }
 

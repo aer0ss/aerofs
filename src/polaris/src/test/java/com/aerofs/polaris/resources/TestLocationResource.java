@@ -1,7 +1,10 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
-import com.aerofs.ids.core.Identifiers;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.google.common.net.HttpHeaders;
@@ -11,7 +14,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -28,8 +31,8 @@ public final class TestLocationResource {
         RestAssured.config = PolarisHelpers.newRestAssuredConfig();
     }
 
-    private static final String USERID = "test@aerofs.com";
-    private static final String DEVICE = Identifiers.newRandomDevice();
+    private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
+    private static final DID DEVICE = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
     private final MySQLDatabase database = new MySQLDatabase("test");
@@ -41,18 +44,18 @@ public final class TestLocationResource {
     @Test
     public void shouldAddLocationsForLogicalObject() {
         // create a root folder and a file under it
-        String root = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, DEVICE);
 
         // verify that this location exists
-        List<String> locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations, contains(DEVICE));
+        DID[] locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations), contains(DEVICE));
     }
 
     @Test
     public void shouldFailToAddLocationForNonExistentLogicalObject() {
-        String fake = Identifiers.newRandomObject(); // fake object -- doesn't exist
+        OID fake = OID.generate(); // fake object -- doesn't exist
 
         given()
                 .spec(AUTHENTICATED)
@@ -65,47 +68,47 @@ public final class TestLocationResource {
     @Test
     public void shouldStillBeAbleToAddLocationForDeletedObject() {
         // create a file under the root folder
-        String root = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
 
         // add a location for this file
-        String dev0 = Identifiers.newRandomDevice();
+        DID dev0 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev0);
 
         // delete the file
         PolarisHelpers.removeFileOrFolder(AUTHENTICATED, root, file);
 
         // should still be able to add a location for this file
-        String dev1 = Identifiers.newRandomDevice();
+        DID dev1 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev1);
 
         // when we get a list of locations for this object
-        List<String> locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations, containsInAnyOrder(dev0, dev1));
+        DID[] locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations), containsInAnyOrder(dev0, dev1));
     }
 
     @Test
     public void shouldGetLocationsForLogicalObject() {
         // create a root folder and a file under it
-        String root = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
 
         // indicate that this object is available at multiple locations
-        String dev0 = Identifiers.newRandomDevice();
+        DID dev0 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev0);
-        String dev1 = Identifiers.newRandomDevice();
+        DID dev1 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev1);
-        String dev2 = Identifiers.newRandomDevice();
+        DID dev2 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev2);
 
         // verify that we have stored this info
-        List<String> locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations, containsInAnyOrder(dev0, dev1, dev2));
+        DID[] locations = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations), containsInAnyOrder(dev0, dev1, dev2));
     }
 
     @Test
     public void shouldFailToGetLocationsForNonExistentObject() {
-        String fake = Identifiers.newRandomObject();
+        OID fake = OID.generate();
 
         // shouldn't be able to get locations for this fake object
         given()
@@ -122,27 +125,27 @@ public final class TestLocationResource {
     @Test
     public void shouldDeleteLocationsForLogicalObject() {
         // create a root folder and a file under it
-        String root = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
 
         // indicate that this object is available at multiple locations
-        String dev0 = Identifiers.newRandomDevice();
+        DID dev0 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev0);
-        String dev1 = Identifiers.newRandomDevice();
+        DID dev1 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev1);
-        String dev2 = Identifiers.newRandomDevice();
+        DID dev2 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev2);
 
         // verify that we have stored this info
-        List<String> locations0 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations0, containsInAnyOrder(dev0, dev1, dev2));
+        DID[] locations0 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations0), containsInAnyOrder(dev0, dev1, dev2));
 
         // now, indicate that dev1 no longer has that object
         PolarisHelpers.removeLocation(AUTHENTICATED, file, 0, dev1);
 
         // verify that this list is now updated and no longer contains the removed device
-        List<String> locations1 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations1, containsInAnyOrder(dev0, dev2));
+        DID[] locations1 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations1), containsInAnyOrder(dev0, dev2));
     }
 
     // interesting - we don't have to say the content info to say that the object is available
@@ -150,20 +153,20 @@ public final class TestLocationResource {
     @Test
     public void shouldNoopWhenAttemptingToDeleteNonExistingDeviceForLogicalObject() {
         // create a root folder and a file under it and say that the object is available at this device
-        String root = Identifiers.newRandomSharedFolder();
-        String file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID root = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, DEVICE);
 
         // verify that we have stored this info
-        List<String> locations0 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations0, containsInAnyOrder(DEVICE));
+        DID[] locations0 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations0), containsInAnyOrder(DEVICE));
 
         // now, indicate that we no longer have this object
         PolarisHelpers.removeLocation(AUTHENTICATED, file, 0, DEVICE);
 
         // verify that this list is now updated and no longer contains the removed device
-        List<String> locations1 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(List.class);
-        assertThat(locations1, empty());
+        DID[] locations1 = PolarisHelpers.getLocations(AUTHENTICATED, file, 0).extract().response().as(DID[].class);
+        assertThat(Arrays.asList(locations1), empty());
 
         // attempt to delete ourselves again
         PolarisHelpers.removeLocation(AUTHENTICATED, file, 0, DEVICE);

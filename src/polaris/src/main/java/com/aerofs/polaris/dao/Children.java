@@ -1,8 +1,9 @@
 package com.aerofs.polaris.dao;
 
-import com.aerofs.polaris.Constants;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
@@ -18,40 +19,44 @@ import java.sql.SQLException;
 @RegisterMapper(Children.ChildMapper.class)
 public interface Children {
 
-    @SqlUpdate("insert into children(oid, child_oid, child_name) values(:oid, :child_oid, :child_name)")
-    int add(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") byte[] childName);
+    String OID_TRASH_AS_STRING = "01000000000000000000000000000000";
 
-    @SqlUpdate("update children set child_name = :child_name where oid = :oid and child_oid = :child_oid")
-    void update(@Bind("oid") String oid, @Bind("child_oid") String child, @Bind("child_name") byte[] newChildName);
+    @SqlUpdate("insert into children(parent_oid, child_oid, child_name) values(:parent_oid, :child_oid, :child_name)")
+    int add(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child, @Bind("child_name") byte[] childName);
 
-    @SqlUpdate("delete from children where oid = :oid and child_oid = :child_oid")
-    int remove(@Bind("oid") String oid, @Bind("child_oid") String child);
+    @SqlUpdate("update children set child_name = :child_name where parent_oid = :parent_oid and child_oid = :child_oid")
+    void update(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child, @Bind("child_name") byte[] newChildName);
 
-    @SqlQuery("select count(child_oid) from children where child_oid = :child_oid and oid <> '" + Constants.NO_ROOT + "'")
-    int getActiveReferenceCount(@Bind("child_oid") String child);
+    @SqlUpdate("delete from children where parent_oid = :parent_oid and child_oid = :child_oid")
+    int remove(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 
-    @SqlQuery("select count(child_oid) from children where oid = :oid and child_oid = :child_oid")
-    boolean isChild(@Bind("oid") String oid, @Bind("child_oid") String child);
+    @SqlQuery("select count(child_oid) from children where child_oid = :child_oid and parent_oid <> BINARY '" + OID_TRASH_AS_STRING + "'")
+    int getActiveReferenceCount(@Bind("child_oid") UniqueID child);
 
-    @Nullable
-    @SqlQuery("select oid from children where child_oid = :child_oid")
-    String getParent(@Bind("child_oid") String child);
+    @SqlQuery("select count(child_oid) from children where parent_oid = :parent_oid and child_oid = :child_oid")
+    boolean isChild(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 
     @Nullable
-    @SqlQuery("select child_oid from children where oid = :oid and child_name = :child_name")
-    String getChildNamed(@Bind("oid") String oid, @Bind("child_name") byte[] childName);
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
+    @SqlQuery("select parent_oid from children where child_oid = :child_oid")
+    UniqueID getParent(@Bind("child_oid") UniqueID child);
 
     @Nullable
-    @SqlQuery("select child_name from children where oid = :oid and child_oid = :child_oid")
-    byte[] getChildName(@Bind("oid") String oid, @Bind("child_oid") String child);
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
+    @SqlQuery("select child_oid from children where parent_oid = :parent_oid and child_name = :child_name")
+    UniqueID getChildNamed(@Bind("parent_oid") UniqueID parent, @Bind("child_name") byte[] childName);
 
-    @SqlQuery("select child_oid, child_name, object_type from children inner join object_types on (children.child_oid = object_types.oid) where children.oid = :oid")
-    ResultIterator<Child> getChildren(@Bind("oid") String oid);
+    @Nullable
+    @SqlQuery("select child_name from children where parent_oid = :parent_oid and child_oid = :child_oid")
+    byte[] getChildName(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
+
+    @SqlQuery("select child_oid, child_name, object_type from children inner join object_types on (children.child_oid = object_types.oid) where children.parent_oid = :parent_oid")
+    ResultIterator<Child> getChildren(@Bind("parent_oid") UniqueID parent);
 
     @SuppressWarnings("unused")
     void close();
 
-    public static final class ChildMapper implements ResultSetMapper<Child> {
+    final class ChildMapper implements ResultSetMapper<Child> {
 
         private static final int COL_CHILD_OID   = 1;
         private static final int COL_CHILD_NAME  = 2;
@@ -60,7 +65,7 @@ public interface Children {
         @Override
         public Child map(int index, ResultSet r, StatementContext ctx) throws SQLException {
             try {
-                return new Child(r.getString(COL_CHILD_OID), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getBytes(COL_CHILD_NAME));
+                return new Child(new UniqueID(r.getBytes(COL_CHILD_OID)), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getBytes(COL_CHILD_NAME));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

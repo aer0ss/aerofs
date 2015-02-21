@@ -2,7 +2,7 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.ids.validation.Identifier;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.types.Transform;
@@ -38,13 +38,13 @@ public final class TransformsResource {
     @GET
     public AppliedTransforms getTransforms(
             @Context AeroUserDevicePrincipal principal,
-            @PathParam("oid") @Identifier String oid,
+            @PathParam("oid") UniqueID root,
             @QueryParam("since") @Min(-1) long since,
             @QueryParam("count") @Min(1) int requestedResultCount) {
         return store.inTransaction(dao -> {
-            int transformCount = store.getTransformCount(dao, principal.getUser(), oid);
-            int actualResultCount = Math.min(requestedResultCount, maxReturnedTransforms);
-            List<Transform> transforms = store.getTransforms(dao, principal.getUser(), oid, since, actualResultCount);
+            int transformCount = store.getTransformCount(dao, principal.getUser(), root);
+            int resultCount = Math.min(requestedResultCount, maxReturnedTransforms);
+            List<Transform> transforms = store.getTransforms(dao, principal.getUser(), root, since, resultCount);
             return new AppliedTransforms(transformCount, transforms);
         });
     }

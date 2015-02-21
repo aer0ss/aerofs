@@ -1,69 +1,45 @@
 package com.aerofs.polaris.api.operation;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.aerofs.polaris.api.types.AeroTypes;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Arrays;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class UpdateContent extends Operation {
 
     @Min(0)
-    private long localVersion;
+    public final long localVersion;
 
+    @JsonSerialize(using = AeroTypes.Base16Serializer.class)
+    @JsonDeserialize(using = AeroTypes.Base16Deserializer.class)
     @NotNull
     @Size(min = 1)
-    private String hash;
+    public final byte[] hash;
 
     @Min(0)
-    private long size;
+    public final long size;
 
     @Min(0)
-    private long mtime;
+    public final long mtime;
 
-    public UpdateContent(long localVersion, String hash, long size, long mtime) {
+    @JsonCreator
+    public UpdateContent(
+            @JsonProperty("local_version") long localVersion,
+            @JsonProperty("hash") byte[] hash,
+            @JsonProperty("size") long size,
+            @JsonProperty("mtime") long mtime) {
         super(OperationType.UPDATE_CONTENT);
         this.localVersion = localVersion;
         this.hash = hash;
         this.size = size;
-        this.mtime = mtime;
-    }
-
-    private UpdateContent() { super(OperationType.UPDATE_CONTENT); }
-
-    public long getLocalVersion() {
-        return localVersion;
-    }
-
-    private void setLocalVersion(long localVersion) {
-        this.localVersion = localVersion;
-    }
-
-    public String getHash() {
-        return hash;
-    }
-
-    private void setHash(String hash) {
-        this.hash = hash;
-    }
-
-    public long getSize() {
-        return size;
-    }
-
-    private void setSize(long size) {
-        this.size = size;
-    }
-
-    public long getMtime() {
-        return mtime;
-    }
-
-    private void setMtime(long mtime) {
         this.mtime = mtime;
     }
 
@@ -73,7 +49,11 @@ public final class UpdateContent extends Operation {
         if (o == null || getClass() != o.getClass()) return false;
 
         UpdateContent other = (UpdateContent) o;
-        return type == other.type && localVersion == other.localVersion && Objects.equal(hash, other.hash) && size == other.size && mtime == other.mtime;
+        return type == other.type
+                && localVersion == other.localVersion
+                && Arrays.equals(hash, other.hash)
+                && size == other.size
+                && mtime == other.mtime;
     }
 
     @Override

@@ -6,6 +6,9 @@ import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
@@ -69,34 +72,40 @@ public final class AeroDelegatedUserDeviceAuthenticator implements Authenticator
         }
 
         // it does - check if it's the "Aero-Delegated-User-Device" one
-        String auth = authHeaders.get(0);
-        if (!auth.startsWith(AeroDelegatedUserDevice.AUTHENTICATION_SCHEME)) {
+        String authValue = authHeaders.get(0);
+        if (!authValue.startsWith(AeroDelegatedUserDevice.AUTHENTICATION_SCHEME)) {
             return AuthenticationResult.UNSUPPORTED;
         }
 
         // check if the authentication scheme format is correct
-        Matcher matcher = COMPILED_REGEX.matcher(auth);
+        Matcher matcher = COMPILED_REGEX.matcher(authValue);
         if (!matcher.matches()) {
             throw new AuthenticationException("invalid authentication scheme format"); // explicitly don't specify what's broken
         }
 
         // it matches - parse it out, and get the other header values
-        String service = matcher.group(1);
-        String reportedSecret = matcher.group(2);
-        String device = matcher.group(4);
+        String serviceValue = matcher.group(1);
+        String reportedSecretValue = matcher.group(2);
+        String deviceValue = matcher.group(4);
 
-        // check if the username is encoded correctly
-        String user;
+        // check if the user and device are encoded correctly
+        UserID user;
+        DID device;
         try {
+            // user
             String encodedUser = matcher.group(3);
-            user = new String(BaseEncoding.base64().decode(encodedUser), Charsets.UTF_8);
-        } catch (IllegalArgumentException e) { // base64 decoding failed
+            String userValue = new String(BaseEncoding.base64().decode(encodedUser), Charsets.UTF_8);
+            user = UserID.fromInternalThrowIfNotNormalized(userValue);
+
+            // device
+            device = new DID(deviceValue);
+        } catch (IllegalArgumentException|ExInvalidID e) { // base64 decoding failed
             throw new AuthenticationException("invalid authentication scheme format");
         }
 
         // does their secret match ours?
-        if (deploymentSecret.equalsString(reportedSecret)) {
-            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroDelegatedUserDevicePrincipal(service, user, device), Roles.USER, AeroDelegatedUserDevice.AUTHENTICATION_SCHEME));
+        if (deploymentSecret.equalsString(reportedSecretValue)) {
+            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroDelegatedUserDevicePrincipal(serviceValue, user, device), Roles.USER, AeroDelegatedUserDevice.AUTHENTICATION_SCHEME));
         }
 
         return AuthenticationResult.FAILED;

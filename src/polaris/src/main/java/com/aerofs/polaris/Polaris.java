@@ -9,9 +9,13 @@ import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.polaris.acl.AccessManager;
-import com.aerofs.polaris.api.operation.Operation;
-import com.aerofs.polaris.dao.ObjectTypeArgument;
-import com.aerofs.polaris.dao.TransformTypeArgument;
+import com.aerofs.polaris.api.PolarisModule;
+import com.aerofs.polaris.dao.types.DIDTypeArgument;
+import com.aerofs.polaris.dao.types.OIDTypeArgument;
+import com.aerofs.polaris.dao.types.ObjectTypeArgument;
+import com.aerofs.polaris.dao.types.SIDTypeArgument;
+import com.aerofs.polaris.dao.types.TransformTypeArgument;
+import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.logical.TreeCommand;
 import com.aerofs.polaris.notification.UpdatePublisher;
@@ -62,11 +66,15 @@ public class Polaris extends Service<PolarisConfiguration> {
 
         // setup JDBI
         DBI dbi = Databases.newDBI(dataSource);
+        dbi.registerArgumentFactory(new UniqueIDTypeArgument.UniqueIDTypeArgumentFactory());
+        dbi.registerArgumentFactory(new OIDTypeArgument.OIDTypeArgumentFactory());
+        dbi.registerArgumentFactory(new SIDTypeArgument.SIDTypeArgumentFactory());
+        dbi.registerArgumentFactory(new DIDTypeArgument.DIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
-        // setup the api-object deserializer
-        Operation.registerDeserializer(environment.getMapper());
+        // setup polaris json api conversion
+        environment.getMapper().registerModule(new PolarisModule());
 
         // pick up the deployment secret
         String deploymentSecret = getDeploymentSecret(configuration);

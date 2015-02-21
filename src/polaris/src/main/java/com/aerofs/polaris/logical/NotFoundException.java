@@ -1,5 +1,6 @@
 package com.aerofs.polaris.logical;
 
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
 
@@ -9,16 +10,16 @@ public final class NotFoundException extends PolarisException {
 
     private static final long serialVersionUID = 5816361021481101865L;
 
-    private final String oid;
+    private final UniqueID oid;
 
-    public NotFoundException(String oid) {
+    public NotFoundException(UniqueID oid) {
         super(PolarisError.NO_SUCH_OBJECT);
         this.oid = oid;
     }
 
     @Override
     protected String getSimpleMessage() {
-        return oid + " does not exist";
+        return String.format("%s does not exist", oid);
     }
 
     @Override

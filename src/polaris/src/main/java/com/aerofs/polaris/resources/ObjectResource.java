@@ -2,7 +2,7 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.ids.validation.Identifier;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.api.operation.Updated;
@@ -46,17 +46,17 @@ public final class ObjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") @Identifier String oid, Operation operation) {
+    public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") UniqueID oid, Operation operation) {
         OperationResult result = store.inTransaction(dao -> new OperationResult(store.performTransform(dao, principal.getUser(), principal.getDevice(), oid, operation)));
 
-        Preconditions.checkState(result.getUpdated() != null, "no updates made for %s", operation);
-        Set<String> updatedRoots = Sets.newHashSet();
+        Preconditions.checkState(result.updated != null, "no updates made for %s", operation);
+        Set<UniqueID> updatedRoots = Sets.newHashSet();
 
-        for (Updated updated : result.getUpdated()) {
-            updatedRoots.add(updated.getObject().getRoot());
+        for (Updated updated : result.updated) {
+            updatedRoots.add(updated.object.root);
         }
 
-        for (String root : updatedRoots) {
+        for (UniqueID root : updatedRoots) {
             publisher.publishUpdate(root);
         }
 

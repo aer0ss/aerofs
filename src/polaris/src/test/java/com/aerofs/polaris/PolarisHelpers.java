@@ -1,7 +1,12 @@
 package com.aerofs.polaris;
 
 import com.aerofs.auth.server.cert.AeroDeviceCert;
-import com.aerofs.ids.core.Identifiers;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
+import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.api.operation.AppliedTransforms;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.MoveChild;
@@ -9,6 +14,7 @@ import com.aerofs.polaris.api.operation.RemoveChild;
 import com.aerofs.polaris.api.operation.UpdateContent;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.jayway.restassured.RestAssured;
@@ -27,7 +33,6 @@ import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_VERIFY_SUCCEEDED_H
 import static com.aerofs.baseline.Constants.JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER;
 import static com.aerofs.polaris.api.types.ObjectType.FILE;
 import static com.aerofs.polaris.api.types.ObjectType.FOLDER;
-import static com.fasterxml.jackson.databind.PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
@@ -48,20 +53,22 @@ public abstract class PolarisHelpers {
                 .objectMapperConfig(ObjectMapperConfig
                         .objectMapperConfig()
                         .defaultObjectMapperType(JACKSON_2)
-                        .jackson2ObjectMapperFactory((cls, charset) -> newCamelCaseMapper()));
+                        .jackson2ObjectMapperFactory((cls, charset) -> newPolarisMapper()));
     }
 
-    public static ObjectMapper newCamelCaseMapper() {
+    public static ObjectMapper newPolarisMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.setPropertyNamingStrategy(CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+        mapper.registerModule(new PolarisModule());
         return mapper;
     }
 
-    public static RequestSpecification newAuthedAeroUserReqSpec(String userid, String device) {
+    public static RequestSpecification newAuthedAeroUserReqSpec(UserID user, DID device) {
+        String userString = user.getString();
+        String deviceString = device.toStringFormal();
         return new RequestSpecBuilder().addHeaders(
                 ImmutableMap.of(
-                        AUTHORIZATION, com.aerofs.auth.client.cert.AeroDeviceCert.getHeaderValue(userid, device),
-                        AERO_DNAME_HEADER, String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(userid, device)),
+                        AUTHORIZATION, com.aerofs.auth.client.cert.AeroDeviceCert.getHeaderValue(userString, deviceString),
+                        AERO_DNAME_HEADER, String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(userString, deviceString)),
                         AERO_VERIFY_HEADER, AERO_VERIFY_SUCCEEDED_HEADER_VALUE
                 )).build();
     }
@@ -70,33 +77,42 @@ public abstract class PolarisHelpers {
     // file and folder operations
     //
 
-    public static String newFile(RequestSpecification authenticated, String parentOid, String filename) {
-        String file = Identifiers.newRandomObject();
-        newObject(authenticated, parentOid, file, filename, FILE).assertThat().statusCode(SC_OK);
+    public static OID newFile(RequestSpecification authenticated, UniqueID parent, String filename) {
+        OID file = OID.generate();
+        newFileUsingOID(authenticated, parent, file, filename);
         return file;
     }
 
-    public static String newFolder(RequestSpecification authenticated, String parentOid, String folderName) {
-        String folder = Identifiers.newRandomObject();
-        newObject(authenticated, parentOid, folder, folderName, FOLDER).assertThat().statusCode(SC_OK);
+    public static void newFileUsingOID(RequestSpecification authenticated, UniqueID parent, UniqueID file, String filename) {
+        newObject(authenticated, parent, file, filename, FILE).assertThat().statusCode(SC_OK);
+    }
+
+    public static OID newFolder(RequestSpecification authenticated, UniqueID parent, String folderName) {
+        OID folder = OID.generate();
+        newFolderUsingOID(authenticated, parent, folder, folderName);
         return folder;
     }
 
-    public static ValidatableResponse newObject(RequestSpecification authenticated, String parentOid, String childOid, String childName, ObjectType childObjectType) {
+    public static void newFolderUsingOID(RequestSpecification authenticated, UniqueID parent, UniqueID folder, String folderName) {
+        newObject(authenticated, parent, folder, folderName, FOLDER).assertThat().statusCode(SC_OK);
+    }
+
+    public static ValidatableResponse newObject(RequestSpecification authenticated, UniqueID parent, UniqueID child, String childName, ObjectType childObjectType) {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(childOid, childObjectType, childName))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(child, childObjectType, childName))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(parentOid))
+                .when().post(PolarisTestServer.getObjectURL(parent))
                 .then();
     }
 
-    public static void newFileContent(RequestSpecification authenticated, String file, long localVersion, String hash, long size, long mtime) {
+    public static void newFileContent(RequestSpecification authenticated, OID file, long localVersion, byte[] hash, long size, long mtime) {
         newContent(authenticated, file, localVersion, hash, size, mtime).assertThat().statusCode(SC_OK);
     }
 
-    public static ValidatableResponse newContent(RequestSpecification authenticated, String file, long localVersion, String hash, long size, long mtime) {
+    public static ValidatableResponse newContent(RequestSpecification authenticated, OID file, long localVersion, byte[] hash, long size, long mtime) {
+        Preconditions.checkArgument(hash.length == 32, "invalid hash length %s", hash.length);
         return given()
                 .spec(authenticated)
                 .and()
@@ -106,63 +122,63 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static String removeFileOrFolder(RequestSpecification authenticated, String parentOid, String childOid) {
-        String folder = Identifiers.newRandomObject();
-        removeObject(authenticated, parentOid, childOid).assertThat().statusCode(SC_OK);
+    public static OID removeFileOrFolder(RequestSpecification authenticated, UniqueID parent, OID child) {
+        OID folder = OID.generate();
+        removeObject(authenticated, parent, child).assertThat().statusCode(SC_OK);
         return folder;
     }
 
-    public static ValidatableResponse removeObject(RequestSpecification authenticated, String parentOid, String childOid) {
+    public static ValidatableResponse removeObject(RequestSpecification authenticated, UniqueID parent, OID child) {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new RemoveChild(childOid))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new RemoveChild(child))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(parentOid))
+                .when().post(PolarisTestServer.getObjectURL(parent))
                 .then();
     }
 
-    public static String moveFileOrFolder(RequestSpecification authenticated, String parentOid, String newParentOid, String childOid, String newChildName) {
-        String folder = Identifiers.newRandomObject();
-        moveObject(authenticated, parentOid, newParentOid, childOid, newChildName).assertThat().statusCode(SC_OK);
+    public static OID moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
+        OID folder = OID.generate();
+        moveObject(authenticated, currentParent, newParent, child, newChildName).assertThat().statusCode(SC_OK);
         return folder;
     }
 
-    public static ValidatableResponse moveObject(RequestSpecification authenticated, String parentOid, String newParentOid, String childOid, String newChildName) {
+    public static ValidatableResponse moveObject(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new MoveChild(childOid, newParentOid, newChildName))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new MoveChild(child, newParent, newChildName))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(parentOid))
+                .when().post(PolarisTestServer.getObjectURL(currentParent))
                 .then();
     }
 
-    public static void addLocation(RequestSpecification authentication, String oid, long version, String device) {
+    public static void addLocation(RequestSpecification authentication, OID object, long version, DID device) {
         given()
                 .spec(authentication)
                 .and()
-                .when().post(PolarisTestServer.getLocationURL(oid, version, device))
+                .when().post(PolarisTestServer.getLocationURL(object, version, device))
                 .then()
                 .assertThat().statusCode(SC_NO_CONTENT);
     }
 
-    public static void removeLocation(RequestSpecification authentication, String oid, long version, String device) {
+    public static void removeLocation(RequestSpecification authentication, OID object, long version, DID device) {
         given()
                 .spec(authentication)
                 .and()
-                .when().delete(PolarisTestServer.getLocationURL(oid, version, device))
+                .when().delete(PolarisTestServer.getLocationURL(object, version, device))
                 .then()
                 .assertThat().statusCode(SC_NO_CONTENT);
     }
 
-    public static ValidatableResponse getLocations(RequestSpecification authentication, String oid, long version) {
+    public static ValidatableResponse getLocations(RequestSpecification authentication, OID object, long version) {
         return given()
                 .spec(authentication)
                 .and()
                 .header(HttpHeaders.ACCEPT, APPLICATION_JSON)
                 .and()
-                .when().get(PolarisTestServer.getLocationsURL(oid, version))
+                .when().get(PolarisTestServer.getLocationsURL(object, version))
                 .then()
                 .assertThat().statusCode(SC_OK)
                 .and();
@@ -172,13 +188,13 @@ public abstract class PolarisHelpers {
     // get changes
     //
 
-    public static AppliedTransforms getTransforms(RequestSpecification authenticated, String rootOid, long since, int resultCount) {
+    public static AppliedTransforms getTransforms(RequestSpecification authenticated, SID root, long since, int resultCount) {
         return given()
                 .spec(authenticated)
                 .and()
-                .parameters("oid", rootOid, "since", since, "count", resultCount)
+                .parameters("oid", root.toStringFormal(), "since", since, "count", resultCount)
                 .and()
-                .when().get(PolarisTestServer.getTransformsURL(rootOid))
+                .when().get(PolarisTestServer.getTransformsURL(root))
                 .then()
                 .extract().as(AppliedTransforms.class);
     }
@@ -187,9 +203,9 @@ public abstract class PolarisHelpers {
     // dump logical database
     //
 
-    public static InputStream getTreeAsStream(String rootOid) {
+    public static InputStream getTreeAsStream(UniqueID root) {
         return given()
-                    .queryParam("root", rootOid).and().queryParam(JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER)
+                    .queryParam("root", root.toStringFormal()).and().queryParam(JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER)
                     .and()
                     .when().post(PolarisTestServer.getTreeUrl())
                     .then()

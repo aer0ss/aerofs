@@ -9,6 +9,9 @@ import com.aerofs.auth.server.shared.AeroServicePrincipal;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -27,10 +30,10 @@ public class LegacyAuthenticator implements Authenticator
      */
     private static class LegacyUserDevicePrincipal implements AeroUserDevicePrincipal
     {
-        private final String _user;
-        private final String _device;
+        private final UserID _user;
+        private final DID _device;
 
-        private LegacyUserDevicePrincipal(String user, String device)
+        private LegacyUserDevicePrincipal(UserID user, DID device)
         {
             _user = user;
             _device = device;
@@ -39,17 +42,17 @@ public class LegacyAuthenticator implements Authenticator
         @Override
         public String getName()
         {
-            return String.format("%s:%s", _user, _device);
+            return String.format("%s:%s", _user.getString(), _device.toStringFormal());
         }
 
         @Override
-        public String getUser()
+        public UserID getUser()
         {
             return _user;
         }
 
         @Override
-        public String getDevice()
+        public DID getDevice()
         {
             return _device;
         }
@@ -84,16 +87,22 @@ public class LegacyAuthenticator implements Authenticator
             return AuthenticationResult.UNSUPPORTED;
         }
 
-        String user = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_USER, headers);
-        String device = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DEVICE, headers);
-        String dname = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DNAME, headers);
-        String verify = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_VERIFY, headers);
+        String userValue = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_USER, headers);
+        String deviceValue = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DEVICE, headers);
+        String dnameValue = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_DNAME, headers);
+        String verifyValue = AeroAuth.getSingleAuthHeaderValue(HEADER_AUTH_VERIFY, headers);
 
-        if (verify.equals(AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE)) {
-            String cname = getCName(dname);
-            if (cname.equals(AeroDeviceCert.getCertificateCName(user, device))) {
-                return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new LegacyUserDevicePrincipal(user, device), Roles.USER, AUTHENTICATION_SCHEME));
+        try {
+            if (verifyValue.equals(AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE)) {
+                String cname = getCName(dnameValue);
+                if (cname.equals(AeroDeviceCert.getCertificateCName(userValue, deviceValue))) {
+                    UserID user = UserID.fromExternal(userValue);
+                    DID device = new DID(deviceValue);
+                    return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new LegacyUserDevicePrincipal(user, device), Roles.USER, AUTHENTICATION_SCHEME));
+                }
             }
+        } catch (ExInvalidID e) {
+            throw new AuthenticationException("invalid authentication scheme format");
         }
 
         return AuthenticationResult.FAILED;

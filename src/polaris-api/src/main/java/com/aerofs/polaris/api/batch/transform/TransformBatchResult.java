@@ -1,8 +1,8 @@
 package com.aerofs.polaris.api.batch.transform;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
@@ -10,27 +10,15 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
-@SuppressWarnings("unused")
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
 public final class TransformBatchResult {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    private List<TransformBatchOperationResult> results;
+    public final List<TransformBatchOperationResult> results;
 
-
-    public TransformBatchResult(int resultCount) {
-        this.results = Lists.newArrayListWithCapacity(resultCount);
-    }
-
-    private TransformBatchResult() { }
-
-    public List<TransformBatchOperationResult> getResults() {
-        return results;
-    }
-
-    private void setResults(List<TransformBatchOperationResult> results) {
+    @JsonCreator
+    public TransformBatchResult(@JsonProperty("results") List<TransformBatchOperationResult> results) {
         this.results = results;
     }
 

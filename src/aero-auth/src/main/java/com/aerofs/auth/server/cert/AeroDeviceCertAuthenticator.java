@@ -6,6 +6,9 @@ import com.aerofs.auth.server.Roles;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.baseline.auth.Authenticator;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
@@ -54,29 +57,29 @@ public final class AeroDeviceCertAuthenticator implements Authenticator {
         }
 
         // it does - check if it's the "Aero-Device-Cert" one
-        String auth = authHeaders.get(0);
-        if (!auth.startsWith(AeroDeviceCert.AUTHENTICATION_SCHEME)) {
+        String authValue = authHeaders.get(0);
+        if (!authValue.startsWith(AeroDeviceCert.AUTHENTICATION_SCHEME)) {
             return AuthenticationResult.UNSUPPORTED;
         }
 
         // check if the authentication scheme format is correct
-        Matcher matcher = COMPILED_REGEX.matcher(auth);
+        Matcher matcher = COMPILED_REGEX.matcher(authValue);
         if (!matcher.matches()) {
             throw new AuthenticationException("invalid authentication scheme format"); // explicitly don't specify what's broken
         }
 
         // it matches - parse it out, and get the other header values
-        String encodedUser = matcher.group(1);
-        String device = matcher.group(2);
-        String verify = AeroAuth.getSingleAuthHeaderValue(AeroDeviceCert.AERO_VERIFY_HEADER, headers);
-        String dname = AeroAuth.getSingleAuthHeaderValue(AeroDeviceCert.AERO_DNAME_HEADER, headers);
+        String encodedUserValue = matcher.group(1);
+        String deviceValue = matcher.group(2);
+        String verifyValue = AeroAuth.getSingleAuthHeaderValue(AeroDeviceCert.AERO_VERIFY_HEADER, headers);
+        String dnameValue = AeroAuth.getSingleAuthHeaderValue(AeroDeviceCert.AERO_DNAME_HEADER, headers);
 
         // did nginx verify the cert against the CA?
-        if (verify.equals(AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE)) {
+        if (verifyValue.equals(AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE)) {
             String reportedCName = null;
 
             // try grab the CName component from the DName header
-            String[] dnameTokens = dname.split(AeroDeviceCert.DNAME_SEPARATOR);
+            String[] dnameTokens = dnameValue.split(AeroDeviceCert.DNAME_SEPARATOR);
             for (String dnameToken : dnameTokens) {
                 if (dnameToken.startsWith(AeroDeviceCert.CNAME_TAG)) {
                     String substring = dnameToken.substring(AeroDeviceCert.CNAME_TAG.length());
@@ -89,17 +92,21 @@ public final class AeroDeviceCertAuthenticator implements Authenticator {
 
             // if the cname doesn't exist the dname value is broken
             if (reportedCName == null) {
-                throw new AuthenticationException(AeroDeviceCert.AERO_DNAME_HEADER + " has invalid format (" + dname + ")");
+                throw new AuthenticationException(AeroDeviceCert.AERO_DNAME_HEADER + " has invalid format (" + dnameValue + ")");
             }
 
             // let's see if the device-reported id/device match the one in its cert
             try {
-                String user = new String(BaseEncoding.base64().decode(encodedUser), Charsets.UTF_8);
-                String expectedCName = AeroDeviceCert.getCertificateCName(user, device);
+                String userValue = new String(BaseEncoding.base64().decode(encodedUserValue), Charsets.UTF_8);
+                String expectedCName = AeroDeviceCert.getCertificateCName(userValue, deviceValue);
+
+                UserID user = UserID.fromInternalThrowIfNotNormalized(userValue);
+                DID device = new DID(deviceValue);
+
                 if (expectedCName.equals(reportedCName)) {
                     return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroDeviceCertPrincipal(user, device), Roles.USER, AeroDeviceCert.AUTHENTICATION_SCHEME));
                 }
-            } catch (IllegalArgumentException e) { // base64 decoding failed
+            } catch (IllegalArgumentException|ExInvalidID e) { // base64 decoding failed
                 throw new AuthenticationException("invalid authentication scheme format");
             }
         }

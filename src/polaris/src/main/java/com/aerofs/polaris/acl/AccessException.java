@@ -1,5 +1,7 @@
 package com.aerofs.polaris.acl;
 
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
 import com.google.common.base.Preconditions;
@@ -15,30 +17,30 @@ public final class AccessException extends PolarisException {
 
     private static final long serialVersionUID = -3547417330189536355L;
 
-    private final String user;
-    private final String sharedFolderOid;
+    private final UserID user;
+    private final UniqueID root;
     private final Access[] requested;
 
     /**
      * Constructor.
      *
      * @param user user id of the user who cannot access the shared folder
-     * @param sharedFolderOid oid of the shared folder that cannot be accessed
+     * @param root oid of the root store or shared folder that cannot be accessed
      * @param requested one or more permissions the user requested but does not have
      */
-    public AccessException(String user, String sharedFolderOid, Access... requested) {
+    public AccessException(UserID user, UniqueID root, Access... requested) {
         super(PolarisError.INSUFFICIENT_PERMISSIONS);
 
-        Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
+        Preconditions.checkArgument(requested.length > 0, "at least one Access must be requested");
 
         this.user = user;
-        this.sharedFolderOid = sharedFolderOid;
+        this.root = root;
         this.requested = requested;
     }
 
     @Override
     protected String getSimpleMessage() {
-        return String.format("%s does not have %s access for %s", user, getAccessNames(requested), sharedFolderOid);
+        return String.format("%s does not have %s access for %s", user, getAccessNames(requested), root);
     }
 
     private Object getAccessNames(Access[] requested) {
@@ -57,7 +59,7 @@ public final class AccessException extends PolarisException {
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
         errorFields.put("user", user);
-        errorFields.put("sharedFolderOid", sharedFolderOid);
+        errorFields.put("root", root);
         errorFields.put("access", requested);
     }
 }

@@ -12,7 +12,6 @@ public abstract class Constants {
     // default parameters
     //
 
-    public static final String NO_ROOT = "00000000000000000000000000000000";
 
     //
     // other defaults
