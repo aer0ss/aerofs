@@ -6,20 +6,27 @@ rm -rf $tempdir
 mkdir -p $tempdir/aerofs-db-backup
 pushd $tempdir 1>/dev/null 2>/dev/null
 
-echo ">>> Backing up redis database..."
-if [ ! -f /data/redis/redis.aof ]
+if [ -f /var/aerofs/external-db ]
 then
-    touch /data/redis/redis.aof
+    cp -a /var/aerofs/external-db aerofs-db-backup/external-db
+else
+    # These will all be persisted in the external db, no need to include in backup
+    echo ">>> Backing up redis database..."
+    if [ ! -f /data/redis/redis.aof ]
+    then
+        touch /data/redis/redis.aof
+    fi
+    cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
+
+    echo ">>> Backing up mysql database..."
+    mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
+
+    echo ">>> Backing up CA files..."
+    mkdir -p aerofs-db-backup/ca-files
+    touch aerofs-db-backup/ca-files/migrated
 fi
-cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
 
-echo ">>> Backing up mysql database..."
-mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
-
-echo ">>> Backing up CA files..."
-cp -a /opt/ca/prod aerofs-db-backup/ca-files
-
-echo ">>> Backing up configuration properites..."
+echo ">>> Backing up configuration properties..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
 echo ">>> Backing up verkehr persistent topics to v2topics..."

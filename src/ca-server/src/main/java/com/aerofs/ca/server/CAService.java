@@ -26,7 +26,9 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 
+import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.core.Context;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,7 +96,7 @@ public class CAService extends Service<CAConfig>
             @Override
             protected void configure()
             {
-                bind(AeroServiceSharedSecretAuthenticator.class).to(AeroServiceSharedSecretAuthenticator.class);
+                bindFactory(SharedSecretAuthenticatorFactory.class).to(AeroServiceSharedSecretAuthenticator.class);
                 bindFactory(SharedSecretFactory.class).to(SharedSecret.class);
                 bind(dbi).to(DBI.class);
                 bind(db).to(CADatabase.class);
@@ -123,6 +125,29 @@ class SharedSecretFactory implements Factory<SharedSecret>
 
     @Override
     public void dispose(SharedSecret instance)
+    {
+        // noop
+    }
+}
+
+class SharedSecretAuthenticatorFactory implements Factory<AeroServiceSharedSecretAuthenticator>
+{
+    private SharedSecret deploymentSecret;
+
+    @Inject
+    public SharedSecretAuthenticatorFactory(@Context SharedSecret deploymentSecret)
+    {
+        this.deploymentSecret = deploymentSecret;
+    }
+
+    @Override
+    public AeroServiceSharedSecretAuthenticator provide()
+    {
+        return new AeroServiceSharedSecretAuthenticator(deploymentSecret);
+    }
+
+    @Override
+    public void dispose(AeroServiceSharedSecretAuthenticator instance)
     {
         // noop
     }
