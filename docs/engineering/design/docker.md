@@ -19,13 +19,8 @@ ports.
 [Here](http://www.fig.sh/env.html) is why.
     - We should not dynamically allocate ports. 
 [Here](http://youtu.be/YrxnVKZeqK8?t=14m31s) is why.
-- Use `docker run --restart=always` combined with `<service>/reload` API to 
-allow Bootstrap to reload containers.
-    - May need to patch fig to [add restart 
-support](https://github.com/docker/fig/issues/478)
-    - Perhaps Bootstrap is not needed at all. Can we simply `fig stop && fig 
-start`?
-- Use the [data-only container 
+- Use `docker run --restart=always` combined with `loader/boot` API to reload containers?
+- Use a [data-only container 
 pattern](http://container42.com/2013/12/16/persistent-volumes-with-docker-contai
 ner-as-volume-pattern/) for persistent data.
 
@@ -41,7 +36,7 @@ well supported as of Dec 2014. See
 [here](http://container42.com/2014/11/03/docker-indepth-volumes/), and 
 [here](http://container42.com/2014/11/18/data-only-container-madness/).
 
-In the first iteration I opt to use data volumes for faster implementation. In 
+In the first iteration I opt to use data volumes. In 
 the future most volume data should be replaced with external data stores for 
 easier replication, backup, and horizontal scalability.
 
@@ -53,13 +48,11 @@ The structure of our current codebase is unfriendly to Docker build.
 There are many instructions tagged with the "PREDOCKER" keyword to prepare and fix up files before building docker images. We should eventually reorganize the code and remove PREDOCKER comments.
 
 
-## To-do List
+## TODO List
 
 The following tasks are necessary to completely containerize AeroFS services. 
 Even if we end up with not adopting Docker, these changes would improve service 
 decoupling and pave the road for scaling the appliance in the future.
-
-0. db password (rudy's work)
 
 0. redis: how to run "sysctl vm.overcommit_memory = 1"?
 
@@ -70,7 +63,7 @@ decoupling and pave the road for scaling the appliance in the future.
 Logistic items:
 
 0. Use stable rather than alpha CoreOS release channel (by the time of writing 
-stable doesn't support gz+b64 cloud-config encoding.
+stable doesn't support gz+b64 cloud-config encoding.)
 
 0. Right before release, verify all the code/scripts that duplicate 
 with the original source are still consistent with the original. In particular, 
@@ -78,6 +71,10 @@ check all nginx configurations.
 
 0. Right before release, verify all new code in puppet and other folder have been
 copied or duplicated in the new system.
+
+### Security TODO
+
+0. Verify CoreOS base image. [More info](https://coreos.com/docs/sdk-distributors/distributors/notes-for-distributors/)
 
 
 ### Items after initial release
@@ -114,7 +111,7 @@ clean up CA's certs directory every time CA starts up.
 
 - TODOs in docker/data-container/README.md
 
-- Use build containers to compile things up, so the host dev environment can be 
+- Use build containers to compile things so the host dev environment can be 
 completely clean.
 
 - use buildpack-deps:micro instead of buildpack-deps
