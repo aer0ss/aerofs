@@ -1,0 +1,17 @@
+:group meta_conflict_group
+    core.meta_conflict.name_shift.should_merge_name_swapped_folders
+    core.meta_conflict.name_shift.should_merge_name_swapped_folders_alternate
+    core.meta_conflict.name_shift.should_merge_3_name_shifted_folders
+    core.meta_conflict.name_shift.should_merge_3_name_shifted_folders_alternate
+    core.meta_conflict.should_rename_expelled_folder_on_creating_conflict
+    core.meta_conflict.should_rename_expelled_folder_on_moving_conflict
+    core.meta_conflict.should_rename_expelled_folder_on_children_conflict
+    core.meta_conflict.should_rename_expelled_shared_folder_on_creating_conflict
+    # re-enable once we know how the final resolution of deadlock looks
+    #core.meta_conflict.should_move_folder_under_name_conflicted_parent
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_wz-zw
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_xz-zy
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yd-dx
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zx
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zy
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_zd-dz

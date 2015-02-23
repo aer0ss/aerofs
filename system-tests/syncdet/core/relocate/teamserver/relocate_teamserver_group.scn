@@ -1,0 +1,4 @@
+:group relocate_teamserver_group
+    core.relocate.should_relocate_root_anchor
+    core.relocate.teamserver.should_relocate_user_folder
+    core.relocate.teamserver.should_relocate_shared_folder

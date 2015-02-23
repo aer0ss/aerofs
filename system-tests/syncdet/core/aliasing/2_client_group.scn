@@ -1,0 +1,5 @@
+:group aliasing_group
+    core.aliasing.should_merge_name_conflicted_folder_w_2_subfiles
+    core.aliasing.should_merge_name_conflicted_folder_and_subfile
+    core.aliasing.should_merge_expelled_objects
+    core.aliasing.should_merge_expelled_and_admitted_objects

@@ -1,0 +1,8 @@
+:include test_reinstall_one_client_group.scn
+
+:scn,nofail reinstall_one_client_group_test
+    :serial
+        reinstall_one_client_group()
+
+:serial
+    reinstall_one_client_group_test()

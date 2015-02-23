@@ -28,7 +28,7 @@ readonly ERRSAFETYNET=30
 readonly SYNCDET="${GIT_ROOT}/../syncdet/syncdet.py"
 readonly SAFETYNET_CONFIG_PATH="${BUILD_SCRIPT_DIR}/safetynet/config.yaml"
 readonly SAFETYNET_SYNCDET_DEPLOY_DIR="${BUILD_SCRIPT_DIR}/safetynet/syncdet_deploy"
-readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPLOY_DIR ${GIT_ROOT}/syncdet_test ${GIT_ROOT}/src/python-lib"
+readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPLOY_DIR ${GIT_ROOT}/system-tests/syncdet ${GIT_ROOT}/src/python-lib"
 
 ###############################################################################
 #

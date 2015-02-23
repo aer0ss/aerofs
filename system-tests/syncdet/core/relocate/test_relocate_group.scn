@@ -1,0 +1,3 @@
+:group relocate_group
+    core.relocate.should_forbid_relative_paths
+    core.relocate.should_relocate_root_anchor

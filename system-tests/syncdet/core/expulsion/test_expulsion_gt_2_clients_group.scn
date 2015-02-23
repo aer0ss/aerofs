@@ -1,0 +1,3 @@
+:group expulsion_gt_2_group
+    core.expulsion.should_download_file_from_dev_that_previously_expelled_it
+    core.expulsion.should_delete_shared_folder_by_file_system

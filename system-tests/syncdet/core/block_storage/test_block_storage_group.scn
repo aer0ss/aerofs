@@ -1,0 +1,7 @@
+:group block_storage_group
+    core.block_storage.should_import_export_file
+    core.block_storage.should_delete_file
+    core.block_storage.should_move_file
+    core.block_storage.should_alias_file
+    core.block_storage.should_create_history
+    core.block_storage.should_delete_store

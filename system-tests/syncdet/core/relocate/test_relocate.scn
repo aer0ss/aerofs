@@ -1,0 +1,8 @@
+:include test_relocate_group.scn
+
+:scn,nofail relocate_group_test
+    :serial
+        relocate_group()
+
+:serial
+    relocate_group_test()

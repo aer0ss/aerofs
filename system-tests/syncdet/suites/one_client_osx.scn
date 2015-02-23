@@ -1,0 +1,8 @@
+:include ../ios/test_ios_group.scn
+
+:scn,nofail all
+    :serial
+        test_ios_group()
+
+:serial
+    all()

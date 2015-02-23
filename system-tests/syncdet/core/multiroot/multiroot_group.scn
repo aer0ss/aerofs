@@ -1,0 +1,3 @@
+:group multiroot_group
+    core.multiroot.should_create_external_share
+    core.multiroot.should_list_unlinked_external_root_in_shared_folder_list

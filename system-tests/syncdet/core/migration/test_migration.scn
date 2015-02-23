@@ -1,0 +1,8 @@
+:include test_migration_group.scn
+
+:scn,nofail migration_group_test
+    :serial
+        migration_group()
+
+:serial
+    migration_group_test()

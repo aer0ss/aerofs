@@ -1,0 +1,2 @@
+:group aliasing_gt_2_group
+    core.aliasing.should_merge_name_conflicted_folder_w_n_subdirs

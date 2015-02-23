@@ -1,0 +1,4 @@
+:group api_teamserver_group
+    api.should_get_root_metadata
+    api.should_create_anchor_on_ts
+    api.should_upload_large_file_in_chunks

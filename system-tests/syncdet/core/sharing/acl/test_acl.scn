@@ -1,0 +1,8 @@
+:include test_acl_group.scn
+
+:scn,nofail acl_group_test
+    :serial
+        acl_group()
+
+:serial
+    acl_group_test()

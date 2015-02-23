@@ -1,0 +1,2 @@
+:group servers_group
+    servers.should_send_defect

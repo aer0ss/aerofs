@@ -1,0 +1,8 @@
+:group sharing_multi_user_group
+    core.sharing.should_update_and_delete_acl_for_unlinked_folders
+    core.sharing.should_update_and_delete_acl_for_expelled_folders
+    core.sharing.should_share_unlinked_folder
+    core.sharing.should_share_expelled_folder
+    core.sharing.should_allow_sharing_between_users
+    core.sharing.should_allow_kickout_and_rejoin
+    core.sharing.should_update_name_for_renamed_shared_folder

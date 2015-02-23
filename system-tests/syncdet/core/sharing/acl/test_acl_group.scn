@@ -1,0 +1,4 @@
+:group acl_group
+    core.sharing.acl.should_forbid_setacl_on_unshared_folder
+    core.sharing.acl.should_propagate_shared_folder
+    core.sharing.acl.should_handle_concurrent_acl_updates

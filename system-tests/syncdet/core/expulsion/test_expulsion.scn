@@ -1,0 +1,8 @@
+:include test_expulsion_group.scn
+
+:scn,nofail expulsion_group_test
+    :serial
+        expulsion_group()
+
+:serial
+    expulsion_group_test()

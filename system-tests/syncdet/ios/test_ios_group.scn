@@ -1,0 +1,4 @@
+:group ios_group
+    ios.configure
+    ios.sdk_unit_tests
+    ios.app_unit_tests

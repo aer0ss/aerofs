@@ -1,0 +1,5 @@
+:group meta_meta_conflict_group
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_wz-zw
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_xz-zy
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zx
+    core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zy

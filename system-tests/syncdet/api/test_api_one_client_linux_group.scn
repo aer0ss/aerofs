@@ -1,0 +1,2 @@
+:group api_one_client_linux_group
+    api.should_start_rest_service_iff_enabled

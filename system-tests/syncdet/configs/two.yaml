@@ -1,0 +1,3 @@
+actors:
+  - os: linux
+  - os: windows

@@ -1,0 +1,5 @@
+:group revision_group
+    core.revision.should_build_history
+    core.revision.should_allow_file_and_folder_with_same_name
+    core.revision.should_delete_history
+    core.revision.should_move_read_only_to_history

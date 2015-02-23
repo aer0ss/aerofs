@@ -1,0 +1,5 @@
+:group api_group
+    api.should_get_root_metadata
+    api.should_allow_api_calls_with_valid_token
+    api.should_not_allow_api_calls_with_revoked_token
+    api.should_upload_large_file_in_chunks

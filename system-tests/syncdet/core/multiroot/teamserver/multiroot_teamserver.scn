@@ -1,0 +1,8 @@
+:include multiroot_teamserver_group.scn
+
+:scn,nofail multiroot_teamserver_group_test
+    :serial
+        multiroot_teamserver_group()
+
+:serial
+    multiroot_teamserver_group_test()

@@ -1,0 +1,8 @@
+:include ../core/basic/test_basic_group.scn
+
+:scn,nofail all
+    :serial
+        basic_group()
+
+:serial
+    all()

@@ -1,0 +1,9 @@
+:group multiroot_teamserver_group
+    core.multiroot.teamserver.should_sync_user_files_to_teamserver
+    core.multiroot.teamserver.should_sync_user_files_from_teamserver
+    core.multiroot.teamserver.should_sync_shared_folder_to_teamserver
+    core.multiroot.teamserver.should_sync_shared_folder_from_teamserver
+    core.multiroot.teamserver.should_ignore_files_under_anchor_on_teamserver
+    core.multiroot.teamserver.should_migrate_on_cross_store_move
+    core.multiroot.teamserver.should_remove_shared_folder_from_ts_on_leave
+    core.multiroot.teamserver.should_not_remove_folder_shared_from_ts_on_leave

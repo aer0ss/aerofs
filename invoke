@@ -557,7 +557,7 @@ def prepare_syncdet(args):
             ]
     infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
     source_dir = PACKAGE_DIR
-    dest_dir = os.path.join(GIT_ROOT, "syncdet_test")
+    dest_dir = os.path.join(GIT_ROOT, "system-tests", "syncdet")
     for info in infos_to_copy:
         dest_filename = ".".join([info.prefix, info.extension])
         dest_filepath = os.path.join(dest_dir, dest_filename)
@@ -649,7 +649,7 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
             '--config={}'.format(args.syncdet_config),
             '--case-timeout={}'.format(args.syncdet_case_timeout),
             '--sync-timeout={}'.format(args.syncdet_sync_timeout),
-            os.path.join(GIT_ROOT, "syncdet_test"),
+            os.path.join(GIT_ROOT, "system-tests", "syncdet"),
             # The /./ are needed for syncdet to figure out relative paths.  Wat.
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_common",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_sp",

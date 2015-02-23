@@ -1,0 +1,8 @@
+:include ../core/block_storage/test_block_storage_group.scn
+
+:scn,nofail block_storage_group_test
+    :serial
+        block_storage_group()
+
+:serial
+    block_storage_group_test()

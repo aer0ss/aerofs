@@ -1,0 +1,10 @@
+:include ../core/aliasing/gt_5_client_group.scn
+:include cleanup.scn
+
+:scn,nofail all
+    :serial
+        aliasing_gt_5_group()
+
+:serial
+    all()
+    cleanup()

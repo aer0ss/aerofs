@@ -1,0 +1,4 @@
+actors:
+  - os: linux
+    teamserver: local
+  - os: linux

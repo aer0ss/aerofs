@@ -1,0 +1,8 @@
+:include ../core/sharing/test_sharing_multi_user_group.scn
+
+:scn,nofail multi_user_test
+    :serial
+        sharing_multi_user_group()
+
+:serial
+    multi_user_test()

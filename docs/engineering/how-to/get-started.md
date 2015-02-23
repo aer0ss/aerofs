@@ -281,7 +281,7 @@ Skim through the SyncDET manual at docs/usermanual.pdf in the syncdet repo to ge
 
 Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup_syncdet_actors.html). Then:
 
-Build client packages for all OSes (or use `prepare_syncdet_test_linux` to build Linux packages only):
+Build client packages for all OSes:
 
     $ cd ~/repos/aerofs
     $ invoke --product=CLIENT --mode=PRIVATE  --unsigned setupenv clean proto build_client package_clients
@@ -299,15 +299,15 @@ Run a single test case:
 
     $ invoke syncdet --syncdet-case=core.basic.should_rename_file
     
-This test case correponds to the Python file ~/repos/aerofs/syncdet_test/core/basic/should_move_file.py.
+This test case correponds to the Python file ~/repos/aerofs/system-tests/syncdet/core/basic/should_move_file.py.
      
 Run a scenario that contains all basic test cases:
 
-    $ invoke syncdet --syncdet-scenario=./syncdet_test/core/basic/test_basic.scn
+    $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/core/basic/test_basic.scn
     
 Now, run all the tests!
 
-    $ invoke syncdet --syncdet-scenario=./syncdet_test/all.scn # all tests
+    $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/all.scn # all tests
 
 For convenience, the `test_system` ant target runs clean_install before other tests:
 

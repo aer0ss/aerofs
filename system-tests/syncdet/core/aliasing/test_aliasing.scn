@@ -1,0 +1,8 @@
+:include 2_client_group.scn
+
+:scn,nofail aliasing_group_test
+    :serial
+        aliasing_group()
+
+:serial
+    aliasing_group_test()

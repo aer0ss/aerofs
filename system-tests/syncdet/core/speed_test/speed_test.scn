@@ -1,0 +1,8 @@
+:include speed_test_group.scn
+
+:scn,nofail speed_test
+    :serial
+        speed_test_group()
+
+:serial
+    speed_test()

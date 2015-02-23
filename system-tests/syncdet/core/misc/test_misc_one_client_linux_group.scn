@@ -1,0 +1,2 @@
+:group misc_one_client_linux_group
+    core.misc.should_echo_shell_arguments

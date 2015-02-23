@@ -1,0 +1,6 @@
+:group content_conflict_group
+    core.content_conflict.should_report_conflict_and_manually_resolve
+    core.content_conflict.should_report_conflict_for_large_file_and_manually_resolve
+    core.content_conflict.should_resolve_false_conflicts
+    core.content_conflict.should_resolve_false_conflicts_for_large_file
+    core.content_conflict.should_report_two_conflicts_when_writing_during_download

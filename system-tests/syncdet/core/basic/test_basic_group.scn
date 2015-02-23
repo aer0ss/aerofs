@@ -1,0 +1,11 @@
+:group basic_group
+    core.basic.cD
+    core.basic.cDrl
+    core.basic.cF
+    core.basic.cFr
+    core.basic.dDr
+    core.basic.dFr
+    core.basic.should_transfer_large_file
+    core.basic.should_rename_file
+    core.basic.should_move_file_upward
+    core.basic.should_move_file_downward

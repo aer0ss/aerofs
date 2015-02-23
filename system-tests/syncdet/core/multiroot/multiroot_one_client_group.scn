@@ -1,0 +1,2 @@
+:group multiroot_one_client_group
+    core.multiroot.should_allow_delete_external_share_on_leaving

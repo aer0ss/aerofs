@@ -1,0 +1,8 @@
+:include test_revision_group.scn
+
+:scn,nofail revision_group_test
+    :serial
+        revision_group()
+
+:serial
+    revision_group_test()

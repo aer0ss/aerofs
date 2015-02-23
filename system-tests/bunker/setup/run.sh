@@ -31,7 +31,7 @@ CREATE_FIRST_USER="$4"
 THIS_DIR="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 REBOOT_FLAG_FILE="$(cd "$(dirname "${REBOOT_FLAG_FILE}")" && pwd)/$(basename "${REBOOT_FLAG_FILE}")"
 
-SCREEN_SHOTS="${THIS_DIR}/../../out.shell/screenshots/bunker-setup"
+SCREEN_SHOTS="${THIS_DIR}/../../../out.shell/screenshots/bunker-setup"
 mkdir -p "${SCREEN_SHOTS}"
 rm -rf "${SCREEN_SHOTS}"/*
 

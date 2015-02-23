@@ -1,0 +1,8 @@
+:include test_linker_group.scn
+
+:scn,nofail linker_group_test
+    :serial
+        linker_group()
+
+:serial
+    linker_group_test()

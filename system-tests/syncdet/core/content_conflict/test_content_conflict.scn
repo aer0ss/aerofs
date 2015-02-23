@@ -1,0 +1,8 @@
+:include test_content_conflict_group.scn
+
+:scn,nofail content_conflict_test
+    :serial
+        content_conflict_group()
+
+:serial
+    content_conflict_test()

@@ -1,0 +1,13 @@
+:group stress_group
+    core.stress.stress_scanner_large_flat_dir
+    core.stress.stress_scanner_small_files_mixed
+    core.stress.stress_scanner_small_files_one_source
+    core.stress.stress_scanner_small_files_all_sources
+    core.stress.stress_aliasing_small_files
+
+    # Don't include this test as it restart the daemon which defeats the purpose of imposing stress
+    # to long running daemons.
+    # core.stress.stress_scanner_small_files_pure
+
+:serial
+    stress_group()

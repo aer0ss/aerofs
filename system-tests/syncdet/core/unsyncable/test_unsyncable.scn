@@ -1,0 +1,8 @@
+:include test_unsyncable_group.scn
+
+:scn,nofail unsyncable_group_test
+    :serial
+        unsyncable_group()
+
+:serial
+    unsyncable_group_test()

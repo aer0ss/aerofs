@@ -1,0 +1,13 @@
+:group linker_n_clients_group
+    core.linker.should_update_same_file_on_replacement
+    core.linker.should_update_same_file_on_move_over
+    core.linker.should_update_same_files_on_swap
+    core.linker.should_rename_same_name_different_case
+    core.linker.should_delete_object_with_same_fid_different_type_on_linux
+    core.linker.should_ignore_recursive_symlink
+    core.linker.should_ignore_one_hardlink_file
+    core.linker.should_move_to_other_file_when_hardlink_file_deleted
+    core.linker.should_not_create_duplicate_when_moving_over_diff_content
+    core.linker.should_not_create_duplicate_when_moving_over_same_content
+    core.linker.should_create_duplicate_when_moving_over_expelled_object
+    core.linker.should_handle_4_byte_utf8

@@ -1,0 +1,2 @@
+:group aliasing_gt_5_group
+    core.aliasing.should_merge_grandparent_into_subdir_when_gp_is_alias_of_subdir

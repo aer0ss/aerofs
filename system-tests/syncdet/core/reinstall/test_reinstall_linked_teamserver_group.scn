@@ -1,0 +1,3 @@
+:group reinstall_linked_teamserver_group
+    core.reinstall.should_restore_shared_folders_on_ts_clean_reinstall
+    core.reinstall.should_restore_shared_folders_on_ts_unclean_reinstall

@@ -1,0 +1,4 @@
+actors:
+  - os: linux
+    teamserver: linked
+  - os: windows

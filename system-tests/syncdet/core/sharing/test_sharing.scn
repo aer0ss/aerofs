@@ -1,0 +1,8 @@
+:include test_sharing_group.scn
+
+:scn,nofail sharing_group_test
+    :serial
+        sharing_group()
+
+:serial
+    sharing_group_test()

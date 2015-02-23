@@ -1,0 +1,4 @@
+:group anti_entropy_group
+    core.anti_entropy.should_rename_file
+    core.anti_entropy.should_move_file_upward
+    core.anti_entropy.should_move_file_downward

@@ -1,0 +1,3 @@
+:group linker_one_client_group
+    core.linker.should_detect_changes_with_file_deleted_immediately_after_creation
+    core.linker.should_detect_changes_with_file_moved_immediately_after_creation

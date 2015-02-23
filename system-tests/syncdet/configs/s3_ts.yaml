@@ -1,0 +1,4 @@
+actors:
+  - os: linux
+    teamserver: s3
+  - os: windows

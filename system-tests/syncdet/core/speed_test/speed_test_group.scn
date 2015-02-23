@@ -1,0 +1,4 @@
+:group speed_test_group
+    core.speed_test.should_transfer_huge_file
+    core.speed_test.should_transfer_huge_file_reversed
+    core.speed_test.determine_speed_from_daemon_log

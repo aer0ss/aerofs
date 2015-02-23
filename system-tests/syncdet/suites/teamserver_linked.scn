@@ -1,0 +1,14 @@
+:include ../core/multiroot/teamserver/multiroot_teamserver_group.scn
+:include ../core/relocate/teamserver/relocate_teamserver_group.scn
+:include ../core/reinstall/test_reinstall_linked_teamserver_group.scn
+:include ../api/test_api_teamserver_group.scn
+
+:scn,nofail teamserver_linked_group_test
+    :serial
+       multiroot_teamserver_group()
+       relocate_teamserver_group()
+       api_teamserver_group()
+       reinstall_linked_teamserver_group()
+
+:serial
+    teamserver_linked_group_test()

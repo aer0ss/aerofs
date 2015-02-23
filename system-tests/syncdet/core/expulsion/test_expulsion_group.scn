@@ -1,0 +1,4 @@
+:group expulsion_group
+    core.expulsion.should_download_file_on_parent_folder_readmission
+    core.expulsion.should_download_file_on_parent_folder_readmission_after_downloading_other_objects
+    core.expulsion.should_download_native_and_immigrant_files_on_shared_folder_readmission

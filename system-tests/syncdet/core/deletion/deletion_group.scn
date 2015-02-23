@@ -1,0 +1,2 @@
+:group deletion_group
+    core.deletion.should_move_out_of_deleted_folder

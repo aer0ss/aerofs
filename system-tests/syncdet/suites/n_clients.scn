@@ -1,0 +1,28 @@
+:include ../core/basic/test_basic_group.scn
+:include ../core/linker/test_linker_n_clients_group.scn
+:include ../core/deletion/deletion_group.scn
+:include ../core/multiroot/multiroot_group.scn
+:include ../core/content_conflict/test_content_conflict_group.scn
+:include ../core/expulsion/test_expulsion_gt_2_clients_group.scn
+:include ../core/aliasing/gt_2_client_group.scn
+:include ../core/meta_conflict/gt_2_clients_group.scn
+:include ../core/anti_entropy/test_anti_entropy_group.scn
+:include ../api/test_api_n_clients_group.scn
+:include cleanup.scn
+
+:scn,nofail all
+    :serial
+        basic_group()
+        linker_n_clients_group()
+        deletion_group()
+        multiroot_group()
+        content_conflict_group()
+        expulsion_gt_2_group()
+        aliasing_gt_2_group()
+        meta_conflict_gt_2_group()
+        anti_entropy_group()
+        api_n_group()
+
+:serial
+    all()
+    cleanup()

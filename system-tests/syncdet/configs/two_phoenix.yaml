@@ -1,0 +1,5 @@
+actors:
+  - os: linux
+    aero_flags: ['polaris']
+  - os: windows
+    aero_flags: ['polaris']

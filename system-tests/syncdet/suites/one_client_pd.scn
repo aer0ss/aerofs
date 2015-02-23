@@ -1,0 +1,13 @@
+:include ../core/linker/test_linker_one_client_group.scn
+:include ../core/sharing/test_sharing_one_client_group.scn
+:include ../core/expulsion/test_expulsion_one_client_group.scn
+:include ../core/reinstall/test_reinstall_one_client_group.scn
+
+:scn,nofail all
+    :serial
+        linker_one_client_group()
+        sharing_one_client_group()
+        expulsion_one_client_group()
+
+:serial
+    all()

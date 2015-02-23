@@ -1,0 +1,8 @@
+:include test_api_group.scn
+
+:scn,nofail api_group_test
+    :serial
+        api_group()
+
+:serial
+    api_group_test()

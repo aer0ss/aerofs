@@ -1,0 +1,8 @@
+:include test_anti_entropy_group.scn
+
+:scn,nofail anti_entropy_group_test
+    :serial
+        anti_entropy_group()
+
+:serial
+    anti_entropy_group_test()

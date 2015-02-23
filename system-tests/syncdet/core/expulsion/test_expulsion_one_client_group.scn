@@ -1,0 +1,8 @@
+:group expulsion_one_client_group
+    core.expulsion.should_add_expelled_external_folder_as_unlinked_root
+    core.expulsion.should_delete_folder_recursively_on_expulsion
+    core.expulsion.should_create_folder_recursively_on_readmission
+    core.expulsion.should_support_nested_expulsion
+    core.expulsion.should_support_nested_expulsion_on_shared_folders
+    core.expulsion.should_keep_expelled_subfolder_expelled_on_parent_folder_readmission
+    core.expulsion.should_recreate_admitted_subfolders_on_parent_folder_readmission

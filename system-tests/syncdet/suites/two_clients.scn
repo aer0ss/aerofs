@@ -1,0 +1,37 @@
+:include ../core/basic/test_basic_group.scn
+:include ../core/linker/test_linker_group.scn
+:include ../core/deletion/deletion_group.scn
+:include ../core/expulsion/test_expulsion_group.scn
+:include ../core/multiroot/multiroot_group.scn
+:include ../core/meta_conflict/test_meta_conflict_group.scn
+:include ../core/content_conflict/test_content_conflict_group.scn
+:include ../core/sharing/test_sharing_group.scn
+:include ../core/sharing/acl/test_acl_group.scn
+:include ../core/aliasing/2_client_group.scn
+:include ../core/relocate/test_relocate_group.scn
+:include ../core/revision/test_revision_group.scn
+:include ../core/misc/test_misc_group.scn
+:include ../core/anti_entropy/test_anti_entropy_group.scn
+:include ../core/unsyncable/test_unsyncable_group.scn
+:include ../api/test_api_n_clients_group.scn
+
+:scn,nofail all
+    :serial
+        basic_group()
+        anti_entropy_group()
+        linker_group()
+        deletion_group()
+        expulsion_group()
+        multiroot_group()
+        meta_conflict_group()
+        sharing_group()
+        acl_group()
+        aliasing_group()
+        relocate_group()
+        revision_group()
+        misc_group()
+        unsyncable_group()
+        api_n_group()
+
+:serial
+    all()

@@ -1,0 +1,10 @@
+:include ../core/basic/test_basic_group.scn
+:include cleanup.scn
+
+:scn,nofail basic_group_test
+    :serial
+        basic_group()
+
+:serial
+    basic_group_test()
+    cleanup()

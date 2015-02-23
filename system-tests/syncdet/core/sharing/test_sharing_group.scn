@@ -1,0 +1,2 @@
+:group sharing_group
+    core.sharing.should_not_crash_on_concurrent_leave_and_delete

@@ -1,0 +1,13 @@
+:group sharing_one_client_group
+    core.sharing.should_maintain_same_path_after_sharing
+    core.sharing.should_forbid_creating_nested_sharing
+    core.sharing.should_remove_tag_file_folder_when_sharing
+    core.sharing.should_remove_tag_file_folder_for_non_shared_folder
+    core.sharing.should_remove_tag_file_when_copying_shared_folder
+    core.sharing.should_recreate_tag_file_when_removed
+    core.sharing.should_recreate_tag_file_when_replaced_with_folder
+    core.sharing.should_allow_share_leave_and_rejoin
+    core.sharing.should_allow_leave_expelled
+    core.sharing.should_auto_leave_on_delete
+    core.sharing.should_auto_leave_on_migration
+    core.sharing.should_keep_folder_in_shared_folder_list_after_expulsion

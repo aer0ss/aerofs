@@ -1,0 +1,2 @@
+:group meta_conflict_gt_2_group
+    core.meta_conflict.parent_conflict.should_choose_consistent_state_when_parent_dir_is_child_on_other_device

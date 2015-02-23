@@ -1,7 +1,7 @@
 # Runs some basic tests to ensure core AeroFS functionality is working
 
-:include ../../../../syncdet_test/servers/test_servers_group.scn
-:include ../../../../syncdet_test/core/basic/test_basic_group.scn
+:include ../../../../system-tests/syncdet/servers/test_servers_group.scn
+:include ../../../../system-tests/syncdet/core/basic/test_basic_group.scn
 
 # The collection of SyncDET tests to run
 # We test:

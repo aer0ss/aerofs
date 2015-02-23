@@ -1,0 +1,2 @@
+:group migration_group
+    core.migration.should_migrate_large_hierarchy

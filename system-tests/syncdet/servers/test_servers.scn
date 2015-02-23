@@ -1,0 +1,8 @@
+:include test_servers_group.scn
+
+:scn,nofail servers_group_test
+    :serial
+        servers_group()
+
+:serial
+    servers_group_test()

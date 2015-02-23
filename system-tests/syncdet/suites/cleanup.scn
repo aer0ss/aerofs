@@ -1,0 +1,6 @@
+:scn cleanup
+    :serial
+        lib.cases.dump_root_anchor
+
+:serial
+    cleanup()

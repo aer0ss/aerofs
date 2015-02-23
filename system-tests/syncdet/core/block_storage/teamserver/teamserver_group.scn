@@ -1,0 +1,4 @@
+:group teamserver_group
+    core.block_storage.teamserver.should_sync_users_files_to_teamserver
+    core.block_storage.teamserver.should_sync_users_files_from_teamserver
+    core.block_storage.teamserver.should_sync_shared_folder
