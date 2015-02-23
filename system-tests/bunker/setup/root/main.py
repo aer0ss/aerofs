@@ -137,7 +137,7 @@ def create_account(e, wait, password):
 
 def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_user):
 
-    with open('/appliance.yml') as f:
+    with open('/setup.yml') as f:
         y = yaml.load(f)
 
     url = "http://" + hostname

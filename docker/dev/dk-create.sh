@@ -54,7 +54,7 @@ mkdir -p "$(dirname ${REBOOT_FLAG})"
 echo > "${REBOOT_FLAG}"
 
 # Run the script in the background
-"${THIS_DIR}/../configurator/configure.sh" share.syncfs.com ${IP} "${REBOOT_FLAG}" false &
+"${THIS_DIR}/../../system-tests/bunker/setup/run.sh" share.syncfs.com ${IP} "${REBOOT_FLAG}" false &
 PID=$!
 
 # Listen to boot flag file change. Take action once the file becomes non-empty

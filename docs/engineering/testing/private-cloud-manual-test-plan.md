@@ -37,6 +37,10 @@ Non-goals:
  - functional (sync) testing
  - UI/UX except for setup flow
  - anything handled by existing testing (safetynet, CI, hybrid users)
+ 
+Long term:
+
+ - convert all manual tests to automated ones
 
 ## Appliance
 
@@ -121,5 +125,12 @@ Test new backup
  - use backup file from pass 2
  - use defaults
  - sign in as any user.
+
+## Tests to be automated
+
+These manual tests are not done on every appliance release (they're costly). We record them here to remember all the candidates for automation.
+
+- All the functions on the Bunker Web UI
+- OpenID
 
 
