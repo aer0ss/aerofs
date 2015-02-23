@@ -9,7 +9,7 @@ from web.oauth import get_bifrost_client
 log = logging.getLogger(__name__)
 
 
-def get_new_settings_token(request):
+def create_new_settings_token(request):
     client_id = 'aerofs-settings'
     client_secret = request.registry.settings["oauth.settings_client_secret"]
     # Explicitly request all the scopes, except organization.admin.
@@ -53,25 +53,25 @@ def settings(request):
 
 
 @view_config(
-    route_name='json_create_access_token',
+    route_name='json_create_user_settings_access_token',
     permission='user',
     renderer='json',
     request_method='POST'
 )
-def json_create_access_token(request):
+def json_create_user_settings_access_token(request):
     sp = get_rpc_stub(request)
-    token = get_new_settings_token(request)
+    token = create_new_settings_token(request)
     sp.set_user_settings_token(token)
     return {}
 
 
 @view_config(
-    route_name='json_delete_access_token',
+    route_name='json_delete_user_settings_access_token',
     permission='user',
     renderer='json',
     request_method='POST'
 )
-def json_delete_access_token(request):
+def json_delete_user_settings_access_token(request):
     sp = get_rpc_stub(request)
     user_settings_token = sp.get_user_settings_token().token
     # If the user has a token delete it in bifrost.
@@ -79,8 +79,8 @@ def json_delete_access_token(request):
         bifrost_client = get_bifrost_client(request)
         bifrost_client.delete_access_token(user_settings_token)
         bifrost_client.flash_on_error(request)
-    # Delete the persistent store of the token on SP.
-    sp.delete_user_settings_token()
+        # Delete the persistent store of the token on SP.
+        sp.delete_user_settings_token()
     return {}
 
 

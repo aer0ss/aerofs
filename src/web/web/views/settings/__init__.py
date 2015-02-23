@@ -5,8 +5,8 @@ def includeme(config):
     # Settings.
     config.add_route('settings', 'settings')
 
-    config.add_route('json_create_access_token','json_create_access_token')
-    config.add_route('json_delete_access_token','json_delete_access_token')
+    config.add_route('json_create_user_settings_access_token','json_create_user_settings_access_token')
+    config.add_route('json_delete_user_settings_access_token','json_delete_user_settings_access_token')
 
     config.add_route('json_send_password_reset_email','json_send_password_reset_email')
     config.add_route('json_set_full_name','json_set_full_name')

@@ -198,7 +198,7 @@
                     $progressModal.modal('hide');
                 };
 
-                $.post("${request.route_path('json_create_access_token')}", { }
+                $.post("${request.route_path('json_create_user_settings_access_token')}", { }
                 ).done(function(x) {
                     updateUserSettingsToken(always);
                 }).fail(function(xhr) {
@@ -217,7 +217,7 @@
                     $progressModal.modal('hide');
                 };
 
-                $.post("${request.route_path('json_delete_access_token')}", { }
+                $.post("${request.route_path('json_delete_user_settings_access_token')}", { }
                 ).done(function(x) {
                     updateUserSettingsToken(always);
                 }).fail(function(xhr) {
