@@ -1,6 +1,0 @@
-#!/bin/bash
-
-PYTHONENV=/opt/ca/pythonenv
-rm -rf $PYTHONENV
-virtualenv $PYTHONENV
-# If we had any dependencies, we'd install them here.

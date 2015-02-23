@@ -4,7 +4,7 @@ class persistent::services (
 ) inherits persistent::params {
 
     include private-common
-    include ca::autostart
+    include ca
 
     package { "aerofs-config":
         ensure  => latest,

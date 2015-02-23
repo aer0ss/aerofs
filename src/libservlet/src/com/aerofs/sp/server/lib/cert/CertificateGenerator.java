@@ -6,13 +6,14 @@ import com.aerofs.base.C;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam;
+import com.google.common.net.HttpHeaders;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.DataInputStream;
@@ -94,19 +95,20 @@ public class CertificateGenerator implements ICertificateGenerator
         // Convert the CSR into a string in PEM format (ascii-armored, base64).
         String strCSR = pemEncoded(csr);
 
-        // Call the CA. Use the user_id + '-' + device_id as the URL string. This string is used
-        // only as the certificate's file names stored on the CA server, so the actual value of the
-        // string is not important.
-
-        URLConnection conn;
+        HttpURLConnection conn;
         try {
-            conn = (new URL(LibParam.CA.URL + "?" + userId + '-' + did.toStringFormal())).openConnection();
+            conn = (HttpURLConnection)(new URL(LibParam.CA.URL + "?" + userId + '-' + did.toStringFormal())).openConnection();
         }
         catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly
             // implement the certificate generator interface.
             throw new IOException(e.toString());
         }
+
+        String serviceAuth = com.aerofs.auth.client.shared.AeroService.getHeaderValue("sp",
+                com.aerofs.sp.authentication.DeploymentSecret.getSecret());
+        conn.addRequestProperty(HttpHeaders.AUTHORIZATION, serviceAuth);
+        conn.setRequestMethod("POST");
 
         // 5 sec timeout should be more than enough. The default is way too long.
         Long timeout = 5 * C.SEC;

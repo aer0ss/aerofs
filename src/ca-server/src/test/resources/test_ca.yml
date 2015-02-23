@@ -1,0 +1,23 @@
+admin:
+  host: 0.0.0.0
+  port: 9003
+
+service:
+  host: 0.0.0.0
+  port: 9002
+
+database:
+  username: test
+  password: temp123
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost/test
+
+logging:
+  level: INFO
+
+  console:
+    enabled: false
+
+  file:
+    enabled: true
+    logfile: /var/log/ca-server/ca.log

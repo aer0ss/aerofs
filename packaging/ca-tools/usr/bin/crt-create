@@ -91,6 +91,7 @@ echo ">>> Submitting request to CA"
 # IMPORTANT: use --trace-ascii - to dump output
 
 curl --silent --show-error -X POST \
+    -H "Authorization: Aero-Service-Shared-Secret crt-create $(cat /data/deployment_secret)" \
     --data-binary @"$SERVER_NAME"".csr" \
     --output "$SERVER_X509CERT_FILENAME" \
     "$CA_URL""?""$SERVER_NAME"

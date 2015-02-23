@@ -1,7 +1,0 @@
-Package: aerofs-ca-server
-Section: admin
-Priority: required
-Depends: python, python-setuptools, nginx, make
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS certificate authority server package.
-Architecture: all

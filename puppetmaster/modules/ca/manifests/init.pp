@@ -1,17 +1,12 @@
 class ca {
+    common::service{"ca-server": }
+
     package{[
-        "aerofs-ca-server",
         "aerofs-ca-tools",
     ]:
         ensure => latest,
         require => [
             Apt::Source["aerofs"]
         ]
-    }
-
-    package { [
-        "screen"
-        ]:
-        ensure => latest,
     }
 }

@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bifrost/bifrost.iml" filepath="$PROJECT_DIR$/../../src/bifrost/bifrost.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" filepath="$PROJECT_DIR$/../../src/bootstrap/bootstrap.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/certificate-authority/certificate-authority.iml" filepath="$PROJECT_DIR$/../../src/certificate-authority/certificate-authority.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/command/command.iml" filepath="$PROJECT_DIR$/../../src/command/command.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/dryad/dryad.iml" filepath="$PROJECT_DIR$/../../src/dryad/dryad.iml" />
