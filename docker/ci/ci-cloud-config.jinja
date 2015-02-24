@@ -11,6 +11,19 @@ coreos:
         Address={{ ip_and_prefix }}
         Gateway={{ gateway }}
 
+    # The static.network unit above adds a default route. However this interface is not in VPN and we can't use it to
+    # contact servers that only allow VPN access (e.g. devmail). We delete this route and use the original one which
+    # goes through VPN via the CI host. It's assumed that the new route is on the top of route table and the original
+    # route goes through VPN.
+    - name: delete-first-default-route.service
+      command: start
+      content: |
+        [Unit]
+        Description=Delete First Default Route
+        After=systemd-networkd.service
+        [Service]
+        ExecStart=/usr/bin/ip route del default
+
     # signup-decoder is a Web service listening at <appliance-hostname>:5775 to return signup codes stored in mysql.
     # It's used by CI to sign up users automatically. It's a container because containers are the only thing CoreOS supports.
     - name: signup-decoder.service
