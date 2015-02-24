@@ -1,8 +1,6 @@
 {% include "common.tmplt" %}
 
 base.configuration.initialized={{ configuration_initialized }}
-bootstrap.tasks.configuration_service_url=https://localhost:5436/
-
 base.ca.url=http://localhost:1029/prod
 
 sp.redis.service.host=localhost
