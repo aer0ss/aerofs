@@ -18,14 +18,23 @@ wget https://github.com/docker/machine/releases/download/v0.1.0-rc4/docker-machi
     -O /usr/local/bin/docker-machine
 chmod +x /usr/local/bin/docker-machine
 
+VM=dev
+
+# Install dk-ip
+cat > /usr/local/bin/dk-ip <<END
+#!/bin/sh
+docker-machine ip ${VM}
+END
+chmod +x /usr/local/bin/dk-ip
+
 # Create a docker machine 'dev'
-if [ -z "$(vboxmanage list vms | grep '^"dev"')" ]; then
+if [ -z "$(vboxmanage list vms | grep "^\"${VM}\"")" ]; then
     docker-machine create -d virtualbox --virtualbox-disk-size 100000 --virtualbox-memory 3072 dev
 
     # Set environment variables for current and futher bash processes
     $(docker-machine env dev)
-    if [ -z "$(grep 'docker-machine env dev' ${HOME}/.bash_profile)" ]; then
-        echo '$(docker-machine env dev)' >> "${HOME}/.bash_profile"
+    if [ -z "$(grep 'docker-machine env ${VM}' ${HOME}/.bash_profile)" ]; then
+        echo '$(docker-machine env ${VM})' >> "${HOME}/.bash_profile"
     fi
 
     (set +x

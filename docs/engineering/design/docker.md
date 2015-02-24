@@ -77,7 +77,10 @@ copied or duplicated in the new system.
 0. Verify CoreOS base image. [More info](https://coreos.com/docs/sdk-distributors/distributors/notes-for-distributors/)
 
 
+
 ### Items after initial release
+
+- CI should use docker-machine
 
 - improve logging / deubbging on CI if appliance setup failed.
 

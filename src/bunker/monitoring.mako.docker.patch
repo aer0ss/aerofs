@@ -28,7 +28,7 @@
 -                function() {
 +            ## Reboot the entire system so nginx can pick up the change.
 +            ## TODO (WW) only reboot nginx and its dependents
-+            reboot('current', 'current', 'default', function() {
++            reboot('current', 'current', 'current', function() {
                      ## redirect back to the monitoring page so the updated creds show
                      window.location.assign('${request.route_path('monitoring')}');
                      always();

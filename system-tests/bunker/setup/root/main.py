@@ -1,24 +1,18 @@
+#
+# In addition to the command line arguments, the program requires the AeroFS license present at LICENSE_FILE. It also
+# Write a non-empty string to REBOOT_FLAG_FILE when it expects the appliance to reboot to the default container group.
+#
+
 from os.path import abspath
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from tempfile import mkstemp
 import yaml
-import requests
-from urllib import urlencode
 from sys import argv, stderr
 from webdriver_util import init
+from aerofs_webdriver_util import upload_license, get_signup_code
 
-
-def upload_license(e, d, wait, license_file):
-
-    wait.until(EC.title_contains('Sign In to Manage Appliance'))
-
-    # Make the license-file input visible. Invisible elements can't be interacted with
-    input_id = 'license-file'
-    d.execute_script("document.getElementById('{}').style.display='block';".format(input_id))
-
-    # Upload the file. Use absolute path for browser/OS portability.
-    e.get('#' + input_id).send_keys(abspath(license_file))
+REBOOT_FLAG_FILE = '/reboot-flag'
 
 
 def select_new_appliance(e, wait):
@@ -97,14 +91,14 @@ def _click_next(e):
     e.get('#next-btn').click()
 
 
-def apply_config(e, wait, reboot_flag_file):
+def apply_config(e, wait):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Please wait'))
 
     # Click "Apply"
     e.get('.btn-primary').click()
     print "The next step may take a while but should be less than five minutes:"
 
-    with open(reboot_flag_file, 'w') as f:
+    with open(REBOOT_FLAG_FILE, 'w') as f:
         f.write('1')
 
     # Wait for Apply Click "Create First User"
@@ -121,14 +115,6 @@ def signup_first_user(e, wait):
     wait.until_display('#email-sent-modal')
 
 
-def get_signup_code(hostname, user_id):
-    url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'userid': user_id}))
-    print "Getting signup code via Signup Decoder at {}...".format(url)
-    r = requests.get(url)
-    r.raise_for_status()
-    return r.json()['signup_code']
-
-
 def create_account(e, wait, password):
     wait.until(EC.title_contains('Create Account'))
 
@@ -140,7 +126,7 @@ def create_account(e, wait, password):
     wait.until(EC.title_contains('Download'))
 
 
-def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_user):
+def run_all(d, wait, e, hostname, create_first_user):
 
     with open('/setup.yml') as f:
         y = yaml.load(f)
@@ -150,12 +136,12 @@ def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_u
     d.get(url)
 
     # Set up appliance
-    upload_license(e, d, wait, license_file)
+    upload_license(d, e, wait)
     select_new_appliance(e, wait)
     set_hostname(e, wait, hostname)
     set_browser_cert(e, wait, y['browser-cert'], y['browser-key'])
     set_email(e, wait, y['email-host'], y['email-port'], y['admin-email'])
-    apply_config(e, wait, reboot_flag_file)
+    apply_config(e, wait)
 
     # Create first admin account
     if create_first_user:
@@ -170,13 +156,12 @@ def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_u
 
 
 def main():
-    if len(argv) != 6:
-        print >>stderr, "Usage: {} <hostname-of-appliance-under-test> <screenshot-output-dir> <path-to-license-file> " \
-                        "<path-to-reboot-flag-file> <create-first-user>".format(argv[0])
+    if len(argv) != 3:
+        print >>stderr, "Usage: {} <hostname> <create-first-user>".format(argv[0])
         exit(11)
 
-    driver, waiter, selector = init(argv[2])
-    run_all(driver, waiter, selector, argv[1], argv[3], argv[4], argv[5] == 'true')
+    driver, waiter, selector = init()
+    run_all(driver, waiter, selector, argv[1], argv[2] == 'true')
 
 
 main()

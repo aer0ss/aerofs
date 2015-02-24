@@ -7,7 +7,6 @@ CYAN='0;36'
 YELLOW='1;33'
 RED='0;31'
 cecho() { echo -e "\033[$1m$2\033[0m"; }
-
 info() { cecho ${CYAN} "$1"; }
 success() { cecho ${GREEN} "$1"; }
 error() { cecho ${RED} "$1"; }
@@ -21,6 +20,15 @@ else
     error "       Specify 'nobuild' to skip building Docker images."
     exit 11
 fi
+
+# VPN is required to build images and access devmail.aerofs.com during appliance setup
+(set +e
+    curl newci.arrowfs.org >/dev/null 2>&1
+    [[ $? = 0 ]] || (
+        error "ERROR: please connect to VPN"
+        exit 22
+    )
+)
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
@@ -54,7 +62,7 @@ mkdir -p "$(dirname ${REBOOT_FLAG})"
 echo > "${REBOOT_FLAG}"
 
 # Run the script in the background
-"${THIS_DIR}/../../system-tests/bunker/setup/run.sh" share.syncfs.com ${IP} "${REBOOT_FLAG}" false &
+"${THIS_DIR}/../../system-tests/bunker/setup/test.sh" ${IP} "${REBOOT_FLAG}" false &
 PID=$!
 
 # Listen to boot flag file change. Take action once the file becomes non-empty

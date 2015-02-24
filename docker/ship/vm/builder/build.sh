@@ -49,7 +49,7 @@ setup_preload_registry() {
         echo "WARNING: ${REPO_CONTAINER} failed to start. Try again."
     done
 
-    # Find the registry's hostname
+    # Find the registry's hostname. TODO (WW) use docker-machine for both CI and dev environment
     local REPO_HOST
     if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
         # Use the hostname specified in DOCKER_HOST environment variable
