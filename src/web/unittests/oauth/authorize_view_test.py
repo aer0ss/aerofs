@@ -1,10 +1,11 @@
-from mock import Mock
+from mock import Mock, patch
 import unittest
 import requests
 from webob.multidict import MultiDict
 from pyramid.httpexceptions import HTTPBadRequest, HTTPFound
 from ..test_base import TestBase
 from web.views.settings.access_tokens_view import app_authorization
+from web.oauth import DelegatedBifrostClient
 
 CLIENT_ID = "CLIENT_ID"
 CLIENT_NAME = "CLIENT_NAME"
@@ -54,10 +55,17 @@ class AuthorizeViewTest(TestBase):
 
     def _make_req(self, params):
         request = self.create_dummy_request(MultiDict(params))
-        request.registry.settings["deployment.oauth_server_uri"] = OAUTH_SERVER_URL
         return app_authorization(request)
 
-    def test_should_400_if_client_id_or_redirect_uri_is_invalid(self):
+    def _get_test_bifrost_client(self):
+        return DelegatedBifrostClient(OAUTH_SERVER_URL,
+                deployment_secret='1234567890123456789012',
+                delegated_user='test@aerofs.com',
+                service_name='web')
+
+    @patch('web.views.settings.access_tokens_view.get_bifrost_client')
+    def test_should_400_if_client_id_or_redirect_uri_is_invalid(self, get_test_bifrost_client):
+        get_test_bifrost_client.return_value = self._get_test_bifrost_client()
         # missing client_id
         with self.assertRaises(HTTPBadRequest):
             self._make_req({
@@ -93,7 +101,9 @@ class AuthorizeViewTest(TestBase):
                 "scope": "user.read"
             })
 
-    def test_should_redirect_error_if_invalid_response_type(self):
+    @patch('web.views.settings.access_tokens_view.get_bifrost_client')
+    def test_should_redirect_error_if_invalid_response_type(self, get_test_bifrost_client):
+        get_test_bifrost_client.return_value = self._get_test_bifrost_client()
         # no response_type
         try:
             self._make_req({
@@ -121,7 +131,9 @@ class AuthorizeViewTest(TestBase):
             self.assertIn("error=unsupported_response_type", e.location)
             self.assertIn("state=1234567890", e.location)
 
-    def test_should_redirect_error_if_missing_scope(self):
+    @patch('web.views.settings.access_tokens_view.get_bifrost_client')
+    def test_should_redirect_error_if_missing_scope(self, get_test_bifrost_client):
+        get_test_bifrost_client.return_value = self._get_test_bifrost_client()
         try:
             self._make_req({
                 "response_type": "code",
@@ -134,7 +146,9 @@ class AuthorizeViewTest(TestBase):
             self.assertIn("error=invalid_request", e.location)
             self.assertIn("state=1234567890", e.location)
 
-    def test_should_return_consent_page_if_valid_request(self):
+    @patch('web.views.settings.access_tokens_view.get_bifrost_client')
+    def test_should_return_consent_page_if_valid_request(self, get_test_bifrost_client):
+        get_test_bifrost_client.return_value = self._get_test_bifrost_client()
         to_render = self._make_req({
             "response_type": "code",
             "client_id": CLIENT_ID,
