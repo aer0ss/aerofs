@@ -1,5 +1,7 @@
 admin-email: admin@syncfs.com
 admin-pass: temp123
+email-host: devmail.aerofs.com
+email-port: 25
 
 # This is the *.syncfs.com certificate
 browser-cert: |

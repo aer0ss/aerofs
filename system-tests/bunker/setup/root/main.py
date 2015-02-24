@@ -60,8 +60,13 @@ def set_browser_cert(e, wait, cert, key):
     _click_next(e)
 
 
-def set_email(e, wait, admin_email):
+def set_email(e, wait, email_host, email_port, admin_email):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 3 of 3'))
+
+    # Set remote mail relay
+    e.get('input[value="remote"]').click()
+    e.get_and_clear('#email-sender-public-host').send_keys(email_host)
+    e.get_and_clear('#email-sender-public-port').send_keys(email_port)
 
     # Set support email address
     e.get_and_clear('#base-www-support-email-address').send_keys(admin_email)
@@ -149,7 +154,7 @@ def run_all(d, wait, e, hostname, license_file, reboot_flag_file, create_first_u
     select_new_appliance(e, wait)
     set_hostname(e, wait, hostname)
     set_browser_cert(e, wait, y['browser-cert'], y['browser-key'])
-    set_email(e, wait, y['admin-email'])
+    set_email(e, wait, y['email-host'], y['email-port'], y['admin-email'])
     apply_config(e, wait, reboot_flag_file)
 
     # Create first admin account

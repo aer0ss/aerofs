@@ -35,7 +35,7 @@ SCREEN_SHOTS="${THIS_DIR}/../../../out.shell/screenshots/bunker-setup"
 mkdir -p "${SCREEN_SHOTS}"
 rm -rf "${SCREEN_SHOTS}"/*
 
-docker build -t aerofs/test. "${THIS_DIR}"
+docker build -t aerofs/test.bunker.setup "${THIS_DIR}"
 
 (set +e
     docker run --rm \
@@ -43,7 +43,7 @@ docker build -t aerofs/test. "${THIS_DIR}"
         -v "${SCREEN_SHOTS}":/screenshots \
         -v "${REBOOT_FLAG_FILE}":/reboot-flag \
         --add-host "${HOST}:${IP}" \
-        aerofs/configurator python -u main.py \
+        aerofs/test.bunker.setup python -u main.py \
         ${HOST} /screenshots /test.license /reboot-flag ${CREATE_FIRST_USER}
     EXIT_CODE=$?
 
