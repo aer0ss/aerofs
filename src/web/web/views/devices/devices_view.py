@@ -1,5 +1,5 @@
 from datetime import datetime
-from base64 import b64decode
+from base64 import b64encode, b64decode
 from urllib import quote
 import json
 import logging
@@ -10,7 +10,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPBadRequest, HTTPFound, HTTPInternalServerError
 import requests
 
-from web.util import get_rpc_stub
+from web.util import get_rpc_stub, get_deployment_secret
 from web.oauth import get_bifrost_client, is_aerofs_mobile_client_id
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
@@ -188,9 +188,11 @@ def get_devices_for_user(request, user):
     bifrost_client.raise_on_error()
     mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]
 
+    deployment_secret = get_deployment_secret(request.registry.settings)
+
     last_seen_data = {}
     try:
-        last_seen_data = _get_last_seen_data(_get_verkehr_url(request.registry.settings), devices)
+        last_seen_data = _get_last_seen_data(_get_verkehr_url(request.registry.settings), deployment_secret, user, devices)
     except Exception as e:
         log.error('get_last_seen failed. use null values: {}'.format(e))
 
@@ -275,7 +277,7 @@ def _get_verkehr_url(settings):
    return 'http://{}:{}'.format(host, port)
 
 
-def _get_last_seen_data(verkehr_url, devices):
+def _get_last_seen_data(verkehr_url, deployment_secret, user_id, devices):
     """
     Call verkehr to retrieve last seen time and location for the given list of devices.
     @return a dict of:
@@ -290,7 +292,15 @@ def _get_last_seen_data(verkehr_url, devices):
         did = device.device_id.encode('hex')
 
         last_seen_topic = quote('online/{}'.format(did), safe='') # by setting safe to empty we also quote '/'
-        r = requests.get('{}/v2/topics/{}/updates'.format(verkehr_url, last_seen_topic), params={'from': '-1'})
+        url = '{}/v2/topics/{}/updates'.format(verkehr_url, last_seen_topic)
+        auth_headers = {
+            "Authorization": "Aero-Delegated-User {} {} {}".format(
+                "web",
+                deployment_secret,
+                b64encode(user_id)
+                )
+        }
+        r = requests.get(url, headers=auth_headers, params={'from': '-1'})
 
         # device was never seen - ignore it
         if r.status_code == requests.codes.not_found:
