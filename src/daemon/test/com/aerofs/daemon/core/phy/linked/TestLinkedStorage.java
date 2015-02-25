@@ -58,6 +58,7 @@ import org.mockito.Mock;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -254,10 +255,7 @@ public class TestLinkedStorage extends AbstractTest
         checkVersionCount("updateme", 0);
 
         // update & check that the revision dir is populated:
-        prefix = new LinkedPrefix(storage, sokid,
-                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
-        System.out.println(prefix._f.getAbsolutePath());
-        prefix._f.createNewFile();
+        prefix = createNewPrefix();
 
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, new Date().getTime(), txn);
@@ -280,9 +278,7 @@ public class TestLinkedStorage extends AbstractTest
 
         checkVersionCount("rollbackapply", 0);
 
-        prefix = new LinkedPrefix(storage, sokid,
-                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
-        FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
+        prefix = createNewPrefix();
 
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, 0, txn);
@@ -351,9 +347,7 @@ public class TestLinkedStorage extends AbstractTest
 
         // apply a few updates, checking that after each commit there is no growth in
         // revisions dir:
-        prefix = new LinkedPrefix(storage, sokid,
-                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
-        FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
+        prefix = createNewPrefix();
 
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, 0, txn);
@@ -363,15 +357,13 @@ public class TestLinkedStorage extends AbstractTest
         checkVersionCount("update.nohistory", 0);
 
         // test the original file is replaced on rollback:
-        prefix = new LinkedPrefix(storage, sokid,
-                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
-        FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
+        prefix = createNewPrefix();
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, 0, txn);
         txn.end_();
 
         checkVersionCount("update.nohistory", 0);
-        assert FileUtil.getLength(new File(pfile.getAbsPath_())) == 0 : "Original file missing";
+        assert FileUtil.getLength(new File(pfile.getAbsPath_())) == 1 : "Original file missing";
     }
 
     @Test
@@ -396,6 +388,15 @@ public class TestLinkedStorage extends AbstractTest
         txn.commit_();
         txn.end_();
         // should commit without rethrowing.
+    }
+
+    private LinkedPrefix createNewPrefix() throws IOException, SQLException
+    {
+        LinkedPrefix prefix = (LinkedPrefix)storage.newPrefix_(sokid, null);
+        try (OutputStream out = prefix.newOutputStream_(false)) {
+            out.write(0x0);
+        }
+        return prefix;
     }
 
     private IPhysicalFile createNamedFile(String fname) throws IOException, SQLException

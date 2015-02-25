@@ -28,6 +28,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 
 /**
@@ -433,6 +434,13 @@ public class InjectableFile implements IReadableFile
     public InputStream newInputStream() throws FileNotFoundException
     {
         return new FileInputStream(winSafe());
+    }
+
+    public byte[] toByteArray() throws IOException
+    {
+        try (InputStream in = newInputStream()) {
+            return ByteStreams.toByteArray(in);
+        }
     }
 
     public OutputStream newOutputStream() throws FileNotFoundException

@@ -9,17 +9,13 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.object.ObjectCreator;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -39,9 +35,6 @@ import com.google.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 
 public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 {
@@ -112,17 +105,20 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file")) {
             // copy source file to prefix (with core lock released)
             h = tk.inPseudoPause_(() -> {
-                MessageDigest md = SecUtil.newMessageDigest();
+                PrefixOutputStream po = pp.newOutputStream_(false);
                 try (
                         InputStream in = new FileInputStream(f);
-                        OutputStream out = new DigestOutputStream(pp.newOutputStream_(false), md)
+                        PrefixOutputStream out = po
                 ) {
                     ByteStreams.copy(in, out);
                 }
-                return new ContentHash(md.digest());
+                return po.digest();
             });
             // prepare prefix for persistent storage
             pp.prepare_(tk);
+        } catch (Exception e) {
+            pp.delete_();
+            throw e;
         }
 
         try (Trans t = _tm.begin_()) {

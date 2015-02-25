@@ -28,16 +28,13 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.id.KIndex;
@@ -158,14 +155,18 @@ class BlockStorage implements IPhysicalStorage
     @Override
     public IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope)
     {
-        String fileName = makeFileName(k) + (scope != null ? "-" + scope : "");
-        return new BlockPrefix(this, k, _fileFactory.create(_prefixDir, fileName));
+        String fileName = prefixFilePath(k) + (scope != null ? "-" + scope : "");
+        return new BlockPrefix(this, k, _prefixDir.newChild(fileName));
     }
 
-    @Override
-    public void deletePrefix_(SOKID sokid) throws SQLException, IOException
+    private String prefixFilePath(SOID soid)
     {
-        _fileFactory.create(_prefixDir, makeFileName(sokid)).deleteIgnoreError();
+        return Util.join(soid.sidx().toString(), soid.oid().toStringFormal());
+    }
+
+    private String prefixFilePath(SOKID sokid)
+    {
+        return Util.join(prefixFilePath(sokid.soid()), sokid.kidx().toString());
     }
 
     /**
@@ -207,6 +208,7 @@ class BlockStorage implements IPhysicalStorage
             @Override
             public void committed_() {
                 from._f.deleteIgnoreError();
+                from.cleanup_();
             }
         });
 
@@ -277,15 +279,7 @@ class BlockStorage implements IPhysicalStorage
 
         scheduleBlockCleaner_(t);
 
-        deletePrefixFilesMatching_(prefix);
-    }
-
-
-    private void deletePrefixFilesMatching_(final String prefix) throws IOException
-    {
-        InjectableFile[] fs = _prefixDir.listFiles((dir, name) -> name.startsWith(prefix));
-
-        if (fs != null) for (InjectableFile f : fs) f.deleteOrThrowIfExist();
+        _prefixDir.newChild(sidx.toString()).deleteOrThrowIfExistRecursively();
     }
 
     @Override
@@ -342,7 +336,7 @@ class BlockStorage implements IPhysicalStorage
         } finally {
             it.close_();
         }
-        deletePrefixFilesMatching_(prefix);
+        _prefixDir.newChild(prefixFilePath(soid)).deleteOrThrowIfExistRecursively();
     }
 
     private final TransLocal<Boolean> _tlScheduleCleaner = new TransLocal<Boolean>()  {

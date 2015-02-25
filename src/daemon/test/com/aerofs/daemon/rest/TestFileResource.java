@@ -1382,31 +1382,6 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldTruncatePrefix() throws Exception
-    {
-        SOID soid = mds.root().file("foo.txt").soid();
-
-        UploadID id = UploadID.generate();
-
-        pf.newOutputStream_(false).write(new byte[42]);
-
-        givenAccess()
-                .header("Upload-ID", id.toStringFormal())
-                .header(Names.CONTENT_RANGE, "bytes 0-" + (FILE_CONTENT.length - 1) + "/*")
-                .content(FILE_CONTENT)
-        .expect()
-                .statusCode(200)
-                .header("Upload-ID", id.toStringFormal())
-                .header(Names.RANGE, "bytes=0-" + (FILE_CONTENT.length - 1))
-        .when().log().everything()
-                .put("/v0.10/files/" + id(soid) + "/content");
-
-        verify(pf).truncate_(0L);
-
-        assertArrayEquals("Output Does Not match", FILE_CONTENT, pf.data());
-    }
-
-    @Test
     public void shouldRejectChunkStartingAtNonZeroOffsetWithMissingUploadID() throws Exception
     {
         SOID soid = mds.root().file("foo.txt").soid();
@@ -1425,7 +1400,28 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldRejectNonContiguousChunk() throws Exception
+    public void shouldRejectNonContiguousChunkBackward() throws Exception
+    {
+        SOID soid = mds.root().file("foo.txt").soid();
+
+        pf.newOutputStream_(false).write(new byte [42]);
+
+        UploadID id = UploadID.generate();
+
+        givenAccess()
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.CONTENT_RANGE, "bytes 0-" + (FILE_CONTENT.length - 1) + "/*")
+                .content(FILE_CONTENT)
+        .expect()
+                .statusCode(416)
+                .header("Upload-ID", id.toStringFormal())
+                .header(Names.RANGE, "bytes=0-41")
+        .when()
+                .put("/v0.10/files/" + id(soid) + "/content");
+    }
+
+    @Test
+    public void shouldRejectNonContiguousChunkForward() throws Exception
     {
         SOID soid = mds.root().file("foo.txt").soid();
 
@@ -1467,7 +1463,7 @@ public class TestFileResource extends AbstractRestTest
         .when().log().everything()
                 .put("/v0.10/files/" + id(soid) + "/content");
 
-        verify(pf).truncate_(FILE_CONTENT.length);
+        verify(pf).delete_();
     }
 
     @Test

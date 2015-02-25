@@ -65,11 +65,6 @@ public interface IPhysicalStorage extends IStartable
     void deleteStore_(SID physicalRoot, SIndex sidx, SID sid, Trans t) throws IOException, SQLException;
 
     /**
-     * Delete prefix associated with a given SOKID, if any
-     */
-    void deletePrefix_(SOKID sokid) throws IOException, SQLException;
-
-    /**
      * Override CfgStoragePolicy for the given transaction
      *
      * After calling this method, all files deleted within the given transaction will be effectively

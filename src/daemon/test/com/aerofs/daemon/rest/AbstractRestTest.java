@@ -5,6 +5,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.MDID;
 import com.aerofs.ids.OID;
@@ -113,12 +114,8 @@ import org.mockito.Spy;
 import org.slf4j.Logger;
 
 import javax.ws.rs.core.EntityTag;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.Permission;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -220,17 +217,10 @@ public class AbstractRestTest extends AbstractTest
         }
 
         @Override
-        public OutputStream newOutputStream_(boolean append) throws IOException
+        public PrefixOutputStream newOutputStream_(boolean append) throws IOException
         {
             if (!append) baos = new ByteArrayOutputStream();
-            return baos;
-        }
-
-        @Override
-        public InputStream newInputStream_() throws IOException
-        {
-            if (getLength_() == 0) throw new FileNotFoundException();
-            return new ByteArrayInputStream(data());
+            return new PrefixOutputStream(baos);
         }
 
         @Override
@@ -246,13 +236,6 @@ public class AbstractRestTest extends AbstractTest
         public void delete_() throws IOException
         {
             baos = new ByteArrayOutputStream();
-        }
-
-        @Override
-        public void truncate_(long length) throws IOException
-        {
-            baos = new ByteArrayOutputStream();
-            baos.write(Arrays.copyOf(data(), (int)length));
         }
     }
 

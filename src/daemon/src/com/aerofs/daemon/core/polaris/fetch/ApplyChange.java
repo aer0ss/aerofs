@@ -482,7 +482,7 @@ public class ApplyChange
             if (oaConflict.caMasterNullable() != null) {
                 _ps.newFile_(pConflict, KIndex.MASTER).updateSOID_(new SOID(sidx, oid), t);
             }
-            _ps.deletePrefix_(new SOKID(oaConflict.soid(), KIndex.MASTER));
+            _ps.newPrefix_(new SOKID(oaConflict.soid(), KIndex.MASTER), null).delete_();
             if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t)) {
                 _ccdb.insertChange_(sidx, oid, t);
             }

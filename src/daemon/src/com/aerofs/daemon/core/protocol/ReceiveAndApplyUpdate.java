@@ -13,7 +13,6 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -27,6 +26,7 @@ import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -37,7 +37,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.id.CID;
@@ -58,8 +57,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.DigestException;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -163,7 +160,7 @@ public class ReceiveAndApplyUpdate
      * @param isStreaming Whether we are streaming the content or receiving it in a datagram.
      * @return an OutputStream that writes to the prefix file
      */
-    private PrefixDownloadStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
+    private PrefixOutputStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
             SOKID k, Version vRemote, long prefixLength,
             boolean contentPresentLocally, boolean isStreaming)
             throws ExNotFound, SQLException, IOException, ExAborted
@@ -175,7 +172,7 @@ public class ReceiveAndApplyUpdate
             updatePrefixVersion_(k, vRemote, isStreaming);
 
             // This truncates the file to size zero
-            return new PrefixDownloadStream(prefix.newOutputStream_(false));
+            return prefix.newOutputStream_(false);
         }
 
         if (k.kidx().isMaster()) {
@@ -201,22 +198,10 @@ public class ReceiveAndApplyUpdate
         checkState(prefix.getLength_() == prefixLength,
                 "Prefix length mismatch %s %s", prefixLength, prefix.getLength_());
 
-        // if the prefix is too large, defer hashing to the end of the download
-        if (prefixLength > DaemonParam.PREFIX_REHASH_MAX_LENGTH) {
-            return new PrefixDownloadStream(prefix.newOutputStream_(true), new NullDigest());
-        }
-
-        MessageDigest md = SecUtil.newMessageDigest();
-        if (prefixLength > 0) {
-            try (InputStream is = prefix.newInputStream_()) {
-                ByteStreams.copy(is, new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-            }
-        }
-
-        return new PrefixDownloadStream(prefix.newOutputStream_(true), md);
+        return prefix.newOutputStream_(true);
     }
 
-    private @Nullable ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
+    private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
             final long totalFileLength, final long prefixLength, SOKID k,
             Version vRemote, @Nullable KIndex matchingLocalBranch, Token tk)
             throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
@@ -225,7 +210,7 @@ public class ReceiveAndApplyUpdate
         final boolean isStreaming = msg.streamKey() != null;
 
         // Open the prefix file for writing, updating it as required
-        final PrefixDownloadStream prefixStream = createPrefixOutputStreamAndUpdatePrefixState_(
+        final PrefixOutputStream prefixStream = createPrefixOutputStreamAndUpdatePrefixState_(
                 prefix, k, vRemote, prefixLength, matchingLocalBranch != null, isStreaming);
 
         try {
@@ -339,16 +324,12 @@ public class ReceiveAndApplyUpdate
         @Nullable ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
                 response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
-        if (h == null) {
-            h = hashPrefix_(prefix, tk);
-        }
-
         if (remoteHash != null && !h.equals(remoteHash)) {
             l.info("hash mismatch: {} {}", remoteHash, h);
             // hash mismatch can be caused by data corruption on either end of the transfer or
             // inside the transport. Whatever the case may be, we simply can't commit the change.
             // Discard tainted prefix
-            prefix.truncate_(0);
+            prefix.delete_();
             // TODO: more specific exception
             // TODO: NAK to force the sender to recompute its local hash
             throw new ExAborted("hash mismatch");
@@ -358,17 +339,6 @@ public class ReceiveAndApplyUpdate
         prefix.prepare_(tk);
 
         return h;
-    }
-
-    private @Nonnull ContentHash hashPrefix_(IPhysicalPrefix prefix, Token tk)
-            throws ExAborted, IOException, DigestException
-    {
-        TCB tcb = tk.pseudoPause_("hash-prefix");
-        try (InputStream is = prefix.newInputStream_()) {
-            return Hasher.computeHashImpl(is, prefix.getLength_(), () -> {});
-        } finally {
-            tcb.pseudoResumed_();
-        }
     }
 
     public void apply_(SOKID k, PBGetComponentResponse response, IPhysicalPrefix prefix,

@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -19,7 +20,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.oauth.Scope;
 import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.HttpStatus;
@@ -42,12 +42,8 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -82,9 +78,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
 
         try {
             // TODO: limit max upload size?
-            // avoid hashing when we know for sure the chunk cannot end the upload
-            MessageDigest md = mightCompleteUpload(ev._range) ? SecUtil.newMessageDigest() : null;
-            long chunkLength = uploadPrefix_(ev._content, pf, md);
+            PrefixOutputStream out = pf.newOutputStream_(true);
+            long chunkLength = uploadPrefix_(ev._content, out);
 
             l.info("uploaded {} bytes", chunkLength);
 
@@ -96,14 +91,11 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                 }
             }
 
-            // enforced by mightCompleteUpload
-            checkState(md != null);
-
             // anything can happen when the core lock is released...
             final OA newOA = checkSanity_(ev);
             if (newOA == null) return;
 
-            applyPrefix_(pf, newOA, new ContentHash(md.digest()));
+            applyPrefix_(pf, newOA, out.digest());
 
             ev.setResult_(Response.ok()
                     .tag(_etags.etagForContent(newOA.soid())));
@@ -120,14 +112,6 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             }
             throw e;
         }
-    }
-
-    private static boolean mightCompleteUpload(@Nullable ContentRange cr)
-    {
-        if (cr == null) return true;
-        Range<Long> range = cr.range();
-        Long length = cr.totalLength();
-        return length != null && (range == null || length.equals(range.upperEndpoint()));
     }
 
     private OA checkSanity_(EIFileUpload ev)
@@ -201,17 +185,13 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                             "Invalid Content-Range: last-byte-pos >= instance-length (RFC2616 14.16)"));
         }
 
-        if (r.lowerEndpoint() > prefixLength) {
+        if (r.lowerEndpoint() != prefixLength) {
+            l.info("invalid chunk upload request: {} {}", r.lowerEndpoint(), prefixLength);
             return withRange(prefixLength,
                     Response.status(HttpStatus.UNSATISFIABLE_RANGE)
                             .header("Upload-ID", uploadId.toStringFormal()));
         }
 
-        long lo = r.lowerEndpoint();
-        if (lo < prefixLength) {
-            l.info("truncate {}", lo);
-            pf.truncate_(lo);
-        }
         return null;
     }
 
@@ -230,9 +210,8 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             checkState(r.upperBoundType() == BoundType.OPEN);
             long rangeLength = r.upperEndpoint() - r.lowerEndpoint();
             if (chunkLength != rangeLength) {
-                // discard last chunk
-                l.warn("discard inconsistent chunk {}", chunkLength);
-                pf.truncate_(prefixLength - chunkLength);
+                l.warn("discard corrupted prefix", chunkLength);
+                pf.delete_();
                 return Response.status(Status.BAD_REQUEST)
                         .header("Upload-ID", uploadId.toStringFormal())
                         .entity(new Error(Type.BAD_ARGS,
@@ -256,33 +235,15 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         return null;
     }
 
-    private long uploadPrefix_(InputStream in, IPhysicalPrefix pf, MessageDigest md)
+    private long uploadPrefix_(InputStream in, PrefixOutputStream out)
             throws ExNoResource, ExAborted, IOException
     {
-        return _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "rest-upload", () -> {
-            // TODO: version listener to check ifMatch on every change and abort transfer
-            // as soon as possible
-            // TODO: ideally we wouldn't need to use a core thread for that copy
-            // we really should just pipe incoming packets into the prefix as they arrive
-            // and schedule a self-handling event to apply the prefix at the end of the
-            // transfer
-            if (md != null && pf.getLength_() > 0) {
-                try (InputStream is = pf.newInputStream_()) {
-                    ByteStreams.copy(is,
-                            new DigestOutputStream(ByteStreams.nullOutputStream(), md));
-                }
-            }
-            OutputStream out = pf.newOutputStream_(true);
-            try {
-                return ByteStreams.copy(in, md != null ? new DigestOutputStream(out, md) : out);
-            } finally {
-                out.flush();
-                if (out instanceof FileOutputStream) {
-                    ((FileOutputStream)out).getChannel().force(true);
-                }
-                out.close();
-            }
-        });
+        try {
+            return _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "rest-upload",
+                    () -> ByteStreams.copy(in, out));
+        } finally {
+            out.close();
+        }
     }
 
     private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)

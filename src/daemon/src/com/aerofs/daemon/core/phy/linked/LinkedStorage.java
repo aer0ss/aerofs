@@ -156,19 +156,11 @@ public class LinkedStorage implements IPhysicalStorage
         return new LinkedFolder(this, path.soid(), _rh.getPhysicalPath_(path, type));
     }
 
-
     @Override
     public IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope) throws SQLException
     {
-        String filePath = auxFilePath(k, AuxFolder.PREFIX)
-                + (scope != null ? "-" + scope : "");
+        String filePath = prefixFilePath(k) + (scope != null ? "-" + scope : "");
         return new LinkedPrefix(this, k, LinkedPath.auxiliary(null, filePath));
-    }
-
-    @Override
-    public void deletePrefix_(SOKID sokid) throws SQLException, IOException
-    {
-        _factFile.create(auxFilePath(sokid, AuxFolder.PREFIX)).deleteIgnoreError();
     }
 
     @Override
@@ -197,7 +189,8 @@ public class LinkedStorage implements IPhysicalStorage
         }
         String absAuxRoot = plr.absAuxRoot();
         deleteFiles_(absAuxRoot, AuxFolder.CONFLICT, prefix);
-        deleteFiles_(absAuxRoot, AuxFolder.PREFIX, prefix);
+        _factFile.create(Util.join(absAuxRoot, AuxFolder.PREFIX._name, sidx.toString()))
+                .deleteOrThrowIfExistRecursively();
 
         // Unlink external store/root.
         LinkerRoot slr = _lrm.get_(sid);
@@ -206,6 +199,18 @@ public class LinkedStorage implements IPhysicalStorage
             _lrm.unlink_(sid, t);
             l.info("Unlinked {} {}", sid, slr.absRootAnchor());
         }
+    }
+
+    private String prefixFolderPath(String auxRoot, SOID soid) throws SQLException
+    {
+        return Util.join(auxRoot, AuxFolder.PREFIX._name,
+                soid.sidx().toString(), soid.oid().toStringFormal());
+    }
+
+    private String prefixFilePath(SOKID sokid) throws SQLException
+    {
+        return Util.join(prefixFolderPath(auxRootForStore_(sokid.sidx()), sokid.soid()),
+                sokid.kidx().toString());
     }
 
     String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
@@ -344,9 +349,10 @@ public class LinkedStorage implements IPhysicalStorage
             _rh._nrodb.setRepresentable_(soid, t);
         }
 
-        // TODO: reorg storage for more efficient scrubbing
+        // TODO: use hierarchical storage scheme for more efficient scrubbing
         deleteFiles_(auxRoot, AuxFolder.CONFLICT, prefix);
-        deleteFiles_(auxRoot, AuxFolder.PREFIX, prefix);
+
+        _factFile.create(prefixFolderPath(auxRoot, soid)).deleteOrThrowIfExistRecursively();
     }
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
@@ -379,6 +385,12 @@ public class LinkedStorage implements IPhysicalStorage
 
         l.info("applied {} {} {} {}", f._sokid, mtime, f._f.lastModified(), f.lengthOrZeroIfNotFile());
 
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_() {
+                p.cleanup_();
+            }
+        });
         return f._f.lastModified();
     }
 
