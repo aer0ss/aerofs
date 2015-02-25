@@ -9,6 +9,10 @@ enterprise customer. When customer seat count > X (where X is somewhat TBD, and
 has historically been > 200 seats), an implementation engineer is typically
 brought in during the sales process.
 
+*TODO: Do a better job of introducing the implementation engineer during the
+onboarding process. All <strong>qualified opportunities</strong> should have a
+corresponding implementation engineer (just as they have a sales contact).*
+
 It is the implementation engineer's reponsibility to work with the customer to
 deploy and scale the solution, as well as liason with other technical
 departments (support, solutions, engineering, product) when necessary. The
