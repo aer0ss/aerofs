@@ -46,6 +46,8 @@ routes = [
     'toggle_maintenance_mode',
     'timekeeping',
     'json_set_mobile_device_management',
+    'sync_settings',
+    'json_upload_externalproperties',
 
     # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
     'maintenance_mode',

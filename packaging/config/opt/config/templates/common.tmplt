@@ -45,3 +45,5 @@ base.audit.enabled={{ audit_enabled }}
 base.audit.public.url=https://{{ base_host }}:4433/audit/event
 
 base.triks.enabled=false
+
+properties.modification.time={{ properties_modification_time }}

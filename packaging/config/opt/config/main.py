@@ -8,6 +8,7 @@ import hashlib
 import os
 import re
 import tempfile
+import datetime
 
 # ----------------------------------------------------------------------
 # Statics
@@ -17,6 +18,7 @@ PWD = os.path.abspath(os.path.dirname(__file__))
 PROPERTIES_EXTERNAL = os.path.join(PWD, "properties", "external.properties")
 PROPERTIES_EXTERNAL_TMP = os.path.join(PWD, "properties","external.properties.tmp")
 CACERT_PATH = "/etc/ssl/certs/AeroFS_CA.pem"
+MODIFIED_TIME_KEY = "properties_modification_time"
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
 
@@ -146,6 +148,7 @@ def set_external_variable():
     value = request.form['value']
     d = read_dict_from_file(PROPERTIES_EXTERNAL)
     d[key] = value
+    d[MODIFIED_TIME_KEY] = datetime.datetime.utcnow().isoformat()
     write_dict_to_file(d, PROPERTIES_EXTERNAL_TMP, PROPERTIES_EXTERNAL)
     return ""
 

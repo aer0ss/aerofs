@@ -19,6 +19,10 @@ def is_maintenance_mode(settings):
     basepath = _flag_file_folder(settings)
     return os.path.exists(os.path.join(basepath, 'maintenance-flag'))
 
+def has_external_db(settings):
+    basepath = _flag_file_folder(settings)
+    return os.path.exists(os.path.join(basepath, 'external-db'))
+
 def write_pem_to_file(pem_string):
     os_handle, filename = tempfile.mkstemp()
     os.write(os_handle, pem_string.encode('utf8'))

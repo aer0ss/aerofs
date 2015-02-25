@@ -3,6 +3,7 @@ import json
 import urllib2
 from pyramid.view import view_config
 from operator import itemgetter
+from maintenance_util import has_external_db
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ def _status_url(request):
 )
 def status_view(request):
     return {
+        'possible_backup': has_external_db(request.registry.settings),
         'server_statuses': _get_server_statuses(request)
     }
 

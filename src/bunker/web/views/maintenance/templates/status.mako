@@ -2,8 +2,19 @@
 <%! page_title = "Server Status" %>
 
 <h2>Service status</h2>
+%if possible_backup:
+    <p>Any changes made on this appliance will <strong>not</strong> be reflected on other AeroFS appliances.
+    If you make any changes through this appliance management portal, please download a backup file so you can synchronize these changes with other appliances.
+    </p>
+%endif
 
-<div class="page-block footnote" id="get-credentials-div">
+<div class="page-block footnote">
+    %if possible_backup:
+        Is this a backup appliance?
+        <a href="${request.route_path('sync_settings')}">Update appliance settings here.</a>
+        <br/>
+    %endif
+
     Setting up automated service monitoring?
     <a href="${request.route_path('monitoring')}">Integrate this status with your existing sytems.</a>
 </div>
