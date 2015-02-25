@@ -290,15 +290,18 @@ public class GetComponentRequest
         if (rcv != null) {
             if (_cedb.getChangeEpoch_(sidx) == null) throw new ExProtocolError();
             checkState(k.cid().isContent());
-            Long lcv = _cvdb.getVersion_(sidx, k.oid());
-            if (lcv == null || lcv < rcv) {
-                l.debug("{} {} r {} >= {} l", msg.did(), k, rcv, lcv);
-                throw new ExNoComponentWithSpecifiedVersion();
-            }
+            // TODO: in some cases it might be acceptable to transfer un-acked local changes
+            // if some care is given to versioning and hashing
+
             // NB: only MASTER can have local changes
             if (k.kidx().isMaster() && _ccdb.hasChange_(sidx, k.oid())) {
                 l.debug("{} {} has local change", msg.did(), k);
                 throw new ExUpdateInProgress();
+            }
+            Long lcv = _cvdb.getVersion_(sidx, k.oid());
+            if (lcv == null || lcv < rcv) {
+                l.debug("{} {} r {} >= {} l", msg.did(), k, rcv, lcv);
+                throw new ExNoComponentWithSpecifiedVersion();
             }
             vLocal = Version.wrapCentral(lcv);
         } else {
