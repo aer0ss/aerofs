@@ -201,6 +201,8 @@ containers:
         - data
       link:
         - mysql:mysql.service
+        - sparta:sparta.service
+        - verkehr:verkehr.service
 
   sparta:
     image: aerofs/sparta
