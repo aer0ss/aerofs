@@ -79,6 +79,10 @@ copied or duplicated in the new system.
 
 ### Items after initial release
 
+- improve logging / deubbging on CI if appliance setup failed.
+
+- reboot only specified containers and its dependents. Check all usages of loader.mako:reboot()
+
 - remove repload retry loop from docker/ship/vm/builder/build.sh if preloading no longer fails.
 
 - dryad?
