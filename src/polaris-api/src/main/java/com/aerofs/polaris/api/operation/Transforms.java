@@ -11,7 +11,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-public final class AppliedTransforms {
+public final class Transforms {
 
     @Min(0)
     public final long maxTransformCount;
@@ -21,7 +21,7 @@ public final class AppliedTransforms {
     public final List<Transform> transforms;
 
     @JsonCreator
-    public AppliedTransforms(
+    public Transforms(
             @JsonProperty("max_transform_count") long maxTransformCount,
             @JsonProperty("transforms") List<Transform> transforms) {
         this.maxTransformCount = maxTransformCount;
@@ -33,7 +33,7 @@ public final class AppliedTransforms {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        AppliedTransforms other = (AppliedTransforms) o;
+        Transforms other = (Transforms) o;
         return maxTransformCount == other.maxTransformCount && Objects.equal(transforms, other.transforms);
     }
 

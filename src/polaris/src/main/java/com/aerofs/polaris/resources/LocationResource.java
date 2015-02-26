@@ -31,10 +31,7 @@ public final class LocationResource {
             @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
             @PathParam("did") DID did) {
-        store.inTransaction(dao -> {
-            store.performLocationUpdate(dao, principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
-            return null;
-        });
+        store.performLocationUpdate(principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
     }
 
     @DELETE
@@ -43,9 +40,6 @@ public final class LocationResource {
             @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
             @PathParam("did") DID did) {
-        store.inTransaction(dao -> {
-            store.performLocationUpdate(dao, principal.getUser(), LocationUpdateType.REMOVE, oid, version, did);
-            return null;
-        });
+        store.performLocationUpdate(principal.getUser(), LocationUpdateType.REMOVE, oid, version, did);
     }
 }

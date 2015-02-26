@@ -40,11 +40,8 @@ public final class LocationBatchResource {
 
         for (LocationBatchOperation operation : batch.operations) {
             try {
-                store.inTransaction(dao -> {
-                    store.performLocationUpdate(dao, principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
-                    results.add(new LocationBatchOperationResult());
-                    return null;
-                });
+                store.performLocationUpdate(principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
+                results.add(new LocationBatchOperationResult());
             } catch (Exception e) {
                 LocationBatchOperationResult result = new LocationBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
                 LOGGER.warn("fail location batch operation {}", operation, e);

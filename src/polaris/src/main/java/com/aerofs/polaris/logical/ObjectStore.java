@@ -1,12 +1,12 @@
 package com.aerofs.polaris.logical;
 
+import com.aerofs.baseline.db.TransactionIsolation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.Identifiers;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
@@ -16,6 +16,7 @@ import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.MoveChild;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.RemoveChild;
+import com.aerofs.polaris.api.operation.Transforms;
 import com.aerofs.polaris.api.operation.UpdateContent;
 import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.api.types.LogicalObject;
@@ -23,7 +24,9 @@ import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.api.types.Transform;
 import com.aerofs.polaris.api.types.TransformType;
 import com.aerofs.polaris.dao.Atomic;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
@@ -35,9 +38,9 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 
-// FIXME (AG): this is such a shitty piece of code; methods have a crap-ton of parameters, the code looks ugly...
-// FIXME (AG): access check is done while holding the db transaction - VERY VERY BAD
+// FIXME (AG): this is such a shitty, shitty piece of code: methods have a ton of parameters, the code looks ugly, it's painful
 
 /**
  * Interface through which components interact with the logical-object database.
@@ -49,7 +52,39 @@ import java.util.List;
  *     <li>Insert or remove devices at which a versioned logical object is available.</li>
  *     <li>Get a list of transforms on a shared folder.</li>
  * </ul>
+ * The methods in this class <strong>SHOULD NOT</strong>
+ * be called within a transaction.
+ * <br>
  * The methods in this class are re-entrant.
+ *
+ * <h3>Implementation Note</h3>
+ * All methods in this class should only be called after performing
+ * access checks. This is enforced by having all public methods
+ * do an access check and only then perform the requested operation in a
+ * transaction. Unfortunately this means that callers cannot, say,
+ * <ul>
+ *     <li>Insert an object.</li>
+ *     <li>Update content.</li>
+ *     <li>Update content location.</li>
+ * </ul>
+ * all in a single transaction. But, maybe, it would
+ * be nice if they could, someday... So, the implementation
+ * here is designed to support that.
+ * <br>
+ * You will notice that all public methods have the same form:
+ * <pre>
+ *      METHOD:
+ *          AccessToken <- checkAccess(....)
+ *
+ *          START_TRANSACTION:
+ *              privateMethod0(AccessToken, parameters...)
+ *              privateMethod1(AccessToken, parameters...)
+ *              ...
+ * </pre>
+ * If you need to, you can expose all the privateMethodXXX(AccessToken, ...)
+ * calls, do a single access check externally using the {@link #checkAccess(UserID, UniqueID, Access...)}
+ * call and then chain as many db operations as you'd like in
+ * a single {@link #inTransaction(StoreTransaction)} method call.
  */
 @ThreadSafe
 @Singleton
@@ -78,18 +113,39 @@ public final class ObjectStore {
     //
     //------------------------------------------------------------------------------------------------------------------
 
-    public <ReturnType> ReturnType inTransaction(final StoreTransaction<ReturnType> operation) {
+    /**
+     * Perform a set of operations (query, update) on the
+     * object store within a single transaction at the defaul
+     * isolation level.
+     *
+     * @param transaction anonymous class containing the operations to invoke on the object store
+     * @param <ReturnType> type returned by {@code transaction} (can be {@link Void}).
+     * @return an instance of {@code ReturnType} containing the result of {@code transaction}
+     * @throws org.skife.jdbi.v2.exceptions.CallbackFailedException if {@code transaction} could not complete successfully
+     */
+    public <ReturnType> ReturnType inTransaction(StoreTransaction<ReturnType> transaction) {
         return dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
-            return operation.execute(dao);
+            return transaction.execute(dao);
         });
     }
 
-    public <ReturnType> ReturnType inTransaction(final StoreTransaction<ReturnType> operation, final int isolationLevel) {
+    /**
+     * Perform a set of operations (query, update) on the
+     * object store within a single transaction at the specified
+     * {@code isolationLevel}.
+     *
+     * @param transaction anonymous class containing the operations to invoke on the object store
+     * @param isolationLevel transaction isolation level at which to run the transaction
+     * @param <ReturnType> type returned by {@code transaction} (can be {@link Void}).
+     * @return an instance of {@code ReturnType} containing the result of {@code transaction}
+     * @throws org.skife.jdbi.v2.exceptions.CallbackFailedException if {@code transaction} could not complete successfully
+     */
+    public <ReturnType> ReturnType inTransaction(StoreTransaction<ReturnType> transaction, TransactionIsolation isolationLevel) {
         return dbi.inTransaction((conn, status) -> {
-            conn.setTransactionIsolation(isolationLevel);
+            conn.setTransactionIsolation(isolationLevel.getLevel());
             DAO dao = new DAO(conn);
-            return operation.execute(dao);
+            return transaction.execute(dao);
         });
     }
 
@@ -99,34 +155,93 @@ public final class ObjectStore {
     //
     //------------------------------------------------------------------------------------------------------------------
 
+    public static final class AccessToken {
+
+        public final UserID user;
+        public final UniqueID root;
+        public final Set<Access> granted;
+
+        // private so that it can *only* be created from within this class
+        private AccessToken(UserID user, UniqueID root, Access... granted) {
+            Preconditions.checkArgument(granted.length > 0, "at least access type must be allowed");
+            this.user = user;
+            this.root = root;
+            this.granted = ImmutableSet.copyOf(granted);
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AccessToken other = (AccessToken) o;
+            return Objects.equal(user, other.user) && Objects.equal(root, other.root) && Objects.equal(granted, other.granted);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(user, root, granted);
+        }
+
+        @Override
+        public String toString() {
+            return Objects
+                    .toStringHelper(this)
+                    .add("user", user)
+                    .add("root", root)
+                    .add("granted", granted)
+                    .toString();
+        }
+    }
+
     /**
      * Check if an object can be accessed by a user.
      *
-     * @param dao database wrapper instance
-     * @param user user id from which permissions should be checked
+     * @param user user id for which permissions should be checked
      * @param oid object the user wants to access
      * @param requested permissions the user wants on the object
      * @throws NotFoundException if the object does not exist
      * @throws AccessException if the user cannot access the object
      */
-    private void checkAccess(DAO dao, UserID user, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
+    public AccessToken checkAccess(UserID user, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
+        Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
+        UniqueID root = inTransaction(dao -> getRoot(dao, oid));
+        accessManager.checkAccess(user, root, requested);
+        return new AccessToken(user, root, requested);
+    }
+
+    /* (non-javadoc)
+     *
+     * Check if the access token we were previously granted is sufficient to perform the requested operation.
+     */
+    private void checkAccessGranted(DAO dao, AccessToken accessToken, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
+        UniqueID currentRoot = getRoot(dao, oid);
+        Preconditions.checkArgument(currentRoot.equals(accessToken.root), "access granted for root %s instead of %s", accessToken.root, currentRoot);
+
+        if (!ImmutableSet.copyOf(requested).equals(accessToken.granted)) {
+            LOGGER.warn("access granted for {} instead of {}", accessToken.granted, requested);
+            throw new AccessException(accessToken.user, accessToken.root, requested);
+        }
+    }
+
+    private UniqueID getRoot(DAO dao, UniqueID oid) throws NotFoundException {
         UniqueID root;
 
         if (Identifiers.isSharedFolder(oid) || Identifiers.isRootStore(oid)) {
             root = oid;
         } else {
             LogicalObject object = dao.objects.get(oid);
+
             if (object == null) {
                 throw new NotFoundException(oid);
             }
 
             root = object.root;
-            Preconditions.checkState(root != null, "no root for %s", oid);
         }
 
-        accessManager.checkAccess(user, root, requested);
+        return root;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -135,18 +250,37 @@ public final class ObjectStore {
     //
     //------------------------------------------------------------------------------------------------------------------
 
-    public int getTransformCount(DAO dao, UserID user, UniqueID root) throws PolarisException {
+    /**
+     * Get up to {@code maxReturnedResultCount} transforms starting at
+     * {@code startTimestamp} for the shared folder or root store identified
+     * by {@code root}.
+     *
+     * @param user user id of the user requesting the transforms
+     * @param root shared folder or root store for which you want to get a list of transforms
+     * @param startTimestamp logical timestamp <em>after</em> which to start retrieving transforms
+     * @param maxReturnedResultCount maximum number of transforms to return
+     * @return up to {@code maxReturnedResultCount} transforms for {@code root} starting at {@code startTimestamp}
+     * @throws NotFoundException if the {@code root} for which transforms should be retrieved does not exist
+     * @throws AccessException if {@code user} cannot list transforms for {@code root}
+     */
+    public Transforms getTransforms(UserID user, UniqueID root, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
+        AccessToken accessToken = checkAccess(user, root, Access.READ);
+        return inTransaction(dao -> {
+            int available = getTransformCount(dao, accessToken, root);
+            List<Transform> transforms = getTransforms(dao, accessToken, root, startTimestamp, maxReturnedResultCount);
+            return new Transforms(available, transforms);
+        });
+    }
+
+    private int getTransformCount(DAO dao, AccessToken accessToken, UniqueID root) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, root, Access.READ);
         verifyStore(root);
-
-        checkAccess(dao, user, root, Access.READ);
-
         return dao.transforms.getTransformCount(root);
     }
 
-    public List<Transform> getTransforms(DAO dao, UserID user, UniqueID root, long startTimestamp, long maxReturnedResultCount) throws PolarisException {
+    private List<Transform> getTransforms(DAO dao, AccessToken accessToken, UniqueID root, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, root, Access.READ);
         verifyStore(root);
-
-        checkAccess(dao, user, root, Access.READ);
 
         List<Transform> returned = Lists.newArrayList();
 
@@ -169,18 +303,21 @@ public final class ObjectStore {
      * </ul>
      * Note that a high-level transformation may result in multiple primitive transformations.
      *
-     * @param dao database interface used to realize the transformations
      * @param user user id of the user making the change to the object
      * @param device device that submitted the change
      * @param oid object being transformed
      * @param operation high-level transformation (one of the types listed above, along with their relevant parameters)
      * @return list of primitive transformations that resulted from this operation
-     * @throws PolarisException if the requested operation could not be performed
+     * @throws NotFoundException if the {@code object} to be transformed (or one of its dependents) does not exist
+     * @throws AccessException if {@code user} cannot transform {@code object} or one of its dependents
      */
-    public List<Updated> performTransform(DAO dao, UserID user, DID device, UniqueID oid, Operation operation) throws PolarisException {
-        Preconditions.checkNotNull(accessManager);
+    public List<Updated> performTransform(UserID user, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException {
+        AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
+        return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
+    }
 
-        checkAccess(dao, user, oid, Access.READ, Access.WRITE);
+    private List<Updated> performTransform(DAO dao, AccessToken accessToken, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException, ParentConflictException, NameConflictException, VersionConflictException {
+        checkAccessGranted(dao, accessToken, oid, Access.READ, Access.WRITE);
 
         List<Updated> updated = Lists.newArrayListWithExpectedSize(2);
 
@@ -218,7 +355,7 @@ public final class ObjectStore {
         return updated;
     }
 
-    private static Updated insertChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName, boolean allowReinsert, @Nullable Atomic atomic) throws PolarisException {
+    private static Updated insertChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName, boolean allowReinsert, @Nullable Atomic atomic) throws ParentConflictException, NotFoundException, NameConflictException {
         // check if the object was already inserted
         if (!allowReinsert) {
             UniqueID currentParentOid = dao.children.getParent(childOid);
@@ -262,7 +399,7 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
     }
 
-    private static Updated renameChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, byte[] newChildName) throws PolarisException {
+    private static Updated renameChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, byte[] newChildName) throws NotFoundException, NameConflictException {
         // get the parent
         LogicalObject parent = getParent(dao, parentOid);
 
@@ -287,7 +424,7 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
     }
 
-    private static Updated removeChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable Atomic atomic) throws PolarisException {
+    private static Updated removeChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable Atomic atomic) throws NotFoundException {
         Preconditions.checkArgument(!Identifiers.isRootStore(childOid), "cannot remove root store %s", childOid);
 
         // get the parent
@@ -314,7 +451,7 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
     }
 
-    private static Updated makeContent(DAO dao, DID device, UniqueID oid, long deviceVersion, byte[] contentHash, long contentSize, long contentTime) throws PolarisException {
+    private static Updated makeContent(DAO dao, DID device, UniqueID oid, long deviceVersion, byte[] contentHash, long contentSize, long contentTime) throws NotFoundException, VersionConflictException {
         // check that the object exists
         LogicalObject object = getExistingObject(dao, oid);
 
@@ -469,8 +606,23 @@ public final class ObjectStore {
     //
     //------------------------------------------------------------------------------------------------------------------
 
-    public List<DID> getLocations(DAO dao, UserID user, UniqueID oid, long version) throws PolarisException {
-        checkAccess(dao, user, oid, Access.READ);
+    /**
+     * Get a list of devices at which {@code oid}, {@code version} is available.
+     *
+     * @param user user id requesting the list of devices
+     * @param oid object to be located
+     * @param version integer version > 0 of {@code oid}
+     * @return list of devices at which {@code oid}, {@code version} can be found
+     * @throws NotFoundException if the {@code object} to be located does not exist
+     * @throws AccessException if {@code user} cannot retrieve the list of locations for {@code oid}, {@code version}
+     */
+    public List<DID> getLocations(UserID user, UniqueID oid, long version) throws NotFoundException, AccessException {
+        AccessToken accessToken = checkAccess(user, oid, Access.READ);
+        return inTransaction(dao -> getLocations(dao, accessToken, oid, version));
+    }
+
+    private List<DID> getLocations(DAO dao, AccessToken accessToken, UniqueID oid, long version) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, oid, Access.READ);
 
         // check that the object exists
         LogicalObject object = getExistingObject(dao, oid);
@@ -493,8 +645,35 @@ public final class ObjectStore {
         return existingLocations;
     }
 
-    public void performLocationUpdate(DAO dao, UserID user, LocationUpdateType updateType, UniqueID oid, long version, DID did) throws PolarisException {
-        checkAccess(dao, user, oid, Access.READ, Access.WRITE);
+    /**
+     * Update the list of devices at which an object
+     * identified by {@code oid}, {@code version} can be located.
+     * Updates can be one of:
+     * <ul>
+     *     <li>Addition.</li>
+     *     <li>Removal.</li>
+     * </ul>
+     *
+     * @param user user id updating the list of devices
+     * @param updateType {@link LocationUpdateType#INSERT} to add {@code did} to
+     *                   the list of devices or {@link LocationUpdateType#REMOVE}
+     *                   to remove {@code did} from the list of devices
+     * @param oid object for which the location list should be updated
+     * @param version integer version > 0 of {@code oid}
+     * @param did device id to be added or removed from the location list
+     * @throws NotFoundException if the {@code object} for which the location list should be updated does not exist
+     * @throws AccessException if {@code user} cannot update the list of locations for {@code oid}, {@code version}
+     */
+    public void performLocationUpdate(UserID user, LocationUpdateType updateType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
+        AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
+        inTransaction(dao -> {
+            performLocationUpdate(dao, accessToken, updateType, oid, version, did);
+            return null;
+        });
+    }
+
+    private void performLocationUpdate(DAO dao, AccessToken accessToken, LocationUpdateType updateType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, oid, Access.READ, Access.WRITE);
 
         switch (updateType) {
             case INSERT:
@@ -508,7 +687,7 @@ public final class ObjectStore {
         }
     }
 
-    private static void insertLocation(DAO dao, UniqueID oid, long version, DID did) throws PolarisException {
+    private static void insertLocation(DAO dao, UniqueID oid, long version, DID did) throws NotFoundException {
         // check that the object exists
         LogicalObject object = getExistingObject(dao, oid);
 
@@ -524,7 +703,7 @@ public final class ObjectStore {
         dao.locations.add(oid, version, did);
     }
 
-    private static void removeLocation(DAO dao, UniqueID oid, long version, DID did) throws PolarisException {
+    private static void removeLocation(DAO dao, UniqueID oid, long version, DID did) throws NotFoundException {
         // check that the object exists
         LogicalObject object = getExistingObject(dao, oid);
 

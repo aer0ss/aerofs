@@ -5,10 +5,8 @@ import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
-import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.UpdatePublisher;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 import javax.annotation.security.RolesAllowed;
@@ -22,6 +20,7 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RolesAllowed(Roles.USER)
 @Singleton
@@ -47,18 +46,11 @@ public final class ObjectResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") UniqueID oid, Operation operation) {
-        OperationResult result = store.inTransaction(dao -> new OperationResult(store.performTransform(dao, principal.getUser(), principal.getDevice(), oid, operation)));
+        OperationResult result = new OperationResult(store.performTransform(principal.getUser(), principal.getDevice(), oid, operation));
 
-        Preconditions.checkState(result.updated != null, "no updates made for %s", operation);
         Set<UniqueID> updatedRoots = Sets.newHashSet();
-
-        for (Updated updated : result.updated) {
-            updatedRoots.add(updated.object.root);
-        }
-
-        for (UniqueID root : updatedRoots) {
-            publisher.publishUpdate(root);
-        }
+        updatedRoots.addAll(result.updated.stream().map(updated -> updated.object.root).collect(Collectors.toList()));
+        updatedRoots.forEach(publisher::publishUpdate);
 
         return result;
     }

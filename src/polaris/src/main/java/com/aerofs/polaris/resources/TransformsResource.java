@@ -4,8 +4,7 @@ import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisConfiguration;
-import com.aerofs.polaris.api.operation.AppliedTransforms;
-import com.aerofs.polaris.api.types.Transform;
+import com.aerofs.polaris.api.operation.Transforms;
 import com.aerofs.polaris.logical.ObjectStore;
 
 import javax.annotation.security.RolesAllowed;
@@ -18,7 +17,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 
 @RolesAllowed(Roles.USER)
 @Path("/transforms")
@@ -36,16 +34,12 @@ public final class TransformsResource {
     @Path("/{oid}")
     @Produces(MediaType.APPLICATION_JSON)
     @GET
-    public AppliedTransforms getTransforms(
+    public Transforms getTransforms(
             @Context AeroUserDevicePrincipal principal,
             @PathParam("oid") UniqueID root,
             @QueryParam("since") @Min(-1) long since,
             @QueryParam("count") @Min(1) int requestedResultCount) {
-        return store.inTransaction(dao -> {
-            int transformCount = store.getTransformCount(dao, principal.getUser(), root);
-            int resultCount = Math.min(requestedResultCount, maxReturnedTransforms);
-            List<Transform> transforms = store.getTransforms(dao, principal.getUser(), root, since, resultCount);
-            return new AppliedTransforms(transformCount, transforms);
-        });
+        int resultCount = Math.min(requestedResultCount, maxReturnedTransforms);
+        return store.getTransforms(principal.getUser(), root, since, resultCount);
     }
 }

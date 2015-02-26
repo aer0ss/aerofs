@@ -38,6 +38,6 @@ public final class LocationsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<DID> getLocationsForContent(@Context AeroUserDevicePrincipal principal, @PathParam("oid") OID oid, @PathParam("version") @Min(0) long version) {
-        return store.inTransaction(dao -> store.getLocations(dao, principal.getUser(), oid, version));
+        return store.getLocations(principal.getUser(), oid, version);
     }
 }

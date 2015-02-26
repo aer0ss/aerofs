@@ -11,7 +11,7 @@ import java.util.Map;
  * to ensure that a useful HTTP response status code is
  * generated and returned by {@link com.aerofs.polaris.PolarisExceptionMapper}.
  */
-public abstract class PolarisException extends Exception {
+public abstract class PolarisException extends RuntimeException {
 
     private static final long serialVersionUID = -2765489236613535717L;
 

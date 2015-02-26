@@ -24,6 +24,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RolesAllowed(Roles.USER)
 @Singleton
@@ -44,31 +45,18 @@ public final class TransformBatchResource {
     @Produces(MediaType.APPLICATION_JSON)
     public TransformBatchResult submitBatch(@Context AeroUserDevicePrincipal principal, TransformBatch batch) {
         List<TransformBatchOperationResult> results = Lists.newArrayListWithCapacity(batch.operations.size());
+        Set<UniqueID> updatedRoots = Sets.newHashSet();
 
         for (TransformBatchOperation operation: batch.operations) {
             try {
-                store.inTransaction(dao -> {
-                    List<Updated> updated = store.performTransform(dao, principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
-                    results.add(new TransformBatchOperationResult(updated));
-                    return null;
-                });
+                List<Updated> updated = store.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
+                results.add(new TransformBatchOperationResult(updated));
+                updatedRoots.addAll(updated.stream().map(u -> u.object.root).collect(Collectors.toList()));
             } catch (Exception e) {
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
                 LOGGER.warn("fail transform batch operation {}", operation, e);
                 results.add(result);
                 break; // abort early if a batch operation fails
-            }
-        }
-
-        Set<UniqueID> updatedRoots = Sets.newHashSet();
-
-        for (TransformBatchOperationResult result : results) {
-            if (result.updated == null) { // in error case; technically I can 'break' here...
-                continue;
-            }
-
-            for (Updated updated : result.updated) {
-                updatedRoots.add(updated.object.root);
             }
         }
 

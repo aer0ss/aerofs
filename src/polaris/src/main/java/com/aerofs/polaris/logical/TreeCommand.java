@@ -2,6 +2,7 @@ package com.aerofs.polaris.logical;
 
 import com.aerofs.baseline.admin.Command;
 import com.aerofs.baseline.admin.Commands;
+import com.aerofs.baseline.db.TransactionIsolation;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
@@ -20,7 +21,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.PrintWriter;
-import java.sql.Connection;
 import java.util.Map;
 
 @Singleton
@@ -110,7 +110,7 @@ public final class TreeCommand implements Command {
                 // allow returns to be chained
                 return parentNode;
             }
-        }, Connection.TRANSACTION_READ_COMMITTED);
+        }, TransactionIsolation.READ_COMMITTED);
 
         Object serialized = mapper.treeToValue(forest, Object.class);
         Commands.outputFormattedJson(mapper, entityWriter, queryParameters, serialized);

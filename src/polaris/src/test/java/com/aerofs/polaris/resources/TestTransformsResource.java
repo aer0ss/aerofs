@@ -9,7 +9,7 @@ import com.aerofs.ids.UserID;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.api.PolarisUtilities;
-import com.aerofs.polaris.api.operation.AppliedTransforms;
+import com.aerofs.polaris.api.operation.Transforms;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.api.types.Transform;
 import com.aerofs.polaris.api.types.TransformType;
@@ -50,7 +50,7 @@ public final class TestTransformsResource {
         SID root = SID.generate();
         OID folder = PolarisHelpers.newFolder(verified, root, "folder_1");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(1));
         assertThat(applied.maxTransformCount, is(1L));
 
@@ -64,7 +64,7 @@ public final class TestTransformsResource {
         OID folder = PolarisHelpers.newFolder(verified, root, "folder_1");
         PolarisHelpers.removeFileOrFolder(verified, root, folder);
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(2));
         assertThat(applied.maxTransformCount, is(2L));
 
@@ -80,7 +80,7 @@ public final class TestTransformsResource {
         OID file = PolarisHelpers.newFile(verified, folder1, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(5));
         assertThat(applied.maxTransformCount, is(5L));
 
@@ -98,7 +98,7 @@ public final class TestTransformsResource {
         OID file = PolarisHelpers.newFile(verified, folder, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder, folder, file, "renamed");
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(3));
         assertThat(applied.maxTransformCount, is(3L));
 
@@ -117,7 +117,7 @@ public final class TestTransformsResource {
         OID file = PolarisHelpers.newFile(verified, root, "file");
         PolarisHelpers.newFileContent(verified, file, 0, hash, 100, 1024);
 
-        AppliedTransforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(2));
         assertThat(applied.maxTransformCount, is(2L));
 
@@ -133,7 +133,7 @@ public final class TestTransformsResource {
         OID file = PolarisHelpers.newFile(verified, folder1, "file");
         PolarisHelpers.moveFileOrFolder(verified, folder1, folder2, file, "renamed");
 
-        AppliedTransforms applied;
+        Transforms applied;
 
         applied = PolarisHelpers.getTransforms(verified, root, -1, 10);
         assertThat(applied.transforms, hasSize(5));
@@ -169,7 +169,7 @@ public final class TestTransformsResource {
                 PolarisHelpers.newFolder(verified, root, "folder_13"),
         };
 
-        AppliedTransforms applied;
+        Transforms applied;
         int count;
 
         applied = PolarisHelpers.getTransforms(verified, root, -1, 100);

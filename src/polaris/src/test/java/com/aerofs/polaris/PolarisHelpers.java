@@ -7,7 +7,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.api.PolarisModule;
-import com.aerofs.polaris.api.operation.AppliedTransforms;
+import com.aerofs.polaris.api.operation.Transforms;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.MoveChild;
 import com.aerofs.polaris.api.operation.RemoveChild;
@@ -188,7 +188,7 @@ public abstract class PolarisHelpers {
     // get changes
     //
 
-    public static AppliedTransforms getTransforms(RequestSpecification authenticated, SID root, long since, int resultCount) {
+    public static Transforms getTransforms(RequestSpecification authenticated, SID root, long since, int resultCount) {
         return given()
                 .spec(authenticated)
                 .and()
@@ -196,7 +196,7 @@ public abstract class PolarisHelpers {
                 .and()
                 .when().get(PolarisTestServer.getTransformsURL(root))
                 .then()
-                .extract().as(AppliedTransforms.class);
+                .extract().as(Transforms.class);
     }
 
     //
