@@ -5,8 +5,7 @@ import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
-
+@SuppressWarnings("unused")
 public abstract class Identifiers {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Identifiers.class);
@@ -26,34 +25,34 @@ public abstract class Identifiers {
 
     public static final int NUM_BYTES_IN_IDENTIFIER = 16;
 
-    public static boolean isRootStore(String oid) {
-        return isRootStore(hexDecode(oid));
+    public static boolean isRootStore(UniqueID identifier) {
+        return isRootStore(identifier.getBytes());
     }
 
-    public static boolean isRootStore(UniqueID oid) {
-        return isRootStore(oid.getBytes());
+    public static boolean isRootStore(String identifier) {
+        return isRootStore(hexDecode(identifier));
     }
 
-    public static boolean isRootStore(byte[] oid) {
-        int versionNibble = getVersionNibble(oid);
+    public static boolean isRootStore(byte[] identifier) {
+        int versionNibble = getVersionNibble(identifier);
         return versionNibble == 3;
     }
 
-    public static boolean isSharedFolder(String oid) {
-        return isSharedFolder(hexDecode(oid));
+    public static boolean isSharedFolder(UniqueID identifier) {
+        return isSharedFolder(identifier.getBytes());
     }
 
-    public static boolean isSharedFolder(UniqueID oid) {
-        return isSharedFolder(oid.getBytes());
+    public static boolean isSharedFolder(String identifier) {
+        return isSharedFolder(hexDecode(identifier));
     }
 
-    public static boolean isSharedFolder(byte[] oid) {
-        int versionNibble = getVersionNibble(oid);
+    public static boolean isSharedFolder(byte[] identifier) {
+        int versionNibble = getVersionNibble(identifier);
         return versionNibble == 0;
     }
 
     public static String newRandomSharedFolder() {
-        return getNibbledRandomBytes(0);
+        return SID.generate().toStringFormal();
     }
 
     public static boolean isMountPoint(String identifier) {
@@ -75,7 +74,7 @@ public abstract class Identifiers {
     }
 
     public static String newRandomObject() {
-        return getNibbledRandomBytes(4);
+        return OID.generate().toStringFormal();
     }
 
     public static boolean isDevice(String identifier) {
@@ -88,40 +87,25 @@ public abstract class Identifiers {
     }
 
     public static String newRandomDevice() {
-        return getNibbledRandomBytes(4);
-    }
-
-    private static String getNibbledRandomBytes(int nibbleValue) {
-        // create random bytes
-        Random random = new Random();
-        byte[] bytes = new byte[NUM_BYTES_IN_IDENTIFIER];
-        random.nextBytes(bytes);
-
-        // set the version nibble
-        byte lobits = (byte) (bytes[VERSION_BYTE] & 0x0f);
-        byte hibits = (byte) ((nibbleValue << VERSION_SHIFT) & VERSION_MASK);
-        bytes[VERSION_BYTE] = (byte) (hibits | lobits);
-
-        // return the hex-encoded value
-        return BaseEncoding.base16().lowerCase().encode(bytes);
+        return DID.generate().toStringFormal();
     }
 
     public static int getVersionNibble(byte[] identifier) {
         checkIdentifierLength(identifier);
-        return (identifier[VERSION_BYTE] & VERSION_MASK) >> VERSION_SHIFT;
+        return UniqueID.getVersionNibble(identifier);
     }
 
     private static void checkIdentifierLength(byte[] identifier) {
-        Preconditions.checkArgument(hasValdiIdentifierLength(identifier), "identifier has invalid length %d", identifier.length);
+        Preconditions.checkArgument(hasValidIdentifierLength(identifier), "identifier has invalid length %d", identifier.length);
     }
 
-    public static boolean hasValdiIdentifierLength(byte[] identifier) {
-        return identifier.length == NUM_BYTES_IN_IDENTIFIER;
+    public static boolean hasValidIdentifierLength(byte[] identifier) {
+        return identifier.length == UniqueID.LENGTH;
     }
 
     public static byte[] hexDecode(String identifier) {
         try {
-            return BaseEncoding.base16().lowerCase().decode(identifier.toLowerCase());
+            return BaseEncoding.base16().lowerCase().decode(identifier.trim().toLowerCase());
         } catch (IllegalArgumentException e) {
             LOGGER.warn("invalid hex-encoded identifier {}", identifier);
             throw new IllegalArgumentException(identifier + " is not a valid identifier");
