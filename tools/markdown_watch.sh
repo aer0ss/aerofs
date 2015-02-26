@@ -179,7 +179,8 @@ function CheckCss
 }
 
 # Call ProcessMarkdown if the markdown file is newer than the target html file
-# or the target doesn't exist. Create parent folders of the target if necessary.
+# or the target doesn't exist. Create parent folders of the target if
+# necessary.
 #
 # This method assumes PWD is the folder being scanned.
 # $1 : markdown file path
@@ -199,6 +200,29 @@ function CheckMarkdown
     if [ "$m" -nt "$h" ]
     then
         CompileMarkdown "$m" "$h"
+    fi
+}
+
+# Copy the HTML document if the source file is newer than the target file,
+# or the target doesn't exist. Create parent folders of the target if
+# necessary.
+#
+# This method assumes PWD is the folder being scanned.
+# $1 : html file path
+# $2 : target base dir path
+#
+function CheckHtml
+{
+    typeset m="${1}"
+    typeset h="${2}/${m}"
+
+    # Create target directory if necessary
+    typeset targetDir=`dirname ${h}`
+    [ -d "${targetDir}" ] || mkdir -p "${targetDir}"
+
+    if [ "$m" -nt "$h" ]
+    then
+        cp "$m" "$h"
     fi
 }
 
@@ -239,7 +263,7 @@ function ScanDir
     set -e
 
     typeset pwd=`pwd`
-    # Set pwd to the sourceDir to simplify processing in CheckMarkdown
+    # Set pwd to the sourceDir to simplify processing.
     cd "$sourceDir"
 
     # prefix the orginal pwd to the target dir if it's not an absolute path
@@ -253,14 +277,26 @@ function ScanDir
 
     if [ $Recursive -ne 0 ]
     then
+        # Markdown
         for x in `find . -iname \*.md -type f`
         do
             CheckMarkdown "$x" "${actualTargetDir}"
         done
+        # HTML
+        for x in `find . -iname \*.html -type f`
+        do
+            CheckHtml "$x" "${actualTargetDir}"
+        done
     else
+        # Markdown
         for x in *.md
         do
             [ -f "$x" ] && CheckMarkdown "$x" "${actualTargetDir}"
+        done
+        # HTML
+        for x in *.html
+        do
+            [ -f "$x" ] && CheckHtml "$x" "${actualTargetDir}"
         done
     fi
 

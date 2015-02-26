@@ -5,19 +5,22 @@ This document outlines our implementation team's responsibilities.
 ## Overview
 
 The implementation engineer is the technical point of contact for the large
-enterprise customer. When customer seat count > X (where X is somewhat TBD, and
-has historically been > 200 seats), an implementation engineer is typically
-brought in during the sales process.
-
-*TODO: Do a better job of introducing the implementation engineer during the
-onboarding process. All <strong>qualified opportunities</strong> should have a
-corresponding implementation engineer (just as they have a sales contact).*
+enterprise customer. When an opportunity is <strong>qualified</strong>, the
+prospect is assigned an implementation engineer. This is part of the onboarding
+process. Just as all qualified opportunities have a sales contact, they have
+an implementation contact as well.
 
 It is the implementation engineer's reponsibility to work with the customer to
 deploy and scale the solution, as well as liason with other technical
 departments (support, solutions, engineering, product) when necessary. The
 implementation engineer remains the primary technical point of contact
 throughout the customer lifecycle.
+
+## Meta
+
+The meta responsibility of the implementation engineering is to <strong>reduce
+touches</strong>. We should strive to make our onboarding as self-servicable
+as possible.
 
 ## Success
 
@@ -30,8 +33,12 @@ customer's specific issues, and is responsible for diagnosing and fixing those
 issues in a proactive manner in collaboration with the sales team to foster
 upsell and renewal.
 
-## Training
+## Other
+
+### Training and documentation
 
 As a corollary of the above, the implementation engineer is also responsible
 for training the IT adminisrator and other individuals within the customer's
 organization.
+
+This responsibility is shared with the support group.
