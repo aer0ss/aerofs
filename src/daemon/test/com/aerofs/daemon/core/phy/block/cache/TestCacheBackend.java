@@ -70,9 +70,9 @@ public class TestCacheBackend extends AbstractBlockTest
     {
         TestBlock b = newBlock();
 
-        cache.putBlock(b._key, new ByteArrayInputStream(b._content), b._content.length, null);
+        cache.putBlock(b._key, new ByteArrayInputStream(b._content), b._content.length);
 
-        verify(bsb).putBlock(eq(b._key), any(InputStream.class), eq((long)b._content.length), isNull());
+        verify(bsb).putBlock(eq(b._key), any(InputStream.class), eq((long)b._content.length));
     }
 
     @Test

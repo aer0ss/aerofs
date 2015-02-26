@@ -6,15 +6,13 @@ package com.aerofs.daemon.core.phy.block.gzip;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.lib.ContentBlockHash;
+import com.aerofs.lib.GZippingInputStream;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Simple proxy backend transparently compressing/decompressing blocks on top of another backend
@@ -52,24 +50,10 @@ public class GZipBackend implements IBlockStorageBackend
     }
 
     @Override
-    public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
+    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength)
+            throws IOException
     {
-        boolean ok = false;
-        EncoderWrapping w = _bsb.wrapForEncoding(out);
-        try {
-            w = new EncoderWrapping(new GZIPOutputStream(w.wrapped), w.encoderData);
-            ok = true;
-            return w;
-        } finally {
-            if (!ok) out.close();
-        }
-    }
-
-    @Override
-    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength,
-            @Nullable Object encoderData) throws IOException
-    {
-        _bsb.putBlock(key, input, decodedLength, encoderData);
+        _bsb.putBlock(key, new GZippingInputStream(input), decodedLength);
     }
 
     @Override

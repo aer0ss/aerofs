@@ -65,7 +65,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
         AppRoot.set("dummy");
 
         when(cfgLocalUser.get()).thenReturn(localUser);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create()).thenReturn(sp);
         when(sp.signInRemote()).thenReturn(sp);

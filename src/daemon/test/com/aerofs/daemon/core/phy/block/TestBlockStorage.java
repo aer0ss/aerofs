@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -25,6 +24,7 @@ import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.ITransListener;
@@ -39,6 +39,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -54,24 +55,20 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 public class TestBlockStorage extends AbstractBlockTest
 {
+    static {
+        LogUtil.enableConsoleLogging();
+        LogUtil.setLevel(LogUtil.Level.DEBUG);
+    }
     @Mock Trans t;
     @Mock Token tk;
     @Mock TokenManager tc;
@@ -81,6 +78,14 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock CfgAbsDefaultAuxRoot auxRoot;
     @Mock CfgStoragePolicy storagePolicy;
     @Mock IIMCExecutor iimc;
+
+    class TestableTrans extends Trans
+    {
+        private TestableTrans(TransManager tm)
+        {
+            super(new Trans.Factory(mock(IDBCW.class)), tm);
+        }
+    }
 
     // use in-memory DB
     InjectableFile.Factory fileFactory = new InjectableFile.Factory();
@@ -115,22 +120,16 @@ public class TestBlockStorage extends AbstractBlockTest
         new BlockStorageSchema()
                 .create_(idbcw.getConnection().createStatement(), idbcw);
 
-        when(tm.begin_()).thenReturn(t);
+        when(tm.begin_()).thenAnswer(invocation -> new TestableTrans(tm));
         when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
         when(storagePolicy.useHistory()).thenAnswer(invocation -> useHistory);
 
-        // no encoding is performed by the mock backend
-        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            return new EncoderWrapping((OutputStream)args[0], null);
-        });
-
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
-            ((AbstractEBSelfHandling)args[0]).handle_();
+            ((AbstractEBSelfHandling) args[0]).handle_();
             return null;
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
@@ -192,17 +191,23 @@ public class TestBlockStorage extends AbstractBlockTest
     private void store(
             String path, SOKID sokid,
             byte[] content, boolean wasPresent, long mtime)
-            throws Exception
+            throws Exception {
+        store(path, sokid, new ByteArrayInputStream(content), wasPresent, mtime);
+    }
+
+    private void store(String path, SOKID sokid, InputStream content,
+                       boolean wasPresent, long mtime) throws IOException, SQLException
     {
         IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
         IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
 
-        OutputStream out = prefix.newOutputStream_(false);
-        out.write(content);
-        out.close();
-
-        prefix.prepare_(tk);
-        bs.apply_(prefix, file, wasPresent, mtime, t);
+        try (OutputStream out = prefix.newOutputStream_(false)) {
+            ByteStreams.copy(content, out);
+        }
+        try (Trans t = tm.begin_()) {
+            bs.apply_(prefix, file, wasPresent, mtime, t);
+            t.commit_();
+        }
     }
 
     private byte[] fetch(String path, SOKID sokid) throws Exception
@@ -293,7 +298,7 @@ public class TestBlockStorage extends AbstractBlockTest
         createFile("foo/bar", sokid);
         byte[] result = fetch("foo/bar", sokid);
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
         Assert.assertArrayEquals(new byte[0], result);
     }
@@ -312,7 +317,7 @@ public class TestBlockStorage extends AbstractBlockTest
         }
         Assert.assertTrue(ok);
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -324,8 +329,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         store("foo/bar", sokid, content, false, 0L);
 
-        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
-                isNull());
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long) content.length));
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -338,8 +342,7 @@ public class TestBlockStorage extends AbstractBlockTest
         createFile("foo/bar", sokid);
         store("foo/bar", sokid, content, true, 0L);
 
-        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
-                isNull());
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long) content.length));
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -389,8 +392,7 @@ public class TestBlockStorage extends AbstractBlockTest
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
         store("foo/bar", sokid, content, false, 0L);
-        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
-                isNull());
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long) content.length));
 
         when(bsb.getBlock(forKey(content))).thenReturn(new ByteArrayInputStream(content));
 
@@ -413,7 +415,7 @@ public class TestBlockStorage extends AbstractBlockTest
         }
         Assert.assertTrue(ok);
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -428,7 +430,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertFalse(exists("foo/bar", sokid));
 
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -440,7 +442,7 @@ public class TestBlockStorage extends AbstractBlockTest
         deleteFile("foo/bar", sokid);
 
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
         verify(bsb, never()).deleteBlock(any(ContentBlockHash.class), any(TokenWrapper.class));
     }
@@ -455,7 +457,7 @@ public class TestBlockStorage extends AbstractBlockTest
         moveFile("foo/bar", from, "foo/baz/bla", to);
 
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -474,7 +476,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(ok);
 
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -495,7 +497,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(ok);
 
         verify(bsb, never())
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), anyObject());
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong());
         verify(bsb, never()).getBlock(any(ContentBlockHash.class));
     }
 
@@ -540,8 +542,7 @@ public class TestBlockStorage extends AbstractBlockTest
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
         store("foo/bar", sokid, content, false, 0L);
-        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
-                isNull());
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long) content.length));
 
         when(bsb.getBlock(forKey(content))).thenReturn(new ByteArrayInputStream(content));
 
@@ -856,30 +857,25 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldSplitLargeInputIntoBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
-        OutputStream out = prefix.newOutputStream_(false);
+        store("foo/bar", sokid, new DevCtr(4 * LibParam.FILE_BLOCK_SIZE + 1), false, 0L);
 
-        ByteStreams.copy(new DevCtr(4 * LibParam.FILE_BLOCK_SIZE + 1), out);
-        prefix.prepare_(tk);
-
-        verify(bsb, times(5))
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), isNull());
+        verify(bsb, times(4))
+                .putBlock(any(ContentBlockHash.class), any(InputStream.class),
+                        eq((long)LibParam.FILE_BLOCK_SIZE));
+        verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 
     @Test
     public void shouldAvoidStoringAlreadyStoredBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
-        OutputStream out = prefix.newOutputStream_(false);
-
-        ByteStreams.copy(new DevZero(4 * LibParam.FILE_BLOCK_SIZE + 1), out);
-        prefix.prepare_(tk);
+        store("foo/bar", sokid, new DevZero(4 * LibParam.FILE_BLOCK_SIZE + 1), false, 0L);
 
         // BlockStorageBackend.putBlock() should only be called once per *unique* chunk.
         // So we have four of the same full-size zero-block, and one that's one byte long.
-        verify(bsb, times(2))
-                .putBlock(any(ContentBlockHash.class), any(InputStream.class), anyLong(), isNull());
+        verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class),
+                eq((long)LibParam.FILE_BLOCK_SIZE));
+        verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 
     @Test

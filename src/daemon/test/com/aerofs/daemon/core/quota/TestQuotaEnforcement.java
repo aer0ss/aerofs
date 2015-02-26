@@ -35,8 +35,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.List;
 import java.util.Map;
@@ -99,7 +97,7 @@ public class TestQuotaEnforcement extends AbstractTest
         }
 
         // Mock out boring stuff
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).then(RETURNS_MOCKS);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).then(RETURNS_MOCKS);
         when(factSP.create()).thenReturn(sp);
         when(sp.signInRemote()).thenReturn(sp);
 
@@ -107,16 +105,10 @@ public class TestQuotaEnforcement extends AbstractTest
         buildSPReply();
 
         // Run the first event only (which is scheduled with 0 delay)
-        doAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                AbstractEBSelfHandling ev = (AbstractEBSelfHandling)invocation.getArguments()[0];
-                ev.handle_();
-                return null;
-            }
+        doAnswer(invocation -> {
+            AbstractEBSelfHandling ev = (AbstractEBSelfHandling)invocation.getArguments()[0];
+            ev.handle_();
+            return null;
         }).when(sched).schedule(any(IEvent.class), eq(0L));
     }
 

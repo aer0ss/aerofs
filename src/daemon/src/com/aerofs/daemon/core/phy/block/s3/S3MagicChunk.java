@@ -4,29 +4,27 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
-import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.amazonaws.AmazonServiceException;
-import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.sql.SQLException;
 import java.util.Arrays;
 
 /**
@@ -47,7 +45,8 @@ class S3MagicChunk implements IBlockStorageInitable
     private IBlockStorageBackend _bsb;
 
     private static final byte[] MAGIC = {};
-    private static ContentBlockHash MAGIC_HASH;
+    private static final ContentBlockHash MAGIC_HASH
+            = new ContentBlockHash(BaseSecUtil.hash(MAGIC));
 
     @Override
     public void init_(IBlockStorageBackend bsb) throws IOException
@@ -89,11 +88,6 @@ class S3MagicChunk implements IBlockStorageInitable
      */
     private void checkMagicChunk() throws IOException, AmazonServiceException
     {
-        HashStream hs = HashStream.newFileHasher();
-        hs.update(MAGIC, 0, MAGIC.length);
-        hs.close();
-        MAGIC_HASH = hs.getHashAttrib();
-
         try {
             downloadMagicChunk();
             return;
@@ -165,27 +159,6 @@ class S3MagicChunk implements IBlockStorageInitable
 
     private void uploadMagicChunk() throws IOException
     {
-        long length = MAGIC.length;
-        AbstractChunker upload = new AbstractChunker(ByteSource.wrap(MAGIC), length, _bsb) {
-            @Override
-            protected StorageState prePutBlock_(Block block) throws SQLException
-            {
-                return StorageState.NEEDS_STORAGE;
-            }
-
-            @Override
-            protected void postPutBlock_(Block block) throws SQLException
-            {}
-        };
-        upload.setSkipEmpty(false);
-        try {
-            ContentBlockHash hash = upload.splitAndStore_();
-            if (!hash.equals(MAGIC_HASH)) {
-                throw new IOException("Upload returns magic hash: " + hash.toHex()
-                        + " expected: " + MAGIC_HASH.toHex());
-            }
-        } catch (SQLException e) {
-            throw new IOException(e);
-        }
+        _bsb.putBlock(MAGIC_HASH, new ByteArrayInputStream(MAGIC), MAGIC.length);
     }
 }

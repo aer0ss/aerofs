@@ -38,7 +38,6 @@ import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Maintains mapping between logical object (SOKID) and physical objects (64bit index)
@@ -104,13 +103,10 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
 
             ps.setString(1, iname);
-            ResultSet rs = ps.executeQuery();
 
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return FILE_ID_NOT_FOUND;
                 return rs.getLong(1);
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _psGetFileIndex = null;
@@ -205,26 +201,20 @@ public class BlockStorageDatabase extends AbstractDatabase
                         C_FileCurr_Ver, C_FileCurr_Len, C_FileCurr_Date, C_FileCurr_Chunks));
             }
             ps.setLong(1, fileId);
-            ResultSet rs = ps.executeQuery();
-            try {
-                if (!rs.next()) {
-                    return null;
-                } else {
-                    byte[] hash = rs.getBytes(4);
-                    // It appears that a byte[0] written into a SQLite db can come out
-                    // as a null and ContentHash does not deal with that gracefully...
-                    if (hash == null) {
-                        hash = new byte[0];
-                    }
-                    return new FileInfo(
-                            fileId,
-                            rs.getLong(1),
-                            rs.getLong(2),
-                            rs.getLong(3),
-                            new ContentBlockHash(hash));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                byte[] hash = rs.getBytes(4);
+                // It appears that a byte[0] written into a SQLite db can come out
+                // as a null and ContentHash does not deal with that gracefully...
+                if (hash == null) {
+                    hash = new byte[0];
                 }
-            } finally {
-                rs.close();
+                return new FileInfo(
+                        fileId,
+                        rs.getLong(1),
+                        rs.getLong(2),
+                        rs.getLong(3),
+                        new ContentBlockHash(hash));
             }
         } catch (SQLException e) {
             _psGetFileInfo = null;
@@ -276,15 +266,8 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
             ps.setLong(1, parent);
             ps.setString(2, name);
-            ResultSet rs = ps.executeQuery();
-            try {
-                if (!rs.next()) {
-                    return DIR_ID_NOT_FOUND;
-                } else {
-                    return rs.getLong(1);
-                }
-            } finally {
-                rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : DIR_ID_NOT_FOUND;
             }
         } catch (SQLException e) {
             _psGetChildHistDir = null;
@@ -350,17 +333,12 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
             ps.setLong(1, dirId);
             ps.setString(2, name);
-            ResultSet rs = ps.executeQuery();
             List<Revision> revisions = Lists.newArrayList();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     byte[] index = encodeIndex(rs.getLong(1), rs.getLong(2));
-                    if (index != null) {
-                        revisions.add(new Revision(index, rs.getLong(3), rs.getLong(4)));
-                    }
+                    revisions.add(new Revision(index, rs.getLong(3), rs.getLong(4)));
                 }
-            } finally {
-                rs.close();
             }
             return revisions;
         } catch (SQLException e) {
@@ -385,27 +363,21 @@ public class BlockStorageDatabase extends AbstractDatabase
 
             ps.setLong(1, idx[0]);
             ps.setLong(2, idx[1]);
-            ResultSet rs = ps.executeQuery();
 
-            try {
-                if (!rs.next()) {
-                    return null;
-                } else {
-                    byte[] hash = rs.getBytes(3);
-                    // It appears that a byte[0] written into a SQLite db can come out
-                    // as a null and ContentHash does not deal with that gracefully...
-                    if (hash == null) {
-                        hash = new byte[0];
-                    }
-                    return new FileInfo(
-                            idx[0],
-                            idx[1],
-                            rs.getLong(1),
-                            rs.getLong(2),
-                            new ContentBlockHash(hash));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                byte[] hash = rs.getBytes(3);
+                // It appears that a byte[0] written into a SQLite db can come out
+                // as a null and ContentHash does not deal with that gracefully...
+                if (hash == null) {
+                    hash = new byte[0];
                 }
-            } finally {
-                rs.close();
+                return new FileInfo(
+                        idx[0],
+                        idx[1],
+                        rs.getLong(1),
+                        rs.getLong(2),
+                        new ContentBlockHash(hash));
             }
         } catch (SQLException e) {
             _psGetHistFileInfo = null;
@@ -479,14 +451,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
-                if (!rs.next()) return null;
-                else return BlockState.fromSql(rs.getInt(1));
-            } finally {
-                rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? BlockState.fromSql(rs.getInt(1)) : null;
             }
-
         } catch (SQLException e) {
             psw.close();
             throw detectCorruption(e);
@@ -501,15 +468,10 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
-            ResultSet rs = ps.executeQuery();
 
-            try {
-                if (rs.next()) return rs.getLong(1);
-                else return 0;
-            } finally {
-                rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0;
             }
-
         } catch (SQLException e) {
             psw.close();
             throw detectCorruption(e);
@@ -547,7 +509,6 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
 
             return new DBIterDeadBlocks(_psGetDeadBlocks.executeQuery());
-
         } catch (SQLException e) {
             l.warn(Util.e(e));
             DBUtil.close(_psGetDeadBlocks);
@@ -643,12 +604,8 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get(c());
             ps.setLong(1, id);
-            ResultSet rs = ps.executeQuery();
-            try {
-                if (rs.next()) return rs.getLong(1);
-                return -1;
-            } finally {
-                rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : -1;
             }
         } catch (SQLException e) {
             psw.close();
@@ -764,13 +721,10 @@ public class BlockStorageDatabase extends AbstractDatabase
                         " WHERE " + C_DirHist_Parent + "=?");
             }
             ps.setLong(1, dirId);
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     children.add(new Child(rs.getString(1), true));
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _psGetHistDirChildFolders = null;
@@ -790,13 +744,10 @@ public class BlockStorageDatabase extends AbstractDatabase
                         " WHERE " + C_FileHist_Parent + "=?");
             }
             ps.setLong(1, dirId);
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     children.add(new Child(rs.getString(1), false));
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _psGetHistDirChildFiles = null;

@@ -15,18 +15,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Spy;
 
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -51,22 +47,13 @@ public class TestGZipBackend extends AbstractBlockTest
         }
 
         @Override
-        public EncoderWrapping wrapForEncoding(OutputStream out)
-                throws IOException
-        {
-            return new EncoderWrapping(out, null);
-        }
-
-        @Override
-        public void putBlock(ContentBlockHash key, InputStream input, long decodedLength,
-                @Nullable Object encoderData)
+        public void putBlock(ContentBlockHash key, InputStream input, long decodedLength)
                 throws IOException
         {
             assert !_blocks.containsKey(key);
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            ByteStreams.copy(input, output);
-            l.info("put k: " + key + " v:" + BaseUtil.hexEncode(output.toByteArray()));
-            _blocks.put(key, output.toByteArray());
+            byte[] b = ByteStreams.toByteArray(input);
+            l.info("put k: " + key + " v:" + BaseUtil.hexEncode(b));
+            _blocks.put(key, b);
         }
 
         @Override
@@ -91,10 +78,9 @@ public class TestGZipBackend extends AbstractBlockTest
     {
         TestBlock b = newBlock();
 
-        gzip.putBlock(b._key, new ByteArrayInputStream(b._content), b._content.length, null);
+        gzip.putBlock(b._key, new ByteArrayInputStream(b._content), b._content.length);
 
-        verify(bsb).putBlock(eq(b._key), any(InputStream.class), eq((long)b._content.length),
-                isNull());
+        verify(bsb).putBlock(eq(b._key), any(InputStream.class), eq((long)b._content.length));
     }
 
     @Test

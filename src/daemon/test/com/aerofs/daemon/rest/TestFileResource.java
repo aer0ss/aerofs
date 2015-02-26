@@ -46,12 +46,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TestFileResource extends AbstractRestTest
 {
@@ -1152,7 +1147,7 @@ public class TestFileResource extends AbstractRestTest
     @Test
     public void shouldReturn429WhenOutOfUploadTokens() throws Exception
     {
-        doThrow(new ExNoResource()).when(tokenManager).acquireThrows_(eq(Cat.API_UPLOAD), anyString());
+        doReturn(null).when(tokenManager).acquire_(eq(Cat.API_UPLOAD), anyString());
 
         SOID soid = mds.root().file("foo.txt").soid();
 

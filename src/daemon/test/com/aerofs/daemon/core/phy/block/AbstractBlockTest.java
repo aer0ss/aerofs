@@ -4,18 +4,16 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.UnitTestTempDir;
-import com.google.common.io.ByteStreams;
 import org.junit.Rule;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static org.mockito.Matchers.eq;
 
@@ -60,12 +58,9 @@ public class AbstractBlockTest extends AbstractTest
 
     protected void put(IBlockStorageBackend bsb, TestBlock block) throws IOException
     {
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
-        EncoderWrapping wrapping = bsb.wrapForEncoding(data);
-        ByteStreams.copy(new ByteArrayInputStream(block._content), wrapping.wrapped);
-        wrapping.wrapped.close();
-        bsb.putBlock(block._key, new ByteArrayInputStream(data.toByteArray()),
-                block._content.length, wrapping.encoderData);
+        try (InputStream in = new ByteArrayInputStream(block._content)) {
+            bsb.putBlock(block._key, in, block._content.length);
+        }
     }
 
     protected static ContentBlockHash forKey(byte[] c) { return eq(contentHash(c)); }

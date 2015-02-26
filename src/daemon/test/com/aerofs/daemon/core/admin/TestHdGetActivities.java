@@ -140,7 +140,6 @@ public class TestHdGetActivities extends AbstractTest
         when(cfgLocalUser.get()).thenReturn(me);
 
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         when(tm.begin_()).thenReturn(t);

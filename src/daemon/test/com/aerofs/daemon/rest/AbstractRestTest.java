@@ -230,9 +230,6 @@ public class AbstractRestTest extends AbstractTest
         }
 
         @Override
-        public void prepare_(Token tk) throws IOException {}
-
-        @Override
         public void delete_() throws IOException
         {
             baos = new ByteArrayOutputStream();
@@ -397,7 +394,6 @@ public class AbstractRestTest extends AbstractTest
         when(localDID.get()).thenReturn(did);
 
         when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 

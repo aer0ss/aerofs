@@ -243,8 +243,7 @@ public class ReceiveAndApplyUpdate
                         // point.
                         l.error("known conflict branch has no associated file: {}", conflict);
 
-                        Trans t = _tm.begin_();
-                        try {
+                        try (Trans t = _tm.begin_()) {
                             if (_cedb.getChangeEpoch_(k.sidx()) != null) {
                                 // TODO(phoenix): version adjustment?
                                 //   rewind -> reset central version to base version of MASTER ca
@@ -256,8 +255,6 @@ public class ReceiveAndApplyUpdate
                                         t);
                             }
                             t.commit_();
-                        } finally {
-                            t.end_();
                         }
                     }
 
@@ -265,7 +262,6 @@ public class ReceiveAndApplyUpdate
 
                     throw new ExAborted(e.getMessage());
                 }
-
             } else {
                 // We do not have the content locally, or we do but we are receiving the update via
                 // a datagram. The datagram is fully received at this point so there is no need to
@@ -321,7 +317,7 @@ public class ReceiveAndApplyUpdate
 
         // Write the new content to the prefix file
         // TODO: ideally we'd release the core lock around this entire call
-        @Nullable ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
+        ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
                 response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
         if (remoteHash != null && !h.equals(remoteHash)) {
@@ -334,9 +330,6 @@ public class ReceiveAndApplyUpdate
             // TODO: NAK to force the sender to recompute its local hash
             throw new ExAborted("hash mismatch");
         }
-
-        // TODO: pipelined chunking in BlockStorage to get rid of this step
-        prefix.prepare_(tk);
 
         return h;
     }

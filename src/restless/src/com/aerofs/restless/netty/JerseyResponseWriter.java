@@ -113,6 +113,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
         }
 
         // write response status and headers
+        l.debug("response: {}", r);
         _channel.write(r);
 
         if (entity instanceof ContentStream) {

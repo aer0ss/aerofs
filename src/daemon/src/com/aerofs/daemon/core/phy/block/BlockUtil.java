@@ -24,7 +24,7 @@ public class BlockUtil
     }
 
     /**
-     * ContentHash for files spanning multible blocks are simply the concatenation of the hashes
+     * ContentHash for files spanning multiple blocks are simply the concatenation of the hashes
      * of each block. This method extract the hash for a given block from the concatenated hash.
      */
     public static ContentBlockHash getBlock(ContentBlockHash hash, int i)

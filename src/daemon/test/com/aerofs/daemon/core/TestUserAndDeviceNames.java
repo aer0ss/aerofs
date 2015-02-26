@@ -45,7 +45,7 @@ public class TestUserAndDeviceNames extends AbstractTest
     public void setup() throws Exception
     {
         when(user.get()).thenReturn(UserID.fromInternal("test@aerofs.com"));
-        when(tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), any(String.class))).thenReturn(tk);
         doThrow(new ExBadCredential()).when(spClient).signInRemote();
         when(factSP.create()).thenReturn(spClient);
         when(factTimer.create()).thenReturn(timer);

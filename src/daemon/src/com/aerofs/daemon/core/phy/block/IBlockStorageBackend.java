@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.ContentBlockHash;
+import com.aerofs.lib.injectable.InjectableFile;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -31,35 +32,12 @@ public interface IBlockStorageBackend
     InputStream getBlock(ContentBlockHash key) throws IOException;
 
     /**
-     * Allows backends to perform arbitrary data encoding through wrapper output streams and pass
-     * any computation result from such wrapper streams (e.g. MD5 hash of encoded data) to putBlock
-     */
-    static class EncoderWrapping
-    {
-        public final OutputStream wrapped;
-        public final @Nullable Object encoderData;
-
-        public EncoderWrapping(OutputStream out, Object data)
-        {
-            wrapped = out;
-            encoderData = data;
-        }
-    }
-
-    /**
-     * Used to perform any backend-specific encoding and/or checksum computation on which the actual
-     * storage operation depends.
-     */
-    EncoderWrapping wrapForEncoding(OutputStream out) throws IOException;
-
-    /**
      * Write a block to the storage backend
      *
      * NOTE: the input stream is guaranteed to be repeatable, i.e calling reset() will bring the
      * position back to the start of the block without any loss.
      */
-    void putBlock(ContentBlockHash key, InputStream input, long decodedLength,
-            @Nullable Object encoderData) throws IOException;
+    void putBlock(ContentBlockHash key, InputStream input, long decodedLength) throws IOException;
 
     public interface TokenWrapper
     {

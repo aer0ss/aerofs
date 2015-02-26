@@ -6,21 +6,17 @@ package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.phy.*;
+import com.aerofs.daemon.lib.CleanupScheduler;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
@@ -45,15 +41,12 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,9 +59,9 @@ import java.util.Set;
  * The logic is split between a backend-agnostic database, which keeps track of block usage and a
  * backend which handles the actual storage, either locally or remotely.
  */
-class BlockStorage implements IPhysicalStorage
+class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
 {
-    private static final Logger l = Loggers.getLogger(BlockStorage.class);
+    static final Logger l = Loggers.getLogger(BlockStorage.class);
 
     private TokenManager _tokenManager;
     private TransManager _tm;
@@ -77,9 +70,12 @@ class BlockStorage implements IPhysicalStorage
     private CfgStoragePolicy _storagePolicy;
 
     private InjectableFile _prefixDir;
+    private InjectableFile _uploadDir;
 
     private IBlockStorageBackend _bsb;
     private BlockStorageDatabase _bsdb;
+
+    private CleanupScheduler _uploadScheduler;
 
     private final BlockRevProvider _revProvider = new BlockRevProvider();
     private Set<IBlockStorageInitable> _initables;
@@ -107,8 +103,11 @@ class BlockStorage implements IPhysicalStorage
         _bsdb = bsdb;
         _initables = initables;
 
-        final String prefixDirPath = absDefaultAuxRoot.get();
-        _prefixDir = _fileFactory.create(prefixDirPath, LibParam.AuxFolder.PREFIX._name);
+        final String auxPath = absDefaultAuxRoot.get();
+        _prefixDir = _fileFactory.create(auxPath, LibParam.AuxFolder.PREFIX._name);
+        _uploadDir = _fileFactory.create(auxPath, "up");
+
+        _uploadScheduler = new CleanupScheduler(this, _sched);
     }
 
     @Override
@@ -121,7 +120,10 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public void start_() {}
+    public void start_()
+    {
+        _uploadScheduler.schedule_();
+    }
 
     private void initializeBlockStorage()
             throws IOException
@@ -138,6 +140,7 @@ class BlockStorage implements IPhysicalStorage
             throws IOException
     {
         _prefixDir.ensureDirExists();
+        _uploadDir.ensureDirExists();
     }
 
     @Override
@@ -156,7 +159,7 @@ class BlockStorage implements IPhysicalStorage
     public IPhysicalPrefix newPrefix_(SOKID k, @Nullable String scope)
     {
         String fileName = prefixFilePath(k) + (scope != null ? "-" + scope : "");
-        return new BlockPrefix(this, k, _prefixDir.newChild(fileName));
+        return new BlockPrefix(k, _prefixDir.newChild(fileName));
     }
 
     private String prefixFilePath(SOID soid)
@@ -171,13 +174,6 @@ class BlockStorage implements IPhysicalStorage
 
     /**
      * Update database after complete prefix download
-     *
-     * By the time this method is called:
-     *      1. the prefix file should be fully downloaded
-     *      2. the contents of the prefix file should have been chunked and stored by the backend
-     *
-     * TODO(jP): if a rollback occurs, check for new chunks in the backend that are not ref'ed
-     * by anybody. Currently they are orphaned.
      */
     @Override
     public long apply_(IPhysicalPrefix prefix, IPhysicalFile file, boolean wasPresent, long mtime,
@@ -188,8 +184,9 @@ class BlockStorage implements IPhysicalStorage
 
         checkArgument(from._sokid.equals(to._sokid),
                 "tried to move prefix %s to storage loc for %s", from, to);
-        assert from._hash != null;
-        long length = prefix.getLength_();
+
+        long length = from.length();
+        ContentBlockHash hash = from.hash();
 
         long id = getOrCreateFileId_(to._sokid, t);
         FileInfo oldInfo = _bsdb.getFileInfo_(id);
@@ -199,20 +196,38 @@ class BlockStorage implements IPhysicalStorage
             if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(file.toString());
         }
 
+        // NB: MUST happen before updateFileInfo (DB update dependency)
+        from.consumeChunks_((key, f) -> {
+            if (!prePutBlock(key, f.length(), t)) {
+                return;
+            }
+            InjectableFile dst = _uploadDir.newChild(key.toHex());
+            if (!dst.exists()) TransUtil.moveWithRollback_(f, dst, t);
+        });
+
         // no need to explicitly specify version, DB auto-increments it
-        updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
-        l.debug("inserted {}", from._hash);
+        updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, hash), t);
+        l.debug("inserted {}", hash);
 
         // If transaction succeeds, delete the prefix file
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_() {
-                from._f.deleteIgnoreError();
                 from.cleanup_();
+                _uploadScheduler.schedule_();
             }
         });
 
         return mtime;
+    }
+
+    boolean prePutBlock(ContentBlockHash hash, long length, Trans t)
+            throws SQLException
+    {
+        BlockState bs = _bsdb.getBlockState_(hash);
+        if (bs == BlockState.STORED || bs == BlockState.REFERENCED) return false;
+        _bsdb.prePutBlock_(hash, length, t);
+        return true;
     }
 
     /**
@@ -404,6 +419,49 @@ class BlockStorage implements IPhysicalStorage
         }, 0);
     }
 
+
+    ///////////////////////////////////// CleanupHandler ///////////////////////////////////////////
+
+    @Override
+    public String name() {
+        return "block-upload";
+    }
+
+    @Override
+    public boolean process_() throws Exception {
+        // take snapshot of upload folder w/ core lock held to avoid races
+        String[] blocks = _uploadDir.list();
+
+        if (blocks == null || blocks.length == 0) return false;
+
+        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "block-upload")) {
+            TCB tcb = tk.pseudoPause_("block-upload");
+            try {
+                for (String c : blocks) {
+                    ContentBlockHash k;
+                    try {
+                        k = new ContentBlockHash(BaseUtil.hexDecode(c));
+                        checkState(BlockUtil.isOneBlock(k));
+                    } catch (Exception e) {
+                        l.warn("invalid block in upload dir: {}", c);
+                        continue;
+                    }
+                    l.info("uploading block {}", c);
+                    InjectableFile f = _uploadDir.newChild(c);
+                    try (InputStream in = f.newInputStream()) {
+                        _bsb.putBlock(k, in, f.length());
+                    }
+                    _uploadDir.newChild(c).deleteIgnoreError();
+                }
+            } finally {
+                tcb.pseudoResumed_();
+            }
+        }
+
+        blocks = _uploadDir.list();
+        return blocks != null && blocks.length > 0;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private static String storePrefix(SIndex sidx)
@@ -431,129 +489,31 @@ class BlockStorage implements IPhysicalStorage
         return _bsdb.getFileInfo_(_bsdb.getFileIndex_(makeFileName(sokid)));
     }
 
-    @Nonnull FileInfo getFileInfo_(SOKID sokid) throws SQLException
-    {
-        FileInfo fi = getFileInfoNullable_(sokid);
-        checkNotNull(fi, sokid);
-        return fi;
-    }
+    private final IBlockStorageBackend _overlay = new IBlockStorageBackend() {
+        @Override
+        public void init_() {}
 
+        @Override
+        public InputStream getBlock(ContentBlockHash key) throws IOException {
+            InjectableFile f = _uploadDir.newChild(key.toHex());
+            return f.exists() ? f.newInputStream() : _bsb.getBlock(key);
+        }
+
+        @Override
+        public void putBlock(ContentBlockHash key, InputStream input, long l) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void deleteBlock(ContentBlockHash key, TokenWrapper tk) {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     public InputStream readChunks(ContentBlockHash hash) throws IOException
     {
-        return new BlockInputStream(_bsb, hash);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * "Prepare" a fully downloaded prefix before moving it into persistent storage
-     *
-     * We use this method to perform the actual movement as the backend may use remote storage.
-     */
-    ContentBlockHash prepare_(BlockPrefix prefix, Token tk) throws IOException
-    {
-        ContentBlockHash h;
-        try {
-            l.debug(">>> preparing prefix for {}", prefix._sokid);
-            h = new Chunker(prefix._f, tk, _bsb).splitAndStore();
-            l.debug("<<< done preparing prefix for {}", prefix._sokid);
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-        return h;
-    }
-
-    /**
-     * Chunker implementation that release the core lock around I/O operation and re-acquires
-     * it temporarily around DB operations
-     */
-    private class Chunker extends AbstractChunker
-    {
-        private TCB _tcb;
-        private final Token _tk;
-
-        Chunker(InjectableFile f, Token tk, IBlockStorageBackend bsb)
-        {
-            super(Files.asByteSource(f.getImplementation()), f.lengthOrZeroIfNotFile(),
-                    bsb);
-            _tk = tk;
-        }
-
-        public ContentBlockHash splitAndStore() throws IOException, SQLException, ExAborted
-        {
-            try {
-                pseudoPause_();
-                return splitAndStore_();
-            } finally {
-                pseudoResumed_();
-            }
-        }
-
-        @Override
-        protected StorageState prePutBlock_(Block block) throws SQLException
-        {
-            try {
-                try {
-                    pseudoResumed_();
-                    return prePutBlock(block);
-                } finally {
-                    pseudoPause_();
-                }
-            } catch (ExAborted e) {
-                throw new SQLException(e);
-            }
-        }
-
-        @Override
-        protected void postPutBlock_(Block block) throws SQLException
-        {
-            try {
-                try {
-                    pseudoResumed_();
-                    postPutBlock(block);
-                } finally {
-                    pseudoPause_();
-                }
-            } catch (ExAborted e) {
-                throw new SQLException(e);
-            }
-        }
-
-        private StorageState prePutBlock(Block block) throws SQLException
-        {
-            StorageState retval = StorageState.ALREADY_STORED;
-            try (Trans t = _tm.begin_()) {
-                BlockState bs = _bsdb.getBlockState_(block._hash);
-                if (bs != BlockState.STORED && bs != BlockState.REFERENCED) {
-                    _bsdb.prePutBlock_(block._hash, block._length, t);
-                    retval = StorageState.NEEDS_STORAGE;
-                }
-                t.commit_();
-            }
-            return retval;
-        }
-
-        private void postPutBlock(Block block) throws SQLException
-        {
-            try (Trans t = _tm.begin_()) {
-                _bsdb.postPutBlock_(block._hash, t);
-                t.commit_();
-            }
-        }
-
-        private void pseudoPause_() throws ExAborted
-        {
-            assert _tcb == null;
-            _tcb = _tk.pseudoPause_("still chunking");
-        }
-
-        private void pseudoResumed_() throws ExAborted
-        {
-            TCB tcb = _tcb;
-            _tcb = null;
-            tcb.pseudoResumed_();
-        }
+        // TODO: in-memory refcount overlay to avoid overzealous block cleanup?
+        return new BlockInputStream(_overlay, hash);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -843,6 +803,8 @@ class BlockStorage implements IPhysicalStorage
                     _bsdb.deleteBlock_(h, t);
                     t.commit_();
                 }
+                // TODO: abort in-progress chunk upload?
+                _uploadDir.newChild(h.toHex()).deleteIgnoreError();
                 _bsb.deleteBlock(h, it);
                 _pi.incrementMonotonicProgress();
             }

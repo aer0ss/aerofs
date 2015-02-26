@@ -40,7 +40,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        when(_tokenManager.acquireThrows_(eq(Cat.UNLIMITED), anyString())).thenReturn(_token);
+        when(_tokenManager.acquire_(eq(Cat.UNLIMITED), anyString())).thenReturn(_token);
         when(_token.pseudoPause_(anyString())).thenReturn(_tcb);
     }
 
@@ -53,7 +53,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
 
         verify(pause).pause();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
-        inOrder.verify(_tokenManager).acquireThrows_(eq(Cat.UNLIMITED), anyString());
+        inOrder.verify(_tokenManager).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
         inOrder.verify(_lss).markLinksDown();
         inOrder.verify(_tcb).pseudoResumed_();
@@ -69,7 +69,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
 
         verify(pause).resume();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
-        inOrder.verify(_tokenManager).acquireThrows_(eq(Cat.UNLIMITED), anyString());
+        inOrder.verify(_tokenManager).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
         inOrder.verify(_lss).markLinksUp();
         inOrder.verify(_tcb).pseudoResumed_();

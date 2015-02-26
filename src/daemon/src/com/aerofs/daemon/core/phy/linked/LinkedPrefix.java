@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.TransUtil;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -80,11 +79,6 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
         ((LinkedPrefix)pf)._f.getParentFile().ensureDirExists();
         TransUtil.moveWithRollback_(_f, ((LinkedPrefix) pf)._f, t);
         TransUtil.moveWithRollback_(hashFile(_f), hashFile(((LinkedPrefix)pf)._f), t);
-    }
-
-    @Override
-    public void prepare_(Token tk) throws IOException
-    {
     }
 
     @Override

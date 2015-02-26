@@ -114,8 +114,6 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
                 }
                 return po.digest();
             });
-            // prepare prefix for persistent storage
-            pp.prepare_(tk);
         } catch (Exception e) {
             pp.delete_();
             throw e;

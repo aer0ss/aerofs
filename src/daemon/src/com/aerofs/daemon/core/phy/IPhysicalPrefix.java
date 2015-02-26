@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.phy;
 
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 
 import java.io.IOException;
@@ -21,11 +20,6 @@ public interface IPhysicalPrefix
     PrefixOutputStream newOutputStream_(boolean append) throws IOException;
 
     void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException;
-
-    /**
-     * This method should be called after a prefix is fully downloaded but before it is applied.
-     */
-    void prepare_(Token tk) throws IOException;
 
     void delete_() throws IOException;
 }

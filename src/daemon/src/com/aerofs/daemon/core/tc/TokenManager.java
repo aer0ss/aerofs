@@ -134,14 +134,10 @@ public class TokenManager implements IDumpStatMisc
      * Acquire a token or complain loudly
      * @throws ExNoResource if the cat is full
      */
-    public Token acquireThrows_(Cat cat, String reason) throws ExNoResource
+    public final Token acquireThrows_(Cat cat, String reason) throws ExNoResource
     {
         Token tk = acquire_(cat, reason);
-        if (tk == null) {
-            CatInfo catInfo = Preconditions.checkNotNull(_cat2info.get(cat));
-
-            throw new ExNoResource(cat + " full: toks:" + dumpCatInfo(catInfo, ""));
-        }
+        if (tk == null) throw new ExNoResource(cat + " full");
         return tk;
     }
 

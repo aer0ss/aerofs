@@ -118,7 +118,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(spClient.signInRemote()).thenReturn(spClient);
 
         when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         lacl = new LocalACL(cfgLocalUser, tm, sm, adb, ds);

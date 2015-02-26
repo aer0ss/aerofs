@@ -102,7 +102,7 @@ public class TestLinkedStagingArea extends AbstractTest
         when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
 
         when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(revProvider.newLocalRevFile(any(Path.class), anyString(), any(KIndex.class)))
                 .thenReturn(rf);

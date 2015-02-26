@@ -86,7 +86,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         when(cfgLocalUser.get()).thenReturn(localUser);
         when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create()).thenReturn(sp);
         when(sp.signInRemote()).thenReturn(sp);

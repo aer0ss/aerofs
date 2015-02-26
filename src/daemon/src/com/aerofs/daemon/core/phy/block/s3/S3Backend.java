@@ -4,10 +4,12 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.ContentBlockHash;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -20,14 +22,15 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.google.common.io.ByteSource;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.crypto.SecretKey;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -106,11 +109,25 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     /**
+     * Allows backends to perform arbitrary data encoding through wrapper output streams and pass
+     * any computation result from such wrapper streams (e.g. MD5 hash of encoded data) to putBlock
+     */
+    static class EncoderWrapping
+    {
+        public final OutputStream wrapped;
+        public final Object encoderData;
+
+        public EncoderWrapping(OutputStream out, Object data)
+        {
+            wrapped = out;
+            encoderData = data;
+        }
+    }
+    /**
      * Encrypt blocks before storing remotely
      *
      * Also need to compute MD5 of the encoded data to comply with S3 API
      */
-    @Override
     public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
     {
         final EncoderData d = new EncoderData();
@@ -144,11 +161,89 @@ public class S3Backend implements IBlockStorageBackend
         }
     }
 
-    @Override
-    public void putBlock(final ContentBlockHash key, final InputStream input, final long decodedLength,
-            final Object encoderData) throws IOException
+    private static class EncodingBuffer implements AutoCloseable
     {
-        AWSRetry.retry(() -> {
+        private static final int IN_MEMORY_THRESHOLD = 64 * C.KB;
+
+        long length;
+        byte[] mem;
+
+        @Nullable File f;
+        OutputStream out;
+
+        EncodingBuffer()
+        {
+            mem = new byte[IN_MEMORY_THRESHOLD];
+        }
+
+        ByteSource encoded()
+        {
+            if (f == null) return ByteSource.wrap(mem).slice(0, length);
+            return ByteSource.concat(ByteSource.wrap(mem), Files.asByteSource(f));
+        }
+
+        OutputStream encodingStream() {
+            return new OutputStream() {
+                @Override
+                public void write(int b) throws IOException {
+                    if (length < mem.length) {
+                        mem[(int)length] = (byte)b;
+                        ++length;
+                        return;
+                    }
+
+                    if (f == null) spill();
+                    out.write(b);
+                    ++length;
+                }
+
+                @Override
+                public void write(byte b[], int off, int len) throws IOException {
+                    if (length + len <= mem.length) {
+                        int n = Math.min(len, mem.length - (int)length);
+                        System.arraycopy(b, off, mem, (int)length, len);
+                        length += n;
+                        off += n;
+                        len -= n;
+                    }
+                    if (len == 0) return;
+                    if (f == null) spill();
+                    out.write(b, off, len);
+                    length += len;
+                }
+
+                private void spill() throws IOException
+                {
+                    f = FileUtil.createTempFile("encodebuffer", null, null);
+                    out = new FileOutputStream(f);
+                }
+
+                @Override
+                public void close() throws IOException {
+                    if (out !=null) out.close();
+                }
+            };
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (f != null) FileUtil.delete(f);
+            mem = null;
+        }
+    }
+
+    @Override
+    public void putBlock(final ContentBlockHash key, final InputStream input, final long decodedLength)
+            throws IOException
+    {
+        try (EncodingBuffer buffer = new EncodingBuffer()) {
+            l.debug("s3 encoding {} {}", key, decodedLength);
+            final EncoderWrapping w = wrapForEncoding(buffer.encodingStream());
+            try (OutputStream out = w.wrapped) {
+                ByteStreams.copy(input, out);
+            }
+            l.debug("s3 encoding done");
+
             String baseKey = key.toHex();
             String s3Key = getBlockKey(baseKey);
             String bucketName = _s3BucketIdConfig.getS3BucketId();
@@ -156,12 +251,12 @@ public class S3Backend implements IBlockStorageBackend
             try {
                 ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, s3Key);
                 l.debug("md:{}", metadata);
-                return null;
+                return;
             } catch (AmazonServiceException e) {
                 l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
             }
 
-            EncoderData d = (EncoderData)encoderData;
+            EncoderData d = (EncoderData) w.encoderData;
 
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType("application/octet-stream");
@@ -169,15 +264,14 @@ public class S3Backend implements IBlockStorageBackend
             metadata.setContentMD5(Base64.encodeBytes(d.md5));
             metadata.addUserMetadata("Chunk-Length", Long.toString(decodedLength));
             metadata.addUserMetadata("Chunk-Hash", baseKey);
-            try {
-                _s3Client.putObject(bucketName, s3Key, input, metadata);
-            } finally {
-                // caller guarantees that calling reset will bring the input stream back to the
-                // start of the block without losing any data
-                input.reset();
+            l.debug("s3 upload {}", key);
+            try (InputStream in = buffer.encoded().openStream()) {
+                _s3Client.putObject(bucketName, s3Key, in, metadata);
+                l.debug("s3 upload done {}", key);
+            } catch (AmazonServiceException e) {
+                throw new IOException(e);
             }
-            return null;
-        });
+        }
     }
 
     @Override
@@ -186,14 +280,12 @@ public class S3Backend implements IBlockStorageBackend
         try {
             tk.pseudoPause("s3-del");
             try {
-                AWSRetry.retry(() -> {
-                    String baseKey = key.toHex();
-                    String s3Key = getBlockKey(baseKey);
-                    String bucketName = _s3BucketIdConfig.getS3BucketId();
-
-                    _s3Client.deleteObject(bucketName, s3Key);
-                    return null;
-                });
+                String baseKey = key.toHex();
+                String s3Key = getBlockKey(baseKey);
+                String bucketName = _s3BucketIdConfig.getS3BucketId();
+                _s3Client.deleteObject(bucketName, s3Key);
+            } catch (AmazonServiceException e) {
+                throw new IOException(e);
             } finally {
                 tk.pseudoResumed();
             }

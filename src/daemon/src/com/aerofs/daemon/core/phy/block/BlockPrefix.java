@@ -4,23 +4,32 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.TransUtil;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentBlockHash;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 
+import javax.annotation.Nonnull;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.sql.SQLException;
+import java.util.Arrays;
 
 import static com.aerofs.daemon.core.phy.PrefixOutputStream.hashFile;
 import static com.aerofs.daemon.core.phy.PrefixOutputStream.partialDigest;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Prefixes storage scheme:
@@ -29,85 +38,259 @@ import static com.aerofs.daemon.core.phy.PrefixOutputStream.partialDigest;
  *      p/
  *          <sidx>/
  *              <oid>/
- *                  <kidx>[-<scope>]            prefix
- *                  <kidx>[-<scope>].hash       incremental hash state
+ *                  <kidx>[-<scope>]/
+ *                      blocks                  incremental ContentBlockHash
+ *                      hash                    incremental hash state of whole prefix
+ *                      _                       prefix tail
+ *                      _.hash                  incremental hash state of prefix tail
+ *                      d/
+ *                          <sha256>            completed block
  *
  * A prefix is considered invalid and discarded if the size of the prefix and the
  * incremental hash do not match.
  *
- * TODO: incremental chunking
- *
- * regular scheme for tail chunk
- * extra state file for whole-file hash
- * complete chunk:
- *      - append chunk hash to ContentBlockHash (stored in another file? DB?)
- *      - renamed to content hash (dedup)
- * speculative chunk upload in background?
+ * TODO: speculative chunk upload in background?
+ *  -> nice to have but fairly complex and probably overkill for now
  */
 class BlockPrefix implements IPhysicalPrefix
 {
-    private final BlockStorage _s;
     final SOKID _sokid;
     final InjectableFile _f;
-    ContentBlockHash _hash;
 
-    BlockPrefix(BlockStorage s, SOKID sokid, InjectableFile f)
+    private final static String BLOCK_HASH = "blocks";
+    private final static String HASH = "hash";
+    private final static String TAIL = "_";
+    private final static String BLOCKS = "d";
+
+    BlockPrefix(SOKID sokid, InjectableFile f)
     {
-        _s = s;
         _sokid = sokid;
         _f = f;
     }
 
     @Override
-    public long getLength_()
-    {
-        return _f.lengthOrZeroIfNotFile();
+    public long getLength_() {
+        try {
+            return length();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    long length() throws IOException {
+        long blocksLength = _f.newChild(BLOCK_HASH).lengthOrZeroIfNotFile();
+        if (blocksLength % ContentBlockHash.UNIT_LENGTH != 0) {
+            throw new IOException("invalid prefix blocks " + _sokid + " " + blocksLength);
+        }
+        long tailLength = _f.newChild(TAIL).lengthOrZeroIfNotFile();
+        if (tailLength > LibParam.FILE_BLOCK_SIZE) {
+            throw new IOException("invalid prefix tail " + _sokid + " " + tailLength);
+        }
+        return (blocksLength / ContentBlockHash.UNIT_LENGTH) * LibParam.FILE_BLOCK_SIZE
+                + tailLength;
     }
 
     @Override
     public PrefixOutputStream newOutputStream_(boolean append) throws IOException
     {
-        final MessageDigest md = partialDigest(_f, append);
-        _f.getParentFile().ensureDirExists();
-        return new PrefixOutputStream(new FileOutputStream(_f.getImplementation(), append) {
-            @Override
-            public void close() throws IOException
-            {
-                // persist hash state
-                try (OutputStream out = hashFile(_f).newOutputStream()) {
-                    if (_f.length() > 0) out.write(DigestSerializer.serialize(md));
+        if (!append) _f.deleteOrThrowIfExistRecursively();
+        _f.ensureDirExists();
+        try {
+            long prefixLength = length();
+            final MessageDigest md = prefixLength > 0
+                    ? DigestSerializer.deserialize(_f.newChild(HASH).toByteArray(), prefixLength)
+                    : BaseSecUtil.newMessageDigest();
+            return new PrefixOutputStream(new ChunkingOutputStream(md), md);
+        } catch (IOException e) {
+            _f.deleteIgnoreErrorRecursively();
+            throw e;
+        }
+    }
+
+    @FunctionalInterface
+    interface BlockConsumer
+    {
+        void consume(ContentBlockHash h, InjectableFile f) throws SQLException, IOException;
+    }
+
+    /**
+     * Move all chunks of the prefix to a directory from which:
+     *      - they will eventually be committed to the storage backend
+     *      - they can be read to service reads until then
+     *
+     * rollback if transaction is aborted
+     */
+    public void consumeChunks_(BlockConsumer consumer) throws SQLException, IOException {
+        InjectableFile blockDir = _f.newChild(BLOCKS);
+        String[] complete = blockDir.list();
+        if (complete != null) {
+            for (String c : complete) {
+                ContentBlockHash h;
+                try {
+                    h = new ContentBlockHash(BaseUtil.hexDecode(c));
+                } catch (ExFormatError e) { continue; }
+                checkState(BlockUtil.isOneBlock(h));
+                consumer.consume(h, blockDir.newChild(c));
+            }
+        }
+
+        InjectableFile tail = _f.newChild(TAIL);
+        long tailLength = tail.lengthOrZeroIfNotFile();
+        if (tailLength > 0) {
+            byte[] d = partialDigest(tail, true).digest();
+            consumer.consume(new ContentBlockHash(d), tail);
+        }
+    }
+
+    private class ChunkingOutputStream extends OutputStream
+    {
+        private final MessageDigest md;
+
+        // tail, i.e current chunk
+        private long tailLength;
+        private OutputStream out;
+        private MessageDigest bmd;
+
+        public ChunkingOutputStream(MessageDigest md) throws IOException {
+            this.md = md;
+            openTail();
+        }
+
+        private void commitTail(byte[] digest) throws IOException
+        {
+            final InjectableFile tail = _f.newChild(TAIL);
+            InjectableFile block = _f.newChild(Util.join(BLOCKS, BaseUtil.hexEncode(digest)));
+            block.getParentFile().ensureDirExists();
+            if (!block.exists()) {
+                tail.moveInSameFileSystem(block);
+            } else {
+                // TODO: size check?
+                tail.deleteIgnoreError();
+            }
+            hashFile(tail).deleteIgnoreError();
+            try (OutputStream bo = new FileOutputStream(_f.newChild(BLOCK_HASH).getImplementation(), true)) {
+                bo.write(digest);
+            }
+            // TODO: consistency checks on BLOCK_HASH file?
+            checkState(!tail.exists());
+        }
+
+        private void commitTail() throws IOException
+        {
+            BlockStorage.l.debug("commit tail {} {}", _sokid, tailLength);
+            out.close();
+            out = null;
+            commitTail(bmd.digest());
+            bmd = null;
+            tailLength = 0;
+            openTail();
+        }
+
+        private void openTail() throws IOException
+        {
+            final InjectableFile tail = _f.newChild(TAIL);
+            tailLength = tail.lengthOrZeroIfNotFile();
+            if (tailLength > LibParam.FILE_BLOCK_SIZE) {
+                _f.deleteOrThrowIfExistRecursively();
+                throw new IOException("corrupted prefix");
+            }
+            BlockStorage.l.debug("open tail {} {} {}", _sokid, tailLength,
+                    hashFile(tail).lengthOrZeroIfNotFile());
+            bmd = partialDigest(tail, tailLength > 0);
+            out = new DigestOutputStream(new FileOutputStream(tail.getImplementation(), tailLength > 0) {
+                @Override
+                public void close() throws IOException
+                {
+                    // persist hash state
+                    try (OutputStream out = hashFile(tail).newOutputStream()) {
+                        if (tailLength > 0) {
+                            out.write(DigestSerializer.serialize(bmd));
+                        }
+                    } finally {
+                        super.close();
+                    }
+                }
+            }, bmd);
+        }
+
+        public void write(int b) throws IOException {
+            if (tailLength == LibParam.FILE_BLOCK_SIZE) commitTail();
+            out.write(b);
+            ++tailLength;
+        }
+
+        public void write(@Nonnull byte b[]) throws IOException {
+            write(b, 0, b.length);
+        }
+
+        public void write(@Nonnull byte b[], int off, int len) throws IOException {
+            while (tailLength + len >= LibParam.FILE_BLOCK_SIZE) {
+                int n = (int)(LibParam.FILE_BLOCK_SIZE - tailLength);
+                out.write(b, off, n);
+                off += n;
+                len -= n;
+                commitTail();
+            }
+            out.write(b, off, len);
+            tailLength += len;
+        }
+
+        public void flush() throws IOException {
+            out.flush();
+        }
+
+        @SuppressWarnings("try")
+        public void close() throws IOException {
+            try (OutputStream ostream = out) {
+                try (OutputStream h = _f.newChild(HASH).newOutputStream()) {
+                    if (getLength_() > 0) h.write(DigestSerializer.serialize(md));
                 } finally {
-                    super.close();
+                    flush();
                 }
             }
-        }, md);
+        }
     }
 
     @Override
     public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
     {
         BlockPrefix to = (BlockPrefix)pf;
-        to._f.getParentFile().ensureDirExists();
+        to._f.deleteOrThrowIfExistRecursively();
         TransUtil.moveWithRollback_(_f, to._f, t);
-        TransUtil.moveWithRollback_(hashFile(_f), hashFile(to._f), t);
     }
 
-    @Override
-    public void prepare_(Token tk) throws IOException
+    private static final ContentBlockHash EMPTY_HASH = new ContentBlockHash(new byte[0]);
+
+    ContentBlockHash hash() throws IOException
     {
-        if (_hash == null) _hash = _s.prepare_(this, tk);
+        InjectableFile blocks = _f.newChild(BLOCK_HASH);
+        byte[] d = blocks.exists() ? blocks.toByteArray() : null;
+
+        InjectableFile tail = _f.newChild(TAIL);
+        long tailLength = tail.lengthOrZeroIfNotFile();
+        byte[] td = tailLength > 0 ? partialDigest(tail, true).digest() : null;
+
+        // concat if needed
+        if (d != null && td != null) {
+            byte[] c = Arrays.copyOf(d, d.length + td.length);
+            System.arraycopy(td, 0, c, d.length, td.length);
+            return new ContentBlockHash(c);
+        } else if (d == null && td == null) {
+            return EMPTY_HASH;
+        }
+
+        return new ContentBlockHash(d != null ? d : td);
     }
 
     @Override
     public void delete_() throws IOException
     {
-        _f.deleteOrThrowIfExist();
-        cleanup_();
+        _f.deleteOrThrowIfExistRecursively();
     }
 
     void cleanup_()
     {
-        hashFile(_f).deleteIgnoreError();
+        _f.deleteIgnoreErrorRecursively();
 
         InjectableFile p = _f.getParentFile();
         String[] children = _f.list();

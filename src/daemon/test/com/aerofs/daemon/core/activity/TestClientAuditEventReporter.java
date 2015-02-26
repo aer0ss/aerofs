@@ -167,7 +167,7 @@ public final class TestClientAuditEventReporter
             throws ExNoResource, SQLException, ExAborted
     {
         when(_cfgLocalDID.get()).thenReturn(LOCAL_DID);
-        when(_tokenManager.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(_tk);
+        when(_tokenManager.acquire_(any(Cat.class), any(String.class))).thenReturn(_tk);
         when(_tk.pseudoPause_(anyString())).thenReturn(_tcb);
         when(_tm.begin_()).thenReturn(_trans);
         when(_sidxToSid.getLocalOrAbsent_(THE_SINDEX)).thenReturn(THE_SID);

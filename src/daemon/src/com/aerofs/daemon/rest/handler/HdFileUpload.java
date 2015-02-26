@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -79,7 +78,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         try {
             // TODO: limit max upload size?
             PrefixOutputStream out = pf.newOutputStream_(true);
-            long chunkLength = uploadPrefix_(ev._content, out);
+            long chunkLength = receiveContent_(ev._content, out);
 
             l.info("uploaded {} bytes", chunkLength);
 
@@ -235,7 +234,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         return null;
     }
 
-    private long uploadPrefix_(InputStream in, PrefixOutputStream out)
+    private long receiveContent_(InputStream in, PrefixOutputStream out)
             throws ExNoResource, ExAborted, IOException
     {
         try {
@@ -249,12 +248,6 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)
             throws SQLException, IOException, ExNoResource
     {
-        // sigh....................................................................................
-        // ideally we should not need that (if BlockPrefix performed incremental chunking)
-        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "prepare")) {
-            pf.prepare_(tk);
-        }
-
         SOID soid = oa.soid();
         try (Trans t = _tm.begin_()) {
             ResolvedPath path = _ds.resolve_(oa);

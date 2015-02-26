@@ -39,7 +39,6 @@ import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -200,16 +199,10 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
-    {
-        return _bsb.wrapForEncoding(out);
-    }
-
-    @Override
-    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength, Object encoderData)
+    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength)
             throws IOException
     {
-        _bsb.putBlock(key, input, decodedLength, encoderData);
+        _bsb.putBlock(key, input, decodedLength);
     }
 
     @Override

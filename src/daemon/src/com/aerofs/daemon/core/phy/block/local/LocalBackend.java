@@ -58,13 +58,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
-    {
-        return new EncoderWrapping(out, null);
-    }
-
-    @Override
-    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength, Object encoderData)
+    public void putBlock(ContentBlockHash key, InputStream input, long decodedLength)
             throws IOException
     {
         InjectableFile block = getBlockFile(key);
@@ -72,7 +66,9 @@ public class LocalBackend implements IBlockStorageBackend
             if (!block.getParentFile().exists()) block.getParentFile().mkdirs();
             block.createNewFile();
         }
-        ByteStreams.copy(input, block.newOutputStream());
+        try (OutputStream out = block.newOutputStream()) {
+            ByteStreams.copy(input, out);
+        }
     }
 
     @Override
