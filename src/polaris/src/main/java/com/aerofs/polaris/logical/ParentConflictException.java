@@ -23,7 +23,7 @@ public final class ParentConflictException extends PolarisException {
     }
 
     @Override
-    protected String getSimpleMessage() {
+    public String getSimpleMessage() {
         return String.format("%s is already a child of %s", child, conflictingParent.oid);
     }
 

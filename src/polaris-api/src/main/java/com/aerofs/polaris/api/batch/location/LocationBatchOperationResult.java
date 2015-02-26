@@ -1,8 +1,9 @@
 package com.aerofs.polaris.api.batch.location;
 
-import com.aerofs.polaris.api.PolarisError;
+import com.aerofs.polaris.api.batch.BatchError;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nullable;
@@ -11,26 +12,20 @@ public final class LocationBatchOperationResult {
 
     public final boolean successful;
 
-    public final @Nullable PolarisError errorCode;
-
-    public final @Nullable String errorMessage;
-
-    public LocationBatchOperationResult(PolarisError errorCode, String errorMessage) {
-        this(false, errorCode, errorMessage);
-    }
+    public final @Nullable BatchError error;
 
     public LocationBatchOperationResult() {
-        this(true, null, null);
+        this(true, null);
+    }
+
+    public LocationBatchOperationResult(BatchError error) {
+        this(false, error);
     }
 
     @JsonCreator
-    private LocationBatchOperationResult(
-            @JsonProperty("successful") boolean successful,
-            @JsonProperty("error_code") @Nullable PolarisError errorCode,
-            @JsonProperty("error_message") @Nullable String errorMessage) {
+    private LocationBatchOperationResult( @JsonProperty("successful") boolean successful, @JsonUnwrapped @Nullable BatchError error) {
         this.successful = successful;
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
+        this.error = error;
     }
 
     @Override
@@ -39,14 +34,12 @@ public final class LocationBatchOperationResult {
         if (o == null || getClass() != o.getClass()) return false;
 
         LocationBatchOperationResult other = (LocationBatchOperationResult) o;
-        return successful == other.successful
-                && Objects.equal(errorCode, other.errorCode)
-                && Objects.equal(errorMessage, other.errorMessage);
+        return successful == other.successful && Objects.equal(error, other.error);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(successful, errorCode, errorMessage);
+        return Objects.hashCode(successful, error);
     }
 
     @Override
@@ -54,8 +47,7 @@ public final class LocationBatchOperationResult {
         return Objects
                 .toStringHelper(this)
                 .add("successful", successful)
-                .add("errorCode", errorCode)
-                .add("errorMessage", errorMessage)
+                .add("error", error)
                 .toString();
     }
 }

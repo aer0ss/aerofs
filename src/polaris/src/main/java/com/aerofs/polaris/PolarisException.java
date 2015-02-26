@@ -25,7 +25,7 @@ public abstract class PolarisException extends Exception {
         return errorCode;
     }
 
-    protected abstract String getSimpleMessage();
+    public abstract String getSimpleMessage();
 
     protected abstract void addErrorFields(Map<String, Object> errorFields);
 

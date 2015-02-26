@@ -123,7 +123,7 @@ public final class TestTransformBatchResource {
         // third result
         operationResult = result.results.get(2);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NAME_CONFLICT));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
         verify(polaris.getNotifier(), times(1)).publishUpdate(root);
@@ -164,7 +164,7 @@ public final class TestTransformBatchResource {
         // second result
         operationResult = result.results.get(1);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NAME_CONFLICT));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
         verify(polaris.getNotifier(), times(1)).publishUpdate(root);
@@ -205,7 +205,7 @@ public final class TestTransformBatchResource {
         // second result
         operationResult = result.results.get(1);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NAME_CONFLICT));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
         verify(polaris.getNotifier(), times(1)).publishUpdate(root);

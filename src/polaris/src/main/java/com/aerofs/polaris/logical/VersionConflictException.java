@@ -23,7 +23,7 @@ public final class VersionConflictException extends PolarisException {
     }
 
     @Override
-    protected String getSimpleMessage() {
+    public String getSimpleMessage() {
         return String.format("%s has version %d instead of expected version %d", oid, actualVersion, expectedVersion);
     }
 

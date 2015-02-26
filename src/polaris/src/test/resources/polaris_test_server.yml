@@ -2,14 +2,14 @@ maxReturnedTransforms: 10
 
 admin:
   host: localhost
-  port: 8087
+  port: 8987
   directMemoryBacked: false
   maxAcceptQueueSize: 10
   numNetworkThreads: 2
 
 service:
   host: localhost
-  port: 8086
+  port: 8986
   directMemoryBacked: false
   maxAcceptQueueSize: 10
   numNetworkThreads: 2

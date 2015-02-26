@@ -39,7 +39,7 @@ public final class AccessException extends PolarisException {
     }
 
     @Override
-    protected String getSimpleMessage() {
+    public String getSimpleMessage() {
         return String.format("%s does not have %s access for %s", user, getAccessNames(requested), root);
     }
 

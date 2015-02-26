@@ -115,7 +115,7 @@ public final class TestLocationBatchResource {
         // third result
         operationResult = result.results.get(2);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
     }
 
     @Test
@@ -151,7 +151,7 @@ public final class TestLocationBatchResource {
         // second result
         operationResult = result.results.get(1);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.NO_SUCH_OBJECT));
     }
 
     @Test
@@ -207,6 +207,6 @@ public final class TestLocationBatchResource {
         // third result
         operationResult = result.results.get(2);
         assertThat(operationResult.successful, is(false));
-        assertThat(operationResult.errorCode, equalTo(PolarisError.INSUFFICIENT_PERMISSIONS));
+        assertThat(operationResult.error.errorCode, equalTo(PolarisError.INSUFFICIENT_PERMISSIONS));
     }
 }

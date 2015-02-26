@@ -24,7 +24,7 @@ public final class NameConflictException extends PolarisException {
     }
 
     @Override
-    protected String getSimpleMessage() {
+    public String getSimpleMessage() {
         return String.format("child named %s already exists in %s", childName, parent);
     }
 

@@ -18,7 +18,7 @@ public final class NotFoundException extends PolarisException {
     }
 
     @Override
-    protected String getSimpleMessage() {
+    public  String getSimpleMessage() {
         return String.format("%s does not exist", oid);
     }
 
