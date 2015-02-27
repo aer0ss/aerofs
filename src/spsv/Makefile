@@ -1,6 +1,5 @@
 IMAGE_NAME = aerofs/servlets
 
-FLAG_FILE = buildroot/etc/aerofs/private-deployment-flag
 WEB_INF_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF
 LIB_DIR = $(WEB_INF_DIR)/lib
 CONF_PROP = $(WEB_INF_DIR)/classes/configuration.properties
@@ -13,7 +12,7 @@ FIXES = \
 	../lib/src/com/aerofs/lib/properties/ServerConfigurationLoader.java \
 	src/com/aerofs/sp/server/listeners/SPLifecycleListener.java
 
-image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP) $(FLAG_FILE)
+image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP)
 	docker build -t $(IMAGE_NAME) .
 
 DIRS =  sp \
@@ -42,10 +41,6 @@ $(CONF_PROP):
 $(ZELDA_PROP): ../../puppetmaster/modules/public-zelda-creds/files/zelda.properties
 	mkdir -p $(@D)
 	cp $< $@
-
-$(FLAG_FILE):
-	mkdir -p $(@D)
-	touch $@
 
 .fix-source: $(FIXES)
 $(FIXES): .force

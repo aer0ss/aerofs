@@ -10,8 +10,9 @@ image: .fix-source .gradle .restore-source $(DST_DIR)/bifrost.properties $(DST_D
 	gradle --daemon dist
 	../../tools/lazy-copy.sh ../../out.gradle/bifrost/dist $(DST_DIR)
 
-BASE_PARAM = ../base/src/main/java/com/aerofs/base/BaseParam.java
-FIXES = $(abspath $(BASE_PARAM))
+FIXES = $(abspath \
+	../lib/src/com/aerofs/lib/properties/Configuration.java \
+	../base/src/main/java/com/aerofs/base/BaseParam.java)
 
 .restore-source:
 	for i in $(FIXES); do patch -R $$i < $$(basename $$i).docker.patch; done

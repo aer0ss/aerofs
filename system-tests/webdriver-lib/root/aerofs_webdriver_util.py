@@ -1,4 +1,5 @@
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_util import wait_and_get
 import requests
 from urllib import urlencode
 
@@ -16,6 +17,18 @@ def upload_license(driver, selector, wait):
     driver.execute_script("document.getElementById('{}').style.display='block';".format(input_id))
 
     selector.get('#' + input_id).send_keys(LICENSE_FILE)
+
+
+def login(driver, wait, selector, host, user, password):
+    wait_and_get(driver, "https://{}/files".format(host))
+    wait.until(EC.title_contains('Sign In | AeroFS'))
+    selector.get_and_clear('#input_email').send_keys(user)
+    selector.get_and_clear('#input_passwd').send_keys(password)
+    selector.get('#signin_button').click()
+
+
+def login_as_admin_at_syncfs_dot_com(driver, wait, selector, host):
+    login(driver, wait, selector, host, 'admin@syncfs.com', 'temp123')
 
 
 def get_signup_code(hostname, user_id):

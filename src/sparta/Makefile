@@ -1,7 +1,9 @@
 IMAGE_NAME = aerofs/sparta
 DST_DIR = buildroot/opt/sparta
 
-FIXES = src/com/aerofs/sp/sparta/Sparta.java
+FIXES = \
+	src/com/aerofs/sp/sparta/Sparta.java \
+	../lib/src/com/aerofs/lib/properties/Configuration.java
 
 image: .fix-source .gradle .unfix-source $(DST_DIR)/logback.xml $(DST_DIR)/sparta.properties
 	docker build -t $(IMAGE_NAME) .

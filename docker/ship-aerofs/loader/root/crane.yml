@@ -152,6 +152,7 @@ containers:
     run:
       detach: true
       link:
+        - config:config.service
         - mysql:mysql.service
         - sp:sp.service
 
@@ -212,6 +213,7 @@ containers:
         # For /data/deployment_secret
         - data
       link:
+        - config:config.service
         - mysql:mysql.service
         - redis:redis.service
         - bifrost:bifrost.service

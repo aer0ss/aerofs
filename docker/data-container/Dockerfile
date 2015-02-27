@@ -8,6 +8,9 @@ RUN mkdir -p \
     /data/web \
     /data/redis
 
+# TODO (WW) remove this
+RUN mkdir -p /etc/aerofs && touch /etc/aerofs/private-deployment-flag
+
 VOLUME /data
 
 # Used by Repackaging & Nginx

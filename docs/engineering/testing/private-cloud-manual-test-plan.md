@@ -133,7 +133,6 @@ These manual tests are not done on every appliance release (they're costly). We 
 - All functions in the Bunker Web UI
 - All functions in the Web UI
 - OpenID
-- Auditor
 - OAuth
 - 3rd-party applications & the user-facing OAuth flow for external apps
 - Dryad

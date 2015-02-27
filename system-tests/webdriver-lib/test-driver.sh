@@ -27,34 +27,29 @@ if [ $# != 0 ]; then
     EXTRA_PYTHON_ARGS=$@
 fi
 
-# For color code see http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
-GREEN='0;32'
-CYAN='0;36'
-YELLOW='1;33'
-RED='0;31'
-cecho() { echo -e "\033[$1m$2\033[0m"; }
-
 # Docker requires absolute paths. OSX has no realpath command.
 THIS_DIR="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 BASE_DIR="$(dirname "${THIS_DIR}")"
 CALLER_DIR="$(cd "${CALLER_DIR}" && pwd)"
 if [ -z "$(grep "^${BASE_DIR}" <<< "${CALLER_DIR}")" ]; then
-    cecho ${RED} "ERROR: the caller script must be in a subfolder under ${BASE_DIR}."
+    error "ERROR: the caller script must be in a subfolder under ${BASE_DIR}."
     exit 22
 fi
+
+source "${THIS_DIR}/utils.sh"
 
 # Derive image and container names from the caller dir.
 RELATIVE_CALLER_DIR="$(sed -e "s@^${BASE_DIR}/@@" <<< "${CALLER_DIR}")"
 IMAGE_NAME="aerofs/test.$(tr '/' '-' <<< "${RELATIVE_CALLER_DIR}")"
 CONTAINER_NAME="aerofs-test.$(tr '/' '-' <<< "${RELATIVE_CALLER_DIR}")"
 
-cecho ${CYAN} "Building image aerofs/base.webdriver..."
+info "Building image aerofs/base.webdriver..."
 docker build -t aerofs/base.webdriver "${THIS_DIR}"
 
-cecho ${CYAN} "Building image ${IMAGE_NAME}..."
+info "Building image ${IMAGE_NAME}..."
 docker build -t "${IMAGE_NAME}" "${CALLER_DIR}"
 
-cecho ${CYAN} "Running container ${CONTAINER_NAME}..."
+info "Running container ${CONTAINER_NAME}..."
 # redirect stderr to suppress the big red error if the container is not running
 docker rm -fv "${CONTAINER_NAME}" 2> /dev/null || true
 
@@ -79,9 +74,9 @@ HOST=share.syncfs.com
     MSG="Screenshots at ${SCREEN_SHOTS}"
     echo
     if [ ${EXIT_CODE} = 0 ]; then
-        cecho ${GREEN} ">>> PASSED. ${MSG}"
+        success ">>> PASSED. ${MSG}"
     else
-        cecho ${RED} ">>> FAILED: $(basename "${BASE_DIR}")/${RELATIVE_CALLER_DIR}. ${MSG}"
+        error ">>> FAILED: $(basename "${BASE_DIR}")/${RELATIVE_CALLER_DIR}. ${MSG}"
     fi
     echo
 

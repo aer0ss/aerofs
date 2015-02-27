@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 #
 # Precondition: the appliance is running at the specified IP and hasn't been set up yet.
 #
@@ -19,5 +20,5 @@ CREATE_FIRST_USER="$3"
 THIS_DIR="$(cd $(dirname "$0") && pwd)"
 REBOOT_FLAG_FILE="$(cd "$(dirname "${REBOOT_FLAG_FILE}")" && pwd)/$(basename "${REBOOT_FLAG_FILE}")"
 
-${THIS_DIR}/../../webdriver-lib/test-wrapper.sh ${THIS_DIR} ${IP} \
+${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} ${IP} \
     -v "${REBOOT_FLAG_FILE}":/reboot-flag -- ${CREATE_FIRST_USER}

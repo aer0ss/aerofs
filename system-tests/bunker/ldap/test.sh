@@ -3,30 +3,15 @@ set -e
 
 [[ $# = 1 ]] || ( echo "Usage: $0 <ip>"; exit 11 )
 
-function test_port() {
-    # See http://bit.ly/1vDblqg
-    exec 3<> "/dev/tcp/$1/$2"
-    CODE=$?
-    exec 3>&- # close output
-    exec 3<&- # close input
-    echo ${CODE}
-}
-
-function wait_port() {
-    echo "Waiting for $1:$2 readiness..."
-    while [ $(test_port $1 $2 2> /dev/null) != 0 ]; do
-    	sleep 1
-    done
-}
-
 THIS_DIR="$(dirname $0)"
+source "${THIS_DIR}/../../webdriver-lib/utils.sh"
 
-# Launch OpenDS server
+info "Launching OpenDS server..."
 IMAGE=aerofs/test.opends
 CONTAINER=aerofs-test.opends
 docker build -t ${IMAGE} "${THIS_DIR}/opends"
 docker rm -vf ${CONTAINER} 2>/dev/null || true
-docker run --name ${CONTAINER} -d -p 389:389 aerofs/test.opends
+docker run --name ${CONTAINER} -d -p 389:389 ${IMAGE}
 
 # Find OpenDS's IP. TODO (WW) use docker-machine for both CI and dev environment
 if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
@@ -41,7 +26,7 @@ fi
 wait_port ${OPENDS_IP} 389
 
 # Run the tests
-${THIS_DIR}/../../webdriver-lib/test-wrapper.sh ${THIS_DIR} "$1" -- ${OPENDS_IP} || true
+${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} "$1" -- ${OPENDS_IP}
 
 # Kill OpenDS server
 docker rm -vf ${CONTAINER}

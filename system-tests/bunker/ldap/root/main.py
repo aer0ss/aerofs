@@ -1,7 +1,7 @@
 from sys import argv, stderr
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_util import init, wait_and_get
-from aerofs_webdriver_util import upload_license
+from aerofs_webdriver_util import upload_license, login
 
 
 def enable_ldap(w, e, ldap_address):
@@ -16,16 +16,16 @@ def enable_ldap(w, e, ldap_address):
     e.get_and_clear('#ldap-server-credential').send_keys('aaaaaa')
     e.get('input[name="ldap_server_security"][value="none"]').click()
 
-    apply_ldap_settings(w, e)
+    save_ldap_settings(w, e)
 
 
 def disable_ldap(w, e):
     w.until(EC.title_contains('Identity'))
     e.get('input[name="authenticator"][value="local_credential"]').click()
-    apply_ldap_settings(w, e)
+    save_ldap_settings(w, e)
 
 
-def apply_ldap_settings(w, e):
+def save_ldap_settings(w, e):
     e.get('#save-btn').click()
 
     print
@@ -35,22 +35,18 @@ def apply_ldap_settings(w, e):
     w.until_display('#success-modal', timeout=5 * 60)
 
 
+USER = 'user.0@maildomain.net'
+PASS = 'password'
+
+
 def should_allow_ldap_user_login(d, w, e, host):
-    login(d, w, e, host)
+    login(d, w, e, host, USER, PASS)
     w.until(EC.title_contains('My Files'))
 
 
 def should_forbid_ldap_user_login(d, w, e, host):
-    login(d, w, e, host)
+    login(d, w, e, host, USER, PASS)
     w.until_display('#flash-msg-error')
-
-
-def login(d, w, e, host):
-    wait_and_get(d, "https://{}/files".format(host))
-    w.until(EC.title_contains('Sign In'))
-    e.get_and_clear('#input_email').send_keys('user.0@maildomain.net')
-    e.get_and_clear('#input_passwd').send_keys('password')
-    e.get('#signin_button').click()
 
 
 def main():

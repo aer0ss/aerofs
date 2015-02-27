@@ -26,6 +26,9 @@ $(REQUIREMENTS_FILE): requirements-exact.txt
 	cp $< $@
 	echo psutil >> $@
 
+$(ROOT)/web/views/maintenance/templates/auditing.mako: web/views/maintenance/templates/auditing.mako auditing.mako.docker.patch
+	$(call patch,$@,$<,$(@F))
+
 $(ROOT)/web/views/maintenance/templates/identity.mako: web/views/maintenance/templates/identity.mako identity.mako.docker.patch
 	$(call patch,$@,$<,$(@F))
 
