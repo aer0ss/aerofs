@@ -3,6 +3,7 @@ package com.aerofs.polaris.api;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.polaris.api.batch.BatchError;
 import com.aerofs.polaris.api.batch.location.LocationBatch;
 import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
 import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
@@ -69,9 +70,9 @@ public final class TestJsonConversion {
     @Test
     public void shouldSerializeAndDeserializeLocationBatchResult() throws IOException {
         List<LocationBatchOperationResult> results = ImmutableList.of(
-                new LocationBatchOperationResult(PolarisError.INSUFFICIENT_PERMISSIONS, "message 0"),
-                new LocationBatchOperationResult(PolarisError.INVALID_OPERATION_ON_TYPE, "message 1"),
-                new LocationBatchOperationResult(PolarisError.NAME_CONFLICT, "message 2"),
+                new LocationBatchOperationResult(new BatchError(PolarisError.INSUFFICIENT_PERMISSIONS, "message 0")),
+                new LocationBatchOperationResult(new BatchError(PolarisError.INVALID_OPERATION_ON_TYPE, "message 1")),
+                new LocationBatchOperationResult(new BatchError(PolarisError.NAME_CONFLICT, "message 2")),
                 new LocationBatchOperationResult()
         );
         LocationBatchResult batch = new LocationBatchResult(results);
@@ -104,13 +105,13 @@ public final class TestJsonConversion {
     @Test
     public void shouldSerializeAndDeserializeTransformBatchResult() throws IOException {
         List<TransformBatchOperationResult> results = ImmutableList.of(
-                new TransformBatchOperationResult(PolarisError.INSUFFICIENT_PERMISSIONS, "message 1"),
-                new TransformBatchOperationResult(PolarisError.NAME_CONFLICT, "message 2"),
+                new TransformBatchOperationResult(new BatchError(PolarisError.INSUFFICIENT_PERMISSIONS, "message 1")),
+                new TransformBatchOperationResult(new BatchError(PolarisError.NAME_CONFLICT, "message 2")),
                 new TransformBatchOperationResult(ImmutableList.of(
                         new Updated(1, new LogicalObject(OID.generate(), OID.generate(), 2, ObjectType.FOLDER)),
                         new Updated(2, new LogicalObject(SID.generate(), OID.generate(), 1, ObjectType.FILE)),
                         new Updated(3, new LogicalObject(SID.generate(), OID.generate(), 1, ObjectType.FILE)))),
-                new TransformBatchOperationResult(PolarisError.NO_SUCH_OBJECT, "message 3")
+                new TransformBatchOperationResult(new BatchError(PolarisError.NO_SUCH_OBJECT, "message 3"))
         );
         TransformBatchResult batch = new TransformBatchResult(results);
 
