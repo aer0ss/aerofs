@@ -4,6 +4,7 @@ import com.aerofs.baseline.db.TransactionIsolation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.Identifiers;
 import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.Constants;
@@ -205,7 +206,14 @@ public final class ObjectStore {
      */
     public AccessToken checkAccess(UserID user, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
+
         UniqueID root = inTransaction(dao -> getRoot(dao, oid));
+
+        // avoid checking sparta if it turns out that this is some user's root store
+        if (Identifiers.isRootStore(root) && SID.rootSID(user).equals(root)) {
+            return new AccessToken(user, root, requested);
+        }
+
         accessManager.checkAccess(user, root, requested);
         return new AccessToken(user, root, requested);
     }
