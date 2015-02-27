@@ -27,7 +27,7 @@ import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
-import com.aerofs.lib.properties.Configuration.Server;
+import com.aerofs.lib.properties.ServerConfigurationLoader;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -82,7 +82,7 @@ public class Bifrost extends Service
         Properties extra = new Properties();
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
-        Server.initialize(extra);
+        ServerConfigurationLoader.initialize("bifrost", extra);
 
         Class.forName(getStringProperty("bifrost.db.driverClass", "com.mysql.jdbc.Driver"));
 

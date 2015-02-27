@@ -123,7 +123,7 @@ public class ClientConfigurationLoader
             }
 
             // Join all properties together, logging a warning if any property is specified twice.
-            return _propertiesHelper.unionOfThreeProperties(staticProperties,
+            return _propertiesHelper.mergeProperties(staticProperties,
                     siteConfigProperties, httpProperties);
         } catch (Exception e) {
             throw new ConfigurationException(e);

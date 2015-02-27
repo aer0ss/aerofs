@@ -8,7 +8,7 @@ import com.aerofs.base.Base64;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.lib.properties.Configuration;
+import com.aerofs.lib.properties.ServerConfigurationLoader;
 import com.aerofs.sp.authentication.LocalCredential;
 
 public class GetHashedPassword
@@ -17,7 +17,7 @@ public class GetHashedPassword
             throws Exception
     {
         LogUtil.setLevel(Level.NONE);
-        Configuration.Server.initialize();
+        ServerConfigurationLoader.initialize("get-hashed-password");
 
         if (args.length != 2) {
             System.err.println("Usage: java -jar get-hashed-password.jar <user_id> <password>");

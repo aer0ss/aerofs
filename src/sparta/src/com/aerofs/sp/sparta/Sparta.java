@@ -11,6 +11,7 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.properties.ServerConfigurationLoader;
 import com.aerofs.rest.auth.DelegatedUserDeviceExtractor;
 import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.auth.OAuthRequestFilter;
@@ -19,7 +20,6 @@ import com.aerofs.restless.Version;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.LibParam.REDIS;
-import com.aerofs.lib.properties.Configuration.Server;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.rest.providers.FactoryReaderProvider;
 import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
@@ -145,7 +145,7 @@ public class Sparta extends Service
 
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
-        Server.initialize(extra);
+        ServerConfigurationLoader.initialize("sparta", extra);
 
         ICertificateProvider cacert = new FileBasedCertificateProvider(Cacert.FILE);
 

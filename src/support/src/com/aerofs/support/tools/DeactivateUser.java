@@ -6,7 +6,7 @@ package com.aerofs.support.tools;
 
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.lib.properties.Configuration;
+import com.aerofs.lib.properties.ServerConfigurationLoader;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.protobuf.ByteString;
 
@@ -18,7 +18,7 @@ public class DeactivateUser
             throws Exception
     {
         LogUtil.setLevel(Level.NONE);
-        Configuration.Server.initialize();
+        ServerConfigurationLoader.initialize("deactivate-user");
 
         if (args.length != 2) {
             System.err.println("Usage: java -jar support-deactivate-user.jar <user_id> <password>");

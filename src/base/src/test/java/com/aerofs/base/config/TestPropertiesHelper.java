@@ -34,7 +34,7 @@ public class TestPropertiesHelper
         b.setProperty("grault", "garply");
         b.setProperty("waldo", "fred");
 
-        Properties c = _propertiesHelper.unionProperties(a, b);
+        Properties c = _propertiesHelper.mergeProperties(a, b);
 
         assertEquals("zomg", c.getProperty("foo"));
         assertEquals("qux", c.getProperty("baz"));
@@ -58,7 +58,7 @@ public class TestPropertiesHelper
         a.setProperty("conflict2", "a");
         b.setProperty("conflict2", "b");
 
-        Properties d = _propertiesHelper.unionOfThreeProperties(a, b, c);
+        Properties d = _propertiesHelper.mergeProperties(a, b, c);
 
         assertEquals("c", d.getProperty("conflict3"));
         assertEquals("b", d.getProperty("conflict2"));

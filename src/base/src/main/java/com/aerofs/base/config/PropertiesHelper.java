@@ -36,7 +36,7 @@ public class PropertiesHelper
      * @param p2
      * @return Union of p1 and p2.
      */
-    public Properties unionProperties(Properties p1, Properties p2)
+    private Properties unionProperties(Properties p1, Properties p2)
     {
         Set<Object> intersection = Sets.intersection(p1.keySet(), p2.keySet());
         if (!intersection.isEmpty()) {
@@ -53,17 +53,17 @@ public class PropertiesHelper
     }
 
     /**
-     * Convenience function to take the union of three Properties objects. In case of conflicts last
-     * setter wins.
-     *
-     * @param p1 Properties object that loses all conflicts.
-     * @param p2 Properties object that wins conflicts with p1, but loses to p3.
-     * @param p3 Properties object that wins all conflicts.
-     * @return Union of p1, p2 and p3.
+     * Merges a list of Properties objects ordered from lowest precedence to highest.
+     * @param propsArgs A series of Properties objects, ordered from lowest precedence to highest precedence.
+     * @return A Properties object representing the merged value of all of the propsArgs.
      */
-    public Properties unionOfThreeProperties(Properties p1, Properties p2, Properties p3)
+    public Properties mergeProperties(Properties... propsArgs)
     {
-        return unionProperties(unionProperties(p1, p2), p3);
+        Properties merged = new Properties();
+        for (Properties props: propsArgs) {
+            merged = unionProperties(merged, props);
+        }
+        return merged;
     }
 
     /**
