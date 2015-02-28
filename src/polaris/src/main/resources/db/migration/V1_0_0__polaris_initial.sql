@@ -1,8 +1,14 @@
 /**
  * Initial Polaris database schema.
+ *
+ * FIXME (AG): change all root_oid to store_oid
  */
 
-ALTER SCHEMA `polaris` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
+ALTER SCHEMA DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
+
+/**
+ * object store
+ */
 
 CREATE TABLE IF NOT EXISTS `objects` (
   `root_oid` BINARY(16) NOT NULL,
@@ -62,6 +68,30 @@ CREATE TABLE IF NOT EXISTS `transforms` (
 ) ENGINE = InnoDB;
 
 CREATE INDEX `store_transforms_index` ON `transforms` (`root_oid`);
+
+/**
+ * notification
+ */
+
+CREATE TABLE IF NOT EXISTS `store_max_logical_timestamp` (
+  `root_oid`          BINARY(16) NOT NULL,
+  `logical_timestamp` BIGINT     NOT NULL,
+  PRIMARY KEY (`root_oid`)
+) ENGINE = InnoDB;
+
+CREATE INDEX `store_max_logical_timestamp_index` ON `store_max_logical_timestamp` (`root_oid`, `logical_timestamp`);
+
+CREATE TABLE IF NOT EXISTS `store_notified_logical_timestamp` (
+  `root_oid`          BINARY(16) NOT NULL,
+  `logical_timestamp` BIGINT     NOT NULL,
+  PRIMARY KEY (`root_oid`)
+) ENGINE = InnoDB;
+
+CREATE INDEX `store_notified_logical_timestamp_index` ON `store_notified_logical_timestamp` (`root_oid`, `logical_timestamp`);
+
+/**
+ * conversion from distributed system -> polaris
+ */
 
 CREATE TABLE IF NOT EXISTS `converted` (
   `oid`                      BINARY(16)   NOT NULL,

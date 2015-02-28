@@ -9,7 +9,7 @@ import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
 import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.logical.ObjectStore;
-import com.aerofs.polaris.notification.UpdatePublisher;
+import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -33,11 +33,11 @@ public final class TransformBatchResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransformBatchResource.class);
 
     private final ObjectStore store;
-    private final UpdatePublisher publisher;
+    private final Notifier notifier;
 
-    public TransformBatchResource(@Context ObjectStore store, @Context UpdatePublisher publisher) {
+    public TransformBatchResource(@Context ObjectStore store, @Context Notifier notifier) {
         this.store = store;
-        this.publisher = publisher;
+        this.notifier = notifier;
     }
 
     @POST
@@ -60,7 +60,7 @@ public final class TransformBatchResource {
             }
         }
 
-        updatedRoots.forEach(publisher::publishUpdate);
+        updatedRoots.forEach(notifier::notifyStoreUpdated);
 
         return new TransformBatchResult(results);
     }

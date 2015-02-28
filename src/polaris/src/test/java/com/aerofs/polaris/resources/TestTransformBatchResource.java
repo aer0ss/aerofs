@@ -79,7 +79,7 @@ public final class TestTransformBatchResource {
         }
 
         // should have received a *single* notification, since all changes were to the same shared folder
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -126,7 +126,7 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -167,7 +167,7 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -208,6 +208,6 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 }

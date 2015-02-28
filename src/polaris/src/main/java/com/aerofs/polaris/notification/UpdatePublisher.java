@@ -1,6 +1,6 @@
 package com.aerofs.polaris.notification;
 
-import com.aerofs.ids.UniqueID;
+import com.aerofs.polaris.api.notification.Update;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
@@ -20,8 +20,9 @@ public interface UpdatePublisher {
      * via the returned future, but may continue to
      * publish subsequent updates.
      *
-     * @param root folder oid for which the update was made
+     * @param topic topic
+     * @param update update message to be published
      * @return future representing the publication state
      */
-    ListenableFuture<Void> publishUpdate(UniqueID root);
+    ListenableFuture<Void> publishUpdate(String topic, Update update);
 }

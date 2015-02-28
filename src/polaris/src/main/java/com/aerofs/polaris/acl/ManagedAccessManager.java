@@ -1,7 +1,6 @@
-package com.aerofs.polaris.sparta;
+package com.aerofs.polaris.acl;
 
 import com.aerofs.baseline.Managed;
-import com.aerofs.polaris.acl.AccessManager;
 
 /**
  * Convenience interface that combines both {@code Managed} and {@code AccessManager}.

@@ -529,9 +529,8 @@ public final class ObjectStore {
     private static long attachChild(DAO dao, DID device, LogicalObject parent, UniqueID childOid, byte[] childName, @Nullable Atomic atomic) {
         long newParentVersion = parent.version + 1;
 
-        // add the transform
-        long timestamp = System.currentTimeMillis();
-        long logicalTimestamp = dao.transforms.add(device, parent.root, parent.oid, TransformType.INSERT_CHILD, newParentVersion, childOid, childName, timestamp, atomic);
+        // add entry in transforms table and update our latest known max logical timestamp
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.INSERT_CHILD, newParentVersion, childOid, childName, atomic);
 
         // update the version of the parent
         dao.objects.update(parent.root, parent.oid, newParentVersion);
@@ -546,9 +545,8 @@ public final class ObjectStore {
     private static long detachChild(DAO dao, DID device, LogicalObject parent, UniqueID childOid, @Nullable Atomic atomic) {
         long newParentVersion = parent.version + 1;
 
-        // add the transform
-        long timestamp = System.currentTimeMillis();
-        long logicalTimestamp = dao.transforms.add(device, parent.root, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, childOid, null, timestamp, atomic);
+        // add entry in transforms table and update our latest known max logical timestamp
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, childOid, null, atomic);
 
         // update the version of the parent
         dao.objects.update(parent.root, parent.oid, newParentVersion);
@@ -563,9 +561,8 @@ public final class ObjectStore {
     private static long renameChild(DAO dao, DID device, LogicalObject parent, UniqueID childOid, byte[] childName) {
         long newParentVersion = parent.version + 1;
 
-        // add the transform
-        long timestamp = System.currentTimeMillis();
-        long logicalTimestamp = dao.transforms.add(device, parent.root, parent.oid, TransformType.RENAME_CHILD, newParentVersion, childOid, childName, timestamp, null);
+        // add entry in transforms table and update our latest known max logical timestamp
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.RENAME_CHILD, newParentVersion, childOid, childName, null);
 
         // update the version of the parent
         dao.objects.update(parent.root, parent.oid, newParentVersion);
@@ -580,9 +577,8 @@ public final class ObjectStore {
     private static long newContent(DAO dao, DID device, LogicalObject file, byte[] hash, long size, long mtime) {
         long newVersion = file.version + 1;
 
-        // add an entry in the transforms table
-        long timestamp = System.currentTimeMillis();
-        long logicalTimestamp = dao.transforms.add(device, file.root, file.oid, TransformType.UPDATE_CONTENT, newVersion, null, null, timestamp, null);
+        // add entry in transforms table and update our latest known max logical timestamp
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, file.root, file.oid, TransformType.UPDATE_CONTENT, newVersion, null, null, null);
 
         // add a row to the content table
         dao.objectProperties.add(file.oid, newVersion, hash, size, mtime);
@@ -591,6 +587,18 @@ public final class ObjectStore {
         dao.objects.update(file.root, file.oid, newVersion);
 
         // return the timestamp at which the transform was made
+        return logicalTimestamp;
+    }
+
+    private static long addTransformAndUpdateMaxLogicalTimestamp(DAO dao, DID device, UniqueID root, UniqueID oid, TransformType transformType, long newVersion, @Nullable UniqueID child, @Nullable byte[] name, @Nullable Atomic atomic) {
+        // add an entry in the transforms table
+        long timestamp = System.currentTimeMillis();
+        long logicalTimestamp = dao.transforms.add(device, root, oid, transformType, newVersion, child, name, timestamp, atomic);
+
+        // update the store max timestamp
+        dao.logicalTimestamps.updateLatest(root, logicalTimestamp);
+
+        // return logical timestamp associated with this transform
         return logicalTimestamp;
     }
 

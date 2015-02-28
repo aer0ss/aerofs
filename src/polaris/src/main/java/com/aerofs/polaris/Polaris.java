@@ -10,6 +10,7 @@ import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.polaris.acl.AccessManager;
+import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.dao.types.DIDTypeArgument;
 import com.aerofs.polaris.dao.types.OIDTypeArgument;
@@ -19,14 +20,16 @@ import com.aerofs.polaris.dao.types.TransformTypeArgument;
 import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.logical.TreeCommand;
+import com.aerofs.polaris.notification.ManagedNotifier;
+import com.aerofs.polaris.notification.ManagedUpdatePublisher;
+import com.aerofs.polaris.notification.Notifier;
+import com.aerofs.polaris.notification.OrderedNotifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
 import com.aerofs.polaris.resources.BatchResource;
 import com.aerofs.polaris.resources.ObjectsResource;
 import com.aerofs.polaris.resources.TransformsResource;
-import com.aerofs.polaris.sparta.ManagedAccessManager;
 import com.aerofs.polaris.sparta.SpartaAccessManager;
 import com.aerofs.polaris.sparta.SpartaConfiguration;
-import com.aerofs.polaris.verkehr.ManagedUpdatePublisher;
 import com.aerofs.polaris.verkehr.ServiceSharedSecretProvider;
 import com.aerofs.polaris.verkehr.VerkehrConfiguration;
 import com.aerofs.polaris.verkehr.VerkehrPublisher;
@@ -90,6 +93,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(configuration.getSparta()).to(SpartaConfiguration.class);
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(ServiceSharedSecretProvider.class).to(AuthorizationHeaderProvider.class).in(Singleton.class);
+                bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(VerkehrPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
@@ -99,6 +103,7 @@ public class Polaris extends Service<PolarisConfiguration> {
 
         environment.addManaged(ManagedAccessManager.class);
         environment.addManaged(ManagedUpdatePublisher.class);
+        environment.addManaged(ManagedNotifier.class);
 
         // setup resource authorization
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());

@@ -2,9 +2,11 @@ package com.aerofs.polaris.verkehr;
 
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.baseline.Threads;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
+import com.aerofs.polaris.api.notification.Update;
+import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -23,6 +25,7 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -40,7 +43,6 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
     private static final int NUM_BOSS_THREADS = 1;
     private static final int NUM_WORK_THREADS = 8;
-    private static final byte[] EMPTY_PAYLOAD = {(byte) 0xFF};
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VerkehrPublisher.class);
 
@@ -49,10 +51,11 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
     private BossPool<NioClientBoss> bossPool = new NioClientBossPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-boss-%d")), NUM_BOSS_THREADS);
     private WorkerPool<NioWorker> workerPool = new NioWorkerPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-wrk-%d")), NUM_WORK_THREADS);
     private final ChannelFactory channelFactory = new NioClientSocketChannelFactory(bossPool, workerPool);
+    private final ObjectMapper mapper;
     private final VerkehrClient verkehrClient;
 
     @Inject
-    public VerkehrPublisher(VerkehrConfiguration configuration,
+    public VerkehrPublisher(ObjectMapper mapper, VerkehrConfiguration configuration,
                             @Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret,
                             @Named(SERVICE_NAME_INJECTION_KEY) String serviceName)
             throws MalformedURLException
@@ -63,6 +66,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
         LOGGER.info("setup verkehr update publisher {}:{}", host, port);
 
+        this.mapper = mapper;
         this.verkehrClient = VerkehrClient.create(
                 host,
                 port,
@@ -88,8 +92,8 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
     }
 
     @Override
-    public ListenableFuture<Void> publishUpdate(UniqueID root) {
-        LOGGER.debug("notify {}", root);
+    public ListenableFuture<Void> publishUpdate(String topic, Update update) {
+        LOGGER.debug("notify {}", topic);
 
         SettableFuture<Void> returned = SettableFuture.create();
 
@@ -97,23 +101,24 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
             Futures.addCallback(returned, new FutureCallback<Void>() {
 
                 @Override
-                public void onSuccess(Void result) {
-                    LOGGER.debug("done notify {}", root);
+                public void onSuccess(@Nullable Void result) {
+                    LOGGER.debug("done notify {}", topic);
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    LOGGER.debug("fail notify {}", root);
+                    LOGGER.debug("fail notify {}", topic);
                 }
             });
         }
 
         try {
-            ListenableFuture<Void> publishFuture = verkehrClient.publish(UrlEscapers.urlPathSegmentEscaper().escape(PolarisUtilities.getVerkehrUpdateTopic(root.toStringFormal())), EMPTY_PAYLOAD);
+            byte[] serialized = mapper.writeValueAsBytes(update);
+            ListenableFuture<Void> publishFuture = verkehrClient.publish(UrlEscapers.urlPathSegmentEscaper().escape(PolarisUtilities.getVerkehrUpdateTopic(topic)), serialized);
             Futures.addCallback(publishFuture, new FutureCallback<Void>() {
 
                 @Override
-                public void onSuccess(Void result) {
+                public void onSuccess(@Nullable Void result) {
                     returned.set(result);
                 }
 
@@ -123,7 +128,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
                 }
             });
         } catch (Exception e) {
-            LOGGER.warn("fail publish notification for {}", root);
+            LOGGER.warn("fail publish notification for {}", topic);
             returned.setException(e);
         }
 

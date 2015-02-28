@@ -89,7 +89,7 @@ public final class TestObjectResource {
 
         // the tree wasn't changed, and no notifications were made
         checkTreeState(root, "tree/shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees.json");
-        verify(polaris.getNotifier(), times(0)).publishUpdate(any(SID.class));
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
@@ -113,7 +113,7 @@ public final class TestObjectResource {
 
         // the tree was changed, and that we got a single notification (the change was within the same root)
         checkTreeState(root, "tree/shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove.json");
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -137,7 +137,7 @@ public final class TestObjectResource {
 
         // the tree was changed, and we get a single notification
         checkTreeState(root, "tree/shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename.json");
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -159,7 +159,7 @@ public final class TestObjectResource {
 
         // no changes should be made, and, since it was a conflict, no notification
         checkTreeState(root, "tree/shouldNotAllowRenameIfItWouldCauseANameConflict.json");
-        verify(polaris.getNotifier(), times(0)).publishUpdate(any(SID.class));
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
@@ -181,7 +181,7 @@ public final class TestObjectResource {
 
         // no changes should be made, and, since it was a conflict, no notification
         checkTreeState(root, "tree/shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent.json");
-        verify(polaris.getNotifier(), times(0)).publishUpdate(any(SID.class));
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
@@ -219,7 +219,7 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_OK);
 
         checkTreeState(OID.TRASH, "tree/shouldAllowUpdateToADeletedObject_0000.json");
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root); // <--- FIXME (AG): oh dear...this is bad, no?
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root); // <--- FIXME (AG): oh dear...this is bad, no?
     }
 
     @Test
@@ -256,7 +256,7 @@ public final class TestObjectResource {
 
         checkTreeState(root, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent.json");
         checkTreeState(OID.TRASH, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent_0000.json");
-        verify(polaris.getNotifier(), times(2)).publishUpdate(root);
+        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(root);
     }
 
     @Test
@@ -280,7 +280,7 @@ public final class TestObjectResource {
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
 
         // shouldn't get any updates
-        verify(polaris.getNotifier(), times(0)).publishUpdate(any(SID.class));
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
@@ -310,7 +310,7 @@ public final class TestObjectResource {
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
 
         // shouldn't get any updates
-        verify(polaris.getNotifier(), times(0)).publishUpdate(any(SID.class));
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
@@ -335,7 +335,7 @@ public final class TestObjectResource {
         PolarisHelpers.newFolder(AUTHENTICATED, root1, "SHOULD_SUCCEED"); // ignore object created
 
         // should get only one update for root1
-        verify(polaris.getNotifier(), times(1)).publishUpdate(root1);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root1);
     }
 
     private void checkTreeState(UniqueID root, String json) throws IOException {

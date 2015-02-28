@@ -6,7 +6,7 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.logical.ObjectStore;
-import com.aerofs.polaris.notification.UpdatePublisher;
+import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Sets;
 
 import javax.annotation.security.RolesAllowed;
@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
 public final class ObjectResource {
 
     private final ObjectStore store;
-    private final UpdatePublisher publisher;
+    private final Notifier notifier;
     private final ResourceContext context;
 
-    public ObjectResource(@Context ObjectStore store, @Context UpdatePublisher publisher, @Context ResourceContext context) {
+    public ObjectResource(@Context ObjectStore store, @Context Notifier notifier, @Context ResourceContext context) {
         this.store = store;
-        this.publisher = publisher;
+        this.notifier = notifier;
         this.context = context;
     }
 
@@ -50,7 +50,7 @@ public final class ObjectResource {
 
         Set<UniqueID> updatedRoots = Sets.newHashSet();
         updatedRoots.addAll(result.updated.stream().map(updated -> updated.object.root).collect(Collectors.toList()));
-        updatedRoots.forEach(publisher::publishUpdate);
+        updatedRoots.forEach(notifier::notifyStoreUpdated);
 
         return result;
     }

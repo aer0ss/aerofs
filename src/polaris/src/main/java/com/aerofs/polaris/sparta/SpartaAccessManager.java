@@ -5,6 +5,7 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
+import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;

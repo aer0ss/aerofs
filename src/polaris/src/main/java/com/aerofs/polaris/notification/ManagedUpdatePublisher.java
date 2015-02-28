@@ -1,7 +1,6 @@
-package com.aerofs.polaris.verkehr;
+package com.aerofs.polaris.notification;
 
 import com.aerofs.baseline.Managed;
-import com.aerofs.polaris.notification.UpdatePublisher;
 
 /**
  * Convenience interface that combines both {@code Managed} and {@code UpdatePublisher}.

@@ -289,7 +289,7 @@ public final class Transform {
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("logicalTimestamp", logicalTimestamp)
+                .add("databaseTimestamp", logicalTimestamp)
                 .add("originator", originator)
                 .add("root", root)
                 .add("oid", oid)
