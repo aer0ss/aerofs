@@ -26,3 +26,25 @@ accomplish this:
 * Totango
 * Silota
 * FrontLeaf
+
+## Usage Data Collection
+
+As a first step toward comprehensive customer success metrics, we would like to
+collect anonymized audit stream data directly from our customers. This will
+allow the CS and sales teams to have better insight into customer/prospect
+usage patters.
+
+Implementation wise, we will provide several options:
+
+1. Default: upload directly AeroFS. (N.B. messaging is important here).
+2. Relay through Dryad.
+3. Do no upload anonymized usage data.
+
+Deployment through dryad is ideal for our larger enterprise customers, as it
+will allow them to inspect payloads. We can sell deploying dryad as a way to:
+
+1. Do log collection, for support.
+2. Do incident management.
+3. Drive product improvement.
+
+*Coming soon: a detailed engineering design document.*
