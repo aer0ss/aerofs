@@ -30,6 +30,7 @@ include 'src/aero-auth',
         'src/spdb',
         'src/spsv',
         'src/support',
+        'src/sync',
         'src/tunnel',
         'src/verkehr',
         'src/zephyr'

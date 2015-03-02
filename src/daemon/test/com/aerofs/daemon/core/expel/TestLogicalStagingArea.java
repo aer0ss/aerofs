@@ -20,9 +20,8 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.KIndex;
@@ -74,8 +73,8 @@ public class TestLogicalStagingArea extends AbstractTest
     @Mock Trans t;
 
     InjectableDriver dr = new InjectableDriver(OSUtil.get());
-    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr, mock(CfgUsePolaris.class));
-    LogicalStagingAreaDatabase lsadb = new LogicalStagingAreaDatabase(dbcw.getCoreDBCW());
+    InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW(dr);
+    LogicalStagingAreaDatabase lsadb = new LogicalStagingAreaDatabase(dbcw);
 
     MockDS mds;
     SID rootSID = SID.generate();

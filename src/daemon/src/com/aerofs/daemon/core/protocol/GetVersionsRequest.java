@@ -5,6 +5,9 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.collector.SenderFilters;
+import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -15,18 +18,8 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.net.TransportRoutingLayer;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Contributors;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -75,7 +68,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
-public class GetVersionsRequest
+public class GetVersionsRequest implements CoreProtocolReactor.Handler
 {
     private static final Logger l = Loggers.getLogger(GetVersionsRequest.class);
 
@@ -196,7 +189,13 @@ public class GetVersionsRequest
         Tick _tickImmKwlgLocalES;  // ZERO if _did == Cfg.did()
     }
 
-    public void processRequest_(DigestedMessage msg)
+    @Override
+    public Type message() {
+        return Type.GET_VERSIONS_REQUEST;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg)
             throws Exception
     {
         Util.checkPB(msg.pb().hasGetVersionsRequest(), PBGetVersionsRequest.class);
@@ -324,8 +323,8 @@ public class GetVersionsRequest
         }
 
         boolean fromBase = requestBlock.getFromBase();
-        Store s = _sidx2s.getThrows_(sidx);
-        SenderFilterAndIndex sfi = s.senderFilters().get_(from, fromBase);
+        LegacyStore s = (LegacyStore)_sidx2s.getThrows_(sidx);
+        SenderFilterAndIndex sfi = s.iface(SenderFilters.class).get_(from, fromBase);
 
         l.info("{} issue gv response for {} l {} r {} fs {}", from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
 

@@ -112,7 +112,7 @@ public class ImmigrantCreator
 
         MigratedPath join(OA from, SOID to, String name)
         {
-            return new MigratedPath(this.from.join(from), this.to.join(to, name));
+            return new MigratedPath(this.from.join(from.soid(), from.name()), this.to.join(to, name));
         }
     }
 
@@ -160,7 +160,7 @@ public class ImmigrantCreator
 
                 // make sure the physical file reflect the migrated SOID before any MAP operation
                 if (op == PhysicalOp.MAP) {
-                    ResolvedPath pathFrom = pathParent.from.join(oaFrom);
+                    ResolvedPath pathFrom = pathParent.from.join(oaFrom.soid(), oaFrom.name());
                     if (oaFrom.isFile()) {
                         for (KIndex kidx : oaFrom.cas().keySet()) {
                             _ps.newFile_(pathFrom, kidx).updateSOID_(soidTo, t);

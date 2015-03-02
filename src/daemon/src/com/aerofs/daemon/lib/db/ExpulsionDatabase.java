@@ -6,6 +6,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.ids.OID;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -21,9 +22,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.T_EX;
 public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDatabase
 {
     @Inject
-    public ExpulsionDatabase(CoreDBCW dbcw)
+    public ExpulsionDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psAdd;

@@ -33,7 +33,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -85,7 +85,7 @@ public class TestHdGetActivities extends AbstractTest
 
     HdGetActivities hd;
 
-    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
+    InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
     IActivityLogDatabase aldb;
     ActivityLog al;
 
@@ -125,7 +125,7 @@ public class TestHdGetActivities extends AbstractTest
         when(sidx2sid.get_(rootSidx)).thenReturn(rootSID);
         when(sidx2sid.getNullable_(rootSidx)).thenReturn(rootSID);
         when(sidx2sid.getLocalOrAbsent_(rootSidx)).thenReturn(rootSID);
-        aldb = new ActivityLogDatabase(dbcw.getCoreDBCW(), stores, sidx2sid);
+        aldb = new ActivityLogDatabase(dbcw, stores, sidx2sid);
 
         dbcw.init_();
         addActivity(CREATION_VALUE, mkpath("a"), null, did1, did2, did3);

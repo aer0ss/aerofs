@@ -1,12 +1,12 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
 
@@ -24,7 +24,7 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, CoreDBCW dbcw,
+    public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, IDBCW dbcw,
             CfgLocalUser cfgUser, CfgLocalDID localDID, InjectableDriver dr)
     {
         _cfgDB = cfgDB;

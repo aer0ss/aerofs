@@ -46,6 +46,7 @@ TOOLS_DIR = os.path.join(GIT_ROOT, "tools")
 SRC_BASE = os.path.join(GIT_ROOT, "src", "base")
 SRC_LIB = os.path.join(GIT_ROOT, "src", "lib")
 SRC_DAEMON = os.path.join(GIT_ROOT, "src", "daemon")
+SRC_SYNC = os.path.join(GIT_ROOT, "src", "sync")
 SRC_GUI = os.path.join(GIT_ROOT, "src", "gui")
 
 PROTOC = "/usr/local/bin/protoc"
@@ -86,16 +87,16 @@ PROTO_MAPPINGS = {
                             os.path.join(SRC_LIB, "src", "proto", "sp_notifications.proto"),
                           ],
             },
-        os.path.join(SRC_DAEMON, "gen"):
+        os.path.join(SRC_SYNC, "gen"):
             {
                 "lang": "java",
                 "includes": [ os.path.join(SRC_BASE, "src", "proto"),
                               os.path.join(SRC_LIB, "src", "proto"),
-                              os.path.join(SRC_DAEMON, "src", "proto"),
+                              os.path.join(SRC_SYNC, "src", "proto"),
                             ],
-                "protos": [ os.path.join(SRC_DAEMON, "src", "proto", "core.proto"),
-                            os.path.join(SRC_DAEMON, "src", "proto", "limit.proto"),
-                            os.path.join(SRC_DAEMON, "src", "proto", "transport.proto"),
+                "protos": [ os.path.join(SRC_SYNC, "src", "proto", "core.proto"),
+                            os.path.join(SRC_SYNC, "src", "proto", "limit.proto"),
+                            os.path.join(SRC_SYNC, "src", "proto", "transport.proto"),
                           ],
             },
         os.path.join(SRC_GUI, "gen"):
@@ -147,7 +148,6 @@ PROTO_MAPPINGS = {
                 "includes": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto"),
                               os.path.join(SRC_BASE, "src", "proto"),
                               os.path.join(SRC_LIB, "src", "proto"),
-                              os.path.join(SRC_DAEMON, "src", "proto"),
                             ],
                 "protos": [
                             os.path.join(SRC_LIB, "src", "proto", "diagnostics.proto"),
@@ -155,7 +155,6 @@ PROTO_MAPPINGS = {
                             os.path.join(TOOLS_DIR, "protobuf.plugins", "proto", "rpc_service.proto"),
                             os.path.join(SRC_LIB, "src", "proto", "path_status.proto"),
                             os.path.join(SRC_LIB, "src", "proto", "ritual.proto"),
-                            os.path.join(SRC_DAEMON, "src", "proto", "transport.proto"),
                             ],
             },
         # ObjC protobufs

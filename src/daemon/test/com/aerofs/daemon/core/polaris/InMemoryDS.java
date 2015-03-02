@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris;
 
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -31,16 +32,7 @@ import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.core.status.PauseSync;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.SIDMap;
-import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.store.StoreCreationOperators;
-import com.aerofs.daemon.core.store.StoreCreator;
-import com.aerofs.daemon.core.store.StoreDeletionOperators;
-import com.aerofs.daemon.core.store.StoreHierarchy;
-import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.lib.db.AliasDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.SIDDatabase;
@@ -48,6 +40,7 @@ import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgUsePolaris;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
@@ -79,7 +72,7 @@ public class InMemoryDS
     public final StoreDeletionOperators sdo = new StoreDeletionOperators();
 
     @SuppressWarnings("unchecked")
-    public InMemoryDS(CoreDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
+    public InMemoryDS(IDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
     {
         sm = new SIDMap(new SIDDatabase(dbcw));
         MetaDatabase mdb = new MetaDatabase(dbcw);
@@ -120,10 +113,12 @@ public class InMemoryDS
         ContentFetcher.Factory factCF = mock(ContentFetcher.Factory.class);
         when(factCF.create_(any(SIndex.class))).thenReturn(mock(ContentFetcher.class));
 
-        Store.Factory factStore  = new Store.Factory(factSF, factCollector,
-                mock(AntiEntropy.class), mock(Devices.class), mock(IPulledDeviceDatabase.class),
-                cedb, mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF,
-                mock(PauseSync.class));
+        Store.Factory factStore = usePolaris.get()
+                ? new PolarisStore.Factory(mock(Devices.class),
+                        mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF,
+                        mock(PauseSync.class))
+                : new LegacyStore.Factory(factSF, factCollector, mock(AntiEntropy.class),
+                        mock(Devices.class), mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
         stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
 
         ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
@@ -162,7 +157,7 @@ public class InMemoryDS
             OA oa = ds.ds.getOA_(new SOID(parent.sidx(), child));
             assertEquals(type, oa.type());
             if (oid != null) assertEquals(oid, oa.soid().oid());
-            return pParent.join(oa);
+            return pParent.join(oa.soid(), oa.name());
         }
     }
 

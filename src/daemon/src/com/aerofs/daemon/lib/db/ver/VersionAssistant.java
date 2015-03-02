@@ -3,6 +3,8 @@ package com.aerofs.daemon.lib.db.ver;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.daemon.core.collector.SenderFilters;
+import com.aerofs.daemon.core.store.LegacyStore;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -123,8 +125,8 @@ public class VersionAssistant extends AbstractTransListener
             // commit, since we no longer track that store anyway.
             // There's an assertion above to make sure the named events happen in the safe order.
             Store s = _f._sidx2s.getNullable_(soid.sidx());
-            if (s != null) {
-                s.senderFilters().objectUpdated_(soid.oid(), t);
+            if (s != null && s instanceof LegacyStore) {
+                s.iface(SenderFilters.class).objectUpdated_(soid.oid(), t);
             }
         }
     }

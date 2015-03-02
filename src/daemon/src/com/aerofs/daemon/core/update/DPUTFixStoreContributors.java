@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_SC;
@@ -17,9 +16,9 @@ public class DPUTFixStoreContributors implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTFixStoreContributors(CoreDBCW dbcw)
+    public DPUTFixStoreContributors(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

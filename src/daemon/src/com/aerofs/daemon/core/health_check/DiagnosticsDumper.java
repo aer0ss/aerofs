@@ -40,7 +40,7 @@ import static com.aerofs.lib.JsonFormat.prettyPrint;
  *
  * @see com.aerofs.daemon.core.health_check.HealthCheckService
  */
-final class DiagnosticsDumper implements Runnable
+public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunnable
 {
     private static final long MAX_DEVICE_DIAGNOSTICS_WAIT_TIME = 2 * C.SEC;
 
@@ -68,6 +68,12 @@ final class DiagnosticsDumper implements Runnable
         _ul = ul;
         _dl = dl;
         _metriks = metriks;
+    }
+
+    @Override
+    public long interval()
+    {
+        return 10 * C.MIN;
     }
 
     @Override

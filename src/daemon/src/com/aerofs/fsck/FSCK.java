@@ -1,6 +1,5 @@
 package com.aerofs.fsck;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreDatabaseDumper;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -19,11 +18,11 @@ public class FSCK
     private final CoreDatabaseDumper _dump;
 
     @Inject
-    public FSCK(CoreDatabaseDumper dump, DBChecker checker, CoreDBCW dbcw)
+    public FSCK(CoreDatabaseDumper dump, DBChecker checker, IDBCW dbcw)
     {
         _dump = dump;
         _checker = checker;
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     void init_() throws SQLException

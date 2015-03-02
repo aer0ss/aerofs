@@ -13,7 +13,6 @@ import com.aerofs.base.Loggers;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.ids.OID;
@@ -38,9 +37,9 @@ public class DBCheckOAAndCA
     }
 
     @Inject
-    public DBCheckOAAndCA(CoreDBCW dbcw)
+    public DBCheckOAAndCA(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     public void check_(InOutArg<Boolean> okay) throws SQLException
@@ -102,8 +101,7 @@ public class DBCheckOAAndCA
         try {
             _psListCAttrs.setInt(1, a._soid.sidx().getInt());
             _psListCAttrs.setBytes(2, a._soid.oid().getBytes());
-            ResultSet rs = _psListCAttrs.executeQuery();
-            try {
+            try (ResultSet rs = _psListCAttrs.executeQuery()) {
                 if (!rs.next()) {
                     DBChecker.error("count(*) exists", "db", okay);
 
@@ -126,8 +124,6 @@ public class DBCheckOAAndCA
                         }
                     }
                 }
-            } finally {
-                rs.close();
             }
         } finally {
             _soidSet.remove(a._soid);

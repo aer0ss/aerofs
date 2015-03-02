@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -17,7 +17,7 @@ import com.aerofs.testlib.AbstractTest;
 public class TestDaemonPostUpdateTasks extends AbstractTest
 {
     @Mock CfgDatabase cfgDB;
-    @Mock CoreDBCW dbcw;
+    @Mock IDBCW dbcw;
     @Mock IStoreDatabase sdb;
     @Mock CfgAbsDefaultAuxRoot absAuxRoot;
     @Mock InjectableDriver dr;

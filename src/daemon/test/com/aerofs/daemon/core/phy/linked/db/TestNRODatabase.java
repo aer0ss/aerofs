@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.phy.linked.db;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -25,7 +25,7 @@ public class TestNRODatabase extends AbstractTest
 {
     @Mock Trans t;
 
-    IDBCW dbcw = new InMemorySQLiteDBCW();
+    IDBCW dbcw = new InMemoryCoreDBCW();
 
     NRODatabase nrodb;
 
@@ -33,13 +33,10 @@ public class TestNRODatabase extends AbstractTest
     public void setUp() throws SQLException
     {
         dbcw.init_();
-        Statement s = dbcw.getConnection().createStatement();
-        try {
+        try (Statement s = dbcw.getConnection().createStatement()) {
             new LinkedStorageSchema().create_(s, dbcw);
-        } finally {
-            s.close();
         }
-        nrodb = new NRODatabase(((InMemorySQLiteDBCW)dbcw).getCoreDBCW());
+        nrodb = new NRODatabase(dbcw);
     }
 
     @After

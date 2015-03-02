@@ -11,8 +11,8 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -79,7 +79,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                     throws Exception {
                 boolean isRoot = soidRoot.equals(oa.soid());
 
-                ResolvedPath path = isRoot ? parentPath : parentPath.join(oa);
+                ResolvedPath path = isRoot ? parentPath : parentPath.join(oa.soid(), oa.name());
 
                 // skip the current node and its children if the effective state of the current
                 // object doesn't change
@@ -131,7 +131,10 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         public void committing_(Trans t) throws SQLException
         {
             for (SIndex sidx : _sidxs) {
-                _sidx2s.get_(sidx).resetCollectorFiltersForAllDevices_(t);
+                Store s = _sidx2s.get_(sidx);
+                if (s instanceof LegacyStore) {
+                    ((LegacyStore)s).resetCollectorFiltersForAllDevices_(t);
+                }
             }
         }
     }
@@ -157,7 +160,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
             if (_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) {
                 // TODO(phoenix): BF adjustment (when BF brought back)
-                _sidx2s.get_(soid.sidx()).contentFetcher().schedule_(soid.oid(), t);
+                _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);
             }
         } else {
             SOCID socid = new SOCID(soid, CID.CONTENT);

@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -28,9 +27,9 @@ public class DPUTFixBlockHistory implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTFixBlockHistory(CoreDBCW dbcw)
+    public DPUTFixBlockHistory(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

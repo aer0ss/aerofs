@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -26,6 +29,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,10 +83,16 @@ public class TestSingleuserStoreJoiner extends AbstractTest
                 eq(OID.ROOT), eq(name), eq(PhysicalOp.APPLY), eq(false), eq(false), eq(t));
     }
 
+    private static StoreInfo sf(String name, boolean external)
+    {
+        return new StoreInfo(name, external,
+                ImmutableMap.<UserID, Permissions>of(), ImmutableSet.of());
+    }
+
     @Test
     public void joinStore_shouldNotJoinOwnRootStore() throws Exception
     {
-        ssj.joinStore_(rootSidx, rootSID, "test", false, t);
+        ssj.joinStore_(rootSidx, rootSID, sf("test", false), t);
 
         verifyZeroInteractions(oc, od, os, sd, lod, rns, urdb);
     }
@@ -91,7 +101,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     public void joinStore_shouldNotJoinExternalStore() throws Exception
     {
         SID sid = SID.generate();
-        ssj.joinStore_(sidx, sid, "test", true, t);
+        ssj.joinStore_(sidx, sid, sf("test", true), t);
 
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verify(urdb).addUnlinkedRoot(sid, "test", t);
@@ -103,7 +113,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     public void joinStore_shouldJoinNonRootStore() throws Exception
     {
         SID sid = SID.generate();
-        ssj.joinStore_(sidx, sid, "test", false, t);
+        ssj.joinStore_(sidx, sid, sf("test", false), t);
 
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "test");
@@ -115,7 +125,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     {
         SID sid = SID.generate();
 
-        ssj.joinStore_(sidx, sid, "*test", false, t);
+        ssj.joinStore_(sidx, sid, sf("*test", false), t);
 
         verify(lod).removeLeaveCommandsFromQueue_(sid, t);
         verifyAnchorCreated(sid, "*test");

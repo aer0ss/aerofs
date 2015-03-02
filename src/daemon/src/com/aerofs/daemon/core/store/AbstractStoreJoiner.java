@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UserID;
@@ -23,9 +24,12 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -37,7 +41,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * See {@link com.aerofs.daemon.core.acl.ACLSynchronizer}
  */
-public abstract class AbstractStoreJoiner
+public abstract class AbstractStoreJoiner implements IStoreJoiner
 {
     protected final static Logger l = Loggers.getLogger(AbstractStoreJoiner.class);
     protected final ObjectCreator _oc;
@@ -53,25 +57,6 @@ public abstract class AbstractStoreJoiner
         _oc = oc;
         _od = od;
     }
-
-    /**
-     * Create logical/physical objects as needed when gaining access to a store.
-     */
-    public abstract void joinStore_(SIndex sidx, SID sid, String folderName, boolean external,
-            Trans t) throws Exception;
-
-    /**
-     * Remove logical/physical objects as needed when losing access to a store.
-     */
-    public abstract void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
-
-    /**
-     * Create anchor as needed on TS when member list changes.
-     *
-     * TODO (WW) It's not a great idea to expose TS specific functions in this interface.
-     */
-    public abstract void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
-            throws Exception;
 
     /**
      * Creating an anchor when joining a store is a complex operation

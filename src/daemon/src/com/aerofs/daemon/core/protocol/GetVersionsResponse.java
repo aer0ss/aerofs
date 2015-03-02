@@ -6,6 +6,8 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
+import com.aerofs.daemon.core.collector.Collector;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -32,6 +34,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetVersionsResponse;
 import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
 import com.aerofs.proto.Core.PBStoreHeader;
@@ -44,7 +47,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class GetVersionsResponse
+public class GetVersionsResponse implements CoreProtocolReactor.Handler
 {
     private static final Logger l = Loggers.getLogger(GetVersionsResponse.class);
 
@@ -84,7 +87,13 @@ public class GetVersionsResponse
         _tokenManager = tokenManager;
     }
 
-    public void processResponse_(DigestedMessage msg)
+    @Override
+    public PBCore.Type message() {
+        return PBCore.Type.GET_VERSIONS_RESPONSE;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg)
             throws Exception
     {
         try {
@@ -97,7 +106,6 @@ public class GetVersionsResponse
                 processResponseFromStream_(msg.user(), msg.did(), msg.streamKey(), msg.is());
             }
         } finally {
-            // TODO put this statement into a more general method
             if (msg.streamKey() != null) {
                 _iss.end_(msg.streamKey());
             }
@@ -137,7 +145,7 @@ public class GetVersionsResponse
 
             // must call add *after* everything else is written to the db
             if (_filter != null) {
-                _sidx2s.getThrows_(_sidx).collector().add_(_from, _filter, t);
+                _sidx2s.getThrows_(_sidx).iface(Collector.class).add_(_from, _filter, t);
             }
 
             // Once all blocks have been processed and are written to the db,

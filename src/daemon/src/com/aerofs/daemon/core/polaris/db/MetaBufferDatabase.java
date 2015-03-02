@@ -9,10 +9,10 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -22,7 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.polaris.db.PolarisSchema.*;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -46,9 +46,9 @@ import static com.google.common.base.Preconditions.checkState;
 public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
     @Inject
-    public MetaBufferDatabase(CoreDBCW dbcw, StoreDeletionOperators sdo)
+    public MetaBufferDatabase(IDBCW dbcw, StoreDeletionOperators sdo)
     {
-        super(dbcw.get());
+        super(dbcw);
         sdo.addImmediate_(this);
     }
 

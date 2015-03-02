@@ -4,17 +4,18 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.StoreCreator;
-import com.aerofs.daemon.core.store.StoreDeleter;
-import com.aerofs.daemon.core.store.StoreHierarchy;
+import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.ids.UserID;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -39,6 +40,12 @@ public class TestMultiuserStoreJoiner extends AbstractTest
 
     UserID userID = UserID.fromInternal("test@gmail");
 
+    private static StoreInfo sf(String name, boolean external)
+    {
+        return new StoreInfo(name, external,
+                ImmutableMap.<UserID, Permissions>of(), ImmutableSet.of());
+    }
+
     @Test
     public void joinStore_shouldJoinRootStore()
             throws Exception
@@ -46,7 +53,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         SID rootSID = SID.rootSID(userID);
         when(sidx2sid.getNullable_(sidx)).thenReturn(rootSID);
 
-        msj.joinStore_(sidx, rootSID, "test", false, t);
+        msj.joinStore_(sidx, rootSID, sf("test", false), t);
 
         verify(sc).createRootStore_(eq(rootSID), eq("test"), eq(t));
     }
@@ -58,7 +65,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         SID sid = SID.generate();
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
-        msj.joinStore_(sidx, sid, "test", false, t);
+        msj.joinStore_(sidx, sid, sf("test", false), t);
 
         verify(sc).createRootStore_(eq(sid), eq("test"), eq(t));
     }
@@ -71,7 +78,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         when(sidx2sid.getNullable_(sidx)).thenReturn(rootSID);
         when(cfgRootSID.get()).thenReturn(rootSID);
 
-        msj.joinStore_(sidx, rootSID, "test", false, t);
+        msj.joinStore_(sidx, rootSID, sf("test", false), t);
 
         verifyZeroInteractions(sc);
     }

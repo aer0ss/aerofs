@@ -3,14 +3,14 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.collector.SenderFilters;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 
 import java.sql.SQLException;
 
-public class UpdateSenderFilter
+public class UpdateSenderFilter implements CoreProtocolReactor.Handler
 {
     private final TransportRoutingLayer _trl;
     private final MapSIndex2Store _sidx2s;
@@ -49,7 +49,13 @@ public class UpdateSenderFilter
         _trl.sendUnicast_(did, pb);
     }
 
-    public void process_(DigestedMessage msg)
+    @Override
+    public Type message() {
+        return Type.UPDATE_SENDER_FILTER;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg)
             throws ExProtocolError, ExNotFound, SQLException
     {
         Util.checkPB(msg.pb().hasUpdateSenderFilter(),
@@ -57,7 +63,10 @@ public class UpdateSenderFilter
 
         PBUpdateSenderFilter sf = msg.pb().getUpdateSenderFilter();
         SIndex sidx = _sid2sidx.getThrows_(new SID(BaseUtil.fromPB(sf.getStoreId())));
-        _sidx2s.getThrows_(sidx).senderFilters().update_(msg.did(), new SenderFilterIndex(
-                sf.getSenderFilterIndex()), sf.getSenderFilterUpdateSeq());
+        Store s = _sidx2s.getThrows_(sidx);
+        if (s instanceof LegacyStore) {
+            s.iface(SenderFilters.class).update_(msg.did(),
+                    new SenderFilterIndex(sf.getSenderFilterIndex()), sf.getSenderFilterUpdateSeq());
+        }
     }
 }

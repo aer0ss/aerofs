@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.collector;
 
 import com.aerofs.ids.DID;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +19,6 @@ import com.aerofs.daemon.lib.db.SenderFilterDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.ids.UniqueID;
@@ -26,9 +26,9 @@ import com.aerofs.testlib.AbstractTest;
 
 public class TestSenderFilters extends AbstractTest
 {
-    private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
+    private final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
 
-    @Spy  ISenderFilterDatabase sfdb = new SenderFilterDatabase(dbcw.getCoreDBCW());
+    @Spy  ISenderFilterDatabase sfdb = new SenderFilterDatabase(dbcw);
     @Mock TransManager tm;
 
     @InjectMocks SenderFilters.Factory sfFact;

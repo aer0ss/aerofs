@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.T_PD;
@@ -18,9 +17,9 @@ public class DPUTRefreshBloomFilters implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTRefreshBloomFilters(CoreDBCW dbcw)
+    public DPUTRefreshBloomFilters(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

@@ -100,7 +100,7 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
             {
                 if (oa.isExpelled() || oa.soid().oid().isRoot() || oa.fid() == null) return;
 
-                ResolvedPath path = oldParent.join(oa);
+                ResolvedPath path = oldParent.join(oa.soid(), oa.name());
                 LinkedPath lp = _rh.getPhysicalPath_(path, PathType.SOURCE);
                 FID newFID = null;
                 try {
@@ -155,8 +155,10 @@ class LinkedCrossFSRelocator extends CrossFSRelocator
         }
 
         switch (oa.type()) {
-        case ANCHOR: return oldParent.join(oa);
-        case DIR:    return (oa.soid().oid().isRoot()) ? oldParent: oldParent.join(oa);
+        case ANCHOR:
+            return oldParent.join(oa.soid(), oa.name());
+        case DIR:
+            return (oa.soid().oid().isRoot()) ? oldParent: oldParent.join(oa.soid(), oa.name());
         case FILE:   return null;
         default:     assert false; return null;
         }

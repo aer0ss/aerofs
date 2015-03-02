@@ -6,13 +6,9 @@ package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -165,12 +161,13 @@ public class QuotaEnforcement implements IQuotaEnforcement
             for (Entry<SID, Boolean> en : sid2bool.entrySet()) {
                 SID sid = new SID(en.getKey());
                 Store s = getStoreNullable_(sid);
-                if (s == null) continue;
+                // TODO(phoenix)
+                if (s == null || !(s instanceof LegacyStore)) continue;
 
                 if (en.getValue()) {
-                    s.startCollectingContent_(t);
+                    ((LegacyStore)s).startCollectingContent_(t);
                 } else {
-                    s.stopCollectingContent_(t);
+                    ((LegacyStore)s).stopCollectingContent_(t);
                 }
             }
             t.commit_();

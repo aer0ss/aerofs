@@ -3,11 +3,11 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.store.LegacyStore;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -17,8 +17,10 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -112,8 +114,7 @@ public class AntiEntropy
         req._scheduled.add(did);
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
-            public void handle_()
-            {
+            public void handle_() {
                 Request req = _requests.get(sidx);
                 if (req != null) sendRequest_(req, did);
             }
@@ -125,7 +126,7 @@ public class AntiEntropy
     {
         try {
             req._scheduled.remove(did);
-            Store s = _sidx2s.getNullable_(req._sidx);
+            LegacyStore s = (LegacyStore)_sidx2s.getNullable_(req._sidx);
             if (s == null || !s.hasOnlinePotentialMemberDevices_()) return;
             req.sendGetVersRequests_(did);
         } catch (Exception e) {
@@ -167,25 +168,27 @@ public class AntiEntropy
          */
         private boolean sendGetVersRequest_()
         {
-            Store s = _sidx2s.getNullable_(_sidx);
+            LegacyStore s = (LegacyStore)_sidx2s.getNullable_(_sidx);
             if (s == null) {
                 l.debug("{} no longer exists. return", _sidx);
                 return false;
-            } else if (!s.hasOnlinePotentialMemberDevices_()) {
+            }
+            ArrayList<DID> dids = new ArrayList<>(s.getOnlinePotentialMemberDevices_().keySet());
+            if (dids.isEmpty()) {
                 l.debug("{}: no online devs. return", s);
                 return false;
-            } else {
-                To to = _factTo.create_(_sidx, To.RANDCAST);
-                try {
-                    // TODO: take locality and last req time to pick among available devices
-                    DID didTo = checkNotNull(to.pick_());
-                    sendGetVersRequests_(didTo);
-                } catch (RuntimeException e) {
-                    // we tolerate no runtime exceptions
-                    throw e;
-                } catch (Exception e) {
-                    l.warn("{}: {}", s, Util.e(e));
-                }
+            }
+
+            To to = _factTo.create_(dids.get(ThreadLocalRandom.current().nextInt(dids.size())));
+            try {
+                // TODO: take locality and last req time to pick among available devices
+                DID didTo = checkNotNull(to.pick_());
+                sendGetVersRequests_(didTo);
+            } catch (RuntimeException e) {
+                // we tolerate no runtime exceptions
+                throw e;
+            } catch (Exception e) {
+                l.warn("{}: {}", s, Util.e(e));
             }
             return true;
         }

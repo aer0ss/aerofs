@@ -7,13 +7,13 @@ package com.aerofs.daemon.core.expel;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -30,9 +30,9 @@ import static com.google.common.base.Preconditions.checkState;
 public class LogicalStagingAreaDatabase extends AbstractDatabase
 {
     @Inject
-    public LogicalStagingAreaDatabase(CoreDBCW dbcw)
+    public LogicalStagingAreaDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(

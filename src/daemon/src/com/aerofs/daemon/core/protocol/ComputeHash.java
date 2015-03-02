@@ -4,9 +4,11 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -34,7 +36,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 
-public class ComputeHash
+public class ComputeHash implements CoreProtocolReactor.Handler
 {
     private static Logger l = Loggers.getLogger(ComputeHash.class);
     private final RPC _rpc;
@@ -93,6 +95,23 @@ public class ComputeHash
         // Reply that the hash has been computed with an empty message
         PBCore response = CoreProtocolUtil.newResponse(msg.pb()).build();
         _trl.sendUnicast_(msg.ep(), response);
+    }
+
+    @Override
+    public Type message() {
+        return Type.COMPUTE_HASH_REQUEST;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg) throws Exception
+    {
+        try {
+            processRequest_(msg);
+        } catch (Exception e) {
+            l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()),
+                    BaseLogUtil.suppress(e));
+            _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
+        }
     }
 
     public void processRequest_(DigestedMessage msg) throws Exception

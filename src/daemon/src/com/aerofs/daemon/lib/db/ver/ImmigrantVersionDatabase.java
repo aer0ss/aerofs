@@ -20,7 +20,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
@@ -29,6 +28,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SIndex;
@@ -45,9 +45,9 @@ public class ImmigrantVersionDatabase
     private final CfgLocalDID _localDID;
 
     @Inject
-    public ImmigrantVersionDatabase(CoreDBCW dbcw, CfgLocalDID  localDID)
+    public ImmigrantVersionDatabase(IDBCW dbcw, CfgLocalDID  localDID)
     {
-        super(dbcw.get(), C_GT_IMMIGRANT, T_IK, C_IK_SIDX, C_IK_IMM_DID, C_IK_IMM_TICK, T_IV,
+        super(dbcw, C_GT_IMMIGRANT, T_IK, C_IK_SIDX, C_IK_IMM_DID, C_IK_IMM_TICK, T_IV,
                 C_IV_IMM_DID, C_IV_SIDX, C_IV_TICK, C_IV_CID, C_IV_OID);
         _localDID = localDID;
     }

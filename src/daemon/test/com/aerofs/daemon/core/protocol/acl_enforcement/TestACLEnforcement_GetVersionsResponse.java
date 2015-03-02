@@ -80,7 +80,7 @@ public class TestACLEnforcement_GetVersionsResponse extends AbstractTest
     {
         // Unlike other tests in the same package, for this test it is easier to craft a protobuf
         // reply than connecting the caller and the replier.
-        caller._gvr.processResponse_(newDigestedMessage(replier.user(), newResponse()));
+        caller._gvr.handle_(newDigestedMessage(replier.user(), newResponse()));
 
         // verify that the caller writes nothing to the db
         verifyNoMoreInteractions(caller._tm);

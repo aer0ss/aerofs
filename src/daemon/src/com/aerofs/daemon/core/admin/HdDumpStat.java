@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.IDumpStatMisc;

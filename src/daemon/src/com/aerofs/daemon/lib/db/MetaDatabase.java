@@ -25,6 +25,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.ids.OID;
@@ -43,9 +44,9 @@ import com.google.inject.Inject;
 public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMetaDatabaseWalker
 {
     @Inject
-    public MetaDatabase(CoreDBCW dbcw)
+    public MetaDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     PreparedStatement _psGetChild;
@@ -62,15 +63,12 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             _psGetChild.setInt(1, sidx.getInt());
             _psGetChild.setBytes(2, parent.getBytes());
             _psGetChild.setString(3, name);
-            ResultSet rs = _psGetChild.executeQuery();
-            try {
+            try (ResultSet rs = _psGetChild.executeQuery()) {
                 if (rs.next()) {
                     return new OID(rs.getBytes(1));
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGetChild);
@@ -349,8 +347,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
                     + C_CA_OID + "=?");
             _psGetCA.setInt(1, soid.sidx().getInt());
             _psGetCA.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = _psGetCA.executeQuery();
-            try {
+            try (ResultSet rs = _psGetCA.executeQuery()) {
                 SortedMap<KIndex, CA> cas = Maps.newTreeMap();
                 while (rs.next()) {
                     long len = rs.getLong(1);
@@ -362,8 +359,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
                     cas.put(kidx, new CA(len, mtime));
                 }
                 return cas;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGetCA);
@@ -388,16 +383,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             _psGCAH.setBytes(2, soid.oid().getBytes());
             _psGCAH.setInt(3, kidx.getInt());
 
-            ResultSet rs = _psGCAH.executeQuery();
-            try {
+            try (ResultSet rs = _psGCAH.executeQuery()) {
                 byte[] hash;
                 if (rs.next() && (hash = rs.getBytes(1)) != null) {
                     return new ContentHash(hash);
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGCAH);
@@ -419,30 +411,26 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
 
             _psGetOA.setInt(1, soid.sidx().getInt());
             _psGetOA.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = _psGetOA.executeQuery();
-            try {
+            try (ResultSet rs = _psGetOA.executeQuery()) {
                 if (rs.next()) {
                     OID parent = new OID(rs.getBytes(1));
                     String name = rs.getString(2);
-                    OA.Type type = OA.Type.valueOf(rs.getInt(3));
+                    Type type = Type.valueOf(rs.getInt(3));
                     int flags = rs.getInt(4);
                     byte[] bs = rs.getBytes(5);
                     FID fid = bs == null ? null : new FID(bs);
 
                     assert !rs.next();
 
-                    switch(type) {
-                    case FILE:
-                        return OA.createFile(soid, parent, name, getCAs_(soid), flags, fid);
-                    default:
-                        return OA.createNonFile(soid, parent, name, type, flags, fid);
+                    switch (type) {
+                        case FILE:
+                            return OA.createFile(soid, parent, name, getCAs_(soid), flags, fid);
+                        default:
+                            return OA.createNonFile(soid, parent, name, type, flags, fid);
                     }
-
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGetOA);
@@ -462,8 +450,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
                     " where " + C_OA_FID + "=?");
 
             _psFID2SOID.setBytes(1, fid.getBytes());
-            ResultSet rs = _psFID2SOID.executeQuery();
-            try {
+            try (ResultSet rs = _psFID2SOID.executeQuery()) {
                 if (rs.next()) {
                     SIndex sidx = new SIndex(rs.getInt(1));
                     OID oid = new OID(rs.getBytes(2));
@@ -473,8 +460,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psFID2SOID);
@@ -531,11 +516,8 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             PreparedStatement ps = _pswHasChildren.get(c());
             ps.setInt(1, parent.sidx().getInt());
             ps.setBytes(2, parent.oid().getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswHasChildren.close();
@@ -608,29 +590,25 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             ps.setInt(1, sidx.getInt());
             ps.setBytes(2, parent.getBytes());
             ResultSet rs = ps.executeQuery();
-            try {
-                final boolean rootParent = parent.isRoot();
-                return new AbstractDBIterator<TypeNameOID>(rs) {
-                    OID oid;
-                    @Override
-                    public boolean next_() throws SQLException
-                    {
-                        do {
-                            if (!_rs.next()) return false;
-                            oid = new OID(_rs.getBytes(1));
-                        } while (rootParent && oid.isRoot());
-                        return true;
-                    }
+            final boolean rootParent = parent.isRoot();
+            return new AbstractDBIterator<TypeNameOID>(rs) {
+                OID oid;
+                @Override
+                public boolean next_() throws SQLException
+                {
+                    do {
+                        if (!_rs.next()) return false;
+                        oid = new OID(_rs.getBytes(1));
+                    } while (rootParent && oid.isRoot());
+                    return true;
+                }
 
-                    @Override
-                    public TypeNameOID get_() throws SQLException
-                    {
-                        return new TypeNameOID(_rs.getString(2), oid, Type.valueOf(_rs.getInt(3)));
-                    }
-                };
-            } finally {
-                rs.close();
-            }
+                @Override
+                public TypeNameOID get_() throws SQLException
+                {
+                    return new TypeNameOID(_rs.getString(2), oid, Type.valueOf(_rs.getInt(3)));
+                }
+            };
         } catch (SQLException e) {
             _pswGetTypedChildren.close();
             throw detectCorruption(e);
@@ -717,14 +695,11 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
 
             _psGetBytesUsed.setInt(1, sidx.getInt());
 
-            ResultSet rs = _psGetBytesUsed.executeQuery();
-            try {
+            try (ResultSet rs = _psGetBytesUsed.executeQuery()) {
                 checkState(rs.next());
                 long ret = rs.getLong(1);
                 checkState(!rs.next());
                 return ret;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGetBytesUsed);

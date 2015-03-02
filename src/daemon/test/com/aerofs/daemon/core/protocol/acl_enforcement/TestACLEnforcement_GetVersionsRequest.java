@@ -7,14 +7,11 @@ package com.aerofs.daemon.core.protocol.acl_enforcement;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.protocol.class_under_test.GetVersionsRequestWithMocks;
-import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
@@ -94,16 +91,10 @@ public class TestACLEnforcement_GetVersionsRequest extends AbstractTest
             throws Exception
     {
         when(caller._trl.sendUnicast_(any(DID.class), any(String.class), anyInt(),
-                any(ByteArrayOutputStream.class))).thenAnswer(new Answer<Endpoint>()
-        {
-            @Override
-            public Endpoint answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
-                replier._gvc.processRequest_(newDigestedMessage(caller.user(), os));
-                return null;
-            }
-        });
+                any(ByteArrayOutputStream.class))).thenAnswer(invocation -> {
+                    ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
+                    replier._gvc.handle_(newDigestedMessage(caller.user(), os));
+                    return null;
+                });
     }
 }

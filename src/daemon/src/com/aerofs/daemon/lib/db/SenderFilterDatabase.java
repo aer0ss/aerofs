@@ -13,6 +13,7 @@ import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.ids.DID;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -23,9 +24,9 @@ import javax.annotation.Nullable;
 public class SenderFilterDatabase extends AbstractDatabase implements ISenderFilterDatabase
 {
     @Inject
-    public SenderFilterDatabase(CoreDBCW dbcw)
+    public SenderFilterDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psSSF;
@@ -80,8 +81,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                             C_SF_SFIDX + "=?");
             _psGSF.setInt(1, sidx.getInt());
             _psGSF.setLong(2, sfidx.getLong());
-            ResultSet rs = _psGSF.executeQuery();
-            try {
+            try (ResultSet rs = _psGSF.executeQuery()) {
                 if (rs.next()) {
                     return new BFOID(rs.getBytes(1));
                 } else if (sfidx.equals(SenderFilterIndex.BASE)) {
@@ -89,8 +89,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGSF);
@@ -147,12 +145,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                             + C_SF_SFIDX + "<?");
             _psGSFPI.setInt(1, sidx.getInt());
             _psGSFPI.setLong(2, sfidx.getLong());
-            ResultSet rs = _psGSFPI.executeQuery();
-            try {
+            try (ResultSet rs = _psGSFPI.executeQuery()) {
                 Util.verify(rs.next());
                 return new SenderFilterIndex(rs.getLong(1));
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGSFPI);
@@ -171,16 +166,13 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                     .prepareStatement("select max(" + C_SF_SFIDX + ") from "
                             + T_SF + " where " + C_SF_SIDX + "=?");
             _psGSFGI.setInt(1, sidx.getInt());
-            ResultSet rs = _psGSFGI.executeQuery();
-            try {
+            try (ResultSet rs = _psGSFGI.executeQuery()) {
                 if (rs.next()) {
                     long v = rs.getLong(1);
                     return rs.wasNull() ? SenderFilterIndex.BASE : new SenderFilterIndex(v);
                 } else {
                     return SenderFilterIndex.BASE;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGSFGI);
@@ -201,16 +193,13 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                             C_SD_DID + "=?");
             _psGSDI.setInt(1, sidx.getInt());
             _psGSDI.setBytes(2, did.getBytes());
-            ResultSet rs = _psGSDI.executeQuery();
-            try {
+            try (ResultSet rs = _psGSDI.executeQuery()) {
                 if (rs.next()) {
                     long v = rs.getLong(1);
                     return rs.wasNull() ? null : new SenderFilterIndex(v);
                 } else {
                     return null;
                 }
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGSDI);
@@ -231,12 +220,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                             C_SD_SFIDX + "=?");
             _psGSDIC.setInt(1, sidx.getInt());
             _psGSDIC.setLong(2, sfidx.getLong());
-            ResultSet rs = _psGSDIC.executeQuery();
-            try {
+            try (ResultSet rs = _psGSDIC.executeQuery()) {
                 Util.verify(rs.next());
                 return rs.getInt(1);
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGSDIC);

@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -12,9 +11,9 @@ public class DPUTCreateUnlinkedRootTable implements IDaemonPostUpdateTask
 {
     private final IDBCW _dcbw;
 
-    public DPUTCreateUnlinkedRootTable(CoreDBCW dbcw)
+    public DPUTCreateUnlinkedRootTable(IDBCW dbcw)
     {
-        _dcbw = dbcw.get();
+        _dcbw = dbcw;
     }
 
     @Override

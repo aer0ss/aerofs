@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.update;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -15,9 +14,9 @@ public class DPUTMakeMTimesNaturalNumbersOnly implements IDaemonPostUpdateTask
 
     private final IDBCW _dbcw;
 
-    public DPUTMakeMTimesNaturalNumbersOnly(CoreDBCW dbcw)
+    public DPUTMakeMTimesNaturalNumbersOnly(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

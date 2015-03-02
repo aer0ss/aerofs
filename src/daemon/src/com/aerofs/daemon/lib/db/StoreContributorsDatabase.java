@@ -5,6 +5,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -21,9 +22,9 @@ public class StoreContributorsDatabase
         implements IStoreContributorsDatabase
 {
     @Inject
-    public StoreContributorsDatabase(CoreDBCW dbcw)
+    public StoreContributorsDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private final PreparedStatementWrapper _pswAddContrib = new PreparedStatementWrapper(
@@ -53,15 +54,12 @@ public class StoreContributorsDatabase
         try {
             PreparedStatement ps = _pswGetContrib.get(c());
             ps.setInt(1, sidx.getInt());
-            ResultSet rs = ps.executeQuery();
             Set<DID> dids = Sets.newHashSet();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     dids.add(new DID(rs.getBytes(1)));
                 }
                 return dids;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGetContrib.close();

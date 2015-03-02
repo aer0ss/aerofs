@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.SQLException;
@@ -26,9 +25,9 @@ public class DPUTClearSyncStatusColumns implements IDaemonPostUpdateTask
 
     private final IDBCW _dbcw;
 
-    public DPUTClearSyncStatusColumns(CoreDBCW dbcw)
+    public DPUTClearSyncStatusColumns(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

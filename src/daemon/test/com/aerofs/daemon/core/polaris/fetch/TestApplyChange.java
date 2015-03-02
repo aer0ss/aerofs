@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.polaris.fetch;
 
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.store.Store;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
@@ -18,21 +20,14 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.InMemoryDS;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AliasDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -49,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -76,22 +72,21 @@ public class TestApplyChange extends AbstractBaseTest
     final CfgUsePolaris usePolaris = new CfgUsePolaris() {
         @Override public boolean get() { return true; }
     };
-    final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(mock(InjectableDriver.class), usePolaris);
-    final CoreDBCW cdbcw = dbcw.getCoreDBCW();
+    final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW(mock(InjectableDriver.class));
 
     final UserID user = UserID.fromInternal("foo@bar.baz");
     final SID rootSID = SID.rootSID(user);
 
     final IPhysicalStorage ps = mock(IPhysicalStorage.class);
 
-    final InMemoryDS mds = new InMemoryDS(dbcw.getCoreDBCW(), usePolaris, ps, user);
+    final InMemoryDS mds = new InMemoryDS(dbcw, usePolaris, ps, user);
 
-    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(cdbcw, mds.sdo);
-    final MetaBufferDatabase mbdb = new MetaBufferDatabase(cdbcw, mds.sdo);
-    final CentralVersionDatabase cvdb = new CentralVersionDatabase(cdbcw, mds.sdo);
-    final AliasDatabase adb = new AliasDatabase(cdbcw);
-    final ContentChangesDatabase ccdb = new ContentChangesDatabase(cdbcw, mds.sco, mds.sdo);
-    final RemoteContentDatabase rcdb = new RemoteContentDatabase(cdbcw, mds.sco, mds.sdo);
+    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(dbcw, mds.sdo);
+    final MetaBufferDatabase mbdb = new MetaBufferDatabase(dbcw, mds.sdo);
+    final CentralVersionDatabase cvdb = new CentralVersionDatabase(dbcw, mds.sdo);
+    final AliasDatabase adb = new AliasDatabase(dbcw);
+    final ContentChangesDatabase ccdb = new ContentChangesDatabase(dbcw, mds.sco, mds.sdo);
+    final RemoteContentDatabase rcdb = new RemoteContentDatabase(dbcw, mds.sco, mds.sdo);
 
     final MapAlias2Target a2t = new MapAlias2Target(adb);
     final MetaChangesDatabase mcdb = mock(MetaChangesDatabase.class);
@@ -113,6 +108,9 @@ public class TestApplyChange extends AbstractBaseTest
         when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(pf);
 
         dbcw.init_();
+        try (Statement s = dbcw.getConnection().createStatement()) {
+            new PolarisSchema().create_(s, dbcw);
+        }
 
         mds.stores.init_();
         try {
@@ -120,8 +118,15 @@ public class TestApplyChange extends AbstractBaseTest
         } catch (Exception e) { throw new AssertionError(e); }
         sidx = mds.sm.get_(rootSID);
 
-        ac = new ApplyChange(ds, ps, expulsion, cvdb, rldb, a2t, ds, mbdb, mcdb, submitter, ccdb,
-                rcdb, mock(MapSIndex2Store.class));
+        ApplyChangeImpl impl = new ApplyChangeImpl(ds, ps, expulsion, a2t, ds, rldb, mbdb, mcdb, ccdb, submitter);
+
+        MapSIndex2Store sidx2s = mock(MapSIndex2Store.class);
+        Store s = mock(Store.class);
+        ContentFetcher cf = mock(ContentFetcher.class);
+        when(s.iface(ContentFetcher.class)).thenReturn(cf);
+        when(sidx2s.get_(sidx)).thenReturn(s);
+
+        ac = new ApplyChange(impl, cvdb, rldb, rcdb, sidx2s);
     }
 
     @After

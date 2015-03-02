@@ -8,6 +8,8 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.polaris.fetch.ApplyChange;
+import com.aerofs.daemon.core.store.PolarisStore;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -46,13 +48,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -244,13 +240,7 @@ public class MetaChangeSubmitter implements Submitter
 
     private void batchSubmit(List<MetaChange> c, Batch batch, AsyncTaskCallback cb)
     {
-        FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
-                "/batch/transforms",
-                Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(batch))));
-        req.headers().add(Names.CONTENT_TYPE, "application/json");
-        req.headers().add(Names.TRANSFER_ENCODING, "chunked");
-
-        _client.send(req, cb, r -> handleBatch_(c, batch, r));
+        _client.post("/batch/transforms", batch, cb, r -> handleBatch_(c, batch, r));
     }
 
     private boolean handleBatch_(List<MetaChange> c, Batch batch, FullHttpResponse resp)
@@ -429,7 +419,7 @@ public class MetaChangeSubmitter implements Submitter
             OA oa = _ds.getOANullable_(new SOID(c.sidx, c.oid));
             if (oa != null && !oa.isExpelled() && oa.isFile()) {
                 // fast retry content submission
-                _sidx2s.get_(c.sidx).contentSubmitter().startOnCommit_(t);
+                ((PolarisStore)_sidx2s.get_(c.sidx)).contentSubmitter().startOnCommit_(t);
             }
             break;
         case MOVE_CHILD:

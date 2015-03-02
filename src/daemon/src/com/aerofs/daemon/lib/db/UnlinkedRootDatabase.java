@@ -8,6 +8,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
@@ -34,9 +35,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 public class UnlinkedRootDatabase extends AbstractDatabase
 {
     @Inject
-    public UnlinkedRootDatabase(CoreDBCW dbcw)
+    public UnlinkedRootDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private final PreparedStatementWrapper _pswGetUnlinkedRoot = new PreparedStatementWrapper(
@@ -46,11 +47,8 @@ public class UnlinkedRootDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = _pswGetUnlinkedRoot.get(c());
             ps.setBytes(1, sid.getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getString(1) : null;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGetUnlinkedRoot.close();
@@ -63,15 +61,12 @@ public class UnlinkedRootDatabase extends AbstractDatabase
     public Map<SID, String> getUnlinkedRoots() throws SQLException
     {
         try {
-            ResultSet rs = _pswGetUnlinkedRoots.get(c()).executeQuery();
-            try {
+            try (ResultSet rs = _pswGetUnlinkedRoots.get(c()).executeQuery()) {
                 Map<SID, String> m = Maps.newHashMap();
                 while (rs.next()) {
                     m.put(new SID(rs.getBytes(1)), rs.getString(2));
                 }
                 return m;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGetUnlinkedRoots.close();

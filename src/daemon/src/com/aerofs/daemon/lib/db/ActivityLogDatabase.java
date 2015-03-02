@@ -16,6 +16,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Sets;
@@ -49,9 +50,9 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public ActivityLogDatabase(CoreDBCW dbcw, StoreHierarchy stores, IMapSIndex2SID sidx2sid)
+    public ActivityLogDatabase(IDBCW dbcw, StoreHierarchy stores, IMapSIndex2SID sidx2sid)
     {
-        super(dbcw.get());
+        super(dbcw);
         _stores = stores;
         _sidx2sid = sidx2sid;
     }

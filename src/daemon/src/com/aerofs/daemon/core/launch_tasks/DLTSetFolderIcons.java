@@ -166,7 +166,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
                 SID sid = _roots.get(0).getKey();
 
                 if (_linker.isFirstScanInProgress_(sid)) {
-                    l.info("Waiting for scan session to finish.");
+                    l.info("Waiting for scan session to finish {}", sid);
                     return absPaths;
                 }
 

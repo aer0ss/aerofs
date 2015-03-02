@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import com.aerofs.lib.db.DBUtil;
@@ -27,9 +26,9 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
 
     private static final String C_STORE_PARENT = "s_p";
 
-    DPUTMorphStoreTables(CoreDBCW dbcw)
+    DPUTMorphStoreTables(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

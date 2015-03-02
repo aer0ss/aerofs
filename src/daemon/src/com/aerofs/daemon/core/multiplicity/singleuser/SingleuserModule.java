@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantTargetSI
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.SingleuserImmigrantDetector;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
-import com.aerofs.daemon.core.store.AbstractStoreJoiner;
+import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
@@ -41,7 +41,7 @@ public class SingleuserModule extends AbstractModule
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);
         bind(ImmigrantDetector.class).to(SingleuserImmigrantDetector.class);
 
-        bind(AbstractStoreJoiner.class).to(SingleuserStoreJoiner.class);
+        bind(IStoreJoiner.class).to(SingleuserStoreJoiner.class);
 
         bind(IQuotaEnforcement.class).to(NullQuotaEnforcement.class);
 

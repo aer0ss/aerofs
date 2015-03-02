@@ -9,7 +9,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.update.DPUTUtil;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IAuditDatabase;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -49,10 +48,10 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
     private final IAuditDatabase _auditdb;
 
     @Inject
-    public DLTCleanActivityLog(CoreScheduler sched, CoreDBCW dbcw, IAuditDatabase auditdb)
+    public DLTCleanActivityLog(CoreScheduler sched, IDBCW dbcw, IAuditDatabase auditdb)
     {
         super(sched);
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _auditdb = auditdb;
     }
 

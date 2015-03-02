@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.ids.DID;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -18,9 +19,9 @@ import javax.annotation.Nullable;
 public class CollectorFilterDatabase extends AbstractDatabase implements ICollectorFilterDatabase
 {
     @Inject
-    public CollectorFilterDatabase(CoreDBCW dbcw)
+    public CollectorFilterDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psSCF;

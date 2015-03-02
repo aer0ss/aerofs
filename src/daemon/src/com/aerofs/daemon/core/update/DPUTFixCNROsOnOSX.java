@@ -9,7 +9,6 @@ import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
@@ -64,9 +63,9 @@ public class DPUTFixCNROsOnOSX implements IDaemonPostUpdateTask
     private final ISIDDatabase _siddb;
     private final NRODatabase _nrodb;
 
-    public DPUTFixCNROsOnOSX(IOSUtil osutil, CoreDBCW dbcw)
+    public DPUTFixCNROsOnOSX(IOSUtil osutil, IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _osutil = osutil;
         _mdb = new MetaDatabase(dbcw);
         _sdb = new StoreDatabase(dbcw);

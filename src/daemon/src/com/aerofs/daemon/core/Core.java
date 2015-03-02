@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
+import com.aerofs.daemon.core.net.UnicastInputOutputStack;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -24,21 +25,19 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.metriks.IMetriks;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.Inject;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 
 public class Core implements IModule
 {
     private final FirstLaunch _fl;
-    private final CoreDBCW _dbcw;
+    private final IDBCW _dbcw;
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
@@ -76,7 +75,7 @@ public class Core implements IModule
             IPhysicalStorage ps,
             NativeVersionControl nvc,
             ImmigrantVersionControl ivc,
-            CoreDBCW dbcw,
+            IDBCW dbcw,
             VerkehrPubSubClient vk,
             ACLNotificationSubscriber aclsub,
             UnicastInputOutputStack stack,
@@ -129,7 +128,7 @@ public class Core implements IModule
     @Override
     public void init_() throws Exception
     {
-        _dbcw.get().init_();
+        _dbcw.init_();
         // setup core DB if needed
         if (!_dbsetup.isSetupDone_()) _dbsetup.setup_();
         // must run dput immediately after database initialization and before other components, as

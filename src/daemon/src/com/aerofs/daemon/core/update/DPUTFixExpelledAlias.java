@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.PreparedStatement;
@@ -25,9 +24,9 @@ public class DPUTFixExpelledAlias implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTFixExpelledAlias(CoreDBCW dbcw)
+    public DPUTFixExpelledAlias(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

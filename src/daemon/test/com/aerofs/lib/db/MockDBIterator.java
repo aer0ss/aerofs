@@ -2,8 +2,6 @@ package com.aerofs.lib.db;
 
 import java.sql.SQLException;
 
-import com.aerofs.lib.db.IDBIterator;
-
 public class MockDBIterator<E> implements IDBIterator<E>
 {
     private boolean _closed;

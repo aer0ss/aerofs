@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
@@ -24,9 +23,9 @@ public class DPUTCaseSensitivityHellYeah implements IDaemonPostUpdateTask
 
     private static final String T_OA_OLD = T_OA + "old";
 
-    DPUTCaseSensitivityHellYeah(CoreDBCW dbcw, InjectableDriver dr)
+    DPUTCaseSensitivityHellYeah(IDBCW dbcw, InjectableDriver dr)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _dr = dr;
     }
 

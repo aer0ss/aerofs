@@ -2,11 +2,11 @@ package com.aerofs.daemon.lib.db.ver;
 
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -21,9 +21,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVersionDatabase
 {
     @Inject
-    public PrefixVersionDatabase(CoreDBCW dbcw)
+    public PrefixVersionDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psGetPV;
@@ -41,8 +41,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             _psGetPV.setInt(1, soid.sidx().getInt());
             _psGetPV.setBytes(2, soid.oid().getBytes());
             _psGetPV.setInt(3, kidx.getInt());
-            ResultSet rs = _psGetPV.executeQuery();
-            try {
+            try (ResultSet rs = _psGetPV.executeQuery()) {
                 Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
@@ -50,8 +49,6 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
                     v.set_(did, rs.getLong(2));
                 }
                 return v;
-            } finally {
-                rs.close();
             }
 
         } catch (SQLException e) {

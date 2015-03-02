@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -14,9 +13,9 @@ final class DPUTOptimizeCSTableIndex implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    DPUTOptimizeCSTableIndex(CoreDBCW dbcw)
+    DPUTOptimizeCSTableIndex(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     /**

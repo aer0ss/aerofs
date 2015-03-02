@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  * was previously hidden by the cost of object cleanup but with scalable deletion
  * it jumped to the forefront.
  *
- * The verssion system will eventually be drastically simplified as part of the
+ * The version system will eventually be drastically simplified as part of the
  * Polaris project but it will be months before that bears fruit, hence this
  * patch.
  */
@@ -50,9 +49,9 @@ public class DPUTRemoveBackupTicks implements IDaemonPostUpdateTask
             C_IBT_TICK      = "ibt_t";      // Tick
 
 
-    public DPUTRemoveBackupTicks(CoreDBCW dbcw, CfgLocalDID localDID)
+    public DPUTRemoveBackupTicks(IDBCW dbcw, CfgLocalDID localDID)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _localDID = localDID;
     }
 

@@ -7,6 +7,7 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -25,9 +26,9 @@ public class AuditDatabase extends AbstractDatabase implements IAuditDatabase
     // FIXME (AG): merge epoch-{get,set} code in ACL, SyncStatus and Audit
 
     @Inject
-    public AuditDatabase(CoreDBCW dbcw)
+    public AuditDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psGetEpoch;

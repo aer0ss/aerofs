@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -32,7 +31,7 @@ import java.util.Set;
 /**
  * Migrate DB from old OID->SID generation to new scheme that allows bidirectional mapping.
  *
- * See {@link com.aerofs.base.id.SID} for details of the new scheme
+ * See {@link com.aerofs.ids.SID} for details of the new scheme
  *
  * We must not under any circumstance break existing shared folders in an irrecoverable way and this
  * transition is potentially risky in that regard. Therefore, we back up the old SID table to be
@@ -110,9 +109,9 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
             C_SID_BACKUP_SIDX = "bak_" + C_SID_SIDX,
             C_SID_BACKUP_SID = "bak_" + C_SID_SID;
 
-    public DPUTUpdateSIDGeneration(CfgLocalUser cfgLocalUser, CoreDBCW dbcw)
+    public DPUTUpdateSIDGeneration(CfgLocalUser cfgLocalUser, IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _cfgLocalUser = cfgLocalUser;
     }
 

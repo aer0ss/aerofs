@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -23,8 +22,8 @@ public class DPUTUpdateEpochTableAddAuditColumn implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    DPUTUpdateEpochTableAddAuditColumn(CoreDBCW dbcw) {
-        _dbcw = dbcw.get();
+    DPUTUpdateEpochTableAddAuditColumn(IDBCW dbcw) {
+        _dbcw = dbcw;
     }
 
     @Override

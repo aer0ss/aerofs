@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -17,9 +16,9 @@ public class DPUTUpdateOAFlags implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTUpdateOAFlags(CoreDBCW dbcw)
+    public DPUTUpdateOAFlags(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

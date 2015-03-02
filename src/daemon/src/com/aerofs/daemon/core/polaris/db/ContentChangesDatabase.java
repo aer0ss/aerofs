@@ -10,12 +10,12 @@ import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.ParameterizedStatement;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -23,7 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.polaris.db.PolarisSchema.*;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -33,10 +33,10 @@ public class ContentChangesDatabase extends AbstractDatabase
         implements IStoreCreationOperator, IStoreDeletionOperator
 {
     @Inject
-    public ContentChangesDatabase(CoreDBCW dbcw, StoreCreationOperators sco,
+    public ContentChangesDatabase(IDBCW dbcw, StoreCreationOperators sco,
             StoreDeletionOperators sdo)
     {
-        super(dbcw.get());
+        super(dbcw);
         sco.add_(this);
         sdo.addImmediate_(this);
     }

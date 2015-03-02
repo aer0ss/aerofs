@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
@@ -19,6 +18,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.ids.OID;
@@ -38,9 +38,9 @@ public class NativeVersionDatabase
     private final CfgLocalDID _cfgLocalDID;
 
     @Inject
-    public NativeVersionDatabase(CoreDBCW dbcw, CfgLocalDID cfgLocalDID)
+    public NativeVersionDatabase(IDBCW dbcw, CfgLocalDID cfgLocalDID)
     {
-        super(dbcw.get(), C_GT_NATIVE, T_KWLG, C_KWLG_SIDX, C_KWLG_DID, C_KWLG_TICK, T_VER, C_VER_DID,
+        super(dbcw, C_GT_NATIVE, T_KWLG, C_KWLG_SIDX, C_KWLG_DID, C_KWLG_TICK, T_VER, C_VER_DID,
                 C_VER_SIDX, C_VER_TICK, C_VER_CID, C_VER_OID);
         _cfgLocalDID = cfgLocalDID;
     }
@@ -288,13 +288,10 @@ public class NativeVersionDatabase
             _psGLT.setInt(3, k.cid().getInt());
             _psGLT.setInt(4, k.kidx().getInt());
             _psGLT.setBytes(5, _cfgLocalDID.get().getBytes());
-            ResultSet rs = _psGLT.executeQuery();
-            try {
+            try (ResultSet rs = _psGLT.executeQuery()) {
                 // Util.verify(rs.next());
                 // return new Tick(rs.getLong(1));
                 return rs.next() ? new Tick(rs.getLong(1)) : null;
-            } finally {
-                rs.close();
             }
 
         } catch (SQLException e) {
@@ -331,8 +328,7 @@ public class NativeVersionDatabase
             _psGetV.setBytes(2, socid.oid().getBytes());
             _psGetV.setInt(3, socid.cid().getInt());
             _psGetV.setInt(4, kidx.getInt());
-            ResultSet rs = _psGetV.executeQuery();
-            try {
+            try (ResultSet rs = _psGetV.executeQuery()) {
                 Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
@@ -340,8 +336,6 @@ public class NativeVersionDatabase
                     v.set_(did, rs.getLong(2));
                 }
                 return v;
-            } finally {
-                rs.close();
             }
 
         } catch (SQLException e) {
@@ -367,8 +361,7 @@ public class NativeVersionDatabase
             _psGetALV.setInt(1, socid.sidx().getInt());
             _psGetALV.setBytes(2, socid.oid().getBytes());
             _psGetALV.setInt(3, socid.cid().getInt());
-            ResultSet rs = _psGetALV.executeQuery();
-            try {
+            try (ResultSet rs = _psGetALV.executeQuery()) {
                 Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
@@ -376,8 +369,6 @@ public class NativeVersionDatabase
                     v.set_(did, rs.getLong(2));
                 }
                 return v;
-            } finally {
-                rs.close();
             }
 
         } catch (SQLException e) {
@@ -400,8 +391,7 @@ public class NativeVersionDatabase
             _psGetMaxTick.setBytes(2, socid.oid().getBytes());
             _psGetMaxTick.setInt(3, socid.cid().getInt());
 
-            ResultSet rs = _psGetMaxTick.executeQuery();
-            try {
+            try (ResultSet rs = _psGetMaxTick.executeQuery()) {
                 Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
@@ -409,8 +399,6 @@ public class NativeVersionDatabase
                     v.set_(did, rs.getLong(2));
                 }
                 return v;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psGetMaxTick);
@@ -455,8 +443,7 @@ public class NativeVersionDatabase
             _psAddMaxTick.setBytes(2, oid);
             _psAddMaxTick.setInt(3, cid);
 
-            ResultSet rs = _psGetMaxTick.executeQuery();
-            try {
+            try (ResultSet rs = _psGetMaxTick.executeQuery()) {
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
                     Tick tick = new Tick(rs.getLong(2));
@@ -464,8 +451,6 @@ public class NativeVersionDatabase
                     _psAddMaxTick.setLong(5, tick.getLong());
                     _psAddMaxTick.addBatch();
                 }
-            } finally {
-                rs.close();
             }
             _psAddMaxTick.executeBatch();
         } catch (SQLException e) {
@@ -534,12 +519,11 @@ public class NativeVersionDatabase
         @Override
         public NativeTickRow get_() throws SQLException
         {
-            NativeTickRow tr = new NativeTickRow(
+            return new NativeTickRow(
                     new OID(_rs.getBytes(1)),
                     new CID(_rs.getInt(2)),
                     new Tick(_rs.getLong(3))
             );
-            return tr;
         }
     }
 }

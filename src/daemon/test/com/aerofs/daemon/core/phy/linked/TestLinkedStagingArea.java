@@ -23,9 +23,8 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.KIndex;
@@ -77,8 +76,8 @@ public class TestLinkedStagingArea extends AbstractTest
     @Mock LinkedRevFile rf;
 
     InjectableDriver dr = new InjectableDriver(OSUtil.get());
-    InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW(dr, mock(CfgUsePolaris.class));
-    LinkedStagingAreaDatabase lsadb = new LinkedStagingAreaDatabase(dbcw.getCoreDBCW());
+    InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW(dr);
+    LinkedStagingAreaDatabase lsadb = new LinkedStagingAreaDatabase(dbcw);
 
     LinkedStagingArea lsa;
 

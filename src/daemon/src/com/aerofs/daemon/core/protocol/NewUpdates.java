@@ -5,6 +5,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
+import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -13,6 +15,7 @@ import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBNewUpdates;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -23,7 +26,7 @@ import java.sql.SQLException;
 /**
  * This class is responsible for reacting to NEW_UPDATE messages
  */
-public class NewUpdates
+public class NewUpdates implements CoreProtocolReactor.Handler
 {
     private static final Logger l = Loggers.getLogger(NewUpdates.class);
 
@@ -44,7 +47,13 @@ public class NewUpdates
         _sidx2s = sidx2s;
     }
 
-    public void process_(DigestedMessage msg)
+    @Override
+    public Type message() {
+        return Type.NEW_UPDATES;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg)
             throws ExNotFound, SQLException, IOException, ExProtocolError
     {
         l.debug("{} process incoming nu over {}", msg.did(), msg.tp());
@@ -73,7 +82,7 @@ public class NewUpdates
 
             if (pb.getChangeEpoch() > epoch) {
                 l.debug("{}: {} > {} -> fetch from polaris", sidx, pb.getChangeEpoch(), epoch);
-                _sidx2s.get_(sidx).fetchChanges_();
+                _sidx2s.get_(sidx).iface(ChangeFetchScheduler.class).schedule_();
             }
         }
     }

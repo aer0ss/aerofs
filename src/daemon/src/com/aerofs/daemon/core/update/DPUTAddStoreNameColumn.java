@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -13,9 +12,9 @@ public class DPUTAddStoreNameColumn implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTAddStoreNameColumn(CoreDBCW dbcw)
+    public DPUTAddStoreNameColumn(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

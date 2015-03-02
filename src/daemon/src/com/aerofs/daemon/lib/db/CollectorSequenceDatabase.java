@@ -12,6 +12,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.ids.OID;
@@ -25,9 +26,9 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         implements ICollectorSequenceDatabase
 {
     @Inject
-    public CollectorSequenceDatabase(CoreDBCW dbcw)
+    public CollectorSequenceDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private static class DBIterComWithKML extends AbstractDBIterator<OCIDAndCS>

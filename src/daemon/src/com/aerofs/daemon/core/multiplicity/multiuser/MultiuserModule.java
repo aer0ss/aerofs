@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetec
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.QuotaEnforcement;
-import com.aerofs.daemon.core.store.AbstractStoreJoiner;
+import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class MultiuserModule extends AbstractModule
         bind(ImmigrantDetector.class).to(MultiuserImmigrantDetector.class);
 
         bind(ACLFilter.class).to(MultiuserACLFilter.class);
-        bind(AbstractStoreJoiner.class).to(MultiuserStoreJoiner.class);
+        bind(IStoreJoiner.class).to(MultiuserStoreJoiner.class);
 
         bind(IQuotaEnforcement.class).to(QuotaEnforcement.class);
 

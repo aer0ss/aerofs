@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.OID;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
@@ -41,9 +40,9 @@ public class DPUTUpdateNROForAliasedAndMigrated implements IDaemonPostUpdateTask
 
     private final IDBCW _dbcw;
 
-    public DPUTUpdateNROForAliasedAndMigrated(CoreDBCW dbcw)
+    public DPUTUpdateNROForAliasedAndMigrated(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

@@ -22,7 +22,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -37,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Manages in-progress {@link AsyncDownload} objects.
  */
-public class Downloads
+public class Downloads implements IContentDownloads
 {
     private static final Logger l = Loggers.getLogger(Downloads.class);
 
@@ -67,6 +69,15 @@ public class Downloads
         _factDL = factDL;
         _tokenManager = tokenManager;
         _cedb = cedb;
+    }
+
+
+    @Override
+    public boolean downloadAsync_(SOID soid, Set<DID> dids,
+                           ITokenReclamationListener cb,
+                           IDownloadCompletionListener l)
+    {
+        return downloadAsync_(new SOCID(soid, CID.CONTENT), dids, cb, l);
     }
 
     /**

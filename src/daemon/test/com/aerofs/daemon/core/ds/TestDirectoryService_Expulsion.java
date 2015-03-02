@@ -16,7 +16,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
@@ -38,8 +38,8 @@ public class TestDirectoryService_Expulsion extends AbstractTest
     final SID sid = SID.generate();
     final SIndex sidx = new SIndex(1);
 
-    private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    private final IMetaDatabase mdb = new MetaDatabase(dbcw.getCoreDBCW());
+    private final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
+    private final IMetaDatabase mdb = new MetaDatabase(dbcw);
 
     // System under test
     private final DirectoryServiceImpl ds = new DirectoryServiceImpl();

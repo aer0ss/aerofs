@@ -16,7 +16,7 @@ import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 
 public class TestGetVersionsRequest extends AbstractTest
 {
-    private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
+    private final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
 
     @Mock NativeVersionControl nvc;
     @Mock ImmigrantVersionControl ivc;
@@ -53,7 +53,7 @@ public class TestGetVersionsRequest extends AbstractTest
     @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
     @Mock IMapSIndex2SID sidx2sid;
-    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.getCoreDBCW(),
+    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw,
             mock(StoreDeletionOperators.class));
 
     // System Under Test

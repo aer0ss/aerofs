@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
@@ -85,7 +84,7 @@ public class AbstractDownloadTest extends AbstractTest
 
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
-        factTo = new To.Factory(mock(Devices.class), mock(MapSIndex2Store.class));
+        factTo = new To.Factory(mock(Devices.class));
         factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes);
     }
 

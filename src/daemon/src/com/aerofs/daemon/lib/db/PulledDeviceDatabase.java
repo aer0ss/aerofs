@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.ids.DID;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -21,9 +22,9 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         IStoreDeletionOperator
 {
     @Inject
-    public PulledDeviceDatabase(CoreDBCW dbcw, StoreDeletionOperators storeDeletionOperators)
+    public PulledDeviceDatabase(IDBCW dbcw, StoreDeletionOperators storeDeletionOperators)
     {
-        super(dbcw.get());
+        super(dbcw);
         storeDeletionOperators.addImmediate_(this);
     }
 
@@ -42,14 +43,11 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
             _psPDContains.setBytes(2, did.getBytes());
             _psPDContains.executeQuery();
 
-            ResultSet rs = _psPDContains.executeQuery();
-            try {
+            try (ResultSet rs = _psPDContains.executeQuery()) {
                 Util.verify(rs.next());
                 int resultRows = rs.getInt(1);
                 assert !rs.next();
                 return (resultRows == 1);
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psPDContains);

@@ -1,0 +1,34 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-sync'
+
+test {
+    // Daemon tests can be parallelized safely.
+    maxParallelForks = 8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'gen', 'src/main/java'
+        }
+    }
+}
+
+dependencies {
+    compile name: 'smack'
+    compile name: 'smackx'
+    compile 'com.amazonaws:aws-java-sdk-s3:1.9.+'
+    compile 'io.netty:netty-codec-http:4.1.+'
+    compile 'io.netty:netty-handler:4.1+'
+    compile 'io.netty:netty-transport:4.1.+'
+    compile project(':src/libjingle.binding')
+    compile project(':src/lib')
+    compile project(path: ':src/verkehr', configuration: 'wireClient')
+    compile project(path: ':src/zephyr', configuration: 'client')
+    testCompile 'javax.mail:mail:1.4.2'
+    testCompile project(':src/zephyr')
+    testCompile project(path: ':src/lib', configuration: 'testutil')
+}

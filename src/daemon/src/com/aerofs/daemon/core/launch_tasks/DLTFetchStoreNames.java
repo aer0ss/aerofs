@@ -11,10 +11,10 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
@@ -46,13 +46,13 @@ class DLTFetchStoreNames extends DaemonLaunchTask
 
     private final TokenManager _tokenManager;
     private final TransManager _tm;
-    private final CoreDBCW _dbcw;
+    private final IDBCW _dbcw;
     private final IStoreDatabase _sdb;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
     public DLTFetchStoreNames(TokenManager tokenManager, TransManager tm, CoreScheduler sched,
-            IStoreDatabase sdb, IMapSID2SIndex sid2sidx, CoreDBCW dbcw)
+            IStoreDatabase sdb, IMapSID2SIndex sid2sidx, IDBCW dbcw)
     {
         super(sched);
         _tokenManager = tokenManager;
@@ -103,7 +103,7 @@ class DLTFetchStoreNames extends DaemonLaunchTask
     private void setName_(SIndex sidx, String name)
             throws SQLException
     {
-        try (PreparedStatement ps = _dbcw.get()
+        try (PreparedStatement ps = _dbcw
                 .getConnection()
                 .prepareStatement(updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_NAME))) {
             ps.setString(1, name);

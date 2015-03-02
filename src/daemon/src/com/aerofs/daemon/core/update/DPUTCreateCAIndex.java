@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -12,9 +11,9 @@ public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    public DPUTCreateCAIndex(CoreDBCW dbcw)
+    public DPUTCreateCAIndex(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

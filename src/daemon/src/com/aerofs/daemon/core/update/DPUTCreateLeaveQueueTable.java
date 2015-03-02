@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -29,9 +28,9 @@ public class DPUTCreateLeaveQueueTable implements IDaemonPostUpdateTask
     private static final Logger l = Loggers.getLogger(DPUTCreateLeaveQueueTable.class);
     private final IDBCW _dbcw;
 
-    public DPUTCreateLeaveQueueTable(CoreDBCW dbcw)
+    public DPUTCreateLeaveQueueTable(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

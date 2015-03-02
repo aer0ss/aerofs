@@ -10,86 +10,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
 
-public class CoreSchema implements ISchema
+public class CoreSchema extends SyncSchema
 {
     public static final String
-
-            // Stores
-            T_STORE         = "s",
-            C_STORE_SIDX    = "s_i",        // SIndex
-            C_STORE_NAME    = "s_n",        // String
-            C_STORE_COLLECTING_CONTENT = "s_c", // boolean
-            C_STORE_LTS_LOCAL = "s_lts",        // long: polaris logical timestamp
-            C_STORE_LTS_REMOTE = "s_rts",       // long: polaris logical timestamp
-            // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
-            // C_STORE_DIDS    = "s_d",     // concatenated DIDs
-
-            // Store Hierarchy. See IStores' class-level comments for details.
-            // parents.
-            T_SH             = "sh",
-            C_SH_SIDX        = "sh_s",      // SIndex
-            C_SH_PARENT_SIDX = "sh_p",      // SIndex
-
-            // SIndex-SID map. It maintains bidirectional map between SIndexes and SIDs
-            T_SID           = "i",
-            C_SID_SIDX      = "i_i",        // SIndex
-            C_SID_SID       = "i_d",        // SID
-
             // SIndex->{DID} map: for each store, maintain a set of DID having contributed ticks
             T_SC            = "sc",
             C_SC_SIDX       = "sc_s",
             C_SC_DID        = "sc_d",
 
-            // Centralized object versions
-            T_VERSION       = "cv",
-            C_VERSION_SIDX  = "cv_s",
-            C_VERSION_OID   = "cv_o",
-            C_VERSION_TICK  = "cv_t",
-
-            // local knowledge of central object tree
-            T_REMOTE_LINK           = "rl",
-            C_REMOTE_LINK_SIDX      = "rl_s",
-            C_REMOTE_LINK_OID       = "rl_o",
-            C_REMOTE_LINK_PARENT    = "rl_p",
-            C_REMOTE_LINK_NAME      = "rl_n",
-            C_REMOTE_LINK_VERSION   = "rl_v",
-
-            // local knowledge of remote content versions (per-store)
-            T_REMOTE_CONTENT            = "rc",
-            C_REMOTE_CONTENT_OID        = "rc_o",
-            C_REMOTE_CONTENT_VERSION    = "rc_v",
-            C_REMOTE_CONTENT_DID        = "rc_d",
-            C_REMOTE_CONTENT_HASH       = "rc_h",
-            C_REMOTE_CONTENT_LENGTH     = "rc_l",
-
-            // buffered meta changes
-            T_META_BUFFER           = "mb",
-            C_META_BUFFER_SIDX      = "mb_s",
-            C_META_BUFFER_OID       = "mb_o",
-            C_META_BUFFER_TYPE      = "mb_t",
-            C_META_BUFFER_BOUND     = "mb_b",
-
-            // Local meta changes   (per-store)
-            T_META_CHANGE               = "mc",
-            C_META_CHANGE_IDX           = "mc_i",
-            C_META_CHANGE_OID           = "mc_o",
-            C_META_CHANGE_NEW_PARENT    = "mc_p",
-            C_META_CHANGE_NEW_NAME      = "mc_n",
-
-            // local content changes (per-store)
-            T_CONTENT_CHANGE        = "cc",
-            C_CONTENT_CHANGE_IDX    = "cc_i",
-            C_CONTENT_CHANGE_OID    = "cc_o",
-
-            // remote content fetch queue (per-store)
-            T_CONTENT_QUEUE         = "cq",
-            C_CONTENT_QUEUE_IDX     = "cq_i",
-            C_CONTENT_QUEUE_OID     = "cq_o",
 
             // Distributed Versions
             T_VER           = "v",
@@ -123,16 +55,6 @@ public class CoreSchema implements ISchema
             C_IK_SIDX       = "ik_s",       // SIndex
             C_IK_IMM_DID    = "ik_d",       // DID
             C_IK_IMM_TICK   = "ik_t",       // Tick
-
-            // Prefixes
-            T_PRE           = "r",          // prefix table
-            C_PRE_SIDX      = "r_s",        // SIndex
-            C_PRE_OID       = "r_o",        // OID
-            // KIndex, INVALID if not local (null doesn't work well with "replace" statement when
-            // adding a KML version)
-            C_PRE_KIDX      = "r_k",
-            C_PRE_DID       = "r_d",        // DID
-            C_PRE_TICK      = "r_t",        // Tick
 
             // Object Attributes
             T_OA          = "o",
@@ -193,12 +115,6 @@ public class CoreSchema implements ISchema
             C_SD_DID         = "sd_d",      // DID
             C_SD_SFIDX       = "sd_i",      // SenderFilterIndex
 
-            // Alias Table
-            T_ALIAS              = "al",
-            C_ALIAS_SIDX         = "al_i",  // SIndex
-            C_ALIAS_SOURCE_OID   = "al_s",  // Aliased oid
-            C_ALIAS_TARGET_OID   = "al_t",  // Target
-
             // Greatest Ticks. this table has only one row. it's designed to maintain
             // the greatest ticks that the local peers has ever used
             T_GT             = "gt",
@@ -221,20 +137,6 @@ public class CoreSchema implements ISchema
             C_LSA_OID           = "lsa_o",
             C_LSA_HISTORY_PATH  = "lsa_p",  // path for sync history, empty if no history is kept
 
-            // ACL Table
-            T_ACL            = "a",
-            C_ACL_SIDX       = "a_i",       // SIndex
-            C_ACL_SUBJECT    = "a_b",       // String
-            C_ACL_ROLE       = "a_r",       // Role
-
-            // Epoch Table (ACL, SyncStatus, ...) (one row only)
-            T_EPOCH             = "ep",
-            C_EPOCH_ACL         = "ep_ep",     // acl epoch
-            C_EPOCH_AUDIT_PUSH  = "ep_dp",     // index of last activity log entry pushed to the auditor
-            // This deprecated fields are still in old databases. See DPUTClearSyncStatusColumns
-            // C_EPOCH_SYNC_PULL   = "ep_s",   // sync status pull epoch (server-issued)
-            // C_EPOCH_SYNC_PUSH   = "ep_a",   // index of last local activity pushed to server
-
             // Activity Log Table. See IActivityLogDatabase.ActivityRow for field details.
             T_AL             = "ao",
             C_AL_IDX         = "ao_i",      // long autoincrement primary key
@@ -256,35 +158,15 @@ public class CoreSchema implements ISchema
             // unlinked external folders
             T_UNLINKED_ROOT = "pr",
             C_UNLINKED_ROOT_SID = "pr_s",
-            C_UNLINKED_ROOT_NAME = "pr_n",
-
-            // DID-to-User mapping
-            T_D2U            = "d",
-            C_D2U_DID        = "d_d",       // DID
-            C_D2U_USER       = "d_u",       // String
-
-            // Device Name Table
-            T_DN             = "dn",
-            C_DN_DID         = "dn_d",      // DID
-            C_DN_NAME        = "dn_n",      // String. null if not provided by SP
-            C_DN_TIME        = "dn_t",      // long. the time when the entry is added
-
-            // User Name Table
-            T_UN             = "un",
-            C_UN_USER        = "un_u",      // String
-            C_UN_FIRST_NAME  = "un_f",      // String. null if not provided by SP
-            C_UN_LAST_NAME   = "un_l",      // String. null if not provided by SP
-            C_UN_TIME        = "un_t";      // long. the time when the entry is added
+            C_UNLINKED_ROOT_NAME = "pr_n";
 
 
     private final InjectableDriver _dr;
-    private final CfgUsePolaris _usePolaris;
 
     @Inject
-    public CoreSchema(InjectableDriver dr, CfgUsePolaris usePolaris)
+    public CoreSchema(InjectableDriver dr)
     {
         _dr = dr;
-        _usePolaris = usePolaris;
     }
 
     @Override
@@ -544,12 +426,6 @@ public class CoreSchema implements ISchema
         createUnlinkedRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
         createLogicalStagingArea(s, dbcw);
-
-        // to keep maximum flexibility, avoid rolling out schema changes for now
-        // TODO: remove this check when rolling out Polaris
-        if (_usePolaris.get()) {
-            createPolarisFetchTables(s, dbcw);
-        }
     }
 
     public static void createOATableAndIndices_(Statement s, IDBCW dbcw, InjectableDriver dr)
@@ -704,39 +580,4 @@ public class CoreSchema implements ISchema
                 + ")");
     }
 
-    public static void createPolarisFetchTables(Statement s, IDBCW dbcw) throws SQLException
-    {
-        // add epoch columns to store table
-        s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_LOCAL + dbcw.longType());
-        s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_REMOTE + dbcw.longType()
-                + " not null default -1");
-
-        s.executeUpdate("create table " + T_VERSION + "("
-                + C_VERSION_SIDX + " integer not null,"
-                + C_VERSION_OID + dbcw.uniqueIdType() + "not null,"
-                + C_VERSION_TICK + dbcw.longType() + "not null,"
-                + "primary key(" + C_VERSION_SIDX + "," + C_VERSION_OID + ")"
-                + ")");
-
-        s.executeUpdate("create table " + T_REMOTE_LINK + "("
-                + C_REMOTE_LINK_SIDX + " integer not null,"
-                + C_REMOTE_LINK_OID + dbcw.uniqueIdType() + "not null,"
-                + C_REMOTE_LINK_PARENT + dbcw.uniqueIdType() + "not null,"
-                + C_REMOTE_LINK_NAME + dbcw.nameType() + "not null,"
-                + C_REMOTE_LINK_VERSION + dbcw.longType() + "not null,"
-                + "primary key("+ C_REMOTE_LINK_SIDX + "," + C_REMOTE_LINK_OID + "))");
-
-        s.executeUpdate("create table " + T_META_BUFFER + "("
-                + C_META_BUFFER_SIDX + " integer not null,"
-                + C_META_BUFFER_OID + dbcw.uniqueIdType() + "not null,"
-                + C_META_BUFFER_TYPE + " integer not null,"
-                + C_META_BUFFER_BOUND + dbcw.longType() + " not null,"
-                + "primary key(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_OID + "))");
-
-        s.executeUpdate("create index " + T_META_BUFFER + "0 on " + T_META_BUFFER
-                + "(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_BOUND + ")");
-
-    }
 }

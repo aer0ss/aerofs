@@ -40,13 +40,7 @@ import com.aerofs.daemon.core.fs.HdListNonRepresentableObjects;
 import com.aerofs.daemon.core.fs.HdListUserRoots;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.fs.HdShareFolder;
-import com.aerofs.daemon.core.net.HdChunk;
 import com.aerofs.daemon.core.net.HdGetTransferStat;
-import com.aerofs.daemon.core.net.HdMaxcastMessage;
-import com.aerofs.daemon.core.net.HdStoreAvailability;
-import com.aerofs.daemon.core.net.HdStreamAborted;
-import com.aerofs.daemon.core.net.HdStreamBegun;
-import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.quota.EITestCheckQuota;
 import com.aerofs.daemon.core.quota.HdTestCheckQuota;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
@@ -88,12 +82,6 @@ import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.fs.EIListNonRepresentableObjects;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
-import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.event.net.rx.EIChunk;
-import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.daemon.event.net.rx.EIStreamAborted;
-import com.aerofs.daemon.event.net.rx.EIStreamBegun;
-import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.google.inject.Inject;
@@ -112,12 +100,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdSetExpelled _hdSetExpelled;
     @Inject HdListExpelledObjects _hdListExpelledObjects;
     @Inject HdListNonRepresentableObjects _hdListNonRepresentableObjects;
-    @Inject HdStreamAborted _hdStreamAborted;
-    @Inject HdChunk _hdChunk;
-    @Inject HdStreamBegun _hdStreamBegun;
-    @Inject HdMaxcastMessage _hdMaxcastMessage;
-    @Inject HdUnicastMessage _hdUnicastMessage;
-    @Inject HdStoreAvailability _hdStoreAvailability;
     @Inject HdListConflicts _hdListConflicts;
     @Inject HdExportConflict _hdExportConflict;
     @Inject HdGetTransferStat _hdGetTransferStat;
@@ -196,14 +178,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 
                 // status events
                 .setHandler_(EIGetStatusOverview.class, _hdGetStatusOverview)
-
-                // net events
-                .setHandler_(EIStoreAvailability.class, _hdStoreAvailability)
-                .setHandler_(EIUnicastMessage.class, _hdUnicastMessage)
-                .setHandler_(EIMaxcastMessage.class, _hdMaxcastMessage)
-                .setHandler_(EIStreamBegun.class, _hdStreamBegun)
-                .setHandler_(EIChunk.class, _hdChunk)
-                .setHandler_(EIStreamAborted.class, _hdStreamAborted)
 
                 // test events
                 .setHandler_(EITestGetAliasObject.class, _hdTestGetAliasObject)

@@ -5,6 +5,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -22,9 +23,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
 {
     @Inject
-    public AliasDatabase(CoreDBCW dbcw)
+    public AliasDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private PreparedStatement _psSetAliasSOID;
@@ -63,11 +64,8 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
                     C_ALIAS_SOURCE_OID + "=?");
             _psTargetOID.setInt(1, sidx.getInt());
             _psTargetOID.setBytes(2, src.getBytes());
-            ResultSet rs = _psTargetOID.executeQuery();
-            try {
+            try (ResultSet rs = _psTargetOID.executeQuery()) {
                 return rs.next() ? new OID(rs.getBytes(1)) : null;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             DBUtil.close(_psTargetOID);

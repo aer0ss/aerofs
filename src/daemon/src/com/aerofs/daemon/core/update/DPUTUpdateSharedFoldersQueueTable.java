@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.C_SPQ_NAME;
@@ -19,9 +18,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.T_SPQ;
 public class DPUTUpdateSharedFoldersQueueTable implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
-    public DPUTUpdateSharedFoldersQueueTable(CoreDBCW dbcw)
+    public DPUTUpdateSharedFoldersQueueTable(IDBCW dbcw)
     {
-        this._dbcw = dbcw.get();
+        this._dbcw = dbcw;
     }
 
     @Override

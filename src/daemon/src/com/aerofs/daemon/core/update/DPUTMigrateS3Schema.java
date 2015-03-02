@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema;
 import com.aerofs.daemon.core.phy.block.cache.CacheSchema;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -81,9 +80,9 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
     private final IDBCW _dbcw;
     private final CfgDatabase _cfgdb;
 
-    public DPUTMigrateS3Schema(CoreDBCW dbcw, CfgDatabase cfgdb)
+    public DPUTMigrateS3Schema(IDBCW dbcw, CfgDatabase cfgdb)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _cfgdb = cfgdb;
     }
 
@@ -96,9 +95,7 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
         Connection c = _dbcw.getConnection();
         assert !c.getAutoCommit();
 
-        Statement s = c.createStatement();
-
-        try {
+        try (Statement s = c.createStatement()) {
             // create new tables
             new BlockStorageSchema().create_(s, _dbcw);
             new CacheSchema().create_(s, _dbcw);
@@ -121,8 +118,6 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
 
             // delete obsolete dir structure
             FileUtil.deleteIgnoreErrorRecursively(new File(_cfgdb.get(Key.S3_DIR)));
-        } finally {
-            s.close();
         }
 
         c.commit();

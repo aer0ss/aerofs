@@ -43,13 +43,7 @@ import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -199,13 +193,7 @@ public class ContentChangeSubmitter implements Submitter
 
     private void batchSubmit(List<ContentChange> c, Batch batch, AsyncTaskCallback cb)
     {
-        FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
-                "/batch/transforms",
-                Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(batch))));
-        req.headers().add(Names.CONTENT_TYPE, "application/json");
-        req.headers().add(Names.TRANSFER_ENCODING, "chunked");
-
-        _client.send(req, cb, r -> handleBatch_(c, batch, r));
+        _client.post("/batch/transforms", batch, cb, r -> handleBatch_(c, batch, r));
     }
 
     private boolean handleBatch_(List<ContentChange> c, Batch batch, FullHttpResponse resp)

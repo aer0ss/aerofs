@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.Connection;
@@ -21,9 +20,9 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    DPUTGetEncodingStats(CoreDBCW dbcw)
+    DPUTGetEncodingStats(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

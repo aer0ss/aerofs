@@ -23,7 +23,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.CID;
@@ -55,10 +55,10 @@ import static org.mockito.Mockito.when;
 
 public class TestCollector extends AbstractTest
 {
-    InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
-    @Spy ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw.getCoreDBCW());
-    @Spy ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw.getCoreDBCW());
-    @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw.getCoreDBCW());
+    InMemoryCoreDBCW idbcw = new InMemoryCoreDBCW();
+    @Spy ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw);
+    @Spy ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw);
+    @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw);
 
     @Mock Trans t;
     @Mock TransManager tm;
@@ -97,7 +97,7 @@ public class TestCollector extends AbstractTest
         Store store = mock(Store.class);
         when(store.sidx()).thenReturn(sidx);
 
-        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", false, t);
+        new StoreDatabase(idbcw).insert_(sidx, "", false, t);
 
 
         Collector.Factory fact = new Collector.Factory(sched, csdb, csr, dls, tm, er, cfdb,

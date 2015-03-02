@@ -2,13 +2,13 @@ package com.aerofs.daemon.core.phy.linked.db;
 
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -32,9 +32,9 @@ import static com.google.common.base.Preconditions.checkState;
 public class NRODatabase extends AbstractDatabase
 {
     @Inject
-    public NRODatabase(CoreDBCW dbcw)
+    public NRODatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     private final PreparedStatementWrapper _pswCheck = new PreparedStatementWrapper(
@@ -61,12 +61,9 @@ public class NRODatabase extends AbstractDatabase
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
 
-            ResultSet rs = ps.executeQuery();
-            try {
+            try (ResultSet rs = ps.executeQuery()) {
                 byte[] b = rs.next() ? rs.getBytes(1) : null;
                 return b != null ? new OID(b) : null;
-            } finally {
-                rs.close();
             }
         } catch (SQLException e) {
             _pswGetConflict.close();

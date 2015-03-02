@@ -17,8 +17,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
@@ -108,7 +106,7 @@ public class TestACLEnforcement_NewUpdates extends AbstractTest
     {
         doAnswer(invocation -> {
             ByteArrayOutputStream os = (ByteArrayOutputStream) invocation.getArguments()[3];
-            receiver._nu.process_(newDigestedMessage(sender.user(), os));
+            receiver._nu.handle_(newDigestedMessage(sender.user(), os));
             return null;
         }).when(sender._trl).sendMaxcast_(any(SID.class), anyString(), anyInt(),
                 any(ByteArrayOutputStream.class));

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
@@ -7,6 +8,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.CA;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -66,7 +68,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 // we split the code for this protocol primitive into classes due to complexity
 
-public class GetComponentRequest
+public class GetComponentRequest implements CoreProtocolReactor.Handler
 {
     private static final Logger l = Loggers.getLogger(GetComponentRequest.class);
 
@@ -244,6 +246,23 @@ public class GetComponentRequest
             if (!v.isDominatedBy_(vRemote)) return kidx;
         }
         return KIndex.MASTER;
+    }
+
+    @Override
+    public Type message() {
+        return Type.GET_COMPONENT_REQUEST;
+    }
+
+    @Override
+    public void handle_(DigestedMessage msg) throws Exception
+    {
+        try {
+            processRequest_(msg);
+        } catch (Exception e) {
+            l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()),
+                    BaseLogUtil.suppress(e, ExNoComponentWithSpecifiedVersion.class));
+            _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
+        }
     }
 
     public void processRequest_(DigestedMessage msg)

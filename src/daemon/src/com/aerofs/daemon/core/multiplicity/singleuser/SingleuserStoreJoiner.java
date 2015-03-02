@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -59,10 +58,10 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t)
+    public void joinStore_(SIndex sidx, SID sid, StoreInfo info, Trans t)
             throws Exception
     {
-        l.debug("join store sid:{} external:{} foldername:{}", sid, external, folderName);
+        l.debug("join store sid:{} external:{} foldername:{}", sid, info._external, info._name);
 
         // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
@@ -71,16 +70,16 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         _lod.removeLeaveCommandsFromQueue_(sid, t);
 
         // external folders are not auto-joined (user interaction is needed)
-        if (external) {
-            l.info("pending {} {}", sid, folderName);
-            _urdb.addUnlinkedRoot(sid, folderName, t);
+        if (info._external) {
+            l.info("pending {} {}", sid, info._name);
+            _urdb.addUnlinkedRoot(sid, info._name, t);
             _rns.getRitualNotifier().sendNotification(newSharedFolderPendingNotification());
             return;
         }
 
-        createAnchorIfNeeded_(sidx, sid, folderName, _sid2sidx.get_(_cfgRootSID.get()), t);
+        createAnchorIfNeeded_(sidx, sid, info._name, _sid2sidx.get_(_cfgRootSID.get()), t);
 
-        final Path path = new Path(_cfgRootSID.get(), folderName);
+        final Path path = new Path(_cfgRootSID.get(), info._name);
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_()
@@ -128,8 +127,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
-            throws Exception
+    public void onMembershipChange_(SIndex sidx, StoreInfo info, Trans t)
     {
         // nop
     }

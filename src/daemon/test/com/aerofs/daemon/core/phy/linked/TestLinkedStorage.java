@@ -22,7 +22,6 @@ import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -30,6 +29,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -67,7 +67,6 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -81,7 +80,6 @@ public class TestLinkedStorage extends AbstractTest
     @Mock private CfgStoragePolicy cfgStoragePolicy;
     @Mock private IgnoreList il;
     @Mock private OA oa;
-    @Mock private CoreDBCW dbcw;
     @Mock LinkerRootMap lrm;
     @Mock IOSUtil os;
 
@@ -122,7 +120,6 @@ public class TestLinkedStorage extends AbstractTest
 
         // these mocks are used to set up the LinkedStorage but also when
         // committing/ending transactions.
-        when(dbcw.get()).then(RETURNS_MOCKS);
         when(dr.getFIDAndTypeNullable(any(String.class))).thenReturn(new FIDAndType(fid, false));
         when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
@@ -180,7 +177,7 @@ public class TestLinkedStorage extends AbstractTest
                 new LinkedRevProvider(lrm, factFile, new TimeSource()),
                 mock(HashQueue.class), mock(CoreScheduler.class));
 
-        tm = new TransManager(new Trans.Factory(dbcw));
+        tm = new TransManager(new Trans.Factory(mock(IDBCW.class)));
 
         useHistory = true;
     }

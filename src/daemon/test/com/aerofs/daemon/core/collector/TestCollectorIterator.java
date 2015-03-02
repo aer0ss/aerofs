@@ -11,7 +11,7 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.InMemorySQLiteDBCW;
+import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
@@ -116,8 +116,8 @@ public class TestCollectorIterator extends AbstractTest
         }
     }
 
-    InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
-    @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw.getCoreDBCW());
+    InMemoryCoreDBCW idbcw = new InMemoryCoreDBCW();
+    @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw);
 
     @Mock Trans t;
     @Mock ICollectorSequenceDatabase csdb;
@@ -160,7 +160,7 @@ public class TestCollectorIterator extends AbstractTest
                 .then(new CSDBAnswer(cidOfGetMetaCS));
 
         idbcw.init_();
-        new StoreDatabase(idbcw.getCoreDBCW()).insert_(sidx, "", false, t);
+        new StoreDatabase(idbcw).insert_(sidx, "", false, t);
 
         // Collect content by default
         it = fact.create_(sidx);

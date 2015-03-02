@@ -11,7 +11,6 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
@@ -81,9 +80,9 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
             T_SSPQ          = "sspq",
             C_SSPQ_OID      = "sspq_o";
 
-    public DPUTMigrateDeadAnchorsAndEmigratedNames(CoreDBCW dbcw)
+    public DPUTMigrateDeadAnchorsAndEmigratedNames(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

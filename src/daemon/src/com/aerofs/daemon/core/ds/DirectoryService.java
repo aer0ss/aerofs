@@ -8,7 +8,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.daemon.core.admin.Dumpables;
+import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;

@@ -5,13 +5,9 @@
 package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -71,7 +67,7 @@ public class TestQuotaEnforcement extends AbstractTest
 
     SIndex[] sidxs;
     SID[] sids;
-    Store[] ss;
+    LegacyStore[] ss;
 
     @Before
     public void setUp()
@@ -81,11 +77,11 @@ public class TestQuotaEnforcement extends AbstractTest
         int STORES = 3;
         sidxs = new SIndex[STORES];
         sids = new SID[STORES];
-        ss = new Store[STORES];
+        ss = new LegacyStore[STORES];
         for (int i = 0; i < STORES; i++) {
             sidxs[i] = new SIndex(i);
             sids[i] = SID.generate();
-            ss[i] = mock(Store.class);
+            ss[i] = mock(LegacyStore.class);
         }
 
         // Mock store management

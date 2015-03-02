@@ -10,50 +10,29 @@ import com.aerofs.daemon.core.db.TamperingDetectionSchema;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
+import com.aerofs.daemon.core.health_check.CoreProgressWatcher;
+import com.aerofs.daemon.core.health_check.DeadlockDetector;
+import com.aerofs.daemon.core.health_check.DiagnosticsDumper;
+import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
+import com.aerofs.daemon.core.net.RPC;
+import com.aerofs.daemon.core.net.TransportEventHandlerRegistrar;
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.PathStatusNotifier;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
-import com.aerofs.daemon.core.protocol.NewUpdatesSender;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.polaris.db.PolarisSchema;
+import com.aerofs.daemon.core.polaris.fetch.ApplyChange;
+import com.aerofs.daemon.core.polaris.fetch.ApplyChangeImpl;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator;
+import com.aerofs.daemon.core.polaris.fetch.DefaultFetchFilter;
+import com.aerofs.daemon.core.protocol.*;
+import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.core.transfers.download.Downloads;
+import com.aerofs.daemon.core.transfers.download.IContentDownloads;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
-import com.aerofs.daemon.lib.db.ACLDatabase;
-import com.aerofs.daemon.lib.db.ActivityLogDatabase;
-import com.aerofs.daemon.lib.db.AliasDatabase;
-import com.aerofs.daemon.lib.db.AuditDatabase;
-import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
-import com.aerofs.daemon.lib.db.CoreSchema;
-import com.aerofs.daemon.lib.db.DID2UserDatabase;
-import com.aerofs.daemon.lib.db.ExpulsionDatabase;
-import com.aerofs.daemon.lib.db.IACLDatabase;
-import com.aerofs.daemon.lib.db.IActivityLogDatabase;
-import com.aerofs.daemon.lib.db.IAliasDatabase;
-import com.aerofs.daemon.lib.db.IAuditDatabase;
-import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
-import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
-import com.aerofs.daemon.lib.db.IDID2UserDatabase;
-import com.aerofs.daemon.lib.db.IExpulsionDatabase;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.ISIDDatabase;
-import com.aerofs.daemon.lib.db.ISchema;
-import com.aerofs.daemon.lib.db.ISenderFilterDatabase;
-import com.aerofs.daemon.lib.db.IStoreContributorsDatabase;
-import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
-import com.aerofs.daemon.lib.db.MetaDatabase;
-import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.SIDDatabase;
-import com.aerofs.daemon.lib.db.SenderFilterDatabase;
-import com.aerofs.daemon.lib.db.StoreContributorsDatabase;
-import com.aerofs.daemon.lib.db.StoreDatabase;
-import com.aerofs.daemon.lib.db.UserAndDeviceNameDatabase;
+import com.aerofs.daemon.lib.db.*;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
@@ -64,12 +43,10 @@ import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertificateProvider;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.metriks.IMetriks;
@@ -96,6 +73,7 @@ public class CoreModule extends AbstractModule
         binder().disableCircularProxies();
 
         multibind(binder(), ICoreEventHandlerRegistrar.class, CoreEventHandlerRegistrar.class);
+        multibind(binder(), ICoreEventHandlerRegistrar.class, TransportEventHandlerRegistrar.class);
 
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
@@ -133,13 +111,47 @@ public class CoreModule extends AbstractModule
         multibind(binder(), ISchema.class, CoreSchema.class);
         multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
 
+        // TODO(phoenix): remove this check when rolling out Polaris
+        if (Cfg.usePolaris()) {
+            // to keep maximum flexibility, avoid rolling out schema changes for now
+            multibind(binder(), ISchema.class, PolarisSchema.class);
+
+            // pacific coexistence
+            bind(Store.Factory.class).to(TransitionalStoreFactory.class);
+
+            // client/SA behavioral differences
+            bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
+            bind(IContentDownloads.class).to(Downloads.class);
+            bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
+        } else {
+            bind(Store.Factory.class).to(LegacyStore.Factory.class);
+        }
+
+        multibind(binder(), HealthCheckService.ScheduledRunnable.class, CoreProgressWatcher.class);
+        multibind(binder(), HealthCheckService.ScheduledRunnable.class, DeadlockDetector.class);
+        multibind(binder(), HealthCheckService.ScheduledRunnable.class, DiagnosticsDumper.class);
+
         multibind(binder(), ISnapshotableNotificationEmitter.class, PathStatusNotifier.class);
         multibind(binder(), ISnapshotableNotificationEmitter.class, OnlineStatusNotifier.class);
+
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsRequest.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsResponse.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetComponentRequest.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, NewUpdates.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, UpdateSenderFilter.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, RPC.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instanciation. However we don't want to leak the specific classes outside the package
         // hence the use of a static method
         DaemonLaunchTasks.bindTasks(binder());
+    }
+
+    @Provides @Singleton
+    public IDBCW provideIDBCW(CfgCoreDatabaseParams dbParams)
+    {
+        return DBUtil.newDBCW(dbParams);
     }
 
     @Provides @Singleton

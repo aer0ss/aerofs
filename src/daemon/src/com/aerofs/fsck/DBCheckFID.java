@@ -11,7 +11,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.FID;
@@ -54,9 +53,9 @@ public class DBCheckFID
     }
 
     @Inject
-    public DBCheckFID(CoreDBCW dbcw)
+    public DBCheckFID(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     /**

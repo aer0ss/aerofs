@@ -1,16 +1,15 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public class DPUTAddTamperingDetectionTable implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;
 
-    DPUTAddTamperingDetectionTable(CoreDBCW dbcw)
+    DPUTAddTamperingDetectionTable(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     @Override

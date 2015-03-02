@@ -7,11 +7,11 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -27,9 +27,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 class SharedFolderUpdateQueueDatabase extends AbstractDatabase
 {
     @Inject
-    public SharedFolderUpdateQueueDatabase(CoreDBCW dbcw)
+    public SharedFolderUpdateQueueDatabase(IDBCW dbcw)
     {
-        super(dbcw.get());
+        super(dbcw);
     }
 
     class SharedFolderOpIterator extends AbstractDBIterator<ISharedFolderOp>

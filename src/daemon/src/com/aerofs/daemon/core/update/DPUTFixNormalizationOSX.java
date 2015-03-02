@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
@@ -101,11 +100,10 @@ public class DPUTFixNormalizationOSX implements IDaemonPostUpdateTask
         int physicalConflict;
     }
 
-
-    public DPUTFixNormalizationOSX(IOSUtil osutil, CoreDBCW dbcw, InjectableDriver dr)
+    public DPUTFixNormalizationOSX(IOSUtil osutil, IDBCW dbcw, InjectableDriver dr)
     {
         _osutil = osutil;
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
         _dr =  dr;
         _mdb = new MetaDatabase(dbcw);
         _sdb = new StoreDatabase(dbcw);

@@ -7,7 +7,6 @@ import java.sql.Statement;
 import com.google.inject.Inject;
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
-import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -20,18 +19,16 @@ public class DBCheckCA
     private final IDBCW _dbcw;
 
     @Inject
-    public DBCheckCA(CoreDBCW dbcw)
+    public DBCheckCA(IDBCW dbcw)
     {
-        _dbcw = dbcw.get();
+        _dbcw = dbcw;
     }
 
     public void check_(InOutArg<Boolean> okay) throws SQLException
     {
-        Statement stmt = _dbcw.getConnection().createStatement();
-        try {
-            ResultSet rs = stmt.executeQuery(DBUtil.selectWhere(T_CA, C_CA_HASH + " is null",
-                    C_CA_SIDX, C_CA_OID, C_CA_KIDX));
-            try {
+        try (Statement stmt = _dbcw.getConnection().createStatement()) {
+            try (ResultSet rs = stmt.executeQuery(DBUtil.selectWhere(T_CA, C_CA_HASH + " is null",
+                    C_CA_SIDX, C_CA_OID, C_CA_KIDX))) {
                 while (rs.next()) {
                     KIndex kidx = new KIndex(rs.getInt(3));
                     if (!kidx.equals(KIndex.MASTER)) {
@@ -41,11 +38,7 @@ public class DBCheckCA
                         DBChecker.error("non-masters have content hash", offender, okay);
                     }
                 }
-            } finally {
-                rs.close();
             }
-        } finally {
-            stmt.close();
         }
     }
 }

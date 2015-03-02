@@ -22,7 +22,10 @@ import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -54,7 +57,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t)
+    public void joinStore_(SIndex sidx, SID sid, StoreInfo info, Trans t)
             throws Exception
     {
         // sigh... we create a root store for TeamServer clients to simplify the server-side
@@ -63,9 +66,9 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
         // 2. this store may confuse some storage backends
         if (sid.equals(_cfgRootSID.get())) return;
 
-        l.info("join {} {} {}", sidx, sid, folderName);
+        l.info("join {} {} {}", sidx, sid, info._name);
         // every store is a root store, until it is referenced by an anchor in another store
-        _sc.createRootStore_(sid, folderName, t);
+        _sc.createRootStore_(sid, info._name, t);
     }
 
     @Override
@@ -81,21 +84,27 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void adjustAnchor_(SIndex sidx, String folderName, UserID user, Trans t)
+    public void onMembershipChange_(SIndex sidx, StoreInfo info, Trans t)
             throws Exception
     {
-        SID sid = _sidx2sid.get_(sidx);
-        checkArgument(!sid.isUserRoot());
-        SID rootSID = SID.rootSID(user);
-        SIndex root = _sid2sidx.getNullable_(rootSID);
-        if (root == null) return;
+        Set<UserID> newMembers =  Sets.filter(
+                Sets.difference(info._roles.keySet(), info._externalMembers),
+                user -> !user.isTeamServerID());
 
-        // delay adjustment until first scan of root store is done to avoid creating anchor under
-        // root if it is present deeper w/ a tag file
-        if (_linker.isFirstScanInProgress_(rootSID)) {
-            throw new ExRetryLater("wait for user root scan");
+        for (UserID user : newMembers) {
+            SID sid = _sidx2sid.get_(sidx);
+            checkArgument(!sid.isUserRoot());
+            SID rootSID = SID.rootSID(user);
+            SIndex root = _sid2sidx.getNullable_(rootSID);
+            if (root == null) return;
+
+            // delay adjustment until first scan of root store is done to avoid creating anchor under
+            // root if it is present deeper w/ a tag file
+            if (_linker.isFirstScanInProgress_(rootSID)) {
+                throw new ExRetryLater("wait for user root scan");
+            }
+
+            createAnchorIfNeeded_(sidx, sid, info._name, root, t);
         }
-
-        createAnchorIfNeeded_(sidx, sid, folderName, root, t);
     }
 }
