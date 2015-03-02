@@ -24,7 +24,7 @@ To:
     
 To:
 
-    AeroFS :: Docker :: Configure Appliance
+    AeroFS :: Docker :: Configure and Test Appliance
     
 N.B. Please keep other options unchanged. Do not delete and recreate dependencies. It would destroy these options.
 

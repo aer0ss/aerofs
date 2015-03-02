@@ -151,6 +151,9 @@ containers:
     image: aerofs/bifrost
     run:
       detach: true
+      volumes-from:
+        # for deployment secret
+        - data
       link:
         - config:config.service
         - mysql:mysql.service
