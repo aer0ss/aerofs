@@ -10,7 +10,6 @@
 @darkoats: #e7e7e7;
 
 @navheight: 50px;
-@videoheight: 150px;
 @signupformbuttonwidth: 160px;
 @navindex: 500;
 
@@ -329,7 +328,7 @@ body .gold-button {
 }
 .top-header {
   padding: @navheight/2 0;
-  background: @darkblue url('../../images/fog-background.png') bottom repeat;
+  background: @darkblue;
   h1 {
     letter-spacing: -2px;
     color: white;
@@ -351,6 +350,9 @@ body .gold-button {
     text-align: center;
   }
 
+  &.front-page h1 {
+    text-align: right;
+  }
   &.front-page h3 {
     text-align: right;
   }
@@ -360,9 +362,8 @@ body .gold-button {
     height: auto;
   }
   .video-player {
-    width: 256px;
-    height: @videoheight;
-    margin: 12px 0 0 0;
+    width: 100%;
+    margin: 40px 0 0 0;
     border: 2px solid @darkoats;
     h4 {
         color: @oatmeal;
