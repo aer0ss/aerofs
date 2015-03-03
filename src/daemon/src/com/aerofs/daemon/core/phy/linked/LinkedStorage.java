@@ -51,6 +51,9 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.AclFileAttributeView;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -394,6 +397,22 @@ public class LinkedStorage implements IPhysicalStorage
         return f._f.lastModified();
     }
 
+    private static void copyACL(String from, String to) throws IOException
+    {
+        Files.getFileAttributeView(Paths.get(to), AclFileAttributeView.class)
+                .setAcl(Files.getFileAttributeView(Paths.get(from), AclFileAttributeView.class).getAcl());
+    }
+
+    private void onReplaceFailed(boolean wasPresent, InjectableFile f, Exception e)
+    {
+        l.warn("replace failed", BaseLogUtil.suppress(e));
+        if (!wasPresent) {
+            if (!f.deleteIgnoreError() && f.exists()) {
+                l.warn("failed to delete dummy file {}", f);
+            }
+        }
+    }
+
     private void applyPreservingStreamsAndACLs_(final LinkedPrefix p, final LinkedFile f,
             boolean wasPresent, Trans t)
             throws SQLException, IOException
@@ -414,8 +433,42 @@ public class LinkedStorage implements IPhysicalStorage
                 f._sokid.kidx());
         InjectableFile rf = _factFile.create(revPath);
         rf.getParentFile().ensureDirExists();
+
+        InjectableFile src = p._f;
+        InjectableFile dst = f._f;
+
+        // OMG WTF !?!??!
+        //
+        // Windows never ceases to amaze
+        //
+        // Supposedly, ReplaceFile should preserve DACLs. The doc mentions that it could fail to do
+        // so if the caller does not have WRITE_DAC for the replacement file. However, it has been
+        // observed that ReplaceFile reliably drops ACLs for SMB shares when the replacement file is
+        // not in the same SMB share as the replaced file.
+        //
+        // It has further been observed that while the JRE can reliably read ACL entries for the
+        // destination file, trying to write them to the prefix file fails as reliably and silently
+        // as ReplaceFile.
+        //
+        // It has finally been observed that both manual ACL copy and ReplaceFile succeed if the
+        // prefix file is first moved to the destination folder. This suggests that Windows, in its
+        // infinite wisdom is silently filtering ACEs and that nobody at Microsoft deigned document
+        // this behavior.
+        //
+        // To placate those of our customers that are stuck with antiquated Windows machines and
+        // baroque SMB setups, we jump through all the hoops required to get these damn permissions
+        // to be preserved, at the (small but non-zero) risk of leaving a cryptically-named prefix
+        // lying around in case the daemon dies at just the wrong time.
+        //
+        // NB: The ".aerofs" prefix in the name of the temporary file ensures that notifications for
+        // this file will be ignored by the linker and the random UUID reduces the likelihood of a
+        // conflict with a leftover file.
+        InjectableFile tmp = dst.getParentFile()
+                .newChild(".aerofs.dl." + UniqueID.generate().toStringFormal());
+        src.moveInSameFileSystem(tmp);
+
         try {
-            _dr.replaceFile(f.getAbsPath_(), p._f.getAbsolutePath(), revPath);
+            _dr.replaceFile(f.getAbsPath_(), tmp.getAbsolutePath(), revPath);
         } catch (ReplaceFileException e) {
             newMetric("linked.replace")
                     .setException(e)
@@ -427,16 +480,19 @@ public class LinkedStorage implements IPhysicalStorage
                     // delete dummy file
                     _factFile.create(revPath).deleteIgnoreError();
                 }
+                // copy ACLs manually
+                copyACL(f.getAbsPath_(), tmp.getAbsolutePath());
+                tmp.moveInSameFileSystem(src);
                 // try a regular move w/ NRO fallback
                 move_(p, f, t);
                 return;
             }
-            l.warn("replace failed", BaseLogUtil.suppress(e));
-            if (!wasPresent) {
-                if (!f._f.deleteIgnoreError() && f._f.exists()) {
-                    l.warn("failed to delete dummy file {}", f._f);
-                }
-            }
+            tmp.moveInSameFileSystem(src);
+            onReplaceFailed(wasPresent, dst, e);
+            throw e;
+        } catch (IOException|RuntimeException e) {
+            tmp.moveInSameFileSystem(src);
+            onReplaceFailed(wasPresent, dst, e);
             throw e;
         }
 
@@ -453,20 +509,20 @@ public class LinkedStorage implements IPhysicalStorage
                 public void aborted_()
                 {
                     try {
-                        f._f.moveInSameFileSystem(p._f);
-                        _factFile.create(revPath).moveInSameFileSystem(f._f);
+                        dst.moveInSameFileSystem(src);
+                        _factFile.create(revPath).moveInSameFileSystem(dst);
                     } catch (IOException e) {
-                        l.error("fs rollback failed {}", f._f, e);
+                        l.error("fs rollback failed {}", dst, e);
                         // FIXME: reset CA to prevent a spurious deletion?
-                        SystemUtil.fatal("fs rollback failed " + f._f);
+                        SystemUtil.fatal("fs rollback failed " + dst);
                     }
                 }
             });
         } else {
-            TransUtil.onRollback_(f._f, t, () -> f._f.moveInSameFileSystem(p._f));
+            TransUtil.onRollback_(dst, t, () -> dst.moveInSameFileSystem(src));
             // delete dummy file from rev history immediately
             if (!rf.deleteIgnoreError() && rf.exists()) {
-                l.warn("failed to delete dummy rev file {}", f._f);
+                l.warn("failed to delete dummy rev file {}", dst);
             }
         }
     }
