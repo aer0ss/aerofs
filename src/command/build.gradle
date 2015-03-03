@@ -6,7 +6,7 @@ archivesBaseName = 'aerofs-command'
 
 dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1.+'
-    compile 'com.aerofs.baseline:baseline-service:0.6.0'
+    compile 'com.aerofs.baseline:baseline-service:0.6.1'
     compile project(':src/aero-ids')
     compile project(':src/libservlet')
 }
