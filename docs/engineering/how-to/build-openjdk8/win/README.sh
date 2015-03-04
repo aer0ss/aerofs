@@ -20,7 +20,7 @@ pushd openjdk8u
 sh get_source.sh
 
 # put all sub-repos at a known-good release tag
-sh ./make/scripts/hgforest.sh update -c jdk8u20-b15
+sh ./make/scripts/hgforest.sh update -c jdk8u60-b04
 
 # apply Windows-specific patch for File.list
 pushd jdk
@@ -38,7 +38,7 @@ popd
 #        slow down the overall build time
 #     3. launch Cygwin terminal
 #     4.   cd  /cygdrive/z/openjdk8u
-#     5    bash ./configure --with-freetype=/cygdrive/c/code/freetype-2.4.7 --with-target-bits=32 --with-boot-jdk=/cygdrive/c/code/jdk1.70-55 && make all
+#     5    bash ./configure --with-freetype=/cygdrive/c/code/freetype-2.4.7 --with-target-bits=32 --with-boot-jdk=/cygdrive/c/code/jdk1.70-55 && make images
 #     6. wait ~2h
 #     7. profit (assuming nothing broke)
 #########################################################################

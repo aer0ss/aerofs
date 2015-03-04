@@ -25,7 +25,7 @@ Instructions are at https://wiki.openjdk.java.net/display/MacOSXPort/Main
 
 # Checkout a known release tag
 
-    bash ./make/scripts/hgforest.sh update -c jdk8u20-b15
+    bash ./make/scripts/hgforest.sh update -c jdk8u60-b04
 
 # Build
 
@@ -41,7 +41,7 @@ Instructions are at https://wiki.openjdk.java.net/display/MacOSXPort/Main
     export CC=llvm-gcc
     export CXX=llvm-g++
     bash ./configure
-    make JOBS=8 all
+    make JOBS=8 images
     $HIDE_BDB && brew link db
 
 Packaging

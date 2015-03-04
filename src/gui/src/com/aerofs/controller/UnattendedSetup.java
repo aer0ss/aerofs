@@ -30,8 +30,6 @@ public class UnattendedSetup
      *
      *  userid = test@aerofs.com
      *  password = password
-     *  first_name = John
-     *  last_name = Smith
      *  device = Ye Olde MacBook Pro
      */
     private File _setupFile = null;

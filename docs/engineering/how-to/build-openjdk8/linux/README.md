@@ -42,7 +42,7 @@ From within the VM:
         hg clone --pull http://hg.openjdk.java.net/jdk8u/jdk8u openjdk8u
         cd openjdk8u
         bash get_source.sh
-        bash ./make/scripts/hgforest.sh update -c jdk8u40-b13
+        bash ./make/scripts/hgforest.sh update -c jdk8u60-b04
 
  - Apply patch that remove the AI\_CANONNAME hint from calls to getaddrinfo
    to avoid unnecessary (and slow) reverse DNS lookup with older versions
@@ -51,7 +51,7 @@ From within the VM:
   - Configure and build JDK8
 
         bash ./configure
-        make JOBS=4 all
+        make JOBS=4 images
 
 Congratulations, you now have a full j2sdk-image somewhere under your build/ folder.
 Now we need to trim it down.
