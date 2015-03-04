@@ -82,9 +82,14 @@ def login_openid_complete(request):
     Complete the signin procedure with SP.
     """
     session_nonce = request.session['sp_session_nonce']
-    headers, second_factor_needed = log_in_user(request, _sp_openid_get_session_attrs,
-            stay_signed_in=True, sp_session_nonce=session_nonce)
+
+    headers, second_factor_needed, second_factor_setup_needed = log_in_user(request,
+            _sp_openid_get_session_attrs,
+            stay_signed_in=True,
+            sp_session_nonce=session_nonce)
+
     # Note: this logic is very similar to login_util.py:redirect_to_next_page()
     redirect = request.session[_SESSION_KEY_NEXT]
     log.debug("openid login redirect to {}".format(redirect))
+
     return HTTPFound(location=redirect, headers=headers)
