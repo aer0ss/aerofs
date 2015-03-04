@@ -1,24 +1,30 @@
 # Unattended Team Server Setup
 
+## Procedure
+
 1. Run `touch ~/.aerofsts/unattended-setup.properties`
 2. Populate the **unattended-setup.properties** file with the following contents:
 
-    `userid = admin@acme.com` [Required]
+    `userid = admin@acme.com` [Required]  
     `password = admin_password` [Required]
 
     **Storage Type [Optional - default is LINKED storage]:**
-    `storage_type = LINKED` [Preserves folder structure storage]
-    `storage_type = LOCAL` [Uses compressed and deduplicated storage]
+
+    `storage_type = LINKED` [Preserves folder structure storage]  
+    `storage_type = LOCAL` [Uses compressed and deduplicated storage]  
     `storage_type = S3` [Uses compressed and deduplicated storage pn S3]
 
     **S3 Credentials [Optional - required only if you specified S3 for the storage type]:**
-    `s3_endpoint = <endpoint>`
-    `s3_bucket_id = <bucket_name>`
-    `s3_access_key = <access_key>`
-    `s3_secret_key = <secret_key>`
+
+    `s3_endpoint = <endpoint>`  
+    `s3_bucket_id = <bucket_name>`  
+    `s3_access_key = <access_key>`  
+    `s3_secret_key = <secret_key>`  
     `s3_encryption_password = <encryption_password>`
 
 3. Run `aerofsts-cli`
+
+## Examples
 
 Sample unattended-setup.properties file for LINKED Storage:
 
