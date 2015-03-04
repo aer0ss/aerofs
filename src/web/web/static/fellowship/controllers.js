@@ -49,11 +49,15 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
             scope.addMember = function(){
                 // if the member wasn't added via typeahead
                 // need to populate email by name attribute
-                if (scope.newGroup.newMember.email === undefined) {
-                    scope.newGroup.newMember.email = scope.newGroup.newMember.name;
+                if (scope.newGroup.newMember.name.length > 0) {
+                    if (scope.newGroup.newMember.email === undefined) {
+                        scope.newGroup.newMember.email = scope.newGroup.newMember.name;
+                    }
+                    scope.newGroup.members.push(scope.newGroup.newMember);
+                    scope.newGroup.newMember = '';
+                } else {
+                    $log.info("Attempted to submit empty group member.");
                 }
-                scope.newGroup.members.push(scope.newGroup.newMember);
-                scope.newGroup.newMember = '';
             };
 
             scope.removeMember = function(member){

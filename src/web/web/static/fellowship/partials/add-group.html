@@ -44,7 +44,9 @@
                     </div>
                     <div class="col-xs-3">
                         <a href="#" class="btn btn-default pull-right" 
-                            ng-disabled="newGroup.newMember.indexOf('@') == -1 || newGroup.members.length >= maxMembers"
+                            ng-disabled="newGroup.newMember.name.length < 1 ||
+                                newGroup.newMember.indexOf('@') == -1 ||
+                                newGroup.members.length >= maxMembers"
                             ng-click="addMember()">Add</a>
                     </div>
                 </div>
