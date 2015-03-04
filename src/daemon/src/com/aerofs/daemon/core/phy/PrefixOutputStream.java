@@ -85,7 +85,7 @@ public class PrefixOutputStream extends DigestOutputStream
 
         try {
             return DigestSerializer.deserialize(hf.toByteArray(), prefixLength);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException|IOException e) {
             l.warn("failed to reload hash for {}", pf, e);
         }
 

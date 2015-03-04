@@ -99,7 +99,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 
         boolean wasPresent = (oa.caMasterNullable() != null);
         SOKID sokid = new SOKID(soid, KIndex.MASTER);
-        IPhysicalPrefix pp = _ps.newPrefix_(sokid, null);
+        IPhysicalPrefix pp = _ps.newPrefix_(sokid, UniqueID.generate().toStringFormal());
 
         final ContentHash h;
         try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "import-file")) {

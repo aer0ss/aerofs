@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
@@ -50,5 +51,27 @@ public class TestDigestSerializer extends AbstractTest
         }
 
         assertDigestPreserved(md0, buf);
+    }
+
+    @Test
+    public void shouldRejectFinalizedDigest()
+    {
+        MessageDigest md = BaseSecUtil.newMessageDigest();
+        try {
+            md.digest();
+            DigestSerializer.serialize(md);
+            fail();
+        } catch (IllegalArgumentException e) {}
+    }
+
+    @Test
+    public void shouldRejectInvalidSerialization()
+    {
+        byte[] b = new byte[DigestSerializer.SERIALIZED_SIZE];
+        Arrays.fill(b, (byte)0xff);
+        try {
+            DigestSerializer.deserialize(b);
+            fail();
+        } catch (IllegalArgumentException e) {}
     }
 }

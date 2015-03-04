@@ -24,11 +24,14 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public final class DigestSerializer
 {
+    private static final int BUFFER_LENGTH = 64;
+    private static final int STATE_LENGTH = 8;
+
     public static final int SERIALIZED_SIZE
-            = 8             // bytesProcessed
-            + 4             // bufOfs
-            + 64            // buffer (SHA 256 block size)
-            + 32;           // state
+            = 8                 // bytesProcessed
+            + 4                 // bufOfs
+            + BUFFER_LENGTH     // buffer (SHA 256 block size)
+            + 4 * STATE_LENGTH; // state
 
     public static byte[] serialize(MessageDigest md)
     {
@@ -38,20 +41,24 @@ public final class DigestSerializer
             MessageDigestSpi spi = (MessageDigestSpi) field(md, "digestSpi").get(md);
 
             // buffered input (DigestBase)
-            b.putLong(field(spi, "bytesProcessed").getLong(spi));
+            long bytesProcessed = field(spi, "bytesProcessed").getLong(spi);
+            checkArgument(bytesProcessed >= 0, "Cannot serialize finalized digest");
+            b.putLong(bytesProcessed);
             b.putInt(field(spi, "bufOfs").getInt(spi));
             byte[] buffer = (byte[]) field(spi, "buffer").get(spi);
-            checkState(buffer.length == 64, "unexpected buffer length: %s", buffer.length);
+            checkArgument(buffer.length == BUFFER_LENGTH,
+                    "unexpected buffer length: %s", buffer.length);
             b.put(buffer);
 
             // SHA-256 state
             int[] state = (int[]) field(spi, "state").get(spi);
-            checkState(state.length == 8, "unexpected state length: %s", state.length);
+            checkArgument(state.length == STATE_LENGTH,
+                    "unexpected state length: %s", state.length);
             for (int i = 0; i < state.length; ++i) {
                 b.putInt(state[i]);
             }
         } catch (NoSuchFieldException|IllegalAccessException e) {
-            throw new IllegalArgumentException("unsupported digest", e);
+            throw new UnsupportedOperationException("unsupported digest", e);
         }
         return b.array();
     }
@@ -75,24 +82,27 @@ public final class DigestSerializer
             MessageDigestSpi spi = (MessageDigestSpi) field(md, "digestSpi").get(md);
 
             long bytesProcessed = b.getLong();
+            checkArgument(bytesProcessed >= 0, "Cannot deserialize finalized digest");
             if (expectedBytesProcessed >= 0) {
                 checkArgument(expectedBytesProcessed == bytesProcessed,
                         "Mismatching number of processed bytes: %s != %s",
                         bytesProcessed, expectedBytesProcessed);
             }
             field(spi, "bytesProcessed").setLong(spi, bytesProcessed);
-            field(spi, "bufOfs").setInt(spi, b.getInt());
-            byte[] buffer = new byte[64];
+            int bufOfs = b.getInt();
+            checkArgument(bufOfs >= 0 && bufOfs < BUFFER_LENGTH);
+            field(spi, "bufOfs").setInt(spi, bufOfs);
+            byte[] buffer = new byte[BUFFER_LENGTH];
             b.get(buffer);
             field(spi, "buffer").set(spi, buffer);
 
-            int[] state = new int[8];
+            int[] state = new int[STATE_LENGTH];
             for (int i = 0; i < state.length; ++i) {
                 state[i] = b.getInt();
             }
             field(spi, "state").set(spi, state);
         } catch (NoSuchFieldException|IllegalAccessException e) {
-            throw new IllegalArgumentException("unsupported digest", e);
+            throw new UnsupportedOperationException("unsupported digest", e);
         }
         return md;
     }

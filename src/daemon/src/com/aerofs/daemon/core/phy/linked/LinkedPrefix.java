@@ -77,7 +77,10 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
     {
         ((LinkedPrefix)pf)._f.getParentFile().ensureDirExists();
-        TransUtil.moveWithRollback_(_f, ((LinkedPrefix) pf)._f, t);
+        ((LinkedPrefix)pf)._f.deleteOrThrowIfExist();
+        hashFile(((LinkedPrefix)pf)._f).deleteOrThrowIfExist();
+
+        TransUtil.moveWithRollback_(_f, ((LinkedPrefix)pf)._f, t);
         TransUtil.moveWithRollback_(hashFile(_f), hashFile(((LinkedPrefix)pf)._f), t);
     }
 
