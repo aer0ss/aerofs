@@ -14,7 +14,7 @@ $(ROOT)/auditor.yml: src/dist/auditor.yml
 	sed -e 's/localhost/0.0.0.0/' $< > $@
 
 FIXES = $(abspath \
-	../lib/src/com/aerofs/lib/properties/Configuration.java)
+	../lib/src/com/aerofs/lib/properties/ServerConfigurationLoader.java)
 
 .fix-source:
 	for i in $(FIXES); do patch $$i < $$(basename $$i).docker.patch; done
