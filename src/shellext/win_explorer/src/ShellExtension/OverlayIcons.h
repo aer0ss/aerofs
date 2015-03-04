@@ -57,7 +57,13 @@ protected:
 };
 
 class
+#if defined(_M_IX86)
 	__declspec(uuid("882108B1-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108B9-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)
 DownloadOverlay : public OverlayBase<DownloadOverlay>
 {
@@ -68,7 +74,13 @@ public:
 };
 
 class
+#if defined(_M_IX86)
 	__declspec(uuid("882108B2-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108BA-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)
 UploadOverlay : public OverlayBase<UploadOverlay>
 {
@@ -79,7 +91,13 @@ public:
 };
 
 class
+#if defined(_M_IX86)
 	__declspec(uuid("882108B3-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108BB-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)
 InSyncOverlay : public OverlayBase<InSyncOverlay>
 {
@@ -90,7 +108,13 @@ public:
 };
 
 class
+#if defined(_M_IX86)
 	__declspec(uuid("882108B5-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108BD-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)
 OutSyncOverlay : public OverlayBase<OutSyncOverlay>
 {
@@ -101,7 +125,13 @@ public:
 };
 
 class
+#if defined(_M_IX86)
 	__declspec(uuid("882108B6-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108BE-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)
 ConflictOverlay : public OverlayBase<ConflictOverlay>
 {

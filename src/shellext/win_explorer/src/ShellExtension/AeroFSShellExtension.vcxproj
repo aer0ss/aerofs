@@ -265,10 +265,6 @@
     </ClCompile>
     <ClCompile Include="OverlayIcons.cpp" />
     <ClCompile Include="ContextMenu.cpp" />
-    <ClCompile Include="AsyncSocket.cpp" />
-    <ClCompile Include="SocketOperations.cpp">
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -283,13 +279,10 @@
     <ClInclude Include="AeroFSShellExtension.h" />
     <ClInclude Include="AeroSocket.h" />
     <ClInclude Include="..\..\..\common\OverlayCache.h" />
-    <ClInclude Include="ISocketDelegate.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="OverlayIcons.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ContextMenu.h" />
-    <ClInclude Include="AsyncSocket.h" />
-    <ClInclude Include="SocketOperations.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="string_helpers.h" />
     <ClInclude Include="targetver.h" />

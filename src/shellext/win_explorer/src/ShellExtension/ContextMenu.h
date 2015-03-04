@@ -20,7 +20,13 @@ using namespace ATL;
 class AeroFSShellExtension;
 
 class
-	__declspec(uuid("882108B0-26E6-4926-BC70-EA1D738D5DEB"))     // Declare the CLSID for this class
+#if defined(_M_IX86)
+	__declspec(uuid("882108B0-26E6-4926-BC70-EA1D738D5DEB"))
+#elif defined(_M_AMD64)
+	__declspec(uuid("882108B8-26E6-4926-BC70-EA1D738D5DEB"))
+#else
+#error Unexpected build architecture.
+#endif
 	__declspec(novtable)                                         // ATL_NO_VTABLE
 ContextMenu :
 	public CComObjectRootEx<CComSingleThreadModel>,

@@ -20,9 +20,6 @@
     <Filter Include="3rdparty">
       <UniqueIdentifier>{0cda8b35-032d-4183-878e-d290d845d1b0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="AsyncSocket">
-      <UniqueIdentifier>{572a35fa-ce8c-4d0b-837b-66e6985e270d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -36,12 +33,6 @@
     </ClCompile>
     <ClCompile Include="AeroSocket.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AsyncSocket.cpp">
-      <Filter>AsyncSocket</Filter>
-    </ClCompile>
-    <ClCompile Include="SocketOperations.cpp">
-      <Filter>AsyncSocket</Filter>
     </ClCompile>
     <ClCompile Include="ContextMenu.cpp">
       <Filter>Source Files</Filter>
@@ -77,15 +68,6 @@
     </ClInclude>
     <ClInclude Include="AeroSocket.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AsyncSocket.h">
-      <Filter>AsyncSocket</Filter>
-    </ClInclude>
-    <ClInclude Include="ISocketDelegate.h">
-      <Filter>AsyncSocket</Filter>
-    </ClInclude>
-    <ClInclude Include="SocketOperations.h">
-      <Filter>AsyncSocket</Filter>
     </ClInclude>
     <ClInclude Include="ContextMenu.h">
       <Filter>Header Files</Filter>
