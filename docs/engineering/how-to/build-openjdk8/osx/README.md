@@ -11,6 +11,12 @@ Pre-requisites
   - Takeaway: use llvm-gcc.
 - Oracle's Java 7 to serve as a bootstrap JDK
 
+OpenJDK 8 refuses to build with Xcode 5 or newer. There is an ongoing effort to
+make OpenJDK 9 compatible with recent clang (which is the default C compiler in
+recent Xcode versions) and it will probably be backported to OpenJDK 8 at some
+point but for now, Mavericks and Yosemite users need to download Xcode 4.6.3
+and install it alongside the newer Xcode (e.g. in /Applications/Xcode4.app)
+
 
 Building
 --------
@@ -40,7 +46,7 @@ Instructions are at https://wiki.openjdk.java.net/display/MacOSXPort/Main
     $HIDE_BDB && brew unlink db
     export CC=llvm-gcc
     export CXX=llvm-g++
-    bash ./configure
+    bash ./configure --with-xcode-path=/Applications/Xcode4.app
     make JOBS=8 images
     $HIDE_BDB && brew link db
 
