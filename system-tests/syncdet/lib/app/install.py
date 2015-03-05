@@ -152,11 +152,22 @@ def ensure_site_config_present(approot):
         with open(site_config_file, 'w') as f:
             f.write(r.text)
 
+
 def extra_rtroot_flags():
     try:
         return case.local_actor().aero_flags or []
     except AttributeError:
         return []
+
+
+def remove_auxroot(root_anchor):
+    print 'removing auxroot...'
+    p = os.path.dirname(root_anchor)
+    # for absolute cleanliness remove *ALL* auxroots left over by previous installs
+    for d in os.listdir(p):
+        if d.startswith('.aerofs.aux.'):
+            print 'remove auxroot: {}'.format(d)
+            rm_rf(os.path.join(p, d))
 
 #####                      #####
 ### Installer Parent Classes ###
@@ -231,6 +242,7 @@ class BaseAeroFSInstaller(object):
             cleanup_win_root_anchor(root_anchor)
         else:
             rm_rf(root_anchor)
+        remove_auxroot(root_anchor)
 
     def remove_rtroot(self):
         print 'removing rtroot...'

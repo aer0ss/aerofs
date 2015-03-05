@@ -22,34 +22,31 @@ from ..app.aerofs_proc import stop_all
 from lib import jretrace
 
 
-def _is_file_or_dir(p):
-    return os.path.isfile(p) or os.path.isdir(p)
-
-
-def _ignore(path, files):
-    return [e for e in files if not _is_file_or_dir(os.path.join(path, e))]
-
-
 def move_data_to_archive_dir():
     archive_dir = os.path.join(os.path.expanduser('~'), 'archive')
     if 'win32' in sys.platform:
         cleanup_win_root_anchor(archive_dir)
-        magic_prefix = u"\\\\?\\"
+        os.rmdir(archive_dir)
     else:
         # make sure we only archive this suite's data
         rm_rf(archive_dir)
-        magic_prefix = ""
 
-    archive_dir_prefixed = magic_prefix + os.path.join(os.path.expanduser('~'), 'archive')
-    cfg = get_cfg()
     # kill aerofs processes so the rtroot is unchanged during the copy
     stop_all()
 
-    # N.B. shutil.copytree() creates the destination dir and all parents.Copy
-    # everything in the rtroot except the unix domain socket files.
-    shutil.copytree(cfg.get_rtroot(), os.path.join(archive_dir_prefixed, 'rtroot'), symlinks=True, ignore=_ignore)
+    cfg = get_cfg()
+    rtroot = cfg.get_rtroot()
+    root_anchor = cfg.get_root_anchor()
 
-    shutil.copytree(magic_prefix + cfg.get_root_anchor(), os.path.join(archive_dir_prefixed, 'root_anchor'), symlinks=True)
+    os.makedirs(archive_dir)
+    os.rename(rtroot, os.path.join(archive_dir, 'rtroot'))
+    os.rename(root_anchor, os.path.join(archive_dir, 'root_anchor'))
+
+    p = os.path.dirname(root_anchor)
+    # copy all auxroots-looking folders for simplicity (install should clean old ones)
+    for d in os.listdir(p):
+        if d.startswith('.aerofs.aux.'):
+            os.rename(os.path.join(p, d), os.path.join(archive_dir, d))
 
 
 def unobfuscate_logs():
