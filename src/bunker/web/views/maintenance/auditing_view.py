@@ -9,7 +9,6 @@ from web.error import error
 
 log = logging.getLogger(__name__)
 
-
 @view_config(
     route_name='auditing',
     permission='maintain',
@@ -17,8 +16,12 @@ log = logging.getLogger(__name__)
 )
 def auditing(request):
     conf = get_conf(request)
+
+    # Override template if the license forbids auditing:
+    if not _is_audit_allowed(conf):
+        request.override_renderer = 'auditing_upgrade.mako'
+
     return {
-        'is_audit_allowed': _is_audit_allowed(conf),
         'is_audit_enabled': _is_audit_enabled(conf),
         'downstream_host': conf['base.audit.downstream_host'],
         'downstream_port': conf['base.audit.downstream_port'],

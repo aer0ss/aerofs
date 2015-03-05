@@ -11,17 +11,25 @@
 <h4>Desktop Client Authorization</h4>
 
 <p>The <strong>AeroFS Private Cloud Device Authorization Subsystem </strong>
-grants IT administrators fine-grained control over which users and devices on
-their network are permitted to run AeroFS desktop clients.
-<a href="https://support.aerofs.com/hc/en-us/articles/202157674" target="_blank">Read more</a>.</p>
+    grants IT administrators fine-grained control over which users and devices on
+    their network are permitted to run AeroFS desktop clients.
+    <a href="https://support.aerofs.com/hc/en-us/articles/202157674" target="_blank">Read more</a>.</p>
 
 <p>This subsystem should not be confused with AeroFS'
-end-to-end encryption and private certificate authority, which is always
-enabled and cannot be configured.
-<a href="https://aerofs.com/security" target="_blank">Read more</a>.</p>
+    end-to-end encryption and private certificate authority, which is always
+    enabled and cannot be configured.
+    <a href="https://aerofs.com/security" target="_blank">Read more</a>.</p>
 
 <div class="page-block">
-    ${device_authorization_options_form()}
+    %if not is_device_restriction_allowed:
+        <div class="alert">
+        Device authorization is a feature of AeroFS for Business.
+        <a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to upgrade
+            your appliance</a>.
+        </div>
+    %else:
+        ${device_authorization_options_form()}
+    %endif
 </div>
 
 <%def name="device_authorization_options_form()">
@@ -110,7 +118,15 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
 </a></p>
 
 <div class="page-block">
-    ${mdm_options_form()}
+    %if not is_mdm_allowed:
+        <div class="alert">
+        <p>MDM configuration is a feature of AeroFS for Business.
+        <a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to upgrade
+        your appliance</a>.</p>
+        </div>
+    %else:
+        ${mdm_options_form()}
+    %endif
 </div>
 
 <%def name="mdm_options_form()">

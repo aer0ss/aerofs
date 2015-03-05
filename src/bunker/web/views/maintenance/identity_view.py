@@ -3,6 +3,7 @@ from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 import requests
 from web.error import error
+from web.util import str2bool
 from web.views.maintenance.maintenance_util import is_certificate_formatted_correctly, write_pem_to_file, get_conf_client, format_pem, get_conf, format_time
 from web.views.maintenance.setup_view import verification_base_url
 
@@ -22,8 +23,12 @@ ldap_separator = ' '
     renderer='identity.mako'
 )
 def identity(request):
+    conf = get_conf(request)
+    if not _is_identity_configurable(conf):
+        request.override_renderer = 'identity_upgrade.mako'
+
     return {
-        'conf': get_conf(request),
+        'conf': conf,
         'separator': ldap_separator
     }
 
@@ -83,6 +88,11 @@ def json_set_identity_options(request):
 
     return HTTPOk()
 
+def _is_identity_configurable(conf):
+    """
+    @return whether identity configuration support is included in the license
+    """
+    return str2bool(conf.get('license_allow_identity', True))
 
 def _write_ldap_options(conf, request_params):
     for key in _get_ldap_specific_options(request_params):

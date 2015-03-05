@@ -14,15 +14,7 @@
     <a href="https://support.aerofs.com/entries/26663920" target="_blank">Read more</a>.</p>
 
 <div class="page-block">
-    %if not is_audit_allowed:
-        <div class="alert">
-            Your current AeroFS license does not include auditing.
-            Please <a href="mailto:support@aerofs.com">contact us</a> to upgrade
-            your license.
-        </div>
-    %else:
-        ${auditing_options_form()}
-    %endif
+    ${auditing_options_form()}
 </div>
 
 <%def name="auditing_options_form()">

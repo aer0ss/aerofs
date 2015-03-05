@@ -17,6 +17,8 @@ log = logging.getLogger(__name__)
 def device_restriction(request):
     conf = get_conf(request)
     return {
+        'is_device_restriction_allowed': _is_device_restriction_allowed(conf),
+        'is_mdm_allowed': _is_mdm_allowed(conf),
         'device_authorization_endpoint_enabled':
             str2bool(conf['device.authorization.endpoint_enabled']),
         'device_authorization_endpoint_host':
@@ -80,3 +82,17 @@ def json_set_device_authorization(request):
                                  format_pem(certificate))
 
     return {}
+
+def _is_device_restriction_allowed(conf):
+    """
+    @return whether device restriction support is included in the license. We use
+    a default of 'true' so that legacy licenses are correctly supported.
+    """
+    return str2bool(conf.get('license_allow_device_restriction', True))
+
+def _is_mdm_allowed(conf):
+    """
+    @return whether MDM support is included in the license. We use
+    a default of 'true' so that legacy licenses are correctly supported.
+    """
+    return str2bool(conf.get('license_allow_mdm', True))
