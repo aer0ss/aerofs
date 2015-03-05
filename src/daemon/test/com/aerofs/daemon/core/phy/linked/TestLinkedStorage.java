@@ -63,6 +63,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.RETURNS_MOCKS;
@@ -113,6 +114,8 @@ public class TestLinkedStorage extends AbstractTest
         revDir = factFile.create(auxDir, AuxFolder.HISTORY._name);
         revDir.ensureDirExists();
         factFile.create(auxDir, AuxFolder.PREFIX._name).ensureDirExists();
+        factFile.create(auxDir, AuxFolder.CONFLICT._name).ensureDirExists();
+        factFile.create(auxDir, AuxFolder.NON_REPRESENTABLE._name).ensureDirExists();
 
         l.info("{} {}", rootDir.getAbsolutePath(), revDir.getAbsolutePath());
 
@@ -364,6 +367,40 @@ public class TestLinkedStorage extends AbstractTest
 
         checkVersionCount("update.nohistory", 0);
         assert FileUtil.getLength(new File(pfile.getAbsPath_())) == 1 : "Original file missing";
+    }
+
+    @Test
+    public void shouldAppendToExistingPrefix() throws IOException, SQLException
+    {
+        SOKID target = new SOKID(soid, KIndex.MASTER.increment());
+        LinkedPrefix prefix = (LinkedPrefix)storage.newPrefix_(sokid, null);
+        for (int i = 0; i < 100; ++i) {
+            if (i == 42) {
+                LinkedPrefix p2 = (LinkedPrefix)storage.newPrefix_(target, null);
+                prefix.moveTo_(p2, mock(Trans.class));
+                prefix = p2;
+            }
+            try (OutputStream out = prefix.newOutputStream_(i > 0)) {
+                out.write((byte)(i & 0xff));
+            }
+        }
+
+        LinkedPrefix p2 = (LinkedPrefix)storage.newPrefix_(sokid, null);
+        prefix.moveTo_(p2, mock(Trans.class));
+        prefix = p2;
+
+
+        IPhysicalFile pfile = storage.newFile_(new ResolvedPath(rootSID,
+                        ImmutableList.of(sokid.soid()),
+                        ImmutableList.of("update.resume")),
+                sokid.kidx());
+
+        try (Trans t = tm.begin_()) {
+            storage.apply_(prefix, pfile, false, 0, t);
+            t.commit_();
+        }
+
+        assertEquals(100L, pfile.lengthOrZeroIfNotFile());
     }
 
     @Test

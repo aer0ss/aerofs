@@ -63,9 +63,7 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
             {
                 // persist hash state
                 try (OutputStream out = hashFile(_f).newOutputStream()) {
-                    if (_f.lengthOrZeroIfNotFile() > 0) {
-                        out.write(DigestSerializer.serialize(md));
-                    }
+                    out.write(DigestSerializer.serialize(md));
                 } finally {
                     super.close();
                 }
@@ -76,12 +74,13 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     @Override
     public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
     {
-        ((LinkedPrefix)pf)._f.getParentFile().ensureDirExists();
-        ((LinkedPrefix)pf)._f.deleteOrThrowIfExist();
-        hashFile(((LinkedPrefix)pf)._f).deleteOrThrowIfExist();
+        InjectableFile f = ((LinkedPrefix) pf)._f;
+        f.getParentFile().ensureDirExists();
+        f.deleteOrThrowIfExist();
+        hashFile(f).deleteOrThrowIfExist();
 
-        TransUtil.moveWithRollback_(_f, ((LinkedPrefix)pf)._f, t);
-        TransUtil.moveWithRollback_(hashFile(_f), hashFile(((LinkedPrefix)pf)._f), t);
+        TransUtil.moveWithRollback_(_f, f, t);
+        TransUtil.moveWithRollback_(hashFile(_f), hashFile(f), t);
     }
 
     @Override
@@ -93,7 +92,11 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
 
     void cleanup_()
     {
-        hashFile(_f).deleteIgnoreError();
+        InjectableFile hf = hashFile(_f);
+        if (hf.exists()) {
+            LinkedStorage.l.debug("discard partial hash {}", hf);
+            hf.deleteIgnoreError();
+        }
 
         InjectableFile p = _f.getParentFile();
         String[] children = _f.list();

@@ -208,6 +208,7 @@ class BlockPrefix implements IPhysicalPrefix
                         }
                     } finally {
                         super.close();
+                        // TODO: fsync underlying file?
                     }
                 }
             }, bmd);

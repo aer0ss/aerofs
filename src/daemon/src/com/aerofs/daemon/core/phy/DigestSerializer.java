@@ -7,7 +7,6 @@ import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Reflection-based (de)serialization of MessageDigest
@@ -35,7 +34,7 @@ public final class DigestSerializer
 
     public static byte[] serialize(MessageDigest md)
     {
-        checkState(md.getAlgorithm().equals("SHA-256"));
+        checkArgument(md.getAlgorithm().equals("SHA-256"));
         ByteBuffer b = ByteBuffer.allocate(SERIALIZED_SIZE);
         try {
             MessageDigestSpi spi = (MessageDigestSpi) field(md, "digestSpi").get(md);
@@ -70,7 +69,7 @@ public final class DigestSerializer
 
     public static MessageDigest deserialize(byte[] d, long expectedBytesProcessed)
     {
-        checkState(d.length == SERIALIZED_SIZE, "Invalid input size: %s", d.length);
+        checkArgument(d.length == SERIALIZED_SIZE, "Invalid input size: %s", d.length);
         ByteBuffer b = ByteBuffer.wrap(d);
         MessageDigest md;
         try {

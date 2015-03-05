@@ -79,11 +79,15 @@ public class PrefixOutputStream extends DigestOutputStream
         InjectableFile hf = hashFile(pf);
         long prefixLength = pf.lengthOrZeroIfNotFile();
         if (!append || prefixLength == 0) {
-            hf.deleteIgnoreError();
+            if (hf.exists()) {
+                l.debug("discard partial hash {}", hf);
+                hf.deleteIgnoreError();
+            }
             return BaseSecUtil.newMessageDigest();
         }
 
         try {
+            l.debug("load partial hash {} {}", hf, prefixLength);
             return DigestSerializer.deserialize(hf.toByteArray(), prefixLength);
         } catch (IllegalArgumentException|IOException e) {
             l.warn("failed to reload hash for {}", pf, e);
