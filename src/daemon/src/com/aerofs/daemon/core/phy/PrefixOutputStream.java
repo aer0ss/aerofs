@@ -73,6 +73,14 @@ public class PrefixOutputStream extends DigestOutputStream
         return pf.getParentFile().newChild(pf.getName() + ".hash");
     }
 
+    public static void persistDigest(MessageDigest md, InjectableFile hf) throws IOException
+    {
+        try (FileOutputStream out = hf.newOutputStream()) {
+            out.write(DigestSerializer.serialize(md));
+            out.getChannel().force(true);
+        }
+    }
+
     public static MessageDigest partialDigest(InjectableFile pf, boolean append)
             throws IOException
     {

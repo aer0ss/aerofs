@@ -22,13 +22,11 @@ import javax.annotation.Nonnull;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Arrays;
 
-import static com.aerofs.daemon.core.phy.PrefixOutputStream.hashFile;
-import static com.aerofs.daemon.core.phy.PrefixOutputStream.partialDigest;
+import static com.aerofs.daemon.core.phy.PrefixOutputStream.*;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -168,8 +166,9 @@ class BlockPrefix implements IPhysicalPrefix
                 tail.deleteIgnoreError();
             }
             hashFile(tail).deleteIgnoreError();
-            try (OutputStream bo = new FileOutputStream(_f.newChild(BLOCK_HASH).getImplementation(), true)) {
+            try (FileOutputStream bo = _f.newChild(BLOCK_HASH).newOutputStream(true)) {
                 bo.write(digest);
+                bo.getChannel().force(true);
             }
             // TODO: consistency checks on BLOCK_HASH file?
             checkState(!tail.exists());
@@ -197,21 +196,19 @@ class BlockPrefix implements IPhysicalPrefix
             BlockStorage.l.debug("open tail {} {} {}", _sokid, tailLength,
                     hashFile(tail).lengthOrZeroIfNotFile());
             bmd = partialDigest(tail, tailLength > 0);
-            out = new DigestOutputStream(new FileOutputStream(tail.getImplementation(), tailLength > 0) {
+            out = new PrefixOutputStream(tail.newOutputStream(tailLength > 0), bmd) {
                 @Override
                 public void close() throws IOException
                 {
-                    // persist hash state
-                    try (OutputStream out = hashFile(tail).newOutputStream()) {
-                        if (tailLength > 0) {
-                            out.write(DigestSerializer.serialize(bmd));
-                        }
-                    } finally {
+                    try {
                         super.close();
-                        // TODO: fsync underlying file?
+                    } finally {
+                        if (tailLength > 0) {
+                            persistDigest(bmd, hashFile(tail));
+                        }
                     }
                 }
-            }, bmd);
+            };
         }
 
         public void write(int b) throws IOException {
@@ -242,11 +239,12 @@ class BlockPrefix implements IPhysicalPrefix
 
         @SuppressWarnings("try")
         public void close() throws IOException {
-            try (OutputStream ostream = out) {
-                try (OutputStream h = _f.newChild(HASH).newOutputStream()) {
-                    if (getLength_() > 0) h.write(DigestSerializer.serialize(md));
-                } finally {
-                    flush();
+            try {
+                flush();
+                out.close();
+            } finally {
+                if (getLength_() > 0) {
+                    persistDigest(md, _f.newChild(HASH));
                 }
             }
         }

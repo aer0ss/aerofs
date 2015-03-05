@@ -443,9 +443,13 @@ public class InjectableFile implements IReadableFile
         }
     }
 
-    public OutputStream newOutputStream() throws FileNotFoundException
+    public FileOutputStream newOutputStream() throws FileNotFoundException
     {
         return new FileOutputStream(winSafe());
     }
 
+    public FileOutputStream newOutputStream(boolean append) throws FileNotFoundException
+    {
+        return new FileOutputStream(winSafe(), append);
+    }
 }

@@ -1,11 +1,8 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.MessageDigest;
 
-import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.TransUtil;
@@ -57,18 +54,20 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     {
         final MessageDigest md = partialDigest(_f, append);
         _f.getParentFile().ensureDirExists();
-        return new PrefixOutputStream(new FileOutputStream(_f.getImplementation(), append) {
+        return new PrefixOutputStream(_f.newOutputStream(append), md) {
             @Override
             public void close() throws IOException
             {
-                // persist hash state
-                try (OutputStream out = hashFile(_f).newOutputStream()) {
-                    out.write(DigestSerializer.serialize(md));
-                } finally {
+                try {
                     super.close();
+                } finally {
+                    if (_f.lengthOrZeroIfNotFile() > 0) {
+                        LinkedStorage.l.debug("persist partial hash {}", _f);
+                        persistDigest(md, hashFile(_f));
+                    }
                 }
             }
-        }, md);
+        };
     }
 
     @Override
@@ -94,7 +93,7 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     {
         InjectableFile hf = hashFile(_f);
         if (hf.exists()) {
-            LinkedStorage.l.debug("discard partial hash {}", hf);
+            LinkedStorage.l.debug("discard partial hash {}", _f);
             hf.deleteIgnoreError();
         }
 
