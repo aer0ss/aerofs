@@ -9,13 +9,28 @@
       ng-class="{'disabled': error.status == 503}">New Folder</button>
   </div>
 
-  <div class="row" ng-hide="currentShare.isSingleObject">
+  <div class="row">
     <div aero-link-options 
       ng-model="currentShare.link"
       title="Sharing Options"
       ng-if="currentShare.token && currentShare.isAdmin"></div>
-    <h2 ng-show="currentShare.token">Download files from folder</h2>
-    <ul class="breadcrumb">
+    <h2 ng-if="currentShare.token && !currentShare.isSingleObject">
+      <span class="glyphicon glyphicon-link"></span> {{ breadcrumbs[0].name || fsLocation.currentFolder.name }}
+    </h2>
+    <h2 ng-if="currentShare.token && currentShare.isSingleObject">
+      <span class="glyphicon glyphicon-link"></span> Download file {{ objects[0].name || "" }}
+    </h2>
+    <div class="link-labels"
+      ng-if="currentShare.token"
+      ng-show="currentShare.link.has_password || currentShare.link.expires > 0">
+      <span class="label label-default"
+        title="Password will only be required for users who are not already owners of this file or folder."
+        ng-show="currentShare.link.has_password"><span class="glyphicon glyphicon-lock"></span> password-protected</span>
+      <span class="label label-default"
+        title="This link will stop working after the expiration time."
+        ng-show="currentShare.link.expires > 0"><span class="glyphicon glyphicon-time"></span> expires {{currentShare.link.expires|humanDate}}</span>
+    </div>
+    <ul class="breadcrumb" ng-if="!currentShare.isSingleObject">
         <li class="active"
           ng-if="(fsLocation.currentFolder.id == 'root' || error.status == 503) && !currentShare.token">
             My Files
@@ -32,13 +47,6 @@
           {{fsLocation.currentFolder.name}}
         </li>
     </ul>
-  </div>
-  <div class="row" ng-show="currentShare.isSingleObject">
-    <div aero-link-options 
-      ng-model="currentShare.link" 
-      title="Sharing Options"
-      ng-if="currentShare.token && currentShare.isAdmin"></div>
-    <h2>Download file</h2>
   </div>
 </div>
 

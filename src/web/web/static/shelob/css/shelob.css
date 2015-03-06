@@ -33,6 +33,11 @@
     text-decoration: none;
 }
 
+.link-labels {
+    margin-top: -1em;
+    margin-bottom: 1em;
+}
+
 #actions {
     float: right;
 }

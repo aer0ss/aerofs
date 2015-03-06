@@ -99,6 +99,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                             break;
                         }
                     }
+                    _detectOwnership($scope.rootFolder, function(isOwned){
+                        $scope.currentShare.isAdmin = isOwned;
+                    });
                 }
             }
 
@@ -178,13 +181,17 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                         $log.info('The current user owns this linkshare.');
                         callback(true);
                     } else {
+                        $log.info('The current user does not own this linkshare.');
                         callback(false);
                     }
                 }, function(response){
-                    $log.error(response);
+                    if (response.status != 404) {
+                        $log.error(response);
+                    }
                     callback(false);
                 });
         } else {
+            $log.info('No current user.');
             callback(false);
         }
     };
