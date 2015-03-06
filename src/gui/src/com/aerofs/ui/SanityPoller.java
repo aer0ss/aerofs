@@ -158,7 +158,7 @@ public class SanityPoller
 
             String title = "The disk is full for " + L.product();
             String message = "Click here for detail.";
-            final String details = "There are no free disk space on\n" + absPath + "\n\n" +
+            final String details = "There is no free disk space on\n" + absPath + "\n\n" +
                     "The disk may be full or missing, or the operating system may have " +
                     "encountered an error while checking for disk usage.\n\n" +
                     "If the disk is full, please free up more disk space by deleting unused " +
