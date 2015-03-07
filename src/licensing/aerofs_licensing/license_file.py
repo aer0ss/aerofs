@@ -20,6 +20,12 @@ class LicenseInfo(dict):
 
     def allows_audit(self):
         return self.get("license_allow_auditing", "") == "true"
+    def allows_identity(self):
+        return self.get("license_allow_identity", "") == "true"
+    def allows_mdm(self):
+        return self.get("license_allow_mdm", "") == "true"
+    def allows_device_restriction(self):
+        return self.get("license_allow_device_restriction", "") == "true"
 
     def is_trial(self):
         return self.get("license_is_trial", "") != "false"

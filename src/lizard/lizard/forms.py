@@ -4,7 +4,7 @@ from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
 from wtforms import TextField, PasswordField, BooleanField, \
         IntegerField, DateField, SelectField, TextAreaField
-from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo
+from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo, NumberRange
 
 class LoginForm(Form):
     email = TextField('Email', validators=[Email()])
@@ -17,6 +17,7 @@ class SignupForm(Form):
     company_name = TextField('Organization Name', validators=[InputRequired()])
     phone_number = TextField("Phone Number", validators=[InputRequired()])
     job_title = TextField("Job Title", validators=[InputRequired()])
+    deployment_environment = TextField("Deployment Environment", validators=[InputRequired()])
 
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[Length(min=6)])
@@ -47,15 +48,7 @@ class PreferencesForm(Form):
 
 class LicenseCountForm(Form):
 
-    count = SelectField('New License Count', choices=[
-        ('10','10'),
-        ('25', '25'),
-        ('50', '50'),
-        ('100', '100'),
-        ('250', '250'),
-        ('500', '500'),
-        ('1000', '1000')
-        ])
+    count = IntegerField('New License Count', validators=[NumberRange(min=31,max=1000,message="Purchase between 31 and 1,000 seats")])
 
 def IsFutureDate(message=None):
     def _IsFutureDate(form, field):
@@ -66,9 +59,13 @@ def IsFutureDate(message=None):
 class InternalLicenseRequestForm(Form):
     seats = IntegerField("Seats", validators=[InputRequired()])
     expiry_date = DateField("Expiry Date (YYYY-MM-DD)", validators=[InputRequired(), IsFutureDate() ])
-    is_trial = BooleanField("Trial?")
+    is_trial = BooleanField("Free?")
     allow_audit = BooleanField("Allow Audit?")
+    allow_identity = BooleanField("Allow LDAP/AD/OpenID?")
+    allow_mdm = BooleanField("Allow MDM?")
+    allow_device_restriction = BooleanField("Allow Device Restriction?")
     manual_invoice = TextField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
+
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
 

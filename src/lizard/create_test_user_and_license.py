@@ -25,7 +25,7 @@ def make_new_user(email, password, first_name, last_name, customer):
     db.session.add(u)
     return u
 
-def make_new_license(org, days, seats, full, audit):
+def make_new_license(org, days, seats, full, audit, identity, mdm, device_restriction):
     l = models.License()
     l.customer = org
     l.state = models.License.LicenseState.FILLED
@@ -35,6 +35,9 @@ def make_new_license(org, days, seats, full, audit):
     l.expiry_date = expiry_date
     l.is_trial = not full
     l.allow_audit = audit
+    l.allow_identity = identity
+    l.allow_mdm = mdm
+    l.allow_device_restriction = device_restriction
     l.blob = u"This is a fake license file."
     db.session.add(l)
     return l
@@ -53,6 +56,10 @@ if __name__ == "__main__":
     parser.add_argument("--license-seats", type=int, help="create license with a particular number of seats", default=30)
     parser.add_argument("--license-full", help="create non-trial license", action="store_false")
     parser.add_argument("--license-audit", help="allow auditing", action="store_true")
+    parser.add_argument("--license-identity", help="allow identity", action="store_true")
+    parser.add_argument("--license-mdm", help="allow MDM", action="store_true")
+    parser.add_argument("--license-device-restriction", help="allow device restriction", action="store_true")
+
     parser.add_argument("email", nargs="+", help="email addresses to create accounts for")
     args = parser.parse_args(sys.argv[1:])
     # We need a request context to have the flask request globals available (db connection, for one)
@@ -74,8 +81,11 @@ if __name__ == "__main__":
                 make_new_user(email, args.password, args.first_name, args.last_name, org)
             else:
                 print "{} already exists, moving on".format(email)
-        print "Creating fake license ({} days, {} seats, {}, {})".format(
+        print "Creating fake license ({} days, {} seats, {}, {}, {}, {}, {})".format(
                 args.license_days, args.license_seats, "non-trial" if args.license_full else "trial",
-                "auditing allowed" if args.license_audit else "no audit")
-        l = make_new_license(org, args.license_days, args.license_seats, args.license_full, args.license_audit)
+                "auditing allowed" if args.license_audit else "no audit",
+                "identity allowed" if args.license_identity else "no identity",
+                "mdm allowed" if args.license_mdm else "no mdm",
+                "device restriction allowed" if args.license_device_restriction else "no device restriction")
+        l = make_new_license(org, args.license_days, args.license_seats, args.license_full, args.license_audit, args.license_identity, args.license_mdm, args.license_device_restriction)
         db.session.commit()

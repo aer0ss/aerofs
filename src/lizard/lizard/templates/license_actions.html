@@ -23,10 +23,16 @@
         <dd>{{ license.seats }}</dd>
         <dt>Expiry Date</dt>
         <dd>{{ license.expiry_date }}</dd>
-        <dt>Trial?</dt>
+        <dt>Free?</dt>
         <dd>{{ license.is_trial }}</dd>
         <dt>Audit allowed?</dt>
         <dd>{{ license.allow_audit }}</dd>
+        <dt>Identity allowed?</dt>
+        <dd>{{ license.allow_identity }}</dd>
+        <dt>MDM allowed?</dt>
+        <dd>{{ license.allow_mdm }}</dd>
+        <dt>Device Restriction allowed?</dt>
+        <dd>{{ license.allow_device_restriction }}</dd>
     </dl>
 
     {# There's no good reason to manually change the state of the license once it is FILLED. #}

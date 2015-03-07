@@ -24,6 +24,9 @@
         {{ render_field(form.manual_invoice) }}
         {{ render_field(form.is_trial) }}
         {{ render_field(form.allow_audit) }}
+        {{ render_field(form.allow_identity) }}
+        {{ render_field(form.allow_mdm) }}
+        {{ render_field(form.allow_device_restriction) }}
         {{ submit_button("Create license request") }}
     </form>
 {% endblock %}

@@ -46,16 +46,21 @@ def customer_actions(org_id):
         l.expiry_date = datetime.datetime.combine(form.expiry_date.data, datetime.datetime.min.time())
         l.is_trial = form.is_trial.data
         l.allow_audit = form.allow_audit.data
+        l.allow_identity = form.allow_identity.data
+        l.allow_mdm = form.allow_mdm.data
+        l.allow_device_restriction = form.allow_device_restriction.data
         l.invoice_id = form.manual_invoice.data
-
         db.session.add(l)
         db.session.commit()
         return redirect(url_for('.queues'))
-    # Set some convenient defaults for renewing a trial license for another 30 seats, ~30 days
-    form.seats.data = 30
-    form.expiry_date.data = (datetime.datetime.today() + datetime.timedelta(days=32)).date()
-    form.is_trial.data = True
-
+    # Set some convenient defaults for paid license for another 35 seats, ~1 year
+    form.seats.data = 35
+    form.expiry_date.data = (datetime.datetime.today() + datetime.timedelta(days=365)).date()
+    form.is_trial.data = False
+    form.allow_audit.data = True
+    form.allow_identity.data = True
+    form.allow_mdm.data = True
+    form.allow_device_restriction.data = True
     charge_data = charges.data if charges else None
     return render_template('customer_actions.html', form=form, customer=customer, charges=charge_data)
 
@@ -116,7 +121,7 @@ def active_customers():
 def download_license_request_csv():
     to_add = models.License.query.filter_by(state=models.License.states.PENDING).all()
     s = StringIO()
-    c = unicodecsv.UnicodeDictWriter(s, ["ID", "Company", "Seats", "Expiry Date", "Trial", "Allow Audit"])
+    c = unicodecsv.UnicodeDictWriter(s, ["ID", "Company", "Seats", "Expiry Date", "Trial", "Allow Audit", "Allow Identity", "Allow MDM", "Allow Device Restriction"])
     c.writeheader()
     for row in to_add:
         c.writerow({
@@ -126,6 +131,9 @@ def download_license_request_csv():
             "Expiry Date": row.expiry_date.strftime("%Y-%m-%d"),
             "Trial": unicode(row.is_trial),
             "Allow Audit": unicode(row.allow_audit),
+            "Allow Identity": unicode(row.allow_identity),
+            "Allow MDM": unicode(row.allow_mdm),
+            "Allow Device Restriction": unicode(row.allow_device_restriction)
             })
     return Response(s.getvalue(),
                 mimetype='text/csv; charset=utf-8',
@@ -156,6 +164,9 @@ def upload_bundle():
             #issue_date = row["Issue Date"] # Present, but unused
             is_trial = row["Trial"].lower() == "true"
             allow_audit = row["Allow Audit"].lower() == "true"
+            allow_identity = row["Allow Identity"].lower() == "true"
+            allow_mdm = row["Allow MDM"].lower() == "true"
+            allow_device_restriction = row["Allow Device Restriction"].lower() == "true"
             filename = row["Filename"]
             # Look for a matching License in state PENDING
             license_request = models.License.query.filter_by(customer_id=customer_id,
@@ -164,6 +175,9 @@ def upload_bundle():
                     expiry_date=expiry_date,
                     is_trial=is_trial,
                     allow_audit=allow_audit,
+                    allow_identity=allow_identity,
+                    allow_mdm=allow_mdm,
+                    allow_device_restriction=allow_device_restriction
                     ).first()
             if license_request is not None:
                 # Extract license file from tarball

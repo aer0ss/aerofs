@@ -16,11 +16,11 @@ from aerofs_licensing.crypto import sign, verify
 from aerofs_licensing import license_file, unicodecsv
 
 # Column order of the data_dir's log CSV
-_LOG_COLUMN_ORDER = ["ID","License Type","Issue Date","Company","Seats","Expiry Date","Trial","Allow Audit"]
+_LOG_COLUMN_ORDER = ["ID","License Type","Issue Date","Company","Seats","Expiry Date","Trial","Allow Audit","Allow Identity","Allow MDM","Allow Device Restriction"]
 # Columns expected to be present in license request CSVs
-_LICENSE_REQUEST_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Company" ]
+_LICENSE_REQUEST_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Allow Identity", "Allow MDM", "Allow Device Restriction", "Company" ]
 # Columns expected to be present in a license bundle's manifest CSV
-_LICENSE_BUNDLE_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Issue Date", "Filename" ]
+_LICENSE_BUNDLE_FIELDS = [ "ID", "Seats", "Expiry Date", "Trial", "Allow Audit", "Allow Identity", "Allow MDM", "Allow Device Restriction", "Issue Date", "Filename" ]
 
 cached_password = None
 def caching_password_cb(uid_hint, passphrase_info, prev_was_bad, fd):
@@ -83,6 +83,10 @@ def build_tool(args):
 
     d["license_seats"] = str(license_seats)
     d["license_allow_auditing"] = prompt_for("Allow auditing (true/false): ")
+    d["license_allow_identity"] = prompt_for("Allow identity (true/false): ")
+    d["license_allow_mdm"] = prompt_for("Allow mdm (true/false): ")
+    d["license_allow_device_restriction"] = prompt_for("Allow device restriction (true/false): ")
+
     d["license_is_trial"] = prompt_for("Should this license be a trial (true/false): ").lower()
     d["license_issue_date"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -137,6 +141,9 @@ def _sign(row, data_dir, gpg_dir):
         raise ValueError("Expected 'true' or 'false' for field {} but got '{}'".format(key, row[key]))
     trial = _parse_key_boolean("Trial")
     allow_audit = _parse_key_boolean("Allow Audit")
+    allow_identity = _parse_key_boolean("Allow Identity")
+    allow_mdm = _parse_key_boolean("Allow MDM")
+    allow_device_restriction = _parse_key_boolean("Allow Device Restriction")
 
     # Security-sensitive kinda-tricky line here:
     # \n is a special character that indicates the end of a value (and the
@@ -161,6 +168,9 @@ def _sign(row, data_dir, gpg_dir):
             "Expiry Date":  expiry_date.strftime("%Y-%m-%d"),
             "Trial" :       str(trial).lower(),
             "Allow Audit":  str(allow_audit).lower(),
+            "Allow Identity":  str(allow_identity).lower(),
+            "Allow MDM":  str(allow_mdm).lower(),
+            "Allow Device Restriction":  str(allow_device_restriction).lower(),
             "Issue Date":   issue_date,
         }
     # ensure customer id folder exists
@@ -178,6 +188,10 @@ def _sign(row, data_dir, gpg_dir):
     d["license_issue_date"]     = license_metadata["Issue Date"]
     d["license_is_trial"]       = license_metadata["Trial"]
     d["license_allow_auditing"] = license_metadata["Allow Audit"]
+    d["license_allow_identity"] = license_metadata["Allow Identity"]
+    d["license_allow_mdm"]      = license_metadata["Allow MDM"]
+    d["license_allow_device_restriction"] = license_metadata["Allow Device Restriction"]
+
     new_license_file = os.path.join(customer_folder, "{}.license".format(issue_date))
     with open(new_license_file, "wb") as output_f:
         license_file.generate(d, output_f, gpg_homedir=gpg_dir, password_cb=caching_password_cb)
@@ -245,7 +259,10 @@ def signbundle_tool(args):
                     x["Seats"] == row["Seats"] and
                     x["Expiry Date"] == row["Expiry Date"] and
                     x["Trial"].lower() == row["Trial"].lower() and
-                    x["Allow Audit"].lower() == row["Allow Audit"].lower()
+                    x["Allow Audit"].lower() == row["Allow Audit"].lower() and
+                    x["Allow Identity"].lower() == row["Allow Identity"].lower() and
+                    x["Allow MDM"].lower() == row["Allow MDM"].lower() and
+                    x["Allow Device Restriction"].lower() == row["Allow Device Restriction"].lower()
                     ]
             # if none found:
             match = None

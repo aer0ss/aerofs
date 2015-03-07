@@ -77,6 +77,9 @@ def import_licenses_from(license_data_dir, id_user_map):
                 license.expiry_date = expiry_date
                 license.is_trial = is_trial
                 license.allow_audit = False
+                license.allow_identity = False
+                license.allow_mdm = False
+                license.allow_device_restriction = False
                 # load license data from folder
                 license_file = os.path.join(license_data_dir, "issued_licenses", row["ID"], row["Issue Date"] + ".license")
                 with open(license_file) as l:

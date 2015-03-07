@@ -144,7 +144,7 @@ def signup_completion_page():
         # Create a new Customer named `company`
         cust = models.Customer()
         cust.name = signup.company_name
-        cust.renewal_seats = 25 # default renewal number
+        cust.renewal_seats = 30 # default renewal number
         db.session.add(cust)
 
         # Create a new Admin with the right
@@ -172,9 +172,13 @@ def signup_completion_page():
         l.customer = cust
         l.state = models.License.LicenseState.PENDING
         l.seats = 30 # Default to 30 seat trial licenses
-        l.set_days_until_expiry(32)
+        l.set_days_until_expiry(365*10) # default to 10 years for now
         l.is_trial = True
         l.allow_audit = False
+        l.allow_identity = False
+        l.allow_mdm = False
+        l.allow_device_restriction = False
+
         db.session.add(l)
 
         # Commit.
@@ -400,6 +404,9 @@ def buy():
         license_request.seats = requested_license_count
         license_request.is_trial = False
         license_request.allow_audit = True
+        license_request.allow_identity = True
+        license_request.allow_mdm = True
+        license_request.allow_device_restriction = True
         db.session.add(license_request)
 
         customer.renewal_seats = license_request.seats
@@ -462,6 +469,7 @@ def dashboard():
     customer = user.customer
 
     active_license = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
+                models.License.is_trial.asc(),
                 models.License.expiry_date.desc(),
                 models.License.modify_date.desc(),
             ).first()

@@ -12,7 +12,7 @@
                 <h4>Active license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if active_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
+                    <dd>{% if active_license.is_trial %}Free{% else %}Paid{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ active_license.seats }}</dd>
                     <dt>Valid until:</dt>
@@ -22,7 +22,7 @@
                 <h4>Pending license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if newest_license.is_trial %}Trial{% else %}Standard{% endif %}</dd>
+                    <dd>{% if newest_license.is_trial %}Free{% else %}Paid{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ newest_license.seats }}</dd>
                     <dt>Valid until:</dt>
@@ -44,7 +44,7 @@
                         please contact us at <a href="mailto:sales@aerofs.com">sales@aerofs.com</a>.</p>
                     <form role="form" class="form-inline" action="" method="post" name="seats">
                         {{ form.hidden_tag() }}
-                        {{ render_field(form.count, type="select", no_divs=True, label_width=5, class="form-control")}}
+                        {{ render_field(form.count, type="number", no_divs=True, label_width=5, class="form-control")}}
                         {% if newest_license.is_trial %}
                         <button type="submit" class="btn btn-success">Purchase licenses</button>
                         {% else %}

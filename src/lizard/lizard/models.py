@@ -86,13 +86,16 @@ class Customer(db.Model, TimeStampedMixin):
     # This is used at the time of renewal.
     renewal_seats = db.Column(db.Integer, nullable=True)
 
+    # sort by paid accounts first, then expiry date, then modified date
     def newest_license(self):
         active_license = self.licenses.filter_by(state=License.states.FILLED).order_by(
+                    License.is_trial.asc(),
                     License.expiry_date.desc(),
                     License.modify_date.desc(),
                 ).first()
 
         pending_license = self.licenses.filter_by(state=License.states.PENDING).order_by(
+                    License.is_trial.asc(),
                     License.expiry_date.desc(),
                     License.modify_date.desc(),
                 ).first()
@@ -228,6 +231,9 @@ class License(db.Model, TimeStampedMixin):
 
     is_trial = db.Column(db.Boolean, nullable=False)
     allow_audit = db.Column(db.Boolean, default=False, nullable=False)
+    allow_identity = db.Column(db.Boolean, default=False, nullable=False)
+    allow_mdm = db.Column(db.Boolean, default=False, nullable=False)
+    allow_device_restriction = db.Column(db.Boolean, default=False, nullable=False)
 
     # Each license should generally have either a stripe id or an invoice ID
     # Exceptions are for trial licenses, and well, when we're feeling nice...

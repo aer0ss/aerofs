@@ -43,11 +43,15 @@
             <th>Members</th>
             <th>State</th>
             <th>Seats</th>
-            <th>Trial?</th>
+            <th>Free/Paid?</th>
             <th>Expiry Date</th>
             <th>Issue Date</th>
             <th>CC Receipt</th>
             <th>Manual Invoice</th>
+            <th>Auditing</th>
+            <th>Identity</th>
+            <th>MDM</th>
+            <th>DDR</th>
             <th colspan="3">Actions</th>
         </tr>
         {% for license in licenses %}
@@ -56,7 +60,7 @@
             <td>{% for admin in license.customer.admins.all() %}{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}<br>{% endfor %}</td>
             <td>{{ pretty_state(license) }}</td>
             <td>{{ license.seats }}</td>
-            <td>{% if license.is_trial %}Trial{% else %}Full license{% endif %}</td>
+            <td>{% if license.is_trial %}Free{% else %}Paid license{% endif %}</td>
             <td>{{ license.expiry_date.strftime('%b %d, %Y') }}</td>
             <td>{{ license.create_date.strftime('%b %d, %Y') }}</td>
             <td>
@@ -76,6 +80,10 @@
             {% endif %}
             </td>
             <td>{% if license.invoice_id %} {{ license.invoice_id }} {% endif %}</td>
+            <td>{% if license.allow_audit %}&#x2714{% endif %}</td>
+            <td>{% if license.allow_identity %}&#x2714{% endif %}</td>
+            <td>{% if license.allow_mdm %}&#x2714{% endif %}</td>
+            <td>{% if license.allow_device_restriction %}&#x2714{% endif %}</td>
             <td><a href="{{ url_for(".license_actions", license_id=license.id) }}">Details</a></td>
             {{ render_license_state_buttons(license) }}
         </tr>
