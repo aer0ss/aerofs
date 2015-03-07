@@ -14,14 +14,11 @@ shift 1
 SCRIPT=`readlink -f "$0"`
 SCRIPT_DIR=`dirname "$SCRIPT"`
 PROBE_SCRIPT=$SCRIPT_DIR/probes/$PROBE
-HIPCHAT_SCRIPT=/usr/local/bin/hipchat_room_message
 
 TRIES=3
 
 # set the reply to for emails to the team
 export REPLYTO="team@aerofs.com"
-# set the hipchat token
-HIPCHAT_TOKEN=bbae0c9263d4a3e0f614c7058eac6d
 
 for i in `seq 1 $TRIES`; do
     /bin/bash "$PROBE_SCRIPT" $@
@@ -35,7 +32,6 @@ for i in `seq 1 $TRIES`; do
         TITLE="$PROBE returned $RET: $ARGS"
         echo sending alert \"$TITLE\"
         echo " " | mail $SERVICE@aerofs.pagerduty.com -s "$TITLE"
-        echo "PagerDuty Probe Failed: $TITLE" | $HIPCHAT_SCRIPT -t $HIPCHAT_TOKEN -r 93246 -f "PagerDuty" -c "red" -n
         exit 1
     fi
 done

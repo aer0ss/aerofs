@@ -1,0 +1,83 @@
+#!/bin/bash
+
+###############################################################################
+#
+# ./slack_message
+#
+# A script for sending a system message to a channel or user.
+#
+# Docs: see Slack - Incoming WebHooks
+#
+# Usage:
+#   cat message.txt | ./slack_message -u <URI> -r "#eng" -f "System"
+#   echo -e "New\nline" | ./slack_message -t <token> -r "#eng" -f "System"
+#
+###############################################################################
+
+# exit on failure
+set -e
+
+usage() {
+  cat << EOF
+Usage: $0 -u <webhook_url> [-r <channel>] [-f <from name>] [-c <color>]
+
+This script will read from stdin and send the contents to the given room as
+a system message.
+
+FORMATTING NOTES:
+
+See Slack docs. Use angle brackets to create clickable URLs.
+
+Note that the channel, bot name, and color are all default-configured for the bot.
+
+OPTIONS:
+   -h             Show this message
+   -u <url>       Webhook URL for Slack incoming WebHook
+   -r <channel>   Channel name; e.g. #eng, @username
+   -f <from name> From name (default configured in Slack)
+   -c <color>     Message color; one of 'good', 'warning', 'danger', or any hex color code.
+   -n             No-op; show what would have been sent.
+EOF
+}
+
+WEBHOOK=
+CHANNEL=
+FROM=
+COLOR=
+CURL=curl
+while getopts “c:f:hnr:u:” OPTION; do
+  case $OPTION in
+    c) COLOR=$OPTARG;;
+    f) FROM=$OPTARG;;
+    h) usage; exit 1;;
+    n) CURL="echo $CURL";;
+    r) CHANNEL=$OPTARG;;
+    u) WEBHOOK=$OPTARG ;;
+    [?]) usage; exit;;
+  esac
+done
+
+# check for required args
+if [[ -z $WEBHOOK ]]; then
+  usage
+  exit 1
+fi
+
+# read stdin, then clean up bare newlines:
+INPUT=$(cat)
+INPUT=${INPUT//$'\n'/\\n}
+INPUT=${INPUT//\"/\\\"}
+
+fromStr=
+colorStr=
+channelStr=
+[ -z "$FROM" ] || fromStr=", \"username\":\"${FROM//\"/}\""
+[ -z "$CHANNEL" ] || channelStr=", \"channel\":\"${CHANNEL//\"/}\""
+
+payloadStr="{ \"text\":\"$INPUT\" $fromStr $channelStr }"
+
+# Send the payload string as the body of a POST
+$CURL -sS -XPOST \
+    -d "$payloadStr" \
+    "$WEBHOOK"
+

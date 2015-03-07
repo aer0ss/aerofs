@@ -1,0 +1,8 @@
+name    'aerofs-slack'
+version '0.0.1'
+source 'UNKNOEN'
+author 'Jon Pile by way of Peter Hamilton <jon@aerofs.com>'
+license 'Apache License, Version 2.0'
+summary 'Send messages to Slack'
+description 'send messages to a Slack channel'
+project_page 'UNKNOWN'

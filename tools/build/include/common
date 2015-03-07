@@ -98,6 +98,8 @@ readonly MAP_SERVER="rocklog.aerofs.com"
 readonly MAP_SERVER_LOGIN=${MAP_SERVER}
 readonly MAP_FILES_DIR="/maps"
 
+readonly SLACK_WEBHOOK="https://hooks.slack.com/services/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"
+
 ###############################################################################
 #
 # Constants relating to the product to be built (CLIENT/TEAM_SERVER)
@@ -441,16 +443,11 @@ function publish_public_to_s3() {
 ENDCMDS
 }
 
-# Emails team@aerofs.com about this deployment and sends message to Dev Team
-# channel on Hipchat.
+# Emails team@aerofs.com about this deployment and sends message to #eng channel on Slack
 function notify_successful_deployment {
-    echo ">> notifying team of successful deployment via email"
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
-ENDCMDS
-    echo ">> notifying team of successful deployment via HipChat"
+    echo ">> notifying team of successful deployment via Slack"
     echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
-        $(git rev-parse --show-cdup)puppetmaster/modules/hipchat/files/hipchat_room_message -c green -t 6124360a8cd9355ff9b9927b51cea4 -r 93246 -f "Deploy" > /dev/null
+        $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message -c good -u $SLACK_WEBHOOK -f "Deploy" > /dev/null
 }
 
 # Uploads proguard map file to the servers that need it.
