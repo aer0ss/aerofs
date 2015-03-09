@@ -8,6 +8,8 @@ public abstract class Constants {
 
     public static final String DEPLOYMENT_SECRET_ABSOLUTE_PATH = "/data/deployment_secret";
 
+    public static final int NUM_NOTIFICATION_DATABASE_LOOKUP_THREADS = 10;
+
     //
     // default parameters
     //

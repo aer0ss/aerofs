@@ -4,19 +4,20 @@ import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
+import com.aerofs.baseline.logging.ConsoleLoggingConfiguration;
+import com.aerofs.baseline.logging.FileLoggingConfiguration;
+import com.aerofs.baseline.logging.LoggingConfiguration;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
-import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
-import com.aerofs.polaris.dao.LogicalTimestamps;
-import com.aerofs.polaris.dao.NotifiedTimestamps;
 import com.aerofs.polaris.dao.types.DIDTypeArgument;
 import com.aerofs.polaris.dao.types.OIDTypeArgument;
 import com.aerofs.polaris.dao.types.ObjectTypeArgument;
 import com.aerofs.polaris.dao.types.SIDTypeArgument;
 import com.aerofs.polaris.dao.types.TransformTypeArgument;
 import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
@@ -31,7 +32,13 @@ import org.skife.jdbi.v2.DBI;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
 
+import static com.aerofs.polaris.notification.NotifierUtilities.getLatestLogicalTimestamp;
+import static com.aerofs.polaris.notification.NotifierUtilities.getLatestNotifiedLogicalTimestamp;
+import static com.aerofs.polaris.notification.NotifierUtilities.getVerkehrUpdateTopic;
+import static com.aerofs.polaris.notification.NotifierUtilities.setLatestLogicalTimestamp;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Matchers.any;
@@ -53,6 +60,20 @@ public final class TestOrderedNotifier {
 
     @Before
     public void setup() throws Exception {
+        // setup logging
+        FileLoggingConfiguration file = new FileLoggingConfiguration();
+        file.setEnabled(false);
+
+        ConsoleLoggingConfiguration console = new ConsoleLoggingConfiguration();
+        console.setEnabled(true);
+
+        LoggingConfiguration logging = new LoggingConfiguration();
+        logging.setLevel(Level.ALL.toString());
+        logging.setFile(file);
+        logging.setConsole(console);
+
+        com.aerofs.baseline.logging.Logging.setupLogging(logging);
+
         // setup database
         PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
         DatabaseConfiguration database = configuration.getDatabase();
@@ -63,7 +84,7 @@ public final class TestOrderedNotifier {
         flyway.migrate();
 
         // setup JDBI
-        dbi = Databases.newDBI(dataSource);
+        DBI dbi = Databases.newDBI(dataSource);
         dbi.registerArgumentFactory(new UniqueIDTypeArgument.UniqueIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new OIDTypeArgument.OIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new SIDTypeArgument.SIDTypeArgumentFactory());
@@ -71,8 +92,11 @@ public final class TestOrderedNotifier {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
 
+        // spy on it
+        this.dbi = Mockito.spy(dbi);
+
         // setup notifier
-        notifier = new OrderedNotifier(dbi, publisher, MoreExecutors.sameThreadExecutor()); // tasks executed inline
+        notifier = new OrderedNotifier(this.dbi, publisher, MoreExecutors.sameThreadExecutor(), MoreExecutors.listeningDecorator(MoreExecutors.sameThreadExecutor())); // tasks executed inline
         notifier.start();
     }
 
@@ -91,7 +115,7 @@ public final class TestOrderedNotifier {
     public void shouldPublishNotificationAndUpdateDatabaseTablesWhenStoreUpdated() {
         // set the logical timestamp associated with this store
         UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(root, 3024);
+        setLatestLogicalTimestamp(dbi, root, 3024);
 
         // future to be returned when the update is published
         SettableFuture<Void> future = SettableFuture.create();
@@ -106,8 +130,8 @@ public final class TestOrderedNotifier {
         future.set(null);
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(root), equalTo(3024L));
-        assertThat(getLatestNotifiedLogicalTimestamp(root), equalTo(3024L));
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(3024L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(3024L));
     }
 
     @Test
@@ -119,7 +143,7 @@ public final class TestOrderedNotifier {
 
         // set the logical timestamp associated with this store
         UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(root, 1983);
+        setLatestLogicalTimestamp(dbi, root, 1983);
 
         notifier.notifyStoreUpdated(root); // <--- CALL
 
@@ -127,8 +151,8 @@ public final class TestOrderedNotifier {
         future0.setException(new RuntimeException("publish failed"));
 
         // we haven't changed the db
-        assertThat(getLatestLogicalTimestamp(root), equalTo(1983L));
-        assertThat(getLatestNotifiedLogicalTimestamp(root), equalTo(-1L));
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(1983L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(-1L));
 
         // second time around the publish succeeds
         future1.set(null);
@@ -137,8 +161,8 @@ public final class TestOrderedNotifier {
         verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(root)), eq(new Update(root, 1983))); // first call (unsuccessful), second call succeeds
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(root), equalTo(1983L));
-        assertThat(getLatestNotifiedLogicalTimestamp(root), equalTo(1983L));
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(1983L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(1983L));
     }
 
     @Test
@@ -150,20 +174,20 @@ public final class TestOrderedNotifier {
 
         // set the logical timestamp associated with this store
         UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(root, 1983);
+        setLatestLogicalTimestamp(dbi, root, 1983);
 
         notifier.notifyStoreUpdated(root); // <--- CALL
 
         // now, modify the logical timestamp associated with this store again
         // note that it's *this* timestamp that should be picked up with the second call
-        setLatestLogicalTimestamp(root, 2005);
+        setLatestLogicalTimestamp(dbi, root, 2005);
 
         // first time around the publish fails :(
         future0.setException(new RuntimeException("publish failed"));
 
         // we haven't changed the db
-        assertThat(getLatestLogicalTimestamp(root), equalTo(2005L));
-        assertThat(getLatestNotifiedLogicalTimestamp(root), equalTo(-1L));
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2005L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(-1L));
 
         // second time around the publish succeeds
         future1.set(null);
@@ -176,35 +200,47 @@ public final class TestOrderedNotifier {
         assertThat(updates.get(1), equalTo(new Update(root, 2005))); // second call was made with the second value which existed at the time of the publish retry
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(root), equalTo(2005L));
-        assertThat(getLatestNotifiedLogicalTimestamp(root), equalTo(2005L));
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2005L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2005L));
     }
 
-    // FIXME (AG): test db failures...
+    @Test
+    public void shouldRetryPublishIfFirstDatabaseCallFails() throws Exception {
+        // set the logical timestamp associated with this store
+        UniqueID root = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, root, 2918);
 
-    private String getVerkehrUpdateTopic(UniqueID root) {
-        return PolarisUtilities.getVerkehrUpdateTopic(root.toStringFormal());
+        // publish should always succeed
+        when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(Futures.immediateFuture(null));
+
+        // first db call should fail, the second should succeed
+        when(dbi.open()).thenThrow(new RuntimeException("first db call fails")).thenCallRealMethod();
+
+        notifier.notifyStoreUpdated(root); // <--- CALL
+
+        // database should be updated by the end of this
+        assertThat(getLatestLogicalTimestamp(dbi,root), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2918L));
     }
 
-    private void setLatestLogicalTimestamp(UniqueID root, long timestamp) {
-        dbi.inTransaction((conn, status) -> {
-            LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
-            timestamps.updateLatest(root, timestamp);
-            return null;
-        });
+    @Test
+    public void shouldRetryPublishIfSecondDatabaseCallFails() throws Exception {
+        // set the logical timestamp associated with this store
+        UniqueID root = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, root, 2918);
+
+        // publish should always succeed
+        when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(Futures.immediateFuture(null));
+
+        // first db call should succeed, the second should fail, and following should succeed
+        when(dbi.open()).thenCallRealMethod().thenThrow(new RuntimeException("second db call fails")).thenCallRealMethod();
+
+        notifier.notifyStoreUpdated(root); // <--- CALL
+
+        // database should be updated by the end of this
+        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2918L));
     }
 
-    private long getLatestLogicalTimestamp(UniqueID root) {
-        return dbi.inTransaction((conn, status) -> {
-            LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
-            return timestamps.getLatest(root);
-        });
-    }
 
-    private long getLatestNotifiedLogicalTimestamp(UniqueID root) {
-        return dbi.inTransaction((conn, status) -> {
-            NotifiedTimestamps timestamps = conn.attach(NotifiedTimestamps.class);
-            return timestamps.getLatest(root);
-        });
-    }
 }

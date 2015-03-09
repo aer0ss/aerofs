@@ -93,24 +93,9 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
     @Override
     public ListenableFuture<Void> publishUpdate(String topic, Update update) {
-        LOGGER.debug("notify {}", topic);
-
         SettableFuture<Void> returned = SettableFuture.create();
 
-        if (LOGGER.isDebugEnabled()) {
-            Futures.addCallback(returned, new FutureCallback<Void>() {
-
-                @Override
-                public void onSuccess(@Nullable Void result) {
-                    LOGGER.debug("done notify {}", topic);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    LOGGER.debug("fail notify {}", topic);
-                }
-            });
-        }
+        LOGGER.debug("notify {}", topic);
 
         try {
             byte[] serialized = mapper.writeValueAsBytes(update);
@@ -119,11 +104,13 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
                 @Override
                 public void onSuccess(@Nullable Void result) {
+                    LOGGER.debug("done notify {}", topic);
                     returned.set(result);
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
+                    LOGGER.debug("fail notify {}", topic);
                     returned.setException(t);
                 }
             });

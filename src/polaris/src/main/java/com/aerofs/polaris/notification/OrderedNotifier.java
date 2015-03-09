@@ -2,13 +2,18 @@ package com.aerofs.polaris.notification;
 
 import com.aerofs.baseline.Threads;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.api.types.Timestamps;
 import com.aerofs.polaris.dao.NotifiedTimestamps;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.slf4j.Logger;
@@ -17,11 +22,12 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// FIXME (AG): the notifier thread will be bogged down making db requests
-// FIXME (AG): this code is very poor and I have no time to improve it
+// FIXME (AG): this code is incredibly poor and I have no time to improve it
+// FIXME (AG): stripe notifications
 
 /**
  * Naive implementation of an ordered notification system.
@@ -33,18 +39,33 @@ public final class OrderedNotifier implements ManagedNotifier {
     private final Set<UniqueID> pending = Sets.newConcurrentHashSet();
     private final DBI dbi;
     private final UpdatePublisher publisher;
-    private final ExecutorService executor;
+    private final ExecutorService notifyExecutor;
+    private final ListeningExecutorService databaseExecutor;
 
-    @SuppressWarnings("unused")
-    @Inject
-    public OrderedNotifier(DBI dbi, UpdatePublisher publisher) {
-        this(dbi, publisher, Executors.newSingleThreadExecutor(Threads.newNamedThreadFactory("on-%d")));
+    private final class NotifyState {
+
+        private final UniqueID root;
+        private @Nullable Timestamps timestamps;
+
+        public NotifyState(UniqueID root) {
+            this.root = root;
+        }
     }
 
-    OrderedNotifier(DBI dbi, UpdatePublisher publisher, ExecutorService executor) {
+    // FIXME (AG): specify number of threads
+    @Inject
+    public OrderedNotifier(DBI dbi, UpdatePublisher publisher) {
+        this(dbi,
+             publisher,
+             MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor(Threads.newNamedThreadFactory("notify-%d"))),
+             MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Constants.NUM_NOTIFICATION_DATABASE_LOOKUP_THREADS, Threads.newNamedThreadFactory("notify-db-%d"))));
+    }
+
+    OrderedNotifier(DBI dbi, UpdatePublisher publisher, ListeningExecutorService notifyExecutor, ListeningExecutorService databaseExecutor) {
         this.dbi = dbi;
         this.publisher = publisher;
-        this.executor = executor;
+        this.notifyExecutor = notifyExecutor;
+        this.databaseExecutor = databaseExecutor;
     }
 
     @Override
@@ -55,7 +76,8 @@ public final class OrderedNotifier implements ManagedNotifier {
     @Override
     public void stop() {
         LOGGER.info("stopping ordered notifier");
-        executor.shutdown();
+        notifyExecutor.shutdown();
+        databaseExecutor.shutdown();
     }
 
     @Override
@@ -63,90 +85,86 @@ public final class OrderedNotifier implements ManagedNotifier {
         boolean added = pending.add(root);
 
         if (added) {
-            publish(root, null);
+            NotifyState state = new NotifyState(root);
+            publish(state);
         }
     }
 
-    private void publish(UniqueID root, @Nullable Timestamps timestamps) {
-        executor.execute(new RetryingRunnable(root, new PublishTask(timestamps)));
-    }
+    // FIXME (AG): I wish we had fibers
+    // I tried to create a chain() method and by the time I was done things looked way worse than if I wrote everything inline
+    private void publish(NotifyState state) {
+        notifyExecutor.submit(new Callable<Void>() {
 
-    private final class RetryingRunnable implements Runnable {
+            @Override
+            public Void call() {
+                ListenableFuture<Timestamps> lookupFuture = databaseExecutor.submit(() -> getTimestamps(state.root));
 
-        private final UniqueID root;
-        private final Task task;
+                Futures.addCallback(lookupFuture, new FutureCallback<Timestamps>() {
 
-        public RetryingRunnable(UniqueID root, Task task) {
-            this.root = root;
-            this.task = task;
-        }
+                    @Override
+                    public void onSuccess(@Nullable Timestamps result) {
+                        Preconditions.checkNotNull(result);
 
-        @Override
-        public void run() {
-            try {
-                task.execute(root);
-            } catch (Exception e) {
-                LOGGER.warn("fail publish notification for {}", root, e);
-                publish(root, null);
+                        if (!shouldNotify(state.root, result)) {
+                            return;
+                        }
+
+                        state.timestamps = result;
+
+                        ListenableFuture<Void> publishFuture = publishStoreNotification(state);
+                        Futures.addCallback(publishFuture, new FutureCallback<Void>() {
+
+                            @Override
+                            public void onSuccess(@Nullable Void result) {
+                                ListenableFuture<Void> updateFuture = databaseExecutor.submit(new Callable<Void>() {
+                                    @Override
+                                    public Void call() {
+                                        updateNotifiedTimestamp(state);
+                                        return null;
+                                    }
+                                });
+
+                                Futures.addCallback(updateFuture, new FutureCallback<Void>() {
+
+                                    @Override
+                                    public void onSuccess(@Nullable Void result) {
+                                        Timestamps timestamps = getTimestamps(state.root);
+                                        if (shouldNotify(state.root, timestamps)) {
+                                            publish(new NotifyState(state.root));
+                                        } else {
+                                            pending.remove(state.root);
+                                        }
+
+                                    }
+
+                                    @Override
+                                    public void onFailure(Throwable t) {
+                                        handleFailure(state.root, t);
+                                    }
+                                }, notifyExecutor);
+                            }
+
+                            @Override
+                            public void onFailure(Throwable t) {
+                                handleFailure(state.root, t);
+                            }
+                        }, notifyExecutor);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        handleFailure(state.root, t);
+                    }
+                }, notifyExecutor);
+
+                return null;
             }
-        }
+        });
     }
 
-    private interface Task {
-
-        void execute(UniqueID root) throws Exception;
-    }
-
-    private final class PublishTask implements Task {
-
-        private @Nullable Timestamps timestamps;
-
-        public PublishTask(@Nullable Timestamps timestamps) {
-            this.timestamps = timestamps;
-        }
-
-        @Override
-        public void execute(UniqueID root) throws Exception {
-            timestamps = timestamps == null ? getTimestamps(root) : timestamps;
-
-            // check if we have to notify at all - can happen if an older request processing threads wants to publish a notification
-            if (!shouldNotify(timestamps)) return;
-
-            // notify
-            ListenableFuture<Void> publishFuture = publishStoreNotification(root, timestamps.databaseTimestamp);
-
-            // when the future triggers, attempt to write the notified timestamp to the database
-            publishFuture.addListener(new RetryingRunnable(root, new UpdateTask(publishFuture, timestamps.databaseTimestamp)), executor);
-        }
-    }
-
-    private final class UpdateTask implements Task {
-
-        private final ListenableFuture<Void> publishFuture;
-        private final long notifiedTimestamp;
-
-        public UpdateTask(ListenableFuture<Void> publishFuture, long notifiedTimestamp) {
-
-            this.publishFuture = publishFuture;
-            this.notifiedTimestamp = notifiedTimestamp;
-        }
-
-        @Override
-        public void execute(UniqueID root) throws Exception {
-            // did the publish succeed?
-            publishFuture.get();
-
-            // update the db to indicate that we notified successfully
-            updateNotifiedTimestamp(root, notifiedTimestamp);
-
-            // check if we need to notify again
-            Timestamps timestamps = getTimestamps(root);
-            if (shouldNotify(timestamps)) {
-                publish(root, timestamps);
-            } else {
-                pending.remove(root);
-            }
-        }
+    private void handleFailure(UniqueID root, Throwable t) {
+        LOGGER.warn("fail publish notification for {}", root, t);
+        publish(new NotifyState(root));
     }
 
     // stage 1
@@ -162,25 +180,24 @@ public final class OrderedNotifier implements ManagedNotifier {
     }
 
     // stage 2
-    private ListenableFuture<Void> publishStoreNotification(UniqueID root, long latest) {
-        return publisher.publishUpdate(PolarisUtilities.getVerkehrUpdateTopic(root.toStringFormal()), new Update(root, latest));
+    private ListenableFuture<Void> publishStoreNotification(NotifyState state) {
+        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.root);
+        LOGGER.debug("publish {} to {}", state.timestamps.databaseTimestamp, state.root);
+        return publisher.publishUpdate(PolarisUtilities.getVerkehrUpdateTopic(state.timestamps.root.toStringFormal()), new Update(state.root, state.timestamps.databaseTimestamp));
     }
 
     // stage 3
-    private void updateNotifiedTimestamp(UniqueID root, long latest) {
+    private void updateNotifiedTimestamp(NotifyState state) {
+        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.root);
         dbi.inTransaction(TransactionIsolationLevel.READ_COMMITTED, (conn, status) -> {
             NotifiedTimestamps timestamps = conn.attach(NotifiedTimestamps.class);
-            timestamps.updateLatest(root, latest);
+            timestamps.updateLatest(state.root, state.timestamps.databaseTimestamp);
             return null;
         });
     }
 
-    private static boolean shouldNotify(Timestamps timestamps) {
-        if (timestamps.databaseTimestamp == timestamps.notifiedTimestamp) {
-            LOGGER.info("{} is up to date - latest notified timestamp:{}", timestamps.notifiedTimestamp);
-            return false;
-        }
-
-        return true;
+    private static boolean shouldNotify(UniqueID root, Timestamps timestamps) {
+        LOGGER.debug("compare ts for {}: latest:{} notify:{}", root, timestamps.databaseTimestamp, timestamps.notifiedTimestamp);
+        return timestamps.databaseTimestamp != timestamps.notifiedTimestamp;
     }
 }
