@@ -262,7 +262,7 @@ public class SSLEngineFactory implements ISslHandlerFactory
     @Override
     public SslHandler newSslHandler() throws IOException, GeneralSecurityException
     {
-        SslHandler sslHandler = new SslHandler(getSSLEngine());
+        AeroSslHandler sslHandler = new AeroSslHandler(getSSLEngine());
         sslHandler.setCloseOnSSLException(true);
         sslHandler.setEnableRenegotiation(false);
         return sslHandler;
