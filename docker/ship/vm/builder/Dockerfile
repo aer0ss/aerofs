@@ -2,14 +2,18 @@ FROM python:2.7
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-# Combine download and unzip so we don't pollute Docker build cache
-# TODO (WW) verify the downloaded image
-RUN \
-    wget http://alpha.release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2 -O /coreos.bin.bz2 &&\
-    echo "Decompression may take a while..." &&\
-    bunzip2 /coreos.bin.bz2
-
 RUN pip install Jinja2 pyyaml
 RUN apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/*
+
+ENV COREOS_TAR_BALL http://alpha.release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2
+
+RUN \
+    wget $COREOS_TAR_BALL -O /coreos.bin.bz2 &&\
+    wget $COREOS_TAR_BALL.sig -O /coreos.bin.bz2.sig &&\
+    # See https://coreos.com/security/image-signing-key/ for signing key ID
+    gpg --recv-keys 50E0885593D2DCB4 &&\
+    gpg --verify coreos.bin.bz2.sig &&\
+    echo "Decompression may take a while..." &&\
+    bunzip2 /coreos.bin.bz2
 
 COPY root /

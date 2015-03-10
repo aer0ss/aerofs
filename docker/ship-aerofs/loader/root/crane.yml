@@ -246,6 +246,7 @@ containers:
     image: aerofs/sp
     run:
       detach: true
+      # for deployment secret and private deployment flag
       volumes-from:
         - data
       link:
@@ -261,6 +262,9 @@ containers:
     image: aerofs/verification
     run:
       detach: true
+      # for deployment secret
+      volumes-from:
+        - data
       link:
         - postfix:postfix.service
         - config:config.service

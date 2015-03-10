@@ -72,11 +72,6 @@ check all nginx configurations.
 0. Right before release, verify all new code in puppet and other folder have been
 copied or duplicated in the new system.
 
-### Security TODO
-
-0. Verify CoreOS base image. [More info](https://coreos.com/docs/sdk-distributors/distributors/notes-for-distributors/)
-
-
 
 ### Items after initial release
 
