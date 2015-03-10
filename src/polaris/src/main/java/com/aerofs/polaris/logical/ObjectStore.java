@@ -193,6 +193,23 @@ public final class ObjectStore {
                     .add("granted", granted)
                     .toString();
         }
+
+        // granted must be a *superset* of requested
+        public boolean subsumes(Access[] requested) {
+            if (requested.length == 0) {
+                return false;
+            }
+
+            boolean subsumes = true;
+
+            for (Access required : requested) {
+                if (!granted.contains(required)) {
+                    subsumes = false;
+                }
+            }
+
+            return subsumes;
+        }
     }
 
     /**
@@ -228,7 +245,7 @@ public final class ObjectStore {
         UniqueID currentStore = getStore(dao, oid);
         Preconditions.checkArgument(currentStore.equals(accessToken.store), "access granted for store %s instead of %s", accessToken.store, currentStore);
 
-        if (!ImmutableSet.copyOf(requested).equals(accessToken.granted)) {
+        if (!accessToken.subsumes(requested)) {
             LOGGER.warn("access granted for {} instead of {}", accessToken.granted, requested);
             throw new AccessException(accessToken.user, accessToken.store, requested);
         }
