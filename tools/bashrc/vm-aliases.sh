@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VMTOOL=$(dirname "${BASH_SOURCE[0]}")/../vm-tool
+VMTOOL=$(dirname "${BASH_SOURCE[0]:-$0}")/../vm-tool
 if [[ ! -x $VMTOOL ]]; then
     echo "The vm-tool script (expected at $VMTOOL) was not found."
 fi

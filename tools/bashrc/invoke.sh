@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GIT_ROOT=$(dirname $(dirname $(dirname "${BASH_SOURCE[0]}")))
+GIT_ROOT=$(dirname $(dirname $(dirname "${BASH_SOURCE[0]:-$0}")))
 alias invoke="$GIT_ROOT/invoke"
 
 # The _filedir function does intelligent bash completion for files and folders.
@@ -86,4 +86,13 @@ _invoke()
         COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
     fi
 }
+
+# allow zsh to have the same cool autocompletion features as bash
+command -v autoload &>/dev/null
+if [ $? -eq 0 ] ; then
+    autoload bashcompinit
+    bashcompinit
+fi
+
+# turn on autocompletion
 complete -F _invoke invoke

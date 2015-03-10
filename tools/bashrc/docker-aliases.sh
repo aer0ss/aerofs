@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEV_DIR="$(dirname "${BASH_SOURCE[0]}")/../../docker/dev"
+DEV_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")/../../docker/dev"
 
 # Run crane from any folder
 alias crane="${DEV_DIR}/crane.sh"
