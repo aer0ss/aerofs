@@ -246,6 +246,8 @@ containers:
     image: aerofs/sp
     run:
       detach: true
+      volumes-from:
+        - data
       link:
         - ca:ca.service
         - mysql:mysql.service
