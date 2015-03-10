@@ -19,6 +19,7 @@ if __name__ == "__main__":
     arg 1: path to ship.yml
     arg 2: output path to cloud-config.yml
     arg 3: output path to preload-cloud-config.yml
+    arg 4: tag
     """
     with open(argv[1]) as f:
         y = yaml.load(f)
@@ -30,6 +31,7 @@ if __name__ == "__main__":
             loader_image=y['loader-image'],
             swap_size=y['vm-swap-size'],
             repo=y['repo'],
+            tag=argv[4],
             target=y['target'],
         ))
 

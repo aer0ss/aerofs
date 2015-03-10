@@ -4,22 +4,30 @@ from common import MODIFIED_YML_PATH, CRANE_YML_PATH, TAG_PATH, call_crane, my_i
 from api import start
 
 
-def load(repo_file, target_file):
+def load(repo_file, tag_file, target_file):
+
+    # Verify that tag file content matches our own tag
+    tag = get_tag()
+    with open(tag_file) as f:
+        tag_from_file = f.read().strip()
+        if tag != tag_from_file:
+            raise Exception("ERROR: Tag file content '{}' differs from the Loader's tag '{}'."
+                            " Please check sanity of the sail script.".format(tag_from_file, tag))
+
     with open(repo_file) as f:
         repo = f.read().strip()
     with open(target_file) as f:
         target = f.read().strip()
 
-    tag = get_tag()
     modify_yaml(repo, tag)
     call_crane('run', target)
-    start(repo, target, repo_file, target_file, tag, False)
+    start(repo, target, repo_file, tag_file, target_file, tag, False)
 
 
 def simulate_api(repo, target):
     tag = get_tag()
     modify_yaml(repo, tag)
-    start(repo, target, '/dev/null', '/dev/null', tag, True)
+    start(repo, target, '/dev/null', '/dev/null', '/dev/null', tag, True)
 
 
 def modify_yaml(repo, tag):

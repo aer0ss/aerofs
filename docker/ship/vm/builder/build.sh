@@ -92,6 +92,9 @@ teardown_preload_registry() {
 }
 
 build_vdi() {
+    local LOADER_IMAGE=$1
+    local TAG=$(docker run --rm ${LOADER_IMAGE} tag)
+
     # Copy ship.yml to the output folder as the original file may be in a temp folder which can't be
     # reliably bind mounted by docker-machine.
     cp "${SHIP_YML}" "${OUTPUT}/ship.yml"
@@ -102,7 +105,7 @@ build_vdi() {
 
     # Run the builder. Need privilege to run losetup
     docker run --rm --privileged -v "${OUTPUT}":/output -v "${OUTPUT}/ship.yml":/ship.yml \
-        ${IMAGE} /run.sh /ship.yml /output
+        ${IMAGE} /run.sh /ship.yml /output ${TAG}
 }
 
 resize_vdi() {
@@ -302,17 +305,18 @@ main() {
     OUTPUT=$(abspath "${OUTPUT}")
 
     local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
+    local LOADER_IMAGE=$(yml 'loader-image')
     local VM=shipenterprise-build-vm
     local FINAL_VM=$(yml 'vm-image-name')
     local VM_BASE_DIR="${OUTPUT}/preloaded/vm"
     local VDI="${OUTPUT}/preloaded/disk.vdi"
     local OVA="${OUTPUT}/preloaded/${FINAL_VM}.ova"
 
-    setup_preload_registry ${PRELOAD_REPO_CONTAINER} $(yml 'loader-image') ${PUSH}
+    setup_preload_registry ${PRELOAD_REPO_CONTAINER} ${LOADER_IMAGE} ${PUSH}
 
     # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the host.
     delete_vm ${VM} "${VM_BASE_DIR}"
-    build_vdi
+    build_vdi ${LOADER_IMAGE}
     resize_vdi "${VDI}" $(yml 'vm-disk-size')
 
     # To minimize race condition, search for a free port right before we use the port.

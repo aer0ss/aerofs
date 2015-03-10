@@ -40,12 +40,12 @@ def main():
         loader.verify()
 
     elif argv[1] == 'load':
-        if len(argv) != 4:
-            print >>stderr, "Usage: {} {} repo_file target_file".format(argv[0], argv[1])
+        if len(argv) != 5:
+            print >>stderr, "Usage: {} {} repo_file tag_file target_file".format(argv[0], argv[1])
             print >>stderr, "       Provide an empty repo file to use the default Docker repo."
             print >>stderr, "       Provide an empty target file to launch the default crane target."
             raise Exception('Wrong arguments for command {}'.format(argv[1]))
-        loader.load(argv[2], argv[3])
+        loader.load(argv[2], argv[3], argv[4])
 
     elif argv[1] == 'install-getty':
         install_getty(argv[2])

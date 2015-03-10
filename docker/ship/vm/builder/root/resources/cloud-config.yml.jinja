@@ -6,14 +6,16 @@
 #}
 {% set getty_restart_unit = 'getty-restart' %}
 {% set getty_drop_in = '/etc/systemd/system/getty@tty1.service.d/50-ship.conf' %}
-{% set getty_restart = '/opt/ship/getty/restart' %}
-{% set getty_restarted = '/opt/ship/getty/restarted' %}
-{% set getty_run = '/opt/ship/getty/run' %}
-{% set enable_swap = '/opt/ship/enable-swap' %}
-{% set sail = '/opt/ship/sail' %}
-{% set loader_getty = '/opt/ship/loader/getty' %}
-{% set repo_file = '/opt/ship/loader/repo' %}
-{% set target_file = '/opt/ship/loader/target' %}
+{% set getty_restart = '/ship/getty/restart' %}
+{% set getty_restarted = '/ship/getty/restarted' %}
+{% set getty_run = '/ship/getty/run' %}
+{% set enable_swap = '/ship/enable-swap' %}
+{% set sail = '/ship/sail' %}
+{% set loader_getty = '/ship/loader/getty' %}
+{% set loader_run = '/ship/loader/run' %}
+{% set repo_file = loader_run + '/repo' %}
+{% set tag_file = loader_run + '/tag' %}
+{% set target_file = loader_run + '/target' %}
 
 hostname: {{ hostname }}
 
@@ -87,10 +89,12 @@ write_files:
       dmesg -n 1
       echo 'Loading console service...'
 
-      {# Create repo file if not exist #}
-      [[ -f {{ repo_file }} ]] || (mkdir -p $(dirname {{ repo_file }}) && echo '{{ repo }}' > {{ repo_file }})
+      {# Create files if not exist #}
+      mkdir -p {{ loader_run }}
+      [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
+      [[ -f {{ tag_file }} ]] || echo '{{ tag }}' > {{ tag_file }}
 
-      IMAGE="$(cat {{ repo_file }})/{{ loader_image }}"
+      IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
       docker run --rm -v {{ loader_getty }}:/host "${IMAGE}" install-getty /host
       {# Don't rely on systemd's Restart= directive as the user may ^C in quick succession causing systemd to #}
       {# disable the service. #}
@@ -127,21 +131,26 @@ write_files:
           )
         done
 
-        {# Create repo and target files if not exist #}
-        [[ -f {{ repo_file }} ]] || (mkdir -p $(dirname {{ repo_file }}) && echo '{{ repo }}' > {{ repo_file }})
-        [[ -f {{ target_file }} ]] || (mkdir -p $(dirname {{ target_file }}) && echo '{{ target }}' > {{ target_file }})
+        {# Create files if not exist #}
+        mkdir -p {{ loader_run }}
+        [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
+        [[ -f {{ tag_file }} ]] || echo '{{ tag }}' > {{ tag_file }}
+        [[ -f {{ target_file }} ]] || echo '{{ target }}' > {{ target_file }}
 
-        IMAGE="$(cat {{ repo_file }})/{{ loader_image }}"
+        IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
 
         {# Use the same container name across restarts as crane/docker doesn't update container links on restarts. #}
         {# Attach tag to support live upgrades. #}
-        CONTAINER=loader-$(docker run --rm "${IMAGE}" tag)
+        CONTAINER=loader-$(cat {{ tag_file }})
 
         {# Create Loader container if not exist #}
         [[ "$(docker ps -a | grep ${CONTAINER})" ]] || \
-            docker create --name "${CONTAINER}" -v /var/run/docker.sock:/var/run/docker.sock \
-              -v {{ repo_file }}:/host{{ repo_file }} -v {{ target_file }}:/host{{ target_file }} \
-              "${IMAGE}" load /host{{ repo_file }} /host{{ target_file }}
+            docker create --name "${CONTAINER}" \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v {{ repo_file }}:/host{{ repo_file }} \
+              -v {{ tag_file }}:/host{{ tag_file }} \
+              -v {{ target_file }}:/host{{ target_file }} \
+              "${IMAGE}" load /host{{ repo_file }} /host{{ tag_file }} /host{{ target_file }}
 
         echo 'Starting Loader...'
         docker start -a "${CONTAINER}"

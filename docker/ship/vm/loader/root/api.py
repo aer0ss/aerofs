@@ -13,17 +13,19 @@ app = Flask(__name__)
 _current_repo = None
 _current_target = None
 _repo_file = None
+_tag_file = None
 _target_file = None
 _tag = None
 _simulate = None
 
 
-def start(current_repo, current_target, repo_file, target_file, tag, simulate):
-    global _current_repo, _current_target, _repo_file, _target_file, _tag, _simulate
+def start(current_repo, current_target, repo_file, tag_file, target_file, tag, simulate):
+    global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag, _simulate
     # Save data in RAM rather than reading files on demand as their content may change _after_ we launch.
     _current_repo = current_repo
     _current_target = current_target
     _repo_file = repo_file
+    _tag_file = tag_file
     _target_file = target_file
     _tag = tag
     _simulate = simulate
@@ -54,9 +56,6 @@ def post_boot(repo=CURRENT, tag=CURRENT, target=CURRENT):
     """
     print 'Restarting app to {}/{}/{} (repo/tag/target)...'.format(repo, tag, target)
 
-    if repo != CURRENT:
-        return 'Supporting non-{} repos is not implemented yet'.format(CURRENT), 400
-
     if _simulate:
         print
         print "WARNING: simulation mode. I dare not restart the appliance. Please do so manually."
@@ -70,6 +69,9 @@ def post_boot(repo=CURRENT, tag=CURRENT, target=CURRENT):
     if repo != CURRENT:
         with open(_repo_file, 'w') as f:
             f.write(repo)
+    if tag != CURRENT:
+        with open(_tag_file, 'w') as f:
+            f.write(tag)
     if target != CURRENT:
         with open(_target_file, 'w') as f:
             f.write(target)
