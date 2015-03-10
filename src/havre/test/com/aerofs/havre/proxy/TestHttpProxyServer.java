@@ -18,6 +18,8 @@ import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.jayway.restassured.RestAssured;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.AbstractChannel;
 import org.jboss.netty.channel.AbstractChannelSink;
 import org.jboss.netty.channel.Channel;
@@ -27,8 +29,9 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.DefaultChannelConfig;
-import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,9 +40,13 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
@@ -56,6 +63,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     @Mock EndpointConnector connector;
 
     HttpProxyServer proxy;
+    Timer timer;
 
     static {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -86,7 +94,8 @@ public class TestHttpProxyServer extends AbstractBaseTest
         HttpRequestProxyHandler.WRITE_TIMEOUT = 300;
         HttpRequestProxyHandler.TIMEOUT_UNIT = TimeUnit.MILLISECONDS;
 
-        proxy = new HttpProxyServer(new InetSocketAddress(0), null, new HashedWheelTimer(), auth, connector);
+        timer = new HashedWheelTimer();
+        proxy = new HttpProxyServer(new InetSocketAddress(0), null, timer, auth, connector);
         proxy.start();
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = proxy.getListeningPort();
@@ -96,6 +105,7 @@ public class TestHttpProxyServer extends AbstractBaseTest
     public void tearDown()
     {
         proxy.stop();
+        timer.stop();
     }
 
     @Test
@@ -204,12 +214,14 @@ public class TestHttpProxyServer extends AbstractBaseTest
             }
         }
 
+        private final AtomicInteger _ops;
         private final Address _addr = new Address();
         private final ChannelConfig _config = new DefaultChannelConfig();
 
-        public TestChannel(ChannelPipeline pipeline)
+        public TestChannel(ChannelPipeline pipeline, AtomicInteger ops)
         {
             super(null, null, pipeline, new Sink());
+            _ops = ops;
         }
 
         @Override
@@ -231,6 +243,12 @@ public class TestHttpProxyServer extends AbstractBaseTest
         }
 
         @Override
+        public int getInterestOps()
+        {
+            return _ops.get();
+        }
+
+        @Override
         public SocketAddress getLocalAddress()
         {
             return _addr;
@@ -243,22 +261,28 @@ public class TestHttpProxyServer extends AbstractBaseTest
         }
     }
 
+    private static Channel makeChannel(ChannelPipeline p, AtomicInteger ops, Consumer<Channel> init)
+    {
+        Channel c = new TestChannel(p, ops);
+        Channels.fireChannelOpen(c);
+        c.getPipeline().execute(
+                () -> Channels.fireChannelConnected(c, c.getRemoteAddress()));
+        init.accept(c);
+        return c;
+    }
+
     @Test
-    public void shouldReturn504OnDownstreamTimeout() throws Exception
+    public void shouldReturn504OnUpstreamTimeout() throws Exception
     {
         AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
 
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
 
+        AtomicInteger ops = new AtomicInteger(Channel.OP_READ);
         when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
                 any(ChannelPipeline.class)))
-                .thenAnswer(i -> {
-                    Channel c = new TestChannel((ChannelPipeline)i.getArguments()[4]);
-                    Channels.fireChannelOpen(c);
-                    c.getPipeline().execute(
-                            () -> Channels.fireChannelConnected(c, c.getRemoteAddress()));
-                    return c;
-                });
+                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], ops, c -> {
+                }));
 
         expect()
                 .statusCode(504)
@@ -266,4 +290,36 @@ public class TestHttpProxyServer extends AbstractBaseTest
                 .get("/");
     }
 
+    @Test
+    public void shouldWaitForUpstreamToBeReadable() throws Exception
+    {
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
+
+        when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
+
+        DID did = DID.generate();
+        AtomicInteger ops = new AtomicInteger(0);
+        ChannelBuffer response = ChannelBuffers.wrappedBuffer((
+                "HTTP/1.1 204 No Content\r\n\r\n"
+        ).getBytes(StandardCharsets.UTF_8));
+
+        when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], ops, c -> {
+                    when(connector.device(c)).thenReturn(did);
+                    when(connector.alternateDevices(c)).thenReturn(Collections.emptyList());
+
+                    // wait 20 times the read timeout before producing response
+                    timer.newTimeout(timeout -> {
+                        ops.set(Channel.OP_READ);
+                        Channels.fireMessageReceived(c, response);
+                    }, 20 * HttpRequestProxyHandler.READ_TIMEOUT, HttpRequestProxyHandler.TIMEOUT_UNIT);
+                }));
+
+        expect()
+                .statusCode(204)
+                .cookie("route", did.toStringFormal())
+        .when()
+                .get("/");
+    }
 }

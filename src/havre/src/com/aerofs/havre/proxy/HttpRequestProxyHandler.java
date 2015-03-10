@@ -376,6 +376,14 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (e.getState() == IdleState.READER_IDLE) {
                 l.info("read idle {}", _expectedResponses.get());
                 if (_expectedResponses.get() > 0) {
+                    // if we paused upstream to avoid overloading downstream we shouldn't fault
+                    // upstream for being idle...
+                    if (!_upstream.isReadable()) {
+                        l.warn("lingering idle upstream {} [down: {} {}]",
+                                _upstream, _downstream.isWritable(), _downstream);
+                        return;
+                    }
+
                     // 2 strikes: we may get a read timeout immediately after the request
                     // is sent because the read timeout is not reset when a message is sent
                     // This makes the timeout effectively a random number between 10s and 20s
