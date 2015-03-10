@@ -22,11 +22,11 @@ import java.util.List;
 @Singleton
 public final class LocationsResource {
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
     private final ResourceContext context;
 
-    public LocationsResource(@Context ObjectStore store, @Context ResourceContext context) {
-        this.store = store;
+    public LocationsResource(@Context ObjectStore objectStore, @Context ResourceContext context) {
+        this.objectStore = objectStore;
         this.context = context;
     }
 
@@ -38,6 +38,6 @@ public final class LocationsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<DID> getLocationsForContent(@Context AeroUserDevicePrincipal principal, @PathParam("oid") OID oid, @PathParam("version") @Min(0) long version) {
-        return store.getLocations(principal.getUser(), oid, version);
+        return objectStore.getLocations(principal.getUser(), oid, version);
     }
 }

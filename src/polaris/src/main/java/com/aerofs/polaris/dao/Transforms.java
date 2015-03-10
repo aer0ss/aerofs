@@ -23,14 +23,14 @@ import java.sql.SQLException;
 public interface Transforms {
 
     @GetGeneratedKeys
-    @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, root_oid, oid, transform_type, new_version, child_oid, child_name, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :root_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :timestamp)")
-    long add(@Bind("originator") DID originator, @Bind("root_oid") UniqueID root, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable UniqueID child, @Bind("child_name") @Nullable byte[] name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
+    @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, store_oid, oid, transform_type, new_version, child_oid, child_name, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :store_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :timestamp)")
+    long add(@Bind("originator") DID originator, @Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable UniqueID child, @Bind("child_name") @Nullable byte[] name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
 
-    @SqlQuery("select logical_timestamp, originator, root_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and root_oid = :root_oid order by logical_timestamp asc")
-    ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("root_oid") UniqueID root);
+    @SqlQuery("select logical_timestamp, originator, store_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and store_oid = :store_oid order by logical_timestamp asc")
+    ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("store_oid") UniqueID store);
 
-    @SqlQuery("select max(logical_timestamp) from transforms where root_oid = :root_oid")
-    int getTransformCount(@Bind("root_oid") UniqueID root);
+    @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid")
+    int getTransformCount(@Bind("store_oid") UniqueID store);
 
     @SuppressWarnings("unused")
     void close();
@@ -39,7 +39,7 @@ public interface Transforms {
 
         private static final int COL_LOGICAL_TIMESTAMP      = 1;
         private static final int COL_ORIGINATOR             = 2;
-        private static final int COL_ROOT_OID               = 3;
+        private static final int COL_STORE_OID              = 3;
         private static final int COL_OID                    = 4;
         private static final int COL_TRANSFORM_TYPE         = 5;
         private static final int COL_NEW_VERSION            = 6;
@@ -63,7 +63,7 @@ public interface Transforms {
                 Transform transform = new Transform(
                         logicalTimestamp,
                         new DID(r.getBytes(COL_ORIGINATOR)),
-                        new UniqueID(r.getBytes(COL_ROOT_OID)),
+                        new UniqueID(r.getBytes(COL_STORE_OID)),
                         new UniqueID(r.getBytes(COL_OID)),
                         transformType,
                         r.getLong(COL_NEW_VERSION),

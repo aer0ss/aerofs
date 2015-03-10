@@ -114,24 +114,24 @@ public final class TestOrderedNotifier {
     @Test
     public void shouldPublishNotificationAndUpdateDatabaseTablesWhenStoreUpdated() {
         // set the logical timestamp associated with this store
-        UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(dbi, root, 3024);
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 3024);
 
         // future to be returned when the update is published
         SettableFuture<Void> future = SettableFuture.create();
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(future);
 
-        notifier.notifyStoreUpdated(root); // <--- CALL
+        notifier.notifyStoreUpdated(store); // <--- CALL
 
         // check that we attempted to publish the update
-        verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(root)), eq(new Update(root, 3024)));
+        verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 3024)));
 
         // publish succeeds!
         future.set(null);
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(3024L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(3024L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(3024L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(3024L));
     }
 
     @Test
@@ -142,27 +142,27 @@ public final class TestOrderedNotifier {
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(future0).thenReturn(future1);
 
         // set the logical timestamp associated with this store
-        UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(dbi, root, 1983);
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 1983);
 
-        notifier.notifyStoreUpdated(root); // <--- CALL
+        notifier.notifyStoreUpdated(store); // <--- CALL
 
         // first time around the publish fails :(
         future0.setException(new RuntimeException("publish failed"));
 
         // we haven't changed the db
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(1983L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(-1L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(1983L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(-1L));
 
         // second time around the publish succeeds
         future1.set(null);
 
         // check that we actually called the publisher
-        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(root)), eq(new Update(root, 1983))); // first call (unsuccessful), second call succeeds
+        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 1983))); // first call (unsuccessful), second call succeeds
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(1983L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(1983L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(1983L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(1983L));
     }
 
     @Test
@@ -173,42 +173,42 @@ public final class TestOrderedNotifier {
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(future0).thenReturn(future1);
 
         // set the logical timestamp associated with this store
-        UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(dbi, root, 1983);
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 1983);
 
-        notifier.notifyStoreUpdated(root); // <--- CALL
+        notifier.notifyStoreUpdated(store); // <--- CALL
 
         // now, modify the logical timestamp associated with this store again
         // note that it's *this* timestamp that should be picked up with the second call
-        setLatestLogicalTimestamp(dbi, root, 2005);
+        setLatestLogicalTimestamp(dbi, store, 2005);
 
         // first time around the publish fails :(
         future0.setException(new RuntimeException("publish failed"));
 
         // we haven't changed the db
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2005L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(-1L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2005L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(-1L));
 
         // second time around the publish succeeds
         future1.set(null);
 
         // check that we actually called the publisher
         ArgumentCaptor<Update> captor = ArgumentCaptor.forClass(Update.class);
-        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(root)), captor.capture()); // first call (unsuccessful), second call succeeds
+        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(store)), captor.capture()); // first call (unsuccessful), second call succeeds
         List<Update> updates = captor.getAllValues();
-        assertThat(updates.get(0), equalTo(new Update(root, 1983))); // first call was made with the initial value at the time of the publish call
-        assertThat(updates.get(1), equalTo(new Update(root, 2005))); // second call was made with the second value which existed at the time of the publish retry
+        assertThat(updates.get(0), equalTo(new Update(store, 1983))); // first call was made with the initial value at the time of the publish call
+        assertThat(updates.get(1), equalTo(new Update(store, 2005))); // second call was made with the second value which existed at the time of the publish retry
 
         // database updated
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2005L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2005L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2005L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2005L));
     }
 
     @Test
     public void shouldRetryPublishIfFirstDatabaseCallFails() throws Exception {
         // set the logical timestamp associated with this store
-        UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(dbi, root, 2918);
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 2918);
 
         // publish should always succeed
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(Futures.immediateFuture(null));
@@ -216,18 +216,18 @@ public final class TestOrderedNotifier {
         // first db call should fail, the second should succeed
         when(dbi.open()).thenThrow(new RuntimeException("first db call fails")).thenCallRealMethod();
 
-        notifier.notifyStoreUpdated(root); // <--- CALL
+        notifier.notifyStoreUpdated(store); // <--- CALL
 
         // database should be updated by the end of this
-        assertThat(getLatestLogicalTimestamp(dbi,root), equalTo(2918L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2918L));
+        assertThat(getLatestLogicalTimestamp(dbi,store), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
     }
 
     @Test
     public void shouldRetryPublishIfSecondDatabaseCallFails() throws Exception {
         // set the logical timestamp associated with this store
-        UniqueID root = UniqueID.generate();
-        setLatestLogicalTimestamp(dbi, root, 2918);
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 2918);
 
         // publish should always succeed
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(Futures.immediateFuture(null));
@@ -235,11 +235,11 @@ public final class TestOrderedNotifier {
         // first db call should succeed, the second should fail, and following should succeed
         when(dbi.open()).thenCallRealMethod().thenThrow(new RuntimeException("second db call fails")).thenCallRealMethod();
 
-        notifier.notifyStoreUpdated(root); // <--- CALL
+        notifier.notifyStoreUpdated(store); // <--- CALL
 
         // database should be updated by the end of this
-        assertThat(getLatestLogicalTimestamp(dbi, root), equalTo(2918L));
-        assertThat(getLatestNotifiedLogicalTimestamp(dbi, root), equalTo(2918L));
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
     }
 
 

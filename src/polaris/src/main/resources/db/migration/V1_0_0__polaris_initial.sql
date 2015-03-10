@@ -1,7 +1,5 @@
 /**
  * Initial Polaris database schema.
- *
- * FIXME (AG): change all root_oid to store_oid
  */
 
 ALTER SCHEMA DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
@@ -11,13 +9,13 @@ ALTER SCHEMA DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
  */
 
 CREATE TABLE IF NOT EXISTS `objects` (
-  `root_oid` BINARY(16) NOT NULL,
-  `oid`      BINARY(16) NOT NULL,
-  `version`  BIGINT     NOT NULL,
+  `store_oid` BINARY(16) NOT NULL,
+  `oid`       BINARY(16) NOT NULL,
+  `version`   BIGINT     NOT NULL,
   PRIMARY KEY (`oid`)
 ) ENGINE = InnoDB;
 
-CREATE INDEX `store_index` ON `objects` (`root_oid`);
+CREATE INDEX `store_index` ON `objects` (`store_oid`);
 
 CREATE TABLE IF NOT EXISTS `object_types` (
   `oid`         BINARY(16) NOT NULL,
@@ -54,7 +52,7 @@ CREATE INDEX `child_name_index` ON `children` (`parent_oid`, `child_name`(520));
 CREATE TABLE IF NOT EXISTS `transforms` (
   `logical_timestamp`      BIGINT AUTO_INCREMENT NOT NULL,
   `originator`             BINARY(16)            NOT NULL,
-  `root_oid`               BINARY(16)            NOT NULL,
+  `store_oid`              BINARY(16)            NOT NULL,
   `oid`                    BINARY(16)            NOT NULL,
   `transform_type`         INTEGER               NOT NULL,
   `new_version`            BIGINT                NOT NULL,
@@ -67,27 +65,27 @@ CREATE TABLE IF NOT EXISTS `transforms` (
   PRIMARY KEY (`logical_timestamp`)
 ) ENGINE = InnoDB;
 
-CREATE INDEX `store_transforms_index` ON `transforms` (`root_oid`);
+CREATE INDEX `store_transforms_index` ON `transforms` (`store_oid`);
 
 /**
  * notification
  */
 
 CREATE TABLE IF NOT EXISTS `store_max_logical_timestamp` (
-  `root_oid`          BINARY(16) NOT NULL,
+  `store_oid`         BINARY(16) NOT NULL,
   `logical_timestamp` BIGINT     NOT NULL,
-  PRIMARY KEY (`root_oid`)
+  PRIMARY KEY (`store_oid`)
 ) ENGINE = InnoDB;
 
-CREATE INDEX `store_max_logical_timestamp_index` ON `store_max_logical_timestamp` (`root_oid`, `logical_timestamp`);
+CREATE INDEX `store_max_logical_timestamp_index` ON `store_max_logical_timestamp` (`store_oid`, `logical_timestamp`);
 
 CREATE TABLE IF NOT EXISTS `store_notified_logical_timestamp` (
-  `root_oid`          BINARY(16) NOT NULL,
+  `store_oid`         BINARY(16) NOT NULL,
   `logical_timestamp` BIGINT     NOT NULL,
-  PRIMARY KEY (`root_oid`)
+  PRIMARY KEY (`store_oid`)
 ) ENGINE = InnoDB;
 
-CREATE INDEX `store_notified_logical_timestamp_index` ON `store_notified_logical_timestamp` (`root_oid`, `logical_timestamp`);
+CREATE INDEX `store_notified_logical_timestamp_index` ON `store_notified_logical_timestamp` (`store_oid`, `logical_timestamp`);
 
 /**
  * conversion from distributed system -> polaris

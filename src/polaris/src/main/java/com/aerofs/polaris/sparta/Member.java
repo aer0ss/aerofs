@@ -10,10 +10,10 @@ import java.util.List;
 // FIXME (AG): remove when the rest-api module no longer depends on restless
 class Member {
 
-    private final String email;
-    private final String firstName;
-    private final String lastName;
-    private final List<String> permissions;
+    public final String email;
+    public final String firstName;
+    public final String lastName;
+    public final List<String> permissions;
 
     @JsonCreator
     public Member(
@@ -25,22 +25,6 @@ class Member {
         this.firstName = firstName;
         this.lastName = lastName;
         this.permissions = permissions;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
     }
 
     @Override

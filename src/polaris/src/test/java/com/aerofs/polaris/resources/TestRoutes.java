@@ -49,9 +49,8 @@ public final class TestRoutes {
 
     @Test
     public void shouldReachRoute0() { // POST /objects/{oid}/versions/{version}/locations/{did}
-        // create a root folder and a file under it
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // this route should exist
         given()
@@ -64,9 +63,9 @@ public final class TestRoutes {
 
     @Test
     public void shouldReachRoute1() { // GET /objects/{oid}/versions/{version}/locations/
-        // create a root folder and a file under it (along with some content)
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file under it along with some content
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
         PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, HASH_BYTES, 1, System.currentTimeMillis());
 
         // add a location at which that file is present
@@ -89,9 +88,9 @@ public final class TestRoutes {
 
     @Test
     public void shouldReachRoute2() { // DELETE /objects/{oid}/versions/{version}/locations/{did}
-        // create a root folder and a file under it (along with some content)
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file under it along with some content
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
         PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, HASH_BYTES, 1, System.currentTimeMillis());
 
         // add a location at which that file is present
@@ -115,27 +114,25 @@ public final class TestRoutes {
 
     @Test
     public void shouldReachRoute3() { // POST /objects/{oid}
-        // create a root folder
-        SID root = SID.generate();
+        SID store = SID.generate();
 
-        // create a file in that root folder
+        // create a file in the store
         OID file = OID.generate();
         given()
                 .spec(AUTHENTICATED)
                 .and()
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(file, FILE, "file"))
                 .and()
-                .when().post(PolarisTestServer.getServiceURL() + "/objects/" + root.toStringFormal())
+                .when().post(PolarisTestServer.getServiceURL() + "/objects/" + store.toStringFormal())
                 .then().assertThat().statusCode(SC_OK);
     }
 
     @Test
     public void shouldReachRoute4() { // GET /transforms/{oid}
-        // create a root folder and a file under it (along with some content)
-        SID root = SID.generate();
-        PolarisHelpers.newFile(AUTHENTICATED, root, "file"); // ignore created file oid
+        SID store = SID.generate();
+        PolarisHelpers.newFile(AUTHENTICATED, store, "file"); // ignore created file oid
 
-        // try to get a list of transforms for the root
+        // try to get a list of transforms for the store
         given()
                 .spec(AUTHENTICATED)
                 .and()
@@ -143,23 +140,22 @@ public final class TestRoutes {
                 .and()
                 .parameters("since", -1, "count", 10)
                 .and()
-                .when().get(PolarisTestServer.getServiceURL() + "/transforms/" + root.toStringFormal())
+                .when().get(PolarisTestServer.getServiceURL() + "/transforms/" + store.toStringFormal())
                 .then()
                 .assertThat().statusCode(equalTo(SC_OK));
     }
 
     @Test
     public void shouldReachRoute5() { // POST /batch/transforms
-        // create a root folder and a file under it (along with some content)
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // post at least one transform
         given()
                 .spec(AUTHENTICATED)
                 .and()
                 .header(ACCEPT, APPLICATION_JSON)
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new TransformBatch(ImmutableList.of(new TransformBatchOperation(root, new InsertChild(file, FILE, "file")))))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new TransformBatch(ImmutableList.of(new TransformBatchOperation(store, new InsertChild(file, FILE, "file")))))
                 .and()
                 .when().post(PolarisTestServer.getServiceURL() + "/batch/transforms/")
                 .then()
@@ -168,9 +164,8 @@ public final class TestRoutes {
 
     @Test
     public void shouldReachRoute6() { // POST /batch/locations
-        // create a root folder and a file under it (along with some content)
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // post at least one location update
         given()

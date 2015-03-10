@@ -51,10 +51,10 @@ public final class TestLocationBatchResource {
 
     @Test
     public void shouldSuccessfullyCompleteAllOperationsInBatch() throws InterruptedException {
-        SID root = SID.generate();
-        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, root, "file0");
-        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, root, "file1");
-        OID object2 = PolarisHelpers.newFile(AUTHENTICATED, root, "file2");
+        SID store = SID.generate();
+        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, store, "file0");
+        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, store, "file1");
+        OID object2 = PolarisHelpers.newFile(AUTHENTICATED, store, "file2");
 
         LocationBatch batch = new LocationBatch(ImmutableList.of(
                 new LocationBatchOperation(object0, 0, DEVICE, LocationUpdateType.INSERT),
@@ -80,10 +80,10 @@ public final class TestLocationBatchResource {
 
     @Test
     public void shouldReturnResultsForCompletedOperationsEvenIfSomeFailed() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
-        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, root, "file0");
-        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, root, "file1");
+        // construct a number of files in a store
+        SID store = SID.generate();
+        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, store, "file0");
+        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, store, "file1");
 
         LocationBatch batch = new LocationBatch(ImmutableList.of(
                 new LocationBatchOperation(object0, 0, DEVICE, LocationUpdateType.INSERT),
@@ -120,10 +120,10 @@ public final class TestLocationBatchResource {
 
     @Test
     public void shouldAbortBatchEarlyAndReturnResultsForCompletedOperations() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
-        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, root, "file0");
-        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, root, "file1");
+        // construct a number of files in a store
+        SID store = SID.generate();
+        OID object0 = PolarisHelpers.newFile(AUTHENTICATED, store, "file0");
+        OID object1 = PolarisHelpers.newFile(AUTHENTICATED, store, "file1");
 
         LocationBatch batch = new LocationBatch(ImmutableList.of(
                 new LocationBatchOperation(object0, 0, DEVICE, LocationUpdateType.INSERT),
@@ -157,15 +157,15 @@ public final class TestLocationBatchResource {
     @Test
     public void shouldAbortBatchEarlyReturnResultsForCompletedOperationsEvenIfSomeFailedDueToAccessRestrictions() throws AccessException {
         // two shared folders
-        SID root0 = SID.generate();
-        SID root1 = SID.generate();
+        SID store0 = SID.generate();
+        SID store1 = SID.generate();
 
-        // create a folder hierarchy for shared folder root0
-        OID folder00 = PolarisHelpers.newFolder(AUTHENTICATED, root0, "folder00");
+        // create a folder hierarchy for store0
+        OID folder00 = PolarisHelpers.newFolder(AUTHENTICATED, store0, "folder00");
         OID folder000 = PolarisHelpers.newFolder(AUTHENTICATED, folder00, "folder000");
 
-        // create a folder hierarchy for shared folder root1
-        OID folder10 = PolarisHelpers.newFolder(AUTHENTICATED, root1, "folder10");
+        // create a folder hierarchy for store1
+        OID folder10 = PolarisHelpers.newFolder(AUTHENTICATED, store1, "folder10");
         OID folder100 = PolarisHelpers.newFolder(AUTHENTICATED, folder10, "folder100");
 
         // now, create files at the deepest level
@@ -173,8 +173,8 @@ public final class TestLocationBatchResource {
         OID object1 = PolarisHelpers.newFile(AUTHENTICATED, folder100, "file1");
         OID object2 = PolarisHelpers.newFile(AUTHENTICATED, folder100, "file2");
 
-        // set the access manager to *reject* attempts to change root0
-        doThrow(new AccessException(USERID, root0, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(root0), anyVararg());
+        // set the access manager to *reject* changes to store0
+        doThrow(new AccessException(USERID, store0, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store0), anyVararg());
 
         // now, submit a batch
         LocationBatch batch = new LocationBatch(ImmutableList.of(

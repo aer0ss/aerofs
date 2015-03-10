@@ -12,14 +12,14 @@ import javax.validation.constraints.NotNull;
 public final class Update {
 
     @NotNull
-    public final UniqueID root;
+    public final UniqueID store;
 
     @Min(0)
     public final long latestLogicalTimestamp;
 
     @JsonCreator
-    public Update(@JsonProperty("root") UniqueID root, @JsonProperty("latest_logical_timestamp") long latestLogicalTimestamp) {
-        this.root = root;
+    public Update(@JsonProperty("store") UniqueID store, @JsonProperty("latest_logical_timestamp") long latestLogicalTimestamp) {
+        this.store = store;
         this.latestLogicalTimestamp = latestLogicalTimestamp;
     }
 
@@ -29,19 +29,19 @@ public final class Update {
         if (o == null || getClass() != o.getClass()) return false;
 
         Update update = (Update) o;
-        return Objects.equal(latestLogicalTimestamp, update.latestLogicalTimestamp) && Objects.equal(root, update.root);
+        return Objects.equal(latestLogicalTimestamp, update.latestLogicalTimestamp) && Objects.equal(store, update.store);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(root, latestLogicalTimestamp);
+        return Objects.hashCode(store, latestLogicalTimestamp);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("root", root)
+                .add("store", store)
                 .add("latestLogicalTimestamp", latestLogicalTimestamp)
                 .toString();
     }

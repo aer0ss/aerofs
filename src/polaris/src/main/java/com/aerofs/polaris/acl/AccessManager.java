@@ -15,7 +15,7 @@ import com.aerofs.ids.UserID;
 public interface AccessManager {
 
     /**
-     * Check if {@code user} can access {@code root}
+     * Check if {@code user} can access {@code store}
      * with the {@code requested} permissions.
      * <br>
      * Note that this is a <strong>BLOCKING</strong> call.
@@ -23,10 +23,10 @@ public interface AccessManager {
      * when the access check is complete.
      *
      * @param user user id of the user who wants to access the shared folder
-     * @param root oid of the root store or shared folder the user wants to access
-     * @param requested one or more permissions the user wants when accessing the root store or shared folder
+     * @param store oid of the store store or shared folder the user wants to access
+     * @param requested one or more permissions the user wants when accessing the store store or shared folder
      * @throws AccessException if <strong>any</strong> of the {@code requested}
      * permissions cannot be granted to the user
      */
-    void checkAccess(UserID user, UniqueID root, Access... requested) throws AccessException;
+    void checkAccess(UserID user, UniqueID store, Access... requested) throws AccessException;
 }

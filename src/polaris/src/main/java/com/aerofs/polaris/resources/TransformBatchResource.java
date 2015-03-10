@@ -32,11 +32,11 @@ public final class TransformBatchResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransformBatchResource.class);
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
     private final Notifier notifier;
 
-    public TransformBatchResource(@Context ObjectStore store, @Context Notifier notifier) {
-        this.store = store;
+    public TransformBatchResource(@Context ObjectStore objectStore, @Context Notifier notifier) {
+        this.objectStore = objectStore;
         this.notifier = notifier;
     }
 
@@ -45,13 +45,13 @@ public final class TransformBatchResource {
     @Produces(MediaType.APPLICATION_JSON)
     public TransformBatchResult submitBatch(@Context AeroUserDevicePrincipal principal, TransformBatch batch) {
         List<TransformBatchOperationResult> results = Lists.newArrayListWithCapacity(batch.operations.size());
-        Set<UniqueID> updatedRoots = Sets.newHashSet();
+        Set<UniqueID> updatedStores = Sets.newHashSet();
 
         for (TransformBatchOperation operation: batch.operations) {
             try {
-                List<Updated> updated = store.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
+                List<Updated> updated = objectStore.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
                 results.add(new TransformBatchOperationResult(updated));
-                updatedRoots.addAll(updated.stream().map(u -> u.object.root).collect(Collectors.toList()));
+                updatedStores.addAll(updated.stream().map(u -> u.object.store).collect(Collectors.toList()));
             } catch (Exception e) {
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
                 LOGGER.warn("fail transform batch operation {}", operation, e);
@@ -60,7 +60,7 @@ public final class TransformBatchResource {
             }
         }
 
-        updatedRoots.forEach(notifier::notifyStoreUpdated);
+        updatedStores.forEach(notifier::notifyStoreUpdated);
 
         return new TransformBatchResult(results);
     }

@@ -15,6 +15,10 @@ import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.dao.types.DIDTypeArgument;
 import com.aerofs.polaris.dao.types.OIDTypeArgument;
 import com.aerofs.polaris.dao.types.ObjectTypeArgument;
+import com.aerofs.polaris.dao.types.OneColumnDIDMapper;
+import com.aerofs.polaris.dao.types.OneColumnOIDMapper;
+import com.aerofs.polaris.dao.types.OneColumnSIDMapper;
+import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
 import com.aerofs.polaris.dao.types.SIDTypeArgument;
 import com.aerofs.polaris.dao.types.TransformTypeArgument;
 import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
@@ -74,6 +78,10 @@ public class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new DIDTypeArgument.DIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
+        dbi.registerMapper(new OneColumnUniqueIDMapper());
+        dbi.registerMapper(new OneColumnDIDMapper());
+        dbi.registerMapper(new OneColumnOIDMapper());
+        dbi.registerMapper(new OneColumnSIDMapper());
 
         // setup polaris json api conversion
         environment.getMapper().registerModule(new PolarisModule());

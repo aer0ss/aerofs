@@ -17,6 +17,7 @@ public @interface BindAtomic {
 
     final class BindAtomicFactory implements BinderFactory {
 
+        @SuppressWarnings("ConstantConditions")
         @Override
         public Binder<BindAtomic, Atomic> build(Annotation annotation) {
             return (q, bind, arg) -> {

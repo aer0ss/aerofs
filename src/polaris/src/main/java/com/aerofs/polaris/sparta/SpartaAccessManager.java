@@ -99,9 +99,11 @@ public final class SpartaAccessManager implements ManagedAccessManager {
         }
     }
 
+    // FIXME (AG): do not throw AccessException when there's an IOException
+
     @Override
-    public void checkAccess(UserID user, UniqueID root, Access... requested) throws AccessException {
-        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, root.toStringFormal(), user.getString()));
+    public void checkAccess(UserID user, UniqueID store, Access... requested) throws AccessException {
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, store.toStringFormal(), user.getString()));
         get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
 
         try {
@@ -110,11 +112,11 @@ public final class SpartaAccessManager implements ManagedAccessManager {
 
                 // if we got a 404 then the user doesn't exist
                 if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    LOGGER.warn("user does not belong to shared folder {}", root);
-                    throw new AccessException(user, root, Access.READ);
+                    LOGGER.warn("user does not belong to shared folder {}", store);
+                    throw new AccessException(user, store, Access.READ);
                 } else if (statusCode != HttpStatus.SC_OK) {
                     LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
-                    throw new AccessException(user, root, requested);
+                    throw new AccessException(user, store, requested);
                 }
 
                 boolean writeAccessRequested = isWriteAccessRequested(requested);
@@ -128,14 +130,14 @@ public final class SpartaAccessManager implements ManagedAccessManager {
                 // we've requested WRITE access and the user exists...
                 try (InputStream content = response.getEntity().getContent()) {
                     Member member = mapper.readValue(content, Member.class);
-                    if (!member.getPermissions().contains("WRITE")) {
-                        throw new AccessException(user, root, Access.WRITE);
+                    if (!member.permissions.contains("WRITE")) {
+                        throw new AccessException(user, store, Access.WRITE);
                     }
                 }
             }
         } catch (IOException e) {
             LOGGER.warn("fail retrieve ACL from sparta", e);
-            throw new AccessException(user, root, requested);
+            throw new AccessException(user, store, requested);
         }
     }
 

@@ -26,12 +26,12 @@ import java.util.stream.Collectors;
 @Singleton
 public final class ObjectResource {
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
     private final Notifier notifier;
     private final ResourceContext context;
 
-    public ObjectResource(@Context ObjectStore store, @Context Notifier notifier, @Context ResourceContext context) {
-        this.store = store;
+    public ObjectResource(@Context ObjectStore objectStore, @Context Notifier notifier, @Context ResourceContext context) {
+        this.objectStore = objectStore;
         this.notifier = notifier;
         this.context = context;
     }
@@ -46,11 +46,11 @@ public final class ObjectResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") UniqueID oid, Operation operation) {
-        OperationResult result = new OperationResult(store.performTransform(principal.getUser(), principal.getDevice(), oid, operation));
+        OperationResult result = new OperationResult(objectStore.performTransform(principal.getUser(), principal.getDevice(), oid, operation));
 
-        Set<UniqueID> updatedRoots = Sets.newHashSet();
-        updatedRoots.addAll(result.updated.stream().map(updated -> updated.object.root).collect(Collectors.toList()));
-        updatedRoots.forEach(notifier::notifyStoreUpdated);
+        Set<UniqueID> updatedStores = Sets.newHashSet();
+        updatedStores.addAll(result.updated.stream().map(updated -> updated.object.store).collect(Collectors.toList()));
+        updatedStores.forEach(notifier::notifyStoreUpdated);
 
         return result;
     }

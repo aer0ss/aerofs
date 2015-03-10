@@ -9,8 +9,8 @@ public abstract class PolarisUtilities {
 
     public static final String VERKEHR_UPDATE_TOPIC_PREFIX = "pol/";
 
-    public static String getVerkehrUpdateTopic(String root) {
-        return VERKEHR_UPDATE_TOPIC_PREFIX + root;
+    public static String getVerkehrUpdateTopic(String store) {
+        return VERKEHR_UPDATE_TOPIC_PREFIX + store;
     }
 
     public static String hexEncode(byte[] bytes) {

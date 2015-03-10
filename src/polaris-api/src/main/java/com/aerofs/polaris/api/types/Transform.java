@@ -25,7 +25,7 @@ public final class Transform {
     private DID originator = null;
 
     // FIXME (AG): do not include in response - re-add @JsonIgnore
-    private UniqueID root = null;
+    private UniqueID store = null;
 
     @NotNull
     private UniqueID oid = null;
@@ -74,14 +74,14 @@ public final class Transform {
     public Transform(
             long logicalTimestamp,
             DID originator,
-            UniqueID root,
+            UniqueID store,
             UniqueID oid,
             TransformType transformType,
             long newVersion,
             long timestamp) {
         this.logicalTimestamp = logicalTimestamp;
         this.originator = originator;
-        this.root = root;
+        this.store = store;
         this.oid = oid;
         this.transformType = transformType;
         this.newVersion = newVersion;
@@ -124,12 +124,12 @@ public final class Transform {
         this.originator = originator;
     }
 
-    public UniqueID getRoot() {
-        return root;
+    public UniqueID getStore() {
+        return store;
     }
 
-    private void setRoot(UniqueID root) {
-        this.root = root;
+    private void setStore(UniqueID store) {
+        this.store = store;
     }
 
     public UniqueID getOid() {
@@ -248,7 +248,7 @@ public final class Transform {
         Transform other = (Transform) o;
         return logicalTimestamp == other.logicalTimestamp
                 && Objects.equal(originator, other.originator)
-                && Objects.equal(root, other.root)
+                && Objects.equal(store, other.store)
                 && Objects.equal(oid, other.oid)
                 && Objects.equal(transformType, other.transformType)
                 && newVersion == other.newVersion
@@ -269,7 +269,7 @@ public final class Transform {
         return Objects.hashCode(
                 logicalTimestamp,
                 originator,
-                root,
+                store,
                 oid,
                 transformType,
                 newVersion,
@@ -291,7 +291,7 @@ public final class Transform {
                 .toStringHelper(this)
                 .add("databaseTimestamp", logicalTimestamp)
                 .add("originator", originator)
-                .add("root", root)
+                .add("store", store)
                 .add("oid", oid)
                 .add("transformType", transformType)
                 .add("newVersion", newVersion)

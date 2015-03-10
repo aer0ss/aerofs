@@ -61,73 +61,73 @@ public final class TestObjectResource {
 
     @Test
     public void shouldProperlyCreateObjectTree() throws Exception {
-        SID root = SID.generate();
-        OID a = PolarisHelpers.newFolder(AUTHENTICATED, root, "A");
+        SID store = SID.generate();
+        OID a = PolarisHelpers.newFolder(AUTHENTICATED, store, "A");
         OID b = PolarisHelpers.newFolder(AUTHENTICATED, a, "B");
         OID c = PolarisHelpers.newFolder(AUTHENTICATED, b, "C");
         PolarisHelpers.newFile(AUTHENTICATED, c, "f1");
 
-        checkTreeState(root, "tree/shouldProperlyCreateObjectTree.json");
+        checkTreeState(store, "tree/shouldProperlyCreateObjectTree.json");
     }
 
     @Test
     public void shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees() throws Exception {
-        // construct root -> folder_1 -> filename
-        SID root = SID.generate();
-        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, root, "folder_1");
+        // construct store -> folder_1 -> filename
+        SID store = SID.generate();
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_1");
         OID file = PolarisHelpers.newFile(AUTHENTICATED, folder, "filename");
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
 
-        // attempt to reinsert filename into root to create:
-        // root -> (folder_1 -> filename, filename)
+        // attempt to reinsert filename into store to create:
+        // store -> (folder_1 -> filename, filename)
         PolarisHelpers
-                .newObject(AUTHENTICATED, root, file, "file2", ObjectType.FILE)
+                .newObject(AUTHENTICATED, store, file, "file2", ObjectType.FILE)
                 .and()
                 .assertThat().statusCode(SC_CONFLICT);
 
         // the tree wasn't changed, and no notifications were made
-        checkTreeState(root, "tree/shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees.json");
+        checkTreeState(store, "tree/shouldNotAllowObjectToBeInsertedMultipleTimesIntoDifferentTrees.json");
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
     public void shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove() throws Exception {
-        // construct root -> folder_1 -> filename
-        SID root = SID.generate();
-        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, root, "folder_1");
+        // construct store -> folder_1 -> filename
+        SID store = SID.generate();
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_1");
         OID file = PolarisHelpers.newFile(AUTHENTICATED, folder, "filename");
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
 
-        // move filename from folder_1 to root to create:
-        // root -> (folder_1, filename)
+        // move filename from folder_1 to store to create:
+        // store -> (folder_1, filename)
         PolarisHelpers
-                .moveObject(AUTHENTICATED, folder, root, file, "filename")
+                .moveObject(AUTHENTICATED, folder, store, file, "filename")
                 .and()
                 .assertThat().statusCode(SC_OK)
                 .and()
                 .body("updated[0].object.version", equalTo(2), "updated[1].object.version", equalTo(2)); // two objects are updated
 
-        // the tree was changed, and that we got a single notification (the change was within the same root)
-        checkTreeState(root, "tree/shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove.json");
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        // the tree was changed, and that we got a single notification (the change was within the same store)
+        checkTreeState(store, "tree/shouldAllowObjectToBeInsertedMultipleTimesIntoDifferentTreesAsPartOfMove.json");
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename() throws Exception {
-        // construct root -> folder_1 -> filename_original
-        SID root = SID.generate();
-        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, root, "folder_1");
+        // construct store -> folder_1 -> filename_original
+        SID store = SID.generate();
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_1");
         OID file = PolarisHelpers.newFile(AUTHENTICATED, folder, "filename_original");
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
 
         // rename filename_original -> filename_modified
-        // root -> folder_1 -> filename_modified
+        // store -> folder_1 -> filename_modified
         PolarisHelpers
                 .moveObject(AUTHENTICATED, folder, folder, file, "filename_modified")
                 .and()
@@ -136,16 +136,16 @@ public final class TestObjectResource {
                 .body("updated[0].object.oid", equalTo(folder.toStringFormal()), "updated[0].object.version", equalTo(2));
 
         // the tree was changed, and we get a single notification
-        checkTreeState(root, "tree/shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename.json");
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        checkTreeState(store, "tree/shouldTreatMoveOfObjectIntoSameParentButWithADifferentNameAsARename.json");
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldNotAllowRenameIfItWouldCauseANameConflict() throws Exception {
-        // construct root -> folder_1 -> filename_original
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "name2");
-        PolarisHelpers.newFolder(AUTHENTICATED, root, "name1");
+        // construct store -> folder_1 -> filename_original
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "name2");
+        PolarisHelpers.newFolder(AUTHENTICATED, store, "name1");
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
@@ -153,43 +153,43 @@ public final class TestObjectResource {
         // rename name2 -> name1
         // should fail, because name1 already exists
         PolarisHelpers
-                .moveObject(AUTHENTICATED, root, root, file, "name1")
+                .moveObject(AUTHENTICATED, store, store, file, "name1")
                 .and()
                 .assertThat().statusCode(Response.Status.CONFLICT.getStatusCode());
 
         // no changes should be made, and, since it was a conflict, no notification
-        checkTreeState(root, "tree/shouldNotAllowRenameIfItWouldCauseANameConflict.json");
+        checkTreeState(store, "tree/shouldNotAllowRenameIfItWouldCauseANameConflict.json");
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
     public void shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent() throws Exception {
-        // construct root -> filename
-        SID root = SID.generate();
-        PolarisHelpers.newFile(AUTHENTICATED, root, "filename");
+        // construct store -> filename
+        SID store = SID.generate();
+        PolarisHelpers.newFile(AUTHENTICATED, store, "filename");
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
 
-        // attempt to create a new filename with the same name in root
+        // attempt to create a new filename with the same name in store
         PolarisHelpers
-                .newObject(AUTHENTICATED, root, OID.generate(), "filename", ObjectType.FILE)
+                .newObject(AUTHENTICATED, store, OID.generate(), "filename", ObjectType.FILE)
                 .and()
                 .assertThat().statusCode(Response.Status.CONFLICT.getStatusCode())
                 .and()
                 .body("error_code", equalTo(PolarisError.NAME_CONFLICT.code()));
 
         // no changes should be made, and, since it was a conflict, no notification
-        checkTreeState(root, "tree/shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent.json");
+        checkTreeState(store, "tree/shouldReturnANameConflictIfDifferentFilesWithSameNameAttemptedToBeInsertedIntoSameParent.json");
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class));
     }
 
     @Test
     public void shouldAllowUpdateToADeletedObject() throws Exception {
-        // construct root -> filename
-        SID root = SID.generate();
+        // construct store -> filename
+        SID store = SID.generate();
         OID file = new OID(PolarisUtilities.hexDecode("F57205C5C8C0427EBEB571ED41294CC7"));
-        PolarisHelpers.newFileUsingOID(AUTHENTICATED, root, file, "filename");
+        PolarisHelpers.newFileUsingOID(AUTHENTICATED, store, file, "filename");
         byte[] hash = PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF");
 
         // create a fake hash for the initial file
@@ -205,7 +205,7 @@ public final class TestObjectResource {
 
         // now, delete the file
         PolarisHelpers
-                .removeObject(AUTHENTICATED, root, file)
+                .removeObject(AUTHENTICATED, store, file)
                 .and()
                 .assertThat().statusCode(SC_OK);
 
@@ -219,23 +219,23 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_OK);
 
         checkTreeState(OID.TRASH, "tree/shouldAllowUpdateToADeletedObject_0000.json");
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root); // <--- FIXME (AG): oh dear...this is bad, no?
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store); // <--- FIXME (AG): oh dear...this is bad, no?
     }
 
     @Test
     public void shouldAllowMoveFromDeletedParentToNonDeletedParent() throws Exception {
-        // construct root -> folder_1 -> folder_1_1 -> file
-        //           root -> folder_2
-        SID root = SID.generate();
+        // construct store -> folder_1 -> folder_1_1 -> file
+        //           store -> folder_2
+        SID store = SID.generate();
         OID folder1 = new OID(PolarisUtilities.hexDecode("F57205C5C8C0427EBEB571ED41294CC7"));
-        PolarisHelpers.newFolderUsingOID(AUTHENTICATED, root, folder1, "folder_1");
+        PolarisHelpers.newFolderUsingOID(AUTHENTICATED, store, folder1, "folder_1");
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder_1_1");
         OID file = PolarisHelpers.newFile(AUTHENTICATED, folder11, "file");
-        PolarisHelpers.newFolder(AUTHENTICATED, root, "folder_2");
+        PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_2");
 
         // now, delete folder_1
         PolarisHelpers
-                .removeObject(AUTHENTICATED, root, folder1)
+                .removeObject(AUTHENTICATED, store, folder1)
                 .and()
                 .assertThat().statusCode(SC_OK);
 
@@ -244,27 +244,27 @@ public final class TestObjectResource {
 
         // check that I can move the file
         PolarisHelpers
-                .moveObject(AUTHENTICATED, folder11, root, file, "file")
+                .moveObject(AUTHENTICATED, folder11, store, file, "file")
                 .and()
                 .assertThat().statusCode(SC_OK);
 
         // and even its containing folder
         PolarisHelpers
-                .moveObject(AUTHENTICATED, folder1, root, folder11, "folder_1_1")
+                .moveObject(AUTHENTICATED, folder1, store, folder11, "folder_1_1")
                 .and()
                 .assertThat().statusCode(SC_OK);
 
-        checkTreeState(root, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent.json");
+        checkTreeState(store, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent.json");
         checkTreeState(OID.TRASH, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent_0000.json");
-        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(root);
+        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldFailToModifySharedFolderToWhichUserDoesNotHavePermissions0() throws Exception {
-        SID root = SID.generate();
+        SID store = SID.generate();
 
         // throw an exception if this user attempts to access this shared folder
-        doThrow(new AccessException(USERID, root, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(root), anyVararg());
+        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store), anyVararg());
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
@@ -276,7 +276,7 @@ public final class TestObjectResource {
                 .and()
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A"))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(root))
+                .when().post(PolarisTestServer.getObjectURL(store))
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
 
         // shouldn't get any updates
@@ -285,21 +285,21 @@ public final class TestObjectResource {
 
     @Test
     public void shouldFailToModifySharedFolderToWhichUserDoesNotHavePermissions() throws Exception {
-        SID root = SID.generate();
+        SID store = SID.generate();
 
         // first, insert an object into the shared folder
         // this should succeed, because access manager allows everyone
-        OID folder0 = PolarisHelpers.newFolder(AUTHENTICATED, root, "folder0");
+        OID folder0 = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder0");
 
         // now, change the access manager to throw
         // if this user attempts to access the same shared folder
-        doThrow(new AccessException(USERID, root, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(root), anyVararg());
+        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store), anyVararg());
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
 
         // try insert a new folder as a child of folder0
-        // this should fail, because folder1 is a child of root
+        // this should fail, because folder1 is a child of store
         OID folder1 = OID.generate();
         given()
                 .spec(AUTHENTICATED)
@@ -317,8 +317,8 @@ public final class TestObjectResource {
     public void shouldTreatDifferentObjectResourceRequestsIndependentlyEvenIfOneFails() throws Exception {
         // setup the access manager to throw an exception
         // if we attempt to access the denied shared folder
-        SID root0 = SID.generate();
-        doThrow(new AccessException(USERID, root0, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(root0), anyVararg());
+        SID store0 = SID.generate();
+        doThrow(new AccessException(USERID, store0, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store0), anyVararg());
 
         // now, make a call to insert the folder directly into the denied shared folder
         OID folder = OID.generate();
@@ -327,31 +327,31 @@ public final class TestObjectResource {
                 .and()
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A"))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(root0))
+                .when().post(PolarisTestServer.getObjectURL(store0))
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
 
         // we should be able to access other shared folders though...
-        SID root1 = SID.generate();
-        PolarisHelpers.newFolder(AUTHENTICATED, root1, "SHOULD_SUCCEED"); // ignore object created
+        SID store1 = SID.generate();
+        PolarisHelpers.newFolder(AUTHENTICATED, store1, "SHOULD_SUCCEED"); // ignore object created
 
-        // should get only one update for root1
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root1);
+        // should get only one update for store1
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store1);
     }
 
-    private void checkTreeState(UniqueID root, String json) throws IOException {
-        JsonNode actual = getActualTree(root);
-        JsonNode wanted = getWantedTree(root, json);
+    private void checkTreeState(UniqueID store, String json) throws IOException {
+        JsonNode actual = getActualTree(store);
+        JsonNode wanted = getWantedTree(store, json);
 
         assertThat(actual, equalTo(wanted));
     }
 
-    private static JsonNode getActualTree(UniqueID root) throws IOException {
+    private static JsonNode getActualTree(UniqueID store) throws IOException {
         ObjectMapper mapper = PolarisHelpers.newPolarisMapper();
-        return mapper.readTree(PolarisHelpers.getTreeAsStream(root));
+        return mapper.readTree(PolarisHelpers.getTreeAsStream(store));
     }
 
-    private static JsonNode getWantedTree(UniqueID root, String resourcePath) throws IOException {
+    private static JsonNode getWantedTree(UniqueID store, String resourcePath) throws IOException {
         ObjectMapper mapper = PolarisHelpers.newPolarisMapper();
-        return mapper.createObjectNode().set(root.toStringFormal(), mapper.readTree(Resources.getResource(resourcePath)));
+        return mapper.createObjectNode().set(store.toStringFormal(), mapper.readTree(Resources.getResource(resourcePath)));
     }
 }

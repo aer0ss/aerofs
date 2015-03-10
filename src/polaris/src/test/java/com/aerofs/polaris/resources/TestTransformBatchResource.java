@@ -50,17 +50,17 @@ public final class TestTransformBatchResource {
 
     @Test
     public void shouldSuccessfullyCompleteAllOperationsInBatch() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
+        // construct a number of files in a store
+        SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_3"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_3"))
         ));
 
-        // attempt to reinsert filename into root to create:
-        // root -> (folder_1 -> filename, filename)
+        // attempt to reinsert filename into store to create:
+        // store -> (folder_1 -> filename, filename)
         TransformBatchResult result = given()
                 .spec(AUTHENTICATED)
                 .and()
@@ -75,26 +75,26 @@ public final class TestTransformBatchResource {
         for (TransformBatchOperationResult operationResult : result.results) {
             assertThat(operationResult.successful, is(true));
             assertThat(operationResult.updated, hasSize(1));
-            assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+            assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
         }
 
         // should have received a *single* notification, since all changes were to the same shared folder
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldReturnResultsForCompletedOperationsEvenIfSomeFailed() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
+        // construct a number of files in store
+        SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1"))
         ));
 
-        // attempt to reinsert filename into root to create:
-        // root -> (folder_1 -> filename, filename)
+        // attempt to reinsert filename into store to create:
+        // store -> (folder_1 -> filename, filename)
         TransformBatchResult result = given()
                 .spec(AUTHENTICATED)
                 .and()
@@ -112,13 +112,13 @@ public final class TestTransformBatchResource {
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
         assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);
         assertThat(operationResult.successful, is(true));
         assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
 
         // third result
         operationResult = result.results.get(2);
@@ -126,22 +126,22 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldAbortBatchEarlyAndReturnResultsForCompletedOperations() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
+        // construct a number of files in a store
+        SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
         ));
 
-        // attempt to reinsert filename into root to create:
-        // root -> (folder_1 -> filename, filename)
+        // attempt to reinsert filename into store to create:
+        // store -> (folder_1 -> filename, filename)
         TransformBatchResult result = given()
                 .spec(AUTHENTICATED)
                 .and()
@@ -159,7 +159,7 @@ public final class TestTransformBatchResource {
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
         assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);
@@ -167,22 +167,22 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 
     @Test
     public void shouldAbortBatchEarlyIfAccessChecksFailAndReturnResultsForCompletedOperations() throws InterruptedException {
-        // construct a number of files in root
-        SID root = SID.generate();
+        // construct a number of files in a store
+        SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(root, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
         ));
 
-        // attempt to reinsert filename into root to create:
-        // root -> (folder_1 -> filename, filename)
+        // attempt to reinsert filename into store to create:
+        // store -> (folder_1 -> filename, filename)
         TransformBatchResult result = given()
                 .spec(AUTHENTICATED)
                 .and()
@@ -200,7 +200,7 @@ public final class TestTransformBatchResource {
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
         assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(root));
+        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);
@@ -208,6 +208,6 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(root);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
     }
 }

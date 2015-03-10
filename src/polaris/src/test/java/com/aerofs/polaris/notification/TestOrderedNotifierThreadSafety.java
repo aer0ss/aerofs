@@ -11,6 +11,7 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.api.notification.Update;
@@ -65,8 +66,8 @@ public final class TestOrderedNotifierThreadSafety {
 
     private final Random random = new Random();
     private final Transformer[] transformers = new Transformer[NUM_TRANSFORM_THREADS];
-    private final UniqueID[] roots = {SID.generate(), SID.generate(), SID.generate(), SID.generate()};
-    private final Map<UniqueID, List<Long>> notifiedRoots = Maps.newHashMap();
+    private final UniqueID[] stores = {SID.generate(), SID.generate(), SID.generate(), SID.generate(), SID.rootSID(UserID.fromInternal("test@aerofs.com"))};
+    private final Map<UniqueID, List<Long>> notifiedStores = Maps.newHashMap();
     private UpdatePublisher publisher = Mockito.mock(UpdatePublisher.class);
     private BasicDataSource dataSource;
     private DBI dbi;
@@ -130,11 +131,11 @@ public final class TestOrderedNotifierThreadSafety {
 
             private void addSuccessfulNotification(Update update) {
                 synchronized (TestOrderedNotifierThreadSafety.this) {
-                    List<Long> notifications = notifiedRoots.get(update.root);
+                    List<Long> notifications = notifiedStores.get(update.store);
 
                     if (notifications == null) {
                         notifications = Lists.newArrayList();
-                        notifiedRoots.put(update.root, notifications);
+                        notifiedStores.put(update.store, notifications);
                     }
 
                     notifications.add(update.latestLogicalTimestamp);
@@ -163,22 +164,22 @@ public final class TestOrderedNotifierThreadSafety {
         public void run() {
             try {
                 for (int i = 0; i < NUM_TRANSFORMS_PER_THREAD; i++) {
-                    UniqueID root = roots[random.nextInt(roots.length)];
-                    addTransform(root);
-                    notifier.notifyStoreUpdated(root);
+                    UniqueID store = stores[random.nextInt(stores.length)];
+                    addTransform(store);
+                    notifier.notifyStoreUpdated(store);
                 }
             } catch (Exception e) {
                 LOGGER.warn("fail add transform and notify publication in {}", getName());
             }
         }
 
-        private void addTransform(UniqueID root) {
+        private void addTransform(UniqueID store) {
             dbi.inTransaction((conn, status) -> {
                 Transforms transforms = conn.attach(Transforms.class);
-                long  logicalTimestamp = transforms.add(DID.generate(), root, root, TransformType.INSERT_CHILD, /* don't care */ 888, OID.generate(), "hello".getBytes(Charsets.UTF_8), System.currentTimeMillis(), null);
+                long  logicalTimestamp = transforms.add(DID.generate(), store, store, TransformType.INSERT_CHILD, /* don't care */ 888, OID.generate(), "hello".getBytes(Charsets.UTF_8), System.currentTimeMillis(), null);
 
                 LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
-                timestamps.updateLatest(root, logicalTimestamp);
+                timestamps.updateLatest(store, logicalTimestamp);
 
                 return null;
             });
@@ -219,23 +220,23 @@ public final class TestOrderedNotifierThreadSafety {
         Thread.sleep(10000); // 10 seconds
 
         // verify that we got the updates in order
-        for (Map.Entry<UniqueID, List<Long>> entry : notifiedRoots.entrySet()) {
-            UniqueID root = entry.getKey();
+        for (Map.Entry<UniqueID, List<Long>> entry : notifiedStores.entrySet()) {
+            UniqueID store = entry.getKey();
             List<Long> timestamps = entry.getValue();
 
-            LOGGER.info("{} -> {}", root, timestamps);
+            LOGGER.info("{} -> {}", store, timestamps);
 
-            // strictly increasing timestamps for each root
+            // strictly increasing timestamps for each store
             long previous = 0;
             for (long current : timestamps) {
                 assertThat(current, greaterThan(previous));
                 previous = current;
             }
 
-            // check that the last notification for each root is correct
+            // check that the last notification for each store is correct
             NotifiedTimestamps notifiedTimestamps = dbi.onDemand(NotifiedTimestamps.class);
             try {
-                Timestamps stored = notifiedTimestamps.getActualAndNotifiedTimestamps(root);
+                Timestamps stored = notifiedTimestamps.getActualAndNotifiedTimestamps(store);
                 assertThat(stored.databaseTimestamp, equalTo(stored.notifiedTimestamp));
                 assertThat(timestamps.get(timestamps.size() - 1), equalTo(stored.databaseTimestamp));
             } finally {

@@ -28,12 +28,12 @@ public final class TreeCommand implements Command {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TreeCommand.class);
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
     private final ObjectMapper mapper;
 
     @Inject
-    public TreeCommand(ObjectStore store, ObjectMapper mapper) {
-        this.store = store;
+    public TreeCommand(ObjectStore objectStore, ObjectMapper mapper) {
+        this.objectStore = objectStore;
         this.mapper = mapper;
     }
 
@@ -41,14 +41,14 @@ public final class TreeCommand implements Command {
     public void execute(MultivaluedMap<String, String> queryParameters, PrintWriter entityWriter) throws Exception {
         ObjectNode forest = mapper.createObjectNode();
 
-        String rootValue = queryParameters.getFirst("root");
-        final OID root = rootValue == null ? null : new OID(rootValue);
+        String storeValue = queryParameters.getFirst("store");
+        OID store = storeValue == null ? null : new OID(storeValue);
 
-        store.inTransaction(new StoreTransaction<Object>() {
+        objectStore.inTransaction(new StoreTransaction<Object>() {
             @Override
             public Void execute(DAO dao) throws Exception {
-                if (root != null) {
-                    dumpObjects(dao, root);
+                if (store != null) {
+                    dumpObjects(dao, store);
                 } else {
                     dumpObjects(dao);
                 }
@@ -57,21 +57,21 @@ public final class TreeCommand implements Command {
             }
 
             private void dumpObjects(DAO dao) {
-                // iterate over all known roots
-                try (ResultIterator<UniqueID> iterator = dao.objectTypes.getByType(ObjectType.ROOT)) {
+                // iterate over all known stores
+                try (ResultIterator<UniqueID> iterator = dao.objectTypes.getByType(ObjectType.STORE)) {
                     while (iterator.hasNext()) {
-                        UniqueID root = iterator.next();
-                        dumpObjects(dao, root);
+                        UniqueID store = iterator.next();
+                        dumpObjects(dao, store);
                     }
                 }
 
-                // iterate over unrooted objects
+                // iterate over objects in the trash (for all stores)
                 dumpObjects(dao, OID.TRASH);
             }
 
-            private void dumpObjects(DAO dao, UniqueID root) {
+            private void dumpObjects(DAO dao, UniqueID store) {
                 ObjectNode node = mapper.createObjectNode();
-                forest.set(root.toStringFormal(), traverse(dao, root, node));
+                forest.set(store.toStringFormal(), traverse(dao, store, node));
             }
 
             private ObjectNode traverse(DAO dao, UniqueID parent, ObjectNode parentNode) {
@@ -98,7 +98,7 @@ public final class TreeCommand implements Command {
                             folders.put(child.oid, node);
                         }
 
-                        parentNode.set(PolarisUtilities.stringFromUTF8Bytes(child.name),node);
+                        parentNode.set(PolarisUtilities.stringFromUTF8Bytes(child.name), node);
                     }
                 }
 

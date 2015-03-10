@@ -44,11 +44,11 @@ public final class OrderedNotifier implements ManagedNotifier {
 
     private final class NotifyState {
 
-        private final UniqueID root;
+        private final UniqueID store;
         private @Nullable Timestamps timestamps;
 
-        public NotifyState(UniqueID root) {
-            this.root = root;
+        public NotifyState(UniqueID store) {
+            this.store = store;
         }
     }
 
@@ -81,11 +81,11 @@ public final class OrderedNotifier implements ManagedNotifier {
     }
 
     @Override
-    public void notifyStoreUpdated(UniqueID root) {
-        boolean added = pending.add(root);
+    public void notifyStoreUpdated(UniqueID store) {
+        boolean added = pending.add(store);
 
         if (added) {
-            NotifyState state = new NotifyState(root);
+            NotifyState state = new NotifyState(store);
             publish(state);
         }
     }
@@ -97,7 +97,7 @@ public final class OrderedNotifier implements ManagedNotifier {
 
             @Override
             public Void call() {
-                ListenableFuture<Timestamps> lookupFuture = databaseExecutor.submit(() -> getTimestamps(state.root));
+                ListenableFuture<Timestamps> lookupFuture = databaseExecutor.submit(() -> getTimestamps(state.store));
 
                 Futures.addCallback(lookupFuture, new FutureCallback<Timestamps>() {
 
@@ -105,7 +105,7 @@ public final class OrderedNotifier implements ManagedNotifier {
                     public void onSuccess(@Nullable Timestamps result) {
                         Preconditions.checkNotNull(result);
 
-                        if (!shouldNotify(state.root, result)) {
+                        if (!shouldNotify(state.store, result)) {
                             return;
                         }
 
@@ -128,32 +128,32 @@ public final class OrderedNotifier implements ManagedNotifier {
 
                                     @Override
                                     public void onSuccess(@Nullable Void result) {
-                                        Timestamps timestamps = getTimestamps(state.root);
-                                        if (shouldNotify(state.root, timestamps)) {
-                                            publish(new NotifyState(state.root));
+                                        Timestamps timestamps = getTimestamps(state.store);
+                                        if (shouldNotify(state.store, timestamps)) {
+                                            publish(new NotifyState(state.store));
                                         } else {
-                                            pending.remove(state.root);
+                                            pending.remove(state.store);
                                         }
 
                                     }
 
                                     @Override
                                     public void onFailure(Throwable t) {
-                                        handleFailure(state.root, t);
+                                        handleFailure(state.store, t);
                                     }
                                 }, notifyExecutor);
                             }
 
                             @Override
                             public void onFailure(Throwable t) {
-                                handleFailure(state.root, t);
+                                handleFailure(state.store, t);
                             }
                         }, notifyExecutor);
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        handleFailure(state.root, t);
+                        handleFailure(state.store, t);
                     }
                 }, notifyExecutor);
 
@@ -162,18 +162,18 @@ public final class OrderedNotifier implements ManagedNotifier {
         });
     }
 
-    private void handleFailure(UniqueID root, Throwable t) {
-        LOGGER.warn("fail publish notification for {}", root, t);
-        publish(new NotifyState(root));
+    private void handleFailure(UniqueID store, Throwable t) {
+        LOGGER.warn("fail publish notification for {}", store, t);
+        publish(new NotifyState(store));
     }
 
     // stage 1
-    private Timestamps getTimestamps(UniqueID root) {
+    private Timestamps getTimestamps(UniqueID store) {
         return dbi.inTransaction(TransactionIsolationLevel.READ_COMMITTED, (conn, status) -> {
             NotifiedTimestamps notifiedTimestamps = conn.attach(NotifiedTimestamps.class);
 
-            Timestamps timestamps = notifiedTimestamps.getActualAndNotifiedTimestamps(root);
-            Preconditions.checkState(timestamps.databaseTimestamp >= 0, "max timestamp not updated for %s", root);
+            Timestamps timestamps = notifiedTimestamps.getActualAndNotifiedTimestamps(store);
+            Preconditions.checkState(timestamps.databaseTimestamp >= 0, "max timestamp not updated for %s", store);
 
             return timestamps;
         });
@@ -181,23 +181,23 @@ public final class OrderedNotifier implements ManagedNotifier {
 
     // stage 2
     private ListenableFuture<Void> publishStoreNotification(NotifyState state) {
-        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.root);
-        LOGGER.debug("publish {} to {}", state.timestamps.databaseTimestamp, state.root);
-        return publisher.publishUpdate(PolarisUtilities.getVerkehrUpdateTopic(state.timestamps.root.toStringFormal()), new Update(state.root, state.timestamps.databaseTimestamp));
+        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.store);
+        LOGGER.debug("publish {} to {}", state.timestamps.databaseTimestamp, state.store);
+        return publisher.publishUpdate(PolarisUtilities.getVerkehrUpdateTopic(state.timestamps.store.toStringFormal()), new Update(state.store, state.timestamps.databaseTimestamp));
     }
 
     // stage 3
     private void updateNotifiedTimestamp(NotifyState state) {
-        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.root);
+        Preconditions.checkArgument(state.timestamps != null, "timestamps not set for %s", state.store);
         dbi.inTransaction(TransactionIsolationLevel.READ_COMMITTED, (conn, status) -> {
             NotifiedTimestamps timestamps = conn.attach(NotifiedTimestamps.class);
-            timestamps.updateLatest(state.root, state.timestamps.databaseTimestamp);
+            timestamps.updateLatest(state.store, state.timestamps.databaseTimestamp);
             return null;
         });
     }
 
-    private static boolean shouldNotify(UniqueID root, Timestamps timestamps) {
-        LOGGER.debug("compare ts for {}: latest:{} notify:{}", root, timestamps.databaseTimestamp, timestamps.notifiedTimestamp);
+    private static boolean shouldNotify(UniqueID store, Timestamps timestamps) {
+        LOGGER.debug("compare ts for {}: latest:{} notify:{}", store, timestamps.databaseTimestamp, timestamps.notifiedTimestamp);
         return timestamps.databaseTimestamp != timestamps.notifiedTimestamp;
     }
 }

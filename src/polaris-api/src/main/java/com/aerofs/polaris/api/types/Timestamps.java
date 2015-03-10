@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 public final class Timestamps {
 
     @NotNull
-    public final UniqueID root;
+    public final UniqueID store;
 
     @Min(0)
     public final long databaseTimestamp;
@@ -22,10 +22,10 @@ public final class Timestamps {
 
     @JsonCreator
     public Timestamps(
-            @JsonProperty("root") UniqueID root,
+            @JsonProperty("store") UniqueID store,
             @JsonProperty("database_timestamp") long databaseTimestamp,
             @JsonProperty("notified_timestamp") long notifiedTimestamp) {
-        this.root = root;
+        this.store = store;
         this.databaseTimestamp = databaseTimestamp;
         this.notifiedTimestamp = notifiedTimestamp;
     }
@@ -38,19 +38,19 @@ public final class Timestamps {
         Timestamps other = (Timestamps) o;
         return Objects.equal(databaseTimestamp, other.databaseTimestamp)
                 && Objects.equal(notifiedTimestamp, other.notifiedTimestamp)
-                && Objects.equal(root, other.root);
+                && Objects.equal(store, other.store);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(root, databaseTimestamp, notifiedTimestamp);
+        return Objects.hashCode(store, databaseTimestamp, notifiedTimestamp);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("root", root)
+                .add("store", store)
                 .add("databaseTimestamp", databaseTimestamp)
                 .add("notifiedTimestamp", notifiedTimestamp)
                 .toString();

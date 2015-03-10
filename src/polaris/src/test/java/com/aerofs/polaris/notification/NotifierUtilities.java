@@ -8,29 +8,29 @@ import org.skife.jdbi.v2.DBI;
 
 abstract class NotifierUtilities {
 
-    static String getVerkehrUpdateTopic(UniqueID root) {
-        return PolarisUtilities.getVerkehrUpdateTopic(root.toStringFormal());
+    static String getVerkehrUpdateTopic(UniqueID store) {
+        return PolarisUtilities.getVerkehrUpdateTopic(store.toStringFormal());
     }
 
-    static void setLatestLogicalTimestamp(DBI dbi, UniqueID root, long timestamp) {
+    static void setLatestLogicalTimestamp(DBI dbi, UniqueID store, long timestamp) {
         dbi.inTransaction((conn, status) -> {
             LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
-            timestamps.updateLatest(root, timestamp);
+            timestamps.updateLatest(store, timestamp);
             return null;
         });
     }
 
-    static long getLatestLogicalTimestamp(DBI dbi, UniqueID root) {
+    static long getLatestLogicalTimestamp(DBI dbi, UniqueID store) {
         return dbi.inTransaction((conn, status) -> {
             LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
-            return timestamps.getLatest(root);
+            return timestamps.getLatest(store);
         });
     }
 
-    static long getLatestNotifiedLogicalTimestamp(DBI dbi, UniqueID root) {
+    static long getLatestNotifiedLogicalTimestamp(DBI dbi, UniqueID store) {
         return dbi.inTransaction((conn, status) -> {
             NotifiedTimestamps timestamps = conn.attach(NotifiedTimestamps.class);
-            return timestamps.getLatest(root);
+            return timestamps.getLatest(store);
         });
     }
 

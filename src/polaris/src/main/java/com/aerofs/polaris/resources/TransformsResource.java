@@ -23,11 +23,11 @@ import javax.ws.rs.core.MediaType;
 @Singleton
 public final class TransformsResource {
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
     private final int maxReturnedTransforms;
 
-    public TransformsResource(@Context ObjectStore store, @Context PolarisConfiguration configuration) {
-        this.store = store;
+    public TransformsResource(@Context ObjectStore objectStore, @Context PolarisConfiguration configuration) {
+        this.objectStore = objectStore;
         this.maxReturnedTransforms = configuration.getMaxReturnedTransforms();
     }
 
@@ -36,10 +36,10 @@ public final class TransformsResource {
     @GET
     public Transforms getTransforms(
             @Context AeroUserDevicePrincipal principal,
-            @PathParam("oid") UniqueID root,
+            @PathParam("oid") UniqueID store,
             @QueryParam("since") @Min(-1) long since,
             @QueryParam("count") @Min(1) int requestedResultCount) {
         int resultCount = Math.min(requestedResultCount, maxReturnedTransforms);
-        return store.getTransforms(principal.getUser(), root, since, resultCount);
+        return objectStore.getTransforms(principal.getUser(), store, since, resultCount);
     }
 }

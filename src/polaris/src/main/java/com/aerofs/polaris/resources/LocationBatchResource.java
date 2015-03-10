@@ -26,10 +26,10 @@ public final class LocationBatchResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransformBatchResource.class);
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
 
-    public LocationBatchResource(@Context ObjectStore store) {
-        this.store = store;
+    public LocationBatchResource(@Context ObjectStore objectStore) {
+        this.objectStore = objectStore;
     }
 
     @POST
@@ -40,7 +40,7 @@ public final class LocationBatchResource {
 
         for (LocationBatchOperation operation : batch.operations) {
             try {
-                store.performLocationUpdate(principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
+                objectStore.performLocationUpdate(principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
                 results.add(new LocationBatchOperationResult());
             } catch (Exception e) {
                 LocationBatchOperationResult result = new LocationBatchOperationResult(Resources.getBatchErrorFromThrowable(e));

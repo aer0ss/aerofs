@@ -43,9 +43,9 @@ public final class TestLocationResource {
 
     @Test
     public void shouldAddLocationsForLogicalObject() {
-        // create a root folder and a file under it
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file in  it
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, DEVICE);
 
         // verify that this location exists
@@ -67,16 +67,16 @@ public final class TestLocationResource {
 
     @Test
     public void shouldStillBeAbleToAddLocationForDeletedObject() {
-        // create a file under the root folder
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file in  it
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // add a location for this file
         DID dev0 = DID.generate();
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, dev0);
 
         // delete the file
-        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, root, file);
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, file);
 
         // should still be able to add a location for this file
         DID dev1 = DID.generate();
@@ -89,9 +89,9 @@ public final class TestLocationResource {
 
     @Test
     public void shouldGetLocationsForLogicalObject() {
-        // create a root folder and a file under it
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file in  it
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // indicate that this object is available at multiple locations
         DID dev0 = DID.generate();
@@ -124,9 +124,9 @@ public final class TestLocationResource {
 
     @Test
     public void shouldDeleteLocationsForLogicalObject() {
-        // create a root folder and a file under it
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store and a file in  it
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // indicate that this object is available at multiple locations
         DID dev0 = DID.generate();
@@ -152,9 +152,9 @@ public final class TestLocationResource {
 
     @Test
     public void shouldNoopWhenAttemptingToDeleteNonExistingDeviceForLogicalObject() {
-        // create a root folder and a file under it and say that the object is available at this device
-        SID root = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, root, "file");
+        // create a store, a file under it and then say that the object is available at this device
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
         PolarisHelpers.addLocation(AUTHENTICATED, file, 0, DEVICE);
 
         // verify that we have stored this info

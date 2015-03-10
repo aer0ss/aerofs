@@ -4,5 +4,5 @@ import com.aerofs.ids.UniqueID;
 
 public interface Notifier {
 
-    void notifyStoreUpdated(UniqueID root);
+    void notifyStoreUpdated(UniqueID store);
 }

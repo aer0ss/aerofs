@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 public final class LogicalObject {
 
     @NotNull
-    public final UniqueID root;
+    public final UniqueID store;
 
     @NotNull
     public final UniqueID oid;
@@ -25,11 +25,11 @@ public final class LogicalObject {
 
     @JsonCreator
     public LogicalObject(
-            @JsonProperty("root") UniqueID root,
+            @JsonProperty("store") UniqueID store,
             @JsonProperty("oid") UniqueID oid,
             @JsonProperty("version") long version,
             @JsonProperty("object_type") ObjectType objectType) {
-        this.root = root;
+        this.store = store;
         this.oid = oid;
         this.version = version;
         this.objectType = objectType;
@@ -41,7 +41,7 @@ public final class LogicalObject {
         if (o == null || getClass() != o.getClass()) return false;
 
         LogicalObject other = (LogicalObject) o;
-        return Objects.equal(root, other.root)
+        return Objects.equal(store, other.store)
                 && Objects.equal(oid, other.oid)
                 && version == other.version
                 && Objects.equal(objectType, other.objectType);
@@ -49,14 +49,14 @@ public final class LogicalObject {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(root, oid, version, objectType);
+        return Objects.hashCode(store, oid, version, objectType);
     }
 
     @Override
     public String toString() {
         return Objects
                 .toStringHelper(this)
-                .add("root", root)
+                .add("store", store)
                 .add("oid", oid)
                 .add("version", version)
                 .add("objectType", objectType)

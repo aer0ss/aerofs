@@ -159,14 +159,14 @@ public final class ObjectStore {
     public static final class AccessToken {
 
         public final UserID user;
-        public final UniqueID root;
+        public final UniqueID store;
         public final Set<Access> granted;
 
         // private so that it can *only* be created from within this class
-        private AccessToken(UserID user, UniqueID root, Access... granted) {
+        private AccessToken(UserID user, UniqueID store, Access... granted) {
             Preconditions.checkArgument(granted.length > 0, "at least access type must be allowed");
             this.user = user;
-            this.root = root;
+            this.store = store;
             this.granted = ImmutableSet.copyOf(granted);
         }
 
@@ -176,12 +176,12 @@ public final class ObjectStore {
             if (o == null || getClass() != o.getClass()) return false;
 
             AccessToken other = (AccessToken) o;
-            return Objects.equal(user, other.user) && Objects.equal(root, other.root) && Objects.equal(granted, other.granted);
+            return Objects.equal(user, other.user) && Objects.equal(store, other.store) && Objects.equal(granted, other.granted);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(user, root, granted);
+            return Objects.hashCode(user, store, granted);
         }
 
         @Override
@@ -189,7 +189,7 @@ public final class ObjectStore {
             return Objects
                     .toStringHelper(this)
                     .add("user", user)
-                    .add("root", root)
+                    .add("store", store)
                     .add("granted", granted)
                     .toString();
         }
@@ -207,15 +207,15 @@ public final class ObjectStore {
     public AccessToken checkAccess(UserID user, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
-        UniqueID root = inTransaction(dao -> getRoot(dao, oid));
+        UniqueID store = inTransaction(dao -> getStore(dao, oid));
 
         // avoid checking sparta if it turns out that this is some user's root store
-        if (Identifiers.isRootStore(root) && SID.rootSID(user).equals(root)) {
-            return new AccessToken(user, root, requested);
+        if (Identifiers.isRootStore(store) && SID.rootSID(user).equals(store)) {
+            return new AccessToken(user, store, requested);
         }
 
-        accessManager.checkAccess(user, root, requested);
-        return new AccessToken(user, root, requested);
+        accessManager.checkAccess(user, store, requested);
+        return new AccessToken(user, store, requested);
     }
 
     /* (non-javadoc)
@@ -225,20 +225,20 @@ public final class ObjectStore {
     private void checkAccessGranted(DAO dao, AccessToken accessToken, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
-        UniqueID currentRoot = getRoot(dao, oid);
-        Preconditions.checkArgument(currentRoot.equals(accessToken.root), "access granted for root %s instead of %s", accessToken.root, currentRoot);
+        UniqueID currentStore = getStore(dao, oid);
+        Preconditions.checkArgument(currentStore.equals(accessToken.store), "access granted for store %s instead of %s", accessToken.store, currentStore);
 
         if (!ImmutableSet.copyOf(requested).equals(accessToken.granted)) {
             LOGGER.warn("access granted for {} instead of {}", accessToken.granted, requested);
-            throw new AccessException(accessToken.user, accessToken.root, requested);
+            throw new AccessException(accessToken.user, accessToken.store, requested);
         }
     }
 
-    private UniqueID getRoot(DAO dao, UniqueID oid) throws NotFoundException {
-        UniqueID root;
+    private UniqueID getStore(DAO dao, UniqueID oid) throws NotFoundException {
+        UniqueID store;
 
         if (Identifiers.isSharedFolder(oid) || Identifiers.isRootStore(oid)) {
-            root = oid;
+            store = oid;
         } else {
             LogicalObject object = dao.objects.get(oid);
 
@@ -246,10 +246,10 @@ public final class ObjectStore {
                 throw new NotFoundException(oid);
             }
 
-            root = object.root;
+            store = object.store;
         }
 
-        return root;
+        return store;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -260,39 +260,39 @@ public final class ObjectStore {
 
     /**
      * Get up to {@code maxReturnedResultCount} transforms starting at
-     * {@code startTimestamp} for the shared folder or root store identified
-     * by {@code root}.
+     * {@code startTimestamp} for the shared folder or store store identified
+     * by {@code store}.
      *
      * @param user user id of the user requesting the transforms
-     * @param root shared folder or root store for which you want to get a list of transforms
+     * @param store shared folder or root store for which you want to get a list of transforms
      * @param startTimestamp logical timestamp <em>after</em> which to start retrieving transforms
      * @param maxReturnedResultCount maximum number of transforms to return
-     * @return up to {@code maxReturnedResultCount} transforms for {@code root} starting at {@code startTimestamp}
-     * @throws NotFoundException if the {@code root} for which transforms should be retrieved does not exist
-     * @throws AccessException if {@code user} cannot list transforms for {@code root}
+     * @return up to {@code maxReturnedResultCount} transforms for {@code store} starting at {@code startTimestamp}
+     * @throws NotFoundException if the {@code store} for which transforms should be retrieved does not exist
+     * @throws AccessException if {@code user} cannot list transforms for {@code store}
      */
-    public Transforms getTransforms(UserID user, UniqueID root, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
-        AccessToken accessToken = checkAccess(user, root, Access.READ);
+    public Transforms getTransforms(UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
+        AccessToken accessToken = checkAccess(user, store, Access.READ);
         return inTransaction(dao -> {
-            int available = getTransformCount(dao, accessToken, root);
-            List<Transform> transforms = getTransforms(dao, accessToken, root, startTimestamp, maxReturnedResultCount);
+            int available = getTransformCount(dao, accessToken, store);
+            List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);
             return new Transforms(available, transforms);
         });
     }
 
-    private int getTransformCount(DAO dao, AccessToken accessToken, UniqueID root) throws NotFoundException, AccessException {
-        checkAccessGranted(dao, accessToken, root, Access.READ);
-        verifyStore(root);
-        return dao.transforms.getTransformCount(root);
+    private int getTransformCount(DAO dao, AccessToken accessToken, UniqueID store) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, store, Access.READ);
+        verifyStore(store);
+        return dao.transforms.getTransformCount(store);
     }
 
-    private List<Transform> getTransforms(DAO dao, AccessToken accessToken, UniqueID root, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
-        checkAccessGranted(dao, accessToken, root, Access.READ);
-        verifyStore(root);
+    private List<Transform> getTransforms(DAO dao, AccessToken accessToken, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
+        checkAccessGranted(dao, accessToken, store, Access.READ);
+        verifyStore(store);
 
         List<Transform> returned = Lists.newArrayList();
 
-        try (ResultIterator<Transform> iterator = dao.transforms.getTransformsSince(startTimestamp, root)) {
+        try (ResultIterator<Transform> iterator = dao.transforms.getTransformsSince(startTimestamp, store)) {
             while (iterator.hasNext() && returned.size() < maxReturnedResultCount) {
                 returned.add(iterator.next());
             }
@@ -392,7 +392,7 @@ public final class ObjectStore {
             child = dao.objects.get(childOid);
         } else {
             Preconditions.checkArgument(childObjectType != null, "%s does not exist", childOid);
-            child = newObject(dao, parent.root, childOid, childObjectType);
+            child = newObject(dao, parent.store, childOid, childObjectType);
         }
 
         // by this point the child object should exist
@@ -450,7 +450,7 @@ public final class ObjectStore {
 
         // check if we should unroot the object
         if (dao.children.getActiveReferenceCount(childOid) == 0) {
-            unrootObject(dao, child, childName);
+            removeObjectFromStore(dao, child, childName);
         }
 
         LOGGER.info("remove {} from {}", childOid, parentOid);
@@ -485,7 +485,7 @@ public final class ObjectStore {
         // if it doesn't exist, and it's a shared folder, create it
         if (parent == null) {
             if (Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid)) {
-                parent = newRoot(dao, oid);
+                parent = newStore(dao, oid);
             } else {
                 throw new NotFoundException(oid);
             }
@@ -507,17 +507,17 @@ public final class ObjectStore {
     // these methods do *not* check pre/post conditions
     //
 
-    private static LogicalObject newRoot(DAO dao, UniqueID oid) {
+    private static LogicalObject newStore(DAO dao, UniqueID oid) {
         verifyStore(oid);
 
-        return newObject(dao, oid, oid, ObjectType.ROOT);
+        return newObject(dao, oid, oid, ObjectType.STORE);
     }
 
-    private static LogicalObject newObject(DAO dao, UniqueID root, UniqueID oid, ObjectType objectType) {
-        verifyStore(root);
+    private static LogicalObject newObject(DAO dao, UniqueID store, UniqueID oid, ObjectType objectType) {
+        verifyStore(store);
 
         // create the object at the initial version
-        dao.objects.add(root, oid, Constants.INITIAL_OBJECT_VERSION);
+        dao.objects.add(store, oid, Constants.INITIAL_OBJECT_VERSION);
 
         // add a type-mapping for the object
         dao.objectTypes.add(oid, objectType);
@@ -530,10 +530,10 @@ public final class ObjectStore {
         long newParentVersion = parent.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.INSERT_CHILD, newParentVersion, childOid, childName, atomic);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.INSERT_CHILD, newParentVersion, childOid, childName, atomic);
 
         // update the version of the parent
-        dao.objects.update(parent.root, parent.oid, newParentVersion);
+        dao.objects.update(parent.store, parent.oid, newParentVersion);
 
         // create an entry for the child
         dao.children.add(parent.oid, childOid, childName);
@@ -546,10 +546,10 @@ public final class ObjectStore {
         long newParentVersion = parent.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, childOid, null, atomic);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, childOid, null, atomic);
 
         // update the version of the parent
-        dao.objects.update(parent.root, parent.oid, newParentVersion);
+        dao.objects.update(parent.store, parent.oid, newParentVersion);
 
         // remove the entry for the child
         dao.children.remove(parent.oid, childOid);
@@ -562,10 +562,10 @@ public final class ObjectStore {
         long newParentVersion = parent.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.root, parent.oid, TransformType.RENAME_CHILD, newParentVersion, childOid, childName, null);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.RENAME_CHILD, newParentVersion, childOid, childName, null);
 
         // update the version of the parent
-        dao.objects.update(parent.root, parent.oid, newParentVersion);
+        dao.objects.update(parent.store, parent.oid, newParentVersion);
 
         // update the child entry in the children table
         dao.children.update(parent.oid, childOid, childName);
@@ -578,31 +578,31 @@ public final class ObjectStore {
         long newVersion = file.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, file.root, file.oid, TransformType.UPDATE_CONTENT, newVersion, null, null, null);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, file.store, file.oid, TransformType.UPDATE_CONTENT, newVersion, null, null, null);
 
         // add a row to the content table
         dao.objectProperties.add(file.oid, newVersion, hash, size, mtime);
 
         // update the version for the object
-        dao.objects.update(file.root, file.oid, newVersion);
+        dao.objects.update(file.store, file.oid, newVersion);
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
-    private static long addTransformAndUpdateMaxLogicalTimestamp(DAO dao, DID device, UniqueID root, UniqueID oid, TransformType transformType, long newVersion, @Nullable UniqueID child, @Nullable byte[] name, @Nullable Atomic atomic) {
+    private static long addTransformAndUpdateMaxLogicalTimestamp(DAO dao, DID device, UniqueID store, UniqueID oid, TransformType transformType, long newVersion, @Nullable UniqueID child, @Nullable byte[] name, @Nullable Atomic atomic) {
         // add an entry in the transforms table
         long timestamp = System.currentTimeMillis();
-        long logicalTimestamp = dao.transforms.add(device, root, oid, transformType, newVersion, child, name, timestamp, atomic);
+        long logicalTimestamp = dao.transforms.add(device, store, oid, transformType, newVersion, child, name, timestamp, atomic);
 
         // update the store max timestamp
-        dao.logicalTimestamps.updateLatest(root, logicalTimestamp);
+        dao.logicalTimestamps.updateLatest(store, logicalTimestamp);
 
         // return logical timestamp associated with this transform
         return logicalTimestamp;
     }
 
-    private static void unrootObject(DAO dao, LogicalObject logicalObject, byte[] name) {
+    private static void removeObjectFromStore(DAO dao, LogicalObject logicalObject, byte[] name) {
         byte[] hex = PolarisUtilities.stringToUTF8Bytes(PolarisUtilities.hexEncode(logicalObject.oid.getBytes()));
         Preconditions.checkState(hex != null, "%s could not be converted to hex string", logicalObject.oid);
         byte[] disambiguated = concat(hex, name);
@@ -746,7 +746,7 @@ public final class ObjectStore {
     }
 
     private static boolean isFolder(ObjectType objectType) {
-        return objectType == ObjectType.ROOT || objectType == ObjectType.FOLDER;
+        return objectType == ObjectType.STORE || objectType == ObjectType.FOLDER;
     }
 
     private static boolean isFile(ObjectType objectType) {

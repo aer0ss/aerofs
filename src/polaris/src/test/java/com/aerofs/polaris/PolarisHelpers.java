@@ -188,13 +188,13 @@ public abstract class PolarisHelpers {
     // get changes
     //
 
-    public static Transforms getTransforms(RequestSpecification authenticated, SID root, long since, int resultCount) {
+    public static Transforms getTransforms(RequestSpecification authenticated, SID store, long since, int resultCount) {
         return given()
                 .spec(authenticated)
                 .and()
-                .parameters("oid", root.toStringFormal(), "since", since, "count", resultCount)
+                .parameters("oid", store.toStringFormal(), "since", since, "count", resultCount)
                 .and()
-                .when().get(PolarisTestServer.getTransformsURL(root))
+                .when().get(PolarisTestServer.getTransformsURL(store))
                 .then()
                 .extract().as(Transforms.class);
     }
@@ -203,9 +203,9 @@ public abstract class PolarisHelpers {
     // dump logical database
     //
 
-    public static InputStream getTreeAsStream(UniqueID root) {
+    public static InputStream getTreeAsStream(UniqueID store) {
         return given()
-                    .queryParam("root", root.toStringFormal()).and().queryParam(JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER)
+                    .queryParam("store", store.toStringFormal()).and().queryParam(JSON_COMMAND_RESPONSE_ENTITY_PRETTY_PRINTING_QUERY_PARAMETER)
                     .and()
                     .when().post(PolarisTestServer.getTreeUrl())
                     .then()

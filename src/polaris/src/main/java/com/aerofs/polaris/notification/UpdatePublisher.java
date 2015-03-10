@@ -20,7 +20,7 @@ public interface UpdatePublisher {
      * via the returned future, but may continue to
      * publish subsequent updates.
      *
-     * @param topic topic
+     * @param topic topic to which the update is published
      * @param update update message to be published
      * @return future representing the publication state
      */

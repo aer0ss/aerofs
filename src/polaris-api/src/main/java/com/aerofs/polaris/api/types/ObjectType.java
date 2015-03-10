@@ -3,7 +3,7 @@ package com.aerofs.polaris.api.types;
 /**
  * List of logical objects that can be represented in the AeroFS virtual filesystem. These are:
  * <ul>
- *     <li>ROOT</li>
+ *     <li>STORE</li>
  *     <li>FILE</li>
  *     <li>FOLDER</li>
  *     <li>MOUNT_POINT (shared-folder mount point)</li>
@@ -14,8 +14,8 @@ package com.aerofs.polaris.api.types;
  */
 public enum ObjectType {
 
-    /** root of a shared folder */
-    ROOT(1),
+    /** shared folder */
+    STORE(1),
 
     /** file on the filesystem */
     FILE(2),

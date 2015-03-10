@@ -19,10 +19,10 @@ import javax.ws.rs.core.Context;
 @Singleton
 public final class LocationResource {
 
-    private final ObjectStore store;
+    private final ObjectStore objectStore;
 
-    public LocationResource(@Context ObjectStore store) {
-        this.store = store;
+    public LocationResource(@Context ObjectStore objectStore) {
+        this.objectStore = objectStore;
     }
 
     @POST
@@ -31,7 +31,7 @@ public final class LocationResource {
             @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
             @PathParam("did") DID did) {
-        store.performLocationUpdate(principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
+        objectStore.performLocationUpdate(principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
     }
 
     @DELETE
@@ -40,6 +40,6 @@ public final class LocationResource {
             @PathParam("oid") OID oid,
             @PathParam("version") @Min(0) long version,
             @PathParam("did") DID did) {
-        store.performLocationUpdate(principal.getUser(), LocationUpdateType.REMOVE, oid, version, did);
+        objectStore.performLocationUpdate(principal.getUser(), LocationUpdateType.REMOVE, oid, version, did);
     }
 }
