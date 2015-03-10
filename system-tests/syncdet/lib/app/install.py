@@ -35,7 +35,7 @@ def cleanup_win_root_anchor(root_anchor):
     for root, dirs, files in os.walk(unicode(root_anchor), topdown=False):
         # Without adding the magic_prefix "\\\\?\\" files, dir aren't returned
         # properly by os.walk(for example dir with name com2.txt is classified as file
-        # eventhough it isn't) So we add combine them in a list
+        # eventhough it isn't) So we combine them in a list
         # and then delete them based on if they are files or dir.
         file_paths = files_and_dirs_paths.extend([os.path.join(root, fname) for fname in files])
         dir_paths = files_and_dirs_paths.extend([os.path.join(root, dname) for dname in dirs])

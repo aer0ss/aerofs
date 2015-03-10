@@ -26,7 +26,8 @@ def move_data_to_archive_dir():
     archive_dir = os.path.join(os.path.expanduser('~'), 'archive')
     if 'win32' in sys.platform:
         cleanup_win_root_anchor(archive_dir)
-        os.rmdir(archive_dir)
+        if os.path.exists(archive_dir):
+            os.rmdir(archive_dir)
     else:
         # make sure we only archive this suite's data
         rm_rf(archive_dir)
