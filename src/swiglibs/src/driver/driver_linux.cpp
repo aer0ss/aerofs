@@ -98,8 +98,9 @@ int killDaemon()
             continue;
         }
 
-        // Allocate the buffer and scan the first argument
+        // Clear the buffer and scan the first argument
         // Be careful not to overflow the buffer
+        memset(cmdlineNameBuffer, 0, sizeof(cmdlineNameBuffer));
         fscanf(fCmdline, "%" STRINGIFY(MAX_CMDLINE_LEN) "s", cmdlineNameBuffer);
 
         // Close the file, we're done with it
