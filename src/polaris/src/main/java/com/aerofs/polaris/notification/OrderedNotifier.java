@@ -120,6 +120,7 @@ public final class OrderedNotifier implements ManagedNotifier {
                                     @Override
                                     public Void call() {
                                         updateNotifiedTimestamp(state);
+                                        pending.remove(state.store);
                                         return null;
                                     }
                                 });
@@ -130,11 +131,8 @@ public final class OrderedNotifier implements ManagedNotifier {
                                     public void onSuccess(@Nullable Void result) {
                                         Timestamps timestamps = getTimestamps(state.store);
                                         if (shouldNotify(state.store, timestamps)) {
-                                            publish(new NotifyState(state.store));
-                                        } else {
-                                            pending.remove(state.store);
+                                            notifyStoreUpdated(state.store);
                                         }
-
                                     }
 
                                     @Override
