@@ -24,7 +24,7 @@ DIRS =  sp \
 subdirs: $(DIRS:%=dockerize-%)
 dockerize-%:
 	@echo "========================================"
-	@echo "  Dockerizing $*"
+	@echo "  Building Docker image $*"
 	@echo "========================================"
 	$(MAKE) -C resources/$* image
 

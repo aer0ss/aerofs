@@ -11,7 +11,7 @@ RUN \
     wget $COREOS_TAR_BALL -O /coreos.bin.bz2 &&\
     wget $COREOS_TAR_BALL.sig -O /coreos.bin.bz2.sig &&\
     # See https://coreos.com/security/image-signing-key/ for signing key ID
-    gpg --recv-keys 50E0885593D2DCB4 &&\
+    gpg --keyserver keys.gnupg.net --recv-keys 50E0885593D2DCB4 &&\
     gpg --verify coreos.bin.bz2.sig &&\
     echo "Decompression may take a while..." &&\
     bunzip2 /coreos.bin.bz2

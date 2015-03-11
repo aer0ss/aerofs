@@ -52,7 +52,7 @@ images: base $(DOCKERIZE_DIRS)
 
 $(DOCKERIZE_BASE_DIRS) $(DOCKERIZE_DIRS):
 	@echo "========================================"
-	@echo "  Dockerizing $(@:dockerize-%=%)"
+	@echo "  Building Docker image $(@:dockerize-%=%)"
 	@echo "========================================"
 	$(MAKE) -C $(@:dockerize-%=%) image
 
