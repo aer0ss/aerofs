@@ -578,17 +578,20 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
             }
         }
 
-        FileInfo toInfo = new FileInfo(toId, -1, fromInfo._length, new Date().getTime(),
+        FileInfo toInfo = new FileInfo(toId, -1, fromInfo._length, fromInfo._mtime,
                 fromInfo._chunks);
         updateFileInfo_(toPath, toInfo, t);
 
         if (toId != fromInfo._id) {
-            delete_(from, t);
+            delete_(fromInfo._id, fromPath, t);
         }
     }
 
     void updateSOID_(SOKID oldId, SOID newId, Trans t) throws SQLException
     {
+        // FIXME: this is probably OK for aliasing but most likely not OK for migration
+        if (!oldId.sidx().equals(newId.sidx())) l.warn("block file migration {} {}", oldId, newId);
+
         int n = _bsdb.updateInternalName_(makeFileName(oldId),
                 makeFileName(new SOKID(newId.sidx(), newId.oid(), oldId.kidx())), t);
         checkState(n == 0 || n == 1);
