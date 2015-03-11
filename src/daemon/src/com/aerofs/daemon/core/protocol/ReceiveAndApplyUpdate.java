@@ -59,6 +59,7 @@ import java.io.InputStream;
 import java.security.DigestException;
 import java.sql.SQLException;
 
+import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ReceiveAndApplyUpdate
@@ -321,11 +322,17 @@ public class ReceiveAndApplyUpdate
                 response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
         if (remoteHash != null && !h.equals(remoteHash)) {
-            l.info("hash mismatch: {} {}", remoteHash, h);
+            l.info("{} hash mismatch: {} {} {}", msg.did(), k, remoteHash, h);
             // hash mismatch can be caused by data corruption on either end of the transfer or
             // inside the transport. Whatever the case may be, we simply can't commit the change.
             // Discard tainted prefix
             prefix.delete_();
+            newMetric("gcr.hash.mismatch")
+                    .addData("sokid", k.toString())
+                    .addData("expected_hash", remoteHash.toHex())
+                    .addData("actual_hash", h.toHex())
+                    .addData("remote_did", msg.did().toStringFormal())
+                    .sendAsync();
             // TODO: more specific exception
             // TODO: NAK to force the sender to recompute its local hash
             throw new ExAborted("hash mismatch");

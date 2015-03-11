@@ -1,9 +1,12 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.defects.Defects;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.OutArg;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -20,6 +23,7 @@ public class FileSystemProber
 {
     private final static Logger l = Loggers.getLogger(FileSystemProber.class);
 
+    private final IOSUtil _osutil;
     private final InjectableFile.Factory _factFile;
 
     // NB: isStricterThan assumes that all properties are restrictions and will
@@ -27,7 +31,8 @@ public class FileSystemProber
     public static enum FileSystemProperty
     {
         CaseInsensitive,
-        NormalizationInsensitive
+        NormalizationInsensitive,
+        Remote
     }
 
     public static class ProbeException extends IOException
@@ -37,9 +42,10 @@ public class FileSystemProber
     }
 
     @Inject
-    public FileSystemProber(InjectableFile.Factory factFile)
+    public FileSystemProber(InjectableFile.Factory factFile, IOSUtil osutil)
     {
         _factFile = factFile;
+        _osutil = osutil;
     }
 
     public EnumSet<FileSystemProperty> probe(String auxRoot) throws ProbeException
@@ -85,6 +91,18 @@ public class FileSystemProber
                                 .collect(Collectors.joining("\n")));
                 throw new FileNotFoundException("Created files missing from listing");
             }
+
+            OutArg<Boolean> remote = new OutArg<>();
+            String fstype = _osutil.getFileSystemType(d.getParent(), remote);
+            if (remote.get()) {
+                props.add(FileSystemProperty.Remote);
+                Defects.newMetric("linker.probe.remote")
+                        .addData("fstype", fstype)
+                        .addData("auxroot", auxRoot)
+                        .sendAsync();
+            }
+
+            // TODO: check reliability of filesystem notifications
 
             // cleanup probe dir for future runs
             // NB: do not throw on failure

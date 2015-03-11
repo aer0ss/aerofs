@@ -6,6 +6,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -344,7 +345,7 @@ public class GetComponentRequest
                     request.getPrefixLength(),
                     Version.fromPB(request.getPrefixVersion()),
                     h);
-            if (contentHash != null) updateHash_(k.sokid(), contentHash);
+            if (contentHash != null) updateHash_(k.sokid(), contentHash, msg.ep().did());
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }
@@ -352,7 +353,7 @@ public class GetComponentRequest
         if (k.cid().isContent()) _oel.log_(CONTENT_COMPLETION, k.soid(), msg.did());
     }
 
-    private void updateHash_(SOKID sokid, @Nonnull ContentHash h)
+    private void updateHash_(SOKID sokid, @Nonnull ContentHash h, DID remote)
     {
         try {
             ContentHash db = _ds.getCAHash_(sokid);
@@ -370,13 +371,24 @@ public class GetComponentRequest
                     //
                     // Both seem fairly unlikely though so a good first step is to simply be log and
                     // send a rocklog defect.
-                    // TODO: force linker update or something?
                     l.info("hash mismatch {} {} {}", sokid, db, h);
                     newMetric("gcc.hash.mismatch")
-                            .addData("sokid", sokid)
-                            .addData("db_hash", db)
-                            .addData("fs_hash", h)
+                            .addData("sokid", sokid.toString())
+                            .addData("db_hash", db.toHex())
+                            .addData("fs_hash", h.toHex())
+                            .addData("remote_did", remote.toStringFormal())
                             .sendAsync();
+
+                    // try to fix hash
+                    // linked storage will rehash the file contents, which will compensate for
+                    // missed filesystem notifications
+                    // block storage will just abort
+                    OA oa = _ds.getOANullable_(sokid.soid());
+                    CA ca = oa != null ? oa.caNullable(sokid.kidx()) : null;
+                    if (ca != null) {
+                        _ps.newFile_(_ds.resolve_(oa), sokid.kidx())
+                                .onContentHashMismatch_();
+                    }
                 }
                 return;
             }

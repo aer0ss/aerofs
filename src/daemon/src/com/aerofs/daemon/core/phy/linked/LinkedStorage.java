@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -79,6 +80,7 @@ public class LinkedStorage implements IPhysicalStorage
     private final LinkedRevProvider _revProvider;
     final RepresentabilityHelper _rh;
     private final CoreScheduler _sched;
+    private final HashQueue _hq;
 
     private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
         @Override
@@ -103,6 +105,7 @@ public class LinkedStorage implements IPhysicalStorage
             SharedFolderTagFileAndIcon sfti,
             LinkedStagingArea sa,
             LinkedRevProvider revProvider,
+            HashQueue hq,
             CoreScheduler sched)
     {
         _il = il;
@@ -119,6 +122,7 @@ public class LinkedStorage implements IPhysicalStorage
         _cfgAbsRoots = cfgAbsRoots;
         _sa = sa;
         _revProvider = revProvider;
+        _hq = hq;
         _sched = sched;
     }
 
@@ -659,6 +663,17 @@ public class LinkedStorage implements IPhysicalStorage
                     r.mightCreate_(f._path.physical);
                 }
             }, 0);
+        }
+    }
+
+    public void onContentHashMismatch_(LinkedFile f) throws IOException
+    {
+        checkArgument(f._sokid.kidx().isMaster(), "corrupted conflict branch %s", f._sokid);
+
+        final long length = f._f.length();
+        final long mtime = f.lastModified();
+        if (_hq.requestHash_(f.soid(), f._f, length, mtime, null)) {
+            l.info("hashing {} {} {} [fix mismatch]", f.soid(), mtime, length);
         }
     }
 }

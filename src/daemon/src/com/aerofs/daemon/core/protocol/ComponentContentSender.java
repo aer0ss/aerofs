@@ -22,10 +22,8 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.fs.FileChunker;
-import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.Version;
+import com.aerofs.lib.*;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
@@ -187,6 +185,17 @@ public class ComponentContentSender
                 l.info("Sending hash: {}", h);
                 // TODO: drop hash length on next proto version bump
                 bdResponse.setHashLength(hashLength);
+            }
+        } else {
+            // refuse to serve content until the hash is known
+            // NB: for backwards compat reason, this cannot be used for BlockStorage clients
+            // deployed before incremental prefix hashing was introduced, as files larger than
+            // the block size transferred before that may not have a valid content hash.
+            // For linked storage the linker/scanner will eventually compute the hash (assuming
+            // it is not modified faster than the hash can be computed but in that case we have
+            // no hope of ever transferring it anyway...)
+            if (Cfg.storageType() == StorageType.LINKED) {
+                throw new ExUpdateInProgress("wait for hash to serve content");
             }
         }
 

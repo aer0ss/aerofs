@@ -146,7 +146,6 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
         verifyZeroInteractions(vu);
     }
@@ -164,7 +163,6 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
         verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
@@ -185,7 +183,6 @@ public class TestHashQueue extends AbstractTest
 
         ev.get().handle_();
 
-        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
         verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
@@ -210,13 +207,11 @@ public class TestHashQueue extends AbstractTest
 
         evAborted.get().handle_();
 
-        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
-        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
         verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
@@ -240,13 +235,11 @@ public class TestHashQueue extends AbstractTest
 
         evAborted.get().handle_();
 
-        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
 
         ev.get().handle_();
 
-        verify(_defect).sendAsync();
         verify(ds).setCA_(eq(sokid), eq(0L), eq(43L), eq(EMPTY_HASH), any(Trans.class));
         verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
     }
@@ -264,7 +257,6 @@ public class TestHashQueue extends AbstractTest
         when(f.wasModifiedSince(42L, 0L)).thenReturn(true);
         ev.get().handle_();
 
-        verifyZeroInteractions(_defect);
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
     }

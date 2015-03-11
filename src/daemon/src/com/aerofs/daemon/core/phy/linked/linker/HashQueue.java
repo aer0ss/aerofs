@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -41,6 +42,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.sql.SQLException;
@@ -53,7 +55,6 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -219,7 +220,8 @@ public class HashQueue
                     t.commit_();
                 }
             } catch (Exception e) {
-                l.warn("failed to update hash", e);
+                l.warn("failed to update hash", BaseLogUtil.suppress(e,
+                        FileNotFoundException.class));
             }
         }
 
@@ -235,14 +237,6 @@ public class HashQueue
             ContentHash oldHash = _ds.getCAHash_(sokid);
             final boolean same = oldHash != null && newHash.equals(oldHash)
                     && ca.length() == length;
-
-            // send rocklog defects to gather information about frequency of linker-induced
-            // hashing, size distribution of affected file and benefit (or lack thereof) of
-            // going through the trouble of hashing content to prevent spurious updates
-            newMetric("mcn.hash." + (same ? "same" : "change"))
-                    .addData("soid", soid.toString())
-                    .addData("length", length)
-                    .sendAsync();
 
             // only bump version if the content hash changes
             // hopefully avoid spurious updates as experienced by some users at BB
@@ -339,7 +333,13 @@ public class HashQueue
             r.aborted = true;
         }
 
-        _tlReq.get(t).put(soid, new HashRequest(soid, f, length, mtime));
+        HashRequest req = new HashRequest(soid, f, length, mtime);
+        if (t != null) {
+            _tlReq.get(t).put(soid, req);
+        } else {
+            _requests.put(soid, req);
+            _e.execute(req);
+        }
         return true;
     }
 

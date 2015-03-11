@@ -86,7 +86,7 @@ public abstract class RootAnchorUtil
         }
 
         // Check if it's a supported filesystem. We only support filesystems that have persistent
-        // i-node numbers. This is to allow the linker to work propoerly.
+        // i-node numbers. This is to allow the linker to work properly.
         // This is not needed for Multiuser.
         if (storageType == StorageType.LINKED && Cfg.useFSTypeCheck(rtRoot)) {
             checkFilesystemType(rtRoot, fToCheck);

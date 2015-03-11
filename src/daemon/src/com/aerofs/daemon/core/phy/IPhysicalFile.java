@@ -29,5 +29,7 @@ public interface IPhysicalFile extends IReadableFile, IPhysicalObject
 
     void onUnexpectedModification_(long expectedMtime) throws IOException;
 
+    void onContentHashMismatch_() throws IOException;
+
     void prepareForAccessWithoutCoreLock_() throws SQLException;
 }

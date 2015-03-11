@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -68,10 +69,11 @@ public class FlatLinkedStorage extends LinkedStorage
             IOSUtil os,
             LinkedStagingArea sa,
             LinkedRevProvider revProvider,
+            HashQueue hq,
             CoreScheduler sched)
     {
         super(factFile, factFIDMan, lrm, os, dr, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti, sa, revProvider, sched);
+                cfgStoragePolicy, il, sfti, sa, revProvider, hq, sched);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));
@@ -93,7 +95,7 @@ public class FlatLinkedStorage extends LinkedStorage
             // If we don't enforce a restriction here, then auto-join will just silently fail,
             // causing an apparent no-sync that the user will blame us for.
             try {
-                new FileSystemProber(_factFile)
+                new FileSystemProber(_factFile, _os)
                         .probe(Util.join(_usersDir.getParent(), LibParam.AUXROOT_NAME + ".ts"));
             } catch (ProbeException e) {
                 ExitCode.FILESYSTEM_PROBE_FAILED.exit();

@@ -91,7 +91,14 @@ class BlockFile implements IPhysicalFile
     public void onUnexpectedModification_(long expectedMtime) throws IOException
     {
         l.error("corrupted block file {} {}", this, expectedMtime);
-        checkState(false, "corrupted block file {} {}", this, expectedMtime);
+        checkState(false, "corrupted block file %s %s", this, expectedMtime);
+    }
+
+    @Override
+    public void onContentHashMismatch_() throws IOException
+    {
+        l.error("corrupted block file {}", this);
+        checkState(false, "corrupted block file %s", this);
     }
 
     @Override

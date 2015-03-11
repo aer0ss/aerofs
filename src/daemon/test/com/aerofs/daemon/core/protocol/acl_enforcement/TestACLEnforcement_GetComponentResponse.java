@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol.acl_enforcement;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.DID;
@@ -20,6 +21,7 @@ import com.aerofs.daemon.core.protocol.class_under_test.GetComponentRequestWithM
 import com.aerofs.daemon.core.protocol.class_under_test.GetComponentResponseWithMocks;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.FID;
@@ -137,10 +139,12 @@ public class TestACLEnforcement_GetComponentResponse extends AbstractTest
         when(oa.casNoExpulsionCheck()).thenReturn(cas);
         when(oa.fid()).thenReturn(new FID(UniqueID.generate().getBytes()));
         when(replier._ds.getOA_(k.soid())).thenReturn(oa);
+        when(replier._ds.getCAHash_(k.sokid()))
+                .thenReturn(new ContentHash(BaseSecUtil.hash(new byte[0])));
 
         // connect replier to the caller
         doAnswer(invocation -> {
-            ByteArrayOutputStream os = (ByteArrayOutputStream)invocation.getArguments()[3];
+            ByteArrayOutputStream os = (ByteArrayOutputStream) invocation.getArguments()[3];
             caller._gcr.processResponse_(k.socid(), newDigestedMessage(replier.user(), os),
                     mock(IDownloadContext.class));
             return null;

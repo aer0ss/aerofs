@@ -254,6 +254,12 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     }
 
     @Override
+    public void onContentHashMismatch_() throws IOException
+    {
+        _s.onContentHashMismatch_(this);
+    }
+
+    @Override
     public void prepareForAccessWithoutCoreLock_() {}
 
     @Override
