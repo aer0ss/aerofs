@@ -12,8 +12,10 @@ RUN apt-get update && apt-get install -y libgpgme11 libgpgme11-dev &&\
 COPY root buildroot /
 
 RUN \
+    apt-get update && apt-get install -y gcc &&\
     pip install --requirement /opt/config/requirements-exact.txt &&\
     pip install /sdist/* && rm -rf /sdist &&\
+    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/* &&\
     #
     # PREDOCKER forward logs to docker log collector
     #

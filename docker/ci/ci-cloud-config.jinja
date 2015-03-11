@@ -46,7 +46,7 @@ write_files:
 
   - path: /signup-decoder/Dockerfile
     content: |
-      FROM debian:jessie
+      FROM debian:sid
       RUN apt-get update && apt-get install -y curl python docker.io &&\
           curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python &&\
           pip install Flask

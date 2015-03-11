@@ -6,8 +6,9 @@ EXPOSE 8701
 
 CMD [ "/run.sh" ]
 
-RUN apt-get update && apt-get install -y pypy && rm -rf /var/lib/apt/lists/* &&\
-    virtualenv --python /usr/bin/pypy /pythonenv
+RUN apt-get update && apt-get install -y pypy && rm -rf /var/lib/apt/lists/*
+
+RUN pip install virtualenv && virtualenv --python /usr/bin/pypy /pythonenv
 
 COPY root buildroot /
 

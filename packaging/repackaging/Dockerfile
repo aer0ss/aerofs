@@ -6,11 +6,13 @@ EXPOSE 80
 
 CMD [ "/run.sh" ]
 
-RUN apt-get update && apt-get install -y p7zip-full zip &&\
+ENV BUILD_PKGS git cmake gcc g++
+
+RUN \
+    apt-get update && apt-get install -y p7zip-full zip fakeroot $BUILD_PKGS &&\
     #
-    # Compile libdmg-hfsplus
+    # Build libdmg-hfsplus
     #
-    apt-get install -y cmake &&\
     git clone --branch=bzip2 --depth=1 https://github.com/aerofs/libdmg-hfsplus.git &&\
     cd libdmg-hfsplus &&\
     cmake CMakeLists.txt -DCMAKE_INSTALL_PREFIX=/usr/local/bin &&\
@@ -22,12 +24,15 @@ RUN apt-get update && apt-get install -y p7zip-full zip &&\
     # Clean up
     #
     cd ../.. && rm -rf libdmg-hfsplus &&\
-    apt-get purge --auto-remove -y cmake &&\
-    rm -rf /var/lib/apt/lists/* 
+    apt-get purge --auto-remove -y $BUILD_PKGS &&\
+    rm -rf /var/lib/apt/lists/*
 
 COPY root/opt/repackaging/api/requirements.txt /
 
-RUN pip install -r /requirements.txt && rm /requirements.txt
+RUN \
+    apt-get update && apt-get install -y gcc &&\
+    pip install -r /requirements.txt && rm /requirements.txt &&\
+    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/*
 
 # Add source files last
 COPY root buildroot /
