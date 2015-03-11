@@ -1,7 +1,6 @@
 # AeroFS Solutions Team
 
-This document outlines our professional services offering (i.e. our solutions
-team).
+This document outlines our solutions team's responsibilities.
 
 ## Overview
 
@@ -31,7 +30,13 @@ on the value-add to our organization). SOW required.
 
 ## Meta
 
-N/A
+To prevent parallel engineering organizations, the solutions team resources
+will be pooled with engineering. This allows the engineers to stay close to the
+core team, while still being customer facing.
+
+Solutions engineers might spend time automating other aspects of our internal
+operations in order to serve our customers better (e.g. helpdesk system
+improvements, etc.).
 
 ## Success
 
