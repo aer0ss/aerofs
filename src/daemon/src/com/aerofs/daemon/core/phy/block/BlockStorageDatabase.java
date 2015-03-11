@@ -129,10 +129,11 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             if (ps == null) {
                 ps = _psGetIndices = c().prepareStatement(DBUtil.selectWhere(T_FileInfo,
-                        C_FileInfo_InternalName + " GLOB \"" + prefix + "*\"",
+                        C_FileInfo_InternalName + " GLOB ?",
                         C_FileInfo_Index));
             }
 
+            ps.setString(1, prefix + "*");
             return new DBIterIndices(ps.executeQuery());
         } catch (SQLException e) {
             _psGetIndices = null;

@@ -349,8 +349,7 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         l.info("logical cleanup {} {}", f.soid, f.historyPath);
         Trans t = _tm.begin_();
         try {
-            IDBIterator<OID> it = _ds.listChildren_(f.soid);
-            try {
+            try (IDBIterator<OID> it = _ds.listChildren_(f.soid)) {
                 long n = 0;
                 while (it.next_()) {
                     OA oa = _ds.getOANullableNoFilter_(new SOID(f.soid.sidx(), it.get_()));
@@ -373,8 +372,6 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
                         n = 0;
                     }
                 }
-            } finally {
-                it.close_();
             }
             finalize_(f.soid, f.historyPath.sid(), t);
             t.commit_();
