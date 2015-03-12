@@ -44,10 +44,9 @@ public class CertificateDatabase extends AbstractSQLDatabase
     public void insertCertificate(long serial, DID did, Date expiry)
             throws SQLException, ExAlreadyExist
     {
-        try {
-            PreparedStatement ps = prepareStatement("insert into " + T_CERT +
-                    "(" + C_CERT_SERIAL + "," + C_CERT_DEVICE_ID + "," + C_CERT_EXPIRE_TS +
-                    ") values (?,?,?)");
+        try (PreparedStatement ps = prepareStatement("insert into " + T_CERT +
+                "(" + C_CERT_SERIAL + "," + C_CERT_DEVICE_ID + "," + C_CERT_EXPIRE_TS +
+                ") values (?,?,?)")) {
 
             ps.setString(1, String.valueOf(serial));
             ps.setString(2, did.toStringFormal());
@@ -62,13 +61,13 @@ public class CertificateDatabase extends AbstractSQLDatabase
     public void revokeCertificate(long serial)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement("update "
+        try (PreparedStatement ps = prepareStatement("update "
                 + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
                 C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
-                " = 0 and " + C_CERT_SERIAL + " = ?");
-
-        ps.setLong(1, serial);
-        ps.execute();
+                " = 0 and " + C_CERT_SERIAL + " = ?")) {
+            ps.setLong(1, serial);
+            ps.execute();
+        }
     }
 
     /**
@@ -80,11 +79,10 @@ public class CertificateDatabase extends AbstractSQLDatabase
     public ImmutableList<Long> getCRL()
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
                 C_CERT_EXPIRE_TS + " > current_timestamp and " + C_CERT_REVOKE_TS + " != 0",
                 C_CERT_SERIAL));
-
-        try (ResultSet rs = ps.executeQuery()) {
+             ResultSet rs = ps.executeQuery()) {
             Builder<Long> builder = ImmutableList.builder();
             while (rs.next()) {
                 builder.add(rs.getLong(1));
@@ -96,45 +94,48 @@ public class CertificateDatabase extends AbstractSQLDatabase
     public ImmutableList<Long> getAllSerialsIssuedFor(DID did)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
-                C_CERT_DEVICE_ID + " = ?", C_CERT_SERIAL ));
-        ps.setString(1, did.toStringFormal());
-        try (ResultSet rs = ps.executeQuery()) {
-            Builder<Long> builder = ImmutableList.builder();
-            while (rs.next()) {
-                builder.add(rs.getLong(1));
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
+                C_CERT_DEVICE_ID + " = ?", C_CERT_SERIAL ))) {
+            ps.setString(1, did.toStringFormal());
+            try (ResultSet rs = ps.executeQuery()) {
+                Builder<Long> builder = ImmutableList.builder();
+                while (rs.next()) {
+                    builder.add(rs.getLong(1));
+                }
+                return builder.build();
             }
-            return builder.build();
         }
     }
 
     public DID getDid(long serial)
             throws SQLException, ExNotFound, ExInvalidID
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
-                C_CERT_SERIAL + " = ?", C_CERT_DEVICE_ID));
-        ps.setLong(1, serial);
-        try (ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
-                throw new ExNotFound();
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
+                C_CERT_SERIAL + " = ?", C_CERT_DEVICE_ID))) {
+            ps.setLong(1, serial);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new ExNotFound();
+                }
+                return new DID(rs.getString(1));
             }
-            return new DID(rs.getString(1));
         }
     }
 
     public boolean isRevoked(long serial)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_CERT, C_CERT_SERIAL + " =?", C_CERT_REVOKE_TS));
-        ps.setLong(1, serial);
-        try (ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
-                throw new ExNotFound();
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_CERT, C_CERT_SERIAL + " =?", C_CERT_REVOKE_TS))) {
+            ps.setLong(1, serial);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new ExNotFound();
+                }
+                long revokeTime = rs.getLong(1);
+                // If the revoke timestamp is greater than 0, then the certificate has been revoked.
+                return revokeTime > 0;
             }
-            long revokeTime = rs.getLong(1);
-            // If the revoke timestamp is greater than 0, then the certificate has been revoked.
-            return revokeTime > 0;
         }
     }
 }

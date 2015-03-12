@@ -36,66 +36,63 @@ public class GroupMembersDatabase extends AbstractSQLDatabase
             throws SQLException, ExAlreadyExist
     {
         // Create the group row.
-        PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_GM, C_GM_GID, C_GM_MEMBER_ID));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.insert(T_GM, C_GM_GID, C_GM_MEMBER_ID))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setString(2, memberId.getString());
+            ps.setInt(1, gid.getInt());
+            ps.setString(2, memberId.getString());
 
-        try {
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throwOnConstraintViolation(e, "user " + memberId.getString() + " already in group");
-            throw e;
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throwOnConstraintViolation(e, "user " + memberId.getString() + " already in group");
+                throw e;
+            }
         }
     }
 
     public void removeMember(GroupID gid, UserID memberId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_GM, C_GM_GID + "=? and " + C_GM_MEMBER_ID + "=?"));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_GM, C_GM_GID + "=? and " + C_GM_MEMBER_ID + "=?"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setString(2, memberId.getString());
-        ps.executeUpdate();
+            ps.setInt(1, gid.getInt());
+            ps.setString(2, memberId.getString());
+            ps.executeUpdate();
+        }
     }
 
     public boolean hasMember(GroupID gid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(
+        try (PreparedStatement ps = prepareStatement(selectWhere(
                 T_GM,
                 C_GM_GID + "=? and " + C_GM_MEMBER_ID + "=?",
-                "count(*)"));
+                "count(*)"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setString(2, userId.getString());
-        ResultSet rs = ps.executeQuery();
-
-        try {
-            return DBUtil.binaryCount(rs);
-        } finally {
-            rs.close();
+            ps.setInt(1, gid.getInt());
+            ps.setString(2, userId.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.binaryCount(rs);
+            }
         }
     }
 
     public List<UserID> listMembers(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_GM,
                 C_GM_GID + "=?",
                 C_GM_MEMBER_ID)
-                + " order by " + C_GM_MEMBER_ID);
+                + " order by " + C_GM_MEMBER_ID)) {
 
-        ps.setInt(1, gid.getInt());
+            ps.setInt(1, gid.getInt());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            return membersResultSetToList(rs);
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return membersResultSetToList(rs);
+            }
         }
     }
 
@@ -118,27 +115,26 @@ public class GroupMembersDatabase extends AbstractSQLDatabase
     public void deleteMembersFor(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_GM, C_GM_GID + "=?"));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_GM, C_GM_GID + "=?"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.executeUpdate();
+            ps.setInt(1, gid.getInt());
+            ps.executeUpdate();
+        }
     }
 
     public List<GroupID> listGroupsFor(UserID userID)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_GM,
                 C_GM_MEMBER_ID + "=?",
-                C_GM_GID));
+                C_GM_GID))) {
 
-        ps.setString(1, userID.getString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            return groupsResultSetToList(rs);
-        } finally {
-            rs.close();
+            ps.setString(1, userID.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return groupsResultSetToList(rs);
+            }
         }
     }
 }

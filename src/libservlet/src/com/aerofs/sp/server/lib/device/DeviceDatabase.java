@@ -46,10 +46,9 @@ public class DeviceDatabase extends AbstractSQLDatabase
             String deviceName)
             throws SQLException, ExDeviceIDAlreadyExists
     {
-        try {
-            PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                     DBUtil.insert(T_DEVICE, C_DEVICE_ID, C_DEVICE_OWNER_ID, C_DEVICE_NAME,
-                            C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME));
+                            C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME))) {
 
             ps.setString(1, did.toStringFormal());
             ps.setString(2, ownerID.getString());
@@ -75,85 +74,79 @@ public class DeviceDatabase extends AbstractSQLDatabase
     public void markUnlinked(DID did)
             throws SQLException
     {
-        PreparedStatement psUpdateUnlinkedFlag = prepareStatement(DBUtil.updateWhere(T_DEVICE,
-                C_DEVICE_ID + "=?", C_DEVICE_UNLINKED));
+        try (PreparedStatement psUpdateUnlinkedFlag = prepareStatement(DBUtil.updateWhere(T_DEVICE,
+                C_DEVICE_ID + "=?", C_DEVICE_UNLINKED))) {
 
-        psUpdateUnlinkedFlag.setBoolean(1, true);
-        psUpdateUnlinkedFlag.setString(2, did.toStringFormal());
+            psUpdateUnlinkedFlag.setBoolean(1, true);
+            psUpdateUnlinkedFlag.setString(2, did.toStringFormal());
 
-        psUpdateUnlinkedFlag.executeUpdate();
+            psUpdateUnlinkedFlag.executeUpdate();
+        }
     }
 
     public boolean hasDevice(DID did)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE, C_DEVICE_ID + "=?",
-                "count(*)"));
-        ps.setString(1, did.toStringFormal());
-        ResultSet rs = ps.executeQuery();
-        try {
-            Util.verify(rs.next());
-            int count = rs.getInt(1);
-            assert count == 0 || count == 1;
-            assert !rs.next();
-            return count != 0;
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE, C_DEVICE_ID + "=?",
+                "count(*)"))) {
+            ps.setString(1, did.toStringFormal());
+            try (ResultSet rs = ps.executeQuery()) {
+                Util.verify(rs.next());
+                int count = rs.getInt(1);
+                assert count == 0 || count == 1;
+                assert !rs.next();
+                return count != 0;
+            }
         }
     }
 
     public @Nonnull UserID getOwnerID(DID did)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryDevice(did, C_DEVICE_OWNER_ID);
-        try {
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_OWNER_ID);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, did);
             return UserID.fromInternal(rs.getString(1));
-        } finally {
-            rs.close();
         }
     }
 
     public @Nonnull String getName(DID did)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryDevice(did, C_DEVICE_NAME);
-        try {
-            return rs.getString(1);
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_NAME);
+             ResultSet rs = ps.executeQuery()) {
+             throwIfEmptyResultSet(rs, did);
+             return rs.getString(1);
         }
     }
 
     public @Nonnull String getOSFamily(DID did)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryDevice(did, C_DEVICE_OS_FAMILY);
-        try {
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_OS_FAMILY);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, did);
             return rs.getString(1);
-        } finally {
-            rs.close();
         }
     }
 
     public long getInstallDate(DID did)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryDevice(did, C_DEVICE_TS);
-        try {
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_TS);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, did);
             return rs.getTimestamp(1).getNanos();
-        } finally {
-            rs.close();
         }
     }
 
     public @Nonnull String getOSName(DID did)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryDevice(did, C_DEVICE_OS_NAME);
-        try {
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_OS_NAME);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, did);
             return rs.getString(1);
-        } finally {
-            rs.close();
         }
     }
 
@@ -163,43 +156,48 @@ public class DeviceDatabase extends AbstractSQLDatabase
     public void setName(DID did, String name)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_NAME));
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_NAME))) {
 
-        ps.setString(1, name.trim());
-        ps.setString(2, did.toStringFormal());
+            ps.setString(1, name.trim());
+            ps.setString(2, did.toStringFormal());
 
-        int count = ps.executeUpdate();
-        assert count <= 1;
-        if (count == 0) throw new ExNotFound("device " + did.toString());
+            int count = ps.executeUpdate();
+            assert count <= 1;
+            if (count == 0) throw new ExNotFound("device " + did.toString());
+        }
     }
 
     public void setOSFamilyAndName(DID deviceId, String osFamily, String osName)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME));
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME))) {
 
-        ps.setString(1, osFamily);
-        ps.setString(2, osName);
-        ps.setString(3, deviceId.toStringFormal());
+            ps.setString(1, osFamily);
+            ps.setString(2, osName);
+            ps.setString(3, deviceId.toStringFormal());
 
-        int count = ps.executeUpdate();
-        assert count <= 1;
-        if (count == 0) throw new ExNotFound("device " + deviceId);
+            int count = ps.executeUpdate();
+            assert count <= 1;
+            if (count == 0) throw new ExNotFound("device " + deviceId);
+        }
     }
 
-    private ResultSet queryDevice(DID did, String... fields)
-            throws SQLException, ExNotFound
+    private PreparedStatement queryDevice(DID did, String... fields)
+            throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE, C_DEVICE_ID + "=?", fields));
         ps.setString(1, did.toStringFormal());
-        ResultSet rs = ps.executeQuery();
+        return ps;
+    }
+
+    // N.B. will return with cursor on the first element of the result set
+    private void throwIfEmptyResultSet(ResultSet rs, DID did)
+            throws SQLException, ExNotFound
+    {
         if (!rs.next()) {
-            rs.close();
             throw new ExNotFound("device " + did);
-        } else {
-            return rs;
         }
     }
 }

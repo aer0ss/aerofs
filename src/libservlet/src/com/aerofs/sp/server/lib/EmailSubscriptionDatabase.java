@@ -62,22 +62,23 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public void insertEmailSubscription(UserID userId, SubscriptionCategory sc, long currentTime)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 DBUtil.insertOnDuplicateUpdate(T_ES, C_ES_LAST_EMAILED + "=?", C_ES_EMAIL,
-                        C_ES_TOKEN_ID, C_ES_SUBSCRIPTION, C_ES_LAST_EMAILED));
+                        C_ES_TOKEN_ID, C_ES_SUBSCRIPTION, C_ES_LAST_EMAILED))) {
 
-        Timestamp ts = new Timestamp(currentTime);
+            Timestamp ts = new Timestamp(currentTime);
 
-        String token = Base62CodeGenerator.generate();
+            String token = Base62CodeGenerator.generate();
 
-        ps.setString(1, userId.getString());
-        ps.setString(2, token);
-        ps.setInt(3, sc.getCategoryID());
-        ps.setTimestamp(4, ts, UTC_CALENDAR);
-        ps.setTimestamp(5, ts, UTC_CALENDAR);
+            ps.setString(1, userId.getString());
+            ps.setString(2, token);
+            ps.setInt(3, sc.getCategoryID());
+            ps.setTimestamp(4, ts, UTC_CALENDAR);
+            ps.setTimestamp(5, ts, UTC_CALENDAR);
 
-        int result = ps.executeUpdate();
-        Util.verify(DBUtil.insertedOrUpdatedOneRow(result));
+            int result = ps.executeUpdate();
+            Util.verify(DBUtil.insertedOrUpdatedOneRow(result));
+        }
     }
 
     /**
@@ -87,24 +88,18 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public Set<SubscriptionCategory> getEmailSubscriptions(String email)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=?",
-                        C_ES_SUBSCRIPTION));
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=?", C_ES_SUBSCRIPTION))) {
+            ps.setString(1, email);
 
-        ps.setString(1, email);
-
-        ResultSet rs = ps.executeQuery();
-        EnumSet<SubscriptionCategory> subscriptions = EnumSet.noneOf(SubscriptionCategory.class);
-
-        try {
-            while (rs.next()) {
-                int result = rs.getInt(1);
-                SubscriptionCategory sc = SubscriptionCategory.getCategoryByID(result);
-                subscriptions.add(sc);
+            EnumSet<SubscriptionCategory> subscriptions = EnumSet.noneOf(SubscriptionCategory.class);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int result = rs.getInt(1);
+                    SubscriptionCategory sc = SubscriptionCategory.getCategoryByID(result);
+                    subscriptions.add(sc);
+                }
+                return subscriptions;
             }
-            return subscriptions;
-        } finally {
-            rs.close();
         }
     }
 
@@ -114,16 +109,17 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public void removeEmailSubscription(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL, C_ES_SUBSCRIPTION));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL, C_ES_SUBSCRIPTION))) {
 
-        ps.setString(1, userId.getString());
-        ps.setInt(2, sc.getCategoryID());
+            ps.setString(1, userId.getString());
+            ps.setInt(2, sc.getCategoryID());
 
-        // Do not verify the returned result is one, since in some cases the user may not have
-        // subscription. For example, when a user signs up with no sign up code, the user may or may
-        // not have subscribed to the sign up reminder email.
-        ps.executeUpdate();
+            // Do not verify the returned result is one, since in some cases the user may not have
+            // subscription. For example, when a user signs up with no sign up code, the user may or may
+            // not have subscribed to the sign up reminder email.
+            ps.executeUpdate();
+        }
     }
 
     /**
@@ -131,11 +127,12 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
      */
     public void removeEmailSubscription(final String tokenId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhereEquals(T_ES, C_ES_TOKEN_ID));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhereEquals(T_ES, C_ES_TOKEN_ID))) {
 
-        ps.setString(1, tokenId);
-        Util.verify(ps.executeUpdate() == 1);
+            ps.setString(1, tokenId);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     /**
@@ -145,20 +142,17 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
      */
     public String getTokenId(final UserID userId, final SubscriptionCategory sc) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES,
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
-                        C_ES_TOKEN_ID));
+                        C_ES_TOKEN_ID))) {
+            ps.setString(1, userId.getString());
+            ps.setInt(2, sc.getCategoryID());
 
-        ps.setString(1, userId.getString());
-        ps.setInt(2, sc.getCategoryID());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (rs.next()) return rs.getString(1);
-            else return null;
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString(1);
+                else return null;
+            }
         }
     }
 
@@ -166,19 +160,14 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
      * get the email associated with the subscription token id
      */
     public String getEmail(final String tokenId)
-            throws SQLException, ExNotFound {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_ES, C_ES_TOKEN_ID + "=?",
-                        C_ES_EMAIL)
-        );
-
-        ps.setString(1, tokenId);
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (rs.next()) return rs.getString(1);
-            else throw new ExNotFound();
-        } finally {
-            rs.close();
+            throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_ES, C_ES_TOKEN_ID + "=?", C_ES_EMAIL))) {
+            ps.setString(1, tokenId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString(1);
+                else throw new ExNotFound();
+            }
         }
     }
 
@@ -190,20 +179,16 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public boolean isSubscribed(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES,
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
-                        C_ES_EMAIL)
-        );
+                        C_ES_EMAIL))) {
+            ps.setString(1, userId.getString());
+            ps.setInt(2, sc.getCategoryID());
 
-        ps.setString(1, userId.getString());
-        ps.setInt(2, sc.getCategoryID());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            return rs.next(); //true if an entry was found, false otherwise
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next(); //true if an entry was found, false otherwise
+            }
         }
     }
 
@@ -211,15 +196,16 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
             long lastEmailTime)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 DBUtil.updateWhere(T_ES,
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
-                        C_ES_LAST_EMAILED));
+                        C_ES_LAST_EMAILED))) {
 
-        ps.setTimestamp(1, new Timestamp(lastEmailTime), UTC_CALENDAR);
-        ps.setString(2, userId.getString());
-        ps.setInt(3, category.getCategoryID());
-        Util.verify(ps.executeUpdate() == 1);
+            ps.setTimestamp(1, new Timestamp(lastEmailTime), UTC_CALENDAR);
+            ps.setString(2, userId.getString());
+            ps.setInt(3, category.getCategoryID());
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     /**
@@ -229,26 +215,26 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
             final int offset)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 "select " + C_SIGNUP_CODE_TO +
                         " from " + T_SIGNUP_CODE +
                         " left join " + T_USER + " on " + C_USER_ID + "=" +
                         C_SIGNUP_CODE_TO +
                         " where (" + C_USER_ID + " is null or " + C_USER_DEACTIVATED + "=1)" +
                         " and DATEDIFF(CURRENT_DATE(),DATE(" + C_SIGNUP_CODE_TS +")) =?" +
-                        " limit ? offset ?");
+                        " limit ? offset ?")) {
 
-        ps.setInt(1, days);
-        ps.setInt(2, maxUsers);
-        ps.setInt(3, offset);
+            ps.setInt(1, days);
+            ps.setInt(2, maxUsers);
+            ps.setInt(3, offset);
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            Set<UserID> users = Sets.newHashSetWithExpectedSize(maxUsers);
-            while (rs.next()) { users.add(UserID.fromInternal(rs.getString(1))); }
-            return users;
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                Set<UserID> users = Sets.newHashSetWithExpectedSize(maxUsers);
+                while (rs.next()) {
+                    users.add(UserID.fromInternal(rs.getString(1)));
+                }
+                return users;
+            }
         }
     }
 
@@ -260,21 +246,18 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
         // {@link http://lists.mysql.com/mysql/176466}
         //
         // This bug is not fixed because of its nominal impact
-        PreparedStatement ps = prepareStatement(
+        try (PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=? and " +
                         C_ES_SUBSCRIPTION + "=?",
                         "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + C_ES_LAST_EMAILED +
-                                "))"));
+                                "))"))) {
+            ps.setString(1, userId.getString());
+            ps.setInt(2, category.getCategoryID());
 
-        ps.setString(1, userId.getString());
-        ps.setInt(2, category.getCategoryID());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (rs.next()) return rs.getInt(1);
-            else return -1;
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+                else return -1;
+            }
         }
     }
 
@@ -285,16 +268,12 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public String getOneSignUpCode(UserID to)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?",
-                C_SIGNUP_CODE_CODE));
-
-        ps.setString(1, to.getString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (rs.next()) return rs.getString(1);
-            else return null;
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?", C_SIGNUP_CODE_CODE))) {
+            ps.setString(1, to.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString(1);
+                else return null;
+            }
         }
     }
 }

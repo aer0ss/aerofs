@@ -54,83 +54,82 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
     private void insertSecret(UserID user, byte[] secret)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.insert(T_TWO_FACTOR_SECRET,
-                C_TWO_FACTOR_USER_ID, C_TWO_FACTOR_SECRET));
-        ps.setString(1, user.getString());
-        ps.setBytes(2, secret);
-        ps.executeUpdate();
+        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_TWO_FACTOR_SECRET,
+                C_TWO_FACTOR_USER_ID, C_TWO_FACTOR_SECRET))) {
+            ps.setString(1, user.getString());
+            ps.setBytes(2, secret);
+            ps.executeUpdate();
+        }
     }
 
     private void insertRecoveryCodes(UserID user, ImmutableList<String> recoveryCodes)
             throws SQLException
     {
         // Insert the recovery codes and the user secret
-        PreparedStatement ps = prepareStatement(DBUtil.insert(T_TWO_FACTOR_RECOVERY,
-                C_TF_RECOVERY_USER_ID, C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS));
-        for (String code : recoveryCodes) {
-            Preconditions.checkState(code.length() <= RECOVERY_CODE_MAX_LENGTH);
-            ps.setString(1, user.getString());
-            ps.setString(2, code);
-            ps.setDate(3, null);
-            Util.verify(ps.executeUpdate() == 1);
+        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_TWO_FACTOR_RECOVERY,
+                C_TF_RECOVERY_USER_ID, C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS))) {
+            for (String code : recoveryCodes) {
+                Preconditions.checkState(code.length() <= RECOVERY_CODE_MAX_LENGTH);
+                ps.setString(1, user.getString());
+                ps.setString(2, code);
+                ps.setDate(3, null);
+                Util.verify(ps.executeUpdate() == 1);
+            }
         }
     }
 
     public ImmutableList<RecoveryCode> recoveryCodesFor(UserID user)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TWO_FACTOR_RECOVERY,
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TWO_FACTOR_RECOVERY,
                         C_TF_RECOVERY_USER_ID + "=? ORDER BY " + C_TF_RECOVERY_ID,
-                        C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS));
-        ps.setString(1, user.getString());
-        Builder<RecoveryCode> builder = ImmutableList.builder();
-        ResultSet rs = ps.executeQuery();
-        try {
-            while (rs.next()) {
-                RecoveryCode r = new RecoveryCode(rs.getString(1), rs.getTimestamp(2));
-                builder.add(r);
+                        C_TF_RECOVERY_CODE, C_TF_RECOVERY_CODE_USE_TS))) {
+            ps.setString(1, user.getString());
+            Builder<RecoveryCode> builder = ImmutableList.builder();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RecoveryCode r = new RecoveryCode(rs.getString(1), rs.getTimestamp(2));
+                    builder.add(r);
+                }
+                ImmutableList<RecoveryCode> result = builder.build();
+                Preconditions.checkState(result.size() == EXPECTED_RECOVERY_CODE_COUNT);
+                return result;
             }
-        } finally {
-            rs.close();
         }
-        ImmutableList<RecoveryCode> result = builder.build();
-        Preconditions.checkState(result.size() == EXPECTED_RECOVERY_CODE_COUNT);
-        return result;
     }
 
     public void markRecoveryCodeUsed(UserID user, String code)
             throws SQLException
     {
         Preconditions.checkState(code.length() <= RECOVERY_CODE_MAX_LENGTH);
-        PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_TWO_FACTOR_RECOVERY,
+        try (PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_TWO_FACTOR_RECOVERY,
                 C_TF_RECOVERY_USER_ID + "=? AND " + C_TF_RECOVERY_CODE + "=?",
-                C_TF_RECOVERY_CODE_USE_TS));
-        java.util.Date now = new java.util.Date();
-        java.sql.Timestamp timestamp = new java.sql.Timestamp(now.getTime());
-        ps.setTimestamp(1, timestamp);
+                C_TF_RECOVERY_CODE_USE_TS))) {
+            java.util.Date now = new java.util.Date();
+            java.sql.Timestamp timestamp = new java.sql.Timestamp(now.getTime());
+            ps.setTimestamp(1, timestamp);
 
-        ps.setString(2, user.getString());
-        ps.setString(3, code);
+            ps.setString(2, user.getString());
+            ps.setString(3, code);
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     public byte[] secretFor(UserID user)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TWO_FACTOR_SECRET,
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TWO_FACTOR_SECRET,
                 C_TWO_FACTOR_USER_ID + "=?",
-                C_TWO_FACTOR_SECRET));
-        ps.setString(1, user.getString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (!rs.next()) {
-                throw new ExNotFound("no second factor for " + user.getString());
+                C_TWO_FACTOR_SECRET))) {
+            ps.setString(1, user.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new ExNotFound("no second factor for " + user.getString());
+                }
+                byte[] result = rs.getBytes(1);
+                return result;
             }
-            byte[] result = rs.getBytes(1);
-            return result;
-        } finally {
-            rs.close();
         }
     }
 
@@ -144,18 +143,20 @@ public class TwoFactorAuthDatabase extends AbstractSQLDatabase
     private void clearRecoveryCodesFor(UserID user)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_TWO_FACTOR_RECOVERY,
-                C_TF_RECOVERY_USER_ID + "=?"));
-        ps.setString(1, user.getString());
-        ps.executeUpdate();
+        try (PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_TWO_FACTOR_RECOVERY,
+                C_TF_RECOVERY_USER_ID + "=?"))) {
+            ps.setString(1, user.getString());
+            ps.executeUpdate();
+        }
     }
 
     private void clearSecretFor(UserID user)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_TWO_FACTOR_SECRET,
-                C_TWO_FACTOR_USER_ID + "=?"));
-        ps.setString(1, user.getString());
-        ps.executeUpdate();
+        try (PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_TWO_FACTOR_SECRET,
+                C_TWO_FACTOR_USER_ID + "=?"))) {
+            ps.setString(1, user.getString());
+            ps.executeUpdate();
+        }
     }
 }

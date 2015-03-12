@@ -20,7 +20,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.selectWhere;
@@ -42,14 +41,11 @@ public class GroupDatabase extends AbstractSQLDatabase
     public boolean hasGroup(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_GID + "=?", "count(*)"));
-        ps.setInt(1, gid.getInt());
-        ResultSet rs = ps.executeQuery();
-
-        try {
-            return DBUtil.binaryCount(rs);
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_GID + "=?", "count(*)"))) {
+            ps.setInt(1, gid.getInt());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.binaryCount(rs);
+            }
         }
     }
 
@@ -58,124 +54,120 @@ public class GroupDatabase extends AbstractSQLDatabase
             throws SQLException, ExAlreadyExist
     {
         // Create the group row.
-        PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_SG, C_SG_GID, C_SG_COMMON_NAME, C_SG_ORG_ID, C_SG_EXTERNAL_ID));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.insert(T_SG, C_SG_GID, C_SG_COMMON_NAME, C_SG_ORG_ID, C_SG_EXTERNAL_ID))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setString(2, commonName);
-        ps.setInt(3, orgId.getInt());
-        ps.setBytes(4, externalId);
+            ps.setInt(1, gid.getInt());
+            ps.setString(2, commonName);
+            ps.setInt(3, orgId.getInt());
+            ps.setBytes(4, externalId);
 
-        try {
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throwOnConstraintViolation(e, "group ID already exists");
-            throw e;
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throwOnConstraintViolation(e, "group ID already exists");
+                throw e;
+            }
         }
     }
 
     public void deleteGroup(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_SG, C_SG_GID + "=?"));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_SG, C_SG_GID + "=?"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.executeUpdate();
+            ps.setInt(1, gid.getInt());
+            ps.executeUpdate();
+        }
     }
 
     public void setCommonName(GroupID gid, String commonName)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_SG, C_SG_GID + "=?", C_SG_COMMON_NAME)
-        );
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_SG, C_SG_GID + "=?", C_SG_COMMON_NAME))) {
 
-        ps.setString(1, commonName);
-        ps.setInt(2, gid.getInt());
-        Util.verify(ps.executeUpdate() == 1);
+            ps.setString(1, commonName);
+            ps.setInt(2, gid.getInt());
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     public String getCommonName(GroupID gid)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryGroup(gid, C_SG_COMMON_NAME);
-        try {
+        try (PreparedStatement ps = queryGroup(gid, C_SG_COMMON_NAME);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, gid);
             return rs.getString(1);
-        } finally {
-            rs.close();
         }
     }
 
     public OrganizationID getOrganizationID(GroupID gid)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryGroup(gid, C_SG_ORG_ID);
-        try {
+        try (PreparedStatement ps = queryGroup(gid, C_SG_ORG_ID);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, gid);
             return new OrganizationID(rs.getInt(1));
-        } finally {
-            rs.close();
         }
     }
 
     public @Nullable byte[] getExternalIdNullable(GroupID gid)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryGroup(gid, C_SG_EXTERNAL_ID);
-        try {
+        try (PreparedStatement ps = queryGroup(gid, C_SG_EXTERNAL_ID);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, gid);
             return rs.getBytes(1);
-        } finally {
-            rs.close();
         }
     }
 
     public @Nullable GroupID getGroupWithExternalID(byte[] externalID)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + "=?", C_SG_GID));
-        ps.setBytes(1, externalID);
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (!rs.next()) {
-                return null;
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + "=?", C_SG_GID))) {
+            ps.setBytes(1, externalID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                GroupID match = GroupID.fromInternal(rs.getInt(1));
+                // should only have one group that matches the external id
+                assert !rs.next();
+                return match;
             }
-            GroupID match = GroupID.fromInternal(rs.getInt(1));
-            // should only have one group that matches the external id
-            assert !rs.next();
-            return match;
-        } finally {
-            rs.close();
         }
     }
 
     public List<byte[]> getExternalIDs()
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + " IS NOT NULL",
-                C_SG_EXTERNAL_ID));
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_EXTERNAL_ID + " IS NOT NULL", C_SG_EXTERNAL_ID));
+             ResultSet rs = ps.executeQuery()) {
             List<byte[]> externalGroups = Lists.newLinkedList();
             while (rs.next()) {
                 externalGroups.add(rs.getBytes(1));
             }
             return externalGroups;
-        } finally {
-            rs.close();
         }
     }
 
-    private ResultSet queryGroup(GroupID gid, String ... fields)
-            throws SQLException, ExNotFound
+    private PreparedStatement queryGroup(GroupID gid, String ... fields)
+            throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_SG, C_SG_GID + "=?", fields));
         ps.setInt(1, gid.getInt());
-        ResultSet rs = ps.executeQuery();
+        return ps;
+    }
+
+    // N.B. will return with cursor on the first element of the result set
+    private void throwIfEmptyResultSet(ResultSet rs, GroupID gid)
+            throws SQLException, ExNotFound
+    {
         if (!rs.next()) {
-            rs.close();
             throw new ExNotFound("group " + gid + " not found");
-        } else {
-            return rs;
         }
     }
 
@@ -191,23 +183,21 @@ public class GroupDatabase extends AbstractSQLDatabase
             @Nullable String searchPrefix)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_SG,
                 C_SG_ORG_ID + "=?" + andCommonNameLike(searchPrefix),
                 C_SG_GID)
-                + " order by " + C_SG_COMMON_NAME + " limit ? offset ?");
+                + " order by " + C_SG_COMMON_NAME + " limit ? offset ?")) {
 
-        int index = 0;
-        ps.setInt(++index, orgId.getInt());
-        if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
-        ps.setInt(++index, maxResults);
-        ps.setInt(++index, offset);
+            int index = 0;
+            ps.setInt(++index, orgId.getInt());
+            if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
+            ps.setInt(++index, maxResults);
+            ps.setInt(++index, offset);
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            return groupsResultSet2List(rs);
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return groupsResultSetToList(rs);
+            }
         }
     }
 
@@ -220,7 +210,7 @@ public class GroupDatabase extends AbstractSQLDatabase
         }
     }
 
-    private List<GroupID> groupsResultSet2List(ResultSet rs)
+    private List<GroupID> groupsResultSetToList(ResultSet rs)
             throws SQLException
     {
         List<GroupID> groups = Lists.newArrayList();

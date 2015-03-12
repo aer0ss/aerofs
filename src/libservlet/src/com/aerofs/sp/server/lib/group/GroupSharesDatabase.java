@@ -41,98 +41,93 @@ public class GroupSharesDatabase extends AbstractSQLDatabase
     public void addSharedFolder(GroupID gid, SID sid, Permissions role)
             throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_GS, C_GS_GID, C_GS_SID, C_GS_ROLE));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.insert(T_GS, C_GS_GID, C_GS_SID, C_GS_ROLE))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setBytes(2, sid.getBytes());
-        ps.setInt(3, role.bitmask());
+            ps.setInt(1, gid.getInt());
+            ps.setBytes(2, sid.getBytes());
+            ps.setInt(3, role.bitmask());
 
-        try {
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throwOnConstraintViolation(e, "share " + sid.toStringFormal() + " already in group");
-            throw e;
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                throwOnConstraintViolation(e, "share " + sid.toStringFormal() + " already in group");
+                throw e;
+            }
         }
     }
 
     public void removeSharedFolder(GroupID gid, SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_GS, C_GS_GID + "=? and " + C_GS_SID + "=?"));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_GS, C_GS_GID + "=? and " + C_GS_SID + "=?"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setBytes(2, sid.getBytes());
-        ps.executeUpdate();
+            ps.setInt(1, gid.getInt());
+            ps.setBytes(2, sid.getBytes());
+            ps.executeUpdate();
+        }
     }
 
     public boolean inSharedFolder(GroupID gid, SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_GS,
-                C_GS_GID + "=? and " + C_GS_SID + "=?", "count(*)"));
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_GS,
+                C_GS_GID + "=? and " + C_GS_SID + "=?", "count(*)"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setBytes(2, sid.getBytes());
-        ResultSet rs = ps.executeQuery();
-
-        try {
-            return DBUtil.binaryCount(rs);
-        } finally {
-            rs.close();
+            ps.setInt(1, gid.getInt());
+            ps.setBytes(2, sid.getBytes());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.binaryCount(rs);
+            }
         }
     }
 
     public List<SID> listSharedFolders(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_GS,
                 C_GS_GID + "=?",
-                C_GS_SID));
+                C_GS_SID))) {
 
-        ps.setInt(1, gid.getInt());
+            ps.setInt(1, gid.getInt());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            return sharesResultSetToList(rs);
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return sharesResultSetToList(rs);
+            }
         }
     }
 
     public List<GroupID> listJoinedGroups(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_GS,
                 C_GS_SID + "=?",
-                C_GS_GID));
+                C_GS_GID))) {
 
-        ps.setBytes(1, sid.getBytes());
+            ps.setBytes(1, sid.getBytes());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            return groupsResultSetToList(rs);
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return groupsResultSetToList(rs);
+            }
         }
     }
 
     public List<GroupIDAndRole> listJoinedGroupsAndRoles(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_GS, C_GS_SID + "=?", C_GS_GID, C_GS_ROLE));
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+                T_GS,
+                C_GS_SID + "=?",
+                C_GS_GID, C_GS_ROLE))) {
 
-        ps.setBytes(1, sid.getBytes());
+            ps.setBytes(1, sid.getBytes());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            return groupRolesResultToList(rs);
-        } finally {
-            rs.close();
+            try (ResultSet rs = ps.executeQuery()) {
+                return groupRolesResultToList(rs);
+            }
         }
     }
 
@@ -164,49 +159,51 @@ public class GroupSharesDatabase extends AbstractSQLDatabase
     public void deleteSharesFor(GroupID gid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhere(T_GS, C_GS_GID + "=?"));
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_GS, C_GS_GID + "=?"))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.executeUpdate();
+            ps.setInt(1, gid.getInt());
+            ps.executeUpdate();
+        }
     }
 
     public Permissions getRole(GroupID gid, SID sid)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_GS,
-                C_GS_GID + "=? and " + C_GS_SID + "=?", C_GS_ROLE));
+        try (PreparedStatement ps = prepareStatement(selectWhere(
+                T_GS,
+                C_GS_GID + "=? and " + C_GS_SID + "=?",
+                C_GS_ROLE))) {
 
-        ps.setInt(1, gid.getInt());
-        ps.setBytes(2, sid.getBytes());
+            ps.setInt(1, gid.getInt());
+            ps.setBytes(2, sid.getBytes());
 
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (!rs.next()) {
-                throw new ExNotFound("gid " + gid.getInt() + " sid " + sid.toStringFormal() +
-                        "not found");
-            } else {
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new ExNotFound("gid " + gid.getInt() + " sid " + sid.toStringFormal() +
+                            "not found");
+                }
                 return Permissions.fromBitmask(rs.getInt(1));
             }
-
-        } finally {
-            rs.close();
         }
     }
 
     public void setRoleForSharedFolder(GroupID gid, SID sid, Permissions role)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_GS,
-                        C_GS_GID + "=? and " + C_GS_SID + "=?", C_GS_ROLE));
+        try (PreparedStatement ps = prepareStatement(updateWhere(
+                T_GS,
+                C_GS_GID + "=? and " + C_GS_SID + "=?",
+                C_GS_ROLE))) {
 
-        ps.setInt(1, role.bitmask());
-        ps.setInt(2, gid.getInt());
-        ps.setBytes(3, sid.getBytes());
+            ps.setInt(1, role.bitmask());
+            ps.setInt(2, gid.getInt());
+            ps.setBytes(3, sid.getBytes());
 
-        if (ps.executeUpdate() != 1) {
-            throw new ExNotFound("gid " + gid.getInt() + " sid " + sid.toStringFormal() +
-                    "not found");
+            if (ps.executeUpdate() != 1) {
+                throw new ExNotFound("gid " + gid.getInt() + " sid " + sid.toStringFormal() +
+                        "not found");
+            }
         }
     }
 

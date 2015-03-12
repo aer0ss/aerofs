@@ -33,47 +33,42 @@ public class UserSettingsTokenDatabase extends AbstractSQLDatabase
     public boolean hasToken(UserID uid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_ST, C_ST_USER_ID + "=?", "count(*)"));
-        ps.setString(1, uid.getString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            return DBUtil.binaryCount(rs);
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_ST, C_ST_USER_ID + "=?", "count(*)"))) {
+            ps.setString(1, uid.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.binaryCount(rs);
+            }
         }
     }
 
     public String getToken(UserID uid)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_ST, C_ST_USER_ID + "=?", C_ST_TOKEN));
-        ps.setString(1, uid.getString());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            if (!rs.next()) throw new ExNotFound();
-            return rs.getString(1);
-        } finally {
-            rs.close();
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_ST, C_ST_USER_ID + "=?", C_ST_TOKEN))) {
+            ps.setString(1, uid.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new ExNotFound();
+                return rs.getString(1);
+            }
         }
     }
 
     public void insertToken(UserID uid, String token)
             throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(DBUtil.insert(T_ST, C_ST_USER_ID, C_ST_TOKEN));
-        ps.setString(1, uid.getString());
-        ps.setString(2, token);
-        if (ps.executeUpdate() != 1) throw new ExAlreadyExist();
+        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_ST, C_ST_USER_ID, C_ST_TOKEN))) {
+            ps.setString(1, uid.getString());
+            ps.setString(2, token);
+            if (ps.executeUpdate() != 1) throw new ExAlreadyExist();
+        }
     }
 
     public void deleteToken(UserID uid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_ST, C_ST_USER_ID + "=?"));
-        ps.setString(1, uid.getString());
-        ps.executeUpdate();
-
+        try (PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_ST, C_ST_USER_ID + "=?"))) {
+            ps.setString(1, uid.getString());
+            ps.executeUpdate();
+        }
     }
 }

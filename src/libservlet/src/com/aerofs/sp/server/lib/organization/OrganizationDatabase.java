@@ -78,9 +78,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         checkNotNull(organizationId, "organizationId cannot be null");
 
-        try {
-            PreparedStatement ps = prepareStatement(
-                    DBUtil.insert(T_ORGANIZATION, C_O_ID));
+        try (PreparedStatement ps = prepareStatement(
+                    DBUtil.insert(T_ORGANIZATION, C_O_ID))) {
 
             ps.setInt(1, organizationId.getInt());
             ps.executeUpdate();
@@ -96,10 +95,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public boolean exists(OrganizationID orgID)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", "count(*)"));
-        ps.setInt(1, orgID.getInt());
-        try (ResultSet rs = ps.executeQuery()) {
-            return binaryCount(rs);
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", "count(*)"))) {
+            ps.setInt(1, orgID.getInt());
+            try (ResultSet rs = ps.executeQuery()) {
+                return binaryCount(rs);
+            }
         }
     }
 
@@ -111,7 +111,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public @Nullable StripeCustomerID getStripeCustomerIDNullable(final OrganizationID orgID)
             throws SQLException, ExNotFound
     {
-        try (ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID)) {
+        try (PreparedStatement ps = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, orgID);
             String id = rs.getString(1);
             return id == null ? null : StripeCustomerID.create(id);
         }
@@ -120,7 +122,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public @Nonnull String getName(OrganizationID orgID)
             throws SQLException, ExNotFound
     {
-        try (ResultSet rs = queryOrg(orgID, C_O_NAME)) {
+        try (PreparedStatement ps = queryOrg(orgID, C_O_NAME);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, orgID);
             return Objects.firstNonNull(rs.getString(1), "An Awesome Team");
         }
     }
@@ -129,13 +133,14 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setName(OrganizationID orgID, String name)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME));
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME))) {
 
-        ps.setString(1, name);
-        ps.setInt(2, orgID.getInt());
+            ps.setString(1, name);
+            ps.setInt(2, orgID.getInt());
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     /**
@@ -143,7 +148,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      */
     public String getContactPhone(final OrganizationID orgID) throws SQLException, ExNotFound
     {
-        try (ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE)) {
+        try (PreparedStatement ps = queryOrg(orgID, C_O_CONTACT_PHONE);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, orgID);
             return Strings.nullToEmpty(rs.getString(1));
         }
     }
@@ -151,28 +158,30 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setContactPhone(final OrganizationID orgID, final String contactPhone)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(
-                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_CONTACT_PHONE));
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_CONTACT_PHONE))) {
 
-        ps.setString(1, contactPhone);
-        ps.setInt(2, orgID.getInt());
+            ps.setString(1, contactPhone);
+            ps.setInt(2, orgID.getInt());
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     public void setStripeCustomerID(final OrganizationID orgID,
             @Nullable final String stripeCustomerID)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(
-                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_STRIPE_CUSTOMER_ID));
+        try (PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_STRIPE_CUSTOMER_ID))) {
 
-        if (stripeCustomerID != null) ps.setString(1, stripeCustomerID);
-        else ps.setNull(1, Types.VARCHAR);
+            if (stripeCustomerID != null) ps.setString(1, stripeCustomerID);
+            else ps.setNull(1, Types.VARCHAR);
 
-        ps.setInt(2, orgID.getInt());
+            ps.setInt(2, orgID.getInt());
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     /**
@@ -180,9 +189,12 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      */
     public @Nullable Long getQuotaPerUser(final OrganizationID orgID) throws SQLException, ExNotFound
     {
-        try (ResultSet rs = queryOrg(orgID, C_O_QUOTA_PER_USER)) {
-            Long quota = rs.getLong(1);
-            return rs.wasNull() ? null : quota;
+        try (PreparedStatement ps = queryOrg(orgID, C_O_QUOTA_PER_USER)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                throwIfEmptyResultSet(rs, orgID);
+                Long quota = rs.getLong(1);
+                return rs.wasNull() ? null : quota;
+            }
         }
     }
 
@@ -192,28 +204,32 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setQuotaPerUser(final OrganizationID orgID, @Nullable Long quota)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
-                C_O_QUOTA_PER_USER));
+        try (PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
+                C_O_QUOTA_PER_USER))) {
 
-        if (quota != null) ps.setLong(1, quota);
-        else ps.setNull(1, Types.BIGINT);
+            if (quota != null) ps.setLong(1, quota);
+            else ps.setNull(1, Types.BIGINT);
 
-        ps.setInt(2, orgID.getInt());
+            ps.setInt(2, orgID.getInt());
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
-    private ResultSet queryOrg(OrganizationID orgID, String field)
-            throws SQLException, ExNotFound
+    private PreparedStatement queryOrg(OrganizationID orgID, String field)
+            throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", field));
         ps.setInt(1, orgID.getInt());
-        ResultSet rs = ps.executeQuery();
+        return ps;
+    }
+
+    // N.B. will return with cursor on the first element of the result set
+    private void throwIfEmptyResultSet(ResultSet rs, OrganizationID orgID)
+            throws SQLException, ExNotFound
+    {
         if (!rs.next()) {
-            rs.close();
             throw new ExNotFound("org " + orgID);
-        } else {
-            return rs;
         }
     }
 
@@ -226,7 +242,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param rs Result set of tuples of the form (id, first name, last name).
      * @return  List of users in the result set.
      */
-    private List<UserID> usersResultSet2List(ResultSet rs)
+    private List<UserID> usersResultSetToList(ResultSet rs)
             throws SQLException
     {
         List<UserID> users = Lists.newArrayList();
@@ -249,20 +265,21 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             @Nullable String searchPrefix)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_USER,
                 C_USER_ORG_ID + "=? " + andActiveNonTeamServerUser() + andUserLike(searchPrefix),
                 C_USER_ID)
-                + " order by " + C_USER_ID + " limit ? offset ?");
+                + " order by " + C_USER_ID + " limit ? offset ?")) {
 
-        int index = 0;
-        ps.setInt(++index, orgId.getInt());
-        if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
-        ps.setInt(++index, maxResults);
-        ps.setInt(++index, offset);
+            int index = 0;
+            ps.setInt(++index, orgId.getInt());
+            if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
+            ps.setInt(++index, maxResults);
+            ps.setInt(++index, offset);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            return usersResultSet2List(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                return usersResultSetToList(rs);
+            }
         }
     }
 
@@ -278,14 +295,15 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public List<UserID> listWhitelistedUsers(OrganizationID orgId)
         throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_USER,
                 C_USER_ORG_ID + "=? and " + C_USER_WHITELISTED + "=1" + andActiveNonTeamServerUser(),
-                C_USER_ID));
-        ps.setInt(1, orgId.getInt());
+                C_USER_ID))) {
+            ps.setInt(1, orgId.getInt());
 
-        try (ResultSet rs = ps.executeQuery()) {
-            return usersResultSet2List(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                return usersResultSetToList(rs);
+            }
         }
     }
 
@@ -296,12 +314,13 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countUsers(OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
-                C_USER_ORG_ID + "=?" + andActiveNonTeamServerUser(), "count(*)"));
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ORG_ID + "=?" + andActiveNonTeamServerUser(), "count(*)"))) {
 
-        ps.setInt(1, orgId.getInt());
-        try (ResultSet rs = ps.executeQuery()) {
-            return count(rs);
+            ps.setInt(1, orgId.getInt());
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
         }
     }
 
@@ -313,15 +332,16 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countUsersAtLevel(AuthorizationLevel authlevel, OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement("select count(*) from " +
+        try (PreparedStatement ps = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
-                C_USER_AUTHORIZATION_LEVEL + "=?" + andActiveNonTeamServerUser());
+                C_USER_AUTHORIZATION_LEVEL + "=?" + andActiveNonTeamServerUser())) {
 
-        ps.setInt(1, orgId.getInt());
-        ps.setInt(2, authlevel.ordinal());
+            ps.setInt(1, orgId.getInt());
+            ps.setInt(2, authlevel.ordinal());
 
-        try (ResultSet rs = ps.executeQuery()) {
-            return count(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
         }
     }
 
@@ -339,22 +359,23 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID), C_AC_STORE_ID)
-                + " limit ? offset ?");
+                + " limit ? offset ?")) {
 
-        ps.setString(1, orgId.toTeamServerUserID().getString());
-        ps.setInt(2, maxResults);
-        ps.setInt(3, offset);
+            ps.setString(1, orgId.toTeamServerUserID().getString());
+            ps.setInt(2, maxResults);
+            ps.setInt(3, offset);
 
-        try (ResultSet rs = ps.executeQuery()) {
-            Set<SID> set = Sets.newHashSet();
-            while (rs.next()) {
-                SID sid = new SID(rs.getBytes(1));
-                checkState(!sid.isUserRoot());
-                Util.verify(set.add(sid));
+            try (ResultSet rs = ps.executeQuery()) {
+                Set<SID> set = Sets.newHashSet();
+                while (rs.next()) {
+                    SID sid = new SID(rs.getBytes(1));
+                    checkState(!sid.isUserRoot());
+                    Util.verify(set.add(sid));
+                }
+                return set;
             }
-            return set;
         }
     }
 
@@ -364,33 +385,37 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countSharedFolders(OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
-                "count(distinct " + C_AC_STORE_ID + ")"));
+                "count(distinct " + C_AC_STORE_ID + ")"))) {
 
-        ps.setString(1, orgId.toTeamServerUserID().getString());
+            ps.setString(1, orgId.toTeamServerUserID().getString());
 
-        try (ResultSet rs = ps.executeQuery()) {
-            return DBUtil.count(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.count(rs);
+            }
         }
     }
 
     public void setTwoFactorEnforcementLevel(OrganizationID id, TwoFactorEnforcementLevel level)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION,
-                C_O_ID + "=?", C_O_TWO_FACTOR_ENFORCEMENT_LEVEL));
+        try (PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION,
+                C_O_ID + "=?", C_O_TWO_FACTOR_ENFORCEMENT_LEVEL))) {
 
-        ps.setInt(1, level.ordinal());
-        ps.setInt(2, id.getInt());
+            ps.setInt(1, level.ordinal());
+            ps.setInt(2, id.getInt());
 
-        Util.verify(ps.executeUpdate() == 1);
+            Util.verify(ps.executeUpdate() == 1);
+        }
     }
 
     public TwoFactorEnforcementLevel getTwoFactorEnforcementLevel(OrganizationID id)
             throws SQLException, ExNotFound
     {
-        try (ResultSet rs = queryOrg(id, C_O_TWO_FACTOR_ENFORCEMENT_LEVEL)) {
+        try (PreparedStatement ps = queryOrg(id, C_O_TWO_FACTOR_ENFORCEMENT_LEVEL);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, id);
             return TwoFactorEnforcementLevel.valueOf(rs.getInt(1));
         }
     }
@@ -398,18 +423,13 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public ImmutableList<OrganizationID> getOrganizationIDs()
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(select(T_ORGANIZATION, C_O_ID));
-
         ImmutableList.Builder<OrganizationID> builder = ImmutableList.builder();
-        ResultSet rs = ps.executeQuery();
-        try {
+        try (PreparedStatement ps = prepareStatement(select(T_ORGANIZATION, C_O_ID));
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 builder.add(new OrganizationID(rs.getInt(1)));
             }
-        } finally {
-            rs.close();
+            return builder.build();
         }
-
-        return builder.build();
     }
 }

@@ -78,11 +78,11 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
     private void insertUser(String userId)
             throws SQLException
     {
-        PreparedStatement addUser =
-                _transaction.getConnection().prepareStatement("insert into users values(?)");
-
-        addUser.setString(1, userId);
-        addUser.executeUpdate();
+        try (PreparedStatement addUser =
+                     _transaction.getConnection().prepareStatement("insert into users values(?)")) {
+            addUser.setString(1, userId);
+            addUser.executeUpdate();
+        }
     }
 
     /**
@@ -91,15 +91,12 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
     private boolean isUserInDatabase(String id)
             throws SQLException
     {
-        PreparedStatement getUser =
-                _transaction.getConnection().prepareStatement("select * from users where u_id=?");
-
-        getUser.setString(1, id);
-        ResultSet rs = getUser.executeQuery();
-        try {
-            return rs.next() && !rs.next(); // one and only one result matching
-        } finally {
-            rs.close();
+        try (PreparedStatement getUser =
+                _transaction.getConnection().prepareStatement("select * from users where u_id=?")) {
+            getUser.setString(1, id);
+            try (ResultSet rs = getUser.executeQuery()) {
+                return rs.next() && !rs.next(); // one and only one result matching
+            }
         }
     }
 
@@ -118,11 +115,12 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
      */
     private boolean isUserTableEmpty() throws Exception
     {
+        boolean retVal;
         _transaction.begin();
-        PreparedStatement getAllUsers =
-                _transaction.getConnection().prepareStatement("select * from users");
-        ResultSet rs = getAllUsers.executeQuery();
-        boolean retVal = !rs.next();
+        try (PreparedStatement getAllUsers = _transaction.getConnection().prepareStatement("select * from users");
+             ResultSet rs = getAllUsers.executeQuery()) {
+            retVal = !rs.next();
+        }
         _transaction.commit();
 
         return retVal;
