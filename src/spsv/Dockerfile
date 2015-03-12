@@ -1,13 +1,14 @@
 # This generates the base image for all servlet containers
 #
 # We can't use aerofs/base as tomcat6 has been removed from debian:sid.
-# We can't use debian, either, because we need java8 + tomcat6 and:
+# We can't use debian at all because we need java8 + tomcat6 and:
 #    - sid has no tomcat6
 #    - jessie and wheezy has no java8
+# We can't use aerofs/base.ubuntu14 as it doesn't have jre8.
 #
 # TODO (WW) upgrade to tomcat7 or kill tomcat entirely, and use aeofs/base
 #
-FROM aerofs/base.ubuntu
+FROM aerofs/base.ubuntu15.04
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 

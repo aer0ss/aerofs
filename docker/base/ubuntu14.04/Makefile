@@ -1,4 +1,4 @@
-IMAGE_NAME = aerofs/base.ubuntu
+IMAGE_NAME = aerofs/base.ubuntu14.04
 
 image:
 	$(MAKE) -f ../../container-scripts/Makefile

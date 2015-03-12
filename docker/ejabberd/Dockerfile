@@ -1,6 +1,6 @@
-# Ubuntu ships ejabberd 2.* while Debian ships 14.*. 2.* has a different configuration format
-# than 14.* and our legacy production uses 2.
-FROM aerofs/base.ubuntu
+# Ubuntu14 ships ejabberd v2 while Debian and Ubuntu15 ships v14. v2 has a different configuration format
+# than v14 and our legacy production uses v2.
+FROM aerofs/base.ubuntu14.04
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
