@@ -156,9 +156,9 @@ def manual_retrace(log_path, out_log_path, map_path):
             prefix = match.group(1)
             key    = match.group(2)
             info   = match.group(3)
-            out_file.write(prefix + retrace_map.get(key, key) + info)
+            out_file.write((prefix + retrace_map.get(key, key) + info).rstrip() + '\n')
         else:
-            out_file.write(line)
+            out_file.write(line.rstrip() + '\n')
 
 def split_log_by_version(log_file_path):
     """
