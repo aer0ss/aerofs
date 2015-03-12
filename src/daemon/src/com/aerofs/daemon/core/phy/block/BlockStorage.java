@@ -246,14 +246,18 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
     {
         FileInfo oldFile = _bsdb.getFileInfo_(newFile._id);
 
-        if (_tlUseHistory.get(t)) {
-            _bsdb.preserveFileInfo(newPath, oldFile, t);
-        } else if (FileInfo.exists(oldFile)) {
-            derefBlocks_(oldFile._chunks, t);
-            scheduleBlockCleaner_(t);
+        if (FileInfo.exists(oldFile)) {
+            if (_tlUseHistory.get(t)) {
+                _bsdb.preserveFileInfo(newPath, oldFile, t);
+            } else {
+                derefBlocks_(oldFile._chunks, t);
+                scheduleBlockCleaner_(t);
+            }
+        } else if (oldFile == null) {
+            _bsdb.insertEmptyFileInfo(newFile._id, t);
         }
 
-        _bsdb.updateFileInfo(newPath, newFile, t);
+        _bsdb.updateFileInfo_(newFile, t);
     }
 
     @Override

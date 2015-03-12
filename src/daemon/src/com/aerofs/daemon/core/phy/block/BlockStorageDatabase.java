@@ -617,7 +617,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     private PreparedStatementWrapper _pswInsertEmptyFileInfo = new PreparedStatementWrapper(
             DBUtil.insert(T_FileCurr, C_FileCurr_Index, C_FileCurr_Ver, C_FileCurr_Len,
                     C_FileCurr_Date, C_FileCurr_Chunks));
-    private void insertEmptyFileInfo(long id, Trans t) throws SQLException
+    void insertEmptyFileInfo(long id, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswInsertEmptyFileInfo;
         try {
@@ -655,7 +655,7 @@ public class BlockStorageDatabase extends AbstractDatabase
      * If the current file info is valid, back it up in the history, creating hierarchy as neeeded
      * Increment ref count for chunks used by the new file info
      */
-    void updateFileInfo(Path path, FileInfo info, Trans t) throws SQLException
+    void updateFileInfo_(FileInfo info, Trans t) throws SQLException
     {
         // update file info
         writeNewFileInfo_(info, t);
