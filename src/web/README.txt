@@ -25,11 +25,11 @@ cd ~/repos/aerofs/src/web && ~/env/bin/python test_all.py
 Compiling Less and JS:
 ======================
 1. Install npm packages for compiling and minifying.
-$ npm install -g lessc minifier uglify-js
+$ npm install -g less minifier uglify-js
 
 2. If you're going to be modifying LESS or JS more than once, install watchman to enable automatic compilation on save. 
 
-$ brew watchman
+$ brew install watchman
 
 3. For a one-off change, run:
 $ cd src/web/web

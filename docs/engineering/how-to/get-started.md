@@ -1,14 +1,15 @@
-Welcome, new AeroFS teammate!  By now, you have received:
+## Welcome, new AeroFS teammate!
+
+By now, you have received:
 
   * a laptop
   * an @aerofs.com email account provided by Google
 
-You'll need to do several things to get started with AeroFS:
+You'll need to do several things to get started with AeroFS.
 
 ## Make sure your local user ID is good
 
 Your user ID should follow the format "<first_name><last_name_initial>" e.g. "alext." Otherwise there will be ongoing pain in the future. Creating a new account and deleting the existing one is one of easier ways to change your user ID.
-
 
 ## Set up full-disk encryption with FileVault
 
@@ -28,6 +29,10 @@ Your public key is `$HOME/.ssh/id_rsa.pub`. Provide this file to [Drew](drew@aer
 
 Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Weihan or Drew to add you to the 'Developers' group in Gerrit.
 
+## Register for JIRA, our issue tracker
+
+Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com credentials and use the interface to ask for access.  They will quickly be granted by someone with mighty admin powers.
+
 ## Install AeroFS Canary and join the team folder
 
   * Once your AeroFS is installed, go to tray menu > Preferences... > Advanced..., and enable the Canary mode.
@@ -35,6 +40,10 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
   * Accept the invitation via the email you received
   * [Download and install the AeroFS client](https://www.aerofs.com/download). 
   * [Accept the shared folder invitation](https://www.aerofs.com/accept).
+
+## Install XCode
+
+[XCode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12) is a huge (~2.5 GB) application.  Fortunately you can continue to work on this guide while it downloads.  Just be sure it's finished installing before you run the `brew` commands.
 
 ## Install XCode command line tools
 
@@ -61,49 +70,28 @@ meant to be distributed externally (dryad) must be compatible with Java 6. The J
 binaries compatible with older versions of the JRE but it requires a so-called "bootclasspath" from
 an earlier JDK to work correctly.
 
-## Install IDEs
-
-We suggest [IntelliJ IDEA CE](http://www.jetbrains.com/idea/download/) for Java and [PyCharm](http://www.jetbrains.com/pycharm/download/) for Python.
-
-To compile from IntelliJ you may need to force it to run under Java 8. To do that:
-in /Application/IntelliJ IDEA*.app/Contents/Info.plist
-change `JVMVersion` to `1.8*`
-
-You may also need to manually point IntelliJ to the newly installed JDK:
-
-File > Project Structure... > SDKs > + > JDK
-the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
-
-We require that you use either an IDE or a language validator to check syntax and formatting for code in markup and scripting languages, such as Python, HTML, CSS, and JavaScript.
-
 ## Install Homebrew
 
 [Homebrew](http://mxcl.github.io/homebrew/) is a package manager for OSX.  We use many open-source softwares packaged with homebrew, and have a few of our own formulae for internal things (we'll get to them later)
 
 Paste the following in a terminal:
 
-    ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 It'll prompt you before it does anything, but the defaults are sane.
-
-Prepending (not append):
-
-    /usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin
-    
-to your path, with `{version}` replaced by the version of your ruby install.
 
 ## Install packages
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm && brew install --devel s3cmd
+    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
     gem install kramdown jekyll
     
     ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
-    
+
     pip install virtualenv protobuf requests pyyaml
 
     npm install -g less minifier uglify-js
@@ -131,19 +119,45 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `minifier` is used to minify JavaScripts.
   * `uglify-js` is used to beautify JavaScripts.
 
+## Update your command path
+
+Prepend (not append):
+
+    /usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin
+
+to your path, with `{version}` replaced by the version of your ruby install.
+
+## Install IDEs
+
+We suggest [IntelliJ IDEA CE](http://www.jetbrains.com/idea/download/) for Java and [PyCharm](http://www.jetbrains.com/pycharm/download/) for Python.
+
+To compile from IntelliJ you may need to force it to run under Java 8. To do that:
+in /Application/IntelliJ IDEA*.app/Contents/Info.plist
+change `JVMVersion` to `1.8*`
+
+You may also need to manually point IntelliJ to the newly installed JDK:
+
+File > Project Structure... > SDKs > + > JDK
+the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
+
+You may also need to manually point IntelliK to the newly installed gradle:
+
+Preferences > Build, Execution, and Deployment > Built Tools > Gradle > Use local gradle distribution
+the path should be something like /usr/local/opt/gradle/libexec"
+
+Import the the "aerofs" and "baseline" repos into IntelliJ. Because IntelliJ has trouble parsing the gradle files completely it is necessary to manually enable some of the libraries we use:
+
+File > Project Structure > Project Settings > Modules > Dependencies
+Enable the checkboxes for all dependencies in the "src_base" and "src_bifrost" modules.
+
+We require that you use either an IDE or a language validator to check syntax and formatting for code in markup and scripting languages, such as Python, HTML, CSS, and JavaScript. Note that the first time you open IntelliJ, IntelliJ will launch background tasks to download various libraries from Maven Central to the local Maven cache. This process is time-intensive (~15 minutes) and you will see background tasks running, one after another, in IntelliJ.
+
 ## Install VM tools
 
 * `vagrant` may be found [here](http://www.vagrantup.com)
 * `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Required version: 4.2.16).
 
-
-## Install optional packages
-
-### Packages from brew
-
-    brew install bash-completion rdesktop coreutils autoconf automake
-
-### Mono MDK
+## Install Mono MDK
 
 Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't deploy production releases.)
 
@@ -173,7 +187,6 @@ This installs `git-review`, installs a post-commit hook for gerrit and adds the 
     set hlsearch
     END
 
-
 ## Set up MySQL and Redis for unit tests
 
 `brew install mysql redis`. Follow the instructions from `brew info redis` and `brew info mysql` to setting them to run automatically via `launchctl`.
@@ -190,8 +203,8 @@ Set a good root password for MySQL, then create the test user for MySQL:
 
 `brew install ejabberd`. Copy the ejabberd config, key/cert and authorization scripts as listed below.
 
-    cp repos/aerofs/tools/ejabberd/ejabberd.* /usr/local/etc/ejabberd/
-    cp repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
+    cp $HOME/repos/aerofs/tools/ejabberd/ejabberd.* /usr/local/etc/ejabberd/
+    cp $HOME/repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
 
 Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
 
@@ -219,7 +232,7 @@ The last step may take a while (expect 30 mins). Grab a coffee from Philz, look 
 This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
 
     cd $HOME/repos/aerofs/
-    gradle clean gen dist
+    gradle clean dist
     ./invoke --mode PRIVATE --product CLIENT setupenv
     approot/run ~/rtroot/user1 gui
 
@@ -230,14 +243,6 @@ The `--mode PRIVATE` flag points the client to your private environment. Specify
 Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
 
 Run `sh` to enter interactive AeroFS shell. This command requires a running daemon.
-
-## Build Java inside of IntelliJ
-
-IntelliJ 14 has a bug which prevents it from downloading some libraries needed to build AeroFS. As a workaround, run the following script to force Maven to download these libraries to the local cache:
-
-    $HOME/repos/aerofs/tools/setup-maven.sh
-
-Note that the first time you open IntelliJ, IntelliJ will launch background tasks to download various libraries from Maven Central to the local Maven cache. This process is time-intensive (~15 minutes) and you will see background tasks running, one after another, in IntelliJ.
 
 ### To avoid relaunching the daemon every time
 

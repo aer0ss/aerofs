@@ -53,18 +53,16 @@ Configure SyncDET to use the actors
 
 Overwrite the file `/etc/syncdet/config.yaml` with the following content:
 
-```
-actor_defaults:
-  aero_userid: {aero_user_id}
-  aero_password: {aero_password}
-  aero_host: share.syncfs.com
-  login: aerofstest
-  root: ~/syncdet
-  rsh: ssh
-actors:
-- address: {username}-vagrant-0.local
-- address: {username}-vagrant-1.local
-```
+    actor_defaults:
+        aero_userid: {aero_user_id}
+        aero_password: {aero_password}
+        aero_host: share.syncfs.com
+        login: aerofstest
+        root: ~/syncdet
+        rsh: ssh
+    actors:
+        - address: {username}-vagrant-0.local
+        - address: {username}-vagrant-1.local
 
 Replace `{aero_user_id}` and `{aero_password}` with an account in your local prod, and `{username}` is the output of `whoami` on the host computer.
 
