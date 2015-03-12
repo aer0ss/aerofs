@@ -1,1 +1,1 @@
-../../../docs/how-to/setup_syncdet_actors.md
+../../../docs/engineering/how-to/setup-syncdet-actors.md
