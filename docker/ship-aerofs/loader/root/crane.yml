@@ -52,6 +52,8 @@ containers:
       detach: true
       publish:
         - "5222:5222"
+      volumes-from:
+        - data
       link:
         - config:config.service
         - mysql:mysql.service
@@ -174,7 +176,7 @@ containers:
       detach: true
       # sysctl requires privilege
       privileged: true
-      # for copying cacert only
+      # for deployment secret and copying cacert
       volumes-from:
         - data
       link:
@@ -190,7 +192,7 @@ containers:
         - "8084:8084"
       detach: true
       volumes-from:
-        # For copying /opt/ca/prod/cacert.pem only
+        # For /opt/ca/prod/cacert.pem and deployment secret
         - data
       link:
         - ca:ca.service
@@ -227,7 +229,7 @@ containers:
     run:
       detach: true
       volumes-from:
-        # For copying /opt/ca/prod/cacert.pem only
+        # For /opt/ca/prod/cacert.pem and deployment secret
         - data
       link:
         - config:config.service
@@ -273,21 +275,34 @@ containers:
     image: aerofs/probe
     run:
       detach: true
+      # for deployment secret
+      volumes-from:
+        - data
       link:
         - mysql:mysql.service
         - config:config.service
+        - verkehr:verkehr.service
 
   logcollection:
     image: aerofs/logcollection
     run:
+      # for deployment secret
+      volumes-from:
+        - data
       detach: true
       link:
         - redis:redis.service
+        - mysql:mysql.service
+        - config:config.service
+        - verkehr:verkehr.service
 
   openid:
     image: aerofs/openid
     run:
       detach: true
+      # for deployment secret
+      volumes-from:
+        - data
       link:
         - mysql:mysql.service
         - redis:redis.service
@@ -297,6 +312,9 @@ containers:
     image: aerofs/status
     run:
       detach: true
+      # for deployment secret
+      volumes-from:
+        - data
       link:
         - bifrost:bifrost.service
         - loader:loader.service
