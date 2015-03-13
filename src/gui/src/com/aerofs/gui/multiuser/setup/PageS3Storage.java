@@ -52,7 +52,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
     private Button      _btnBack;
 
     static final String BLOCK_STORAGE_HELP_URL =
-            "https://support.aerofs.com/hc/en-us/articles/201439474";
+            "https://support.aerofs.com/hc/en-us/articles/203618620";
 
     public PageS3Storage(Composite parent)
     {

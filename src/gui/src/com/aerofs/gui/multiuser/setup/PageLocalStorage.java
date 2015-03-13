@@ -45,7 +45,7 @@ public class PageLocalStorage extends AbstractSetupWorkPage
     private Button      _btnInstall;
     private Button      _btnBack;
 
-    static final String STORAGE_OPTIONS_URL = "https://support.aerofs.com/entries/23690567";
+    static final String STORAGE_OPTIONS_URL = "https://support.aerofs.com/hc/en-us/articles/203434524";
 
     public PageLocalStorage(Composite parent)
     {
