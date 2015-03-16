@@ -51,9 +51,7 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
     
 will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
 
-## Install JDK 6 & 8
-
-[JDK 6 for OSX](http://support.apple.com/kb/DL1572) (necessary only if your OS X doesn't have JDK 6)
+## Install JDK 8
 
 [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
@@ -63,12 +61,6 @@ You should configure your environment to pick up JDK8 instead of the default JDK
 For bash this can be achieved by adding the following line to your `~/.bash_profile`:
 
     export JAVA_HOME="$(/usr/libexec/java_home -v '1.8*')"
-
-For the time being, we need *both* JDK6 and JDK8. JDK8 is still fairly recent and no Linux distros
-provide official packages for it at the time of this writing. For this reason, any package that is
-meant to be distributed externally (dryad) must be compatible with Java 6. The JDK can produce
-binaries compatible with older versions of the JRE but it requires a so-called "bootclasspath" from
-an earlier JDK to work correctly.
 
 ## Install Homebrew
 

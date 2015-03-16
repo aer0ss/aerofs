@@ -28,12 +28,9 @@ String os = System.getProperty("os.name").toLowerCase();
 if (os.contains('windows')) {
     sharedLibrarySearchPathVariable = 'PATH'
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/win", "${clientResourcesDir}/win/lib"]
-    // We don't support building from Windows at this time
-    ext.bootstrapClassPath = 'UNDEFINED'
 } else if (os.contains('mac')) {
     sharedLibrarySearchPathVariable = 'DYLD_LIBRARY_PATH'
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/osx", "${clientResourcesDir}/osx/lib"]
-    ext.bootstrapClassPath = '/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar'
 } else {
     String arch = System.getProperty("os.arch").toLowerCase();
     if (arch.equals("amd64")) {
@@ -47,13 +44,6 @@ if (os.contains('windows')) {
 
     sharedLibrarySearchPathVariable = 'LD_LIBRARY_PATH'
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/linux/${arch}", "${clientResourcesDir}/linux/${arch}/lib"]
-    new ByteArrayOutputStream().withStream { out ->
-        def result = exec {
-            executable = "${rootDir}/tools/bootclasspath.sh"
-            standardOutput = out
-        }
-        ext.bootstrapClassPath = out.toString().trim()
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -64,7 +54,6 @@ subprojects {
     apply plugin: 'java'
 
     // Default to Java 8 for everything.
-    // Dryad and Restless override this for Java 6 compat.
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 

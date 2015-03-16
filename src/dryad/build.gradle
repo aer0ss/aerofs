@@ -4,13 +4,6 @@
 
 archivesBaseName = 'aerofs-dryad'
 
-sourceCompatibility = JavaVersion.VERSION_1_6
-targetCompatibility = JavaVersion.VERSION_1_6
-
-compileJava {
-    options.bootClasspath = rootProject.ext.properties.bootstrapClassPath
-}
-
 sourceSets {
     main {
         java {
