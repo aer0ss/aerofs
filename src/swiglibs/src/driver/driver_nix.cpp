@@ -85,17 +85,16 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         return DRIVER_FAILURE_WITH_ERRNO;
     }
 
-    mode_t type = st.st_mode & S_IFMT;
-    if (type == S_IFLNK) return GETFID_SYMLINK;
-    else if (type != S_IFREG && type != S_IFDIR) {
-        return GETFID_SPECIAL;
-    }
-
     if (buffer) {
         // put ino before dev to speed up fid comparison
         bcopy(&st.st_ino, buffer, sizeof(ino_t));
     }
 
+    mode_t type = st.st_mode & S_IFMT;
+    if (type == S_IFLNK) return GETFID_SYMLINK;
+    else if (type != S_IFREG && type != S_IFDIR) {
+        return GETFID_SPECIAL;
+    }
     return type == S_IFREG ? GETFID_FILE : GETFID_DIR;
 }
 

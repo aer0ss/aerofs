@@ -124,6 +124,10 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         p[1] = info.nFileIndexHigh;
     }
 
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        return GETFID_SYMLINK;
+    }
+
     return info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ?
         GETFID_DIR : GETFID_FILE;
 }
