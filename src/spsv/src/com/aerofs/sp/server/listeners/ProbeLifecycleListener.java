@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.listeners;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -36,12 +37,14 @@ public class ProbeLifecycleListener
     {
         Executor nioExecutor = Executors.newCachedThreadPool();
         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
+        String secret = AeroService.loadDeploymentSecret();
         return VerkehrClient.create(
                 Verkehr.HOST,
                 Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
                 10,
+                () -> AeroService.getHeaderValue("probe-servlet", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),
                 channelFactory);

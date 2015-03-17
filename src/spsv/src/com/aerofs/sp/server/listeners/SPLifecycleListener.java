@@ -2,6 +2,7 @@ package com.aerofs.sp.server.listeners;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
@@ -61,8 +62,10 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
+        String deploymentSecret = AeroService.loadDeploymentSecret();
+
         // verkehr
-        VerkehrClient verkehrClient = createVerkehrClient();
+        VerkehrClient verkehrClient = createVerkehrClient(deploymentSecret);
         ctx.setAttribute(VERKEHR_CLIENT_ATTRIBUTE, verkehrClient);
 
         // auditor
@@ -74,7 +77,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
         ctx.setAttribute(SESSION_EXTENDER, _sessionExtender);
     }
 
-    private static VerkehrClient createVerkehrClient()
+    private static VerkehrClient createVerkehrClient(String secret)
     {
         Executor nioExecutor = Executors.newCachedThreadPool();
         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
@@ -84,6 +87,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
                 10,
+                () -> AeroService.getHeaderValue("sp", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),
                 channelFactory);

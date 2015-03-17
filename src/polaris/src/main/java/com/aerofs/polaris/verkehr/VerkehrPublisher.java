@@ -1,5 +1,6 @@
 package com.aerofs.polaris.verkehr;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.baseline.Threads;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
@@ -23,11 +24,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
+import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
 // FIXME (AG): this is a piss-poor updater. I have another approach in mind where you can dump out the actual transforms
 @Singleton
@@ -47,7 +52,11 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
     private final VerkehrClient verkehrClient;
 
     @Inject
-    public VerkehrPublisher(VerkehrConfiguration configuration) throws MalformedURLException {
+    public VerkehrPublisher(VerkehrConfiguration configuration,
+                            @Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret,
+                            @Named(SERVICE_NAME_INJECTION_KEY) String serviceName)
+            throws MalformedURLException
+    {
         URL url = new URL(configuration.getUrl());
         String host = url.getHost();
         short port = (short) url.getPort();
@@ -60,6 +69,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
                 configuration.getConnectTimeout(),
                 configuration.getResponseTimeout(),
                 configuration.getMaxConnections(),
+                () -> AeroService.getHeaderValue(serviceName, deploymentSecret),
                 timer,
                 addressResolverExecutor,
                 channelFactory);

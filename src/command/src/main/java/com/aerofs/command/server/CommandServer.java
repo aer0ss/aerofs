@@ -4,6 +4,7 @@
 
 package com.aerofs.command.server;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.baseline.Environment;
@@ -49,6 +50,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
         LOGGER.info("redis host={} port={}", configuration.getRedis().getHost(), configuration.getRedis().getPort());
         LOGGER.info("verkehr host={} port={}", configuration.getVerkehr().getHost(), configuration.getVerkehr().getPort());
 
+        String secret = AeroService.loadDeploymentSecret();
         // create the verkehr client
         final VerkehrClient verkehrClient = VerkehrClient.create(
                 BaseParam.Verkehr.HOST,
@@ -56,6 +58,7 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
                 10,
+                () -> AeroService.getHeaderValue("command", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),
                 new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2));

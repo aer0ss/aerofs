@@ -129,7 +129,7 @@ public class Sparta extends Service
 
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(new SpartaSQLConnectionProvider()),
-                clientsModule(cacert),
+                clientsModule(cacert, secret),
                 spartaModule(timer, clientFactory));
 
 
@@ -189,7 +189,7 @@ public class Sparta extends Service
         };
     }
 
-    static private Module clientsModule(final ICertificateProvider cacert)
+    static private Module clientsModule(final ICertificateProvider cacert, String secret)
     {
         return new AbstractModule()
         {
@@ -215,6 +215,7 @@ public class Sparta extends Service
                         MILLISECONDS.convert(30, SECONDS),
                         MILLISECONDS.convert(60, SECONDS),
                         10,
+                        () -> AeroService.getHeaderValue("sparta", secret),
                         new HashedWheelTimer(),
                         MoreExecutors.sameThreadExecutor(),
                         channelFactory);
