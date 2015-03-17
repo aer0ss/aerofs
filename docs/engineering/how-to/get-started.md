@@ -88,7 +88,7 @@ Note: Do not use `sudo` for the following command. You should not need it if the
 
     npm install -g less minifier uglify-js
 
-This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing_list.html).
+This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing-list.html).
 
   * `git` is used for source control.
   * `python` is used by some services and SyncDET (source: the syncdet repo on gerrit), our distributed test harness.  We suggest installing the version from homebrew since it integrates nicely, is reasonably contained, is up-to-date, and keeps you from having to do privilege escalation all the time.
@@ -217,7 +217,7 @@ You'll need to be on the VPN to complete this step, since it'll pull some packag
      ssh apt.aerofs.com # (create password and don't forget it!)
      lp-create
 
-The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local_prod.html) for more information about the private environment.
+The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local-prod.html) for more information about the private environment.
 
 ## Build and launch the client
 
@@ -276,7 +276,7 @@ When asked for vagrant password use: `vagrant`. It will create user signup recor
 
 Skim through the SyncDET manual at docs/usermanual.pdf in the syncdet repo to get familiar with SyncDET concepts.
 
-Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup_syncdet_actors.html). Then:
+Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup-syncdet-actors.html). Then:
 
 Build client packages for all OSes:
 

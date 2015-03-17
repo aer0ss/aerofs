@@ -7,7 +7,7 @@ local-prod is a developer testing tool. Its goal is to make testing AeroFS clien
 - vagrant (version 1.2.x upwards)
 - VirtualBox (version 4.2.6)
 
-You should already have installed them as per the [Getting Started guide](../how-to/get_started.html).
+You should already have installed them as per the [Getting Started guide](../how-to/get-started.html).
 
 ## Initial setup
 

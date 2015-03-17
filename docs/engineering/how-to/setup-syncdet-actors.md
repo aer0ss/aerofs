@@ -1,5 +1,5 @@
 
-This article describes how to set up SyncDET actor VMs on your development computers. It assumes you've setup the local prod following the [Getting Started guide](get_started.html).
+This article describes how to set up SyncDET actor VMs on your development computers. It assumes you've setup the local prod following the [Getting Started guide](get-started.html).
 
 Set up Linux actors
 ---
