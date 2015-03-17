@@ -9,7 +9,7 @@ FIXES = \
 	../base/src/main/java/com/aerofs/base/BaseParam.java \
 	../libservlet/src/com/aerofs/servlets/lib/AsyncEmailSender.java \
 	../libservlet/src/com/aerofs/sp/server/lib/session/RequestRemoteAddress.java \
-	../lib/src/com/aerofs/lib/configuration/ServerConfigurationLoader.java \
+	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
 	src/com/aerofs/sp/server/listeners/SPLifecycleListener.java
 
 image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP)

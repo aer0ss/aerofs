@@ -1,9 +1,0 @@
-@@ -28,7 +28,7 @@ public final class ServerConfigurationLoader
-     private static final Logger LOGGER = LoggerFactory.getLogger(ServerConfigurationLoader.class);
- 
-     // The URL that we must GET to obtain configuration properties.
--    private static final String CONFIGURATION_URL = "http://localhost:5434/server";
-+    private static final String CONFIGURATION_URL = "http://config.service:5434/server";
- 
-     // The path to the shared secret that we use to prove to the config server that we are a valid client
-     private static final String DEPLOYMENT_SECRET_PATH = "/data/deployment_secret";

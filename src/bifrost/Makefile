@@ -11,7 +11,7 @@ image: .fix-source .gradle .restore-source $(DST_DIR)/bifrost.properties $(DST_D
 	../../tools/lazy-copy.sh ../../out.gradle/bifrost/dist $(DST_DIR)
 
 FIXES = $(abspath \
-	../lib/src/com/aerofs/lib/configuration/ServerConfigurationLoader.java \
+	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
 	../base/src/main/java/com/aerofs/base/BaseParam.java)
 
 .restore-source:
