@@ -30,8 +30,13 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.core.Context;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.Security;
 
@@ -40,7 +45,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class CAService extends Service<CAConfig>
 {
     private static final Logger l = Loggers.getLogger(CAService.class);
-    private static final String CA_CERT_PATH = "/opt/ca/prod/cacert.pem";
+    private static final String CA_CERT_DIR = "/opt/ca/prod";
 
     public CAService()
     {
@@ -85,11 +90,13 @@ public class CAService extends Service<CAConfig>
             db.setKeyAndCert(keys.getPrivate(), certificateSigner.caCert());
         }
 
-        // save the cacert as a PEM to disk, needed by some other services that shouldn't depend on ca-server to be running
-        FileOutputStream caCert = new FileOutputStream(CA_CERT_PATH);
-        caCert.write(CertificateUtils.x509ToPEM(certificateSigner.caCert()));
-        caCert.flush();
-        caCert.close();
+        // save the cert as a PEM to disk, needed by some other services that shouldn't depend on ca-server to be running
+        try {
+            Files.createDirectories(Paths.get(CA_CERT_DIR));
+            Files.write(Paths.get(CA_CERT_DIR, "cacert.pem"), CertificateUtils.x509ToPEM(certificateSigner.caCert()));
+        } catch (FileSystemException e) {
+            l.warn("could not write cacert file to disk", e);
+        }
 
         environment.addResource(CAResource.class);
         environment.registerHealthCheck("initialized", CAInitializedCheck.class);
