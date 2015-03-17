@@ -5,6 +5,7 @@
 package com.aerofs.ca.server;
 
 import com.aerofs.auth.server.SharedSecret;
+import com.aerofs.auth.server.shared.AeroService;
 import com.aerofs.auth.server.shared.AeroServiceSharedSecretAuthenticator;
 import com.aerofs.base.Loggers;
 import com.aerofs.baseline.Environment;
@@ -127,13 +128,7 @@ class SharedSecretFactory implements Factory<SharedSecret>
     @Override
     public SharedSecret provide()
     {
-        try (InputStream is = new FileInputStream("/data/deployment_secret")) {
-            String s = new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8).trim();
-            checkState(s.length() == 32, "Invalid deployment secret %s", s);
-            return new SharedSecret(s);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load deployment secret", e);
-        }
+        return new SharedSecret(AeroService.loadDeploymentSecret());
     }
 
     @Override

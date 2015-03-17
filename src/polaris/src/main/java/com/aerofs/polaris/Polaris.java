@@ -3,6 +3,7 @@ package com.aerofs.polaris;
 import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
+import com.aerofs.auth.server.shared.AeroService;
 import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.db.DBIExceptionMapper;
@@ -30,8 +31,6 @@ import com.aerofs.polaris.verkehr.ServiceSharedSecretProvider;
 import com.aerofs.polaris.verkehr.VerkehrConfiguration;
 import com.aerofs.polaris.verkehr.VerkehrPublisher;
 import com.aerofs.verkehr.client.rest.AuthorizationHeaderProvider;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
@@ -121,6 +120,6 @@ public class Polaris extends Service<PolarisConfiguration> {
     }
 
     protected String getDeploymentSecret(PolarisConfiguration configuration) throws IOException {
-        return Files.readFirstLine(new File(configuration.getDeploymentSecretPath()), Charsets.UTF_8);
+        return AeroService.loadDeploymentSecret(configuration.getDeploymentSecretPath());
     }
 }

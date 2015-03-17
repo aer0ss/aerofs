@@ -6,28 +6,25 @@ package com.aerofs.sp.sparta;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.FileBasedCertificateProvider;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
+import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.rest.auth.DelegatedUserDeviceExtractor;
 import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.rest.auth.SharedSecretExtractor;
-import com.aerofs.restless.Version;
-import com.aerofs.base.ssl.FileBasedCertificateProvider;
-import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.lib.LibParam.REDIS;
-import com.aerofs.oauth.TokenVerifier;
-import com.aerofs.rest.providers.FactoryReaderProvider;
-import com.aerofs.rest.providers.IllegalArgumentExceptionMapper;
-import com.aerofs.rest.providers.JsonExceptionMapper;
-import com.aerofs.rest.providers.ParamExceptionMapper;
-import com.aerofs.rest.providers.RuntimeExceptionMapper;
+import com.aerofs.rest.providers.*;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
+import com.aerofs.restless.Version;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
@@ -36,7 +33,6 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
@@ -46,16 +42,8 @@ import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.Stage;
-import com.google.inject.TypeLiteral;
+import com.google.inject.*;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -68,11 +56,8 @@ import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.Properties;
 import java.util.Set;
@@ -80,7 +65,6 @@ import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -127,17 +111,6 @@ public class Sparta extends Service
                 getIntegerProperty("sparta.port", 8085));
     }
 
-    private static String deploymentSecret()
-    {
-        try (InputStream is = new FileInputStream("/data/deployment_secret")) {
-            String s = new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8).trim();
-            checkState(s.length() == 32, "Invalid deployment secret %s", s);
-            return s;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load deployment secret", e);
-        }
-    }
-
     public static void main(String[] args) throws Exception
     {
         Properties extra = new Properties();
@@ -152,6 +125,8 @@ public class Sparta extends Service
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
 
+        String secret = AeroService.loadDeploymentSecret();
+
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(new SpartaSQLConnectionProvider()),
                 clientsModule(cacert),
@@ -159,7 +134,7 @@ public class Sparta extends Service
 
 
         // NB: we expect nginx or similar to provide ssl termination...
-        new Sparta(inj, deploymentSecret())
+        new Sparta(inj, secret)
                 .start();
     }
 

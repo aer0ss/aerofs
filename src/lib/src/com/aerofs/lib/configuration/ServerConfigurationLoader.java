@@ -30,9 +30,6 @@ public final class ServerConfigurationLoader
     // The URL that we must GET to obtain configuration properties.
     private static final String CONFIGURATION_URL = "http://localhost:5434/server";
 
-    // The path to the shared secret that we use to prove to the config server that we are a valid client
-    private static final String DEPLOYMENT_SECRET_PATH = "/data/deployment_secret";
-
     // Flag created by puppet that tells us we are in private deployment mode.
     private static final String PRIVATE_DEPLOYMENT_FLAG_FILE = "/etc/aerofs/private-deployment-flag";
 
@@ -77,7 +74,7 @@ public final class ServerConfigurationLoader
 
         try {
             HttpURLConnection conn = (HttpURLConnection)(new URL(CONFIGURATION_URL).openConnection());
-            String authHeaderValue = AeroService.getHeaderValue(serviceName, deploymentSecret());
+            String authHeaderValue = AeroService.getHeaderValue(serviceName, AeroService.loadDeploymentSecret());
             conn.setRequestProperty("Authorization", authHeaderValue);
             InputStream is = conn.getInputStream();
             httpProperties.load(is);
@@ -86,16 +83,6 @@ public final class ServerConfigurationLoader
         }
 
         return httpProperties;
-    }
-
-    private static String deploymentSecret() {
-        try (InputStream is = new FileInputStream(DEPLOYMENT_SECRET_PATH)) {
-            String s = new String(ByteStreams.toByteArray(is), StandardCharsets.UTF_8).trim();
-            checkState(s.length() == 32, "Invalid deployment secret %s", s);
-            return s;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load deployment secret", e);
-        }
     }
 
     public static class ExHttpConfig extends Exception

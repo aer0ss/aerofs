@@ -19,6 +19,14 @@ public abstract class AeroService {
      */
     public static final String AERO_SERVICE_SHARED_SECRET_HEADER_REGEX = "Aero-Service-Shared-Secret ([a-zA-Z0-9\\-_]+) ([0-9a-fA-F]{32})";
 
+    public static final String loadDeploymentSecret() {
+        return com.aerofs.auth.client.shared.AeroService.loadDeploymentSecret();
+    }
+
+    public static final String loadDeploymentSecret(String path) {
+        return com.aerofs.auth.client.shared.AeroService.loadDeploymentSecret(path);
+    }
+
     private AeroService() {
         // to prevent instantiation by subclasses
     }
