@@ -4,5 +4,6 @@ import com.aerofs.ids.DID;
 
 public interface IDeviceEvictionListener
 {
-    void evicted_(DID did);
+    // NB: MUST be thread-safe
+    void evicted(DID did);
 }

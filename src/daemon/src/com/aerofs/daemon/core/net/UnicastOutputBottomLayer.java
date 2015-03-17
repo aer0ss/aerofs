@@ -64,17 +64,16 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws ExNoResource
     {
-        _f._dlru.addDevice_(ep.did());
+        _f._dlru.addDevice(ep.did());
 
-        EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
-        ep.tp().q().enqueueThrows(ev, TC.currentThreadPrio());
+        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), TC.currentThreadPrio());
     }
 
     @Override
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)
             throws ExStreamInvalid, ExAborted, ExNoResource
     {
-        _f._dlru.addDevice_(ep.did());
+        _f._dlru.addDevice(ep.did());
 
         OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
 
@@ -96,7 +95,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep, Token tk)
             throws Exception
     {
-        _f._dlru.addDevice_(ep.did());
+        _f._dlru.addDevice(ep.did());
 
         OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
 

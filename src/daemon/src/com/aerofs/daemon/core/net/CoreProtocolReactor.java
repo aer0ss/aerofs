@@ -44,6 +44,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
     public static class Factory
     {
         private final TransportRoutingLayer _trl;
+        private final CoreDeviceLRU _dlru;
         private final DeviceToUserMapper _d2u;
         private final RPC _rpc;
         private final GetComponentRequest _pgcc;
@@ -65,6 +66,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
                 NewUpdates pnu,
                 GetComponentRequest pgcc,
                 RPC rpc,
+                CoreDeviceLRU dlru,
                 DeviceToUserMapper d2u,
                 TransportRoutingLayer trl)
         {
@@ -76,6 +78,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             _pgcc = pgcc;
             _pgvr = pgvr;
             _rpc = rpc;
+            _dlru = dlru;
             _d2u = d2u;
             _trl = trl;
         }
@@ -126,7 +129,6 @@ public class CoreProtocolReactor implements IUnicastInputLayer
                 // process all pending messages
                 userID = _f._d2u.issuePeerToPeerResolveUserIDRequest_(did);
             }
-
             processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null), true);
         } catch (Exception e) {
             l.warn("{} fail process mc", did, LogUtil.suppress(e,
@@ -140,6 +142,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             throws Exception
     {
         l.debug("{} <- {} {},{} over {}", msg.did(), isMulticast ? "mc" : "uc", CoreProtocolUtil.typeString(msg.pb()), msg.pb().getRpcid(), msg.tp());
+
+        _f._dlru.addDevice(msg.did());
 
         switch (msg.pb().getType()) {
         case GET_COMPONENT_REQUEST:
@@ -193,9 +197,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
         try {
             error = CoreProtocolUtil.newErrorResponse(msg.pb(), cause);
         } catch (ExProtocolError e) {
-            // logic error
-            // should not send an error response for non-rpc messages
-            // FIXME (AG): does that mean that we often fail silently? seems bad...
+            // should not use this method for messages which don't expect a response.
             SystemUtil.fatal("fail creating a reply for msg:" + CoreProtocolUtil.typeString(msg.pb()));
         }
 

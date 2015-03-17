@@ -4,21 +4,27 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.db.DID2UserDatabase;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.testlib.AbstractTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.sql.SQLException;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -27,28 +33,27 @@ public final class TestDeviceToUserMapper extends AbstractTest
     private final DID _did = new DID(UniqueID.generate());
     private final UserID _userID = UserID.fromInternal("user");
     private final InMemorySQLiteDBCW _dbcw = new InMemorySQLiteDBCW();
+    private final TransManager _tm = new TransManager(new Trans.Factory(_dbcw));
     private final DID2UserDatabase _db = Mockito.spy(new DID2UserDatabase(_dbcw.getCoreDBCW()));
-    private final CoreDeviceLRU _deviceLRU = Mockito.mock(CoreDeviceLRU.class);
-    private final AtomicReference<IDeviceEvictionListener> _evictionListener = new AtomicReference<>(null);
 
     private DeviceToUserMapper _deviceToUserMapper;
 
     @Before
-    public void setup()
-            throws SQLException
+    public void setup() throws SQLException
     {
-        // store the eviction listener
-        Mockito.doAnswer(invocation -> {
-            _evictionListener.set((IDeviceEvictionListener) invocation.getArguments()[0]);
-            return null;
-        }).when(_deviceLRU).addEvictionListener_(Mockito.any(IDeviceEvictionListener.class));
-
         // have to initialize this here so that the
         // when() call above works
-        _deviceToUserMapper = new DeviceToUserMapper(null, null, _db, _deviceLRU, null); // SUT
+        _deviceToUserMapper = new DeviceToUserMapper(mock(TokenManager.class),
+                mock(TransportRoutingLayer.class), _db, _tm);
 
         // initialize the database
         _dbcw.init_();
+    }
+
+    @After
+    public void tearDown() throws SQLException
+    {
+        _dbcw.fini_();
     }
 
     @Test
@@ -56,10 +61,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // make the call
-        assertEquals(_deviceToUserMapper.getUserIDForDIDNullable_(_did), null);
-
-        // regardless of the result, we should refresh the device cache
-        verify(_deviceLRU).addDevice_(_did);
+        assertNull(_deviceToUserMapper.getUserIDForDIDNullable_(_did));
     }
 
     @Test
@@ -67,7 +69,10 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // store the mapping
-        _db.insert_(_did, _userID, null);
+        try (Trans t = _tm.begin_()) {
+            _db.insert_(_did, _userID, t);
+            t.commit_();
+        }
 
         // verify that we retrieve the correct mapping when asked
         assertEquals(_userID, _deviceToUserMapper.getUserIDForDIDNullable_(_did));
@@ -77,9 +82,6 @@ public final class TestDeviceToUserMapper extends AbstractTest
 
         // check that we only hit the db _once_: the second call should be handled from the cache
         verify(_db, times(1)).getNullable_(_did);
-
-        // we should have refreshed the device cache twice
-        verify(_deviceLRU, times(2)).addDevice_(_did);
     }
 
     @Test
@@ -87,7 +89,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // pretend that the UserID was resolved
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
 
         // check that we properly stored it
         assertEquals(_userID, _deviceToUserMapper.getUserIDForDIDNullable_(_did));
@@ -98,12 +100,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
         verify(_db, times(1)).getNullable_(_did);
 
         // we should have stored it in the DB
-        verify(_db).insert_(_did, _userID, null);
-
-        // we should have refreshed the device cache twice
-        // 1st time: onUserIDResolved_
-        // 2nd time: getUserIDForDIDNullable_
-        verify(_deviceLRU, times(2)).addDevice_(_did);
+        verify(_db).insert_(eq(_did), eq(_userID), any(Trans.class));
     }
 
     @Test
@@ -111,10 +108,13 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // store the mapping
-        _db.insert_(_did, _userID, null);
+        try (Trans t = _tm.begin_()) {
+            _db.insert_(_did, _userID, t);
+            t.commit_();
+        }
 
         // pretend that the UserID was resolved
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
 
         // check that we can retrieve the value
         assertEquals(_userID, _deviceToUserMapper.getUserIDForDIDNullable_(_did));
@@ -126,12 +126,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
 
         // this '1' is because of the manual insert
         // if onUserIDResolved_ did this as well, it would have happened twice
-        verify(_db, times(1)).insert_(_did, _userID, null);
-
-        // we should have refreshed the device cache twice
-        // 1st time: onUserIDResolved_
-        // 2nd time: getUserIDForDIDNullable_
-        verify(_deviceLRU, times(2)).addDevice_(_did);
+        verify(_db, times(1)).insert_(eq(_did), eq(_userID), any(Trans.class));
     }
 
     @Test
@@ -139,19 +134,17 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // store the mapping
-        _db.insert_(_did, _userID, null);
+        try (Trans t = _tm.begin_()) {
+            _db.insert_(_did, _userID, t);
+            t.commit_();
+        }
 
         // warm the cache
         assertEquals(_deviceToUserMapper.getUserIDForDIDNullable_(_did), _userID);
 
         // pretend that we (for some reason) resolve it again
         // this call should not fail because the cache should be warmed
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
-
-        // we should have refreshed the device cache twice
-        // 1st time: getUserIDForDIDNullable_
-        // 2nd time: onUserIDResolved_
-        verify(_deviceLRU, times(2)).addDevice_(_did);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
     }
 
     @Test
@@ -159,10 +152,12 @@ public final class TestDeviceToUserMapper extends AbstractTest
             throws SQLException
     {
         // pretend that we resolved the UserID
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
 
-        // now, evict the device
-        _evictionListener.get().evicted_(_did);
+        // evict the device by resolving more devices than the cache can hold
+        for (int i = 0; i < DeviceToUserMapper.CACHE_SIZE; ++i) {
+            _deviceToUserMapper.onUserIDResolved_(DID.generate(), UserID.DUMMY);
+        }
 
         // attempt to get the userID
         _deviceToUserMapper.getUserIDForDIDNullable_(_did);
@@ -175,7 +170,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
     public void shouldNotThrowExceptionIfOnUserIDResolvedCalledMultipleTimes()
             throws SQLException
     {
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
-        _deviceToUserMapper.onUserIDResolved_(_did, _userID, null);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
+        _deviceToUserMapper.onUserIDResolved_(_did, _userID);
     }
 }

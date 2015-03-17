@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
@@ -23,6 +24,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -52,12 +54,13 @@ public class DeviceToUserMapper
 {
     private static final Logger l = Loggers.getLogger(DeviceToUserMapper.class);
 
-    private final Map<DID, UserID> _mappingCache = Maps.newHashMap();
+    static final int CACHE_SIZE = 64;
+
+    private final DBCache<DID, UserID> _mappingCache;
     private final Map<DID, TCB> _resolutionWaiters = Maps.newHashMap();
     private final TransportRoutingLayer _transportRoutingLayer;
     private final TokenManager _tokenManager;
     private final IDID2UserDatabase _mappingStore;
-    private final CoreDeviceLRU _deviceLRU;
     private final TransManager _tm;
 
     @Inject
@@ -65,18 +68,13 @@ public class DeviceToUserMapper
             TokenManager tokenManager,
             TransportRoutingLayer transportRoutingLayer,
             IDID2UserDatabase mappingStore,
-            CoreDeviceLRU deviceLRU,
             TransManager tm)
     {
         _tokenManager = tokenManager;
         _transportRoutingLayer = transportRoutingLayer;
         _mappingStore = mappingStore;
-        _deviceLRU = deviceLRU;
+        _mappingCache = new DBCache<>(tm, CACHE_SIZE);
         _tm = tm;
-
-        // mappings for old (i.e. devices that are not used within
-        // this process lifetime) are removed from the in-memory cache
-        deviceLRU.addEvictionListener_(_mappingCache::remove);
     }
 
     /**
@@ -90,19 +88,7 @@ public class DeviceToUserMapper
     public @Nullable UserID getUserIDForDIDNullable_(DID did)
             throws SQLException
     {
-        UserID userID = _mappingCache.get(did);
-
-        if (userID == null) {
-            userID = _mappingStore.getNullable_(did);
-
-            if (userID != null) {
-                _mappingCache.put(did, userID);
-            }
-        }
-
-        _deviceLRU.addDevice_(did);
-
-        return userID;
+        return _mappingCache.get_(did, _mappingStore::getNullable_);
     }
 
     /**
@@ -125,7 +111,7 @@ public class DeviceToUserMapper
     public UserID issuePeerToPeerResolveUserIDRequest_(DID did)
             throws Exception
     {
-        UserID cachedUserID = _mappingCache.get(did);
+        UserID cachedUserID = _mappingCache.get_(did);
         if (cachedUserID != null) {
             l.trace("{} mapping exists {}->{}", did, did, cachedUserID);
             return cachedUserID;
@@ -140,7 +126,8 @@ public class DeviceToUserMapper
         }
 
         l.info("{} send resolve", did);
-        _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
+        _transportRoutingLayer.sendUnicast_(did,
+                CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_REQUEST).build());
 
         try (Token tk = _tokenManager.acquireThrows_(Cat.RESOLVE_USER_ID, did.toString())) {
             TCB tcb = TC.tcb();
@@ -155,7 +142,7 @@ public class DeviceToUserMapper
         // this should always return a non-null value
         // if the resolution succeeds then both
         // _mappingStore and _mappingCache have been refreshed
-        UserID userID = _mappingCache.get(did);
+        UserID userID = _mappingCache.get_(did);
         checkState(userID != null);
         return userID;
     }
@@ -168,7 +155,8 @@ public class DeviceToUserMapper
     {
         l.info("{} respond to resolve", did);
 
-        _transportRoutingLayer.sendUnicast_(did, CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_RESPONSE).build());
+        _transportRoutingLayer.sendUnicast_(did,
+                CoreProtocolUtil.newCoreMessage(Type.RESOLVE_USER_ID_RESPONSE).build());
     }
 
     /**
@@ -184,22 +172,19 @@ public class DeviceToUserMapper
     public void onUserIDResolved_(DID did, UserID userID)
             throws SQLException
     {
-        if (!_mappingCache.containsKey(did)) {
+        if (_mappingCache.get_(did) == null) {
             try (Trans t = _tm.begin_()) {
                 onUserIdResolvedInternal_(did, userID, t);
                 t.commit_();
             }
-        } else {
-            _deviceLRU.addDevice_(did);
         }
 
         wakeResolutionWaiter_(did, userID);
     }
 
     /**
-     * Creates a mapping from DID->UserID
-     * if one does not already exist. This method
-     * is a noop if a mapping exists.
+     * Creates a mapping from DID->UserID if one does not already exist.
+     * This method is a noop if a mapping exists.
      * <p/>
      * Callers <strong>must</strong> securely authenticate
      * the remote device before calling this method.
@@ -209,10 +194,8 @@ public class DeviceToUserMapper
     public void onUserIDResolved_(DID did, UserID userID, Trans t)
             throws SQLException
     {
-        if (!_mappingCache.containsKey(did)) {
+        if (_mappingCache.get_(did) == null) {
             onUserIdResolvedInternal_(did, userID, t);
-        } else {
-            _deviceLRU.addDevice_(did);
         }
 
         wakeResolutionWaiter_(did, userID);
@@ -234,15 +217,14 @@ public class DeviceToUserMapper
             checkState(persistedUserID.equals(userID), "exp:%s act:%s", userID, persistedUserID);
         }
 
-        _mappingCache.put(did, userID);
-        _deviceLRU.addDevice_(did);
+        _mappingCache.put_(did, userID);
     }
 
     // Verifies that the in-memory cache has been updated
     // and wakes any threads waiting on the UserID having been resolved
     private void wakeResolutionWaiter_(DID did, UserID userID)
     {
-        UserID cachedUserID = _mappingCache.get(did);
+        UserID cachedUserID = checkNotNull(_mappingCache.get_(did));
         checkState(cachedUserID.equals(userID), "userID:%s", cachedUserID);
 
         TCB waiter = _resolutionWaiters.get(did);

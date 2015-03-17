@@ -4,47 +4,44 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.LRUCache;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+/**
+ * Cache of DIDs used by the transport, with Least Recently Used eviction policy
+ *
+ * This class is thread-safe and eviction listeners added to it MUST also be thread-safe.
+ */
 public class DeviceLRU
 {
-    @Nonnull
-    private Logger l;
-    @Nonnull
-    private Set<IDeviceEvictionListener> listeners_;
-    @Nonnull
-    private LRUCache<DID, Object> devices_;
+    private static final Logger l = Loggers.getLogger(DeviceLRU.class);
 
-    public void addEvictionListener_(IDeviceEvictionListener l)
-    {
-        listeners_.add(l);
-    }
+    private final LRUCache<DID, Object> _devices;
+    private final List<IDeviceEvictionListener> _listeners =
+            Collections.synchronizedList(Lists.newLinkedList());
 
-    public void removeEvictionListener_(IDeviceEvictionListener l)
+    public void addEvictionListener(IDeviceEvictionListener l)
     {
-        listeners_.remove(l);
+        _listeners.add(l);
     }
 
     public DeviceLRU(int numDevices)
     {
-        l = Loggers.getLogger(DeviceLRU.class);
-        listeners_ = new HashSet<>();
-
-        LRUCache.IEvictionListener<DID, Object> el = (d, o) -> {
-            l.debug("evict d:" + d);
-
-            for (IDeviceEvictionListener l : listeners_) l.evicted_(d);
-        };
-
-        devices_ = new LRUCache<>(true, numDevices, el);
+        _devices = new LRUCache<>(true, numDevices, (d, o) -> {
+            l.debug("evict d:{}", d);
+            for (IDeviceEvictionListener l : _listeners) l.evicted(d);
+        });
     }
 
-    public void addDevice_(DID d)
+    public synchronized void addDevice(DID d)
     {
-        devices_.put_(d, null);
+        _devices.put_(d, null);
     }
 }

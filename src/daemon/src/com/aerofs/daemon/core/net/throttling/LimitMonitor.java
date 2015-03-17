@@ -31,10 +31,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -155,11 +155,11 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         _upperUnicastInput = upperUnicastInput;
         _lowerUnicastOutput = lowerUnicastOutput;
         _lowerInput = lowerUnicastOutput; // [sigh] HACK -> see notes above
-        _transmitMap = new HashMap<>();
+        _transmitMap = new ConcurrentHashMap<>();
         setBandwidth_(Cfg.db().getLong(Key.MAX_DOWN_RATE));
 
         Cfg.db().addListener(this);
-        _f._dlru.addEvictionListener_(this);
+        _f._dlru.addEvictionListener(this);
     }
 
     public void init_()
@@ -513,7 +513,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     //
 
     @Override
-    public void evicted_(DID d)
+    public void evicted(DID d)
     {
         TransmitInfo ti = _transmitMap.remove(d);
         if (ti != null) {
