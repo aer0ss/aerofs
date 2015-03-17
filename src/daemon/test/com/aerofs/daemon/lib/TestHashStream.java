@@ -73,7 +73,7 @@ public class TestHashStream extends AbstractTest
             @Override
             public void writeTestData(OutputStream out) throws IOException
             {
-                int chunkSize = LibParam.FILE_BLOCK_SIZE;
+                int chunkSize = (int)LibParam.FILE_BLOCK_SIZE;
                 writeRandomBytes(out, chunkSize);
                 writeRandomBytes(out, chunkSize / 2);
                 writeRandomBytes(out, chunkSize);

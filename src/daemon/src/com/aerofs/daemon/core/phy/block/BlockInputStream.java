@@ -74,7 +74,7 @@ public class BlockInputStream extends InputStream
         int newChunkIndex = (int)(newPos / LibParam.FILE_BLOCK_SIZE);
         if (newChunkIndex != _chunkIndex) {
             _chunkIndex = newChunkIndex;
-            _pos = _chunkIndex * LibParam.FILE_BLOCK_SIZE;
+            _pos = (long)_chunkIndex * LibParam.FILE_BLOCK_SIZE;
             closeInputStream();
         }
         if (_in == null) resetInputStream();

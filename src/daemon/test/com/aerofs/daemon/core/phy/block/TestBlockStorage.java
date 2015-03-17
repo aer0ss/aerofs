@@ -861,7 +861,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         verify(bsb, times(4))
                 .putBlock(any(ContentBlockHash.class), any(InputStream.class),
-                        eq((long)LibParam.FILE_BLOCK_SIZE));
+                        eq(LibParam.FILE_BLOCK_SIZE));
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 
@@ -874,7 +874,7 @@ public class TestBlockStorage extends AbstractBlockTest
         // BlockStorageBackend.putBlock() should only be called once per *unique* chunk.
         // So we have four of the same full-size zero-block, and one that's one byte long.
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class),
-                eq((long)LibParam.FILE_BLOCK_SIZE));
+                eq(LibParam.FILE_BLOCK_SIZE));
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 

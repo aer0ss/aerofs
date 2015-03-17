@@ -34,7 +34,7 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS
 public class LibParam extends BaseParam
 {
     // the block size used for content hashing and block storage (see BlockStorage)
-    public static final int FILE_BLOCK_SIZE                  = 4 * C.MB;
+    public static final long FILE_BLOCK_SIZE                 = 4 * C.MB;
     public static final long FREQUENT_DEFECT_SENDER_INTERVAL = 30 * C.MIN;
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
     public static final long EXP_RETRY_MAX_DEFAULT           = 60 * C.SEC;
