@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.lib.properties;
+package com.aerofs.lib.configuration;
 
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.config.ConfigurationProperties;

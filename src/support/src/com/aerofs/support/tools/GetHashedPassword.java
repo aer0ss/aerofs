@@ -8,7 +8,7 @@ import com.aerofs.base.Base64;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.sp.authentication.LocalCredential;
 
 public class GetHashedPassword

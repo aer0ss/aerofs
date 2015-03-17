@@ -27,7 +27,7 @@ import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.lib.LibParam;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
@@ -48,7 +48,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class Bifrost extends Service
 {

@@ -11,7 +11,7 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.rest.auth.DelegatedUserDeviceExtractor;
 import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.auth.OAuthRequestFilter;

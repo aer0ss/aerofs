@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.listeners;
 
 import com.aerofs.base.config.PropertiesHelper;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.lib.Util;
 
 import javax.servlet.ServletContextEvent;

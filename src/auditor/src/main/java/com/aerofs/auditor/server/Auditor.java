@@ -9,7 +9,7 @@ import com.aerofs.auth.server.AeroPrincipalBinder;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 public class Auditor extends Service<AuditorConfiguration>

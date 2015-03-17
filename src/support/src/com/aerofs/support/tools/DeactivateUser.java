@@ -6,7 +6,7 @@ package com.aerofs.support.tools;
 
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.lib.properties.ServerConfigurationLoader;
+import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.protobuf.ByteString;
 
