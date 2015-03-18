@@ -45,7 +45,8 @@ public final class TestDeviceToUserMapper extends AbstractTest
     {
         // have to initialize this here so that the
         // when() call above works
-        _deviceToUserMapper = new DeviceToUserMapper(mock(TokenManager.class),
+        _deviceToUserMapper = new DeviceToUserMapper();
+        _deviceToUserMapper.inject_(mock(TokenManager.class),
                 mock(TransportRoutingLayer.class), _db, _tm);
 
         // initialize the database
