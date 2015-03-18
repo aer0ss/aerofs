@@ -75,7 +75,7 @@ def set_email(e, wait, email_host, email_port, admin_email):
     e.get('#send-verification-code-button').click()
 
     # Get verification code
-    wait.until_display('#verify-modal-code-input')
+    wait.until_display('#verify-modal-code-input', timeout=30)
     code = e.get('#verify-modal-email-input input[name="verification-code"]').get_attribute('value')
 
     # Fill the code and click Verify
