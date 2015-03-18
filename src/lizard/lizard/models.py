@@ -100,7 +100,19 @@ class Customer(db.Model, TimeStampedMixin):
                     License.modify_date.desc(),
                 ).first()
 
-        return pending_license or active_license
+        held_license = self.licenses.filter_by(state=License.states.ON_HOLD).order_by(
+                    License.is_trial.asc(),
+                    License.expiry_date.desc(),
+                    License.modify_date.desc(),
+                ).first()
+
+        ignored_license = self.licenses.filter_by(state=License.states.IGNORED).order_by(
+                    License.is_trial.asc(),
+                    License.expiry_date.desc(),
+                    License.modify_date.desc(),
+                ).first()
+
+        return pending_license or active_license or held_license or ignored_license
 
 
     def __repr__(self):
