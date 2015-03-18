@@ -44,24 +44,33 @@
                         please contact us at <a href="mailto:sales@aerofs.com">sales@aerofs.com</a>.</p>
                     <form role="form" class="form-inline" action="" method="post" name="seats">
                         {{ form.hidden_tag() }}
-                        {{ render_field(form.count, type="number", no_divs=True, label_width=5, class="form-control")}}
-                        {% if newest_license.is_trial %}
-                        <button type="submit" class="btn btn-success">Purchase licenses</button>
-                        {% else %}
-                        <button type="submit" class="btn btn-success">Change license count</button>
-                        {% endif %}
+                        <p>
+                            {{ render_field(form.count, type="number", no_divs=True, label_width=5, class="form-control")}}
+                            {% if newest_license.is_trial %}
+                        </p>
+                        <p>
+                            <button type="submit" class="btn btn-success btn-block">Purchase licenses</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-block">Change license count</button>
+                            {% endif %}
+                        </p>
                     </form>
                 <br><br>
             </div>
             <div class="col-sm-6">
                 <h4>AeroFS Private Cloud</h4>
+                <p>Current version: <b>{{ appliance_version }}</b></p>
+                <p>Visit our <a href="https://support.aerofs.com/hc/en-us/articles/201439644">release notes</a> for more information.</p>
 
-                {# TODO: note which appliance version the user has downloaded #}
-                <p><a class="btn btn-primary" href="{{ url_for('.download_image') }}">
-                    Download appliance image (v{{ appliance_version }})</a>
+                <p><a class="btn btn-primary btn-block" href="{{ url_for('.download_ova') }}">
+                    Download OVA (for VirtualBox, VMware)</a>
                 </p>
 
-                <p><a class="btn btn-default" href="{{ url_for('.download_latest_license') }}">
+                <p><a class="btn btn-primary btn-block" href="{{ url_for('.download_qcow') }}">
+                    Download QCow2 (for OpenStack, EC2)</a>
+                </p>
+
+                <p><a class="btn btn-default btn-block" href="{{ url_for('.download_latest_license') }}">
                     Download your latest license file</a>
                 </p>
 
@@ -69,11 +78,11 @@
 
                 <h4>AeroFS for MobileIron</h4>
 
-                <p><a class="btn btn-default" href="{{ mi_android_download }}">
+                <p><a class="btn btn-default btn-block" href="{{ mi_android_download }}">
                     Download Android Application</a>
                 </p>
 
-                <p><a class="btn btn-default" target="_blank" href="{{ mi_ios_app_store }}">
+                <p><a class="btn btn-default btn-block" target="_blank" href="{{ mi_ios_app_store }}">
                     iOS App on the App Store</a>
                 </p>
             </div>

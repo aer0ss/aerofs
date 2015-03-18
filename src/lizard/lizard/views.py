@@ -529,13 +529,19 @@ def administrators():
             form=forms.InviteForm(),
             )
 
-
-@blueprint.route("/download_image", methods=["GET"])
+@blueprint.route("/download_ova", methods=["GET"])
 @login.login_required
-def download_image():
+def download_ova():
     version = appliance.latest_appliance_version()
     # TODO: log that this user has started downloading the OVA.
     return redirect(appliance.ova_url(version))
+
+@blueprint.route("/download_qcow", methods=["GET"])
+@login.login_required
+def download_qcow():
+    version = appliance.latest_appliance_version()
+    # TODO: log that this user has started downloading the QCow2.
+    return redirect(appliance.qcow_url(version))
 
 @blueprint.route("/download_latest_license", methods=["GET"])
 @login.login_required

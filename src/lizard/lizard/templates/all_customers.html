@@ -14,9 +14,8 @@
         {% for customer in customers %}
             <tr>
                 <td><a href="{{ url_for('.customer_actions', org_id=customer.id) }}">{{ customer.name }}</a></td>
-                <td>{{ customer.id }}</td>
                 <td>{% for admin in customer.admins.all() %}{{ admin.email }}<br>{% endfor %}</td>
-                <td><a href="{{ url_for('.customer_actions', org_id=customer.id) }}">Create new license request</a></td>
+                <td><a href="{{ url_for('.customer_actions', org_id=customer.id) }}">New license</a></td>
             </tr>
         {% endfor %}
     </table>

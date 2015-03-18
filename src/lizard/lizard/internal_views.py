@@ -92,8 +92,8 @@ def all_customers():
     customers = models.Customer.query.all()
     return render_template("all_customers.html", customers=customers)
 
-@blueprint.route("/active_customers", methods=["GET"])
-def active_customers():
+@blueprint.route("/paying_customers", methods=["GET"])
+def paying_customers():
     now = datetime.datetime.today()
     # This is possibly inefficient because group by is hard to understand/map
     # to sqlalchemy and this is internal anyway
@@ -105,17 +105,22 @@ def active_customers():
     # licenses).  Since a customer may have multiple currently-valid licenses,
     # (say, bought one year at 200 seats, then upgraded to 400 seats later that
     # year), uniquify the customer list.
-    customers = list(set([ l.customer for l in licenses ]))
+    customers = list(set([l.customer for l in licenses]))
     rows = []
+    total_paid_seats = 0
     for c in customers:
         # For each customer, we're only really interested in the most-recently-issued license
         l = models.License.query.\
                 filter(models.License.customer_id==c.id).\
                 order_by(models.License.create_date.desc()).\
                 first()
+        # To handle the case where the customer paid us at one point but no longer does (because of
+        # downgrades or grandfathering), do not append if the latest license is not paid.
+        if l.is_trial: continue
         rows.append( {"customer": c, "license": l} )
-    rows = sorted(rows, key=lambda row: row["license"].expiry_date)
-    return render_template("active_customers.html", rows=rows)
+        total_paid_seats += l.seats
+    rows = sorted(rows, key=lambda row: row["license"].seats, reverse=True)
+    return render_template("paying_customers.html", rows=rows, total_paid_seats=total_paid_seats)
 
 @blueprint.route("/download_csv", methods=["GET"])
 def download_license_request_csv():
