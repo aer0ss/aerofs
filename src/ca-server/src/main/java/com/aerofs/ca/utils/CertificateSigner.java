@@ -72,7 +72,7 @@ public class CertificateSigner {
         Date startDate = dates.getTime();
         dates.add(Calendar.YEAR, 10);
         Date endDate = dates.getTime();
-        BigInteger serialNumber = BigInteger.valueOf(new Random().nextLong());
+        BigInteger serialNumber = BigInteger.valueOf(Math.abs(new Random().nextLong()));
         X500Name caName = new X500Name("C=US, ST=California, L=San Francisco, O=aerofs.com, CN=" + randomDN());
 
         X509v3CertificateBuilder certGen =

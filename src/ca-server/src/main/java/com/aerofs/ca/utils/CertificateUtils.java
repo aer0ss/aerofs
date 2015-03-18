@@ -44,6 +44,13 @@ public class CertificateUtils
         }
     }
 
+    // converted to the form we normally store certs in external.properties
+    public static String encodeCertForSavingToFile(X509CertificateHolder cert)
+            throws IOException, CertificateException
+    {
+        return new String(x509ToPEM(cert)).trim().replace("\n", "\\n");
+    }
+
     public static byte[] csrToPEM(PKCS10CertificationRequest csr)
             throws IOException
     {

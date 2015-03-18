@@ -17,7 +17,6 @@ import datetime
 PWD = os.path.abspath(os.path.dirname(__file__))
 PROPERTIES_EXTERNAL = os.path.join(PWD, "properties", "external.properties")
 PROPERTIES_EXTERNAL_TMP = os.path.join(PWD, "properties","external.properties.tmp")
-CACERT_PATH = "/etc/ssl/certs/AeroFS_CA.pem"
 MODIFIED_TIME_KEY = "properties_modification_time"
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
@@ -98,19 +97,9 @@ def write_dict_to_file(d, tmpfilename, dstfilename):
 def get_external_variables():
     return read_dict_from_file(PROPERTIES_EXTERNAL)
 
-def get_ca_cert_as_dict():
-    d = {}
-    if os.path.exists(CACERT_PATH):
-        with open(CACERT_PATH) as f:
-            root_cert = f.read().replace("\n", "\\n")
-            d["base_ca_cert"] = root_cert
-    return d
-
 def get_template_kv_pairs():
     # Get explicit user-provided properties
     d = get_external_variables()
-    # Add CA cert, if available
-    d = dict(d, **get_ca_cert_as_dict())
     # Add properties from license file
     d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
     for k, v in current_license_info.iteritems():

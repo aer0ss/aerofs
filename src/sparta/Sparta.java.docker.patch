@@ -1,4 +1,4 @@
-@@ -220,7 +220,7 @@
+@@ -210,7 +210,7 @@
              {
                  NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2);
                  return VerkehrClient.create(

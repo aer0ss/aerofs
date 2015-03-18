@@ -6,4 +6,4 @@
 +    mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
  
      echo ">>> Backing up CA files..."
-     cp -a /opt/ca/prod aerofs-db-backup/ca-files
+     mkdir -p aerofs-db-backup/ca-files

@@ -180,7 +180,7 @@ containers:
       detach: true
       # sysctl requires privilege
       privileged: true
-      # for deployment secret and copying cacert
+      # for deployment secret
       volumes-from:
         - data
       link:
@@ -196,7 +196,7 @@ containers:
         - "8084:8084"
       detach: true
       volumes-from:
-        # For /opt/ca/prod/cacert.pem and deployment secret
+        # For deployment secret
         - data
       link:
         - ca:ca.service
@@ -234,7 +234,7 @@ containers:
     run:
       detach: true
       volumes-from:
-        # For /opt/ca/prod/cacert.pem and deployment secret
+        # For deployment secret
         - data
       link:
         - config:config.service

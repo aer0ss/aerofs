@@ -3,11 +3,10 @@ set -e
 
 if [ $# -ne 1 ]; then
     echo "Copy AeroFS CA's root cert to \$1/cacert.pem."
-    echo "It requires the container to mount CA's data volume (for now)."
+    echo "It requires the container to depend on CA's container."
     echo "Usage: $0 <path>"
     exit 1
 fi
 
-# PREDOCKER it should call CA's API rather than accessing CA's data volume.
-echo "Copying cacert.pem..."
-cp /opt/ca/prod/cacert.pem "$1"/cacert.pem
+echo "Downloading cacert.pem..."
+curl --fail -o "$1"/cacert.pem http://ca.service:9002/prod/cacert.pem
