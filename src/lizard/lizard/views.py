@@ -477,6 +477,10 @@ def dashboard():
 
     newest_license = customer.newest_license()
 
+    if newest_license is None:
+        flash('Sorry, we found a problem with your license request. Please contact us at support@aerofs.com', "error")
+        return redirect(url_for(".login_page"))
+
     form = forms.LicenseCountForm(count=(customer.renewal_seats or newest_license.seats))
     if form.validate_on_submit():
         requested_license_count = int(form.count.data)
