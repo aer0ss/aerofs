@@ -12,7 +12,6 @@ import com.aerofs.ca.utils.CertificateUtils;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import org.slf4j.Logger;
 
 import javax.annotation.security.RolesAllowed;
