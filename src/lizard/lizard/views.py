@@ -106,12 +106,13 @@ def signup_request_page():
             db.session.add(record)
             db.session.commit()
         emails.send_verification_email(form.email.data, record.signup_code)
-        flash("https://go.pardot.com/l/32882/2014-03-27/bjxp?first_name={}&last_name={}&email={}&company={}&phone={}"
+        flash("https://go.pardot.com/l/32882/2014-03-27/bjxp?first_name={}&last_name={}&email={}&company={}&phone={}&deployment_environment={}"
                 .format(urllib.quote(record.first_name.encode('utf-8')),
                         urllib.quote(record.last_name.encode('utf-8')),
                         urllib.quote(record.email.encode('utf-8')),
                         urllib.quote(record.company_name.encode('utf-8')),
-                        urllib.quote(record.phone_number.encode('utf-8')))
+                        urllib.quote(record.phone_number.encode('utf-8')),
+                        urllib.quote(form.deployment_environment.data.encode('utf-8')))
                 ,"pardot")
         return redirect(url_for(".signup_request_done"))
     return render_template("request_signup.html",

@@ -13,6 +13,7 @@
         {{ render_field(form.company_name, type="text") }}
         {{ render_field(form.job_title, type="text") }}
         {{ render_field(form.phone_number, type="phone") }}
+        {{ render_field(form.deployment_environment, type="text") }}
         {{ eula_notice() }}
 
         {{ submit_button("Sign Up", horizontal=True) }}
