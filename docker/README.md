@@ -6,15 +6,16 @@ information, please see [this design doc](../docs/design/docker.html).
 1. Install build tools. You may run this script again at any time to upgrade the tools.
 
         $ ~/repos/aerofs/docker/dev/upgrade-tools.sh
+
+2. Restart the bash terminal for changes to take effect.
    
-2. Build and launch the appliance. The first run takes about 30 minutes. Follow-up instructions
+3. Build and launch the appliance. The first run takes about 30 minutes. Follow-up instructions
 is printed at the end of the process. [Learn Docker](https://docs.docker.com/userguide/) while
 it's in progress.
 
         $ dk-create
 
-4. Now you can rebuild and reload individual service containers. Familiarize yourself with the
-`dk-*` command family.
+4. Now you can rebuild and reload individual service containers.
 
         $ make -C src/bifrost && dk-reload bifrost
 

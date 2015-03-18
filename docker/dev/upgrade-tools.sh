@@ -67,14 +67,12 @@ if [ -z "$(vboxmanage list vms | grep "${VM}")" ]
 then
     docker-machine create -d virtualbox --virtualbox-disk-size 100000 --virtualbox-memory 3072 dev
 
-    # Set environment variables for current and futher bash processes
-    $(docker-machine env dev)
     if [ -z "$(grep 'docker-machine env ${VM}' ${HOME}/.bash_profile)" ]
     then
         echo '$(docker-machine env ${VM})' >> "${HOME}/.bash_profile"
     fi
 
-    yellow_print 'Please restart other bash terminals for settings to take effect.'
+    yellow_print 'Please restart this and all other bash terminals for settings to take effect.'
 else
     yellow_print 'Docker-machine vm already created; nothing to do.'
 fi
