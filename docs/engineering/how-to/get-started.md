@@ -38,7 +38,7 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
   * Once your AeroFS is installed, go to tray menu > Preferences... > Advanced..., and enable the Canary mode.
   * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
-  * [Download and install the AeroFS client](https://www.aerofs.com/download). 
+  * [Download and install the AeroFS client](https://www.aerofs.com/download).
   * [Accept the shared folder invitation](https://www.aerofs.com/accept).
 
 ## Install XCode
@@ -48,8 +48,9 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
 ## Install XCode command line tools
 
     $ gcc
+    $ xcode-select --install
     
-will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools.
+will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools. Note that there are _two sets_ of "command line developer tools," so one must run both commands to get both sets.
 
 ## Install JDK 8
 
@@ -76,9 +77,9 @@ It'll prompt you before it does anything, but the defaults are sane.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake
+    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
 
-    brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb $HOME/repos/aerofs/tools/protobuf.brew/protobuf.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
+    brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
     gem install kramdown jekyll
     
@@ -110,6 +111,7 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `less` is used to compile less scripts into CSS.
   * `minifier` is used to minify JavaScripts.
   * `uglify-js` is used to beautify JavaScripts.
+  * `msitools` is used to repackage Windows installers to create MSI installers.
 
 ## Update your command path
 
@@ -132,7 +134,7 @@ You may also need to manually point IntelliJ to the newly installed JDK:
 File > Project Structure... > SDKs > + > JDK
 the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
 
-You may also need to manually point IntelliK to the newly installed gradle:
+You may also need to manually point IntelliJ to the newly installed gradle:
 
 Preferences > Build, Execution, and Deployment > Built Tools > Gradle > Use local gradle distribution
 the path should be something like /usr/local/opt/gradle/libexec"
@@ -224,6 +226,7 @@ The last step may take a while (expect 30 mins). Grab a coffee from Philz, look 
 This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
 
     cd $HOME/repos/aerofs/
+    ./invoke clean proto
     gradle clean dist
     ./invoke --mode PRIVATE --product CLIENT setupenv
     approot/run ~/rtroot/user1 gui
