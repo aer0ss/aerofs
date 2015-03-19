@@ -61,7 +61,9 @@ You will generally setup your local-prod environment once, start/stop/ssh/deploy
 
     lp-create [<iface>]
 
-See the [Networking](#networking) section for an explanation of `<iface>`
+See the [Networking](#networking) section for an explanation of `<iface>`.
+
+Beware of having no multithreading flag for make set (`MAKEFLAGS="-j8"` for example), otherwise you will need to `export MAKEFLAGS="-j1"`.
 
 This command:
 
