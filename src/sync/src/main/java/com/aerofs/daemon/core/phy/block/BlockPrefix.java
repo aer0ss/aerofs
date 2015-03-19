@@ -99,7 +99,8 @@ class BlockPrefix implements IPhysicalPrefix
                     ? DigestSerializer.deserialize(_f.newChild(HASH).toByteArray(), prefixLength)
                     : BaseSecUtil.newMessageDigest();
             return new PrefixOutputStream(new ChunkingOutputStream(md), md);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException|IOException e) {
+            BlockStorage.l.warn("failed to reload hash for {}", _f, e);
             _f.deleteIgnoreErrorRecursively();
             throw e;
         }

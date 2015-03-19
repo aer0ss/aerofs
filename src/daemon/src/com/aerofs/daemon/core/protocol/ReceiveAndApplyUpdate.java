@@ -267,7 +267,7 @@ public class ReceiveAndApplyUpdate
                 // We do not have the content locally, or we do but we are receiving the update via
                 // a datagram. The datagram is fully received at this point so there is no need to
                 // read from the file system the same content we already have in memory.
-                l.debug("reading content from network");
+                l.info("{} {} dl {} bytes", msg.did(), k, totalFileLength - prefixLength);
 
                 // assert after opening the stream otherwise the file length may
                 // have changed after the assertion and before newOutputStream()
