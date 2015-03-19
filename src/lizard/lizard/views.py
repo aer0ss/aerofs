@@ -4,6 +4,8 @@ import os
 import json
 import urllib
 
+import requests
+
 from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response, session
 from flask.ext import scrypt, login
 import itsdangerous
@@ -106,14 +108,19 @@ def signup_request_page():
             db.session.add(record)
             db.session.commit()
         emails.send_verification_email(form.email.data, record.signup_code)
-        flash("https://go.pardot.com/l/32882/2014-03-27/bjxp?first_name={}&last_name={}&email={}&company={}&phone={}&deployment_environment={}"
-                .format(urllib.quote(record.first_name.encode('utf-8')),
-                        urllib.quote(record.last_name.encode('utf-8')),
-                        urllib.quote(record.email.encode('utf-8')),
-                        urllib.quote(record.company_name.encode('utf-8')),
-                        urllib.quote(record.phone_number.encode('utf-8')),
-                        urllib.quote(form.deployment_environment.data.encode('utf-8')))
-                ,"pardot")
+
+        # can post to pardot directly now that we cookie the user earlier
+        # in the process on the marketing site itself
+        pardot_params = {
+            'first_name': record.first_name.encode('utf-8'),
+            'last_name': record.last_name.encode('utf-8'),
+            'email': record.email.encode('utf-8'),
+            'company': record.company_name.encode('utf-8'),
+            'phone': record.phone_number.encode('utf-8'),
+            'deployment_environment': form.deployment_environment.data.encode('utf-8')
+        }
+        r = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
+
         return redirect(url_for(".signup_request_done"))
     return render_template("request_signup.html",
             form=form)
