@@ -2,13 +2,11 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.PostUpdate;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.injectable.InjectableDriver;
-import com.aerofs.lib.os.IOSUtil;
+import com.google.common.collect.ImmutableList;
+import com.google.inject.Injector;
 
 import javax.inject.Inject;
 
@@ -17,99 +15,123 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * This class is structurally identical to UIPostUpdateTasks.
  * TODO (WW) use the Template Methods pattern.
+ *
+ * We strive to allow old clients to be able to update to the newest release but to
+ * avoid dragging around vast amount of migration code which sometimes stand in the
+ * way of refactoring we will every now and then prune old DPUTs.
+ *
+ * Pruning may not *ever* break upgrade from releases that are less than 6 months old.
+ * Ideally all releases should be upgradable for roughly 1 year.
  */
 public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
-    private final IDaemonPostUpdateTask[] _tasks;
+    private final Injector _injector;
 
-    @Inject
-    public DaemonPostUpdateTasks(IOSUtil osutil, CfgDatabase cfgDB, IDBCW dbcw,
-            CfgLocalUser cfgUser, CfgLocalDID localDID, InjectableDriver dr)
-    {
-        _cfgDB = cfgDB;
+    private static class TOO_OLD_TO_UPGRADE implements IDaemonPostUpdateTask {
+        @Override
+        public void run() throws Exception {
+            SystemUtil.ExitCode.TOO_OLD_TO_UPGRADE.exit();
+        }
+    }
 
-        _tasks = new IDaemonPostUpdateTask[] {
-            new DPUTOptimizeCSTableIndex(dbcw),
-            null, // used to be DPUTUpdateEpochTable
-            new DPUTCreateActivityLogTables(dbcw),
-            null, // used to be DPUTUpdateSchemaForSyncStatus
-            null, // used to be DPUTAddAggregateSyncColumn
-            new DPUTMakeMTimesNaturalNumbersOnly(dbcw),
-            new DPUTGetEncodingStats(dbcw),
-            new DPUTMigrateRevisionSuffixToBase64(),
-            null, // used to be DPUTResetSyncStatus (for redis migation issue)
-            null, // used to be DPUTResetSyncStatus (account for change in vh computation)
-            null, // used to be DPUTResetSyncStatus (account for aliasing related crash)
-            new DPUTMorphStoreTables(dbcw),
-            new DPUTMigrateS3Schema(dbcw, _cfgDB),
-            null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
-            null, // used to be DPUTBreakSyncStatActivityLogDependency
-            null, // used to be DPUTResetSyncStatus (bug in AggregateSyncStatus.objectMoved_)
-            new DPUTMigrateAuxRoot(),
-            new DPUTUpdateSIDGeneration(cfgUser, dbcw),
-            null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
-            new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
-            new DPUTMarkAuxRootAsHidden(),
-            new DPUTCreateLeaveQueueTable(dbcw),
-            null,  // used to be DPUTRenameTeamServerAutoExportFolders (obsoleted by linked TS)
-            new DPUTSkipFirstLaunch(),
-            new DPUTRenameRootDirs(dbcw),
-            null,  // used to be DPUTFixExpelledAlias
-            new DPUTFixExpelledAlias(dbcw),
-            new DPUTPerPhyRootAuxRoot(),
-            new DPUTCreateCAIndex(dbcw),
-            new DPUTCreateUnlinkedRootTable(dbcw),
-            new DPUTAddStoreNameColumn(dbcw),
-            new DPUTAddContributorsTable(dbcw),
-            null,  // used to be DPUTCleanupGhostKML
-            new DPUTCleanupGhostKML(dbcw),
-            new DPUTRefreshBloomFilters(dbcw),
-            new DPUTDeleteLargeLibjingleLog(),
-            new DPUTAddTamperingDetectionTable(dbcw),
-            new DPUTCaseSensitivityHellYeah(dbcw, dr),
-            new DPUTMigrateHistoryToHex(),
-            new DPUTUpdateACLFromDiscreteRolesToFlags(dbcw),
-            new DPUTUpdateNROForAliasedAndMigrated(dbcw),
-            new DPUTFixNormalizationOSX(osutil, dbcw, dr),
-            new DPUTUpdateEpochTableAddAuditColumn(dbcw),
-            new DPUTFixCNROsOnOSX(osutil, dbcw),
-            null, // used to be DPUTResetSyncStatus
-            new DPUTFixBlockHistory(dbcw),
-            new DPUTUpdateSharedFoldersQueueTable(dbcw),
-            new DPUTUpdateCAHash(dbcw),
-            new DPUTClearSyncStatusColumns(dbcw),
-            new DPUTFixStoreContributors(dbcw),
-            new DPUTAddStoreCollectingContentColumn(dbcw),
-            new DPUTUpdateOAFlags(dbcw),
-            new DPUTAddPhysicalStagingArea(dbcw),
-            new DPUTAddLogicalStagingArea(dbcw),
-            new DPUTRemoveBackupTicks(dbcw, localDID),
-            new DPUTCleanupPrefixes(),
+    @SuppressWarnings("unchecked")
+    private final static ImmutableList<Class<? extends IDaemonPostUpdateTask>> _tasks = ImmutableList.of(
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            TOO_OLD_TO_UPGRADE.class,
+            DPUTFixStoreContributors.class,
+            DPUTAddStoreCollectingContentColumn.class,
+            DPUTUpdateOAFlags.class,
+            DPUTAddPhysicalStagingArea.class,
+            DPUTAddLogicalStagingArea.class,
+            DPUTRemoveBackupTicks.class,
+            DPUTCleanupPrefixes.class
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
 
             // only uncomment when rolling out Polaris to keep maximum flexibility
             // during dev and integration tests
-            // new DPUTAddPolarisFetchTables(dbcw),
-        };
+            // DPUTAddPolarisFetchTables.class,
+    );
+
+
+    @Inject
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, Injector inj)
+    {
+        _cfgDB = cfgDB;
+        _injector = inj;
 
         // please update this macro whenever new tasks are added
-        checkState(_tasks.length == PostUpdate.DAEMON_POST_UPDATE_TASKS);
+        checkState(_tasks.size() == PostUpdate.DAEMON_POST_UPDATE_TASKS);
     }
 
-    public void run() throws Exception
+    public void run() throws Exception {
+        run(false);
+    }
+
+    static int firstValid()
     {
+        return _tasks.lastIndexOf(TOO_OLD_TO_UPGRADE.class) + 1;
+    }
+
+    void run(boolean dryRun) throws Exception {
         // the zero value is required for oldest client to run all the tasks
         assert Key.DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
 
         int current = _cfgDB.getInt(Key.DAEMON_POST_UPDATES);
 
         // N.B: no-op if current >= tasks.length
-        for (int i = current; i < _tasks.length; i++) {
-            IDaemonPostUpdateTask task = _tasks[i];
+        for (int i = current; i < _tasks.size(); i++) {
+            IDaemonPostUpdateTask task = _injector.getInstance(_tasks.get(i));
             if (task != null) {
                 Loggers.getLogger(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
-                task.run();
+                if (!dryRun) task.run();
             }
 
             // update db after every task so if later tasks fail earlier ones won't be run again

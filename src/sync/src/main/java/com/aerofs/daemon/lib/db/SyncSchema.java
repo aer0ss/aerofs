@@ -48,12 +48,6 @@ public class SyncSchema implements ISchema
             C_PRE_DID       = "r_d",        // DID
             C_PRE_TICK      = "r_t",        // Tick
 
-            // Alias Table
-            T_ALIAS              = "al",
-            C_ALIAS_SIDX         = "al_i",  // SIndex
-            C_ALIAS_SOURCE_OID   = "al_s",  // Aliased oid
-            C_ALIAS_TARGET_OID   = "al_t",  // Target
-
             // ACL Table
             T_ACL            = "a",
             C_ACL_SIDX       = "a_i",       // SIndex
@@ -115,19 +109,6 @@ public class SyncSchema implements ISchema
                 ")" + dbcw.charSet());
 
         s.executeUpdate(
-                "create table " + T_ALIAS + " (" +
-                 C_ALIAS_SIDX + " integer not null," +
-                 C_ALIAS_SOURCE_OID + dbcw.uniqueIdType() + " not null, " +
-                 C_ALIAS_TARGET_OID + dbcw.uniqueIdType() + " not null, " +
-                 "primary key (" + C_ALIAS_SIDX + "," + C_ALIAS_SOURCE_OID + ")" +
-                 ")" + dbcw.charSet());
-
-        // for resolveAliasChaining_()
-        s.executeUpdate(
-                "create index " + T_ALIAS + "0 on " + T_ALIAS +
-                    "(" + C_ALIAS_SIDX + "," + C_ALIAS_TARGET_OID + ")");
-
-        s.executeUpdate(
                 "create table " + T_ACL + " (" +
                 C_ACL_SIDX + " integer not null, " +
                 C_ACL_SUBJECT + dbcw.userIdType() + " not null, " +
@@ -158,7 +139,26 @@ public class SyncSchema implements ISchema
                             LibParam.INITIAL_AUDIT_PUSH_EPOCH +
                         ")");
 
-        createStoreTables(s, dbcw);
+        s.executeUpdate(
+                "create table " + T_STORE + "(" +
+                        C_STORE_SIDX + " integer primary key," +
+                        C_STORE_NAME + dbcw.nameType() + "," +
+                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null" +
+                        ")" + dbcw.charSet());
+
+        s.executeUpdate(
+                "create table " + T_SH + "(" +
+                        C_SH_SIDX + " integer not null," +
+                        C_SH_PARENT_SIDX + " integer not null," +
+                        "unique (" + C_SH_SIDX + "," + C_SH_PARENT_SIDX + ")" +
+                        ")" + dbcw.charSet());
+
+        // for getParents()
+        s.executeUpdate(
+                "create index " + T_SH + "0 on " + T_SH + "(" + C_SH_SIDX + ")");
+
+        // for getChildren()
+        s.executeUpdate("create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
 
 
         s.executeUpdate(
@@ -187,30 +187,5 @@ public class SyncSchema implements ISchema
     public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
     {
         // TODO:
-    }
-
-    public static void createStoreTables(Statement s, IDBCW dbcw)
-            throws SQLException
-    {
-        s.executeUpdate(
-                "create table " + T_STORE + "(" +
-                        C_STORE_SIDX + " integer primary key," +
-                        C_STORE_NAME + dbcw.nameType() + "," +
-                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null" +
-                        ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table " + T_SH + "(" +
-                        C_SH_SIDX + " integer not null," +
-                        C_SH_PARENT_SIDX + " integer not null," +
-                        "unique (" + C_SH_SIDX + "," + C_SH_PARENT_SIDX + ")" +
-                        ")" + dbcw.charSet());
-
-        // for getParents()
-        s.executeUpdate(
-                "create index " + T_SH + "0 on " + T_SH + "(" + C_SH_SIDX + ")");
-
-        // for getChildren()
-        s.executeUpdate("create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
     }
 }

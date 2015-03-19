@@ -9,7 +9,6 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
@@ -81,6 +80,12 @@ public class CoreSchema extends SyncSchema
             // This deprecated fields are still in old databases. See DPUTClearSyncStatusColumns
             // C_OA_SYNC     = "o_st",      // blob. syncstatus bitvector
             // C_OA_AG_SYNC  = "o_as",      // blob. aggregate sync status (folder only)
+
+            // Alias Table
+            T_ALIAS              = "al",
+            C_ALIAS_SIDX         = "al_i",  // SIndex
+            C_ALIAS_SOURCE_OID   = "al_s",  // Aliased oid
+            C_ALIAS_TARGET_OID   = "al_t",  // Target
 
             // Max ticks
             T_MAXTICK          = "t",
@@ -172,10 +177,7 @@ public class CoreSchema extends SyncSchema
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException
     {
-        // TODO (AAG) all updates have to detect MySQL and use engine=InnoDB
-        assert !dbcw.isMySQL();
-
-        // TODO use strict affinity once it's implemented in sqlite
+        super.create_(s, dbcw);
 
         // NB. adding "unique (C_VER_DID, C_VER_TICK)" may change the behavior
         // of "replace" statements
@@ -245,14 +247,26 @@ public class CoreSchema extends SyncSchema
                     "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
                 ")" + dbcw.charSet());
 
-
         s.executeUpdate(
-                "create table " + T_SID + "(" +
-                    C_SID_SIDX + " integer primary key " + dbcw.autoIncrement() +"," +
-                    C_SID_SID + dbcw.uniqueIdType() + " unique not null" +
-                ")" + dbcw.charSet());
+                "create table " + T_OA + "(" +
+                        C_OA_SIDX + " integer not null," +
+                        C_OA_OID + dbcw.uniqueIdType() + " not null," +
+                        C_OA_NAME + dbcw.nameType() + " not null," +
+                        C_OA_PARENT + dbcw.uniqueIdType() + " not null," +
+                        C_OA_TYPE + " integer not null, " +
+                        C_OA_FID + dbcw.fidType(_dr.getFIDLength()) + "," +
+                        C_OA_FLAGS + " integer not null," +
+                        "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
+                        ")" + dbcw.charSet());
 
-        createOATableAndIndices_(s, dbcw, _dr);
+        // for name conflict detection and getChild()
+        s.executeUpdate(
+                "create unique index " + T_OA + "0 on " + T_OA +
+                        "(" + C_OA_SIDX + "," + C_OA_PARENT + "," + C_OA_NAME + ")");
+
+        // for getSOID_(FID), and for uniqueness constraint on FIDs
+        s.executeUpdate(
+                "create unique index " + T_OA + "1 on " + T_OA + "(" + C_OA_FID + ")");
 
         s.executeUpdate(
                 "create table " + T_CA + "(" +
@@ -267,18 +281,8 @@ public class CoreSchema extends SyncSchema
                 ")" + dbcw.charSet());
 
         // for getAllNonMasterBranches_()
-        createCAIndex(s);
-
-        s.executeUpdate(
-                "create table " + T_PRE + "(" +
-                    C_PRE_SIDX + " integer not null," +
-                    C_PRE_OID + dbcw.uniqueIdType() + " not null," +
-                    C_PRE_KIDX + " integer not null," +
-                    C_PRE_DID + dbcw.uniqueIdType() + " not null," +
-                    C_PRE_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_PRE_SIDX + "," + C_PRE_OID + "," +
-                        C_PRE_KIDX + "," + C_PRE_DID + ")" +
-                ")" + dbcw.charSet());
+        s.executeUpdate("create index if not exists "
+                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
 
         /*
          * The mt (maxticks) table was created to solve performance problems with the GetVers query.
@@ -322,7 +326,14 @@ public class CoreSchema extends SyncSchema
                 "unique (" + C_CS_SIDX + "," + C_CS_OID + "," + C_CS_CID + ")" +
                 ")" + dbcw.charSet());
 
-        createIndexForCSTable(s);
+        // for getAllCS_()
+        s.executeUpdate(
+                // (sidx,cs_cs,oid,cid) is required as an index, so the queries of
+                // "sidx=#, order by cs_cs" in the callers of getFromCSImpl_()
+                // do not require a temporary b-tree
+                "create index " + T_CS + "0 on "
+                        + T_CS + "(" + C_CS_SIDX + "," + C_CS_CS + "," + C_CS_OID + ","
+                        + C_CS_CID + ")");
 
         s.executeUpdate(
                 "create table " + T_CF + " (" +
@@ -389,185 +400,44 @@ public class CoreSchema extends SyncSchema
                 "primary key (" + C_EX_SIDX + "," + C_EX_OID + ")" +
                 ")" + dbcw.charSet());
 
-        s.executeUpdate(
-                "create table " + T_ACL + " (" +
-                C_ACL_SIDX + " integer not null, " +
-                C_ACL_SUBJECT + dbcw.userIdType() + " not null, " +
-                C_ACL_ROLE + dbcw.roleType() + " not null, " +
-                "primary key (" + C_ACL_SIDX + "," + C_ACL_SUBJECT + ")" +
+        // "if not exists" is needs since the method is used by a DPUT, which requires this method
+        // to be idempotent.
+        s.executeUpdate("create table if not exists " + T_AL + "(" +
+                C_AL_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
+                C_AL_SIDX + " integer not null," +
+                C_AL_OID + dbcw.uniqueIdType() + "not null," +
+                C_AL_TYPE + " integer not null," +
+                C_AL_PATH + " text not null," +
+                C_AL_PATH_TO + " text," +
+                C_AL_DIDS + " blob not null," +
+                C_AL_TIME + dbcw.longType() + " not null" +
                 ")" + dbcw.charSet());
 
-        // NOTE: although auditing is disabled in
-        // hybrid installations, it's OK to create
-        // an additional column for it.
-        // this simplifies the code here and imposes
-        // no cost. Moreover, this allows us to
-        // use the identical db schema across installation
-        // types
-        s.executeUpdate(
-                "create table " + T_EPOCH + " (" +
-                        C_EPOCH_ACL        + dbcw.longType() + " not null," +
-                        C_EPOCH_AUDIT_PUSH + dbcw.longType() + " not null" +
-                        ")" + dbcw.charSet());
-        s.executeUpdate(
-                "insert into " + T_EPOCH +
-                        " (" +
-                            C_EPOCH_ACL + "," +
-                            C_EPOCH_AUDIT_PUSH +
-                        ")" +
-                        " values("+
-                            LibParam.INITIAL_ACL_EPOCH + "," +
-                            LibParam.INITIAL_AUDIT_PUSH_EPOCH +
-                        ")");
-
-        createStoreTables(s, dbcw);
-        createActivityLogTables(s, dbcw);
-        createUpdateQueueTable(s, dbcw);
-        createUnlinkedRootTable(s, dbcw);
-        createStoreContributorsTable(s, dbcw);
-        createLogicalStagingArea(s, dbcw);
-    }
-
-    public static void createOATableAndIndices_(Statement s, IDBCW dbcw, InjectableDriver dr)
-            throws SQLException
-    {
-        s.executeUpdate(
-                "create table " + T_OA  + "(" +
-                        C_OA_SIDX + " integer not null," +
-                        C_OA_OID + dbcw.uniqueIdType() + " not null," +
-                        C_OA_NAME + dbcw.nameType() + " not null," +
-                        C_OA_PARENT + dbcw.uniqueIdType() + " not null," +
-                        C_OA_TYPE + " integer not null, " +
-                        C_OA_FID + dbcw.fidType(dr.getFIDLength()) + "," +
-                        C_OA_FLAGS + " integer not null," +
-                        "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
-                        ")" + dbcw.charSet());
-
-        // for name conflict detection and getChild()
-        s.executeUpdate(
-                "create unique index " + T_OA + "0 on " + T_OA +
-                        "(" + C_OA_SIDX + "," + C_OA_PARENT + "," + C_OA_NAME + ")");
-
-        // for getSOID_(FID), and for uniqueness constraint on FIDs
-        s.executeUpdate(
-                "create unique index " + T_OA + "1 on " + T_OA + "(" + C_OA_FID + ")");
-    }
-
-    public static void createStoreContributorsTable(Statement s, IDBCW dbcw)
-            throws SQLException
-    {
-        s.executeUpdate(
-                "create table " + T_SC + "(" +
-                        C_SC_SIDX + " integer," +
-                        C_SC_DID + " blob," +
-                        "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
-                        ")" + dbcw.charSet());
-    }
-
-    @Override
-    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
-    {
-        new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
-    }
-
-    public static void createStoreTables(Statement s, IDBCW dbcw)
-            throws SQLException
-    {
-        s.executeUpdate(
-                "create table " + T_STORE + "(" +
-                        C_STORE_SIDX + " integer primary key," +
-                        C_STORE_NAME + dbcw.nameType() + "," +
-                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null" +
-                        ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table " + T_SH + "(" +
-                        C_SH_SIDX + " integer not null," +
-                        C_SH_PARENT_SIDX + " integer not null," +
-                        "unique (" + C_SH_SIDX + "," + C_SH_PARENT_SIDX + ")" +
-                        ")" + dbcw.charSet());
-
-        // for getParents()
-        s.executeUpdate(
-                "create index " + T_SH + "0 on " + T_SH + "(" + C_SH_SIDX + ")");
-
-        // for getChildren()
-        s.executeUpdate("create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
-    }
-
-    public static void createUpdateQueueTable(Statement s, IDBCW dbcw) throws SQLException
-    {
         s.executeUpdate("create table if not exists " + T_SPQ + "(" +
                 C_SPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                 C_SPQ_SID + dbcw.uniqueIdType() + " not null," +
                 C_SPQ_TYPE + " integer not null," +
                 C_SPQ_NAME + " text" +
                 ")");
-    }
 
-    public static void createUnlinkedRootTable(Statement s, IDBCW dbcw) throws SQLException
-    {
         s.executeUpdate("create table if not exists " + T_UNLINKED_ROOT + "(" +
                 C_UNLINKED_ROOT_SID + dbcw.uniqueIdType() + " not null primary key," +
                 C_UNLINKED_ROOT_NAME + " text not null" +
                 ")" + dbcw.charSet());
-    }
 
-
-    public static void createActivityLogTables(Statement s, IDBCW dbcw) throws SQLException
-    {
-        // "if not exists" is needs since the method is used by a DPUT, which requires this method
-        // to be idempotent.
-        s.executeUpdate(
-                "create table if not exists " + T_AL + "(" +
-                    C_AL_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                    C_AL_SIDX + " integer not null," +
-                    C_AL_OID + dbcw.uniqueIdType() + "not null," +
-                    C_AL_TYPE + " integer not null," +
-                    C_AL_PATH + " text not null," +
-                    C_AL_PATH_TO + " text," +
-                    C_AL_DIDS + " blob not null," +
-                    C_AL_TIME + dbcw.longType() + " not null" +
+        s.executeUpdate("create table " + T_SC + "(" +
+                C_SC_SIDX + " integer," +
+                C_SC_DID + " blob," +
+                "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
                 ")" + dbcw.charSet());
 
-        s.executeUpdate(
-                "create table if not exists " + T_D2U + "(" +
-                        C_D2U_DID + dbcw.uniqueIdType() + " primary key," +
-                        C_D2U_USER + dbcw.userIdType() + " not null" +
-                        ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table if not exists " + T_UN + "(" +
-                        C_UN_USER + dbcw.userIdType() + " primary key," +
-                        C_UN_FIRST_NAME + " text," +
-                        C_UN_LAST_NAME + " text," +
-                        C_UN_TIME + dbcw.longType() + " not null" +
-                        ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table if not exists " + T_DN + "(" +
-                        C_DN_DID + dbcw.uniqueIdType() + " primary key," +
-                        C_DN_NAME + " text," +
-                        C_DN_TIME + dbcw.longType() + " not null" +
-                        ")" + dbcw.charSet());
+        createLogicalStagingArea(s, dbcw);
     }
 
-    public static void createCAIndex(Statement s) throws SQLException
+    @Override
+    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
     {
-        s.executeUpdate("create index if not exists "
-                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
-    }
-
-    public static void createIndexForCSTable(Statement s) throws SQLException
-    {
-        // for getAllCS_()
-        s.executeUpdate(
-                // (sidx,cs_cs,oid,cid) is required as an index, so the queries of
-                // "sidx=#, order by cs_cs" in the callers of getFromCSImpl_()
-                // do not require a temporary b-tree
-                "create index " + T_CS + "0 on "
-                    + T_CS + "(" + C_CS_SIDX + "," + C_CS_CS + "," + C_CS_OID + ","
-                    + C_CS_CID + ")");
+        new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
     }
 
     public static void createLogicalStagingArea(Statement s, IDBCW dbcw) throws SQLException
@@ -579,5 +449,4 @@ public class CoreSchema extends SyncSchema
                 + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
                 + ")");
     }
-
 }

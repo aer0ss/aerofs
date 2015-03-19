@@ -58,18 +58,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.lib.SystemUtil.ExitCode.CORE_DB_TAMPERING;
-import static com.aerofs.lib.SystemUtil.ExitCode.CORRUPTED_DB;
-import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
-import static com.aerofs.lib.SystemUtil.ExitCode.FAIL_TO_LAUNCH;
-import static com.aerofs.lib.SystemUtil.ExitCode.FILESYSTEM_PROBE_FAILED;
-import static com.aerofs.lib.SystemUtil.ExitCode.JNOTIFY_WATCH_CREATION_FAILED;
-import static com.aerofs.lib.SystemUtil.ExitCode.RELOCATE_ROOT_ANCHOR;
-import static com.aerofs.lib.SystemUtil.ExitCode.S3_BAD_CREDENTIALS;
-import static com.aerofs.lib.SystemUtil.ExitCode.S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED;
-import static com.aerofs.lib.SystemUtil.ExitCode.SHUTDOWN_REQUESTED;
-import static com.aerofs.lib.SystemUtil.ExitCode.WINDOWS_SHUTTING_DOWN;
-import static com.aerofs.lib.SystemUtil.ExitCode.getMessage;
+import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 class DefaultDaemonMonitor implements IDaemonMonitor
 {
@@ -215,18 +204,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
                     + " - Windows is shutting down");
 
-        } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getCode()) {
-            /*
-               This exit code may happen when we try to run the DPUTMigrateAuxRoot task
-               Therefore, it can only happen here, not in onDaemonDeath()
-             */
-            // TODO: legacy migration code, should be removed when we think all users
-            // have updated past the DPUT in question (or decide not to support upgrade
-            // from such fossilized clients)
-            throw new ExUIMessage(L.product() + " couldn't launch because it couldn't " +
-                    "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
-                    L.product() + " has the appropriate permissions to write to that " +
-                    "folder.");
         } else if (exitCode == JNOTIFY_WATCH_CREATION_FAILED.getCode()) {
             throw new ExUIMessage(L.product() + " couldn't launch because it couldn't "
                     + "watch for file changes under \"" + getFailedRootPath_() + "\"\n\n"
@@ -241,6 +218,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             // TODO: use custom dialog to streamline reinstall process
             // w/ unlink, seed file gen if possible, ...
             throw new ExUIMessage(L.product() + " couldn't launch because of a corrupted database."
+                    + S.MANUAL_REINSTALL);
+        } else if (exitCode == TOO_OLD_TO_UPGRADE.getCode()) {
+            // TODO: use custom dialog to streamline reinstall process
+            // w/ unlink, seed file gen if possible, ...
+            throw new ExUIMessage(L.product() + " couldn't launch because this installation is too old."
                     + S.MANUAL_REINSTALL);
         } else if (exitCode == CORE_DB_TAMPERING.getCode()) {
             handlCoreDBTampering();

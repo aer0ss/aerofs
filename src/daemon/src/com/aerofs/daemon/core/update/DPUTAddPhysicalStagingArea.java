@@ -8,15 +8,11 @@ import com.aerofs.daemon.core.phy.linked.db.LinkedStorageSchema;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 
 public class DPUTAddPhysicalStagingArea implements IDaemonPostUpdateTask
 {
-    private final IDBCW _dbcw;
-
-    public DPUTAddPhysicalStagingArea(IDBCW dbcw)
-    {
-        _dbcw = dbcw;
-    }
+    @Inject private IDBCW _dbcw;
 
     @Override
     public void run() throws Exception

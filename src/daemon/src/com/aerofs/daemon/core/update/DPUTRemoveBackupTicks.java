@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -28,8 +29,8 @@ public class DPUTRemoveBackupTicks implements IDaemonPostUpdateTask
 {
     private final static Logger l = Loggers.getLogger(DPUTRemoveBackupTicks.class);
 
-    private final IDBCW _dbcw;
-    private final CfgLocalDID _localDID;
+    @Inject private IDBCW _dbcw;
+    @Inject private CfgLocalDID _localDID;
 
     private final static String
             // Backup Ticks
@@ -47,13 +48,6 @@ public class DPUTRemoveBackupTicks implements IDaemonPostUpdateTask
             C_IBT_IMM_TICK  = "ibt_it",     // immigrant Tick
             C_IBT_DID       = "ibt_d",      // DID
             C_IBT_TICK      = "ibt_t";      // Tick
-
-
-    public DPUTRemoveBackupTicks(IDBCW dbcw, CfgLocalDID localDID)
-    {
-        _dbcw = dbcw;
-        _localDID = localDID;
-    }
 
     @Override
     public void run() throws Exception

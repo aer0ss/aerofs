@@ -1,15 +1,18 @@
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.injectable.InjectableDriver;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.testlib.AbstractTest;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class is structurally identical to TestUIPostUpdateTasks
@@ -17,12 +20,17 @@ import com.aerofs.testlib.AbstractTest;
 public class TestDaemonPostUpdateTasks extends AbstractTest
 {
     @Mock CfgDatabase cfgDB;
-    @Mock IDBCW dbcw;
-    @Mock IStoreDatabase sdb;
-    @Mock CfgAbsDefaultAuxRoot absAuxRoot;
-    @Mock InjectableDriver dr;
+    DaemonPostUpdateTasks dput;
 
-    @InjectMocks DaemonPostUpdateTasks dput;
+    @Before
+    public void setUp() {
+        Injector inj = Guice.createInjector(binder -> {
+            binder.bind(CfgDatabase.class).toInstance(cfgDB);
+            binder.bind(IDBCW.class).toInstance(mock(IDBCW.class));
+            binder.bind(CfgLocalDID.class).toInstance(mock(CfgLocalDID.class));
+        });
+        dput = inj.getInstance(DaemonPostUpdateTasks.class);
+    }
 
     @Test
     public void shouldBeConsistentWithParam() throws Exception
@@ -34,5 +42,13 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
          * happens in the class's constructor, which is called during this test class's
          * construction, no code is needed for this test method.
          */
+    }
+
+    @Test
+    public void shouldInjectTasks() throws Exception
+    {
+        when(cfgDB.getInt(CfgDatabase.Key.DAEMON_POST_UPDATES))
+                .thenReturn(DaemonPostUpdateTasks.firstValid());
+        dput.run(true);
     }
 }

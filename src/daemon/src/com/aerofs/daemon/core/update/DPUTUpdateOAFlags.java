@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
@@ -14,12 +15,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  */
 public class DPUTUpdateOAFlags implements IDaemonPostUpdateTask
 {
-    private final IDBCW _dbcw;
-
-    public DPUTUpdateOAFlags(IDBCW dbcw)
-    {
-        _dbcw = dbcw;
-    }
+    @Inject private IDBCW _dbcw;
 
     @Override
     public void run() throws Exception

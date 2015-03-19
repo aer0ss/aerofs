@@ -6,17 +6,12 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.polaris.db.PolarisSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 public class DPUTAddPolarisFetchTables implements IDaemonPostUpdateTask
 {
-    private final IDBCW _dbcw;
-
-    public DPUTAddPolarisFetchTables(IDBCW dbcw)
-    {
-        _dbcw = dbcw;
-    }
+    @Inject private IDBCW _dbcw;
 
     @Override
     public void run() throws Exception

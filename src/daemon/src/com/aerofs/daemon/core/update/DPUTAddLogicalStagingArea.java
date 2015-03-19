@@ -6,15 +6,11 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 
 public class DPUTAddLogicalStagingArea implements IDaemonPostUpdateTask
 {
-    private final IDBCW _dbcw;
-
-    public DPUTAddLogicalStagingArea(IDBCW dbcw)
-    {
-        _dbcw = dbcw;
-    }
+    @Inject private IDBCW _dbcw;
 
     @Override
     public void run() throws Exception

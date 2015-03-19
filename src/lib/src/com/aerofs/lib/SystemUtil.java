@@ -25,7 +25,7 @@ public abstract class SystemUtil
      * This class defines custom process exit codes and corresponding user friendly error messages.
      * By convention, these codes should be in the range of 1 to 127 inclusive.
      */
-    public static enum ExitCode
+    public enum ExitCode
     {
         NORMAL_EXIT(0, "exited normally"),
 
@@ -38,8 +38,8 @@ public abstract class SystemUtil
         JINGLE_CALL_TOO_LONG(70, "jingle call too long"),
         JINGLE_TASK_FATAL_ERROR(71, "jingle task fatal error"),
         JINGLE_CHANNEL_TASK_UNCAUGHT_EXCEPTION(72, "jingle channel task had uncaught exception"),
-        DPUT_MIGRATE_AUX_ROOT_FAILED(73, "migrating the aux root failed"),
         CONFIGURATION_INIT(74, "initializing configuration failed"),
+        TOO_OLD_TO_UPGRADE(73, "client to old to upgrade"),
         CORRUPTED_DB(75, "corrupted database"),
         FAIL_TO_DETECT_ARCH(76, "failed to detect architecture"),
         ////////
