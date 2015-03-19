@@ -29,4 +29,4 @@
      add_routes(config, routes)
      config.add_route('maintenance_home', '/')
 +
-+    config.add_route('json-boot', 'json-boot/{repo}/{tag}/{target}')
++    config.add_route('json-boot', 'json-boot/{target}')

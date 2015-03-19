@@ -23,7 +23,7 @@
          function restartDeviceServices() {
              var $progress = $('#${progress_modal.id()}');
 -            runBootstrapTask('restart-services-for-device-authorization', function() {
-+            reboot('current', 'current', 'current', function() {
++            reboot('current', function() {
                  $progress.modal('hide');
                  showSuccessMessage('New configuration is saved.');
 -            }, function() {
@@ -38,7 +38,7 @@
          function restartMDMServices() {
              var $progress = $('#${progress_modal.id()}');
 -            runBootstrapTask('restart-services-for-mdm', function() {
-+            reboot('current', 'current', 'current', function() {
++            reboot('current', function() {
                  $progress.modal('hide');
                  showSuccessMessage('New configuration is saved.');
 -            }, function() {

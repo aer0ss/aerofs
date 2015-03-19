@@ -4,14 +4,13 @@
         ## Expected signatures:
         ##          function onSuccess()
         ##          function onFailure(xhr)
-        function reboot(repo, tag, target, onSuccess, onFailure) {
+        function reboot(target, onSuccess, onFailure) {
             ## Get current boot ID before rebooting
             $.get("${request.route_path('json-get-boot')}")
             .done(function(resp) {
                 var bootID = resp['id'];
-                var args = repo + "/" + tag + "/" + target;
-                console.log("reboot to " + args + ". previous boot id: " + bootID);
-                $.post("/json-boot/" + args)
+                console.log("reboot to /" + target + ". previous boot id: " + bootID);
+                $.post("/json-boot/" + target)
                 .done(function() {
                     waitForReboot(bootID, onSuccess);
                 }).fail(function(xhr, textStatus, errorThrown) {

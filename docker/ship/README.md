@@ -74,7 +74,7 @@ i.e. `docker run <image>:latest` should work for all the images.
 
 Then, define a "ship.yml" file with the following content:
 
-    loader-image: coolapp/loader
+    loader: coolapp/loader
     repo: registry.coolapp.com
     target: default
     
@@ -84,7 +84,7 @@ Then, define a "ship.yml" file with the following content:
     vm-ram-size: 3072
     vm-cpus: 2
 
-- `loader-image`: your Loader's image name. It should contain no tags or repo names.
+- `loader`: your Loader's image name. It should contain no tags or repo names.
 - `repo`: URL to your app repository.  After the initial launch, the app can change its value by calling Loader API.
 - `target`: the target container or group to be launched by the Loader. The target should exist in crane.yml.
 "default" loads the default group or all the containers if the default group is not defined. See crane's doc for
@@ -107,16 +107,15 @@ monitor its state. All API calls should prefix the URL with a version string, e.
 `GET /v1/boot`. The latest version is "v1".
   
 - `POST /boot`
-- `POST /boot/{registry}`
-- `POST /boot/{registry}/{tag}`
-- `POST /boot/{registry}/{tag}/{target}`: reboot to a specific registry, tag, and target.
-Use "current" to refer to the registry, tag, or target currently used by Loader. When a parameter
+- `POST /boot/{target}` reboots to a specific target. The Loader restarts, too,
+after returning the response to the client.
+Use "current" to refer to the target currently used by Loader. When a parameter
 is absent from the URL, "current" is used.
 The "default" target refers to the default group defined in crane.yml or all the containers if no default group is defined.
-That the command persists across host reboots. That is, on a host reboot, the Loader loads the app using the repo, tag, and target
-specified in the last `POST /boot`.
+The command persists across host reboots. That is, When the host computer restarts,
+the Loader loads the app using the target specified in the last `POST /boot`.
 
-- `GET /boot`: get boot information. It returns a JSON body as follows:
+- `GET /boot` gets boot information. It returns a JSON body as follows:
 
       {
         "id": "abcdef...",
@@ -131,11 +130,11 @@ specified in the last `POST /boot`.
     can be updated by the `POST /boot` call, and the change will be reflected after the Loader
     finishes rebooting.
 
-- `GET /containers`: return a map of container names and image names as defined in the "containers"
-section of crane.yml. The names may be altered to reflect the actual names used by the host.
+- `GET /containers` returns a map of container names and image names as defined in the "containers"
+section of crane.yml. The names may be altered to reflect actual names on the host.
 For example, registry and tag strings may be prefixed and suffixed to the names. The client may
 used the returned information to query the host about the contianers and images. The map includes
-all the containers rather than only the containers launched by the current boot target.
+all the containers defined in crane.yml rather than only those launched by the current boot target.
 
       {
         "foo-1.2.3": "registry.coolapp.com/foo:1.2.3",
@@ -143,6 +142,55 @@ all the containers rather than only the containers launched by the current boot 
         ...
       }
 
+- `POST /latest-tag/{registry}` checks for updates. It pulls the "latest" Loader image
+from the given registry and returns the tag specified by the Loader's tag file. The result
+can be retrieved using `GET /latest-tag`. Status code 202 Accepted is returned on success.
+
+- `GET /latest-tag/{registry}` returns the status of the last `POST /latest-tag`.
+It replies with one of the following responses:
+
+      202: { "status": "pulling" }
+  
+      201: {
+        "status": "done",
+        "latest": "v1.2.3"
+      }
+  
+      500: { 
+        "status": "error",
+        "error": "unable to reach host"
+      }
+      
+  It returns an error if `POST /latest-tag` has not been invoked since the last boot.
+
+- `POST /images/{registry}/{tag}` pulls all the application images of the given tag from
+the given registry. The list of the images is retrieved from the Loader image of the given tag. Status code 202 Accepted is returned on success.
+
+- `GET /images/{registry}/{tag}` returns the status of the last `POST /images`.
+It replies with one of the following responses:
+
+      202: { "status": "pulling" }
+  
+      201: { "status": "done" }
+
+      500: { 
+        "status": "error",
+        "error": "unable to reach host"
+      }
+  
+  It returns an error if `POST /images` has not been invoked since the last boot.
+    
+- `POST /switch/{registry}/{tag}/{target}` shuts down the running containers,
+and start new containers using the images at the specified registry and tag.
+Only the containers in the target group and their dependencies are launched.
+
+  A previous `POST /switch` call might have created the new containers. In this case,
+  they are restarted as is. If a contianer does not exist, its volume data will be copied
+  from the corresponding old container before the new container starts. The old container
+  is stopped before the copying, and only volumes that exist in both containers are copied.
+
+- `POST /gc` removes old containers and their volume data that are left behind from
+  `POST /switch`.
 
 
 ### Testing and CI

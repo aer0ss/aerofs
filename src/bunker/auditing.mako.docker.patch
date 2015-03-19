@@ -21,7 +21,7 @@
          function restartServices() {
              var $progress = $('#${progress_modal.id()}');
 -            runBootstrapTask('restart-services-for-auditing', function() {
-+            reboot('current', 'current', 'current', function() {
++            reboot('current', function() {
                  $progress.modal('hide');
                  showSuccessMessage('New configuration is saved.');
 -            }, function() {

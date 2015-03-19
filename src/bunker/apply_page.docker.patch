@@ -23,7 +23,7 @@
 -                hideAllModals();
 -                trackError();
 -            });
-+            reboot('current', 'current', 'default', waitForServicesReady, onFailure);
++            reboot('default', waitForServicesReady, onFailure);
 +        }
 +
 +        function waitForServicesReady() {

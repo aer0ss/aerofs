@@ -32,7 +32,7 @@
                  %endif
  
 -            runBootstrapTask(task, function() {
-+            reboot('current', 'current', target, function() {
++            reboot(target, function() {
                  ## reload the page to refresh the value of is_maintenance_mode.
                  location.reload();
 -            }, function() {

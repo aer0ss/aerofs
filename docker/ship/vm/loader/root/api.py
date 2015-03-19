@@ -47,14 +47,12 @@ def get_boot():
     )
 
 @app.route(PREFIX + "/boot", methods=["POST"])
-@app.route(PREFIX + "/boot/<repo>", methods=["POST"])
-@app.route(PREFIX + "/boot/<repo>/<tag>", methods=["POST"])
-@app.route(PREFIX + "/boot/<repo>/<tag>/<target>", methods=["POST"])
-def post_boot(repo=CURRENT, tag=CURRENT, target=CURRENT):
+@app.route(PREFIX + "/boot/<target>", methods=["POST"])
+def post_boot(target=CURRENT):
     """
     Reboot the entire system
     """
-    print 'Restarting app to {}/{}/{} (repo/tag/target)...'.format(repo, tag, target)
+    print 'Restarting app to /{}...'.format(target)
 
     if _simulate:
         print
@@ -66,12 +64,6 @@ def post_boot(repo=CURRENT, tag=CURRENT, target=CURRENT):
         shutdown_server()
 
     # For safety, update files _after_ everything shuts down.
-    if repo != CURRENT:
-        with open(_repo_file, 'w') as f:
-            f.write(repo)
-    if tag != CURRENT:
-        with open(_tag_file, 'w') as f:
-            f.write(tag)
     if target != CURRENT:
         with open(_target_file, 'w') as f:
             f.write(target)

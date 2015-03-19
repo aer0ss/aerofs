@@ -207,7 +207,7 @@ preload() {
     local RETRY=0
     while true; do
         # Ignore exit code so the current script doesn't exit if ssh disconnect.
-        ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader-image') $(yml 'repo') ${DONE_FILE}" || true
+        ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader') $(yml 'repo') ${DONE_FILE}" || true
         if [ "$(ssh ${SSH_ARGS} "ls ${DONE_FILE}")" ]; then
             ssh ${SSH_ARGS} "sudo rm ${DONE_FILE} ${PRELOAD_SCRIPT}"
             break
@@ -305,7 +305,7 @@ main() {
     OUTPUT=$(abspath "${OUTPUT}")
 
     local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
-    local LOADER_IMAGE=$(yml 'loader-image')
+    local LOADER_IMAGE=$(yml 'loader')
     local VM=shipenterprise-build-vm
     local FINAL_VM=$(yml 'vm-image-name')
     local VM_BASE_DIR="${OUTPUT}/preloaded/vm"

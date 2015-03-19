@@ -15,6 +15,8 @@ alias dk-reconfig="${DEV_DIR}/dk-create.sh nobuild"
 # Do not recreate Data container. Otherwise you need to run dk-reconfig to reconfig the system
 alias dk-reload="${DEV_DIR}/dk-reload.sh"
 
+alias dk-exec="docker exec -it"
+
 # Remove, start, stop, and restart all containers
 alias dk-destroy="${DEV_DIR}/dk-destroy.sh"
 alias dk-start="${DEV_DIR}/crane.sh run -dall"

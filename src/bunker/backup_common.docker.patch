@@ -38,7 +38,7 @@
 +        ## responsibility to exit the mode if necessary.
 +        function backup(onBackupDone) {
              $('#${progress_modal.id()}').modal('show');
-+            reboot('current', 'current', 'maintenance', function() {
++            reboot('maintenance', function() {
 +                performBackup(onBackupDone);
 +            }, failed);
 +        }

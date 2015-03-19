@@ -48,10 +48,6 @@ def post_boot(request):
     """
     Reboot
     """
-    r = requests.post(LOADER_URL + '/boot/{}/{}/{}'.format(
-        request.matchdict['repo'],
-        request.matchdict['tag'],
-        request.matchdict['target'],
-    ))
+    r = requests.post(LOADER_URL + '/boot/{}'.format(request.matchdict['target']))
     r.raise_for_status()
     return {}

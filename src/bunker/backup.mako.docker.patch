@@ -17,7 +17,7 @@
      <script>
          function maintenanceExit(onSuccess, onFailure) {
 -            runBootstrapTask('maintenance-exit', onSuccess, onFailure);
-+            reboot('current', 'current', 'default', onSuccess, function(xhr) {
++            reboot('default', onSuccess, function(xhr) {
 +                showErrorMessageFromResponse(xhr);
 +                onFailure();
 +            });

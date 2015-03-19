@@ -69,9 +69,14 @@ wait_for_url() {
     local URL="http://${IP}:${PORT}"
     (set +x
         echo "Waiting for ${URL} readiness..."
+        local START=$(date +"%s")
         while true; do
             BODY="$(curl -s --connect-timeout 1 ${URL} || true)"
             [[ "${BODY}" ]] && break
+            if [ $(($(date +"%s")-START)) -gt 300 ]; then
+                echo "ERROR: Timeout when waiting for ${URL} readiness"
+                exit 22
+            fi
             sleep 1
         done
     )

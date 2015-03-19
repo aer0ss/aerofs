@@ -28,7 +28,7 @@ if __name__ == "__main__":
     with open(argv[2], 'w') as f:
         f.write(env.get_template('cloud-config.yml.jinja').render(
             hostname=y['vm-host-name'],
-            loader_image=y['loader-image'],
+            loader_image=y['loader'],
             swap_size=y['vm-swap-size'],
             repo=y['repo'],
             tag=argv[4],
