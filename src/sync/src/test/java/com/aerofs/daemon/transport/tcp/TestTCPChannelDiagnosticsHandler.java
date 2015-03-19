@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.defects.AutoDefect;
+import com.aerofs.defects.DefectFactory;
+import com.aerofs.defects.MockDefects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.transport.lib.ChannelData;
@@ -60,6 +63,8 @@ public final class TestTCPChannelDiagnosticsHandler
     public void setup()
             throws Exception
     {
+        MockDefects.init(mock(DefectFactory.class), mock(AutoDefect.class));
+
         // setup some
         when(channel.getPipeline()).thenReturn(pipeline);
         when(channel.getCloseFuture()).thenReturn(closeFuture);
