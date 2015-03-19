@@ -504,7 +504,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * Watches the daemon process and exits only when the daemon has stopped.
      *
      * @param proc The daemon process
-     * @throws Exception
      */
     private void watchDaemonProcess(@Nonnull Process proc) throws IOException
     {
@@ -564,6 +563,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         _stopping = true;
 
         l.warn("stop daemon");
+
+        // try a clean shutdown first, to minimize likelihood of data corruption
+        try {
+            UIGlobals.ritual().shutdown(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            l.warn("clean shutdown failed", e);
+        }
 
         kill();
     }

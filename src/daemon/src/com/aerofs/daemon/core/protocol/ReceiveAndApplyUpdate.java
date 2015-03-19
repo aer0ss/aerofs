@@ -214,6 +214,18 @@ public class ReceiveAndApplyUpdate
         final PrefixOutputStream prefixStream = createPrefixOutputStreamAndUpdatePrefixState_(
                 prefix, k, vRemote, prefixLength, matchingLocalBranch != null, isStreaming);
 
+        // PrefixOutputStream relies on close() being called to preserve the SHA256 internal
+        // state. If the internal state is not saved properly, further attempt to reopen the
+        // prefix will fail as it will be considered corrupted.
+        // Unfortunately the UI will sometimes stop the daemon, for instance when installing
+        // an update or relocating the root anchor. To avoid losing wasting progress made on
+        // ongoing downloads we use a shutdown hook to maximize the likelihood of the prefix
+        // stream being cleanly closed in such circumstances.
+        Thread prefixCloser = new Thread(() -> {
+            try { prefixStream.close(); } catch (IOException e) {}
+        });
+        Runtime.getRuntime().addShutdownHook(prefixCloser);
+
         try {
             if (matchingLocalBranch != null && isStreaming) {
                 // We have this file locally and we are receiving the remote content via a stream.
@@ -305,6 +317,7 @@ public class ReceiveAndApplyUpdate
             }
         } finally {
             prefixStream.close();
+            Runtime.getRuntime().removeShutdownHook(prefixCloser);
         }
         return prefixStream.digest();
     }
