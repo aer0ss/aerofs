@@ -153,7 +153,10 @@ public class MightCreate
         }
 
         // ignore files for which we cannot get an FID
-        if (fnt == null) return Result.IGNORED;
+        if (fnt == null) {
+            l.info("ignore {}", pcPhysical._absPath);
+            return Result.IGNORED;
+        }
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
         if (shouldIgnoreChildren_(pcPhysical, parent)) {
