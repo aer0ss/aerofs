@@ -5,6 +5,7 @@
 package com.aerofs.audit.client;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -38,7 +39,7 @@ public class AuditorFactory
     /**
      * Create an unauthenticated client - can only be used by trusted server-side processes (SP).
      */
-    public static IAuditorClient createUnauthenticated()
+    public static IAuditorClient createAuthenticatedWithSharedSecret(String serviceName, String deploymentSecret)
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT && Audit.AUDIT_ENABLED) {
             try {
@@ -55,6 +56,8 @@ public class AuditorFactory
                         conn.setConnectTimeout(Audit.CONN_TIMEOUT);
                         conn.setReadTimeout(Audit.READ_TIMEOUT);
                         conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
+                        String authHeader = AeroService.getHeaderValue(serviceName, deploymentSecret);
+                        conn.addRequestProperty(HttpHeaders.AUTHORIZATION, authHeader);
                         conn.setDoOutput(true);
                         conn.connect();
                         return conn;
@@ -65,7 +68,7 @@ public class AuditorFactory
             }
         }
 
-        return clientDisabled();
+        return createNoopClient();
     }
 
     /**
@@ -73,7 +76,7 @@ public class AuditorFactory
      * and (b) include the required/expected HTTP header fields for authentication.
      * See HttpRequestAuthenticator.
      */
-    public static IAuditorClient createAuthenticated()
+    public static IAuditorClient createAuthenticatedWithDeviceCert()
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT && Audit.AUDIT_ENABLED) {
             l.info("Secure connection to public audit server at {}", Audit.PUBLIC_EVENT_URL);
@@ -101,10 +104,10 @@ public class AuditorFactory
             };
         }
 
-        return clientDisabled();
+        return createNoopClient();
     }
 
-    private static IAuditorClient clientDisabled()
+    public static IAuditorClient createNoopClient()
     {
         l.info("Audit service is disabled");
         return content -> { };

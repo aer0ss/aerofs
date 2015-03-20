@@ -24,7 +24,7 @@ public class ACLNotificationPublisher
     private final VerkehrClient _vk;
 
     @Inject
-    ACLNotificationPublisher(User.Factory factUser, VerkehrClient vk)
+    public ACLNotificationPublisher(User.Factory factUser, VerkehrClient vk)
     {
         _factUser = factUser;
         _vk = vk;

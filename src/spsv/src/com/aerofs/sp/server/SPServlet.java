@@ -1,6 +1,9 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.auth.client.shared.AeroService;
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
@@ -10,7 +13,6 @@ import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.DoPostDelegate;
-import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
@@ -59,7 +61,10 @@ import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.flyway.core.Flyway;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -68,6 +73,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -76,6 +82,8 @@ import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SPServlet extends AeroServlet
 {
@@ -83,147 +91,199 @@ public class SPServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final PooledSQLConnectionProvider _sqlConProvider = new PooledSQLConnectionProvider();
-    private final SQLThreadLocalTransaction _sqlTrans = new SQLThreadLocalTransaction(_sqlConProvider);
+    private final PooledSQLConnectionProvider _sqlConProvider;
+    private final SQLThreadLocalTransaction _sqlTrans;
 
     // TODO (WW) remove dependency on these database classes
-    private final SPDatabase _db = new SPDatabase(_sqlTrans);
-    private final OrganizationDatabase _odb = new OrganizationDatabase(_sqlTrans);
-    private final UserDatabase _udb = new UserDatabase(_sqlTrans);
-    private final TwoFactorAuthDatabase _tfdb = new TwoFactorAuthDatabase(_sqlTrans);
-    private final DeviceDatabase _ddb = new DeviceDatabase(_sqlTrans);
-    private final CertificateDatabase _certdb = new CertificateDatabase(_sqlTrans);
-    private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_sqlTrans);
-    private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_sqlTrans);
-    private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
-    private final UrlSharingDatabase _usdb = new UrlSharingDatabase(_sqlTrans);
-    private final UserSettingsTokenDatabase _ustdb = new UserSettingsTokenDatabase(_sqlTrans);
-    private final GroupDatabase _gdb = new GroupDatabase(_sqlTrans);
-    private final GroupMembersDatabase _gmdb = new GroupMembersDatabase(_sqlTrans);
-    private final GroupSharesDatabase _gsdb = new GroupSharesDatabase(_sqlTrans);
+    private final SPDatabase _db;
+    private final OrganizationDatabase _odb;
+    private final UserDatabase _udb;
+    private final TwoFactorAuthDatabase _tfdb;
+    private final DeviceDatabase _ddb;
+    private final CertificateDatabase _certdb;
+    private final EmailSubscriptionDatabase _esdb;
+    private final SharedFolderDatabase _sfdb;
+    private final OrganizationInvitationDatabase _oidb;
+    private final UrlSharingDatabase _usdb;
+    private final UserSettingsTokenDatabase _ustdb;
+    private final GroupDatabase _gdb;
+    private final GroupMembersDatabase _gmdb;
+    private final GroupSharesDatabase _gsdb;
 
-    private final ThreadLocalRequestProvider _requestProvider =
-            new ThreadLocalRequestProvider();
-    private final ThreadLocalHttpSessionProvider _sessionProvider =
-            new ThreadLocalHttpSessionProvider();
+    private final ThreadLocalRequestProvider _requestProvider;
+    private final ThreadLocalHttpSessionProvider _sessionProvider;
 
 
-    private final CertificateGenerator _certgen = new CertificateGenerator();
-    private final CertificateAuthenticator _certauth =
-            new CertificateAuthenticator(_requestProvider);
-    private final RequestRemoteAddress _remoteAddress = new RequestRemoteAddress(_requestProvider);
+    private final CertificateGenerator _certgen;
+    private final CertificateAuthenticator _certauth;
+    private final RequestRemoteAddress _remoteAddress;
 
-    private final Organization.Factory _factOrg = new Organization.Factory();
-    private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
-    private final Certificate.Factory _factCert = new Certificate.Factory(_certdb);
-    private final Device.Factory _factDevice = new Device.Factory();
-    private final OrganizationInvitation.Factory _factOrgInvite =
-            new OrganizationInvitation.Factory();
-    private final License _license = new License();
-    private final User.Factory _factUser = new User.Factory();
-    private final UrlShare.Factory _factUrlShare = new UrlShare.Factory(_usdb);
-    private final UserSettingsToken.Factory _factUserSettingsToken = new UserSettingsToken.Factory();
-    private final Group.Factory _factGroup = new Group.Factory();
+    private final Organization.Factory _factOrg;
+    private final SharedFolder.Factory _factSharedFolder;
+    private final Certificate.Factory _factCert;
+    private final Device.Factory _factDevice;
+    private final OrganizationInvitation.Factory _factOrgInvite;
+    private final License _license;
+    private final User.Factory _factUser;
+    private final UrlShare.Factory _factUrlShare;
+    private final UserSettingsToken.Factory _factUserSettingsToken;
+    private final Group.Factory _factGroup;
 
-    private final SPSession _session = new SPSession(_factUser, _sessionProvider);
+    private final SPSession _session;
 
-    private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
+    private final InvitationEmailer.Factory _factEmailer;
 
-    private final AsyncEmailSender _asyncEmailSender = AsyncEmailSender.create();
+    private final AsyncEmailSender _asyncEmailSender;
 
-    private final Authenticator _authenticator = AuthenticatorFactory.create();
-    private final PasswordManagement _passwordManagement =
-            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _authenticator);
-    private final DeviceRegistrationEmailer _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
+    private final Authenticator _authenticator;
+    private final PasswordManagement _passwordManagement;
+    private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
 
-    private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
-    private final TwoFactorEmailer _twoFactorEmailer = new TwoFactorEmailer();
-    private final PooledJedisConnectionProvider _jedisConProvider =
-            new PooledJedisConnectionProvider();
-    private final JedisThreadLocalTransaction _jedisTrans =
-            new JedisThreadLocalTransaction(_jedisConProvider);
+    private final RequestToSignUpEmailer _requestToSignUpEmailer;
+    private final TwoFactorEmailer _twoFactorEmailer;
+    private final PooledJedisConnectionProvider _jedisConProvider;
+    private final JedisThreadLocalTransaction _jedisTrans;
 
-    private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
+    private final JedisEpochCommandQueue _commandQueue;
 
-    private final Analytics _analytics =
-            new Analytics(new SPAnalyticsProperties(_session));
-    private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
+    private final Analytics _analytics;
+    private final InvitationReminderEmailer _invitationReminderEmailer;
 
-    private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
-    private final SharingRulesFactory _sfRules =
-            new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
+    private final SharedFolderNotificationEmailer _sfnEmailer;
+    private final SharingRulesFactory _sfRules;
 
     private static final int RATE_LIMITER_BURST_SIZE = 10;
     private static final int RATE_LIMITER_WINDOW = 20000;
-    private final JedisRateLimiter _rateLimiter =
-             new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
+    private final JedisRateLimiter _rateLimiter;
 
     private final ScheduledExecutorService _scheduledExecutor =
             Executors.newSingleThreadScheduledExecutor();
 
+    private final AuditClient _auditClient;
+    private final BifrostClient _bifrostClient;
+    private final VerkehrClient _verkehrClient;
+
+    private final SPService _service;
+
+    private final SPServiceReactor _reactor;
+
+    private final DoPostDelegate _postDelegate;
+    private final ACLNotificationPublisher _aclNotificationPublisher;
+
+    public SPServlet()
     {
-        _factUser.inject(_udb, _oidb, _tfdb, _gmdb, _factDevice, _factOrg,
-                _factOrgInvite, _factSharedFolder, _factGroup, _license);
-        _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
-        _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite, _factGroup,
-                _gdb);
-        _factOrgInvite.inject(_oidb, _factUser, _factOrg);
-        _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser);
-        _factGroup.inject(_gdb, _gmdb, _gsdb, _factOrg, _factSharedFolder, _factUser);
-        _factUserSettingsToken.inject(_ustdb);
+        _sqlConProvider = new PooledSQLConnectionProvider();
+        _sqlTrans = new SQLThreadLocalTransaction(_sqlConProvider);
+        _db = new SPDatabase(_sqlTrans);
+        _odb = new OrganizationDatabase(_sqlTrans);
+        _udb = new UserDatabase(_sqlTrans);
+        _tfdb = new TwoFactorAuthDatabase(_sqlTrans);
+        _ddb = new DeviceDatabase(_sqlTrans);
+        _certdb = new CertificateDatabase(_sqlTrans);
+        _esdb = new EmailSubscriptionDatabase(_sqlTrans);
+        _sfdb = new SharedFolderDatabase(_sqlTrans);
+        _oidb = new OrganizationInvitationDatabase(_sqlTrans);
+        _usdb = new UrlSharingDatabase(_sqlTrans);
+        _ustdb = new UserSettingsTokenDatabase(_sqlTrans);
+        _gdb = new GroupDatabase(_sqlTrans);
+        _gmdb = new GroupMembersDatabase(_sqlTrans);
+        _gsdb = new GroupSharesDatabase(_sqlTrans);
+        _requestProvider = new ThreadLocalRequestProvider();
+        _sessionProvider = new ThreadLocalHttpSessionProvider();
+        _certgen = new CertificateGenerator();
+        _certauth = new CertificateAuthenticator(_requestProvider);
+        _remoteAddress = new RequestRemoteAddress(_requestProvider);
+        _factOrg = new Organization.Factory();
+        _factSharedFolder = new SharedFolder.Factory();
+        _factCert = new Certificate.Factory(_certdb);
+        _factDevice = new Device.Factory();
+        _factOrgInvite = new OrganizationInvitation.Factory();
+        _license = new License();
+        _factUser = new User.Factory();
+        _factUrlShare = new UrlShare.Factory(_usdb);
+        _factUserSettingsToken = new UserSettingsToken.Factory();
+        _factGroup = new Group.Factory();
+        _session = new SPSession(_factUser, _sessionProvider);
+        _factEmailer = new InvitationEmailer.Factory();
+        _asyncEmailSender = AsyncEmailSender.create();
+        String deploymentSecret = AeroService.loadDeploymentSecret();
+        _verkehrClient = createVerkehrClient(deploymentSecret);
+        _auditClient = createAuditClient(deploymentSecret);
+        _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _verkehrClient);
+        _authenticator = new AuthenticatorFactory(
+                _aclNotificationPublisher,
+                _auditClient
+        ).create();
+        _passwordManagement = new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _authenticator);
+        _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
+        _requestToSignUpEmailer = new RequestToSignUpEmailer();
+        _twoFactorEmailer = new TwoFactorEmailer();
+        _jedisConProvider = new PooledJedisConnectionProvider();
+        _jedisTrans = new JedisThreadLocalTransaction(_jedisConProvider);
+        _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
+        _analytics = new Analytics(new SPAnalyticsProperties(_session));
+        _invitationReminderEmailer = new InvitationReminderEmailer();
+        _sfnEmailer = new SharedFolderNotificationEmailer();
+        _sfRules = new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
+        _rateLimiter = new JedisRateLimiter(_jedisTrans, RATE_LIMITER_BURST_SIZE, RATE_LIMITER_WINDOW, "rl");
+
+        // Circular dependencies exist between these various factory classes.  Manual injection required.
+        {
+            _factUser.inject(_udb, _oidb, _tfdb, _gmdb, _factDevice, _factOrg,
+                    _factOrgInvite, _factSharedFolder, _factGroup, _license);
+            _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
+            _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite, _factGroup,
+                    _gdb);
+            _factOrgInvite.inject(_oidb, _factUser, _factOrg);
+            _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser);
+            _factGroup.inject(_gdb, _gmdb, _gsdb, _factOrg, _factSharedFolder, _factUser);
+            _factUserSettingsToken.inject(_ustdb);
+        }
+
+        _bifrostClient = new BifrostClient();
+        _service = new SPService(_db,
+                _sqlTrans,
+                _jedisTrans,
+                _session,
+                _passwordManagement,
+                _certauth,
+                _remoteAddress,
+                _factUser,
+                _factOrg,
+                _factOrgInvite,
+                _factDevice,
+                _certdb,
+                _esdb,
+                _factSharedFolder,
+                _factEmailer,
+                _deviceRegistrationEmailer,
+                _requestToSignUpEmailer,
+                _twoFactorEmailer,
+                _commandQueue,
+                _analytics,
+                new IdentitySessionManager(),
+                _authenticator,
+                _sfRules,
+                _sfnEmailer,
+                _asyncEmailSender,
+                _factUrlShare,
+                _factUserSettingsToken,
+                _factGroup,
+                _rateLimiter,
+                _scheduledExecutor,
+                _bifrostClient,
+                _verkehrClient,
+                _auditClient,
+                _aclNotificationPublisher);
+        _reactor = new SPServiceReactor(_service);
+        _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL, SP.SP_POST_PARAM_DATA);
     }
-
-    private final BifrostClient _bifrostClient = new BifrostClient();
-
-    private final SPService _service = new SPService(_db,
-            _sqlTrans,
-            _jedisTrans,
-            _session,
-            _passwordManagement,
-            _certauth,
-            _remoteAddress,
-            _factUser,
-            _factOrg,
-            _factOrgInvite,
-            _factDevice,
-            _certdb,
-            _esdb,
-            _factSharedFolder,
-            _factEmailer,
-            _deviceRegistrationEmailer,
-            _requestToSignUpEmailer,
-            _twoFactorEmailer,
-            _commandQueue,
-            _analytics,
-            new IdentitySessionManager(),
-            _authenticator,
-            _sfRules,
-            _sfnEmailer,
-            _asyncEmailSender,
-            _factUrlShare,
-            _factUserSettingsToken,
-            _factGroup,
-            _rateLimiter,
-            _license,
-            _scheduledExecutor,
-            _bifrostClient);
-
-    private final SPServiceReactor _reactor = new SPServiceReactor(_service);
-
-    private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
-            SP.SP_POST_PARAM_DATA);
-
 
     @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
         init_();
-
-        _authenticator.setACLPublisher_(new ACLNotificationPublisher(_factUser, getVerkehrClient()));
-
-        _service.setNotificationClients(getVerkehrClient());
-        _service.setAuditorClient_(getAuditClient());
 
         _service.setUserTracker(getUserTracker());
         _service.setSessionInvalidator(getSessionInvalidator());
@@ -250,14 +310,26 @@ public class SPServlet extends AeroServlet
         flyway.migrate();
     }
 
-    private VerkehrClient getVerkehrClient()
+    private static VerkehrClient createVerkehrClient(String secret)
     {
-        return (VerkehrClient) getServletContext().getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
+        Executor nioExecutor = Executors.newCachedThreadPool();
+        NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
+        return VerkehrClient.create(
+                BaseParam.Verkehr.HOST,
+                BaseParam.Verkehr.REST_PORT,
+                MILLISECONDS.convert(30, SECONDS),
+                MILLISECONDS.convert(60, SECONDS),
+                () -> AeroService.getHeaderValue("sp", secret),
+                new HashedWheelTimer(),
+                MoreExecutors.sameThreadExecutor(),
+                channelFactory);
     }
 
-    private AuditClient getAuditClient()
+    private static AuditClient createAuditClient(String deploymentSecret)
     {
-        return (AuditClient) getServletContext().getAttribute(AUDIT_CLIENT_ATTRIBUTE);
+        AuditClient auditClient = new AuditClient();
+        auditClient.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret("sp", deploymentSecret));
+        return auditClient;
     }
 
     private SPActiveUserSessionTracker getUserTracker()

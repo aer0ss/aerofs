@@ -62,34 +62,10 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
-        String deploymentSecret = AeroService.loadDeploymentSecret();
-
-        // verkehr
-        VerkehrClient verkehrClient = createVerkehrClient(deploymentSecret);
-        ctx.setAttribute(VERKEHR_CLIENT_ATTRIBUTE, verkehrClient);
-
-        // auditor
-        ctx.setAttribute(AUDIT_CLIENT_ATTRIBUTE, new AuditClient().setAuditorClient(AuditorFactory.createUnauthenticated()));
-
         // user-session objects
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);
         ctx.setAttribute(SESSION_INVALIDATOR, _sessionInvalidator);
         ctx.setAttribute(SESSION_EXTENDER, _sessionExtender);
-    }
-
-    private static VerkehrClient createVerkehrClient(String secret)
-    {
-        Executor nioExecutor = Executors.newCachedThreadPool();
-        NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
-        return VerkehrClient.create(
-                Verkehr.HOST,
-                Verkehr.REST_PORT,
-                MILLISECONDS.convert(30, SECONDS),
-                MILLISECONDS.convert(60, SECONDS),
-                () -> AeroService.getHeaderValue("sp", secret),
-                new HashedWheelTimer(),
-                MoreExecutors.sameThreadExecutor(),
-                channelFactory);
     }
 
     @Override

@@ -196,6 +196,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -234,8 +235,8 @@ public class SPService implements ISPService
     private final SQLThreadLocalTransaction _sqlTrans;
     private final SharingRulesFactory _sharingRules;
 
-    private ACLNotificationPublisher _aclPublisher;
-    private AuditClient _auditClient;
+    private final ACLNotificationPublisher _aclPublisher;
+    private final AuditClient _auditClient;
 
     private SPActiveUserSessionTracker _userTracker;
     private SPSessionInvalidator _sessionInvalidator;
@@ -269,7 +270,7 @@ public class SPService implements ISPService
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
-    private Authenticator _authenticator;
+    private final Authenticator _authenticator;
     private final LdapGroupSynchronizer _ldapGroupSynchronizer;
     private ScheduledExecutorService _scheduledExecutor;
 
@@ -301,10 +302,9 @@ public class SPService implements ISPService
 
     private final JedisRateLimiter _rateLimiter;
 
-    private final License _license;
-
     private final BifrostClient _bifrostClient;
 
+    @Inject
     public SPService(SPDatabase db,
             SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans,
@@ -334,9 +334,11 @@ public class SPService implements ISPService
             UserSettingsToken.Factory factUserSettingsToken,
             Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
-            License license,
             ScheduledExecutorService scheduledExecutor,
-            BifrostClient bifrostClient)
+            BifrostClient bifrostClient,
+            VerkehrClient verkehrClient,
+            AuditClient auditClient,
+            ACLNotificationPublisher aclPublisher)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -370,17 +372,18 @@ public class SPService implements ISPService
         _sharingRules = sharingRules;
 
         _authenticator = authenticator;
+        _auditClient = auditClient;
+        _aclPublisher = aclPublisher;
 
         _invitationHelper = new InvitationHelper(_authenticator, _factInvitationEmailer, _esdb);
         _ldapGroupSynchronizer = new LdapGroupSynchronizer(new LdapConfiguration(), factUser,
                 factGroup, _invitationHelper);
 
         _commandQueue = commandQueue;
-        _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans);
+        _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans, verkehrClient);
         _analytics = checkNotNull(analytics);
 
         _rateLimiter = rateLimiter;
-        _license = license;
 
         _scheduledExecutor = scheduledExecutor;
         startPeriodicSyncing(_scheduledExecutor, () -> {
@@ -403,22 +406,6 @@ public class SPService implements ISPService
     public void setMaxFreeMembers(int maxFreeMembersPerOrg)
     {
         _maxFreeMembersPerOrg = maxFreeMembersPerOrg;
-    }
-
-    /**
-     * Set the verkehr clients and things that depend on them - the command dispatcher.
-     */
-    public void setNotificationClients(VerkehrClient verkehrClient)
-    {
-        assert verkehrClient != null;
-
-        _commandDispatcher.setVerkehrClient(verkehrClient);
-        _aclPublisher = new ACLNotificationPublisher(_factUser, verkehrClient);
-    }
-
-    public void setAuditorClient_(AuditClient auditClient)
-    {
-        _auditClient = auditClient;
     }
 
     public void setUserTracker(SPActiveUserSessionTracker userTracker)

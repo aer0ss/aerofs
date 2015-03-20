@@ -104,11 +104,6 @@ public class Authenticator
         return userID.isTeamServerID() || _authorities[0].isInternalUser(userID);
     }
 
-    public void setACLPublisher_(ACLNotificationPublisher aclPublisher)
-    {
-        for (IAuthority auth : _authorities) auth.setACLPublisher(aclPublisher);
-    }
-
     private IAuthority[] _authorities;
     private static Logger l = LoggerFactory.getLogger(Authenticator.class);
 }

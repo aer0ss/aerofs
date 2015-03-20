@@ -48,11 +48,11 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
         // Using thenAnswer as the value of mockToken changes and we want latest value of mockToken
         // to be returned in the tests.
-        when(_bifrostClient.getBifrostToken(
+        when(bifrostClient.getBifrostToken(
                 any(String.class), any(Long.class)))
                 .thenAnswer(invocation -> mockToken);
 
-        doNothing().when(_bifrostClient).deleteToken(any(String.class));
+        doNothing().when(bifrostClient).deleteToken(any(String.class));
     }
 
     @Before

@@ -32,6 +32,7 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
@@ -224,7 +225,7 @@ public class Sparta extends Service
             public AuditClient providesAudit()
             {
                 AuditClient client = new AuditClient();
-                client.setAuditorClient(AuditorFactory.createUnauthenticated());
+                client.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret("sparta", secret));
                 return client;
             }
         };
@@ -239,7 +240,6 @@ public class Sparta extends Service
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
-                bind(Authenticator.class).toInstance(AuthenticatorFactory.create());
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
                         getStringProperty("sparta.oauth.id", ""),
                         getStringProperty("sparta.oauth.secret", ""),
@@ -249,6 +249,12 @@ public class Sparta extends Service
                         null,
                         clientFactory
                 ));
+            }
+
+            @Provides @Singleton
+            public Authenticator providesAuthenticator(AuthenticatorFactory authenticatorFactory)
+            {
+                return authenticatorFactory.create();
             }
         };
     }

@@ -66,10 +66,10 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         setProperties(true, INTERNAL_ADDRESSES);
 
         // Authenticator factory reads and caches property values so we have to construct a new one
-        sharingRules = new SharingRulesFactory(AuthenticatorFactory.create(),
-                factUser, sharedFolderNotificationEmailer);
+        AuthenticatorFactory authFactory = new AuthenticatorFactory(aclNotificationPublisher, auditClient);
+        authenticator = authFactory.create();
+        sharingRules = new SharingRulesFactory(authenticator, factUser, sharedFolderNotificationEmailer);
 
-        authenticator = AuthenticatorFactory.create();
 
         // reconstruct SP using the new shared folder rules
         rebuildSPService();

@@ -40,9 +40,6 @@ class OpenIdAuthority implements IAuthority
     }
 
     @Override
-    public void setACLPublisher(ACLNotificationPublisher aclPublisher) {}
-
-    @Override
     public boolean isInternalUser(UserID userID)
     {
         return _internalAddressPattern.isInternalUser(userID);

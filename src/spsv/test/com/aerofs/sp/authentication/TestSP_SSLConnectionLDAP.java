@@ -8,7 +8,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.sp.authentication.LdapConfiguration.SecurityType;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
-import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.google.protobuf.ByteString;
 import org.junit.AfterClass;
@@ -24,9 +23,6 @@ import java.security.cert.CertificateException;
 public class TestSP_SSLConnectionLDAP extends AbstractSPTest
 {
     LdapConfiguration _cfg = new LdapConfiguration();
-    @Mock ACLNotificationPublisher aclPublisher;
-    @Spy Authenticator _authenticator = new Authenticator(
-            new IAuthority[] { new LdapAuthority(_cfg) });
     private static InMemoryServer _server;
 
     @BeforeClass
@@ -38,10 +34,13 @@ public class TestSP_SSLConnectionLDAP extends AbstractSPTest
     @Before
     public void updateConfigs() throws CertificateException, IOException
     {
-        _authenticator.setACLPublisher_(aclPublisher);
         _server.resetConfig(_cfg);
         _cfg.SERVER_SECURITY = SecurityType.SSL;
         _cfg.SERVER_CA_CERT = _server.getCertString();
+        authenticator = new Authenticator(new IAuthority[] {
+                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient)
+        });
+        rebuildSPService();
     }
 
     @Test

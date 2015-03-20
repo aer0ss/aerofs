@@ -26,10 +26,11 @@ public class CommandDispatcher
     private JedisThreadLocalTransaction _jedisTrans;
 
     @Inject
-    public CommandDispatcher(JedisEpochCommandQueue cmdQueue, JedisThreadLocalTransaction jedisTrans)
+    public CommandDispatcher(JedisEpochCommandQueue cmdQueue, JedisThreadLocalTransaction jedisTrans, VerkehrClient verkehrClient)
     {
         _commandQueue = cmdQueue;
         _jedisTrans = jedisTrans;
+        _verkehrClient = verkehrClient;
     }
 
     /**
@@ -57,15 +58,6 @@ public class CommandDispatcher
             throws ExecutionException, InterruptedException
     {
         deliver(did, commandMessage, false);
-    }
-
-    /**
-     * We get the Verkehr admin client after the SP service is already running for some reason
-     */
-    public CommandDispatcher setVerkehrClient(VerkehrClient verkehrClient)
-    {
-        _verkehrClient = verkehrClient;
-        return this;
     }
 
     public VerkehrClient getVerkehrClient() { return _verkehrClient; }

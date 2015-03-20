@@ -60,9 +60,6 @@ class LocalAuthority implements IAuthority
     }
 
     @Override
-    public void setACLPublisher(ACLNotificationPublisher aclPublisher) {}
-
-    @Override
     public boolean managesLocalCredential() { return true; }
 
     @Override

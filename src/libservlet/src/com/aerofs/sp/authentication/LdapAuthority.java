@@ -7,6 +7,7 @@ package com.aerofs.sp.authentication;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.ids.UserID;
@@ -16,6 +17,7 @@ import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.unboundid.ldap.sdk.Filter;
@@ -24,7 +26,6 @@ import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
-import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,12 +56,25 @@ public class LdapAuthority implements IAuthority
     private ACLNotificationPublisher _aclPublisher;
 
     /**
-     * Initialize this authenticator with a provisioning strategy.
+     * Initialize this authenticator in a limited scope for the LDAP verification servlet
      */
     public LdapAuthority(LdapConfiguration cfg)
     {
         _cfg = cfg;
         _connector = new LdapConnector(_cfg);
+        _auditClient = new AuditClient();
+        _auditClient.setAuditorClient(AuditorFactory.createNoopClient());
+    }
+
+    /**
+     * Initialize this authenticator with a provisioning strategy.
+     */
+    public LdapAuthority(LdapConfiguration cfg, ACLNotificationPublisher aclPublisher, AuditClient auditClient)
+    {
+        _cfg = cfg;
+        _connector = new LdapConnector(_cfg);
+        _aclPublisher = aclPublisher;
+        _auditClient = auditClient;
     }
 
     @Override
@@ -86,6 +100,8 @@ public class LdapAuthority implements IAuthority
     public void authenticateUser(User user, byte[] credential,
             IThreadLocalTransaction<SQLException> trans, CredentialFormat format) throws Exception
     {
+        // authenticateUser should only be called by SP/Sparta, not the LDAP Verification servlet
+        Preconditions.checkNotNull(_aclPublisher);
         FullName fullName = throwIfBadCredential(user, credential);
 
         _l.info("LDAP auth ok {}", user.id());
@@ -113,12 +129,6 @@ public class LdapAuthority implements IAuthority
     public boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable
     {
         return canAuthenticate(userID);
-    }
-
-    @Override
-    public void setACLPublisher(ACLNotificationPublisher aclPublisher)
-    {
-        _aclPublisher = aclPublisher;
     }
 
     /**
@@ -238,7 +248,6 @@ public class LdapAuthority implements IAuthority
 
     private static Logger               _l = LoggerFactory.getLogger(LdapAuthority.class);
     protected LdapConfiguration         _cfg;
-    private AuditClient                 _auditClient = new AuditClient().setAuditorClient(
-                                                AuditorFactory.createUnauthenticated());
+    private AuditClient                 _auditClient;
     private LdapConnector               _connector;
 }

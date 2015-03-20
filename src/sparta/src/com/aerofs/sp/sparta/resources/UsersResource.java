@@ -38,7 +38,6 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.Factory;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.sparta.Transactional;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -87,15 +86,12 @@ public class UsersResource extends AbstractSpartaResource
     private final TwoFactorEmailer _twoFactorEmailer;
 
     @Inject
-    public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher,
-            CommandDispatcher commandDispatcher, VerkehrClient verkehrClient,
-            PasswordManagement passwordManagement, AuditClient audit,
-            TwoFactorEmailer twoFactorEmailer)
+    public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher, CommandDispatcher commandDispatcher,
+                         PasswordManagement passwordManagement, AuditClient audit, TwoFactorEmailer twoFactorEmailer)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
         _commandDispatcher = commandDispatcher;
-        _commandDispatcher.setVerkehrClient(verkehrClient);
         _passwordManagement = passwordManagement;
         _audit = audit;
         _twoFactorEmailer = twoFactorEmailer;

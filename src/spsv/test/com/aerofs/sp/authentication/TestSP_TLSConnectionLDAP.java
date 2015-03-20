@@ -31,10 +31,14 @@ public class TestSP_TLSConnectionLDAP extends AbstractSPTest
     @Before
     public void updateConfigs() throws CertificateException, IOException
     {
-        _authenticator.setACLPublisher_(aclPublisher);
         _server.resetConfig(_cfg);
         _cfg.SERVER_SECURITY = SecurityType.STARTTLS;
         _cfg.SERVER_CA_CERT = _server.getCertString();
+        authenticator = new Authenticator(new IAuthority[] {
+                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient),
+                new LocalAuthority()
+        });
+        rebuildSPService();
     }
 
     @Test
@@ -66,8 +70,5 @@ public class TestSP_TLSConnectionLDAP extends AbstractSPTest
     }
 
     LdapConfiguration _cfg = new LdapConfiguration();
-    @Spy Authenticator _authenticator = new Authenticator(
-            new IAuthority[] { new LdapAuthority(_cfg), new LocalAuthority()});
     private static InMemoryServer _server;
-    @Mock ACLNotificationPublisher aclPublisher;
 }

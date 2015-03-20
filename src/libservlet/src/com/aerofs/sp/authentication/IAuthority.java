@@ -68,10 +68,4 @@ public interface IAuthority
      * @see IAuthority#managesLocalCredential()
      */
     boolean isInternalUser(UserID userID) throws ExExternalServiceUnavailable;
-
-    /**
-     * Authorities that auto-provision users need to send ACL notifications to the Team Server
-     * otherwise it will not auto-join root stores until it is restarted.
-     */
-    void setACLPublisher(ACLNotificationPublisher aclPublisher);
 }

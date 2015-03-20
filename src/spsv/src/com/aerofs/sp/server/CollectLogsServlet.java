@@ -83,8 +83,7 @@ public class CollectLogsServlet extends HttpServlet
 
         JedisThreadLocalTransaction _jedisTrans = new JedisThreadLocalTransaction(_jedisConnProvider);
         JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
-        _cmd = new CommandDispatcher(_commandQueue, _jedisTrans);
-        _cmd.setVerkehrClient(_verkehrClient);
+        _cmd = new CommandDispatcher(_commandQueue, _jedisTrans, _verkehrClient);
 
         _license = new License();
 

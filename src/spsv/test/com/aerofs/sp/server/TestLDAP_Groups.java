@@ -84,13 +84,9 @@ public class TestLDAP_Groups extends AbstractSPTest
     }
 
     LdapConfiguration _cfg = new LdapConfiguration();
-    LdapAuthority _authority = new LdapAuthority(_cfg);
     InvitationHelper _invitationHelper = mock(InvitationHelper.class);
     InvitationEmailer.Factory _invitationEmailFact = new InvitationEmailer.Factory();
     LdapGroupSynchronizer _syncer;
-    @Mock ACLNotificationPublisher aclPublisher;
-    @Spy Authenticator _authenticator = new Authenticator(
-            new IAuthority[] { _authority });
     protected User admin = null;
     protected Organization org = null;
     private static AtomicInteger _idx = new AtomicInteger(1);
@@ -119,7 +115,10 @@ public class TestLDAP_Groups extends AbstractSPTest
                 .thenReturn(_invitationEmailFact.doesNothing());
         _server.resetConfig(_cfg);
         _syncer = new LdapGroupSynchronizer(_cfg, factUser, factGroup, _invitationHelper);
-        _authenticator.setACLPublisher_(aclPublisher);
+        authenticator = new Authenticator(new IAuthority[] {
+                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient)
+        });
+        rebuildSPService();
         sqlTrans.begin();
         try {
             admin = saveUser();

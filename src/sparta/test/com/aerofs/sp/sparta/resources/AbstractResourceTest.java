@@ -27,6 +27,7 @@ import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
@@ -103,6 +104,8 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final String OTHER = "other";
 
     @Mock VerkehrClient verkehrClient;
+    @Mock ACLNotificationPublisher aclNotificationPublisher;
+    @Mock AuditClient auditClient;
     @Mock CommandDispatcher commandDispatcher;
     @Mock PasswordManagement passwordManagement;
 
