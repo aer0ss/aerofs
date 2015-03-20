@@ -6,8 +6,13 @@ import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.http.HttpConfiguration;
 import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.ca.server.config.CAConfig;
+import com.aerofs.lib.configuration.ConfigurationUtils;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
+import java.security.cert.CertificateException;
 
 public class TestCAServer extends ExternalResource
 {
@@ -53,6 +58,11 @@ public class TestCAServer extends ExternalResource
                     bind(testSecret).to(SharedSecret.class).ranked(1);
                 }
             });
+        }
+
+        @Override
+        protected void saveCertificateToConfig(X509CertificateHolder cert) throws IOException, CertificateException, ConfigurationUtils.ExHttpConfig {
+            // noop
         }
     }
 }

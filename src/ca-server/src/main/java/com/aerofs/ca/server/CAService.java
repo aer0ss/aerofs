@@ -20,7 +20,9 @@ import com.aerofs.ca.server.resources.InvalidCSRExceptionMapper;
 import com.aerofs.ca.utils.CertificateSigner;
 import com.aerofs.ca.utils.CertificateUtils;
 import com.aerofs.ca.utils.KeyUtils;
+import com.aerofs.lib.configuration.ConfigurationUtils;
 import com.aerofs.lib.configuration.ServerConfigurationSetter;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.api.Factory;
@@ -31,8 +33,10 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.core.Context;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.Security;
+import java.security.cert.CertificateException;
 
 public class CAService extends Service<CAConfig>
 {
@@ -82,7 +86,7 @@ public class CAService extends Service<CAConfig>
         }
 
         // set the ca_cert config property value in the config server (though the canonical copy is found in the database)
-        ServerConfigurationSetter.setProperty("ca-server", "base_ca_cert", CertificateUtils.encodeCertForSavingToFile(certificateSigner.caCert()));
+        saveCertificateToConfig(certificateSigner.caCert());
 
         environment.addResource(CAResource.class);
         environment.registerHealthCheck("initialized", CAInitializedCheck.class);
@@ -105,6 +109,12 @@ public class CAService extends Service<CAConfig>
         });
 
         l.info("ca-server initialization finished");
+    }
+
+    protected void saveCertificateToConfig(X509CertificateHolder cert)
+            throws IOException, CertificateException, ConfigurationUtils.ExHttpConfig
+    {
+        ServerConfigurationSetter.setProperty("ca-server", "base_ca_cert", CertificateUtils.encodeCertForSavingToFile(cert));
     }
 }
 
