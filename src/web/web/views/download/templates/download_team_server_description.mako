@@ -21,7 +21,7 @@
         <li>Done!</li>
     </ol>
     <p>
-        If you're still unsure, our knowledge base has <a href="https://support.aerofs.com/entries/23596201">detailed setup instructions</a>.
+        If you're still unsure, our knowledge base has <a href="https://support.aerofs.com/hc/en-us/articles/203618620">detailed setup instructions</a>.
     </p>
 </div>
 <div class="page-block">
