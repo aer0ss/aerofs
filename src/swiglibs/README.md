@@ -38,11 +38,10 @@ separately on each platform for which native code is being built
 OSX
 ---
 
-The default mkspec may default to 10.7 SDK (as it is the first version to come
-with libc++) but we still support 10.5 at this time so forcing it might be
-necessary:
+In some cases, the default mkspec picked by the Qt install will not work,
+in which case you may need to explictly set it:
 
-    QMAKESPEC=macx-clang 
+    qmake -spec unsupported/macx-clang ../aerofsd.pro && make
 
 
 Linux

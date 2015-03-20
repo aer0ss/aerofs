@@ -22,18 +22,12 @@ contains(QMAKE_HOST.arch, i686):{
 }
 
 macx {
-    # Those flags set what version of the OS X SDK we want to build against
-    SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/
-    # TODO (WW) since we are using 10.6 SDK anyway (see above), should we set -mmacosx-version-min to 10.6?
-    QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -arch x86_64
+    INCLUDEPATH += "/System/Library/Frameworks/JavaVM.framework/Headers"
+    QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -arch x86_64
 
     # Linker settings
     LIBS += -L"$$PWD/3rd_party/lib/osx/"
     LIBS += -lssl.1.0.0 -lcrypto.1.0.0 -framework AppKit
-
-    # Misc OSX settings
-    INCLUDEPATH += "$$(SDKROOT)/System/Library/Frameworks/JavaVM.framework/Headers"
-    #QMAKE_CXXFLAGS += -isysroot $(SDKROOT)
 }
 linux-g++ {
     INCLUDEPATH += "$$(JAVA_HOME)/include"
