@@ -87,3 +87,6 @@ class ReleaseForm(Form):
 
 class ContactForm(Form):
     message = TextAreaField("Your Message", validators=[InputRequired()])
+
+class AllAccountsSearchForm(Form):
+    account_name = TextField('Account Name')

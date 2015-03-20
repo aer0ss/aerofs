@@ -1,0 +1,50 @@
+{% extends "admin.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block title %}All Accounts | Licensing Admin{% endblock %}
+
+{% block content %}
+    <h1>All Accounts</h1>
+
+    <p>Search Accounts.</p>
+    <form role="form" class="form-horizontal" action="" method="get">
+        {{ render_field(form.account_name, autofocus=true) }}
+        {{ submit_button("Search") }}
+    </form>
+
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <th>Admins</th>
+            <th>Actions</th>
+        </tr>
+        {% for account in accounts %}
+            <tr>
+                <td><a href="{{ url_for('.customer_actions', org_id=account.id) }}">{{ account.name }}</a></td>
+                <td>{% for admin in account.admins.all() %}{{ admin.email }}<br>{% endfor %}</td>
+                <td><a href="{{ url_for('.customer_actions', org_id=account.id) }}">New license</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <p align="right">
+        {% if page > 2 %}
+            <a href="{{ url_for('.all_accounts', page=0, **request_args) }}">&#171;</a>
+        {% endif %}
+
+        {% if page > 1 %}
+            <a href="{{ url_for('.all_accounts', page=page-1, **request_args) }}">&lsaquo;</a>
+        {% endif %}
+
+        Page {{ page }} of {{ total_pages }}
+
+        {% if page < total_pages %}
+            <a href="{{ url_for('.all_accounts', page=page+1, **request_args) }}">&rsaquo;</a>
+        {% endif %}
+
+        {% if page < total_pages - 1 %}
+            <a href="{{ url_for('.all_accounts', page=total_pages, **request_args) }}">&#187;</a>
+        {% endif %}
+    </p>
+
+{% endblock %}

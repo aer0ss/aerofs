@@ -87,17 +87,40 @@ def license_download(license_id):
                 )
     return r
 
-@blueprint.route("/all_customers", methods=["GET"])
-def all_customers():
-    customers = models.Customer.query.all()
-    return render_template("all_customers.html", customers=customers)
+PAGE_SIZE = 10
 
-@blueprint.route("/paying_customers", methods=["GET"])
-def paying_customers():
+@blueprint.route("/all_accounts", methods=["GET"])
+def all_accounts():
+    # URL Parameters.
+    account_name = request.args.get('account_name', None)
+    page = int(request.args.get('page', 1))
+    # Form.
+    form = forms.AllAccountsSearchForm()
+    form.account_name.data = account_name
+    # Search.
+    if account_name:
+        query = models.Customer.query.filter(models.Customer.name.ilike("%" + account_name + "%"))
+    else:
+        query = models.Customer.query
+    # Ordering.
+    query = query.order_by(models.Customer.name.asc())
+    # Results.
+    accounts = query.limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE)
+    total_pages = (query.count() / PAGE_SIZE) + 1
+    # Rendering.
+    return render_template("all_accounts.html",
+            form=form,
+            accounts=accounts,
+            page=page,
+            total_pages=total_pages,
+            request_args={'account_name': account_name})
+
+@blueprint.route("/paying_accounts", methods=["GET"])
+def paying_accounts():
     now = datetime.datetime.today()
     # This is possibly inefficient because group by is hard to understand/map
     # to sqlalchemy and this is internal anyway
-    # Pick out licenses that are still valid and for paying customers
+    # Pick out licenses that are still valid and for paying accounts
     licenses = models.License.query.filter(models.License.state == models.License.LicenseState.FILLED).\
                                     filter(models.License.expiry_date > now).\
                                     filter(models.License.is_trial == False)
@@ -120,7 +143,7 @@ def paying_customers():
         rows.append( {"customer": c, "license": l} )
         total_paid_seats += l.seats
     rows = sorted(rows, key=lambda row: row["license"].seats, reverse=True)
-    return render_template("paying_customers.html", rows=rows, total_paid_seats=total_paid_seats)
+    return render_template("paying_accounts.html", rows=rows, total_paid_seats=total_paid_seats)
 
 @blueprint.route("/download_csv", methods=["GET"])
 def download_license_request_csv():
