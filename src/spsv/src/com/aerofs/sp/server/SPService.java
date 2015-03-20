@@ -910,7 +910,7 @@ public class SPService implements ISPService
 
     // method to get the name of users that might not exist, i.e. shared folder members and group
     // members
-    private FullName getUserFullNameOrEmpty(User user)
+    private static FullName getUserFullNameOrEmpty(User user)
             throws SQLException
     {
         try {
@@ -923,7 +923,7 @@ public class SPService implements ISPService
     private static PBUser.Builder user2pb(User user)
             throws SQLException, ExNotFound
     {
-        return user2pb(user, user.getFullName());
+        return user2pb(user, getUserFullNameOrEmpty(user));
     }
 
     private static PBUser.Builder user2pb(User user, FullName fn)
