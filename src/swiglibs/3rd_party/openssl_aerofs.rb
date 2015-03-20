@@ -2,8 +2,8 @@ require 'formula'
 
 class OpensslAerofs < Formula
   homepage 'http://openssl.org'
-  url 'http://openssl.org/source/openssl-1.0.1h.tar.gz'
-  sha256 '9d1c8a9836aa63e2c6adb684186cbd4371c9e9dcc01d6e3bb447abf2d4d3d093'
+  url 'http://openssl.org/source/openssl-1.0.1m.tar.gz'
+  sha256 '095f0b7b09116c0c5526422088058dc7e6e000aa14d22acca6a4e2babcdfef74'
 
   keg_only :provided_by_osx,
     "The OpenSSL provided by OS X is too old for some software."

@@ -12,7 +12,7 @@ Steps to using a new openssl:
     url and shasum, then:
 
     # brew install ./openssl_aerofs.rb
-    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1g/*.dylib ~/repos/aerofs/resource/client/osx/
+    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1m/*.dylib ~/repos/aerofs/resource/client/osx/
 
     Why use a brew script?  We have to patch upstream openssl, since it
     specifies an absolute RPATH at build time (but we need a relative path).
@@ -33,9 +33,9 @@ Steps to using a new openssl:
     # mkdir scratch
     # cd scratch
     # # Obviously, you should pick the latest link.
-    # wget http://www.openssl.org/source/openssl-1.0.1g.tar.gz
+    # wget http://www.openssl.org/source/openssl-1.0.1m.tar.gz
     # tar xzvf openssl*.tar.gz
-    # cd openssl-1.0.1g/
+    # cd openssl-1.0.1m/
 
     2) Configure:
 
@@ -61,7 +61,7 @@ Steps to using a new openssl:
 
     3) Open a Visual Studio Command Prompt (x86, not x64)
 
-      > cd path\to\openssl-1.0.1g
+      > cd path\to\openssl-1.0.1m
       > "C:\Program Files (x86)\nasm\nasmpath.bat"
       > perl Configure VC-WIN32
       > ms\do_nasm.bat
@@ -82,7 +82,7 @@ Steps to using a new openssl:
     mkdir scratch
     cd scratch
         # Obviously, you should pick the latest link.
-    wget http://www.openssl.org/source/openssl-1.0.1g.tar.gz
+    wget http://www.openssl.org/source/openssl-1.0.1m.tar.gz
     tar xzvf openssl*.tar.gz
     cd openssl-*
     cd include
