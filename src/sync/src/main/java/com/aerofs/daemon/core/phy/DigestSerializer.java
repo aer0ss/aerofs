@@ -106,7 +106,7 @@ public final class DigestSerializer
         return md;
     }
 
-    private static Field field(Object o, String n) throws NoSuchFieldException
+    public static Field field(Object o, String n) throws NoSuchFieldException
     {
         Class<?> c = o.getClass();
         while (true) {

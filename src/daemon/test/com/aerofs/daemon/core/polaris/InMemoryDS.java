@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris;
 
+import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -46,6 +47,7 @@ import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -71,7 +73,6 @@ public class InMemoryDS
     public final StoreCreationOperators sco = new StoreCreationOperators();
     public final StoreDeletionOperators sdo = new StoreDeletionOperators();
 
-    @SuppressWarnings("unchecked")
     public InMemoryDS(IDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
     {
         sm = new SIDMap(new SIDDatabase(dbcw));
@@ -102,6 +103,20 @@ public class InMemoryDS
         try {
             when(factCollector.create_(any(SIndex.class))).thenReturn(mock(Collector.class));
         } catch (SQLException e) { throw new AssertionError(); }
+
+        Store.Factory factStore = usePolaris.get()
+                ? polarisStoreFactory()
+                : new LegacyStore.Factory(factSF, factCollector, mock(AntiEntropy.class),
+                        mock(Devices.class), mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
+
+        stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
+
+        ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
+    }
+
+    @SuppressWarnings("unchecked")
+    Store.Factory polarisStoreFactory()
+    {
         ChangeFetchScheduler.Factory factCFS = mock(ChangeFetchScheduler.Factory.class);
         when(factCFS.create(any(SIndex.class))).thenReturn(mock(ChangeFetchScheduler.class));
         SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS
@@ -113,15 +128,24 @@ public class InMemoryDS
         ContentFetcher.Factory factCF = mock(ContentFetcher.Factory.class);
         when(factCF.create_(any(SIndex.class))).thenReturn(mock(ContentFetcher.class));
 
-        Store.Factory factStore = usePolaris.get()
-                ? new PolarisStore.Factory(mock(Devices.class),
-                        mock(ChangeNotificationSubscriber.class), factCFS, factMCSS, factCCSS, factCF,
-                        mock(PauseSync.class))
-                : new LegacyStore.Factory(factSF, factCollector, mock(AntiEntropy.class),
-                        mock(Devices.class), mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
-        stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
+        PolarisStore.Factory f = new PolarisStore.Factory();
+        set(f, "_devices", mock(Devices.class));
+        set(f, "_cnsub", mock(ChangeNotificationSubscriber.class));
+        set(f, "_factCFS", factCFS);
+        set(f, "_factMCSS", factMCSS);
+        set(f, "_factCCSS", factCCSS);
+        set(f, "_factCF", factCF);
+        set(f, "_pauseSync", mock(PauseSync.class));
+        return f;
+    }
 
-        ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
+    public static void set(Object o, String k, Object v)
+    {
+        try {
+            DigestSerializer.field(o, k).set(o, v);
+        } catch (NoSuchFieldException|IllegalAccessException e) {
+            fail();
+        }
     }
 
     public static class Obj
