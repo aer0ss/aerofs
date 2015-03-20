@@ -97,7 +97,16 @@ public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listen
     /** Notifier called when a device becomes offline for this store. */
     public void notifyDeviceOffline_(DID did) {}
 
+    /**
+     * Called after the Store is created.
+     * If there are no OPM devices for this store, do nothing.
+     */
     void postCreate_() {}
+
+    /**
+     * Pre-deletion trigger. Before we remove a Store from the map, mark the devices offline
+     * for this store.
+     */
     void preDelete_() {}
 
     public void deletePersistentData_(Trans t) throws SQLException {
