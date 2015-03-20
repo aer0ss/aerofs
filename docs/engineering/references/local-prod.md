@@ -9,6 +9,8 @@ local-prod is a developer testing tool. Its goal is to make testing AeroFS clien
 
 You should already have installed them as per the [Getting Started guide](../how-to/get-started.html).
 
+Linux users, you should first [compile nsis with logging support enabled](../how-to/compile-nsis-linux.md).
+
 ## Initial setup
 
 Start by adding this to your `~/.profile` or `~/.bashrc` if you're on Linux or OSX:
