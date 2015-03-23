@@ -5,6 +5,14 @@
 The goal of the customer success organization is as follows: <strong>to ensure
 our customers are successful in using the AeroFS platform</strong>.
 
+## Caveat
+
+In this context, "customer" encompasses everyone who uses our product
+legitimately, but should focus on:
+
+1. Enterprise use cases vs personal use cases.
+2. Paying customers or qualified opportunities vs free users.
+
 ## Execution
 
 To accomplish this goal, we break down team team into the following areas:
