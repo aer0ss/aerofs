@@ -110,6 +110,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
 
             try (Trans t = _tm.begin_()) {
                 createAnchorIfNeeded_(sidx, sid, info._name, root, t);
+                t.commit_();
             } catch (Exception e) {
                 ok = false;
             }
