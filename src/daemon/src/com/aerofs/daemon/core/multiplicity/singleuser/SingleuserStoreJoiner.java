@@ -127,8 +127,8 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void onMembershipChange_(SIndex sidx, StoreInfo info, Trans t)
+    public boolean onMembershipChange_(SIndex sidx, StoreInfo info)
     {
-        // nop
+        return true;
     }
 }

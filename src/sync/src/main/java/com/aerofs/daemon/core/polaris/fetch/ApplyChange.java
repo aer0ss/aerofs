@@ -178,7 +178,7 @@ public class ApplyChange
         }
 
         if (_impl.newContent_(soid, c, t)) {
-            l.info("match local content -> ignore");
+            l.info("match local content {} {}", soid, c.newVersion);
             _cvdb.setVersion_(sidx, soid.oid(), c.newVersion, t);
             _rcdb.deleteUpToVersion_(sidx, soid.oid(), c.newVersion, t);
         } else {

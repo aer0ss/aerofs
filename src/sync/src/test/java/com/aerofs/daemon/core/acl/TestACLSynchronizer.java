@@ -118,6 +118,8 @@ public class TestACLSynchronizer extends AbstractTest
 
         when(factSP.create()).thenReturn(spClient);
         when(spClient.signInRemote()).thenReturn(spClient);
+        when(storeJoiner.onMembershipChange_(any(SIndex.class), any(StoreInfo.class)))
+                .thenReturn(true);
 
         when(tm.begin_()).thenReturn(t);
         when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
@@ -363,7 +365,7 @@ public class TestACLSynchronizer extends AbstractTest
         aclsync.syncToLocal_();
 
         verify(spClient).getACL(anyLong());
-        verify(storeJoiner).onMembershipChange_(eq(sidx), any(StoreInfo.class), eq(t));
+        verify(storeJoiner).onMembershipChange_(eq(sidx), any(StoreInfo.class));
         verifyNoMoreInteractions(storeJoiner);
     }
 

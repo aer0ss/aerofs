@@ -32,18 +32,16 @@ public interface IStoreJoiner
     /**
      * Create logical/physical objects as needed when gaining access to a store.
      */
-    public abstract void joinStore_(SIndex sidx, SID sid, StoreInfo info,
-                                    Trans t) throws Exception;
+    void joinStore_(SIndex sidx, SID sid, StoreInfo info, Trans t) throws Exception;
 
     /**
      * Remove logical/physical objects as needed when losing access to a store.
      */
-    public abstract void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
+    void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
 
     /**
      * React to changes to member list (other than the local user)
      */
-    public abstract void onMembershipChange_(SIndex sidx, StoreInfo info, Trans t)
-            throws Exception;
+    boolean onMembershipChange_(SIndex sidx, StoreInfo info) throws Exception;
 
 }

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.polaris.api;
 
 import com.aerofs.base.NoObfuscation;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
@@ -65,6 +66,18 @@ public class RemoteChange
         rc.transformType = Type.RENAME_CHILD;
         rc.child = child;
         rc.childName = name;
+        return rc;
+    }
+
+    public static RemoteChange updateContent(UniqueID object, ContentHash hash, long size, long mtime)
+    {
+        RemoteChange rc = new RemoteChange();
+        rc.oid = object;
+        rc.transformType = Type.UPDATE_CONTENT;
+        rc.contentHash = hash;
+        rc.contentSize = size;
+        rc.contentMtime = mtime;
+        rc.originator = DID.generate();
         return rc;
     }
 }

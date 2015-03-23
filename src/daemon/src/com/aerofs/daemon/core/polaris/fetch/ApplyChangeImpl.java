@@ -93,16 +93,17 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     public boolean newContent_(SOID soid, RemoteChange c, Trans t)
             throws SQLException, IOException {
         OA oa = _ds.getOANullable_(soid);
-        if (oa == null || !oa.isExpelled()) return false;
-
+        if (oa == null) return false;
         CA ca = oa.caMasterNullable();
         if (ca == null) return false;
         ContentHash h = _ds.getCAHash_(new SOKID(soid, KIndex.MASTER));
         if (h == null || !h.equals(c.contentHash) || ca.length() != c.contentSize) return false;
 
+        // local content matches remote change
+        // -> discard local change if any
         _ccdb.deleteChange_(soid.sidx(), soid.oid(), t);
 
-        // delete conflict branch if any
+        // -> delete conflict branch if any
         if (oa.cas().size() > 1) {
             checkState(oa.cas().size() == 2);
             KIndex kidx = KIndex.MASTER.increment();

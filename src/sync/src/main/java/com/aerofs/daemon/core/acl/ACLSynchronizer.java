@@ -283,9 +283,8 @@ public class ACLSynchronizer
 
     private boolean onMembershipChange_(SIndex sidx, IStoreJoiner.StoreInfo info)
     {
-        try (Trans t = _tm.begin_()) {
-            _storeJoiner.onMembershipChange_(sidx, info, t);
-            return true;
+        try {
+            return _storeJoiner.onMembershipChange_(sidx, info);
         } catch (Exception e) {
             // ignore errors to allow incremental progress but prevent epoch bump
             l.warn("failed to react to membership change {} {}", sidx, info._name,

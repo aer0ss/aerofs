@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
@@ -21,7 +22,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
@@ -38,13 +38,14 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final ILinker _linker;
+    private final TransManager _tm;
 
     @Inject
     public MultiuserStoreJoiner(CfgRootSID cfgRootSID, StoreHierarchy stores,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
             StoreCreator sc, StoreDeleter sd, DirectoryService ds,
             ObjectCreator oc, ObjectDeleter od, ObjectSurgeon os,
-            ILinker linker)
+            ILinker linker, TransManager tm)
     {
         super(ds, os, oc, od);
         _cfgRootSID = cfgRootSID;
@@ -54,6 +55,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _linker = linker;
+        _tm = tm;
     }
 
     @Override
@@ -84,27 +86,35 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
     }
 
     @Override
-    public void onMembershipChange_(SIndex sidx, StoreInfo info, Trans t)
+    public boolean onMembershipChange_(SIndex sidx, StoreInfo info)
             throws Exception
     {
         Set<UserID> newMembers =  Sets.filter(
                 Sets.difference(info._roles.keySet(), info._externalMembers),
                 user -> !user.isTeamServerID());
 
+        boolean ok = true;
+        SID sid = _sidx2sid.get_(sidx);
+        checkArgument(!sid.isUserRoot());
         for (UserID user : newMembers) {
-            SID sid = _sidx2sid.get_(sidx);
-            checkArgument(!sid.isUserRoot());
             SID rootSID = SID.rootSID(user);
             SIndex root = _sid2sidx.getNullable_(rootSID);
-            if (root == null) return;
+            if (root == null) continue;
 
-            // delay adjustment until first scan of root store is done to avoid creating anchor under
-            // root if it is present deeper w/ a tag file
+            // delay adjustment until completion of first scan of root store to avoid creating an
+            // anchor directly under the root if it is present deeper w/ a tag file
             if (_linker.isFirstScanInProgress_(rootSID)) {
-                throw new ExRetryLater("wait for user root scan");
+                ok = false;
+                continue;
             }
 
-            createAnchorIfNeeded_(sidx, sid, info._name, root, t);
+            try (Trans t = _tm.begin_()) {
+                createAnchorIfNeeded_(sidx, sid, info._name, root, t);
+            } catch (Exception e) {
+                ok = false;
+            }
         }
+
+        return ok;
     }
 }

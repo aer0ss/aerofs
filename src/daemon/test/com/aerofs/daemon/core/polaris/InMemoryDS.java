@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.polaris;
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.OID;
@@ -13,11 +15,7 @@ import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
-import com.aerofs.daemon.core.ds.AbstractPathResolver;
-import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
-import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
@@ -40,18 +38,21 @@ import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -241,9 +242,12 @@ public class InMemoryDS
 
     private static class File extends Obj
     {
-        protected File(@Nullable OID oid, String name)
+        protected Content[] cas;
+
+        protected File(@Nullable OID oid, String name, Content... contents)
         {
             super(oid, name, Type.FILE);
+            cas = contents;
         }
 
         @Override
@@ -251,15 +255,46 @@ public class InMemoryDS
                 throws Exception
         {
             // TODO: content
-            return super.create(ds, parent, t);
+            SOID soid = super.create(ds, parent, t);
+            KIndex kidx = KIndex.MASTER;
+            for (Content ca : cas) {
+                ds.ds.createCA_(soid, kidx, t);
+                ds.ds.setCA_(new SOKID(soid, KIndex.MASTER), ca.length, ca.mtime, ca.hash, t);
+                kidx = kidx.increment();
+            }
+            return soid;
         }
 
         @Override
         public ResolvedPath expect(InMemoryDS ds, ResolvedPath pParent) throws Exception
         {
             ResolvedPath p = super.expect(ds, pParent);
+            Map<KIndex, CA> acas = ds.ds.getOA_(p.soid()).cas();
             // TODO: content
+            KIndex kidx = KIndex.MASTER;
+            for (Content ca : cas) {
+                CA aca = acas.get(kidx);
+                assertNotNull("Expected ca missing", aca);
+                assertEquals(ca.length, aca.length());
+                assertEquals(ca.mtime, aca.mtime());
+                assertEquals(ca.hash, ds.ds.getCAHash_(new SOKID(p.soid(), kidx)));
+            }
+            assertEquals("Unexpected cas present", cas.length, acas.size());
             return p;
+        }
+    }
+
+    public static class Content
+    {
+        protected long length;
+        protected long mtime;
+        protected ContentHash hash;
+
+        protected Content(long length, long mtime, ContentHash hash)
+        {
+            this.length = length;
+            this.mtime = mtime;
+            this.hash = hash;
         }
     }
 
@@ -332,6 +367,21 @@ public class InMemoryDS
     public static Obj file(String name, OID oid)
     {
         return new File(oid, name);
+    }
+
+    public static Obj file(String name, OID oid, Content... c)
+    {
+        return new File(oid, name, c);
+    }
+
+    public static Content content(byte[] b)
+    {
+        return content(b.length, new ContentHash(BaseSecUtil.hash(b)));
+    }
+
+    public static Content content(long length, ContentHash h)
+    {
+        return new Content(length, 0L, h);
     }
 
     public static Obj anchor(String name)

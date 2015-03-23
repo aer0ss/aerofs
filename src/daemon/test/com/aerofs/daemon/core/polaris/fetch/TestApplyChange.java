@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris.fetch;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.ids.OID;
@@ -25,11 +26,14 @@ import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AliasDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
@@ -48,14 +52,11 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
+import static com.aerofs.daemon.core.polaris.InMemoryDS.content;
 import static com.aerofs.daemon.core.polaris.InMemoryDS.file;
 import static com.aerofs.daemon.core.polaris.InMemoryDS.folder;
 import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -323,7 +324,7 @@ public class TestApplyChange extends AbstractBaseTest
     }
 
     @Test
-    public void shouldHandleMoveeOfBufferedObject() throws Exception
+    public void shouldHandleMoveOfBufferedObject() throws Exception
     {
         when(mcdb.hasChanges_(sidx)).thenReturn(true);
 
@@ -747,5 +748,48 @@ public class TestApplyChange extends AbstractBaseTest
                         file("4.jpg"),
                         file("5.jpg"),
                         file("6.jpg")));
+    }
+
+    @Test
+    public void shouldDetectContentConflict() throws Exception
+    {
+        OID oid = OID.generate();
+        ContentHash h = new ContentHash(BaseSecUtil.hash());
+        mds.create(rootSID, file("foo", oid, content(3L, h)));
+        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
+        ccdb.insertChange_(sidx, oid, t);
+
+        assertNull(cvdb.getVersion_(sidx, oid));
+        assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
+
+        apply(
+                updateContent(oid, new ContentHash(BaseSecUtil.hash(new byte[]{(byte) 'a'})), 3L, 0L)
+        );
+
+        assertTrue(ccdb.hasChange_(sidx, oid));
+        assertNull(cvdb.getVersion_(sidx, oid));
+        assertTrue(rcdb.hasRemoteChanges_(sidx, oid, 0L));
+    }
+
+    @Test
+    public void shouldAvoidFalseContentConflict() throws Exception
+    {
+        OID oid = OID.generate();
+        ContentHash h = new ContentHash(BaseSecUtil.hash());
+        mds.create(rootSID, file("foo", oid, content(3L, h)));
+        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
+        ccdb.insertChange_(sidx, oid, t);
+
+        assertNull(cvdb.getVersion_(sidx, oid));
+        assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
+
+        apply(
+                updateContent(oid, h, 3L, 0L)
+        );
+
+        assertFalse(ccdb.hasChange_(sidx, oid));
+        assertEquals((Long) 1L, cvdb.getVersion_(sidx, oid));
+        assertTrue(rcdb.hasRemoteChanges_(sidx, oid, 0L));
+        assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
     }
 }

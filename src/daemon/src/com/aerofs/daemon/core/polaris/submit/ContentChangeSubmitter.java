@@ -120,6 +120,7 @@ public class ContentChangeSubmitter implements Submitter
         List<ContentChange> cc = Lists.newArrayList();
         List<BatchOp> ops = Lists.newArrayList();
         // TODO(phoenix): avoid wasteful repeated iteration of ignored entries
+        // TODO(phoenix): filter out failed entries on retry to make progress?
         try (IDBIterator<ContentChange> it = _ccdb.getChanges_(sidx)) {
             while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
                 ContentChange c = it.get_();
