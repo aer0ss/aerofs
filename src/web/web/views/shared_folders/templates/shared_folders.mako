@@ -116,8 +116,6 @@
         destroyFolderUrl = "${request.route_path('json.destroy_shared_folder')}";
         rejoinFolderUrl = "${request.route_path('json.accept_folder_invitation')}";
         paginationLimit = parseInt("${pagination_limit}", 10);
-        getGroupsURL = "${request.route_path('json.list_org_groups')}";
-        getUsersURL = "${request.route_path('json.list_org_users')}";
         getUsersAndGroupsURL = "${request.route_path('json.list_org_users_and_groups')}";
         getGroupMembersURL = "${request.route_path('json.list_group_members')}";
     </script>

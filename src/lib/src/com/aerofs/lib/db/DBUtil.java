@@ -10,6 +10,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.db.dbcw.MySQLDBCW;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
+import com.google.common.base.Joiner;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -53,6 +54,16 @@ public class DBUtil
         sb.append(table);
 
         return sb;
+    }
+
+    public static String orConditions(String... conditions)
+    {
+        return "(" + Joiner.on(" OR ").join(conditions) + ")";
+    }
+
+    public static String andConditions(String... conditions)
+    {
+        return "(" + Joiner.on(" AND ").join(conditions) + ")";
     }
 
     /**

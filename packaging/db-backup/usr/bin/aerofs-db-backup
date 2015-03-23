@@ -6,9 +6,9 @@ rm -rf $tempdir
 mkdir -p $tempdir/aerofs-db-backup
 pushd $tempdir 1>/dev/null 2>/dev/null
 
-if [ -f /var/aerofs/external-db ]
+if [ -f /var/aerofs/external-db-flag ]
 then
-    cp -a /var/aerofs/external-db aerofs-db-backup/external-db
+    cp -a /var/aerofs/external-db-flag aerofs-db-backup/external-db-flag
 else
     # These will all be persisted in the external db, no need to include in backup
     echo ">>> Backing up redis database..."

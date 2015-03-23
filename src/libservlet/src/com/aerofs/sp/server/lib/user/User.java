@@ -34,6 +34,7 @@ import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
 import com.aerofs.sp.server.lib.session.ISession.Provenance;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -961,5 +962,34 @@ public class User
             groups.add(_f._factGroup.create(gid));
         }
         return groups.build();
+    }
+
+    public static class EmailAndName
+    {
+        final public String email;
+        final public String firstName;
+        final public String lastName;
+
+        public EmailAndName(String email, String firstName, String lastName)
+        {
+            this.email = email;
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return o == this || (o != null && o instanceof EmailAndName
+                    && email.equals(((EmailAndName) o).email)
+                    && firstName.equals(((EmailAndName) o).firstName)
+                    && lastName.equals(((EmailAndName) o).lastName));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hashCode(email, firstName, lastName);
+        }
     }
 }

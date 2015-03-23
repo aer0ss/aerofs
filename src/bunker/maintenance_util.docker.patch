@@ -1,5 +1,5 @@
-@@ -2,21 +2,37 @@
- import socket
+@@ -4,25 +4,42 @@
+ import datetime
  from subprocess import call, Popen, PIPE
  import tempfile
 +import requests
@@ -8,25 +8,33 @@
  
 -def _flag_file_folder(settings):
 -    return settings.get('deployment.flag_file_folder', "/var/aerofs")
-+_FLAG_FILE = '/data/bunker/configuration-initialized-flag'
++_CONFIG_FLAG_FILE = '/data/bunker/configuration-initialized-flag'
++_EXTERNAL_DB_FLAG_FILE = '/data/bunker/external-db-flag'
 +
  
  def is_configuration_initialized(settings):
 -    basepath = _flag_file_folder(settings)
 -    return os.path.exists(os.path.join(basepath, 'configuration-initialized-flag'))
-+    return os.path.exists(_FLAG_FILE)
++    return os.path.exists(_CONFIG_FLAG_FILE)
 +
 +
 +def set_configuration_initialized():
-+    open(_FLAG_FILE, 'w').close()
-+
++    open(_CONFIG_FLAG_FILE, 'w').close()
  
-+_maintenance_mode_cache = None
- def is_maintenance_mode(settings):
+-def is_maintenance_mode(settings):
 -    # bootstrap tasks maintenance-enter & maintenance-exit create and delete
 -    # this file
 -    basepath = _flag_file_folder(settings)
 -    return os.path.exists(os.path.join(basepath, 'maintenance-flag'))
+ 
+ def has_external_db(settings):
+-    basepath = _flag_file_folder(settings)
+-    return os.path.exists(os.path.join(basepath, 'external-db-flag'))
++    return os.path.exists(_EXTERNAL_DB_FLAG_FILE)
++
++
++_maintenance_mode_cache = None
++def is_maintenance_mode(settings):
 +    """
 +    The system is in maintenance mode if the current target is "maintenance" and the system
 +    has been initialized.

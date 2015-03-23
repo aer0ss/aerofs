@@ -1,4 +1,5 @@
 import os
+import shutil
 import socket
 import datetime
 from subprocess import call, Popen, PIPE
@@ -21,7 +22,7 @@ def is_maintenance_mode(settings):
 
 def has_external_db(settings):
     basepath = _flag_file_folder(settings)
-    return os.path.exists(os.path.join(basepath, 'external-db'))
+    return os.path.exists(os.path.join(basepath, 'external-db-flag'))
 
 def write_pem_to_file(pem_string):
     os_handle, filename = tempfile.mkstemp()
@@ -109,3 +110,17 @@ def is_hostname_resolvable(hostname):
         return True
     except socket.error:
         return False
+
+def save_file_to_path(file, path):
+    directory, filename = os.path.split(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # Clean up old file
+    if os.path.exists(path):
+        os.remove(path)
+
+    file.seek(0)
+    with tempfile.NamedTemporaryFile(dir=directory, prefix=filename, delete=False) as tmp_file:
+        shutil.copyfileobj(file, tmp_file)
+        os.rename(tmp_file.name, path)

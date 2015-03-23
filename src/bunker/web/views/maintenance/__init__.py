@@ -48,6 +48,8 @@ routes = [
     'json_set_mobile_device_management',
     'sync_settings',
     'json_upload_externalproperties',
+    'autocomplete',
+    'json_upload_additional_users',
 
     # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
     'maintenance_mode',

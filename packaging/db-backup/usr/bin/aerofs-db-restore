@@ -55,7 +55,7 @@ then
     exit 3
 fi
 
-if [ ! -f aerofs-db-backup/external-db ]
+if [ ! -f aerofs-db-backup/external-db-flag ]
 then
     # no need to have these in the backup file since they'll all be in the offsite backup
     if [ ! -f aerofs-db-backup/redis.aof ]
@@ -83,10 +83,10 @@ then
     exit 7
 fi
 
-if [ -f aerofs-db-backup/external-db ]
+if [ -f aerofs-db-backup/external-db-flag ]
 then
     mkdir -p /var/aerofs
-    cp -a aerofs-db-backup/external-db /var/aerofs/external-db
+    cp -a aerofs-db-backup/external-db-flag /var/aerofs/external-db-flag
 else
     echo ">>> Restoring redis database..."
     service redis-aof stop 1>/dev/null 2>/dev/null

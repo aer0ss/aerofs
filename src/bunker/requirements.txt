@@ -9,6 +9,7 @@ CherryPy
 iptools
 Mako
 mock
+MySQL-python
 PasteDeploy
 protobuf
 pycrypto

@@ -4,6 +4,7 @@ def includeme(config):
     # The "/users" string must be consistent with BaseParam.java
     config.add_route('org_users', '/users')
     config.add_route('json.list_org_users', 'users/list')
+    config.add_route('json.search_org_users', 'users/search')
     config.add_route('json.list_org_users_and_groups', 'users_and_groups/list')
     config.add_route('json.list_org_invitees', 'users/invitees/list')
     config.add_route('json.invite_user', 'users/invite')

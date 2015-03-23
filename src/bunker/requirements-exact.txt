@@ -3,6 +3,7 @@ Beaker==1.6.4
 CherryPy==3.5.0
 Mako==1.0.0
 MarkupSafe==0.23
+MySQL-python==1.2.5
 PasteDeploy==1.5.2
 WebOb==1.4
 analytics-python==0.4.4

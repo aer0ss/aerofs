@@ -41,7 +41,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
         };
 
         var setGroupCtrlMethods = function(scope, $modalInstance) {
-            scope.userDataURL = userDataURL;
+            scope.searchUsersURL = searchUsersURL;
             scope.nonUniqueName = false;
 
             scope.maxMembers = maxMembers;

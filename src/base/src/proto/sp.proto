@@ -914,6 +914,9 @@ service SPService {
 
     // Delete the user's settings token, if it exists.
     rpc DeleteUserSettingsToken(Void) returns (Void);
+
+    // Search an organization's users for those matching a prefix search
+    rpc SearchOrganizationUsers(SearchOrganizationUsersCall) returns (SearchOrganizationUsersReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1189,6 +1192,7 @@ message RegisterDeviceReply {
     required string cert = 1;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE - remove possible search_prefix parameter, moved to SearchOrganizationMembers
 message ListOrganizationMembersCall {
     // Maximum number of entries returned on one page.
     // The SP server should enforce a reasonable upper bound for this parameter.
@@ -1732,4 +1736,18 @@ message ListGroupStatusInSharedFolderReply {
     }
 
     repeated PBUserAndState user_and_state = 1;
+}
+
+message SearchOrganizationUsersCall {
+    // Number of entries to be returned
+    required uint32 max_results = 1;
+    // Offset to start retrieving the results
+    required uint32 offset = 2;
+    // Search prefix, currently matches against email, fullname, and lastname
+    required string search_prefix = 3;
+}
+
+message SearchOrganizationUsersReply {
+    // There will be at most 'max_results' entries
+    repeated PBUser matching_users = 1;
 }

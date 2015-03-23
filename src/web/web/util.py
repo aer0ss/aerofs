@@ -188,21 +188,19 @@ def get_deployment_secret(settings):
         return f.read().strip()
 
 def is_private_deployment(settings):
-    return str2bool(settings.get('config.loader.is_private_deployment', False))
+    return str2bool(get_settings_nonempty(settings, 'config.loader.is_private_deployment', False))
 
 def is_mobile_disabled(settings):
     # only true if on private deployment
-    return is_private_deployment(settings) and str2bool(settings.get('web.disable_download_mobile_client', False))
+    return is_private_deployment(settings) and str2bool(get_settings_nonempty(settings, 'web.disable_download_mobile_client', False))
 
 def is_linksharing_enabled(settings):
     # Unfortunately, upgrading appliances will have an empty string for this property
-    # and str2bool treats that value as "False".  We want the default to be True here,
-    # so we treat empty string as True, and otherwise obey a provided preference.
-    str_value = settings.get('url_sharing.enabled', '')
-    return True if str_value == '' else str2bool(str_value)
+    # and we want the default to be True here
+    return str2bool(get_settings_nonempty(settings, 'url_sharing.enabled', True))
 
 def is_restricted_external_sharing_enabled(settings):
-    return str2bool(settings.get('sharing_rules.restrict_external_sharing', False))
+    return str2bool(settings.get['sharing_rules.restrict_external_sharing'])
 
 def add_routes(config, routes):
     """
@@ -210,3 +208,7 @@ def add_routes(config, routes):
     is set to identical to the route name.
     """
     for route in routes: config.add_route(route, route)
+
+def get_settings_nonempty(settings, key, default=None):
+    str_value = settings.get(key, '')
+    return str_value if str_value != '' else default

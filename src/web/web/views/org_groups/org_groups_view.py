@@ -59,7 +59,7 @@ def json_list_org_groups(request):
     Can optionally filter by substring in the group name.'''
     count = int(request.params.get('count', PAGE_LIMIT))
     offset = int(request.params.get('offset', 0))
-    substring = request.params.get('substring', '')
+    substring = request.params.get('substring', None)
 
     sp = util.get_rpc_stub(request)
     reply = sp.list_groups(count, offset, substring)

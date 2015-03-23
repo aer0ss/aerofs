@@ -247,6 +247,12 @@ public class Organization
         return builder.build();
     }
 
+    public List<User.EmailAndName> searchAutocompleteUsers(int maxResults, int offset, String searchPrefix)
+            throws SQLException
+    {
+        return _f._odb.searchAutocompleteUsers(_id, offset, maxResults, searchPrefix);
+    }
+
     public ImmutableList<Group> listGroups(int maxResults, int offset)
             throws SQLException
     {

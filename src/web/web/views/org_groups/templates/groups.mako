@@ -65,7 +65,7 @@
             isAdmin = false;
         %endif
 
-        userDataURL = "${request.route_path('json.list_org_users')}";
+        searchUsersURL = "${request.route_path('json.search_org_users')}";
         getGroupsURL = "${request.route_path('json.list_org_groups')}";
         addGroupURL = "${request.route_path('json.add_org_group')}";
         editGroupURL = "${request.route_path('json.edit_org_group')}";

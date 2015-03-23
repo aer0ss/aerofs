@@ -12,8 +12,12 @@
  }
  
  if [ $# -ne 1 ]
-@@ -89,10 +89,8 @@
-     cp -a aerofs-db-backup/external-db /var/aerofs/external-db
+@@ -86,13 +86,11 @@
+ if [ -f aerofs-db-backup/external-db-flag ]
+ then
+     mkdir -p /var/aerofs
+-    cp -a aerofs-db-backup/external-db-flag /var/aerofs/external-db-flag
++    cp -a aerofs-db-backup/external-db-flag /data/bunker/external-db-flag
  else
      echo ">>> Restoring redis database..."
 -    service redis-aof stop 1>/dev/null 2>/dev/null

@@ -16,6 +16,7 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -37,26 +38,11 @@ import java.util.Set;
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.select;
 import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_QUOTA_PER_USER;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_TWO_FACTOR_ENFORCEMENT_LEVEL;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
+import static com.aerofs.sp.server.lib.SPSchema.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_CONTACT_PHONE;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_STRIPE_CUSTOMER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.T_AC;
-import static com.aerofs.sp.server.lib.SPSchema.T_ORGANIZATION;
-import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -233,9 +219,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private static String andActiveNonTeamServerUser()
+    private static String activeNonTeamServerUser()
     {
-        return " and " + C_USER_DEACTIVATED + "=0 and " + C_USER_ID + " not like ':%' ";
+        return C_USER_DEACTIVATED + "=0 and " + C_USER_ID + " not like ':%' ";
     }
 
     /**
@@ -258,24 +244,29 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return List of users under the organization {@code orgId} between
      * [offset, offset + maxResults].
      *
-     * TODO (MP) de-dupe code with group db if this pattern is used elsewhere.
+     * TODO (RD) remove searchprefix param once sp.proto version is bumped
      * @see com.aerofs.sp.server.lib.group.GroupDatabase#listGroups
      */
     public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults,
             @Nullable String searchPrefix)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
-                T_USER,
-                C_USER_ORG_ID + "=? " + andActiveNonTeamServerUser() + andUserLike(searchPrefix),
-                C_USER_ID)
+        String condition;
+        if (searchPrefix == null) {
+            condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser());
+        } else {
+            condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser(), autoCompleteMatching(false));
+        }
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_USER, condition, C_USER_ID)
                 + " order by " + C_USER_ID + " limit ? offset ?")) {
-
-            int index = 0;
-            ps.setInt(++index, orgId.getInt());
-            if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
-            ps.setInt(++index, maxResults);
-            ps.setInt(++index, offset);
+            int index = 1;
+            ps.setInt(index++, orgId.getInt());
+            if (searchPrefix != null) {
+                // need to populate all the extra conditions used for autocomplete
+                index = populateAutocompleteStatement(index, ps, searchPrefix);
+            }
+            ps.setInt(index++, maxResults);
+            ps.setInt(index++, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return usersResultSetToList(rs);
@@ -283,13 +274,91 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private static String andUserLike(String searchPrefix)
+    /**
+     * functions similarly to listUsers, but will also check for users in the autocomplete table
+     */
+    public List<User.EmailAndName> searchAutocompleteUsers(OrganizationID orgID, int offset, int maxResults, String searchPrefix)
+            throws SQLException
     {
-        if (searchPrefix == null) {
-            return "";
-        } else {
-            return " and " + C_USER_ID + " like ?";
+        String condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser(), autoCompleteMatching(false));
+        // so we don't have to do fullname lookups on users from the T_USER and T_ACU tables, we get all the fields here - however since the structure
+        // of the tables isn't exactly the same we add the extra column of true and false to be able to differentiate the two
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_USER, condition, C_USER_ID, C_USER_FIRST_NAME, C_USER_LAST_NAME, "false") + " union " +
+                DBUtil.selectWhere(T_ACU, autoCompleteMatching(true), C_ACU_EMAIL, C_ACU_FULLNAME, C_ACU_LASTNAME, "true") +
+                " order by " + C_USER_ID + " limit ? offset ?")) {
+            int index = 1;
+            ps.setInt(index++, orgID.getInt());
+            index = populateAutocompleteStatement(index, ps, searchPrefix);
+            // second time for the additional query to autocomplete user's table
+            index = populateAutocompleteStatement(index, ps, searchPrefix);
+            ps.setInt(index++, maxResults);
+            ps.setInt(index++, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return autocompleteResultSetToEmailsAndNames(rs);
+            }
         }
+    }
+
+    private List<User.EmailAndName> autocompleteResultSetToEmailsAndNames(ResultSet rs)
+            throws SQLException
+    {
+        List<User.EmailAndName> results = Lists.newArrayList();
+        while(rs.next()) {
+            boolean isFromAutocomplete = rs.getInt(4) != 0;
+            if (isFromAutocomplete) {
+                results.add(new User.EmailAndName(rs.getString(1), trimLastNameFromFullName(rs.getString(2), rs.getString(3)), rs.getString(3)));
+            } else {
+                results.add(new User.EmailAndName(rs.getString(1), rs.getString(2), rs.getString(3)));
+            }
+        }
+        return results;
+    }
+
+    private String trimLastNameFromFullName(String fullName, String lastName)
+    {
+        // trim off the last name and a space from the end of the full name
+        return fullName.substring(0, fullName.length() - (lastName.length() + 1));
+    }
+
+    /**
+     * we don't take or use the searchprefix while generating the statement to mitigate chances of SQL Injection
+     * this means you'll need to call populateAutocompleteStatement if you use the condition this method returns
+     * @param usingExtraTable whether the query is for SP_USER table or the extra SP_AUTOCOMPLETE_USERS
+     */
+    private static String autoCompleteMatching(boolean usingExtraTable)
+    {
+        return DBUtil.orConditions(userEmailLike(usingExtraTable), userFullNameLike(usingExtraTable), userLastNameLike(usingExtraTable));
+    }
+
+    // returns the next index to populate after the autocomplete clause
+    private static int populateAutocompleteStatement(int firstIndex, PreparedStatement statement, String prefix)
+            throws SQLException
+    {
+        statement.setString(firstIndex++, prefix + "%");
+        statement.setString(firstIndex++, prefix + "%");
+        statement.setString(firstIndex++, prefix + "%");
+        return firstIndex;
+    }
+
+    private static String userEmailLike(boolean extraTable)
+    {
+        return (extraTable ? C_ACU_EMAIL : C_USER_ID) + " like ?";
+    }
+
+    private static String userFullNameLike(boolean extraTable)
+    {
+        if (extraTable) {
+            return C_ACU_FULLNAME + " like ?";
+        } else {
+            // search against first name + <space> + last name
+            return "CONCAT(" + C_USER_FIRST_NAME + ", ' ', " + C_USER_LAST_NAME + ") like ?";
+        }
+    }
+
+    private static String userLastNameLike(boolean extraTable)
+    {
+        return (extraTable ? C_ACU_LASTNAME : C_USER_LAST_NAME) + " like ?";
     }
 
     public List<UserID> listWhitelistedUsers(OrganizationID orgId)
@@ -297,7 +366,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(
                 T_USER,
-                C_USER_ORG_ID + "=? and " + C_USER_WHITELISTED + "=1" + andActiveNonTeamServerUser(),
+                C_USER_ORG_ID + "=? and " + C_USER_WHITELISTED + "=1 and " + activeNonTeamServerUser(),
                 C_USER_ID))) {
             ps.setInt(1, orgId.getInt());
 
@@ -315,7 +384,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
-                C_USER_ORG_ID + "=?" + andActiveNonTeamServerUser(), "count(*)"))) {
+                C_USER_ORG_ID + "=? and " + activeNonTeamServerUser(), "count(*)"))) {
 
             ps.setInt(1, orgId.getInt());
             try (ResultSet rs = ps.executeQuery()) {
@@ -334,7 +403,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         try (PreparedStatement ps = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
-                C_USER_AUTHORIZATION_LEVEL + "=?" + andActiveNonTeamServerUser())) {
+                C_USER_AUTHORIZATION_LEVEL + "=? and " + activeNonTeamServerUser())) {
 
             ps.setInt(1, orgId.getInt());
             ps.setInt(2, authlevel.ordinal());

@@ -11,7 +11,7 @@ WORKDIR /opt/bunker
 CMD [ "/run.sh" ]
 
 # mysql-client for backup scripts, docker for collecting docker logs
-RUN apt-get update && apt-get install -y mysql-client docker.io && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mysql-client docker.io libmysqlclient-dev && rm -rf /var/lib/apt/lists/*
 
 COPY buildroot/requirements-exact.txt /
 

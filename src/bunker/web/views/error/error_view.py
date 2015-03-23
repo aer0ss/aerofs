@@ -1,7 +1,7 @@
 import logging
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED, remember
-from pyramid.view import view_config, forbidden_view_config
+from pyramid.view import view_config, forbidden_view_config, notfound_view_config
 from web.license import get_license_shasum_from_query,\
     get_license_shasum_from_session, verify_license_shasum_and_attach_to_session
 from web.views.error.error_view_util import force_login
@@ -12,18 +12,16 @@ log = logging.getLogger(__name__)
 # N.B. both HTML and AJAX requests use these methods to handle errors.
 ######
 
-@view_config(
-    context=NotFound,
-    permission=NO_PERMISSION_REQUIRED,
+@notfound_view_config(
     renderer='404.mako'
 )
 def not_found_view(request):
-    request.response_status = 404
+    request.response.status_int = 404
     return {}
 
 
 @forbidden_view_config(
-    renderer="403.mako"
+    renderer='403.mako'
 )
 def forbidden_view(request):
     log.error("forbidden view for " + request.path)
@@ -62,5 +60,5 @@ def _attempt_license_shasum_login(request):
 def exception_view(context, request):
     log.error("default handling for general exception:", exc_info=context)
 
-    request.response_status = 500
+    request.response.status_int = 500
     return {}

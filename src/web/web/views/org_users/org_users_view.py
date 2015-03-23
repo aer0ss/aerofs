@@ -1,7 +1,7 @@
 import logging
 
 import markupsafe
-from pyramid.httpexceptions import HTTPOk
+from pyramid.httpexceptions import HTTPOk, HTTPBadRequest
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 from aerofs_sp.gen.common_pb2 import PBException
@@ -22,6 +22,8 @@ URL_PARAM_FULL_NAME = 'full_name'
 URL_PARAM_ERASE_DEVICES = 'erase_devices'
 
 PAGE_LIMIT = 20
+# we currently show a maximum of 6 entries
+AUTOCOMPLETE_ENTRIES = 6
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +98,31 @@ def json_list_org_users(request):
         'me': session_user
     }
 
+@view_config(
+    route_name = 'json.search_org_users',
+    renderer = 'json',
+    permission = 'user'
+)
+def json_search_org_users(request):
+    count = int(request.params.get('count', AUTOCOMPLETE_ENTRIES))
+    offset = int(request.params.get('offset', 0))
+    substring = request.params.get('substring', None)
+
+    if not count or not substring:
+        return HTTPBadRequest()
+
+    sp = get_rpc_stub(request)
+    reply = sp.search_organization_users(count, offset, substring)
+
+    users = [{
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': markupsafe.escape(user.user_email),
+                'name': user.first_name + ' ' + user.last_name + ' (' + markupsafe.escape(user.user_email) + ')'
+             } for user in reply.matching_users]
+    return {
+        'results': users
+    }
 
 @view_config(
     route_name = 'json.list_org_users_and_groups',
@@ -103,7 +130,7 @@ def json_list_org_users(request):
     permission = 'user'
 )
 def json_list_org_users_and_groups(request):
-    user_data = json_list_org_users(request)['data'] or []
+    user_data = json_search_org_users(request)['results'] or []
     group_data = json_list_org_groups(request)['groups'] or []
     data = group_data + user_data
     return {

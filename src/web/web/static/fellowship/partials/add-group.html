@@ -36,8 +36,7 @@
                             label=""
                             ng-disabled="newGroup.members.length >= maxMembers"
                             ng-model="newGroup.newMember"
-                            async-data="{{userDataURL}}"
-                            async-attr="data"
+                            async-data="{{searchUsersURL}}"
                             placeholder="Email address of new member" 
                             title="Invite users by email address"
                             ></div>

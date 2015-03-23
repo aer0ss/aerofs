@@ -1,7 +1,6 @@
 # Views for site setup. Related document: docs/design/pyramid_auth.md
 
 import logging
-import shutil
 import os
 import re
 from web.util import str2bool
@@ -19,7 +18,7 @@ from maintenance_util import write_pem_to_file, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
     is_configuration_initialized, is_key_formatted_correctly, \
     get_conf_client, get_conf, is_ipv4_address, \
-    is_hostname_resolvable
+    is_hostname_resolvable, save_file_to_path
 
 log = logging.getLogger(__name__)
 
@@ -366,17 +365,8 @@ def json_upload_backup(request):
         error(_get_already_restored_html_message(request))
 
     log.info("uploading backup file...")
-    # Clean up old file
-    if os.path.exists(BACKUP_FILE_PATH):
-        os.remove(BACKUP_FILE_PATH)
-
     # See http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/forms/file_uploads.html
-    input_file = request.POST['backup-file'].file
-    input_file.seek(0)
-
-    with open(BACKUP_FILE_PATH, 'wb') as output_file:
-        shutil.copyfileobj(input_file, output_file)
-
+    save_file_to_path(request.POST['backup-file'].file, BACKUP_FILE_PATH)
     return HTTPOk()
 
 

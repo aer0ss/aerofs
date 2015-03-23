@@ -123,5 +123,11 @@ public final class SPSchema
 
             T_ST                            = "sp_settings_token",
             C_ST_USER_ID                    = "st_uid",
-            C_ST_TOKEN                      = "st_token";
+            C_ST_TOKEN                      = "st_token",
+
+            T_ACU                           = "sp_autocomplete_users",
+            C_ACU_EMAIL                     = "acu_email",
+            C_ACU_FULLNAME                  = "acu_fullname",
+            C_ACU_LASTNAME                  = "acu_lastname";
+
 }

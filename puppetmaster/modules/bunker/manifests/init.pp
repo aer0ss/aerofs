@@ -1,4 +1,8 @@
 class bunker { # FIXME (AG): should I allow a port to be specified as an argument?
+    # so bunker can use the MySQL-python package
+    package{"libmysqlclient-dev":
+        ensure => latest
+    }
 
     package{"aerofs-bunker":
         ensure => latest,

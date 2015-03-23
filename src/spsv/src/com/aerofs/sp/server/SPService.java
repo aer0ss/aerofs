@@ -51,6 +51,7 @@ import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.proto.Sp.SearchOrganizationUsersReply;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
@@ -677,6 +678,32 @@ public class SPService implements ISPService
                     .build());
         }
         return pb;
+    }
+
+    @Override
+    public ListenableFuture<SearchOrganizationUsersReply> searchOrganizationUsers(Integer maxResults, Integer offset, String searchPrefix) throws Exception
+    {
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
+
+        _sqlTrans.begin();
+
+        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
+        Organization org = user.getOrganization();
+
+        SearchOrganizationUsersReply.Builder reply = SearchOrganizationUsersReply.newBuilder();
+        for (User.EmailAndName u : org.searchAutocompleteUsers(maxResults, offset, searchPrefix)) {
+            PBUser.Builder bd = PBUser.newBuilder()
+                    .setUserEmail(u.email)
+                    .setFirstName(u.firstName)
+                    .setLastName(u.lastName);
+            reply.addMatchingUsers(bd);
+        }
+
+        _sqlTrans.commit();
+
+        return createReply(reply.build());
     }
 
     @Override
