@@ -7,4 +7,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-curl -s -S config.service:5434/server | grep "^$1=" | sed -e "s/^$1=//" | sed -e 's/\\n/\n/g'
+DEPLOYMENT_SECRET="$(cat /data/deployment_secret)"
+curl --silent --show-error \
+     --header "Authorization: Aero-Service-Shared-Secret container-scripts $DEPLOYMENT_SECRET" \
+     config.service:5434/server | grep "^$1=" | sed -e "s/^$1=//" | sed -e 's/\\n/\n/g'

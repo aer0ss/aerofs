@@ -10,4 +10,9 @@ fi
 # Convert newlines to '\\n'. See http://stackoverflow.com/a/1252191.
 V=$(echo "$2" | sed ':a;N;$!ba;s/\n/\\n/g')
 
-curl -s -S -XPOST config.service:5434/set --data-urlencode "key=$1" --data-urlencode "value=${V}"
+DEPLOYMENT_SECRET=$(cat /data/deployment_secret)
+
+curl -XPOST --silent --show-error \
+     --header "Authorization: Aero-Service-Shared-Secret $DEPLOYMENT_SECRET" \
+     --data-urlencode "key=$1" --data-urlencode "value=${V}" \
+     config.service:5434/set
