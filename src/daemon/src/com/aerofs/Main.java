@@ -201,7 +201,7 @@ public class Main
         } catch (Throwable e) {
             String message = "failed in main(): " + Util.e(e);
             System.err.println(message);
-            l.error("{}" + message, e);
+            l.error("{}", message, e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }

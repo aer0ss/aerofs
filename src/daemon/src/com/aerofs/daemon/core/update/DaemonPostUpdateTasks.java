@@ -92,7 +92,8 @@ public class DaemonPostUpdateTasks
             DPUTAddPhysicalStagingArea.class,
             DPUTAddLogicalStagingArea.class,
             DPUTRemoveBackupTicks.class,
-            DPUTCleanupPrefixes.class
+            DPUTCleanupPrefixes.class,
+            DPUTFixOSXFID.class
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
 
             // only uncomment when rolling out Polaris to keep maximum flexibility

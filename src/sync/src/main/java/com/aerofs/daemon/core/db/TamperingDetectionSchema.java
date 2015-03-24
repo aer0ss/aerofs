@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class TamperingDetectionSchema implements ISchema
 {
-    static final String
+    public static final String
             T_DBFILE        = "dbfile",
             C_DBFILE_FID    = "dbfile_fid"
             ;
