@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.os.IOSUtil;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.junit.Before;
@@ -28,6 +30,8 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
             binder.bind(CfgDatabase.class).toInstance(cfgDB);
             binder.bind(IDBCW.class).toInstance(mock(IDBCW.class));
             binder.bind(CfgLocalDID.class).toInstance(mock(CfgLocalDID.class));
+            binder.bind(IOSUtil.class).toInstance(mock(IOSUtil.class));
+            binder.bind(InjectableDriver.class).toInstance(mock(InjectableDriver.class));
         });
         dput = inj.getInstance(DaemonPostUpdateTasks.class);
     }
