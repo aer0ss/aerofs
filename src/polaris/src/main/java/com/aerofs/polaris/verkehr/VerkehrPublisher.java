@@ -68,7 +68,6 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
                 port,
                 configuration.getConnectTimeout(),
                 configuration.getResponseTimeout(),
-                configuration.getMaxConnections(),
                 () -> AeroService.getHeaderValue(serviceName, deploymentSecret),
                 timer,
                 addressResolverExecutor,

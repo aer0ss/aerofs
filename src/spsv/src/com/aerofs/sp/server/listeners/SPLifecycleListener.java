@@ -86,7 +86,6 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
                 Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
-                10,
                 () -> AeroService.getHeaderValue("sp", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),

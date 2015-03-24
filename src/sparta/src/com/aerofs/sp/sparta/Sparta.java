@@ -214,7 +214,6 @@ public class Sparta extends Service
                         Verkehr.REST_PORT,
                         MILLISECONDS.convert(30, SECONDS),
                         MILLISECONDS.convert(60, SECONDS),
-                        10,
                         () -> AeroService.getHeaderValue("sparta", secret),
                         new HashedWheelTimer(),
                         MoreExecutors.sameThreadExecutor(),

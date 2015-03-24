@@ -43,7 +43,6 @@ public class ProbeLifecycleListener
                 Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
-                10,
                 () -> AeroService.getHeaderValue("probe-servlet", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),

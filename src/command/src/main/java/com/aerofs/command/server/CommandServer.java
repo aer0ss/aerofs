@@ -57,7 +57,6 @@ public final class CommandServer extends Service<CommandServerConfiguration> {
                 BaseParam.Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
-                10,
                 () -> AeroService.getHeaderValue("command", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),

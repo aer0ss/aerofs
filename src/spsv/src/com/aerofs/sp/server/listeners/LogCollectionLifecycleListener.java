@@ -41,7 +41,6 @@ public class LogCollectionLifecycleListener extends ConfigurationLifecycleListen
                 Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
-                10,
                 () -> AeroService.getHeaderValue("log-collection", secret),
                 new HashedWheelTimer(),
                 MoreExecutors.sameThreadExecutor(),
