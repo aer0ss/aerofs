@@ -3,7 +3,7 @@
 DEV_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")/../../docker/dev"
 
 # Run crane from any folder
-alias crane="${DEV_DIR}/crane.sh"
+alias dk-crane="${DEV_DIR}/dk-crane.sh"
 
 # Rebuild, recreate, and configure containers
 alias dk-create="${DEV_DIR}/dk-create.sh"
