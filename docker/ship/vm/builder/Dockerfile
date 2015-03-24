@@ -5,7 +5,7 @@ MAINTAINER Weihan Wang "weihan@aerofs.com"
 RUN pip install Jinja2 pyyaml
 RUN apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/*
 
-ENV COREOS_TAR_BALL http://alpha.release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2
+ENV COREOS_TAR_BALL http://stable.release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2
 
 RUN \
     wget $COREOS_TAR_BALL -O /coreos.bin.bz2 &&\

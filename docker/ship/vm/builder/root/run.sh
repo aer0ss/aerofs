@@ -6,23 +6,28 @@ set -ex
 # https://github.com/docker/docker/issues/1916.
 #
 
-if [ $# != 3 ]; then
-    echo "Usage: $0 <path_to_ship.yml> <path_to_output_folder> <tag>"
+if [ $# != 5 ]; then
+    echo "Usage: $0 <0|1> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> <tag>"
+    echo "          The first argument specifies whether to generate the VDI image for the Preloaded VM"
     exit 11
 fi
-SHIP_YML="$1"
-OUT="$2"
-TAG="$3"
+GENERATE_PRELOAD_VDI="$1"
+SHIP_YML="$2"
+EXTRA_FILES="$3"
+OUT="$4"
+TAG="$5"
 
 DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # Generate cloud-config files
 mkdir -p "${OUT}/preloaded"
-"${DIR}/render-cloud-configs.py" "${SHIP_YML}" "${OUT}/cloud-config.yml" "${OUT}/preload-cloud-config.yml" "${TAG}"
+"${DIR}/render-cloud-configs.py" "${SHIP_YML}" "${EXTRA_FILES}" "${OUT}/cloud-config.yml" "${OUT}/preload-cloud-config.yml" "${TAG}"
 
-# Generate preloaded VDI image
-"${DIR}/inject.sh" /coreos.bin "${OUT}/preload-cloud-config.yml" cloud-config.yml
-qemu-img convert -O vdi /coreos.bin "${OUT}/preloaded/disk.vdi"
+# Generate VDI for Preload VM
+if [ "${GENERATE_PRELOAD_VDI}" = 1 ]; then
+    "${DIR}/inject.sh" /coreos.bin "${OUT}/preload-cloud-config.yml" cloud-config.yml
+    qemu-img convert -O vdi /coreos.bin "${OUT}/preloaded/disk.vdi"
+fi
 
 # Skip bare image generation for now
 

@@ -1,0 +1,29 @@
+containers:
+  registry:
+    image: aerofs/registry.registry
+    run:
+      detach: true
+      volume:
+        - ${KEYS_DIR}/aws.key:/host/aws.key
+        - ${KEYS_DIR}/aws.secret:/host/aws.secret
+
+  nginx:
+    image: aerofs/registry.nginx
+    run:
+      detach: true
+      publish:
+        # For read-only access, exposed to the public
+        - "443:443"
+        # For read/write access, limited to AeroFS VPN.
+        - "5050:5050"
+      volume:
+        - ${KEYS_DIR}/https.crt:/host/https.crt
+        - ${KEYS_DIR}/https.key:/host/https.key
+      link:
+        - registry:registry.service
+
+  # Ship Enterprise requires inclusion of Loader.
+  loader:
+    image: aerofs/registry.loader
+    run:
+      detach: true

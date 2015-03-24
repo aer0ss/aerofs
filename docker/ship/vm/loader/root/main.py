@@ -2,6 +2,7 @@ from os.path import join
 import shutil
 from sys import argv, stderr
 from os import walk
+from os.path import isfile
 import subprocess
 import api
 from common import TAG_PATH, MODIFIED_YML_PATH
@@ -20,7 +21,8 @@ def install_getty(dest):
 
     # Copy /tag & /banner
     shutil.copy2(TAG_PATH, join(dest, 'tag'))
-    shutil.copy2('/banner', join(dest, 'banner'))
+    if isfile('/banner'):
+        shutil.copy2('/banner', join(dest, 'banner'))
 
 
 def main():
@@ -37,7 +39,7 @@ def main():
         print loader.get_tag()
 
     elif argv[1] == 'verify':
-        loader.verify()
+        loader.verify(argv[2])
 
     elif argv[1] == 'load':
         if len(argv) != 5:

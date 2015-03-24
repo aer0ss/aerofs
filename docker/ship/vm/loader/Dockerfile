@@ -29,4 +29,4 @@ COPY root /
 EXPOSE 80
 
 # -u to disable console print buffering
-ENTRYPOINT [ "python", "-u", "/run.py" ]
+ENTRYPOINT [ "python", "-u", "/main.py" ]

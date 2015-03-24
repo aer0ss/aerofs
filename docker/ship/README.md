@@ -21,7 +21,7 @@ deployment options:
     - `preloaded` delivers a standalone VM image with all the containers preloaded.
     - `bare` delivers a minimum image to launch the VM. Containers will be pulled at
     first run from the registry defined at build time.
-    - `cloud-init` delivers a cloud-config file only for any clouds that support
+    - `cloudinit` delivers a cloud-config file only for any clouds that support
     CoreOS base images.
 - `vm-cluster`: Configuration data to run the app on a cluster of self-hosted VMs *
 - `gke`: Configuration data for Google Container Engine *
@@ -65,7 +65,9 @@ Here is an example Dockerfile:
 You may run the `verify` command to verify the two files are correctly installed:
 
     $ docker build -t coolapp/loader .
-    $ docker run --rm coolapp/loader verify
+    $ docker run --rm coolapp/loader verify coolapp/loader
+    
+The Loader image's name is specified as the only command argument.
 
 ### Step 2. Generate outputs
 
@@ -75,11 +77,16 @@ i.e. `docker run <image>:latest` should work for all the images.
 Then, define a "ship.yml" file with the following content:
 
     loader: coolapp/loader
-    repo: registry.coolapp.com
+    repo: registry.hub.docker.com
     target: default
+    hostname: coolapp
+    swap-size: 4096
     
+    # Optional
+    push-repo: internal.coolapp.com
+    
+    # The following keys are mandatory only if the output includes one of "preloaded" and "bare"
     vm-image-name: coolapp-appliance
-    vm-host-name: coolapp
     vm-disk-size: 102400
     vm-ram-size: 3072
     vm-cpus: 2
@@ -89,15 +96,17 @@ Then, define a "ship.yml" file with the following content:
 - `target`: the target container or group to be launched by the Loader. The target should exist in crane.yml.
 "default" loads the default group or all the containers if the default group is not defined. See crane's doc for
 detail on targets. After the initial launch, the app can change its value by calling Loader API.
+- `hostname`: the hostname of the appliance. It will be visible to the end user as part of
+the bash command-line prompt.
+- `swap-size`: The swap size of the appliance in MB. 0 to disable swap.
+- `push-repo`: (optional) the target registry `push-images.sh` pushes the container images to, if it's different from `repo`.
 - `vm-image-name`: the file name prefix of VM images. If it's "foo", the images
 will be named "foo.ova", "foo.qcow2", and so on.
-- `vm-host-name`: the hostname of the VM. It will be visible to the end user as part of
-the bash command-line prompt.
-- `vm-disk-size`, `vm-ram-size`: sizes are in MB.
+- `vm-disk-size`, `vm-ram-size`: sizes are in MB. 
 
-Lastly, call "vm/builder/build.sh" to generate VM images to folder "out":
+Lastly, call "vm/build.sh" to generate VM images to folder "out":
 
-    $ <path_to_ship>/vm/builder/build.sh ship.yml out
+    $ <path_to_ship>/vm/build.sh ship.yml out
 
 
 ### Loader API
@@ -214,6 +223,11 @@ To test the generated VM image in Continuous Integration systems, you may follow
 to inject commands into the image. It is useful, say, if you want to set up a
 [static IP](https://coreos.com/docs/cluster-management/setup/network-config-with-networkd/)
 so test suites can easily find the VM.
+
+### Publishing images to repository
+
+
+
 
 ## IT admin & site engineer manual
 

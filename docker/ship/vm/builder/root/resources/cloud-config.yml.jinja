@@ -54,11 +54,11 @@ coreos:
         ExecStart={{ enable_swap }}
 
   oem:
-    id: aerofs-ship
-    name: AeroFS Ship
-    version-id: 0.0.0
-    home-url: http://www.aerofs.com/
-    bug-report-url: http://www.aerofs.com/
+    id: ship-enterprise
+    name: Ship Enterprise
+    version-id: {{ tag }}
+    home-url: http://www.shipenterprise.com/
+    bug-report-url: http://www.shipenterprise.com/
 
   update:
     reboot-strategy: off
@@ -156,3 +156,11 @@ write_files:
         docker start -a "${CONTAINER}"
         echo 'Loader stopped'
       done
+
+{% for key in extra_files %}
+  - path: /{{ key }}
+    encoding: gz+b64
+    content: |
+      {{ extra_files[key] }}
+
+{% endfor %}

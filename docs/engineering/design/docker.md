@@ -81,7 +81,7 @@ copied or duplicated in the new system.
 
 - reboot only specified containers and its dependents. Check all usages of loader.mako:reboot()
 
-- remove repload retry loop from docker/ship/vm/builder/build.sh if preloading no longer fails.
+- remove repload retry loop from docker/ship/vm/build.sh if preloading no longer fails.
 
 - dryad?
 

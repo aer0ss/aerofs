@@ -44,7 +44,9 @@ def modify_yaml(repo, tag):
     add_repo_and_tag_to_images(containers, repo, tag)
     modify_links(containers, tagged_loader_container, my_container, tag)
     modify_volumes_from(containers, tagged_loader_container, my_container, tag)
-    modify_groups(y['groups'], tagged_loader_container, my_container, tag)
+
+    if 'groups' in y:
+        modify_groups(y['groups'], tagged_loader_container, my_container, tag)
 
     with open(MODIFIED_YML_PATH, 'w') as f:
         f.write(yaml.dump(y, default_flow_style=False))
@@ -138,10 +140,16 @@ def get_tag():
         return f.read().strip()
 
 
-def verify():
+def verify(loader_image):
     if not get_tag():
         raise Exception('{} is empty.'.format(TAG_PATH))
 
+    has_loader_image = False
     for image in get_images():
         if ':' in image:
             raise Exception('Image name "{}" has a colon.'.format(image))
+        if image == loader_image:
+            has_loader_image = True
+
+    if not has_loader_image:
+        raise Exception('{} contains no Loader image {}'.format(CRANE_YML_PATH, loader_image))

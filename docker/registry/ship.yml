@@ -1,0 +1,5 @@
+repo: registry.hub.docker.com
+loader: aerofs/registry.loader
+target: default
+hostname: aerofs
+swap-size: 0

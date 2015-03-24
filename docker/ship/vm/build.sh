@@ -1,17 +1,41 @@
 #!/bin/bash
 set -ex
 
-if [ $# != 3 ] && [ $# != 2 ]; then
+die_usage() {
     (set +x
-        echo "Usage: $0 <path_to_ship.yml> <path_to_output_folder> [nopush]"
+        echo "Usage: $0 <output_formats> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> ['nopush']"
+        echo "       <output_formats> is a comma separated list of output formatS. Only 'cloudinit' and 'preloaded' are supported."
+        echo "                Example: 'preloaded,cloudinit'"
+        echo "       <path_to_extra_files> The path to a folder that holds files to be copied to the root of the target host."
+        echo "                The files are added to the cloud-config file so you may expect consistent results across all"
+        echo "                output formats. Specify an empty string if no extra files are needed."
         echo "       'nopush' to skip pushing docker images to the local preload registry. Useful if the images are already"
-        echo "       pushed and unchanged since the last build."
+        echo "                pushed and unchanged since the last build."
         exit 11
     )
+}
+
+if [ $# != 5 ] && [ $# != 4 ]; then
+    die_usage
+else
+    # Parse Output Formats
+    OF_CLOUDINIT=0
+    OF_PRELOADED=0
+    for i in $(tr ',' ' ' <<< "$1"); do
+        if [ "$i" = cloudinit ]; then
+            OF_CLOUDINIT=1
+        elif [ "$i" = preloaded ]; then
+            OF_PRELOADED=1
+        else
+            die_usage
+        fi
+    done
 fi
-SHIP_YML="$1"
-OUTPUT="$2"
-[[ x"$3" = xnopush ]] && PUSH=0 || PUSH=1
+
+SHIP_YML="$2"
+EXTRA_FILES="$3"
+OUTPUT="$4"
+[[ "$5" = nopush ]] && PUSH=0 || PUSH=1
 
 # Absolute paths are required by docker. (the realpath command is unavailable on OSX)
 abspath() {
@@ -19,6 +43,17 @@ abspath() {
 }
 
 THIS_DIR=$(abspath "$(dirname ${BASH_SOURCE[0]})")
+
+# See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
+GREEN='0;32'
+CYAN='0;36'
+YELLOW='1;33'
+RED='0;31'
+cecho() {
+    (set +x
+        echo -e "\033[$1m$2\033[0m"
+    )
+}
 
 # Use this global variable to pass data back to main()
 GLOBAL_PRELOAD_REPO_URL=
@@ -91,21 +126,35 @@ teardown_preload_registry() {
     docker stop $1
 }
 
-build_vdi() {
+build_cloud_config_and_vdi() {
     local LOADER_IMAGE=$1
     local TAG=$(docker run --rm ${LOADER_IMAGE} tag)
 
-    # Copy ship.yml to the output folder as the original file may be in a temp folder which can't be
+    if [ -z "${TAG}" ]; then
+        (set +x; cecho ${RED} "ERROR: couldn't read tag from Loader")
+        exit 44
+    fi
+
+    # Copy the files to the output folder as the original file may be in a temp folder which can't be
     # reliably bind mounted by docker-machine.
     cp "${SHIP_YML}" "${OUTPUT}/ship.yml"
+    local EXTRA_MOUNT="${OUTPUT}/extra"
+    mkdir -p "${EXTRA_MOUNT}"
+    rm -rf "${EXTRA_MOUNT}/*"
+    if [ -n "${EXTRA_FILES}" ]; then
+        cp -a "${EXTRA_FILES}"/* "${EXTRA_MOUNT}"
+    fi
 
     # Build the builder (how meta)
     local IMAGE=shipenterprise/vm-builder
-    docker build -t ${IMAGE} "${THIS_DIR}"
+    docker build -t ${IMAGE} "${THIS_DIR}/builder"
 
     # Run the builder. Need privilege to run losetup
-    docker run --rm --privileged -v "${OUTPUT}":/output -v "${OUTPUT}/ship.yml":/ship.yml \
-        ${IMAGE} /run.sh /ship.yml /output ${TAG}
+    docker run --rm --privileged \
+        -v "${OUTPUT}":/output \
+        -v "${OUTPUT}/ship.yml":/ship.yml \
+        -v "${EXTRA_MOUNT}":/extra \
+        ${IMAGE} /run.sh ${OF_PRELOADED} /ship.yml /extra /output ${TAG}
 }
 
 resize_vdi() {
@@ -172,7 +221,7 @@ preload() {
 
     VBoxManage startvm ${VM} --type headless
 
-    local KEY_FILE="${THIS_DIR}/root/resources/preload-ssh.key"
+    local KEY_FILE="${THIS_DIR}/builder/root/resources/preload-ssh.key"
     local SSH_ARGS="-q -p ${SSH_FORWARD_PORT} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no \
         -i ${KEY_FILE} core@localhost"
 
@@ -272,7 +321,7 @@ convert_to_ova() {
     VBoxManage export ${UUID} --manifest --output "${OVA}"
     VBoxManage modifyvm ${UUID} --name ${VM}
 
-    "${THIS_DIR}/../../../../packaging/bakery/private-deployment/remove_vbox_section_from_ova.py" "${OVA}"
+    "${THIS_DIR}/../../../packaging/bakery/private-deployment/remove_vbox_section_from_ova.py" "${OVA}"
 }
 
 # Return the value of the given key specified in ship.yml
@@ -286,15 +335,29 @@ find_free_local_port() {
     echo ${PORT}
 }
 
-# See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
-GREEN='0;32'
-CYAN='0;36'
-YELLOW='1;33'
-RED='0;31'
-cecho() {
-    (set +x
-        echo -e "\033[$1m$2\033[0m"
-    )
+build_preloaded() {
+    local LOADER_IMAGE=$1
+    local VM_BASE_DIR="$2"
+    local VM_IMAGE_NAME="$3"
+    local OVA="$4"
+
+    local VDI="${OUTPUT}/preloaded/disk.vdi"
+    local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
+
+    resize_vdi "${VDI}" $(yml 'vm-disk-size')
+
+    setup_preload_registry ${PRELOAD_REPO_CONTAINER} ${LOADER_IMAGE} ${PUSH}
+
+    # To minimize race condition, search for a free port right before we use the port.
+    local SSH_FORWARD_PORT=$(find_free_local_port)
+    local SSH_FORWARD_RULE=guestssh
+    create_vm ${VM} $(yml 'vm-cpus') $(yml 'vm-ram-size') "${VDI}" "${VM_BASE_DIR}" ${SSH_FORWARD_PORT} ${SSH_FORWARD_RULE}
+    preload ${VM} ${SSH_FORWARD_PORT} ${GLOBAL_PRELOAD_REPO_URL}
+    update_nic ${VM} ${SSH_FORWARD_RULE}
+    convert_to_ova ${VM} ${VM_IMAGE_NAME} "${OVA}"
+    delete_vm ${VM} "${VM_BASE_DIR}"
+
+    teardown_preload_registry ${PRELOAD_REPO_CONTAINER}
 }
 
 main() {
@@ -304,37 +367,39 @@ main() {
     mkdir -p "${OUTPUT}"
     OUTPUT=$(abspath "${OUTPUT}")
 
-    local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
     local LOADER_IMAGE=$(yml 'loader')
     local VM=shipenterprise-build-vm
-    local FINAL_VM=$(yml 'vm-image-name')
+    local VM_IMAGE_NAME=$(yml 'vm-image-name')
     local VM_BASE_DIR="${OUTPUT}/preloaded/vm"
-    local VDI="${OUTPUT}/preloaded/disk.vdi"
-    local OVA="${OUTPUT}/preloaded/${FINAL_VM}.ova"
+    local OVA="${OUTPUT}/preloaded/${VM_IMAGE_NAME}.ova"
 
-    setup_preload_registry ${PRELOAD_REPO_CONTAINER} ${LOADER_IMAGE} ${PUSH}
+    if [ ${OF_PRELOADED} = 1 ]; then
+        # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the host.
+        delete_vm ${VM} "${VM_BASE_DIR}"
+    fi
 
-    # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the host.
-    delete_vm ${VM} "${VM_BASE_DIR}"
-    build_vdi ${LOADER_IMAGE}
-    resize_vdi "${VDI}" $(yml 'vm-disk-size')
+    if [ ${OF_CLOUDINIT} = 1 ] || [ ${OF_PRELOADED} = 1 ]; then
+        build_cloud_config_and_vdi ${LOADER_IMAGE}
+    fi
 
-    # To minimize race condition, search for a free port right before we use the port.
-    local SSH_FORWARD_PORT=$(find_free_local_port)
-    local SSH_FORWARD_RULE=guestssh
-    create_vm ${VM} $(yml 'vm-cpus') $(yml 'vm-ram-size') "${VDI}" "${VM_BASE_DIR}" ${SSH_FORWARD_PORT} ${SSH_FORWARD_RULE}
-    preload ${VM} ${SSH_FORWARD_PORT} ${GLOBAL_PRELOAD_REPO_URL}
-    update_nic ${VM} ${SSH_FORWARD_RULE}
-    convert_to_ova ${VM} ${FINAL_VM} "${OVA}"
-    delete_vm ${VM} "${VM_BASE_DIR}"
-
-    teardown_preload_registry ${PRELOAD_REPO_CONTAINER}
+    if [ ${OF_PRELOADED} = 1 ]; then
+        build_preloaded ${LOADER_IMAGE} "${VM_BASE_DIR}" "${VM_IMAGE_NAME}" "${OVA}"
+    fi
 
     (set +x
         echo
-        cecho ${GREEN} "Image is ready:"
-        echo
-        cecho ${GREEN} "    $(du -h ${OVA})"
+        cecho ${GREEN} "Build is complete."
+
+        if [ ${OF_CLOUDINIT} = 1 ]; then
+            echo
+            cecho ${GREEN} "    VM cloud-config:        ${OUTPUT}/cloud-config.yml"
+        fi
+
+        if [ ${OF_PRELOADED} = 1 ]; then
+            echo
+            cecho ${GREEN} "    VM preloaded:           $(du -h ${OVA})"
+        fi
+
         echo
     )
 }

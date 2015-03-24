@@ -1,12 +1,12 @@
 repo: registry.aerofs.com
+push-repo: registry.aerofs.com:5050
 loader: {{ loader }}
 target: maintenance
+hostname: aerofs
+swap-size: 4096
 
-# Sizes are in MB. Set swap size to zero to disable swap.
 # TODO (WW) rename to aerofs-appliance once the legacy appliance is phased out.
 vm-image-name: docker-appliance-{{ tag }}
-vm-host-name: aerofs
 vm-disk-size: 102400
 vm-ram-size: 4096
-vm-swap-size: 4096
 vm-cpus: 2
