@@ -18,6 +18,7 @@ PWD = os.path.abspath(os.path.dirname(__file__))
 PROPERTIES_EXTERNAL = os.path.join(PWD, "properties", "external.properties")
 PROPERTIES_EXTERNAL_TMP = os.path.join(PWD, "properties","external.properties.tmp")
 MODIFIED_TIME_KEY = "properties_modification_time"
+DEPLOYMENT_SECRET_PATH = "/data/deployment_secret"
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
 
@@ -55,6 +56,26 @@ def require_matching_license_shasum():
             actual_shasum = hashlib.sha1(license_data).hexdigest()
             if not const_time_is_equal(purported_sha1.lower(), actual_shasum):
                 return Response("license_sha1 does not match that of the current license file.\n", status=400)
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
+
+# Decorator to require that the client provided an Authorization:
+# Aero-Service-Shared-Secret header with the current deployment secret
+def require_deployment_secret():
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            auth_header = request.headers.get("Authorization", "")
+            m = re.match(r"Aero-Service-Shared-Secret ([0-9A-Za-z_-]+) ([0-9A-Fa-f]+)", auth_header)
+            if not m:
+                return Response("Authorization header invalid.", status=400)
+            purported_deployment_secret = m.group(2)
+            actual_deployment_secret = None
+            with open(DEPLOYMENT_SECRET_PATH, "r") as secret_file:
+                actual_deployment_secret = secret_file.readline().strip()
+            if not const_time_is_equal(purported_deployment_secret, actual_deployment_secret):
+                return Response("Invalid deployment secret in Authorization header.", status=400)
             return f(*args, **kwargs)
         return wrapped
     return wrapper
@@ -125,13 +146,13 @@ def client_properties():
 # TODO: Authentication (via license file shasum) required.
 @app.route("/server")
 @returns_plaintext
-#@require_matching_license_shasum()
+@require_deployment_secret()
 def server_properties():
     return render_template("server.tmplt", **get_template_kv_pairs())
 
 @app.route("/set", methods=["POST"])
 @returns_plaintext
-#@require_matching_license_shasum()
+@require_deployment_secret()
 def set_external_variable():
     key = request.form['key']
     value = request.form['value']
