@@ -10,8 +10,8 @@ our customers are successful in using the AeroFS platform</strong>.
 In this context, "customer" encompasses everyone who uses our product
 legitimately, but should focus on:
 
-1. Enterprise use cases vs personal use cases.
-2. Paying customers or qualified opportunities vs free users.
+* Enterprise use cases vs personal use cases.
+* Paying customers or qualified opportunities vs free users.
 
 ## Execution
 
@@ -29,7 +29,7 @@ value-add to our customers.
 
 In the past, this organization might have been referred to as "services". We
 prefer the more modern "customer success" terminology, because it better
-reflects our goal as opposed to our execution.
+reflects our goal.
 
 ## Team Profile
 
@@ -37,5 +37,4 @@ As defined in our [hiring guide](../hiring/customer-success-engineer.html), our
 team is composed of individuals that is are a mix of software engineer, product
 manager, sales person and support person. Because of the nature of our product
 and our execution path to achieve customer success, our CS team is much more
-technical than the industry standard, i.e. the baseline technical knowledge
-required is very high.
+technical than the industry standard.
