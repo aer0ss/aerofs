@@ -44,7 +44,5 @@ Deployment through dryad is ideal for our larger enterprise customers, as it
 will allow them to inspect payloads. We can sell deploying dryad as a way to:
 
 1. Do log collection, for support.
-2. Do incident management.
+2. Do incident management (part of a premium services offering).
 3. Drive product improvement.
-
-*Coming soon: a detailed engineering design document.*

@@ -3,10 +3,10 @@ There are three other AeroFS websites, two of which depend on static files in th
 Bunker
 =======
 
-See the README in ~/repos/aerofs/bunker/development.
+See the README in ~/repos/aerofs/bunker/
 
 Lizard
 ========
 
-See the README in ~/repos/aerofs/src/lizard.
+See the README in ~/repos/aerofs/src/lizard
 

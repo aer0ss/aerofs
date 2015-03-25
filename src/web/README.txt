@@ -8,19 +8,10 @@ Run AeroFS website in a virtual environment
 ================================================
 
 Set up your system using development/setup.sh (run without args for usage
-information). After setup has completed, run the web server using
-development/run.sh.
+information). You can use the resulting virtualenv in ~/.aerofs-web-env in
+your IDE.
 
-N.B. the process needs write permissions to /var/log/web/web.log and
-/var/log is owned by root by default on OSX. Create that directory
-and chown it before running run.sh
-
-Known issues:
-    - Sign in does not work when running in prod mode (cookie issue).
-
-# To run test cases:
-cd ~/repos/aerofs/src/web && ~/env/bin/python test_all.py
-
+To run the actual website please see README.develop.txt
 
 Compiling Less and JS:
 ======================
