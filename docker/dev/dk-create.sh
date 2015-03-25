@@ -44,7 +44,7 @@ info "Removing AeroFS containers..."
 "${THIS_DIR}/dk-destroy.sh"
 
 info "Launching 'maintenance' container group..."
-"${THIS_DIR}/crane.sh" run -dall maintenance
+"${THIS_DIR}/dk-crane.sh" run -dall maintenance
 
 IP=$(docker-machine ip dev)
 
@@ -77,8 +77,8 @@ PID=$!
 while true; do
     if [ "$(cat ${REBOOT_FLAG})" ]; then
         info "Launching default container group..."
-        "${THIS_DIR}/crane.sh" kill -dall maintenance
-        "${THIS_DIR}/crane.sh" run -dall
+        "${THIS_DIR}/dk-crane.sh" kill -dall maintenance
+        "${THIS_DIR}/dk-crane.sh" run -dall
         info "Waiting for apply-config to finish. Use e.g. 'docker logs -f repackaging' to monitor progress..."
         break
     elif [ "$(ps -p ${PID} | sed 1d)" ]; then
