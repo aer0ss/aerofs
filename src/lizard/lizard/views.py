@@ -3,10 +3,9 @@ import datetime
 import os
 import json
 import urllib
-
 import requests
 
-from flask import Blueprint, current_app, render_template, flash, redirect, request, url_for, Response, session
+from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, url_for, Response, session
 from flask.ext import scrypt, login
 import itsdangerous
 from itsdangerous import TimestampSigner
@@ -558,13 +557,10 @@ def download_qcow():
 @login.login_required
 def download_latest_license():
     user = login.current_user
-    # Give the user the license that expires last.  If there exist more than
-    # one such license, give them the one that was imported most recently.
-    licenses = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
-                models.License.expiry_date.desc(),
-                models.License.modify_date.desc(),
-            )
-    license = licenses.first_or_404()
+    license = user.customer.newest_license()
+    if license is None or license.blob is None:
+        # (the user shouldn't see this route if they don't have a Filled license)
+        abort(404)
     r = Response(license.blob,
             mimetype='application/octet-stream',
             headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
