@@ -1,11 +1,13 @@
 package com.aerofs.ca.utils;
 
+import com.google.common.net.InetAddresses;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ExtensionUtils;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -116,8 +118,10 @@ public class CertificateSigner {
 
         X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(
                 _caCert.getSubject(), BigInteger.valueOf(serialNo), startDate, endDate, csr.getSubject(), publicKeyInfo);
+
         // make the certificate a non-CA cert
         certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        addSubjectAlternativeNameForIPAddress(certGen, csr);
 
         // _extensionUtils operations are not thread-safe
         synchronized (_extensionUtils) {
@@ -130,6 +134,18 @@ public class CertificateSigner {
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(_caKey);
 
         return certGen.build(signer);
+    }
+
+    private void addSubjectAlternativeNameForIPAddress(X509v3CertificateBuilder certGen, PKCS10CertificationRequest csr)
+            throws CertIOException
+    {
+        for (RDN rdn : csr.getSubject().getRDNs(BCStyle.CN)) {
+            for (AttributeTypeAndValue at : rdn.getTypesAndValues()) {
+                if (InetAddresses.isInetAddress(at.getValue().toString())) {
+                    certGen.addExtension(Extension.subjectAlternativeName, false, new GeneralName(GeneralName.iPAddress, at.getValue().toString()));
+                }
+            }
+        }
     }
 
     public X509CertificateHolder caCert()

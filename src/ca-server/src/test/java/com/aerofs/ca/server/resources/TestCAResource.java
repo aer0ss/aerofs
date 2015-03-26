@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentSigner;
@@ -180,6 +181,33 @@ public class TestCAResource
         X509CertificateHolder crt2 = CertificateUtils.pemToCert(resp.getBody().asByteArray());
 
         assertTrue("serial numbers must be unique per CA", !crt1.getSerialNumber().equals(crt2.getSerialNumber()));
+    }
+
+    @Test
+    public void shouldAddSubAltNameForIPAddr()
+            throws Exception
+    {
+        String ipAddr = "1.2.3.4";
+        KeyPair signedKeys = KeyUtils.newKeyPair();
+        X500Name subject = new X500Name("C=US, ST=California, L=San Francisco, O=aerofs.com, CN=" + ipAddr);
+        SubjectPublicKeyInfo publicKey = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(signedKeys.getPublic().getEncoded()));
+        PKCS10CertificationRequestBuilder csrBuilder = new PKCS10CertificationRequestBuilder(subject, publicKey);
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(signedKeys.getPrivate());
+        PKCS10CertificationRequest csr = csrBuilder.build(signer);
+
+        Response resp =
+                RestAssured
+                        .given()
+                        .header(HttpHeaders.AUTHORIZATION, getAuthorizationHeader("test"))
+                        .body(CertificateUtils.csrToPEM(csr))
+                        .post(TestCAServer.getCAUrl() + "?service.com");
+        resp
+                .then()
+                .statusCode(javax.ws.rs.core.Response.Status.OK.getStatusCode());
+        X509CertificateHolder crt = CertificateUtils.pemToCert(resp.getBody().asByteArray());
+        Extension extension = crt.getExtension(Extension.subjectAlternativeName);
+        assertTrue(extension != null);
+        assertEquals(extension.getParsedValue(), new GeneralName(GeneralName.iPAddress, ipAddr));
     }
 
     private PKCS10CertificationRequest newCsr()
