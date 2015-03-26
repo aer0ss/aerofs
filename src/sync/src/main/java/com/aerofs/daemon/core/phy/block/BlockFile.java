@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Date;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 
@@ -63,7 +62,8 @@ class BlockFile implements IPhysicalFile
     public long lengthOrZeroIfNotFile()
     {
         try {
-            return checkNotNull(info_())._length;
+            FileInfo info = info_();
+            return info != null ? info._length : 0;
         } catch (SQLException e) {
             l.warn("Failed to determine length of {}", _sokid, e);
             return 0;
@@ -74,7 +74,9 @@ class BlockFile implements IPhysicalFile
     public long lastModified() throws IOException
     {
         try {
-            return checkNotNull(info_())._mtime;
+            FileInfo info = info_();
+            if (info == null) throw new ExFileNotFound(_path);
+            return info._mtime;
         } catch (SQLException e) {
             l.warn("Failed to determine mtime", e);
             return new Date().getTime();
@@ -105,7 +107,7 @@ class BlockFile implements IPhysicalFile
     public boolean exists_()
     {
         try {
-            return checkNotNull(info_()).exists();
+            return FileInfo.exists(info_());
         } catch (SQLException e) {
             l.warn("Failed to determine existence of {}", _sokid, e);
             return false;
