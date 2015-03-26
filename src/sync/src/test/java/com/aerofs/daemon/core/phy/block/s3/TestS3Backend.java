@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.C;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.lib.ContentBlockHash;
@@ -16,6 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -75,6 +77,17 @@ public class TestS3Backend extends AbstractBlockTest
     public void shouldStoreAndFetchBlock() throws Exception
     {
         TestBlock b = newBlock();
+        put(bsb, b);
+        Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b._key)));
+    }
+
+    @Test
+    public void shouldStoreAndFetchLargeBlock() throws Exception
+    {
+        byte[] d = new byte[4 * C.MB];
+        ThreadLocalRandom.current().nextBytes(d);
+        TestBlock b = new TestBlock(d);
+
         put(bsb, b);
         Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b._key)));
     }

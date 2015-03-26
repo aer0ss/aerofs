@@ -39,7 +39,7 @@ public class AbstractBlockTest extends AbstractTest
         public final ContentBlockHash _key;
         public final byte[] _content;
 
-        TestBlock(byte[] content)
+        public TestBlock(byte[] content)
         {
             _content = content;
             _key = contentHash(content);

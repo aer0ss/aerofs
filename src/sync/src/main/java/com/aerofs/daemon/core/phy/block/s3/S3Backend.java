@@ -182,7 +182,7 @@ public class S3Backend implements IBlockStorageBackend
         {
             if (f != null) {
                 checkState(mem.length + f.length() == length,
-                        "corrupted encoding buffer: %s + %s !+ %s", mem.length, f.length(), length);
+                        "corrupted encoding buffer: %s + %s != %s", mem.length, f.length(), length);
             }
             return length;
         }
@@ -212,9 +212,9 @@ public class S3Backend implements IBlockStorageBackend
 
                 @Override
                 public void write(byte b[], int off, int len) throws IOException {
-                    if (length + len <= mem.length) {
+                    if (length < mem.length) {
                         int n = Math.min(len, mem.length - (int)length);
-                        System.arraycopy(b, off, mem, (int)length, len);
+                        System.arraycopy(b, off, mem, (int)length, n);
                         length += n;
                         off += n;
                         len -= n;
