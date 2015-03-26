@@ -26,7 +26,7 @@ echo "Configuring puppet master vm: ${PUPPET_MASTER}"
 echo "Installing puppet"
 $SSH_COMMAND ${PUPPET_MASTER} -C "apt-get update"
 $SSH_COMMAND ${PUPPET_MASTER} -C "apt-get install --yes puppet puppetmaster rubygems"
-$SSH_COMMAND ${PUPPET_MASTER} -C "gem install hiera hiera-puppet"
+$SSH_COMMAND ${PUPPET_MASTER} -C "gem install -v '~>1.0' hiera hiera-puppet"
 echo "Copying over puppet files"
 # rsync - recursuve/follow symlinks - use ssh -
 rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
