@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
@@ -35,6 +36,8 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * BlockStorage backend based on Amazon S3
@@ -115,9 +118,9 @@ public class S3Backend implements IBlockStorageBackend
     static class EncoderWrapping
     {
         public final OutputStream wrapped;
-        public final Object encoderData;
+        public final EncoderData encoderData;
 
-        public EncoderWrapping(OutputStream out, Object data)
+        public EncoderWrapping(OutputStream out, EncoderData data)
         {
             wrapped = out;
             encoderData = data;
@@ -169,11 +172,19 @@ public class S3Backend implements IBlockStorageBackend
         byte[] mem;
 
         @Nullable File f;
-        OutputStream out;
 
         EncodingBuffer()
         {
             mem = new byte[IN_MEMORY_THRESHOLD];
+        }
+
+        long encodedLength()
+        {
+            if (f != null) {
+                checkState(mem.length + f.length() == length,
+                        "corrupted encoding buffer: %s + %s !+ %s", mem.length, f.length(), length);
+            }
+            return length;
         }
 
         ByteSource encoded()
@@ -184,6 +195,8 @@ public class S3Backend implements IBlockStorageBackend
 
         OutputStream encodingStream() {
             return new OutputStream() {
+                FileOutputStream out;
+
                 @Override
                 public void write(int b) throws IOException {
                     if (length < mem.length) {
@@ -214,13 +227,14 @@ public class S3Backend implements IBlockStorageBackend
 
                 private void spill() throws IOException
                 {
-                    f = FileUtil.createTempFile("encodebuffer", null, null);
+                    f = FileUtil.createTempFile("encbuf" + UniqueID.generate().toStringFormal(),
+                            null, null);
                     out = new FileOutputStream(f);
                 }
 
                 @Override
                 public void close() throws IOException {
-                    if (out !=null) out.close();
+                    if (out != null) out.close();
                 }
             };
         }
@@ -256,7 +270,9 @@ public class S3Backend implements IBlockStorageBackend
                 l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
             }
 
-            EncoderData d = (EncoderData) w.encoderData;
+            EncoderData d = w.encoderData;
+            checkState(d.encodedLength == buffer.encodedLength(),
+                    "inconsistent encoded length: %s != %s", d.encodedLength, buffer.encodedLength());
 
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType("application/octet-stream");
