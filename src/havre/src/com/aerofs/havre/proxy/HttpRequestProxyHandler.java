@@ -338,6 +338,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         }
 
         @Override
+        public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent cse)
+        {
+            if (!_downstream.isConnected()) return;
+            final boolean upstreamWritable = ctx.getChannel().isWritable();
+            l.info("{} downstream {}", upstreamWritable ? "resume" : "suspend", _downstream);
+            _downstream.setReadable(upstreamWritable);
+        }
+
+        @Override
         public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent cse)
         {
             l.info("upstream channel closed {} {} {}", cse.getChannel(),

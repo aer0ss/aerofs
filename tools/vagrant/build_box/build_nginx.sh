@@ -15,9 +15,11 @@ cd package_source
 add-apt-repository --yes ppa:nginx/development
 apt-get update
 apt-get -y -o DPkg::Options::=--force-confold build-dep nginx
-apt-get source nginx
-pushd nginx*
-debuild -i -us -uc -b
-popd
-cp nginx*.deb /vagrant/
+for pkg in init-system-helpers nginx ; do
+    apt-get source $pkg
+    pushd "$pkg"*
+    debuild -i -us -uc -b
+    popd
+done
+cp *.deb /vagrant/
 echo "packages ready on host folder"
