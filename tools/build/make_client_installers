@@ -363,12 +363,11 @@ function create_release_version_file() {
 
 echo ">> make client installers and packages in $PACKAGE_DIR"
 compute_product_names
-$BUILD_LINUX_INSTALL_DEB && make_linux_installer_deb &
-$BUILD_LINUX_INSTALL_TGZ && make_linux_installer_tgz &
-$BUILD_LINUX_UPDATE_TGZS && make_linux_update_tgz i386 &
-$BUILD_LINUX_UPDATE_TGZS && make_linux_update_tgz amd64 &
-$BUILD_WINDOWS_EXE && make_windows_installers &
-$BUILD_OSX_PACKAGES && make_osx_packages &
+if [ "$BUILD_LINUX_INSTALL_DEB" == "true" ] ; then make_linux_installer_deb & fi
+if [ "$BUILD_LINUX_INSTALL_TGZ" == "true" ] ; then make_linux_installer_tgz & fi
+if [ "$BUILD_LINUX_UPDATE_TGZS" == "true" ] ; then make_linux_update_tgz i386 & make_linux_update_tgz amd64 & fi
+if [ "$BUILD_WINDOWS_EXE" == "true" ] ; then make_windows_installers & fi
+if [ "$BUILD_OSX_PACKAGES" == "true" ] ; then make_osx_packages & fi
 
 # Check that all the background tasks completed successfully
 FAIL=0
