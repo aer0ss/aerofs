@@ -5,14 +5,12 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.LibParam.PostUpdate;
-import com.aerofs.lib.LibParam.DeploymentConfig;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -20,9 +18,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -34,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
+import static com.aerofs.lib.cfg.CfgDatabase.*;
 
 /**
  * This class is unfriendly to dependency injection and should be eventually removed.
@@ -69,36 +67,21 @@ public class Cfg
         }
     }
 
+    private static BaseCfg _baseCfg;
 
-    private static String _absRTRoot;
-    private static DID _did;
-    private static UserID _user;
     private static SID _rootSID;
     private static boolean _useDM;
-    private static boolean _useTCP;
-    private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
-    private static boolean _isAggressiveCheckingEnabled;
     private static boolean _useXFF;
-    private static boolean _usePolaris;
-    private static String _absDefaultRootAnchor;
     private static String _absDefaultAuxRoot;
-    private static String _ver;
-    private static X509Certificate _cert;
-    private static X509Certificate _cacert;
-    private static PrivateKey _privKey;
     private static boolean _inited;
     private static int _portbase;
-    private static @Nullable StorageType _storageType;
 
     private static final long _profilerStartingThreshold;
 
     private static IDBCW _dbcw;
     private static CfgDatabase _db;
     private static RootDatabase _rdb;
-
-    // default value might be needed before init_
-    private static long _timeout = Long.parseLong(Key.TIMEOUT.defaultValue());
 
     static {
         long pst;
@@ -118,61 +101,51 @@ public class Cfg
      */
     public static synchronized void init_(String rtRoot, boolean readPasswd)
             throws ExInvalidID, IOException, ExBadCredential, SQLException, ExNotSetup,
-            CertificateException
+            GeneralSecurityException
     {
-        // initialize rtroot first so it's available even if the method failed later
-        _absRTRoot = new File(rtRoot).getAbsolutePath();
+        BaseCfg.initialize(rtRoot);
+        _baseCfg = BaseCfg.getInstance();
 
         initDB_();
         _db.reload();
-
-        _user = UserID.fromInternal(_db.get(Key.USER_ID));
-        _did = new DID(_db.get(Key.DEVICE_ID));
-        _rootSID = SID.rootSID(_user);
-
-        _timeout = _db.getInt(Key.TIMEOUT);
-
+        _baseCfg.initializeValuesFromConfigStore(_db);
+        _rootSID = SID.rootSID(_baseCfg.user());
         // We want to keep the user-specified path in the DB, but we need the canonical path to
         // watch for filesystem changes on OSX.
-        File rootAnchor = new File(_db.get(Key.ROOT));
+        File rootAnchor = new File(_db.get(ROOT));
         assert rootAnchor.isAbsolute();
-        _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
-        _absDefaultAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _rootSID);
-        _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
+        _absDefaultAuxRoot = absAuxRootForPath(_baseCfg.absDefaultRootAnchor(), _rootSID);
 
-        if (storageType() == StorageType.LINKED && !L.isMultiuser()) {
+        if (_baseCfg.storageType() == StorageType.LINKED && !L.isMultiuser()) {
             // upgrade schema if needed
             // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
             // DPUT are run so this is not a viable option...
             if (_rdb.getRootNullable(_rootSID) == null) {
-                _rdb.addRoot(_rootSID, _absDefaultRootAnchor);
+                _rdb.addRoot(_rootSID, _baseCfg.absDefaultRootAnchor());
             }
         }
 
         try {
-            if (readPasswd) readCreds();
-            readCert();
-        } catch (FileNotFoundException|GeneralSecurityException e) {
-            throw new ExNotSetup();
+            _baseCfg.readPrivateKey(readPasswd);
+        } catch (IOException e) {
+            Loggers.getLogger(Cfg.class).info("convert private key");
+            // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
+            // is loaded before either of them are run  so we need to do an ad-hoc upgrade path
+            // when configuration is loaded.
+            // The updater kills the daemon and the UI must load the config before it can restart
+            // it so there shouldn't be room for any race conditions
+            // TODO: remove conversion code and deprecated deps once support deems it acceptable,
+            // presumably in about 1 year to give old customers ample time to upgrade so sometimes
+            // in July 2016
+            if (!convertPrivateKey()) throw e;
         }
 
         _portbase = readPortbase();
-        _useDM = disabledByFile(rtRoot, LibParam.NODM);
-        _useTCP = disabledByFile(rtRoot, LibParam.NOTCP);
-        _useZephyr = disabledByFile(rtRoot, LibParam.NOZEPHYR);
-        _useAutoUpdate = disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
-        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, LibParam.AGGRESSIVE_CHECKS);
-        _useXFF = disabledByFile(rtRoot, LibParam.NOXFF);
-        _usePolaris = enabledByFile(rtRoot, "polaris");
+        _useDM = CfgUtils.disabledByFile(rtRoot, LibParam.NODM);
+        _useAutoUpdate = CfgUtils.disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
+        _useXFF = CfgUtils.disabledByFile(rtRoot, LibParam.NOXFF);
 
         _inited = true;
-    }
-
-    private static void readCert()
-            throws CertificateException, IOException
-    {
-        String certFileName = absRTRoot() + File.separator + LibParam.DEVICE_CERT;
-        _cert = BaseSecUtil.newCertificateFromFile(certFileName);
     }
 
     /**
@@ -233,16 +206,6 @@ public class Cfg
         }
     }
 
-    private static boolean disabledByFile(String rtRoot, String filename)
-    {
-        return !new File(rtRoot, filename).exists();
-    }
-
-    private static boolean enabledByFile(String rtRoot, String filename)
-    {
-        return new File(rtRoot, filename).exists();
-    }
-
     /**
      * When possible, use injection provided by CfgModule instead of directly calling this method.
      */
@@ -266,24 +229,14 @@ public class Cfg
 
     private static int readPortbase() throws IOException
     {
-        try (Scanner s = new Scanner(new File(_absRTRoot, LibParam.PORTBASE))) {
+        try (Scanner s = new Scanner(new File(_baseCfg.absRTRoot(), LibParam.PORTBASE))) {
             return Integer.parseInt(s.nextLine());
         }
     }
 
     public static String ver()
     {
-        if (_ver == null) {
-            try {
-                try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)))) {
-                    _ver = s.nextLine();
-                }
-            } catch (FileNotFoundException e) {
-                _ver = Versions.ZERO;
-            }
-        }
-
-        return _ver;
+        return _baseCfg.ver();
     }
 
     private static List<UserID> _usersInShard;
@@ -313,7 +266,7 @@ public class Cfg
 
     public static String absRTRoot()
     {
-        return _absRTRoot;
+        return _baseCfg.absRTRoot();
     }
 
     /**
@@ -343,12 +296,12 @@ public class Cfg
      */
     public static DID did()
     {
-        return _did;
+        return _baseCfg.did();
     }
 
     public static UserID user()
     {
-        return _user;
+        return _baseCfg.user();
     }
 
     /**
@@ -364,7 +317,7 @@ public class Cfg
     public static StorageType defaultStorageType()
     {
         return L.isMultiuser()
-                ? (_db.getNullable(Key.S3_BUCKET_ID) != null
+                ? (_db.getNullable(S3_BUCKET_ID) != null
                     ? StorageType.S3
                         : StorageType.LOCAL)
                 : StorageType.LINKED;
@@ -372,7 +325,7 @@ public class Cfg
 
     public static StorageType storageType()
     {
-        return _storageType != null ? _storageType : defaultStorageType();
+        return _baseCfg.storageType() != null ? _baseCfg.storageType() : defaultStorageType();
     }
 
     public static boolean useDM()
@@ -380,32 +333,15 @@ public class Cfg
         return _useDM;
     }
 
-    public static boolean useTCP()
-    {
-        return _useTCP;
-    }
-
-    public static boolean useZephyr()
-    {
-        return _useZephyr;
-    }
-
     public static boolean useAutoUpdate()
     {
         return _useAutoUpdate;
-    }
-
-    public static boolean isAggressiveCheckingEnabled()
-    {
-        return _isAggressiveCheckingEnabled;
     }
 
     public static boolean useTransferFilter()
     {
         return _useXFF;
     }
-
-    public static boolean usePolaris() { return _usePolaris; }
 
     public static boolean useFSTypeCheck(String rtRoot)
     {
@@ -420,7 +356,7 @@ public class Cfg
 
     public static String nativeSocketFilePath(NativeSocketType type)
     {
-        Preconditions.checkState(_absRTRoot != null);
+        Preconditions.checkState(_baseCfg.absRTRoot() != null);
 
         // In Windows all named pipes are created under a special path i.e. \\.\pipe\.
         // Hence to differentiate between different users we need to add the user name to the pipe
@@ -440,19 +376,10 @@ public class Cfg
             String clientType = L.isMultiuser() ? "ts" : "single";
             return Util.join(parentDir, Joiner.on("_").join(userName, type.getFileName(), clientType));
         } else {
-            return Util.join(_absRTRoot, type.getFileName() + ".sock");
+            return Util.join(_baseCfg.absRTRoot(), type.getFileName() + ".sock");
         }
     }
 
-    public static boolean lotsOfLog(String rtRoot)
-    {
-        return new File(Util.join(rtRoot, LibParam.LOL)).exists();
-    }
-
-    public static boolean lotsOfLotsOfLog(String rtRoot)
-    {
-        return new File(Util.join(rtRoot, LibParam.LOLOL)).exists();
-    }
 
     public synchronized static boolean recertify(String rtRoot)
     {
@@ -475,9 +402,8 @@ public class Cfg
         return _profilerStartingThreshold;
     }
 
-    public static long timeout()
-    {
-        return _timeout;
+    public static long timeout() {
+        return _baseCfg.timeout();
     }
 
     /**
@@ -485,7 +411,7 @@ public class Cfg
      */
     public static String absDefaultRootAnchor()
     {
-        return _absDefaultRootAnchor;
+        return _baseCfg.absDefaultRootAnchor();
     }
 
     public static RootDatabase rootDB()
@@ -525,7 +451,7 @@ public class Cfg
 
     public static boolean hasPendingDPUT()
     {
-        return _db.getInt(Key.DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS;
+        return _db.getInt(DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS;
     }
 
     //-------------------------------------------------------------------------
@@ -537,7 +463,7 @@ public class Cfg
     // return null if neither password is set or setPrivateKey_() is called
     public static PrivateKey privateKey()
     {
-        return _privKey;
+        return _baseCfg.privateKey();
     }
 
     /**
@@ -556,26 +482,7 @@ public class Cfg
         // decrypt device_private_key using b64(scrypt(p|u))
         char[] pbePasswd = Base64.encodeBytes(scrypted).toCharArray();
         byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + LibParam.DEVICE_KEY_ENCRYPTED);
-        _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
-    }
-
-    private static void readCreds() throws ExBadCredential, IOException,
-            GeneralSecurityException {
-        String key = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
-        try {
-            _privKey = BaseSecUtil.newPrivateKeyFromFile(key);
-        } catch (IOException e) {
-            Loggers.getLogger(Cfg.class).info("convert private key");
-            // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
-            // is loaded before either of them are run  so we need to do an ad-hoc upgrade path
-            // when configuration is loaded.
-            // The updater kills the daemon and the UI must load the config before it can restart
-            // it so there shouldn't be room for any race conditions
-            // TODO: remove conversion code and deprecated deps once support deems it acceptable,
-            // presumably in about 1 year to give old customers ample time to upgrade so sometimes
-            // in July 2016
-            if (!convertPrivateKey()) throw e;
-        }
+        _baseCfg.setPrivateKey(SecUtil.decryptPrivateKey(encryptedKey, pbePasswd));
     }
 
     @SuppressWarnings("deprecation")
@@ -584,18 +491,18 @@ public class Cfg
         String newKey = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
         String oldKey = absRTRoot() + File.separator + LibParam.DEVICE_KEY_ENCRYPTED;
 
-        String cred = _db.getNullable(Key.CRED);
+        String cred = _db.getNullable(CRED);
         if (cred == null || !(new File(oldKey).exists())) return false;
 
         byte[] scrypted = BaseSecUtil.encryptedBase642scrypted(cred);
         setPrivKeyAndScryptedUsingScrypted(scrypted);
 
-        BaseSecUtil.writePrivateKey(_privKey, newKey);
+        BaseSecUtil.writePrivateKey(privateKey(), newKey);
 
         new File(oldKey).delete();
 
         try {
-            _db.set(Key.CRED, null);
+            _db.set(CRED, null);
         } catch (SQLException e) {
             Loggers.getLogger(Cfg.class).warn("failed to reset scrypted cred");
         }
@@ -607,37 +514,12 @@ public class Cfg
      */
     public static X509Certificate cert()
     {
-        return _cert;
+        return _baseCfg.cert();
     }
 
     public static X509Certificate cacert() throws IOException, CertificateException
     {
-        if (_cacert == null) {
-            InputStream in = new ByteArrayInputStream(DeploymentConfig.BASE_CA_CERTIFICATE.getBytes());
-
-            _cacert = BaseSecUtil.newCertificateFromStream(in);
-        }
-        return _cacert;
+        return _baseCfg.cacert();
     }
 
-    @SuppressWarnings("deprecation")
-    @Nonnull public static Map<Key, String> dumpDb()
-    {
-        assert inited();
-
-        Map<Key, String> contents = Maps.newTreeMap();
-        for (Key key : Key.values()) {
-            // skip sensitive fields
-            if (key == Key.CRED ||
-                    key.keyString().startsWith("s3_") ||
-                    key.keyString().startsWith("mysql_")) {
-                continue;
-            }
-
-            String value = db().getNullable(key);
-            if (value != null && !value.equals(key.defaultValue())) contents.put(key, value);
-        }
-
-        return contents;
-    }
 }

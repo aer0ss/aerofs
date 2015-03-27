@@ -8,21 +8,15 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.*;
 import com.aerofs.lib.LibParam.PostUpdate;
-import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgKey;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -32,21 +26,20 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.util.TreeMap;
+import java.util.HashMap;
 
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.INSTALL_CLIENT;
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.REINSTALL_CLIENT;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.aerofs.lib.cfg.CfgDatabase.*;
+import static com.google.common.base.Preconditions.*;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 public class Setup
@@ -290,41 +283,42 @@ public class Setup
             SPBlockingClient userSp, boolean apiAccess)
             throws Exception
     {
-        TreeMap<Key, String> map = Maps.newTreeMap();
-        map.put(Key.USER_ID, userId.getString());
-        map.put(Key.DEVICE_ID, did.toStringFormal());
-        map.put(Key.ROOT, rootAnchorPath);
-        map.put(Key.STORAGE_TYPE, storageType.name());
-        map.put(Key.CONTACT_EMAIL, contactEmail);
-        map.put(Key.LAST_VER, Cfg.ver());
-        map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
-        map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
-        map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
-        map.put(Key.REST_SERVICE, Boolean.toString(apiAccess));
+        HashMap<CfgKey, String> map = Maps.newHashMap();
+
+        map.put(USER_ID, userId.getString());
+        map.put(DEVICE_ID, did.toStringFormal());
+        map.put(ROOT, rootAnchorPath);
+        map.put(STORAGE_TYPE, storageType.name());
+        map.put(CONTACT_EMAIL, contactEmail);
+        map.put(LAST_VER, Cfg.ver());
+        map.put(DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
+        map.put(UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
+        map.put(SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
+        map.put(REST_SERVICE, Boolean.toString(apiAccess));
 
         // Register the storage type
         if (backendConfig != null) {
             checkState(backendConfig._storageType == storageType);
             checkState(backendConfig._passphrase != null);
-            map.put(Key.STORAGE_ENCRYPTION_PASSWORD, Base64.encodeBytes(
+            map.put(STORAGE_ENCRYPTION_PASSWORD, Base64.encodeBytes(
                     SecUtil.scrypt(backendConfig._passphrase.toCharArray(), userId)));
         }
 
         // Configure specific backends
         if (storageType == StorageType.S3) {
-            map.put(Key.S3_ENDPOINT, backendConfig._s3Config._endpoint);
-            map.put(Key.S3_BUCKET_ID, backendConfig._s3Config._bucketID);
-            map.put(Key.S3_ACCESS_KEY, backendConfig._s3Config._accessKey);
-            map.put(Key.S3_SECRET_KEY, backendConfig._s3Config._secretKey);
+            map.put(S3_ENDPOINT, backendConfig._s3Config._endpoint);
+            map.put(S3_BUCKET_ID, backendConfig._s3Config._bucketID);
+            map.put(S3_ACCESS_KEY, backendConfig._s3Config._accessKey);
+            map.put(S3_SECRET_KEY, backendConfig._s3Config._secretKey);
         }
         if (storageType == StorageType.SWIFT) {
-            map.put(Key.SWIFT_AUTHMODE, backendConfig._swiftConfig._authMode);
-            map.put(Key.SWIFT_URL, backendConfig._swiftConfig._url);
-            map.put(Key.SWIFT_USERNAME, backendConfig._swiftConfig._username);
-            map.put(Key.SWIFT_PASSWORD, backendConfig._swiftConfig._password);
-            map.put(Key.SWIFT_CONTAINER, backendConfig._swiftConfig._container);
-            map.put(Key.SWIFT_TENANT_ID, backendConfig._swiftConfig._tenantId);
-            map.put(Key.SWIFT_TENANT_NAME, backendConfig._swiftConfig._tenantName);
+            map.put(SWIFT_AUTHMODE, backendConfig._swiftConfig._authMode);
+            map.put(SWIFT_URL, backendConfig._swiftConfig._url);
+            map.put(SWIFT_USERNAME, backendConfig._swiftConfig._username);
+            map.put(SWIFT_PASSWORD, backendConfig._swiftConfig._password);
+            map.put(SWIFT_CONTAINER, backendConfig._swiftConfig._container);
+            map.put(SWIFT_TENANT_ID, backendConfig._swiftConfig._tenantId);
+            map.put(SWIFT_TENANT_NAME, backendConfig._swiftConfig._tenantName);
         }
 
         Cfg.recreateSchema_();

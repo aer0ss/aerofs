@@ -18,6 +18,8 @@ import com.google.inject.Scopes;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.lib.cfg.ICfgStore.*;
+
 public class S3BackendModule extends AbstractBackendModule
 {
     @Override
@@ -32,8 +34,8 @@ public class S3BackendModule extends AbstractBackendModule
     public AWSCredentials provideAWSCredentials(CfgDatabase db)
     {
         return new BasicAWSCredentials(
-                db.get(CfgDatabase.Key.S3_ACCESS_KEY),
-                db.get(CfgDatabase.Key.S3_SECRET_KEY));
+                db.get(S3_ACCESS_KEY),
+                db.get(S3_SECRET_KEY));
     }
 
     @Provides
@@ -54,7 +56,7 @@ public class S3BackendModule extends AbstractBackendModule
 
         // Null testing is for old Team Servers that don't have the endpoint field populated.
         // The default end point is S3 US East region.
-        @Nullable String endpoint = db.getNullable(CfgDatabase.Key.S3_ENDPOINT);
+        @Nullable String endpoint = db.getNullable(S3_ENDPOINT);
         if (endpoint != null) s3.setEndpoint(endpoint);
         return s3;
     }

@@ -4,13 +4,13 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+import static com.aerofs.lib.cfg.CfgDatabase.REST_SERVICE;
 
 public class CfgRestService
 {
     public boolean isEnabled()
     {
-        return Cfg.db().getBoolean(Key.REST_SERVICE, getDefaultValue());
+        return Cfg.db().getBoolean(REST_SERVICE, getDefaultValue());
     }
 
     public boolean getDefaultValue()

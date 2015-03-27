@@ -19,6 +19,7 @@ import com.google.inject.Inject;
  */
 public class InjectableSPBlockingClientFactory extends SPBlockingClient.Factory
 {
+
     @Inject
     public InjectableSPBlockingClientFactory(CfgLocalUser user, CfgLocalDID did,
             CfgKeyManagersProvider key, CfgCACertificateProvider cacert)
@@ -28,13 +29,13 @@ public class InjectableSPBlockingClientFactory extends SPBlockingClient.Factory
 
     public static InjectableSPBlockingClientFactory newMutualAuthClientFactory()
     {
-        return new InjectableSPBlockingClientFactory(new CfgLocalUser(), new CfgLocalDID(),
-                new CfgKeyManagersProvider(), new CfgCACertificateProvider());
+        return new InjectableSPBlockingClientFactory(new CfgLocalUser(),
+                new CfgLocalDID(), new CfgKeyManagersProvider(), new CfgCACertificateProvider());
     }
 
     public static InjectableSPBlockingClientFactory newOneWayAuthClientFactory()
     {
-        return new InjectableSPBlockingClientFactory(new CfgLocalUser(), new CfgLocalDID(),
-                null, new CfgCACertificateProvider());
+        return new InjectableSPBlockingClientFactory(new CfgLocalUser(),
+                new CfgLocalDID(), null, new CfgCACertificateProvider());
     }
 }

@@ -4,11 +4,11 @@
 
 package com.aerofs.defects;
 
+import com.aerofs.defects.Defect.Priority;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
-import com.aerofs.defects.Defect.Priority;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.Gson;
@@ -21,19 +21,20 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 public class TestDefect extends AbstractTest
 {
-    @Mock InjectableCfg _cfg;
+
+    @Mock CfgLocalUser cfgLocalUser;
+    @Mock CfgLocalDID cfgLocalDID;
+    @Mock CfgVer cfgVer;
+
     @Mock RockLog _rockLog;
     @Mock DryadClient _dryad;
     @Mock Executor _executor;
     @Mock RecentExceptions _recentExceptions;
-    Map<String, String> _properties = emptyMap();
 
     Gson _gson = new Gson();
 
@@ -57,19 +58,17 @@ public class TestDefect extends AbstractTest
         final UserID user = UserID.fromInternal("user@test.com");
         final String version = "0.0.1";
 
-        when(_cfg.ver()).thenReturn(version);
-        when(_cfg.inited()).thenReturn(true);
-        when(_cfg.did()).thenReturn(did);
-        when(_cfg.user()).thenReturn(user);
+        when(cfgVer.get()).thenReturn(version);
+        when(cfgLocalDID.get()).thenReturn(did);
+        when(cfgLocalUser.get()).thenReturn(user);
 
         // Create a new defect
-        Defect defect = new Defect("defect.test", _cfg, _rockLog, _executor)
+        Defect defect = new Defect("defect.test", _rockLog, _executor, cfgLocalUser, cfgLocalDID, cfgVer)
                 .setMessage("hello")
                 .setException(wrapper);
 
         // Serialize and de-serialize the defect
         String json = _gson.toJson(defect.getData());
-        //System.out.println("JSON: " + json);
         JsonDefect result = _gson.fromJson(json, JsonDefect.class);
 
         // Check the basic properties of the defect

@@ -9,6 +9,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.google.inject.Inject;
 
 public class CfgCACertificateProvider implements ICertificateProvider
 {
@@ -16,6 +17,6 @@ public class CfgCACertificateProvider implements ICertificateProvider
     public X509Certificate getCert()
             throws IOException, CertificateException
     {
-        return Cfg.cacert();
+        return BaseCfg.getInstance().cacert();
     }
 }

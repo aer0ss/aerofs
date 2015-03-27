@@ -9,6 +9,6 @@ public class CfgLocalUser
 {
     public UserID get()
     {
-        return Cfg.user();
+        return BaseCfg.getInstance().user();
     }
 }

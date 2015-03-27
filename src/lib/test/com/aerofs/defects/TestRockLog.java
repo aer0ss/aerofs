@@ -4,9 +4,14 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.testlib.SimpleHttpServer;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.SimpleHttpServer;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -23,9 +28,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 public class TestRockLog extends AbstractTest
 {
@@ -34,7 +38,10 @@ public class TestRockLog extends AbstractTest
     private static final String DEFECT_NAME = "defect.test";
     private static final String DEFECT_MESSAGE = "Hello";
 
-    @Mock InjectableCfg _cfg;
+    @Mock CfgLocalUser cfgLocalUser;
+    @Mock CfgLocalDID cfgLocalDID;
+    @Mock CfgVer cfgVer;
+
     Executor _executor = MoreExecutors.sameThreadExecutor();
 
     SimpleHttpServer _server;
@@ -49,6 +56,9 @@ public class TestRockLog extends AbstractTest
         _server = new SimpleHttpServer(TEST_PORT);
         _server.startAsync();
         _server.awaitRunning();
+        when(cfgLocalUser.get()).thenReturn(UserID.fromInternal("test@aerofs.com"));
+        when(cfgLocalDID.get()).thenReturn(new DID(UniqueID.generate()));
+        when(cfgVer.get()).thenReturn("0.0.1");
     }
 
     @After
@@ -79,7 +89,7 @@ public class TestRockLog extends AbstractTest
         });
 
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
-        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
+        Defect defect = new Defect(DEFECT_NAME, rockLog, _executor, cfgLocalUser, cfgLocalDID, cfgVer)
                 .setMessage(DEFECT_MESSAGE);
 
         boolean success = rockLog.rpc("/defects", defect.getData());
@@ -93,7 +103,7 @@ public class TestRockLog extends AbstractTest
                 request -> new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR));
 
         com.aerofs.defects.RockLog rockLog = new com.aerofs.defects.RockLog(TEST_URL, new Gson());
-        Defect defect = new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
+        Defect defect = new Defect(DEFECT_NAME, rockLog, _executor, cfgLocalUser, cfgLocalDID, cfgVer)
                 .setMessage(DEFECT_MESSAGE);
 
         boolean success = rockLog.rpc("/defects", defect.getData());
@@ -109,7 +119,7 @@ public class TestRockLog extends AbstractTest
         RockLog rockLog = new RockLog(TEST_URL, new Gson());
 
         for (int i = 0; i < 1000; i++) {
-            new Defect(DEFECT_NAME, _cfg, rockLog, _executor)
+            new Defect(DEFECT_NAME, rockLog, _executor, cfgLocalUser, cfgLocalDID, cfgVer)
                     .setMessage(DEFECT_MESSAGE)
                     .sendSync();
         }

@@ -11,7 +11,6 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
+import static com.aerofs.lib.cfg.ICfgStore.ROOT;
 
 public abstract class RootAnchorUtil
 {
@@ -197,9 +197,9 @@ public abstract class RootAnchorUtil
     public static void updateAbsRootCfg(@Nullable SID sid, String newAbsPath) throws SQLException
     {
         if (sid == null) {
-            String oldAbsPath = Cfg.db().get(Key.ROOT);
+            String oldAbsPath = Cfg.db().get(ROOT);
 
-            Cfg.db().set(Key.ROOT, newAbsPath);
+            Cfg.db().set(ROOT, newAbsPath);
             if (Cfg.storageType() == StorageType.LINKED) {
                 // when using linked storage we need to update implicit root(s)
 

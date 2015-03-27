@@ -3,7 +3,6 @@ package com.aerofs.lib.cfg;
 import java.sql.SQLException;
 
 import com.aerofs.ids.DID;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -12,6 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.aerofs.testlib.AbstractTest;
+
+import static com.aerofs.lib.cfg.CfgDatabase.*;
 
 public class TestCfgDatabase extends AbstractTest
 {
@@ -56,18 +57,18 @@ public class TestCfgDatabase extends AbstractTest
 
         db = new CfgDatabase(_dbcw);
         db.recreateSchema_();
-        db.set(Key.DEVICE_ID, DID.generate().toStringFormal());
+        db.set(DEVICE_ID, DID.generate().toStringFormal());
     }
 
-    // there was a bug: calling init_() closes the connection but not existing prepared statements.
-    // this caused subsequent set() calls fail. init_() in the new code doesn't close the connection
+    // there was a bug: calling initDB_() closes the connection but not existing prepared statements.
+    // this caused subsequent set() calls fail. initDB_() in the new code doesn't close the connection
     // any more.
     @Test
     public void shouldBeAbleToSetAfterCallingInitAgain() throws Exception
     {
-        db.set(CfgDatabase.Key.LAST_LOG_CLEANING, 123);
+        db.set(LAST_LOG_CLEANING, 123);
         db.reload();
-        db.set(CfgDatabase.Key.LAST_LOG_CLEANING, 123);
+        db.set(LAST_LOG_CLEANING, 123);
     }
 
     @After

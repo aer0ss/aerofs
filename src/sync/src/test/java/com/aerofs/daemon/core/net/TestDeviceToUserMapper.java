@@ -12,6 +12,7 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.lib.db.DID2UserDatabase;
+import com.aerofs.lib.cfg.CfgTimeout;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.InMemorySQLiteDBCW;
 import org.junit.After;
@@ -47,7 +48,7 @@ public final class TestDeviceToUserMapper extends AbstractTest
         // when() call above works
         _deviceToUserMapper = new DeviceToUserMapper();
         _deviceToUserMapper.inject_(mock(TokenManager.class),
-                mock(TransportRoutingLayer.class), _db, _tm);
+                mock(TransportRoutingLayer.class), _db, _tm, new CfgTimeout());
 
         // initialize the database
         _dbcw.init_();

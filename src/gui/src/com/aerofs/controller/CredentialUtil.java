@@ -18,7 +18,10 @@ import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.protobuf.ByteString;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PrivateKey;

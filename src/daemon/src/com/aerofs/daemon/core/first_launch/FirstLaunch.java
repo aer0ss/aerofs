@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.first_launch;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
@@ -16,16 +15,12 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.cfg.CfgRootSID;
-import com.aerofs.lib.cfg.CfgStorageType;
-import com.aerofs.lib.cfg.RootDatabase;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.*;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -36,6 +31,7 @@ import org.slf4j.Logger;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
+import static com.aerofs.lib.cfg.CfgDatabase.FIRST_START;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -111,7 +107,7 @@ public class FirstLaunch
      */
     public boolean onFirstLaunch_(final ScanCompletionCallback callback)
     {
-        if (!_cfgDB.getBoolean(Key.FIRST_START)) {
+        if (!_cfgDB.getBoolean(FIRST_START)) {
             // need to make sure all helper classes that abstract away various aspects of first
             // launch logic perform their "regular" (i.e. non-first launch) behavior
             onFirstLaunchCompletion_();
@@ -133,7 +129,7 @@ public class FirstLaunch
                     try {
                         // RitualService responds with ExIndexing as long as FIRST_START is set
                         // so resetting it needs to be the *last* step of the FirstLaunch
-                        _cfgDB.set(Key.FIRST_START, false);
+                        _cfgDB.set(FIRST_START, false);
                     } catch (SQLException e) {
                         SystemUtil.fatal(e);
                     }

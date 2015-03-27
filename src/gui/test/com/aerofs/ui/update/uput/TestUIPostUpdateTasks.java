@@ -1,14 +1,14 @@
 package com.aerofs.ui.update.uput;
 
+import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.*;
 
-import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.testlib.AbstractTest;
+import static com.aerofs.lib.cfg.CfgDatabase.UI_POST_UPDATES;
+import static org.mockito.Mockito.when;
 
 /**
  * This class is structurally identical to TestDaemonPostUpdateTasks
@@ -21,7 +21,7 @@ public class TestUIPostUpdateTasks extends AbstractTest
     @Before
     public void setup()
     {
-        when(cfgDB.getInt(Key.UI_POST_UPDATES)).thenReturn(0);
+        when(cfgDB.getInt(UI_POST_UPDATES)).thenReturn(0);
     }
 
     @Test

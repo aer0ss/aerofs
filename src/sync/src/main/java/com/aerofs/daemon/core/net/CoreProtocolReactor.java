@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.store.ExSIDNotFound;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Core.PBCore;
@@ -33,6 +33,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class CoreProtocolReactor implements IUnicastInputLayer
 {
     private static final Logger l = Loggers.getLogger(CoreProtocolReactor.class);
+    private final CfgLocalDID _cfgLocalDID;
 
     public interface Handler
     {
@@ -49,13 +50,15 @@ public class CoreProtocolReactor implements IUnicastInputLayer
     private CoreProtocolReactor(
             IncomingStreams iss,
             Set<Handler> handlers,
-            DeviceToUserMapper d2u)
+            DeviceToUserMapper d2u,
+            CfgLocalDID cfgLocalDID)
     {
         _iss = iss;
         _d2u = d2u;
         ImmutableMap.Builder<PBCore.Type, Handler> bd = ImmutableMap.builder();
         handlers.stream().forEach(h -> bd.put(h.message(), h));
         _handlers = bd.build();
+        _cfgLocalDID = cfgLocalDID;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
         DID did = pc.ep().did();
 
         try {
-            checkState(!did.equals(Cfg.did()));
+            checkState(!did.equals(_cfgLocalDID.get()));
             _d2u.onUserIDResolved_(did, pc.user());
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null), false);
@@ -79,7 +82,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
         DID did = ep.did();
 
         try {
-            checkState(!did.equals(Cfg.did()));
+            checkState(!did.equals(_cfgLocalDID.get()));
             UserID userID = _d2u.getUserIDForDIDNullable_(did);
             if (userID == null) {
                 // FIXME (AG): This should be a queue of DID -> pending multicast packets

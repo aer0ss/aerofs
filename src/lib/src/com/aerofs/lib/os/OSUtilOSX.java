@@ -1,5 +1,16 @@
 package com.aerofs.lib.os;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.*;
+import com.aerofs.lib.LibParam.RootAnchor;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.swig.driver.Driver;
+import com.aerofs.swig.driver.DriverConstants;
+import com.google.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -9,24 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-import com.aerofs.base.BaseUtil;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.RootAnchor;
-import com.aerofs.lib.OutArg;
-import com.aerofs.lib.S;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.swig.driver.Driver;
-import com.aerofs.swig.driver.DriverConstants;
-import com.google.inject.Inject;
-
 import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.lib.cfg.CfgDatabase.SHELLEXT_CHECKSUM;
 
 public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 {
@@ -197,7 +192,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public void installShellExtension(boolean silently) throws IOException, SecurityException
     {
-        String oldChecksum = Cfg.db().get(Key.SHELLEXT_CHECKSUM);
+        String oldChecksum = Cfg.db().get(SHELLEXT_CHECKSUM);
         String checksum = getShellExtensionChecksum();
 
         l.debug("Comparing checksums: " + oldChecksum + " -> " + checksum);
@@ -255,7 +250,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         }
 
         try {
-            Cfg.db().set(Key.SHELLEXT_CHECKSUM, checksum);
+            Cfg.db().set(SHELLEXT_CHECKSUM, checksum);
         } catch (SQLException ex) {
             l.warn("Failed to update shellext checksum", ex);
         }

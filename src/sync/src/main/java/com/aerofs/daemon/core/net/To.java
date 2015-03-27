@@ -1,19 +1,17 @@
 package com.aerofs.daemon.core.net;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import com.aerofs.ids.DID;
+import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.Devices;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.core.ex.ExNoAvailDevice;
+import com.aerofs.ids.DID;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class To
 {
@@ -48,11 +46,13 @@ public class To
     public static class Factory
     {
         private final Devices __devices;
+        private final CfgLocalDID _cfgLocalDID;
 
         @Inject
-        public Factory(Devices devices)
+        public Factory(Devices devices, CfgLocalDID cfgLocalDID)
         {
             __devices = devices;
+            _cfgLocalDID = cfgLocalDID;
         }
 
         public To create_(DID did)
@@ -101,7 +101,7 @@ public class To
      */
     public To add_(DID did)
     {
-        assert !did.equals(Cfg.did());
+        assert !did.equals(_f._cfgLocalDID.get());
 
         _avoid.remove(did);
         _dids.add(did);

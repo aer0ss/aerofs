@@ -6,9 +6,9 @@ package com.aerofs.gui.sharing;
 
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.ids.UserID;
 import com.aerofs.gui.Images;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.cfg.Cfg;
 import org.eclipse.swt.graphics.Image;
 
 import static java.util.Objects.hash;
@@ -37,14 +37,11 @@ public interface Subject
         public final String         _firstname;
         public final String         _lastname;
 
-        private final InjectableCfg _cfg;
-
-        public User(UserID userID, String firstname, String lastname, InjectableCfg cfg)
+        public User(UserID userID, String firstname, String lastname)
         {
             _userID     = userID;
             _firstname  = firstname;
             _lastname   = lastname;
-            _cfg        = cfg;
         }
 
         @Override
@@ -81,7 +78,7 @@ public interface Subject
         @Override
         public boolean isLocalUser()
         {
-            return _cfg.user().equals(_userID);
+            return Cfg.user().equals(_userID);
         }
 
         @Override

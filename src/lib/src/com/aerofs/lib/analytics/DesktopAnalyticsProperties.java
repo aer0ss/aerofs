@@ -10,12 +10,12 @@ import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.lib.cfg.ICfgStore.SIGNUP_DATE;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 /**
@@ -58,7 +58,7 @@ public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
     @Override
     public long getSignupDate()
     {
-        return Cfg.db().getLong(Key.SIGNUP_DATE);
+        return Cfg.db().getLong(SIGNUP_DATE);
     }
 
     private long _lastSPOrgIDCheck;

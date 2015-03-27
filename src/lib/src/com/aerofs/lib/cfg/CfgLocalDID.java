@@ -13,6 +13,6 @@ public class CfgLocalDID
 {
     public DID get()
     {
-        return Cfg.did();
+        return  BaseCfg.getInstance().did();
     }
 }

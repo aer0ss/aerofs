@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.FileSystemProber;
@@ -17,6 +16,7 @@ import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFileNoPerm;

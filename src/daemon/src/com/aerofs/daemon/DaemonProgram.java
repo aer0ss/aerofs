@@ -5,11 +5,7 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.ex.ExNoAvailDevice;
-import com.aerofs.daemon.core.ex.ExOutOfSpace;
-import com.aerofs.daemon.core.ex.ExUpdateInProgress;
+import com.aerofs.daemon.core.ex.*;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules;
@@ -32,9 +28,7 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgModule;
-import com.aerofs.lib.cfg.CfgRestService;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.nativesocket.NativeSocketAuthenticatorFactory;
 import com.aerofs.lib.nativesocket.NativeSocketModule;
 import com.aerofs.lib.nativesocket.RitualSocketFile;
@@ -80,13 +74,13 @@ public class DaemonProgram implements IProgram
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
-        Util.initDriver("dc"); // "dc" stands for daemon native library in C
+        Util.initDriver("dc", rtRoot); // "dc" stands for daemon native library in C
 
         // TODO (AT): really need to tidy up our launch sequence
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
         // difference is how the exception is handled.
         try {
-            Defects.init(prog, rtRoot);
+            Defects.init(prog, rtRoot,new CfgLocalUser(), new CfgLocalDID(), new CfgVer());
         } catch (Exception e) {
             System.err.println("Failed to initialize the defects system.\n" +
                     "Cause: " + e.toString());

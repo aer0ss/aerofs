@@ -5,7 +5,6 @@
 package com.aerofs.defects;
 
 import com.aerofs.daemon.ritual.RitualService;
-import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 
@@ -17,10 +16,10 @@ public class DaemonPriorityDefect extends PriorityDefect
 {
     private final RitualService _ritual;
 
-    protected DaemonPriorityDefect(InjectableCfg cfg, InjectableSPBlockingClientFactory spFactory,
+    protected DaemonPriorityDefect(InjectableSPBlockingClientFactory spFactory,
             Executor executor, RitualService ritual)
     {
-        super(cfg, spFactory, executor);
+        super(spFactory, executor);
 
         _ritual = ritual;
     }
@@ -39,7 +38,6 @@ public class DaemonPriorityDefect extends PriorityDefect
 
     public static PriorityDefect newDaemonPriorityDefect(RitualService ritual, Executor executor)
     {
-        return new DaemonPriorityDefect(new InjectableCfg(), newMutualAuthClientFactory(),
-                executor, ritual);
+        return new DaemonPriorityDefect(newMutualAuthClientFactory(), executor, ritual);
     }
 }

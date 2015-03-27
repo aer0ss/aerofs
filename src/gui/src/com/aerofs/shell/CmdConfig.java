@@ -7,13 +7,14 @@ package com.aerofs.shell;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgRestService;
 import com.google.common.collect.Sets;
 import org.apache.commons.cli.CommandLine;
 
 import java.io.PrintStream;
 import java.util.Set;
+
+import static com.aerofs.lib.cfg.CfgDatabase.REST_SERVICE;
 
 /**
  * N.B. since we only support one option for the time being, let's go with the simplest impl. As
@@ -96,7 +97,7 @@ public class CmdConfig extends AbstractShellCommand<ShProgram>
     {
         if (key.equals(API)) {
             boolean enable = parseBoolean(value);
-            Cfg.db().set(Key.REST_SERVICE, enable);
+            Cfg.db().set(REST_SERVICE, enable);
 
             out.println("Success: " + API + " is now set to " +
                     (enable ? "enabled" : "disabled") + ".");

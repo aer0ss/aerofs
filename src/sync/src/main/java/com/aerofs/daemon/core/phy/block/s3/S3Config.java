@@ -1,9 +1,10 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
-import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.daemon.core.phy.block.encrypted.BackendConfig;
+import com.aerofs.lib.cfg.ICfgStore;
 import com.google.inject.Inject;
 
-import com.aerofs.daemon.core.phy.block.encrypted.BackendConfig;
+import static com.aerofs.lib.cfg.ICfgStore.*;
 
 public class S3Config extends BackendConfig
 {
@@ -11,17 +12,17 @@ public class S3Config extends BackendConfig
 
     public static class S3BucketIdConfig
     {
-        private final CfgDatabase _db;
+        private final ICfgStore _cfgStore;
 
         @Inject
-        public S3BucketIdConfig(CfgDatabase db)
+        public S3BucketIdConfig(ICfgStore cfgStore)
         {
-            _db = db;
+            _cfgStore = cfgStore;
         }
 
         private String getConfigValue()
         {
-            return _db.get(CfgDatabase.Key.S3_BUCKET_ID);
+            return _cfgStore.get(S3_BUCKET_ID);
         }
 
         public String getS3BucketId()

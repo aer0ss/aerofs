@@ -23,6 +23,6 @@ public class CfgKeyManagersProvider implements IPrivateKeyProvider
     @Override
     public X509Certificate getCert()
     {
-        return Cfg.cert();
+        return BaseCfg.getInstance().cert();
     }
 }

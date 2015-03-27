@@ -4,10 +4,12 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defect.Priority;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import com.aerofs.lib.injectable.TimeSource;
-import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;
 
 import java.io.IOException;
@@ -24,20 +26,28 @@ public class DefectFactory
 {
     private final Executor _executor;
     private final RecentExceptions _recentExceptions;
-    private final InjectableCfg _cfg;
     private final RockLog _rockLog;
     private final DryadClient _dryad;
     private final Map<String, String> _properties;
+    private final CfgLocalUser _cfgLocalUser;
+    private final CfgLocalDID _cfgLocalDID;
+    private final CfgVer _cfgVer;
+    private final String _rtroot;
 
     public DefectFactory(Executor executor, RecentExceptions recentExceptions,
-            InjectableCfg cfg, Map<String, String> properties, RockLog rockLog, DryadClient dryad)
+                         Map<String, String> properties, RockLog rockLog, DryadClient dryad,
+                         String rtroot, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID,
+                         CfgVer cfgVer)
     {
         _executor = executor;
         _recentExceptions = recentExceptions;
-        _cfg = cfg;
         _rockLog = rockLog;
         _dryad = dryad;
         _properties = properties;
+        _rtroot = rtroot;
+        _cfgLocalUser = cfgLocalUser;
+        _cfgLocalDID = cfgLocalDID;
+        _cfgVer = cfgVer;
     }
 
     // Also used by other types of defects in the same package.
@@ -49,8 +59,8 @@ public class DefectFactory
     // Used by command defects.
     protected AutoDefect newAutoDefect(String name, DryadClient dryad)
     {
-        return new AutoDefect(name, _cfg, _rockLog, dryad, _executor, _recentExceptions,
-                _properties);
+        return new AutoDefect(name, _rockLog, dryad, _executor, _recentExceptions,
+                _properties, _cfgLocalUser, _cfgLocalDID, _rtroot, _cfgVer);
     }
 
     /**
@@ -72,7 +82,7 @@ public class DefectFactory
      */
     public Defect newMetric(String name)
     {
-        return new Defect(name, _cfg, _rockLog, _executor);
+        return new Defect(name, _rockLog, _executor, _cfgLocalUser, _cfgLocalDID, _cfgVer);
     }
 
     /**
@@ -100,8 +110,8 @@ public class DefectFactory
 
     public Defect newFrequentDefect(String name)
     {
-        return new FrequentDefect(name, _cfg, _rockLog, _dryad, _executor, _recentExceptions,
-                _properties)
+        return new FrequentDefect(name, _rockLog, _dryad, _executor, _recentExceptions,
+                _properties, _cfgLocalUser, _cfgLocalDID, _rtroot, _cfgVer)
                 .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS);
     }
 
@@ -112,8 +122,9 @@ public class DefectFactory
                 .setFilesToUpload(AutoDefect.UPLOAD_DB);
     }
 
-    // Achievement unlocked: FactoryFactory.
-    public static DefectFactory newFactory(String programName, String rtroot)
+    // Achievement unlocked: FactoryFactory
+    public static DefectFactory newFactory(String programName, String rtroot,
+            CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID, CfgVer cfgVer)
             throws IOException, GeneralSecurityException
     {
         Executor executor = new ThreadPoolExecutor(
@@ -129,7 +140,7 @@ public class DefectFactory
         RockLog rockLog = new RockLog.Noop();
         DryadClient dryad = new DryadClient.Noop();
 
-        return new DefectFactory(executor, recentExceptions, new InjectableCfg(),
-                fromProperties(System.getProperties()), rockLog, dryad);
+        return new DefectFactory(executor, recentExceptions,
+                fromProperties(System.getProperties()), rockLog, dryad,rtroot, cfgLocalUser, cfgLocalDID, cfgVer);
     }
 }

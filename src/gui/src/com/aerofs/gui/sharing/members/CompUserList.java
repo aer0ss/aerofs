@@ -4,7 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.ids.SID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
@@ -13,23 +12,17 @@ import com.aerofs.gui.sharing.SharedFolderMember.SharedFolderMemberWithPermissio
 import com.aerofs.gui.sharing.SharingModel;
 import com.aerofs.gui.sharing.SharingModel.MemberListResult;
 import com.aerofs.gui.sharing.Subject.User;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.eclipse.jface.layout.TreeColumnLayout;
-import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
-import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.TreeViewerColumn;
-import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
@@ -103,7 +96,7 @@ public class CompUserList extends Composite
     {
         super(parent, SWT.NONE);
 
-        _model = new SharingModel(new InjectableCfg(), UIGlobals.ritualClientProvider(),
+        _model = new SharingModel(UIGlobals.ritualClientProvider(),
                 newMutualAuthClientFactory(), listeningDecorator(newSingleThreadExecutor()));
 
         _tv = new TreeViewer(this, SWT.BORDER | SWT.FULL_SELECTION);

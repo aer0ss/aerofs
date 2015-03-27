@@ -8,6 +8,6 @@ public class CfgAbsRTRoot
 {
     public String get()
     {
-        return Cfg.absRTRoot();
+        return BaseCfg.getInstance().absRTRoot();
     }
 }

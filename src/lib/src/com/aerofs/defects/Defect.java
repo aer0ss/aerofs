@@ -7,7 +7,9 @@ package com.aerofs.defects;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import com.aerofs.lib.os.OSUtil;
 import org.slf4j.Logger;
 
@@ -55,10 +57,10 @@ public class Defect
 
     protected UserID    _userID;
     protected DID       _deviceID;
+    protected String    _ver;
 
     private final Map<String, Object> _data = newHashMap();
 
-    protected final InjectableCfg   _cfg;
     private final RockLog           _rockLog;
     private final Executor          _executor;
 
@@ -66,9 +68,9 @@ public class Defect
 
     // N.B. turns out passing in properties is necessary because querying System properties
     //   each time will cause defects to fail under heavy load
-    public Defect(String name, InjectableCfg cfg, RockLog rockLog, Executor executor)
+    public Defect(String name, RockLog rockLog, Executor executor, CfgLocalUser localUser,
+                  CfgLocalDID localDID, CfgVer ver)
     {
-        _cfg = cfg;
         _rockLog = rockLog;
         _executor = executor;
 
@@ -83,8 +85,9 @@ public class Defect
         _exception = new Exception();
         _priority = Priority.Auto;
 
-        _userID = getCfgUser(_cfg);
-        _deviceID = getCfgDID(_cfg);
+        _userID = localUser.get();
+        _deviceID = localDID.get();
+        _ver = ver.get();
     }
 
     public Defect setSubject(String subject)
@@ -176,7 +179,7 @@ public class Defect
         data.put("@timestamp",          _time);
         data.put("priority",            _priority.toString());
 
-        data.put("version",             _cfg.ver());
+        data.put("version",             _ver);
         data.put("user_id",             _userID.getString());
         data.put("did",                 _deviceID.toStringFormal());
 

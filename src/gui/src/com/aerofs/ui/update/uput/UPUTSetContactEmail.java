@@ -5,7 +5,8 @@
 package com.aerofs.ui.update.uput;
 
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+
+import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
 
 public class UPUTSetContactEmail implements IUIPostUpdateTask
 {
@@ -13,6 +14,6 @@ public class UPUTSetContactEmail implements IUIPostUpdateTask
     public void run()
             throws Exception
     {
-        Cfg.db().set(Key.CONTACT_EMAIL, Cfg.user().getString());
+        Cfg.db().set(CONTACT_EMAIL, Cfg.user().getString());
     }
 }

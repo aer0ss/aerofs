@@ -10,9 +10,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.analytics.AnalyticsEvents.UpdateEvent;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
@@ -20,7 +20,6 @@ import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -44,6 +43,8 @@ import java.sql.SQLException;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
+import static com.aerofs.lib.cfg.CfgDatabase.LAST_LOG_CLEANING;
+import static com.aerofs.lib.cfg.CfgDatabase.LAST_VER;
 
 public class Launcher
 {
@@ -212,7 +213,7 @@ public class Launcher
      */
     private static void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
-        UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(Key.LAST_VER)));
+        UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(LAST_VER)));
 
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
@@ -247,10 +248,10 @@ public class Launcher
             // TODO: more robust event sending?
             String ver = Cfg.ver();
             Defects.newMetric("launcher.post_update")
-                    .addData("previous_version", Cfg.db().get(Key.LAST_VER))
+                    .addData("previous_version", Cfg.db().get(LAST_VER))
                     .addData("version", ver)
                     .sendAsync();
-            Cfg.db().set(Key.LAST_VER, ver);
+            Cfg.db().set(LAST_VER, ver);
         }
     }
 
@@ -260,11 +261,11 @@ public class Launcher
     private static void cleanNativeLogs()
     {
         long now = System.currentTimeMillis();
-        if (now - Cfg.db().getLong(Key.LAST_LOG_CLEANING) > 1 * C.WEEK) {
+        if (now - Cfg.db().getLong(LAST_LOG_CLEANING) > 1 * C.WEEK) {
             String logs[] = { "cc.log", "gc.log", "dc.log", "lj.log" };
             for (String log : logs) s_factFile.create(absRTRoot(), log).deleteOrOnExit();
             try {
-                Cfg.db().set(Key.LAST_LOG_CLEANING, now);
+                Cfg.db().set(LAST_LOG_CLEANING, now);
             } catch (SQLException e) {
                 l.warn("ignored: " + Util.e(e));
             }

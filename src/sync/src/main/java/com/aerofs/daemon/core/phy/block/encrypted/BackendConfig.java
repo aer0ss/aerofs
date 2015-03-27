@@ -1,12 +1,14 @@
 package com.aerofs.daemon.core.phy.block.encrypted;
 
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.lib.cfg.ICfgStore;
 import com.google.inject.Inject;
 
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+
+import static com.aerofs.lib.cfg.ICfgStore.STORAGE_ENCRYPTION_PASSWORD;
 
 /**
  * Manage the encryption password used for both S3 and Swift backends
@@ -19,18 +21,18 @@ public class BackendConfig {
 
         public static class EncryptionPasswordFromDB implements EncryptionPasswordConfig
         {
-            private final CfgDatabase _db;
+            private final ICfgStore _store;
 
             @Inject
-            public EncryptionPasswordFromDB(CfgDatabase db)
+            public EncryptionPasswordFromDB(ICfgStore store)
             {
-                _db = db;
+                _store = store;
             }
 
             @Override
             public char[] getPassword()
             {
-                return _db.get(CfgDatabase.Key.STORAGE_ENCRYPTION_PASSWORD).toCharArray();
+                return _store.get(STORAGE_ENCRYPTION_PASSWORD).toCharArray();
             }
         }
     }

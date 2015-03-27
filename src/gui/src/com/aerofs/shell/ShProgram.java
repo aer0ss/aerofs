@@ -15,7 +15,7 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.nativesocket.RitualSocketFile;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
@@ -65,7 +65,7 @@ public class ShProgram implements IProgram, ICallback
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
         // difference is how the exception is handled.
         try {
-            Defects.init(prog, rtRoot);
+            Defects.init(prog, rtRoot, new CfgLocalUser(), new CfgLocalDID(), new CfgVer());
         } catch (Exception e) {
             System.err.println("Failed to initialize the defects system.\n" +
                     "Cause: " + e.toString());

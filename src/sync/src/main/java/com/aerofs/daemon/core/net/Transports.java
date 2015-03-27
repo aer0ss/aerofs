@@ -23,7 +23,6 @@ import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.lib.cfg.*;
-
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;

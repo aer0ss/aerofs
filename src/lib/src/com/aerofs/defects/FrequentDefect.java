@@ -7,7 +7,10 @@ package com.aerofs.defects;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -22,10 +25,12 @@ public class FrequentDefect extends AutoDefect
     private int _count;
     private ElapsedTimer _timer;
 
-    public FrequentDefect(String name, InjectableCfg cfg, RockLog rockLog, DryadClient dryad,
-            Executor executor, RecentExceptions recentExceptions, Map<String, String> properties)
+    public FrequentDefect(String name, RockLog rockLog, DryadClient dryad,
+            Executor executor, RecentExceptions recentExceptions, Map<String, String> properties,
+            CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID, String rtroot, CfgVer cfgVer)
     {
-        super(name, cfg, rockLog, dryad, executor, recentExceptions, properties);
+        super(name, rockLog, dryad, executor, recentExceptions, properties,
+                cfgLocalUser, cfgLocalDID, rtroot, cfgVer);
     }
 
     @Override

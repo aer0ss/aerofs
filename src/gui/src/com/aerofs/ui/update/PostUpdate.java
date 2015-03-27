@@ -2,10 +2,12 @@ package com.aerofs.ui.update;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.*;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,11 +17,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
+import static com.aerofs.lib.cfg.CfgDatabase.LAST_VER;
+
 public class PostUpdate
 {
     public static boolean updated()
     {
-        return !Cfg.ver().equals(Cfg.db().get(Key.LAST_VER));
+        return !Cfg.ver().equals(Cfg.db().get(LAST_VER));
     }
 
     private static Map<String, byte[]> getChecksums()

@@ -1,26 +1,22 @@
 package com.aerofs.lib.cfg;
 
+import com.aerofs.lib.Versions;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.aerofs.base.C;
-import com.aerofs.lib.Versions;
-import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.dbcw.IDBCW;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import static com.aerofs.lib.cfg.CfgKey.getAllConfigKeys;
 
 /**
  * This class contains all the configuration variables stored in the database.
@@ -31,151 +27,54 @@ import com.google.common.collect.Sets;
  *
  * Variable values are cached in memory for fast access.
  */
-public class CfgDatabase
+public class CfgDatabase extends ICfgStore
 {
-    public static enum Key
-    {
-        USER_ID("user_id", null),
-        DEVICE_ID("device_id", null),
-
-        @Deprecated
-        CRED("cred", null),
-
-        SIGNUP_DATE("signup_date", 0), // Timestamp of the user sign up date
-
-        // Absolute path to Root Anchor. N.B. must not use canonical paths so users can use symbolic
-        // links as root anchor and repoint to different paths later.
-        ROOT("root", null),
-        TIMEOUT("timeout", 45 * C.SEC),
-        NOTIFY("notify", true),
-
-        @Deprecated
-        AUTO_EXPORT_FOLDER("autoexport_folder", null),
-
-        // bind address for the Ritual socket. Use "*" to bind to all local addresses.
-        RITUAL_BIND_ADDR("ritual_bind_addr", "127.0.0.1"),
-
-        LAST_LOG_CLEANING("last_log_cleaning", 0),
-        DAEMON_POST_UPDATES("daemon_post_updates", 0),
-        UI_POST_UPDATES("ui_post_updates", 0),
-        LAST_VER("last_ver", Versions.ZERO),
-
-        // Hexadecimal checksum string that identifies the last version of the shell extension.
-        // After an update, we compare against the current checksum to determine whether the
-        // Shell Extension was updated.
-        SHELLEXT_CHECKSUM("shellext_checksum", ""),
-
-        // Config for command channel.
-        TRANSIENT_CMD_CHANNEL_ID("cmd_channel_id", 0), // TODO remove this.
-        CMD_CHANNEL_ID("command_channel_id", 0),
-
-        // Config for bandwidth throttling
-        MAX_DOWN_RATE("max_down_rate", 0),  // 0 is unlimited
-        MAX_UP_RATE("max_up_rate", 0),      // 0 is unlimited
-        MAX_DOWN_RATE_LIMITED("max_down_rate_limited", 51200),
-        MAX_UP_RATE_LIMITED("max_up_rate_limited", 10240),
-
-        // Watermarks for IncomingStream chunks present in the core. Unit is chunk count.
-        LOW_CHUNK_WATERMARK("low_chunk_watermark", 128),
-        HIGH_CHUNK_WATERMARK("high_chunk_watermark", 640),
-
-        // Config for Categories (see Cat.java)
-        MAX_CLIENT_STACKS("max_client_stacks", 5),
-        MAX_SERVER_STACKS("max_server_stacks", 20),
-        MAX_API_UPLOADS("max_api_uploads", 10),
-        MAX_HOUSEKEEPING_STACKS("max_housekeeping_stacks", 10),
-        MAX_D2U_STACKS("max_d2u_stacks", 25),   // 25 = client + server stacks
-
-        // Config for MySQL
-        MYSQL_URL("mysql_url", null),
-        MYSQL_LOGIN("mysql_login", null),
-        MYSQL_PASSWD("mysql_passwd", null),
-
-        // Config for S3
-        S3_DIR("s3_dir", null),
-        S3_ENDPOINT("s3_endpoint", null),
-        S3_ACCESS_KEY("s3_access_key", null),
-        S3_SECRET_KEY("s3_secret_key", null),
-        S3_BUCKET_ID("s3_bucket_id", null),
-        // This field stores scrypt of the password provided by the user, salted by user id.
-        // i.e. value = base64(scrypt(password|user))
-        STORAGE_ENCRYPTION_PASSWORD("remote_storage_encryption_password", null),
-        // Old name for the encryption password
-        S3_LEGACY_ENCRYPTION_PASSWORD("s3_encryption_password", null),
-
-        // Config for Swift
-        SWIFT_AUTHMODE("swift_auth_mode", null),
-        SWIFT_USERNAME("swift_username", null),
-        SWIFT_PASSWORD("swift_password", null),
-        SWIFT_TENANT_ID("swift_tenant_id", null),
-        SWIFT_TENANT_NAME("swift_tenant_name", null),
-        SWIFT_URL("swift_url", null),
-        SWIFT_CONTAINER("swift_container", "aerofs"),
-
-        CONTACT_EMAIL("contact_email", ""),
-
-        // first start of the daemon
-        FIRST_START("first_start", true),
-
-        // enable sync history
-        SYNC_HISTORY("sync_history", true),
-
-        // storage type
-        STORAGE_TYPE("storage_type", null),
-
-        // connecting to the REST API gateway to enable API access
-        // DO NOT use this directly, use CfgRestService instead
-        REST_SERVICE("rest_service", null)
-        ;
-
-        private final String _str;
-        private @Nullable final String _defaultValue;
-
-        /**
-         * @param str the string representation of the key. Ideally it should be derived from
-         * symbol names but not possible due to obfuscation.
-         * TODO revisit now that we no longer obfuscate jars.
-         */
-        Key(String str, @Nullable String defaultValue)
-        {
-            _str = str;
-            _defaultValue = defaultValue;
-        }
-
-        Key(String str, long defaultValue)
-        {
-            this(str, Long.toString(defaultValue));
-        }
-
-        Key(String str, boolean defaultValue)
-        {
-            this(str, Boolean.toString(defaultValue));
-        }
-
-        @Override
-        public String toString()
-        {
-            return _str;
-        }
-
-        public String keyString()
-        {
-            return _str;
-        }
-
-        public String defaultValue()
-        {
-            return _defaultValue;
-        }
-    }
 
     private static final String T_CFG = "c";
     private static final String C_CFG_KEY = "k";
     private static final String C_CFG_VALUE = "v";
 
+    public static final CfgKey NOTIFY = new CfgKey("notify", true);
+
+    @Deprecated
+    public static final CfgKey AUTO_EXPORT_FOLDER = new CfgKey("autoexport_folder", null);
+
+    // bind address for the Ritual socket. Use "*" to bind to all local addresses.
+    public static final CfgKey RITUAL_BIND_ADDR = new CfgKey("ritual_bind_addr", "127.0.0.1");
+
+    public static final CfgKey LAST_LOG_CLEANING = new CfgKey("last_log_cleaning", 0);
+    public static final CfgKey DAEMON_POST_UPDATES = new CfgKey("daemon_post_updates", 0);
+    public static final CfgKey UI_POST_UPDATES = new CfgKey("ui_post_updates", 0);
+    public static final CfgKey LAST_VER = new CfgKey("last_ver", Versions.ZERO);
+
+    // Hexadecimal checksum string that identifies the last version of the shell extension.
+    // After an update, we compare against the current checksum to determine whether the
+    // Shell Extension was updated.
+    public static final CfgKey SHELLEXT_CHECKSUM = new CfgKey("shellext_checksum", "");
+
+    // Config for bandwidth throttling
+    public static final CfgKey MAX_DOWN_RATE = new CfgKey("max_down_rate", 0);  // 0 is unlimited
+    public static final CfgKey MAX_UP_RATE = new CfgKey("max_up_rate", 0);      // 0 is unlimited
+    public static final CfgKey MAX_DOWN_RATE_LIMITED = new CfgKey("max_down_rate_limited", 51200);
+    public static final CfgKey MAX_UP_RATE_LIMITED = new CfgKey("max_up_rate_limited", 10240);
+
+    // Watermarks for IncomingStream chunks present in the core. Unit is chunk count.
+    public static final CfgKey LOW_CHUNK_WATERMARK = new CfgKey("low_chunk_watermark", 128);
+    public static final CfgKey HIGH_CHUNK_WATERMARK = new CfgKey("high_chunk_watermark", 640);
+
+    // Old name for the encryption password
+    public static final CfgKey S3_LEGACY_ENCRYPTION_PASSWORD =
+            new CfgKey("s3_encryption_password", null);
+
+    // first start of the daemon
+    public static final CfgKey FIRST_START = new CfgKey("first_start", true);
+
+    // connecting to the REST API gateway to enable API access
+    // DO NOT use this directly, use CfgRestService instead
+    public static final CfgKey REST_SERVICE = new CfgKey("rest_service", null);
+
     // all the variables are protected by synchronized (this)
     private final IDBCW _dbcw;
-    private final EnumMap<Key, String> _map = Maps.newEnumMap(Key.class);
     private final List<ICfgDatabaseListener> _listeners = Lists.newArrayList();
 
     CfgDatabase(IDBCW dbcw)
@@ -198,7 +97,7 @@ public class CfgDatabase
 
     synchronized void reload() throws SQLException, ExNotSetup
     {
-        Set<Key> oldKeys = Sets.newEnumSet(_map.keySet(), Key.class);
+        Set<CfgKey> oldKeys = Sets.newHashSet(_map.keySet());
         _map.clear();
 
         Statement s = _dbcw.getConnection().createStatement();
@@ -207,8 +106,8 @@ public class CfgDatabase
             try {
                 while (rs.next()) {
                     String str = rs.getString(1);
-                    for (Key key : Key.values()) {
-                        if (key._str.equals(str)) {
+                    for (CfgKey key : getAllConfigKeys()) {
+                        if(key.keyString().equals(str)) {
                             _map.put(key, rs.getString(2));
                         }
                         // ignore un-recognized keys
@@ -218,10 +117,10 @@ public class CfgDatabase
                 rs.close();
             }
 
-            if (!_map.containsKey(Key.DEVICE_ID)) throw new ExNotSetup();
+            if (!_map.containsKey(DEVICE_ID)) throw new ExNotSetup();
 
             oldKeys.addAll(_map.keySet());
-            for (Key key : oldKeys) notifyValueChanged_(key);
+            oldKeys.forEach(this::notifyValueChanged_);
 
         } catch (SQLException e) {
             // it's a hacky way but the only way
@@ -237,34 +136,34 @@ public class CfgDatabase
         _listeners.add(l);
     }
 
-    private void notifyValueChanged_(Key key)
+    private void notifyValueChanged_(CfgKey key)
     {
         for (ICfgDatabaseListener l : _listeners) l.valueChanged_(key);
     }
 
-    public void set(Key key, long value) throws SQLException
+    public void set(CfgKey key, long value) throws SQLException
     {
         set(key, Long.toString(value));
     }
 
-    public void set(Key key, int value) throws SQLException
+    public void set(CfgKey key, int value) throws SQLException
     {
         set(key, Integer.toString(value));
     }
 
-    public void set(Key key, boolean value) throws SQLException
+    public void set(CfgKey key, boolean value) throws SQLException
     {
         set(key, Boolean.toString(value));
     }
 
-    public synchronized void set(Key key, String value) throws SQLException
+    public synchronized void set(CfgKey key, String value) throws SQLException
     {
         set(Collections.singletonMap(key, value));
     }
 
     private PreparedStatement _psSet;
     private PreparedStatement _psRemove;
-    public synchronized void set(Map<Key, String> map) throws SQLException
+    public synchronized void set(Map<CfgKey, String> map) throws SQLException
     {
         try {
             if (_psSet == null) _psSet = _dbcw.getConnection()
@@ -275,18 +174,18 @@ public class CfgDatabase
 
             boolean hasSet = false;
             boolean hasRemove = false;
-            for (Entry<Key, String> en : map.entrySet()) {
-                Key key = en.getKey();
+            for (Entry<CfgKey, String> en : map.entrySet()) {
+                CfgKey key = en.getKey();
                 String value = en.getValue();
-                assert value != null || key._defaultValue == null;
-                if (value == null || value.equals(key._defaultValue)) {
-                    _psRemove.setString(1, key._str);
+                assert value != null || key.defaultValue() == null;
+                if (value == null || value.equals(key.defaultValue())) {
+                    _psRemove.setString(1, key.keyString());
                     _psRemove.addBatch();
                     // TODO rollback the map if transaction is aborted
                     _map.remove(key);
                     hasRemove = true;
                 } else {
-                    _psSet.setString(1, key._str);
+                    _psSet.setString(1, key.keyString());
                     _psSet.setString(2, value);
                     _psSet.addBatch();
                     // TODO rollback the map if transaction is aborted
@@ -298,7 +197,7 @@ public class CfgDatabase
             if (hasSet) _psSet.executeBatch();
             if (hasRemove) _psRemove.executeBatch();
 
-            for (Key key : map.keySet()) notifyValueChanged_(key);
+            for (CfgKey key : map.keySet()) notifyValueChanged_(key);
 
         } catch (SQLException e) {
             DBUtil.close(_psSet);
@@ -310,64 +209,13 @@ public class CfgDatabase
     }
 
     /**
-     * @return the default value if the value is not set or the method is called before loadAll_().
-     * The default value may be null.
-     */
-    public synchronized @Nullable String getNullable(Key key)
-    {
-        String v = _map.get(key);
-        return v == null ? key._defaultValue : v;
-    }
-
-    /**
-     * @pre the value is set, or the default value is not null
-     */
-    public @Nonnull String get(Key key)
-    {
-        String v = getNullable(key);
-        assert v != null;
-        return v;
-    }
-
-
-    /**
-     * @pre the value must be set, or the default value is not null
-     *
-     * N.B frequently calling this method is inefficient. Consider caching the result
-     */
-    public int getInt(Key key)
-    {
-        return Integer.parseInt(get(key));
-    }
-
-    /**
-     * @pre the value must be set, or the default value is not null
-     *
-     * N.B frequently calling this method is inefficient. Consider caching the result
-     */
-    public long getLong(Key key)
-    {
-        return Long.parseLong(get(key));
-    }
-
-    /**
-     * @pre the value must be set, or the default value is not null
-     *
-     * N.B frequently calling this method is inefficient. Consider caching the result
-     */
-    public boolean getBoolean(Key key)
-    {
-        return Boolean.parseBoolean(get(key));
-    }
-
-    /**
      * @return the boolean value for key {@paramref key} if the boolean value is set,
      *   returns {@paramref defaultValue} otherwise.
      *
      * N.B. this method disregards the default value declared in the Key enum.
      * N.B. frequently calling this method is inefficient. COnsider caching the result
      */
-    public boolean getBoolean(Key key, boolean defaultValue)
+    public boolean getBoolean(CfgKey key, boolean defaultValue)
     {
         return getNullable(key) == null ? defaultValue : getBoolean(key);
     }

@@ -8,6 +8,10 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.InitErrors;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -41,7 +45,7 @@ public class GUIProgram implements IProgram
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
         try {
-            Util.initDriver("gc"); // "gc" is the log file that aerofsd will write to
+            Util.initDriver("gc", rtRoot); // "gc" is the log file that aerofsd will write to
         } catch (UnsatisfiedLinkError linkError) {
             // On Windows, a common cause of failure is that the MSVC 2010 redistributables aren't
             // installed. Display a message box to the user so that he can fix the problem
@@ -75,7 +79,7 @@ public class GUIProgram implements IProgram
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
         // difference is how the exception is handled.
         try {
-            Defects.init(prog, rtRoot);
+            Defects.init(prog, rtRoot, new CfgLocalUser(), new CfgLocalDID(), new CfgVer());
         } catch (Exception e) {
             showInitErrors("Failed to initialize the defects system.", "Cause: " + e.toString());
             ExitCode.FAIL_TO_LAUNCH.exit();

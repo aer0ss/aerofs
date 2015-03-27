@@ -8,7 +8,6 @@ import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.gui.sharing.invitee.CompInviteUsers;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.ids.UserID;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 

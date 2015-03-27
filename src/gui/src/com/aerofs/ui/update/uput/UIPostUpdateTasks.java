@@ -3,7 +3,8 @@ package com.aerofs.ui.update.uput;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+
+import static com.aerofs.lib.cfg.CfgDatabase.UI_POST_UPDATES;
 
 /**
  * This class is structurally identical to DaemonPostUpdateTasks.
@@ -28,7 +29,7 @@ public class UIPostUpdateTasks
         assert _tasks.length == PostUpdate.UI_POST_UPDATE_TASKS;
 
         // the zero value is required for oldest client to run all the tasks
-        assert Key.UI_POST_UPDATES.defaultValue().equals(Integer.toString(0));
+        assert UI_POST_UPDATES.defaultValue().equals(Integer.toString(0));
     }
 
     /**
@@ -37,7 +38,7 @@ public class UIPostUpdateTasks
     public void run() throws Exception
     {
         // N.B: no-op if current >= tasks.length
-        int current = _cfgDB.getInt(Key.UI_POST_UPDATES);
+        int current = _cfgDB.getInt(UI_POST_UPDATES);
 
         for (int i = current; i < _tasks.length; i++) {
             IUIPostUpdateTask t = _tasks[i];
@@ -49,7 +50,7 @@ public class UIPostUpdateTasks
 
             // update db after each task so the finished tasks won't be executed again on the next
             // launch if later tasks failed
-            _cfgDB.set(Key.UI_POST_UPDATES, i + 1);
+            _cfgDB.set(UI_POST_UPDATES, i + 1);
         }
     }
 }

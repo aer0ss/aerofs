@@ -51,7 +51,7 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
     @Test
     public void shouldInjectTasks() throws Exception
     {
-        when(cfgDB.getInt(CfgDatabase.Key.DAEMON_POST_UPDATES))
+        when(cfgDB.getInt(CfgDatabase.DAEMON_POST_UPDATES))
                 .thenReturn(DaemonPostUpdateTasks.firstValid());
         dput.run(true);
     }

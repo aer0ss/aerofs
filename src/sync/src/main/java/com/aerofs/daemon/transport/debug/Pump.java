@@ -12,27 +12,30 @@ import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.*;
-import com.aerofs.daemon.core.net.HdUnicastMessage;
-import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
+import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
+import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.lib.OutgoingStream;
+import com.aerofs.daemon.transport.lib.RoundTripTimes;
+import com.aerofs.daemon.transport.lib.StreamKey;
 import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
-import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.*;
+import com.aerofs.lib.IProgram;
+import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
@@ -50,6 +53,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.aerofs.daemon.core.net.TransportFactory.*;
 import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -72,10 +76,12 @@ public final class Pump implements IProgram, IUnicastInputLayer
     private IncomingStreams iss;
 
     private final CoreQueue queue = new CoreQueue();
+
+
     private final CoreScheduler sched = new CoreScheduler(queue);
-    private final TokenManager tokenManager = new TokenManager();
+    private final TokenManager tokenManager = new TokenManager(Cfg.db());
     private final CoreEventDispatcher disp = new CoreEventDispatcher(ImmutableSet.of(
-            d ->  {
+            d -> {
                 d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(this));
                 d.setHandler_(EIStreamBegun.class, new HdStreamBegun(this));
             }
@@ -87,8 +93,8 @@ public final class Pump implements IProgram, IUnicastInputLayer
     public void launch_(String rtRoot, String prog, String[] args)
             throws Exception
     {
-        Util.initDriver("pp");
-        Defects.init(prog, rtRoot);
+        Util.initDriver("pp", rtRoot);
+        Defects.init(prog, rtRoot, new CfgLocalUser(), new CfgLocalDID(), new CfgVer());
 
         l.info(Arrays.toString(args));
         checkArgument(args.length % 2 == 1,
@@ -142,7 +148,8 @@ public final class Pump implements IProgram, IUnicastInputLayer
         synchronized (obj) { ThreadUtil.waitUninterruptable(obj); }
     }
 
-    private Transports newTransports(String transportId) throws ExUnsupportedTransport
+    private Transports newTransports(String transportId) throws
+            ExUnsupportedTransport
     {
         CfgLocalUser localid = new CfgLocalUser();
         CfgLocalDID localdid = new CfgLocalDID();

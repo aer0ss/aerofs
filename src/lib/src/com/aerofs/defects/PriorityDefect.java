@@ -4,15 +4,13 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -27,6 +25,7 @@ import java.util.concurrent.Executor;
 
 import static com.aerofs.defects.DefectUtils.newDefectID;
 import static com.aerofs.defects.Defects.getFactory;
+import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
 
 public abstract class PriorityDefect
 {
@@ -38,16 +37,12 @@ public abstract class PriorityDefect
     protected String    _contactEmail;
     protected boolean   _sampleCPU;
 
-    private final InjectableCfg _cfg;
     private final InjectableSPBlockingClientFactory _spFactory;
     private final Executor _executor;
 
-    protected PriorityDefect(
-            InjectableCfg cfg,
-            InjectableSPBlockingClientFactory spFactory,
+    protected PriorityDefect(InjectableSPBlockingClientFactory spFactory,
             Executor executor)
     {
-        _cfg = cfg;
         _spFactory = spFactory;
         _executor = executor;
     }
@@ -100,7 +95,7 @@ public abstract class PriorityDefect
         l.info("Submitting priority defect: {}", defectID);
 
         if (_contactEmail == null) {
-            _contactEmail = _cfg.db().get(Key.CONTACT_EMAIL);
+            _contactEmail = Cfg.db().get(CONTACT_EMAIL);
         } else {
             saveContactEmail(_contactEmail);
         }
@@ -130,7 +125,7 @@ public abstract class PriorityDefect
     private void saveContactEmail(@Nonnull String contactEmail)
     {
         try {
-            _cfg.db().set(Key.CONTACT_EMAIL, contactEmail);
+            Cfg.db().set(CONTACT_EMAIL, contactEmail);
         } catch (SQLException e) {
             l.warn("Failed to set contact email, ignored: " + Util.e(e));
         }

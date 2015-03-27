@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
@@ -9,10 +8,10 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
 import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.google.common.collect.Lists;
@@ -23,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+
+import static com.aerofs.lib.cfg.CfgDatabase.FIRST_START;
 
 public class Linker implements ILinker, IListener
 {
@@ -106,7 +107,7 @@ public class Linker implements ILinker, IListener
         root._watchId = _notifier.addRootWatch_(root);
 
         // avoid duplicate scans on first launch
-        if (Cfg.db().getBoolean(Key.FIRST_START)) return;
+        if (Cfg.db().getBoolean(FIRST_START)) return;
 
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override

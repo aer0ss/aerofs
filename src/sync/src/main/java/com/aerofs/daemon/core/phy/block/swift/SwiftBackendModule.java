@@ -4,10 +4,13 @@ package com.aerofs.daemon.core.phy.block.swift;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.lib.cfg.ICfgStore;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import org.javaswift.joss.client.factory.AuthenticationMethod;
+
+import static com.aerofs.lib.cfg.ICfgStore.*;
 
 public class SwiftBackendModule extends AbstractBackendModule
 {
@@ -26,11 +29,11 @@ public class SwiftBackendModule extends AbstractBackendModule
     }
 
     @Provides
-    public SwiftConfig provideSwiftConfig(CfgDatabase db)
+    public SwiftConfig provideSwiftConfig(ICfgStore store)
     {
         AuthenticationMethod authMethod;
 
-        switch (db.get(CfgDatabase.Key.SWIFT_AUTHMODE)) {
+        switch (store.get(SWIFT_AUTHMODE)) {
             case "basic":
                 authMethod = AuthenticationMethod.BASIC;
                 break;
@@ -42,13 +45,13 @@ public class SwiftBackendModule extends AbstractBackendModule
         }
 
         return new SwiftConfig(
-            db.get(CfgDatabase.Key.SWIFT_USERNAME),
-            db.get(CfgDatabase.Key.SWIFT_PASSWORD),
-            db.get(CfgDatabase.Key.SWIFT_URL),
+            store.get(SWIFT_USERNAME),
+            store.get(SWIFT_PASSWORD),
+            store.get(SWIFT_URL),
             authMethod,
-            db.get(CfgDatabase.Key.SWIFT_CONTAINER),
-            db.getNullable(CfgDatabase.Key.SWIFT_TENANT_ID),
-            db.getNullable(CfgDatabase.Key.SWIFT_TENANT_NAME)
+            store.get(SWIFT_CONTAINER),
+            store.get(SWIFT_TENANT_ID),
+            store.get(SWIFT_TENANT_NAME)
         );
     }
 }

@@ -4,12 +4,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 
 import javax.inject.Inject;
 
+import static com.aerofs.lib.cfg.CfgDatabase.DAEMON_POST_UPDATES;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -124,9 +124,9 @@ public class DaemonPostUpdateTasks
 
     void run(boolean dryRun) throws Exception {
         // the zero value is required for oldest client to run all the tasks
-        assert Key.DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
+        assert DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
 
-        int current = _cfgDB.getInt(Key.DAEMON_POST_UPDATES);
+        int current = _cfgDB.getInt(DAEMON_POST_UPDATES);
 
         // N.B: no-op if current >= tasks.length
         for (int i = current; i < _tasks.size(); i++) {
@@ -138,7 +138,7 @@ public class DaemonPostUpdateTasks
 
             // update db after every task so if later tasks fail earlier ones won't be run again
             // on the next launch
-            _cfgDB.set(Key.DAEMON_POST_UPDATES, i + 1);
+            _cfgDB.set(DAEMON_POST_UPDATES, i + 1);
         }
     }
 }

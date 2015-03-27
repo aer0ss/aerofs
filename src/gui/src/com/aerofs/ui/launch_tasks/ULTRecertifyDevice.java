@@ -8,18 +8,17 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.UserID;
 import com.aerofs.cli.CLI;
 import com.aerofs.controller.CredentialUtil;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.gui.GUI;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
@@ -30,6 +29,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class ULTRecertifyDevice extends UILaunchTask
@@ -120,7 +120,7 @@ public class ULTRecertifyDevice extends UILaunchTask
                 // prepopulate the setupModel with a user name; in the Team Server case it
                 // may be modified by the user.
                 setupModel.setUserID(
-                        L.isMultiuser() ? Cfg.db().get(Key.CONTACT_EMAIL) : Cfg.user().getString());
+                        L.isMultiuser() ? Cfg.db().get(CONTACT_EMAIL) : Cfg.user().getString());
 
                 if (UI.isGUI()) authenticateGUI();
                 else typeCredentialsInCLI();

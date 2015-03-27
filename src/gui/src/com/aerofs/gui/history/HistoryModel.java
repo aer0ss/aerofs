@@ -7,8 +7,8 @@ package com.aerofs.gui.history;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.ids.SID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
+import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FileUtil.FileName;
@@ -19,19 +19,11 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.proto.Ritual.*;
 import com.aerofs.proto.Ritual.ListUserRootsReply.UserRoot;
+import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
-import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
-import com.aerofs.proto.Ritual.GetObjectAttributesReply;
-import com.aerofs.proto.Ritual.ListRevChildrenReply;
-import com.aerofs.proto.Ritual.ListRevHistoryReply;
-import com.aerofs.proto.Ritual.PBBranch;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
-import com.aerofs.proto.Ritual.PBRevChild;
-import com.aerofs.proto.Ritual.PBRevision;
-import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -153,7 +145,6 @@ public class HistoryModel
 
     public HistoryModel(IRitualClientProvider ritualProvider)
     {
-        // TODO: use dependency injection
         this(ritualProvider, Cfg.storageType(), new CfgAbsRoots(), new CfgLocalUser());
     }
 

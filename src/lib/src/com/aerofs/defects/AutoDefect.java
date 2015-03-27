@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.os.OSUtil;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,13 +18,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import static com.aerofs.defects.DefectUtils.deleteOldHeapDumps;
-import static com.aerofs.defects.DefectUtils.getCommandOutput;
-import static com.aerofs.defects.DefectUtils.getDirectoryInfo;
-import static com.aerofs.defects.DefectUtils.getFiles;
-import static com.aerofs.defects.DefectUtils.listCfgDBContent;
-import static com.aerofs.defects.DefectUtils.listLinkedRoots;
-import static com.aerofs.defects.DefectUtils.listTopLevelContents;
+import static com.aerofs.defects.DefectUtils.*;
 import static com.aerofs.defects.DryadClientUtil.createDefectLogsResource;
 import static com.aerofs.lib.Util.test;
 
@@ -65,16 +59,17 @@ public class AutoDefect extends Defect
     // N.B. turns out passing in properties is necessary because querying System properties
     //   each time will cause defects to fail under heavy load. This is observed when running
     //   TestRockLog#shouldNotDieWhenSubmittingManyRequests()
-    public AutoDefect(String name, InjectableCfg cfg, RockLog rockLog, DryadClient dryad,
-            Executor executor, RecentExceptions recentExceptions, Map<String, String> properties)
+    public AutoDefect(String name, RockLog rockLog, DryadClient dryad,
+                      Executor executor, RecentExceptions recentExceptions, Map<String, String> properties,
+                      CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID, String rtroot,
+                      CfgVer cfgVer)
     {
-        super(name, cfg, rockLog, executor);
+        super(name, rockLog, executor, cfgLocalUser, cfgLocalDID, cfgVer);
 
         _dryad = dryad;
         _recentExceptions = recentExceptions;
         _properties = properties;
-
-        _absRTRoot = _cfg.absRTRoot();
+        _absRTRoot = rtroot;
     }
 
     protected AutoDefect setDefectID(String defectID)
@@ -127,15 +122,9 @@ public class AutoDefect extends Defect
             l.info("Sending defect: {}: {}: {}", _subject, _message, _exception.toString());
         }
 
-        if (_cfg.inited()) {
-            File[] files = getFiles(
-                    _absRTRoot,
-                    _uploadLogs,
-                    _uploadDB,
-                    _uploadHeapDumps,
-                    _uploadFilenames,
-                    _uploadAllFiles);
-
+        if (BaseCfg.getInstance().inited()) {
+            File[] files = getFiles(_absRTRoot, _uploadLogs, _uploadDB, _uploadHeapDumps,
+                    _uploadFilenames, _uploadAllFiles);
             if (ArrayUtils.isNotEmpty(files)) {
                 String resourceURL = createDefectLogsResource(_defectID, _userID, _deviceID);
                 _dryad.uploadFiles(resourceURL, files);
@@ -144,7 +133,7 @@ public class AutoDefect extends Defect
 
         _recentExceptions.add(_exception);
 
-        if (_cfg.inited() && (_uploadAllFiles || _uploadHeapDumps)) {
+        if (BaseCfg.getInstance().inited() && (_uploadAllFiles || _uploadHeapDumps)) {
             deleteOldHeapDumps();
         }
 
@@ -170,12 +159,13 @@ public class AutoDefect extends Defect
             data.put("rtroot_files",    listTopLevelContents(_absRTRoot));
         }
 
-        if (_cfg.inited() && _cfg.storageType() == StorageType.LINKED) {
-            data.put("linked_roots",    listLinkedRoots(_cfg));
+
+        if (Cfg.inited() && Cfg.storageType() == StorageType.LINKED) {
+            data.put("linked_roots",    listLinkedRoots());
         }
 
-        if (_cfg.inited()) {
-            data.put("cfg_db",          listCfgDBContent(_cfg));
+        if (BaseCfg.getInstance().inited()) {
+            data.put("cfg_db",          listCfgDBContent());
         }
 
         return data;

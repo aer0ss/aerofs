@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgTimeout;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -62,19 +62,22 @@ public class DeviceToUserMapper
     private TokenManager _tokenManager;
     private IDID2UserDatabase _mappingStore;
     private TransManager _tm;
+    private CfgTimeout _cfgTimeout;
 
     @Inject
     public void inject_(
             TokenManager tokenManager,
             TransportRoutingLayer transportRoutingLayer,
             IDID2UserDatabase mappingStore,
-            TransManager tm)
+            TransManager tm,
+            CfgTimeout cfgTimeout)
     {
         _tokenManager = tokenManager;
         _transportRoutingLayer = transportRoutingLayer;
         _mappingStore = mappingStore;
         _mappingCache = new DBCache<>(tm, CACHE_SIZE);
         _tm = tm;
+        _cfgTimeout = cfgTimeout;
     }
 
     /**
@@ -133,7 +136,7 @@ public class DeviceToUserMapper
             TCB tcb = TC.tcb();
             checkState(_resolutionWaiters.put(did, tcb) == null);
             try {
-                tk.pause_(Cfg.timeout(), String.format("d2u %s", did));
+                tk.pause_(_cfgTimeout.get(), String.format("d2u %s", did));
             } finally {
                 checkState(_resolutionWaiters.remove(did) == tcb);
             }

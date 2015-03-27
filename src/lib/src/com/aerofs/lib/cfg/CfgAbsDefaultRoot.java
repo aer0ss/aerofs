@@ -7,10 +7,10 @@ package com.aerofs.lib.cfg;
 /**
  * The absolute path to the root anchor
  */
-public class CfgAbsDefaultRoot
-{
+public class CfgAbsDefaultRoot {
+
     public String get()
     {
-        return Cfg.absDefaultRootAnchor();
+        return BaseCfg.getInstance().absDefaultRootAnchor();
     }
 }

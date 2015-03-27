@@ -7,7 +7,6 @@ import com.aerofs.base.net.NettyUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
@@ -22,13 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.newsclub.net.unix.NativeSocketAddress;
@@ -38,6 +31,7 @@ import java.io.File;
 
 import static com.aerofs.lib.LibParam.Ritual.LENGTH_FIELD_SIZE;
 import static com.aerofs.lib.LibParam.Ritual.MAX_FRAME_LENGTH;
+import static com.aerofs.lib.cfg.CfgDatabase.FIRST_START;
 
 public class RitualServer
 {
@@ -90,7 +84,7 @@ public class RitualServer
                 AbstractExWirable ex = null;
                 if (Cfg.hasPendingDPUT()) {
                     ex = new ExUpdating();
-                } else if (Cfg.db().getBoolean(Key.FIRST_START)) {
+                } else if (Cfg.db().getBoolean(FIRST_START)) {
                     ex = new ExIndexing();
                 }
                 if (ex != null) {

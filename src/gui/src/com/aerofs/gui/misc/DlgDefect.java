@@ -8,30 +8,20 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.ui.UIGlobals;
 import com.swtdesigner.SWTResourceManager;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.ShellAdapter;
-import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 
 import javax.annotation.Nullable;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
+import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
@@ -175,7 +165,7 @@ public class DlgDefect extends AeroFSJFaceDialog
 
         _txtEmailAddress = new Text(container, SWT.BORDER);
         _txtEmailAddress.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        _txtEmailAddress.setText(Cfg.db().get(Key.CONTACT_EMAIL));
+        _txtEmailAddress.setText(Cfg.db().get(CONTACT_EMAIL));
         _txtEmailAddress.setEditable(false);
         _txtEmailAddress.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
     }

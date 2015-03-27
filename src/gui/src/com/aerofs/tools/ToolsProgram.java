@@ -20,8 +20,6 @@ public class ToolsProgram implements IProgram
         map.put(t.getName(), t);
         t = new ToolBFOID();
         map.put(t.getName(), t);
-        t = new ToolCfgDB();
-        map.put(t.getName(), t);
     }
 
     @Override

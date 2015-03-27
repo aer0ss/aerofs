@@ -12,16 +12,15 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.defects.CommandDefect.Factory;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.defects.CommandDefect.Factory;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
@@ -31,11 +30,7 @@ import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.IDaemonMonitor;
-import com.aerofs.ui.InfoCollector;
-import com.aerofs.ui.UI;
-import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.UnlinkUtil;
+import com.aerofs.ui.*;
 import com.aerofs.verkehr.client.wire.ConnectionListener;
 import com.aerofs.verkehr.client.wire.UpdateListener;
 import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
@@ -56,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
+import static com.aerofs.lib.cfg.ICfgStore.TIMEOUT;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -117,7 +113,7 @@ public final class CommandNotificationSubscriber
                 clientChannelFactory,
                 Verkehr.MIN_RETRY_INTERVAL,
                 Verkehr.MAX_RETRY_INTERVAL,
-                Cfg.db().getLong(Key.TIMEOUT),
+                Cfg.db().getLong(TIMEOUT),
                 getGlobalTimer());
         _topic = Topics.getCMDTopic(localDevice.toStringFormal(), false);
 

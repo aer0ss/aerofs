@@ -36,18 +36,12 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.*;
 import com.aerofs.daemon.lib.db.trans.TransBoundaryChecker;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
-import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
-import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
-import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
-import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
-import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
+import com.aerofs.daemon.lib.db.ver.*;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.cfg.*;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.IOSUtil;
@@ -62,6 +56,7 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
+import static com.aerofs.lib.cfg.ICfgStore.TIMEOUT;
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class CoreModule extends AbstractModule
@@ -75,6 +70,8 @@ public class CoreModule extends AbstractModule
 
         multibind(binder(), ICoreEventHandlerRegistrar.class, CoreEventHandlerRegistrar.class);
         multibind(binder(), ICoreEventHandlerRegistrar.class, TransportEventHandlerRegistrar.class);
+
+        bind(ICfgStore.class).to(CfgDatabase.class);
 
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
@@ -123,7 +120,7 @@ public class CoreModule extends AbstractModule
         multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
 
         // TODO(phoenix): remove this check when rolling out Polaris
-        if (Cfg.usePolaris()) {
+        if (new CfgUsePolaris().get()) {
             // to keep maximum flexibility, avoid rolling out schema changes for now
             multibind(binder(), ISchema.class, PolarisSchema.class);
 
@@ -204,7 +201,8 @@ public class CoreModule extends AbstractModule
 
     @Provides
     @Singleton
-    public VerkehrPubSubClient provideVerkehrClient(CfgKeyManagersProvider keyManagersProvider, CfgCACertificateProvider certificateProvider, ClientSocketChannelFactory channelFactory, Timer timer)
+    public VerkehrPubSubClient provideVerkehrClient(CfgKeyManagersProvider keyManagersProvider,
+            CfgCACertificateProvider certificateProvider, ClientSocketChannelFactory channelFactory, Timer timer)
     {
         return VerkehrPubSubClient.create(
                 Verkehr.HOST,
@@ -214,7 +212,7 @@ public class CoreModule extends AbstractModule
                 channelFactory,
                 Verkehr.MIN_RETRY_INTERVAL,
                 Verkehr.MAX_RETRY_INTERVAL,
-                Cfg.db().getLong(Key.TIMEOUT),
+                Cfg.db().getLong(TIMEOUT),
                 timer);
     }
 

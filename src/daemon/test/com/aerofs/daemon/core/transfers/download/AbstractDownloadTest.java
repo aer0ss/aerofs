@@ -22,7 +22,9 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.testlib.AbstractTest;
@@ -60,6 +62,8 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock DownloadDeadlockResolver ddr;
     @Mock IMapSIndex2SID sidx2sid;
 
+    @Mock protected CfgLocalDID cfgLocalDID;
+
     @Mock To.Factory factTo;
     /*@InjectMocks*/ AsyncDownload.Factory factDL;
 
@@ -90,8 +94,9 @@ public class AbstractDownloadTest extends AbstractTest
 
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
         when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
+        when(cfgLocalDID.get()).thenReturn(new DID(UniqueID.generate()));
 
-        factTo = new To.Factory(mock(Devices.class));
+        factTo = new To.Factory(mock(Devices.class), cfgLocalDID);
         factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes,
                 cedb, pgcc, pgcr);
     }

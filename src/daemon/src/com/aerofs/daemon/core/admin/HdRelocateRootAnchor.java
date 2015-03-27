@@ -6,13 +6,13 @@ package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -20,7 +20,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExInUse;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -31,6 +30,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+
+import static com.aerofs.lib.cfg.ICfgStore.ROOT;
 
 public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 {
@@ -128,14 +129,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             }
 
             if (isDefaultRoot) {
-                Cfg.db().set(Key.ROOT, absNewRoot);
+                Cfg.db().set(ROOT, absNewRoot);
             }
 
             t.commit_();
         } catch (Exception e) {
             l.warn("Move failed. Rollback: " + Util.e(e));
 
-            if (isDefaultRoot) Cfg.db().set(Key.ROOT, absOldRoot);
+            if (isDefaultRoot) Cfg.db().set(ROOT, absOldRoot);
             // Restart Cfg settings since the daemon keeps running
             Cfg.init_(Cfg.absRTRoot(), false);
             relocator.rollback();

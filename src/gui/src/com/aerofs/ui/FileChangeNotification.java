@@ -4,7 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgKey;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
@@ -16,6 +16,8 @@ import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.IUI.MessageType;
 
 import java.util.ArrayList;
+
+import static com.aerofs.lib.cfg.CfgDatabase.NOTIFY;
 
 /**
  * This is the class responsible for displaying Growl notifications every time a file gets updated
@@ -43,15 +45,15 @@ public class FileChangeNotification
 
     public FileChangeNotification()
     {
-        if (Cfg.db().getBoolean(Key.NOTIFY)) UIGlobals.rnc().addListener(_l);
+        if (Cfg.db().getBoolean(NOTIFY)) UIGlobals.rnc().addListener(_l);
 
         Cfg.db().addListener(new ICfgDatabaseListener() {
             @Override
-            public void valueChanged_(Key key)
+            public void valueChanged_(CfgKey key)
             {
-                if (key != Key.NOTIFY) return;
+                if (!key.keyString().equals(NOTIFY.keyString())) return;
 
-                if (Cfg.db().getBoolean(Key.NOTIFY)) {
+                if (Cfg.db().getBoolean(NOTIFY)) {
                     UIGlobals.rnc().addListener(_l);
                 } else {
                     UIGlobals.rnc().removeListener(_l);

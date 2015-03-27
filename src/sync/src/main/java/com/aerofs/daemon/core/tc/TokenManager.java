@@ -1,32 +1,31 @@
 package com.aerofs.daemon.core.tc;
 
-import java.io.PrintStream;
-import java.util.EnumMap;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.ICfgStore;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.PrintStream;
+import java.util.EnumMap;
+import java.util.Iterator;
+import java.util.Set;
+
+import static com.aerofs.lib.cfg.ICfgStore.*;
 
 /**
  * Acquire your tokens here, for a nominal fee
@@ -90,9 +89,9 @@ public class TokenManager implements IDumpStatMisc
     private final EnumMap<Cat, CatInfo> _cat2info = Maps.newEnumMap(Cat.class);
 
     @Inject
-    public TokenManager()
+    public TokenManager(ICfgStore store)
     {
-        for (Cat cat : Cat.values()) _cat2info.put(cat, new CatInfo(cat, getQuota(cat)));
+        for (Cat cat : Cat.values()) _cat2info.put(cat, new CatInfo(cat, getQuota(cat, store)));
 
         Dumpables.add("cat", this);
     }
@@ -103,19 +102,19 @@ public class TokenManager implements IDumpStatMisc
         _listener = Preconditions.checkNotNull(listener);
     }
 
-    private static int getQuota(@Nonnull Cat cat)
+    private static int getQuota(@Nonnull Cat cat, ICfgStore store)
     {
         switch (cat) {
         case CLIENT:
-            return Cfg.db().getInt(Key.MAX_CLIENT_STACKS);
+            return store.getInt(MAX_CLIENT_STACKS);
         case SERVER:
-            return Cfg.db().getInt(Key.MAX_SERVER_STACKS);
+            return store.getInt(MAX_SERVER_STACKS);
         case API_UPLOAD:
-            return Cfg.db().getInt(Key.MAX_API_UPLOADS);
+            return store.getInt(MAX_API_UPLOADS);
         case HOUSEKEEPING:
-            return Cfg.db().getInt(Key.MAX_HOUSEKEEPING_STACKS);
+            return store.getInt(MAX_HOUSEKEEPING_STACKS);
         case RESOLVE_USER_ID:
-            return Cfg.db().getInt(Key.MAX_D2U_STACKS);
+            return store.getInt(MAX_D2U_STACKS);
         case UNLIMITED:
             return Integer.MAX_VALUE;
         default:

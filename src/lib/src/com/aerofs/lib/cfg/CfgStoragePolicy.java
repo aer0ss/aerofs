@@ -4,23 +4,24 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.google.inject.Inject;
-import org.slf4j.Logger;
+
+import static com.aerofs.lib.cfg.ICfgStore.SYNC_HISTORY;
 
 /**
  * Parameters for sync history storage.
  */
 public class CfgStoragePolicy
 {
+    private ICfgStore _cfgStore;
+
     /**
      * Indicate whether to use any sync history storage at all.
      * @return true if normal sync history storage policy is in effect
      */
     public boolean useHistory()
     {
-        return _useSyncHistoryCached;
+        return _cfgStore.getBoolean(SYNC_HISTORY);
     }
 
     /**
@@ -28,28 +29,8 @@ public class CfgStoragePolicy
      * installs a database listener.
      */
     @Inject
-    public CfgStoragePolicy(CfgDatabase cfgdb)
+    public CfgStoragePolicy(ICfgStore cfgStore)
     {
-        _l = Loggers.getLogger(CfgStoragePolicy.class);
-        _cfgdb = cfgdb;
-        updateCache();
-
-        _cfgdb.addListener(new ICfgDatabaseListener() {
-            @Override
-            public void valueChanged_(Key key)
-            {
-                if (key == Key.SYNC_HISTORY) { updateCache(); }
-            }
-        });
+        _cfgStore = cfgStore;
     }
-
-    private void updateCache()
-    {
-        _useSyncHistoryCached = _cfgdb.getBoolean(Key.SYNC_HISTORY);
-        _l.debug("Enable-sync history value changed to {}", _useSyncHistoryCached);
-    }
-
-    private final CfgDatabase _cfgdb;
-    private final Logger _l;
-    private boolean _useSyncHistoryCached;
 }

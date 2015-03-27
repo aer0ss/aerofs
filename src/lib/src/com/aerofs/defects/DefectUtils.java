@@ -6,41 +6,28 @@ package com.aerofs.defects;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgKey;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Stack;
-import java.util.TimeZone;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
-import static com.aerofs.lib.Util.crc32;
-import static com.aerofs.lib.Util.e;
-import static com.aerofs.lib.Util.join;
+import static com.aerofs.lib.Util.*;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.commons.lang.ArrayUtils.add;
@@ -67,17 +54,6 @@ class DefectUtils
         SimpleDateFormat date = new SimpleDateFormat(DATE_FORMAT);
         date.setTimeZone(TimeZone.getTimeZone("UTC"));
         return date.format(new Date());
-    }
-
-    static UserID getCfgUser(InjectableCfg cfg)
-    {
-        return cfg.inited() ? cfg.user() :
-                L.isMultiuser() ? UserID.UNKNOWN_TEAM_SERVER : UserID.UNKNOWN;
-    }
-
-    static DID getCfgDID(InjectableCfg cfg)
-    {
-        return cfg.inited() ? cfg.did() : new DID(DID.ZERO);
     }
 
     /**
@@ -202,10 +178,10 @@ class DefectUtils
         }
     }
 
-    static String listLinkedRoots(InjectableCfg cfg)
+    static String listLinkedRoots()
     {
         try {
-            Map<SID, String> roots = cfg.getRoots();
+            Map<SID, String> roots = new CfgAbsRoots().getAll();
 
             StringBuilder sb = new StringBuilder();
             for (Entry<SID, String> root : roots.entrySet()) {
@@ -222,13 +198,13 @@ class DefectUtils
         }
     }
 
-    static String listCfgDBContent(InjectableCfg cfg)
+    static String listCfgDBContent()
     {
         try {
-            Map<Key, String> cfgDB = cfg.dumpDB();
+            Map<CfgKey, String> cfgDB = BaseCfg.getInstance().dumpDB();
 
             StringBuilder sb = new StringBuilder();
-            for (Entry<Key, String> entry : cfgDB.entrySet()) {
+            for (Entry<CfgKey, String> entry : cfgDB.entrySet()) {
                 sb.append(entry.getKey())
                         .append(": ")
                         .append(entry.getValue())

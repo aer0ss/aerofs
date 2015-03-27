@@ -26,9 +26,7 @@ import java.util.concurrent.TimeUnit;
 import static com.aerofs.defects.Defects.getFactory;
 import static com.aerofs.defects.DryadClientUtil.createPrivateDryadClient;
 import static com.aerofs.defects.DryadClientUtil.createPublicDryadClient;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 
 public class CommandDefect
 {

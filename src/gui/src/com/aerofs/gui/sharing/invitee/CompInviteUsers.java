@@ -23,7 +23,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.ui.IUI.MessageType;
@@ -41,11 +40,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -119,8 +114,8 @@ public class CompInviteUsers extends Composite
         //   this case.
         ListeningExecutorService executor = listeningDecorator(newSingleThreadExecutor(
                 runnable -> new Thread(runnable, "invite")));
-        _model              = new SharingModel(new InjectableCfg(),
-                UIGlobals.ritualClientProvider(), newMutualAuthClientFactory(), executor);
+        _model              = new SharingModel(UIGlobals.ritualClientProvider(),
+                newMutualAuthClientFactory(), executor);
         _adapter            = new InviteeTextAdapter(_model, _txtInvitees);
 
         initializeControls();

@@ -11,17 +11,21 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.GroupID;
+import com.aerofs.defects.Defects;
+import com.aerofs.gui.sharing.SharedFolderMember.GroupPermissionUserAndState;
+import com.aerofs.gui.sharing.SharedFolderMember.GroupPermissions;
+import com.aerofs.gui.sharing.SharedFolderMember.UserPermissionsAndState;
+import com.aerofs.gui.sharing.Subject.Group;
+import com.aerofs.gui.sharing.Subject.InvalidSubject;
+import com.aerofs.gui.sharing.Subject.User;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
-import com.aerofs.defects.Defects;
-import com.aerofs.gui.sharing.SharedFolderMember.*;
-import com.aerofs.gui.sharing.Subject.*;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply.PBUserAndState;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
@@ -51,28 +55,26 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class SharingModel
 {
-    private final InjectableCfg                             _cfg;
     private final IRitualClientProvider                     _ritualProvider;
     private final InjectableSPBlockingClientFactory         _spClientFactory;
     private final LazyChecked<SPBlockingClient, Exception>  _spClient;
     public  final Factory                                   _factory;
     private final ListeningExecutorService                  _executor;
 
-    public SharingModel(InjectableCfg cfg, IRitualClientProvider ritualProvider,
+    public SharingModel(IRitualClientProvider ritualProvider,
             InjectableSPBlockingClientFactory spClientFactory, ListeningExecutorService executor)
     {
-        _cfg                = cfg;
         _ritualProvider     = ritualProvider;
         _spClientFactory    = spClientFactory;
         _spClient           = new LazyChecked<>(() -> _spClientFactory.create().signInRemote());
-        _factory            = new Factory(_cfg);
+        _factory            = new Factory();
         _executor           = executor;
     }
 
     public ListenableFuture<String> getLocalUserFirstname()
     {
         return _executor.submit(() -> _spClient.get()
-                .getUserPreferences(BaseUtil.toPB(_cfg.did()))
+                .getUserPreferences(BaseUtil.toPB(Cfg.did()))
                 .getFirstName());
     }
 
@@ -256,12 +258,6 @@ public class SharingModel
 
     public static class Factory
     {
-        private final InjectableCfg _cfg;
-
-        public Factory(InjectableCfg cfg)
-        {
-            _cfg = cfg;
-        }
 
         public Subject fromUserInput(String text)
         {
@@ -269,7 +265,7 @@ public class SharingModel
                 if (!Util.isValidEmailAddress(text)) {
                     return new InvalidSubject(text);
                 }
-                return new User(UserID.fromExternal(text), "", "", _cfg);
+                return new User(UserID.fromExternal(text), "", "");
             } catch (Exception e) {
                 return new InvalidSubject(text);
             }
@@ -279,7 +275,7 @@ public class SharingModel
                 throws ExInvalidID, ExBadArgs
         {
             return new User(UserID.fromExternal(pb.getUserEmail()), pb.getFirstName(),
-                    pb.getLastName(), _cfg);
+                    pb.getLastName());
         }
 
         // returns null on error

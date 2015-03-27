@@ -5,6 +5,9 @@
 package com.aerofs.defects;
 
 import com.aerofs.ids.UserID;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -24,10 +27,11 @@ public class Defects
     private static DefectFactory _factory;
 
     // Main calls this to initialize the default defect system.
-    public static void init(String programName, String rtroot)
+    public static void init(String programName, String rtroot, CfgLocalUser cfgLocalUser,
+                            CfgLocalDID cfgLocalDID, CfgVer cfgVer)
             throws IOException, GeneralSecurityException
     {
-        setFactory(newFactory(programName, rtroot));
+        setFactory(newFactory(programName, rtroot, cfgLocalUser, cfgLocalDID, cfgVer));
     }
 
     // used by frequent, command, and priority defects

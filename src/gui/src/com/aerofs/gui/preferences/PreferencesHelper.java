@@ -13,8 +13,7 @@ import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgKey;
 import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -34,6 +33,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
+import static com.aerofs.lib.cfg.CfgDatabase.REST_SERVICE;
+import static com.aerofs.lib.cfg.CfgDatabase.SYNC_HISTORY;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
 
 public class PreferencesHelper
@@ -351,7 +352,7 @@ public class PreferencesHelper
                 new DlgUnlinkDevice(parent.getShell(), true), 2);
     }
 
-    public void setCfg(CfgDatabase.Key key, Boolean value)
+    public void setCfg(CfgKey key, Boolean value)
     {
         try {
             Cfg.db().set(key, value);
@@ -410,7 +411,7 @@ public class PreferencesHelper
         final Button btnHistory = GUIUtil.createButton(parent, SWT.CHECK);
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
         btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        btnHistory.setSelection(Cfg.db().getBoolean(Key.SYNC_HISTORY));
+        btnHistory.setSelection(Cfg.db().getBoolean(SYNC_HISTORY));
         // This button is a little complicated - we present a warning only if the
         // selection state goes from on to off. If the user clicks No, the selection state
         // is forced back to true.
@@ -421,12 +422,12 @@ public class PreferencesHelper
             {
                 if (!btnHistory.getSelection()) {
                     if (GUI.get().ask(_shell, MessageType.WARN, S.SYNC_HISTORY_CONFIRM)) {
-                        setCfg(Key.SYNC_HISTORY, false);
+                        setCfg(SYNC_HISTORY, false);
                     } else {
                         btnHistory.setSelection(true);
                     }
                 } else {
-                    setCfg(Key.SYNC_HISTORY, true);
+                    setCfg(SYNC_HISTORY, true);
                 }
 
                 try {
@@ -465,7 +466,7 @@ public class PreferencesHelper
                 }
 
                 // if we made it this far, that means we should carry out the action
-                setCfg(Key.REST_SERVICE, btnAPIAccess.getSelection());
+                setCfg(REST_SERVICE, btnAPIAccess.getSelection());
 
                 try {
                     // the problem with calling stop that the daemon is not restarted if there are

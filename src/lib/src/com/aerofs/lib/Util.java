@@ -3,26 +3,9 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExIndexing;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
-import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFile;
-import com.aerofs.lib.ex.ExNotShared;
-import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.lib.ex.ExUpdating;
+import com.aerofs.lib.ex.*;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.lib.os.OSUtil;
@@ -47,11 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
@@ -680,19 +659,19 @@ public abstract class Util
         return String.format("%08x", crc.getValue());
     }
 
-    public static void initDriver(String logFileName)
+    public static void initDriver(String logFileName, String rtRoot)
     {
         OSUtil.get().loadLibrary("aerofsd");
-
         Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+
         if (rootLogger.isTraceEnabled() || rootLogger.isDebugEnabled()) {
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LDEBUG);
+            Driver.initLogger_(rtRoot, logFileName, LogLevel.LDEBUG);
         } else if (rootLogger.isInfoEnabled()) {
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LINFO);
+            Driver.initLogger_(rtRoot, logFileName, LogLevel.LINFO);
         } else if (rootLogger.isWarnEnabled()) {
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LWARN);
+            Driver.initLogger_(rtRoot, logFileName, LogLevel.LWARN);
         } else {
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LERROR);
+            Driver.initLogger_(rtRoot, logFileName, LogLevel.LERROR);
         }
     }
 

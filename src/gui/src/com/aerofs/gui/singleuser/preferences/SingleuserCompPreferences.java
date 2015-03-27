@@ -10,7 +10,6 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
@@ -22,6 +21,7 @@ import org.eclipse.swt.widgets.*;
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.preferences.PreferencesHelper.createSeparator;
 import static com.aerofs.gui.preferences.PreferencesHelper.setLayoutForAdvanced;
+import static com.aerofs.lib.cfg.CfgDatabase.NOTIFY;
 
 public class SingleuserCompPreferences extends Composite
 {
@@ -87,13 +87,13 @@ public class SingleuserCompPreferences extends Composite
         final Button btnNotify = GUIUtil.createButton(parent, SWT.CHECK);
         btnNotify.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
         btnNotify.setText("Notify me about file changes");
-        btnNotify.setSelection(Cfg.db().getBoolean(Key.NOTIFY));
+        btnNotify.setSelection(Cfg.db().getBoolean(NOTIFY));
         btnNotify.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                helper.setCfg(Key.NOTIFY, btnNotify.getSelection());
+                helper.setCfg(NOTIFY, btnNotify.getSelection());
             }
         });
     }

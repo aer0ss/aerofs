@@ -2,7 +2,6 @@ package com.aerofs.fsck;
 
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.cfg.CfgModule;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;

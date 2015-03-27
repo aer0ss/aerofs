@@ -1,13 +1,13 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -24,12 +24,14 @@ public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
 
     private final Devices _devices;
     private final IMapSID2SIndex _sid2sidx;
+    private final CfgLocalDID _cfgLocalDID;
 
     @Inject
-    public HdStoreAvailability(Devices devices, IMapSID2SIndex sid2sidx)
+    public HdStoreAvailability(Devices devices, IMapSID2SIndex sid2sidx, CfgLocalDID cfgLocalDID)
     {
         _devices = devices;
         _sid2sidx = sid2sidx;
+        _cfgLocalDID = cfgLocalDID;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
                 DID did = entry.getKey();
                 Collection<SID> sids = entry.getValue();
 
-                Preconditions.checkArgument(!did.equals(Cfg.did()));
+                Preconditions.checkArgument(!did.equals(_cfgLocalDID.get()));
 
                 List<SIndex> sidcs = Lists.newArrayListWithCapacity(sids.size());
                 for (SID sid : sids) {

@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgTimeout;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -30,6 +30,7 @@ import java.util.Map;
 public class RPC implements CoreProtocolReactor.Handler
 {
     private static final Logger l = Loggers.getLogger(RPC.class);
+    private final CfgTimeout _cfgTimeout;
 
     @Override
     public PBCore.Type message() {
@@ -52,15 +53,16 @@ public class RPC implements CoreProtocolReactor.Handler
     private final Map<Integer, ResponseWaiter> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss)
+    public RPC(TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss,
+               CfgTimeout cfgTimeout)
     {
         _trl = trl;
-
         lss.addListener((previous, current, added, removed) -> {
             if (current.isEmpty()) {
                 linkDown_();
             }
         }, coreExecutor); // want to be notified on the core thread
+        _cfgTimeout = cfgTimeout;
     }
 
     private DigestedMessage receiveResponse_(int rpcid, Token tk, String reason)
@@ -73,7 +75,7 @@ public class RPC implements CoreProtocolReactor.Handler
         _waiters.put(rpcid, waiter);
 
         try {
-            tk.pause_(Cfg.timeout(), reason);
+            tk.pause_(_cfgTimeout.get(), reason);
         } finally {
             _waiters.remove(rpcid);
         }

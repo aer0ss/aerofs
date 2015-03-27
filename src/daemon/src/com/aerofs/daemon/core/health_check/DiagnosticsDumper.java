@@ -12,7 +12,9 @@ import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.IDiagnosable;
-import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgVer;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.os.OSUtil;
@@ -46,23 +48,28 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
 
     private final String _newline = System.getProperty("line.separator");
     private final Object _locker = new Object();
-    private final InjectableCfg _cfg;
     private final CoreQueue _q;
     private final Devices _devices;
     private final Transports _tps;
     private final UploadState _ul;
     private final DownloadState _dl;
+    private final CfgLocalDID _cfgLocalDID;
+    private final CfgLocalUser _cfgLocalUser;
+    private final CfgVer _cfgVer;
 
     @Inject
-    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, Devices devices, Transports tps,
-                      UploadState ul, DownloadState dl)
+    DiagnosticsDumper(CoreQueue q, Devices devices, Transports tps, UploadState ul,
+                      DownloadState dl, CfgLocalDID cfgLocalDID, CfgLocalUser cfgLocalUser,
+                      CfgVer cfgVer)
     {
-        _cfg = cfg;
         _q = q;
         _devices = devices;
         _tps = tps;
         _ul = ul;
         _dl = dl;
+        _cfgLocalDID = cfgLocalDID;
+        _cfgLocalUser = cfgLocalUser;
+        _cfgVer = cfgVer;
     }
 
     @Override
@@ -96,9 +103,9 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
     {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
-        builder.append("did:").append(_cfg.did()).append(_newline);
-        builder.append("usr:").append(_cfg.user()).append(_newline);
-        builder.append("ver:").append(_cfg.ver()).append(_newline);
+        builder.append("did:").append(_cfgLocalDID.get()).append(_newline);
+        builder.append("usr:").append(_cfgLocalUser.get()).append(_newline);
+        builder.append("ver:").append(_cfgVer.get()).append(_newline);
         builder.append("os :").append(OSUtil.getOSName()).append(_newline);
         builder.append("tz :").append(TimeZone.getDefault().getDisplayName()).append(_newline);
         builder.append("now:").append(dateFormat.format(new Date())).append(_newline);
