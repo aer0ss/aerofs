@@ -17,7 +17,12 @@ public final class DefaultUncaughtExceptionHandler implements UncaughtExceptionH
     @Override
     public void uncaughtException(Thread thread, Throwable throwable)
     {
-        l.error("uncaught exception thd:{} err:{} - kill system", thread.getName(), throwable, throwable);
+        try {
+            l.error("uncaught exception thd:{} err:{} - kill system",
+                    thread.getName(), throwable, throwable);
+        } catch (Throwable t) {
+            // thou shalt not prevent the process from being killed!
+        }
         System.exit(0x4655434b);
     }
 }
