@@ -104,10 +104,8 @@ public final class HeartbeatHandler extends SimpleChannelHandler
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
             throws Exception
     {
-        long recvTimeNanos = System.nanoTime();
-
         if (!(e.getMessage() instanceof TransportMessage)) {
-            super.messageReceived(ctx, e);
+            ctx.sendUpstream(e);
             return;
         }
 
@@ -115,9 +113,11 @@ public final class HeartbeatHandler extends SimpleChannelHandler
         Type type = msg.getHeader().getType();
 
         if (!isHeartbeatMessage(type)) {
-            super.messageReceived(ctx, e);
+            ctx.sendUpstream(e);
             return;
         }
+
+        long recvTimeNanos = System.nanoTime();
 
         checkState(isHeartbeatMessage(type), "unexpected type:%s", type.name());
 

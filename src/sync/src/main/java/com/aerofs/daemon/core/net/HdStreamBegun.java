@@ -10,12 +10,12 @@ import com.google.inject.Inject;
  */
 public class HdStreamBegun implements IEventHandler<EIStreamBegun>
 {
-    private final UnicastInputOutputStack _stack;
+    private final IUnicastInputLayer _input;
 
     @Inject
-    public HdStreamBegun(UnicastInputOutputStack stack)
+    public HdStreamBegun(IUnicastInputLayer input)
     {
-        _stack = stack;
+        _input = input;
     }
 
     @Override
@@ -23,6 +23,6 @@ public class HdStreamBegun implements IEventHandler<EIStreamBegun>
     {
         PeerContext pc = new PeerContext(ev._ep, ev._userID);
         RawMessage r = new RawMessage(ev.is(), ev.wireLength());
-        _stack.input().onStreamBegun_(ev._streamId, r, pc);
+        _input.onStreamBegun_(ev._streamId, r, pc);
     }
 }

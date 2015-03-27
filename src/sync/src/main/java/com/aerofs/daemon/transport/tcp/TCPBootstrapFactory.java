@@ -21,8 +21,6 @@ import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -102,33 +100,27 @@ final class TCPBootstrapFactory
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory, final ChannelTeardownHandler clientChannelTeardownHandler)
     {
         ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-                    throws Exception
-            {
-                MessageHandler messageHandler = new MessageHandler();
-                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+        bootstrap.setPipelineFactory(() -> {
+            MessageHandler messageHandler = new MessageHandler();
+            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
 
-                return Channels.pipeline(
-                        addressResolver,
-                        newStatsHandler(transportStats),
-                        clientSslEngineFactory.newSslHandler(),
-                        newFrameDecoder(),
-                        newLengthFieldPrepender(),
-                        newCoreProtocolVersionReader(),
-                        newCoreProtocolVersionWriter(),
-                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
-                        verifiedHandler,
-                        newConnectTimeoutHandler(channelConnectTimeout, timer),
-                        messageHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
-                        tcpProtocolHandler,
-                        protocolHandler,
-                        clientChannelDiagnosticsHandler,
-                        clientChannelTeardownHandler);
-            }
+            return Channels.pipeline(
+                    addressResolver,
+                    newStatsHandler(transportStats),
+                    clientSslEngineFactory.newSslHandler(),
+                    newFrameDecoder(),
+                    newLengthFieldPrepender(),
+                    newCoreProtocolVersionReader(),
+                    newCoreProtocolVersionWriter(),
+                    newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                    verifiedHandler,
+                    newConnectTimeoutHandler(channelConnectTimeout, timer),
+                    messageHandler,
+                    newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
+                    tcpProtocolHandler,
+                    protocolHandler,
+                    clientChannelDiagnosticsHandler,
+                    clientChannelTeardownHandler);
         });
         setConnectTimeout(bootstrap, channelConnectTimeout);
         return bootstrap;
@@ -138,34 +130,28 @@ final class TCPBootstrapFactory
     {
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
         bootstrap.setParentHandler(new ShouldKeepAcceptedChannelHandler());
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
-        {
-            @Override
-            public ChannelPipeline getPipeline()
-                    throws Exception
-            {
-                MessageHandler messageHandler = new MessageHandler();
-                CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
+        bootstrap.setPipelineFactory(() -> {
+            MessageHandler messageHandler = new MessageHandler();
+            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
 
-                return Channels.pipeline(
-                        addressResolver,
-                        newStatsHandler(transportStats),
-                        serverSslEngineFactory.newSslHandler(),
-                        newFrameDecoder(),
-                        newLengthFieldPrepender(),
-                        newCoreProtocolVersionReader(),
-                        newCoreProtocolVersionWriter(),
-                        newCNameVerificationHandler(verifiedHandler, localuser, localdid),
-                        verifiedHandler,
-                        messageHandler,
-                        incomingChannelHandler,
-                        newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
-                        newConnectTimeoutHandler(channelConnectTimeout, timer),
-                        tcpProtocolHandler,
-                        protocolHandler,
-                        serverChannelDiagnosticsHandler,
-                        serverChannelTeardownHandler);
-            }
+            return Channels.pipeline(
+                    addressResolver,
+                    newStatsHandler(transportStats),
+                    serverSslEngineFactory.newSslHandler(),
+                    newFrameDecoder(),
+                    newLengthFieldPrepender(),
+                    newCoreProtocolVersionReader(),
+                    newCoreProtocolVersionWriter(),
+                    newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                    verifiedHandler,
+                    messageHandler,
+                    incomingChannelHandler,
+                    newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
+                    newConnectTimeoutHandler(channelConnectTimeout, timer),
+                    tcpProtocolHandler,
+                    protocolHandler,
+                    serverChannelDiagnosticsHandler,
+                    serverChannelTeardownHandler);
         });
         return bootstrap;
     }

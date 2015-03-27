@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -28,7 +28,7 @@ import java.util.Map.Entry;
  * Keep track of all objects for which conflict branches have been added/removed
  * during a transaction and emit a notification when the transaction is committed.
  */
-class ConflictNotifier extends DirectoryServiceAdapter
+class ConflictNotifier implements IDirectoryServiceListener
 {
     private final DirectoryService _ds;
     private final List<IConflictStateListener> _listeners = Lists.newArrayList();

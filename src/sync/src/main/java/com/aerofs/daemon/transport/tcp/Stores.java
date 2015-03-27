@@ -217,7 +217,7 @@ class Stores implements IStores, IDevicePresenceListener
     /**
      * Uses the updated list of stores the core is interested in to update local data structures
      * related to filters {@code _sid2filterIndex} {@code _filter}. This <em>must</em> be called
-     * by {@link Stores#updateStores(com.aerofs.base.id.SID[], com.aerofs.base.id.SID[])} otherwise
+     * by {@link #updateStores(SID[], SID[])} otherwise
      * remote peers will never be notified about our interest changes.
      */
     private Map<SID, int[]> updateFilter_(SID[] addedSids, SID[] removedSids)
@@ -245,7 +245,7 @@ class Stores implements IStores, IDevicePresenceListener
     }
 
     /**
-     * Called by {@link Stores#updateStores(com.aerofs.base.id.SID[], com.aerofs.base.id.SID[])}.
+     * Called by {@link #updateStores(SID[], SID[])}.
      * {@code updateStores} is called by the core when it changes the SIDs that it's interested in.
      * When that happens there are many devices that may have that store. This method checks all
      * devices we're currently aware of and sends presence updates to the core for every device that

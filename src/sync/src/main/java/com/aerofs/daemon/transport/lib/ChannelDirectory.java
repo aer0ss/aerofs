@@ -11,21 +11,15 @@ import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.SucceededChannelFuture;
 import org.slf4j.Logger;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Presence: The New Hotness.
@@ -55,7 +49,6 @@ public class ChannelDirectory
     private final ITransport tp;
     private IUnicastListener unicastListener;
     private IUnicastConnector channelCreator;
-    private Random random = new Random();
     // channels is a mapping, per-transport, of devices to channels. It cannot distinguish
     // or sort the Channel instances on any kind of cost. It's used to detect device up/down
     // transitions on a per-transport basis, and also to handle Transport-down events (down all
@@ -99,10 +92,10 @@ public class ChannelDirectory
     /**
      * Return an immutable copy of the set of channels for the given Device at a given moment.
      */
-    public ImmutableSet<Channel> getSnapshot(DID did)
+    public ImmutableList<Channel> getSnapshot(DID did)
     {
         synchronized (channels) {
-            return ImmutableSet.copyOf(channels.get(did));
+            return ImmutableList.copyOf(channels.get(did));
         }
     }
 
@@ -148,7 +141,7 @@ public class ChannelDirectory
     public ChannelFuture chooseActiveChannel(DID did)
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
-        ImmutableSet<Channel> active = getSnapshot(did);
+        ImmutableList<Channel> active = getSnapshot(did);
         return active.isEmpty() ?
             createChannel(did) : new SucceededChannelFuture(chooseFrom(active, did));
     }
@@ -171,13 +164,13 @@ public class ChannelDirectory
         return detached;
     }
 
-    private Channel chooseFrom(ImmutableSet<Channel> active, DID did)
+    private Channel chooseFrom(ImmutableList<Channel> active, DID did)
     {
         assert !active.isEmpty() : "impossible, did::empty set";
         if (active.size() == 1) { return active.iterator().next(); }
 
         // prefer Verified channels; to do so, we scan the set first.
-        Set<Channel> verified = new HashSet<Channel>(active.size());
+        List<Channel> verified = new ArrayList<>(active.size());
         for (Channel chan : active) {
             if (TransportUtil.getChannelState(chan).equals(ChannelState.VERIFIED)) {
                 verified.add(chan);
@@ -223,10 +216,10 @@ public class ChannelDirectory
     /**
      * get a random member from a set.
      */
-    private Channel chooseRandomlyFrom(Set<Channel> channels)
+    private Channel chooseRandomlyFrom(List<Channel> channels)
     {
         Preconditions.checkArgument(!channels.isEmpty());
-        return channels.toArray(new Channel[0])[random.nextInt(channels.size())];
+        return channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
     }
 
     /**

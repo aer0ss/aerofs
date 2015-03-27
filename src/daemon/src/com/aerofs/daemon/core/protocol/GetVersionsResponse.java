@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.Cat;
@@ -103,7 +103,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             if (msg.streamKey() == null) {
                 processResponseFromDatagram_(msg.user(), msg.did(), msg.is());
             } else {
-                processResponseFromStream_(msg.user(), msg.did(), msg.streamKey(), msg.is());
+                processResponseFromStream_(msg.user(), msg.did(), msg.is());
             }
         } finally {
             if (msg.streamKey() != null) {
@@ -247,7 +247,6 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
 
                 if (block.getIsLastBlock()) break;
             }
-            if (is.available() != 0) throw new ExProtocolError();
             if (t != null) {
                 cxt.finalizeStore_(t);
                 t.commit_();
@@ -262,33 +261,30 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processResponseFromStream_(UserID user, DID from, StreamKey streamKey, InputStream is)
+    private void processResponseFromStream_(UserID user, DID from, InputStream is)
             throws Exception
     {
-        Token tk = null;
         ResponseContext cxt = new ResponseContext(user, from);
-        Queue<PBGetVersionsResponseBlock> qblocks = new ArrayDeque<PBGetVersionsResponseBlock>(MIN_BLOCKS_PER_TX);
+        Queue<PBGetVersionsResponseBlock> qblocks = new ArrayDeque<>(MIN_BLOCKS_PER_TX);
 
-        try {
-            while (!processStreamChunk_(cxt, qblocks, is)) {
-                if (tk == null) {
-                    // push token acquisition as far down as possible to minimize likelihood of
-                    // exhaustion in the common cases where tokens are not actually needed
-                    // TODO: ideally we wouldn't have to pass a token down to the transport...
-                    tk = _tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "gvr " + from);
+        try (Token tk = _tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "gvr: " + from)) {
+            boolean last = false;
+            do {
+                TCB tcb = tk.pseudoPause_("gvr-recv");
+                try {
+                    last = readBlocks(is, cxt, qblocks);
+                } finally {
+                    tcb.pseudoResumed_();
                 }
-                is = _iss.recvChunk_(streamKey, tk);
-            }
-        } finally {
-            if (tk != null) tk.reclaim_();
+
+                processReceivedBlocks_(cxt, qblocks, last);
+            } while (!last);
         }
     }
 
-    private boolean processStreamChunk_(ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks, InputStream is)
-            throws Exception
-    {
+    private boolean readBlocks(InputStream is, ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks) throws Exception {
         boolean last = false;
-        while (!last && is.available() > 0) {
+        while (!last && qblocks.size() < MIN_BLOCKS_PER_TX) {
             PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
             if (block.hasStore()) {
                 // commit changes for previous store
@@ -299,17 +295,6 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             last = block.getIsLastBlock();
             qblocks.add(block);
         }
-
-        if (is.available() != 0) throw new ExProtocolError();
-
-        /**
-         * To reduce the number of writes to the DB, we now batch at least
-         * MIN_BLOCKS_PER_TX blocks into a single transaction
-         */
-        if (qblocks.size() >= MIN_BLOCKS_PER_TX || last) {
-            processReceivedBlocks_(cxt, qblocks, last);
-        }
-
         return last;
     }
 

@@ -81,8 +81,7 @@ public class CoreModule extends AbstractModule
         bind(NewUpdatesSender.class).asEagerSingleton();
 
         bind(TransBoundaryChecker.class).to(TransManager.class);
-        bind(IUnicastInputLayer.Factory.class).to(CoreProtocolReactor.Factory.class);
-        bind(IUnicastOutputLayer.Factory.class).to(UnicastOutputBottomLayer.Factory.class);
+        bind(IUnicastInputLayer.class).to(CoreProtocolReactor.class);
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);

@@ -14,37 +14,23 @@ import com.aerofs.lib.event.Prio;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Queues.newConcurrentLinkedQueue;
 
 public final class TransportInputStream extends InputStream
 {
     private final DID sourcedid;
     private final StreamID streamID;
     private final IBlockingPrioritizedEventSink<IEvent> transportQueue;
-    private final ConcurrentLinkedQueue<InputStream> chunkInputStreamQueue = newConcurrentLinkedQueue();
+    private final InputStream stream;
 
-    private InputStream currentChunk;
-    private boolean closed;
-
-    public TransportInputStream(DID sourcedid, StreamID streamID, IBlockingPrioritizedEventSink<IEvent> transportQueue)
+    public TransportInputStream(DID sourcedid, StreamID streamID, InputStream stream,
+                                IBlockingPrioritizedEventSink<IEvent> transportQueue)
     {
         this.sourcedid = sourcedid;
         this.streamID = streamID;
+        this.stream = stream;
         this.transportQueue = transportQueue;
-    }
-
-    public void offer(InputStream chunkInputStream)
-    {
-        boolean accepted = chunkInputStreamQueue.offer(chunkInputStream);
-        checkState(accepted);
-
-        synchronized (this) {
-            notifyAll();
-        }
     }
 
     @Override
@@ -76,46 +62,7 @@ public final class TransportInputStream extends InputStream
         checkArgument(offset >= 0);
         checkArgument(length >= 0);
         checkArgument(length <= dest.length - offset);
-
-        int lengthRemaining = length;
-
-        try {
-            while(lengthRemaining > 0) {
-                if (closed) {
-                    throw new IOException("stream closed");
-                }
-
-                // check if there is a chunk we can read from
-                if (currentChunk == null) {
-                    // there's none, so pick one from the head of the queue
-                    currentChunk = chunkInputStreamQueue.poll();
-
-                    // if the queue is empty, wait until we're notified
-                    if (currentChunk == null) {
-                        wait();
-                        // when notified, we don't know _why_,
-                        // so go to the top of the loop and check
-                        // the exit conditions again
-                        continue;
-                    }
-                }
-
-                int bytesRead = currentChunk.read(dest, offset, lengthRemaining);
-                if (bytesRead < 0) { // end of stream
-                    currentChunk = null;
-                    continue;
-                }
-
-                offset += bytesRead;
-                lengthRemaining -= bytesRead;
-            }
-        } catch (InterruptedException e) {
-            throw new IOException("interrupted during read");
-        }
-
-        checkState(lengthRemaining == 0);
-
-        return length;
+        return stream.read(dest, offset, length);
     }
 
     @Override
@@ -128,12 +75,11 @@ public final class TransportInputStream extends InputStream
     public void close()
             throws IOException
     {
-        synchronized (this) {
-            closed = true;
-            notifyAll();
+        try {
+            stream.close();
+        } finally {
+            transportQueue.enqueueBlocking(new EORxEndStream(sourcedid, streamID), Prio.LO);
         }
-
-        transportQueue.enqueueBlocking(new EORxEndStream(sourcedid, streamID), Prio.LO);
     }
 
     //--------------------------------------------------------------------------------------------//

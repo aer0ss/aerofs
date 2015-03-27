@@ -8,7 +8,7 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.google.common.base.Objects;
 
-public final class ChannelData implements IChannelData
+public final class ChannelData
 {
     private final UserID userID;
     private final DID did;
@@ -19,14 +19,12 @@ public final class ChannelData implements IChannelData
         this.did = did;
     }
 
-    @Override
-    public DID getRemoteDID()
+    public final DID getRemoteDID()
     {
         return did;
     }
 
-    @Override
-    public UserID getRemoteUserID()
+    public final UserID getRemoteUserID()
     {
         return userID;
     }
@@ -34,8 +32,8 @@ public final class ChannelData implements IChannelData
     @Override
     public boolean equals(Object o)
     {
+        if (o == null || !(o instanceof ChannelData)) return false;
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
 
         ChannelData other = (ChannelData) o;
         return did.equals(other.did) && userID.equals(other.userID);

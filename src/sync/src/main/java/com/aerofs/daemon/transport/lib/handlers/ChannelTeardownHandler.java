@@ -5,12 +5,12 @@
 package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.ids.DID;
 import com.aerofs.base.net.CoreProtocolHandlers.ExBadMagicHeader;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;
@@ -19,8 +19,6 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.log.LogUtil;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -86,15 +84,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        ctx.getChannel().getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                teardown(channelFuture.getChannel());
-            }
-        });
+        ctx.getChannel().getCloseFuture().addListener(cf -> teardown(cf.getChannel()));
 
         super.channelOpen(ctx, e);
     }
@@ -141,7 +131,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     {
         DID did = null;
         if (channel.getAttachment() != null) {
-            did = ((IChannelData) channel.getAttachment()).getRemoteDID();
+            did = ((ChannelData) channel.getAttachment()).getRemoteDID();
         }
         return did;
     }

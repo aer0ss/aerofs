@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.C;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
@@ -84,7 +85,7 @@ public final class UnicastTCPDevice
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org", random.nextInt(10)));
 
         TransportStats transportStats = new TransportStats();
-        StreamManager streamManager = new StreamManager();
+        StreamManager streamManager = new StreamManager(30 * C.SEC);
 
         unicast = new Unicast(addressResolver, transport);
         unicast.setUnicastListener(unicastListener);

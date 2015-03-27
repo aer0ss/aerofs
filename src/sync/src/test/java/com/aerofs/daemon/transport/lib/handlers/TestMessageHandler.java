@@ -368,11 +368,11 @@ public final class TestMessageHandler
         assertThat(transportMessage.getUserID(), is(channelData.getRemoteUserID()));
         assertThat(transportMessage.getDID(), is(channelData.getRemoteDID()));
         assertThat(transportMessage.isPayload(), is(true));
-        assertThat(transportMessage.getPayload().available(), is(payloadSize));
+        assertThat(transportMessage.getPayload().readableBytes(), is(payloadSize));
 
         byte[] deserializedPayload = new byte[payloadSize];
         //noinspection ResultOfMethodCallIgnored
-        transportMessage.getPayload().read(deserializedPayload);
+        transportMessage.getPayload().readBytes(deserializedPayload);
         assertThat(Arrays.equals(deserializedPayload, randomBytes), is(true));
     }
 

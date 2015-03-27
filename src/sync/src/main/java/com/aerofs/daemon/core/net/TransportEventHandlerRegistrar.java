@@ -9,8 +9,6 @@ import com.google.inject.Inject;
 
 public class TransportEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 {
-    @Inject HdStreamAborted _hdStreamAborted;
-    @Inject HdChunk _hdChunk;
     @Inject HdStreamBegun _hdStreamBegun;
     @Inject HdMaxcastMessage _hdMaxcastMessage;
     @Inject HdUnicastMessage _hdUnicastMessage;
@@ -23,8 +21,6 @@ public class TransportEventHandlerRegistrar implements ICoreEventHandlerRegistra
                 .setHandler_(EIUnicastMessage.class, _hdUnicastMessage)
                 .setHandler_(EIMaxcastMessage.class, _hdMaxcastMessage)
                 .setHandler_(EIStreamBegun.class, _hdStreamBegun)
-                .setHandler_(EIChunk.class, _hdChunk)
-                .setHandler_(EIStreamAborted.class, _hdStreamAborted)
                 ;
     }
 }

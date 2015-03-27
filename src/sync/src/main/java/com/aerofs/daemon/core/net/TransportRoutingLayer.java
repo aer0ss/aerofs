@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.net.device.Devices;
@@ -41,16 +42,13 @@ public class TransportRoutingLayer
     private DID _localdid;
     private Devices _devices;
     private Transports _tps;
-    private UnicastInputOutputStack _stack;
 
     @Inject
-    public void inject_(CfgLocalDID localDID, Devices dp, Transports tps,
-            UnicastInputOutputStack stack)
+    public void inject_(CfgLocalDID localDID, Devices dp, Transports tps)
     {
         _localdid = localDID.get();
         _devices = dp;
         _tps = tps;
-        _stack = stack;
     }
 
     // FIXME(AG): do _not_ use because this layer does not have the concept of available transports that we've heard from but don't know if they work or not
@@ -117,8 +115,7 @@ public class TransportRoutingLayer
         }
 
         l.debug("{} -> uc {},{} over {}", ep.did(), type, rpcid, ep.tp());
-        _stack.output().sendUnicastDatagram_(bs, ep);
-
+        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), TC.currentThreadPrio());
         return true;
     }
 
@@ -131,7 +128,7 @@ public class TransportRoutingLayer
         l.debug("{} -> mc {},{}", sid, type, rpcid);
 
         EOMaxcastMessage ev = new EOMaxcastMessage(sid, _mcfs.getNextMaxcastId(), os.toByteArray());
-        for (ITransport tp : _tps.getAll_()) {
+        for (ITransport tp : _tps.getAll()) {
             if (!tp.supportsMulticast()) continue;
             tp.q().enqueueThrows(ev, TC.currentThreadPrio());
         }

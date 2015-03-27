@@ -38,8 +38,8 @@ import org.jivesoftware.smack.XMPPConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.SecureRandom;
-import java.util.Random;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -58,7 +58,6 @@ public final class UnicastZephyrDevice
     public XMPPConnectionService xmppConnectionService;
 
     public UnicastZephyrDevice(
-            Random random,
             SecureRandom secureRandom,
             String zephyrHost,
             int zephyrPort,
@@ -69,17 +68,18 @@ public final class UnicastZephyrDevice
     {
         this.transportListener = transportListener;
 
-        String transportId = String.format("t-%d", random.nextInt(10));
+        String transportId = String.format("t-%d", ThreadLocalRandom.current().nextInt(10));
         ITransport transport = mock(ITransport.class);
         when(transport.id()).thenReturn(transportId);
 
         unicastListener = spy(new SemaphoreTriggeringListener());
 
-        userID = UserID.fromExternal(String.format("user%d@arrowfs.org", random.nextInt(10)));
+        userID = UserID.fromExternal(String.format("user%d@arrowfs.org",
+                ThreadLocalRandom.current().nextInt(10)));
 
         xmppConnectionService = new XMPPConnectionService("z", did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, linkStateService);
 
-        StreamManager streamManager = new StreamManager();
+        StreamManager streamManager = new StreamManager(30 * C.SEC);
         TransportStats transportStats = new TransportStats();
 
         SignallingService signallingService = new SignallingService("z", "arrowfs.org", xmppConnectionService);

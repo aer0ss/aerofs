@@ -232,7 +232,7 @@ public class Devices implements IDiagnosable
      */
     private void updateStoresForTransports_(final SID[] sidAdded, final SID[] sidRemoved)
     {
-        final Iterable<ITransport> tps = Lists.newArrayList(_tps.getAll_());
+        final Iterable<ITransport> tps = Lists.newArrayList(_tps.getAll());
         final Callable<Void> callable = () -> {
                 Iterator<ITransport> it = tps.iterator();
                 while (it.hasNext()) {

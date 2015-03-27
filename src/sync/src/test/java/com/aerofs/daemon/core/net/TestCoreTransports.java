@@ -101,7 +101,7 @@ public class TestCoreTransports extends AbstractTest
                 _serverSocketChannelFactory,
                 _roundTripTimes);
 
-        Collection<ITransport> constructedTransports = transports.getAll_();
+        Collection<ITransport> constructedTransports = transports.getAll();
 
         assertThat(constructedTransports, hasSize(1));
         assertThat(constructedTransports.iterator().next().id(), equalTo(TransportType.ZEPHYR.getId()));

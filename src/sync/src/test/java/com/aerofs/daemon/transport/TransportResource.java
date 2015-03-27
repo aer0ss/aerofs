@@ -15,7 +15,6 @@ import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
@@ -23,7 +22,6 @@ import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -66,10 +64,9 @@ public final class TransportResource extends ExternalResource
     private final LinkStateService linkStateService = new LinkStateService();
     private final SecureRandom secureRandom = new SecureRandom();
     private final Timer timer = new HashedWheelTimer();
-    private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private final ClientSocketChannelFactory clientSocketChannelFactory = ChannelFactories.newClientChannelFactory();
     private final ServerSocketChannelFactory serverSocketChannelFactory = ChannelFactories.newServerChannelFactory();
-    private final TransferStatisticsManager transferStatisticsManager = mock(TransferStatisticsManager.class);
     private final TransportType transportType;
     private final String transportId;
     private final MockCA mockCA;
@@ -125,6 +122,7 @@ public final class TransportResource extends ExternalResource
                 userID,
                 did,
                 scrypted,
+                30 * C.SEC,
                 true,
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
@@ -246,7 +244,7 @@ public final class TransportResource extends ExternalResource
     public void sendBlocking(DID remoteDID, byte[] payload, Prio prio)
             throws Exception
     {
-        final AtomicReference<Exception> sendExceptionReference = new AtomicReference<Exception>(null);
+        final AtomicReference<Exception> sendExceptionReference = new AtomicReference<>(null);
         final Semaphore sendSemaphore = new Semaphore(0);
 
         // we actually want to be notified when the packet was sent
@@ -291,12 +289,6 @@ public final class TransportResource extends ExternalResource
 
     public OutputStream newOutgoingStream(DID did)
     {
-        StreamID streamID;
-
-        synchronized (random) {
-            streamID = new StreamID(random.nextInt());
-        }
-
-        return new TransportOutputStream(did, streamID, transport, transport.q(), transferStatisticsManager);
+        return new TransportOutputStream(did, transport);
     }
 }

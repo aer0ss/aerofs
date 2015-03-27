@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.protocol.class_under_test;
 
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
@@ -48,12 +48,13 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
     public final ContentChangesDatabase _ccdb = mock(ContentChangesDatabase.class);
 
     // For GCCContentSender
-    public final OutgoingStreams _oss = mock(OutgoingStreams.class);
     public final UploadState _ulstate = mock(UploadState.class);
     public final TokenManager _tokenManager = mock(TokenManager.class);
 
+    private final CoreScheduler _sched = mock(CoreScheduler.class);
+
     public final ComponentContentSender _gccContentSender =
-            new ComponentContentSender(_ulstate, _oss, _trl, _ps, _nvc, _m, _ds, _tokenManager);
+            new ComponentContentSender(_ulstate, _sched, _trl, _ps, _nvc, _m, _ds, _tokenManager);
     public final GetComponentRequest _gcc = new GetComponentRequest();
 
     public GetComponentRequestWithMocks()

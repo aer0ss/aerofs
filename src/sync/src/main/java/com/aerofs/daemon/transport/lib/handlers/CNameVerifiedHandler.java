@@ -8,7 +8,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.daemon.transport.lib.ChannelData;
-import com.aerofs.daemon.transport.lib.IChannelData;
 import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import org.jboss.netty.channel.Channel;
@@ -85,19 +84,14 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
         }
 
         l.info("{} connected for duplex tx on {} ", did, TransportUtil.hexify(channel));
-        channel.setAttachment(new ChannelData(user, did));
+        TransportUtil.setChannelData(channel, new ChannelData(user, did));
     }
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        checkState(e.getChannel().getAttachment() != null);
-        checkState(e.getChannel().getAttachment() instanceof IChannelData);
-
-        IChannelData provider = (IChannelData) e.getChannel().getAttachment();
-        checkNotNull(provider.getRemoteDID());
-        checkNotNull(provider.getRemoteUserID());
+        ChannelData provider = TransportUtil.getChannelData(e.getChannel());
 
         ctx.getPipeline().remove(this);
 

@@ -27,12 +27,10 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence.Mode;
 import org.jivesoftware.smackx.muc.DiscussionHistory;
 import org.jivesoftware.smackx.muc.MultiUserChat;
@@ -141,7 +139,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
             throws XMPPException
     {
         try {
-            OutArg<Integer> len = new OutArg<Integer>();
+            OutArg<Integer> len = new OutArg<>();
             getMUC(sid).sendMessage(XMPPUtilities.encodeBody(len, mcastid, bs));
             l.debug("send mc id:{} s:{}", mcastid, sid);
         } catch (IllegalStateException e) {
@@ -159,24 +157,19 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 
         try {
             muc.join(JabberID.getMUCRoomNickname(localdid, xmppTransportId), null, history, SmackConfiguration.getPacketReplyTimeout());
-            muc.addMessageListener(new PacketListener()
-            {
-                @Override
-                public void processPacket(Packet packet)
-                {
-                    Message msg = (Message) packet;
-                    if (msg.getBody() == null) {
-                        l.warn("null-body msg from " + packet.getFrom());
+            muc.addMessageListener(packet -> {
+                Message msg = (Message) packet;
+                if (msg.getBody() == null) {
+                    l.warn("null-body msg from " + packet.getFrom());
 
-                    } else {
-                        try {
-                            recvMessage(msg);
-                        } catch (Exception e) {
-                            defect.setMessage("process mc from " + msg.getFrom() + ": "
-                                    + getBodyDigest(msg.getBody()))
-                                    .setException(e)
-                                    .sendAsync();
-                        }
+                } else {
+                    try {
+                        recvMessage(msg);
+                    } catch (Exception e) {
+                        defect.setMessage("process mc from " + msg.getFrom() + ": "
+                                + getBodyDigest(msg.getBody()))
+                                .setException(e)
+                                .sendAsync();
                     }
                 }
             });
@@ -205,7 +198,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
 
         l.debug("{} recv mc", did);
 
-        OutArg<Integer> wirelen = new OutArg<Integer>();
+        OutArg<Integer> wirelen = new OutArg<>();
         byte [] bs = XMPPUtilities.decodeBody(did, wirelen, msg.getBody(), maxcastFilterReceiver);
 
         // A null byte stream is returned if the packet is to be filtered away
@@ -242,7 +235,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
         while (true) {
             synchronized (this) {
                 if (all != null && all.equals(allStores)) break;
-                all = new TreeSet<SID>(allStores);
+                all = new TreeSet<>(allStores);
             }
 
             for (SID sid : all) getMUC(sid);
@@ -257,7 +250,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
                 getMUC(sid);
             } catch (Exception e) {
                 // the chat room will be re-subscribed when reconnected
-                l.warn("postpone muc 4 " + sid + ": " + e);
+                l.warn("postpone muc 4 {}:", sid, e);
             }
         }
 
@@ -266,7 +259,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
                 leaveMUC(sid);
             } catch (Exception e) {
                 // the chat room will be re-subscribed when reconnected
-                l.warn("leave muc 4 " + sid + ", ignored: " + Util.e(e));
+                l.warn("leave muc 4 {}, ignore: {}", sid, Util.e(e));
             }
         }
     }

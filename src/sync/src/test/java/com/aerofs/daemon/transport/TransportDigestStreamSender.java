@@ -20,7 +20,7 @@ final class TransportDigestStreamSender
     private static final Logger l = LoggerFactory.getLogger(TransportDigestStreamSender.class);
 
     private final Semaphore streamSentSemaphore = new Semaphore(0);
-    private final AtomicReference<byte[]> sentBytesDigest = new AtomicReference<byte[]>(null);
+    private final AtomicReference<byte[]> sentBytesDigest = new AtomicReference<>(null);
     private final Thread streamSenderThread;
 
     public TransportDigestStreamSender(final TransportResource transport, final DID destdid, final String digestType, final byte[] bytes)

@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.protocol.GetVersionsResponse;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
@@ -27,7 +26,6 @@ public class GetVersionsRequestWithMocks extends AbstractClassUnderTestWithMocks
     public @Mock ImmigrantVersionControl _ivc;
     public @Mock GetVersionsResponse _pgvr;
     public @Mock IncomingStreams _iss;
-    public @Mock OutgoingStreams _oss;
     public @Mock MapSIndex2Store _sidx2s;
     public @Mock IPulledDeviceDatabase _pulleddb;
     public @Mock TokenManager _tokenManager;

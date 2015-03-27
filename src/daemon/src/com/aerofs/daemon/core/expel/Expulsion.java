@@ -48,9 +48,9 @@ public class Expulsion
 
     private final List<IExpulsionListener> _listeners = Lists.newArrayList();
 
-    public static interface IExpulsionListener
+    public interface IExpulsionListener
     {
-        public void anchorExpelled_(SOID soid, Trans t) throws SQLException;
+        void anchorExpelled_(SOID soid, Trans t) throws SQLException;
     }
 
     @Inject

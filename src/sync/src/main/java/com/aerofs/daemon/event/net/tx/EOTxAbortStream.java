@@ -1,6 +1,7 @@
 package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
@@ -9,11 +10,13 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 //
 public class EOTxAbortStream implements IEvent
 {
+    public final DID _did;
     public final StreamID _streamId;
     public final InvalidationReason _reason;
 
-    public EOTxAbortStream(StreamID streamId, InvalidationReason reason)
+    public EOTxAbortStream(DID did, StreamID streamId, InvalidationReason reason)
     {
+        _did = did;
         _streamId = streamId;
         _reason = reason;
     }

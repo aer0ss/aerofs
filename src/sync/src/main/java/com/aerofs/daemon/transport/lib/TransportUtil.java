@@ -41,24 +41,23 @@ public abstract class TransportUtil
         return hasValidChannelData(channel);
     }
 
-    public static IChannelData getChannelData(Channel channel)
+    public static void setChannelData(Channel channel, ChannelData data)
     {
-        checkState(hasValidChannelData(channel));
-        return (IChannelData) channel.getAttachment();
+        checkState(data.getRemoteDID() != null && data.getRemoteUserID() != null);
+        channel.setAttachment(data);
+    }
+
+    public static ChannelData getChannelData(Channel channel)
+    {
+        Object a = channel.getAttachment();
+        checkState(a != null && a instanceof ChannelData);
+        return (ChannelData) a;
     }
 
     public static boolean hasValidChannelData(Channel channel)
     {
-        if (channel.getAttachment() == null) {
-            return false;
-        }
-
-        if (!(channel.getAttachment() instanceof IChannelData)) {
-            return false;
-        }
-
-        IChannelData channelData = (IChannelData) channel.getAttachment();
-        return channelData.getRemoteDID() != null && channelData.getRemoteUserID() != null;
+        Object a = channel.getAttachment();
+        return a != null && a instanceof ChannelData;
     }
 
     public static ChannelState getChannelState(Channel channel)

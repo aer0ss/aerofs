@@ -6,7 +6,6 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -50,7 +49,6 @@ public class TestGetVersionsRequest extends AbstractTest
     @Mock TransportRoutingLayer trl;
     @Mock GetVersionsResponse gvr;
     @Mock Metrics m;
-    @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
     @Mock IMapSIndex2SID sidx2sid;
     @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw,

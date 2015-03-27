@@ -4,10 +4,12 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.base.C;
+import com.aerofs.daemon.transport.lib.StreamKey;
+import com.aerofs.daemon.transport.lib.IncomingStream;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -52,6 +54,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,7 +78,7 @@ public final class TestTransportProtocolHandler
     private final ChannelPipeline pipeline = mock(ChannelPipeline.class);
     private final Channel channel = mock(Channel.class);
     private final ITransport transport = mock(ITransport.class);
-    private final StreamManager streamManager = new StreamManager();
+    private final StreamManager streamManager = new StreamManager(30 * C.SEC);
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(10);
     private final TransportProtocolHandler handler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
 
@@ -129,7 +133,7 @@ public final class TestTransportProtocolHandler
         handler.messageReceived(ctx, new UpstreamMessageEvent(channel, chunk0Message, REMOTE_ADDRESS_0));
 
         // verify that the stream has now truly begun
-        assertThat(streamManager.hasStreamBegun(DID_0, streamId), equalTo(true));
+        assertTrue(streamManager.getIncomingStream(new StreamKey(DID_0, streamId)).hasBegun());
 
         // we _did_ send a EIStreamBegun to the core
         EIStreamBegun streamBegun = (EIStreamBegun) outgoingEventSink.tryDequeue(new OutArg<Prio>(null));
@@ -149,18 +153,14 @@ public final class TestTransportProtocolHandler
         TransportMessage chunk1Message = new TransportMessage(chunk1Buffer, DID_0, USER_0);
         handler.messageReceived(ctx, new UpstreamMessageEvent(channel, chunk1Message, REMOTE_ADDRESS_0));
 
+        IncomingStream strm = streamManager.getIncomingStream(new StreamKey(DID_0, streamId));
         // verify that we have not changed the StreamManager state
-        assertThat(streamManager.hasStreamBegun(DID_0, streamId), equalTo(true));
+        assertTrue(strm.hasBegun());
+
+        assertThat(outgoingEventSink.tryDequeue(new OutArg<Prio>(null)), nullValue());
 
         // but that we _did_ send a EIChunk to the core
-        EIChunk chunk = (EIChunk) outgoingEventSink.tryDequeue(new OutArg<Prio>(null));
-        chunk = checkNotNull(chunk);
-
-        assertThat(chunk._ep, equalTo(new Endpoint(transport, DID_0)));
-        assertThat(chunk._userID, equalTo(USER_0));
-        assertThat(chunk._streamId, equalTo(streamId));
-        assertThat(chunk._seq, equalTo(1));
-        assertThatIncomingDataMatchesTestData(chunk.is());
+        assertEquals(1, strm.bufferedChunkCount());
     }
 
     @Test
@@ -189,7 +189,7 @@ public final class TestTransportProtocolHandler
         handler.messageReceived(ctx, new UpstreamMessageEvent(channel, chunk0Message, REMOTE_ADDRESS_0));
 
         // verify that the stream has now truly begun
-        assertThat(streamManager.hasStreamBegun(DID_0, streamId), equalTo(true));
+        assertTrue(streamManager.getIncomingStream(new StreamKey(DID_0, streamId)).hasBegun());
 
         // we _did_ send a EIStreamBegun to the core
         EIStreamBegun streamBegun = (EIStreamBegun) outgoingEventSink.tryDequeue(new OutArg<Prio>(null));
@@ -205,7 +205,7 @@ public final class TestTransportProtocolHandler
         // now, let's remove that stream
         //
 
-        streamManager.removeIncomingStream(DID_0, streamId);
+        streamManager.removeIncomingStream(new StreamKey(DID_0, streamId), InvalidationReason.ENDED);
         assertThat(streamManager.streamExists(DID_0, streamId), is(false)); // it's removed
 
         //
@@ -262,7 +262,7 @@ public final class TestTransportProtocolHandler
         handler.messageReceived(ctx, new UpstreamMessageEvent(channel, chunk0Message, REMOTE_ADDRESS_0));
 
         // verify that the stream has now truly begun
-        assertThat(streamManager.hasStreamBegun(DID_0, streamId), equalTo(true));
+        assertTrue(streamManager.getIncomingStream(new StreamKey(DID_0, streamId)).hasBegun());
 
         // we _did_ send a EIStreamBegun to the core
         EIStreamBegun streamBegun = (EIStreamBegun) outgoingEventSink.tryDequeue(new OutArg<Prio>(null));

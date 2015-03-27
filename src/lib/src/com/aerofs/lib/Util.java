@@ -32,7 +32,6 @@ import com.aerofs.swig.driver.LogLevel;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,21 +42,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
@@ -617,14 +613,9 @@ public abstract class Util
         return os;
     }
 
-    /**
-     * TODO consider thread safety. May use thread local.
-     */
-    private static Random s_rand;
-    public static Random rand()
+    public static ThreadLocalRandom rand()
     {
-        if (s_rand == null) s_rand = new Random();
-        return s_rand;
+        return ThreadLocalRandom.current();
     }
 
     /**

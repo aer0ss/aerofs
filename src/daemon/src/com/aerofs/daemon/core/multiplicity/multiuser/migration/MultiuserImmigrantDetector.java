@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
@@ -33,7 +32,7 @@ public class MultiuserImmigrantDetector extends ImmigrantDetector
 
     @Override
     public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir
     {
         return false;
     }

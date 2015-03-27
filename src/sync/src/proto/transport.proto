@@ -18,10 +18,6 @@ message PBTPHeader {
         // XMPP relay information
         ZEPHYR_CANDIDATE_INFO = 8;
 
-        // Messages to test liveness of the link
-        TRANSPORT_CHECK_PULSE_CALL = 11;
-        TRANSPORT_CHECK_PULSE_REPLY = 12;
-
         // Messages to maintain link liveness
         HEARTBEAT_CALL = 14;
         HEARTBEAT_REPLY = 15;
@@ -56,6 +52,8 @@ message PBStream {
         BEGIN_STREAM = 1;
         TX_ABORT_STREAM = 2;
         RX_ABORT_STREAM = 3;
+        PAUSE_STREAM = 4;
+        RESUME_STREAM = 5;
     }
 
     enum InvalidationReason {

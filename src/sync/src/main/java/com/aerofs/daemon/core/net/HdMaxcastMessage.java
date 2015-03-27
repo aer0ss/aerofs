@@ -10,17 +10,17 @@ import com.google.inject.Inject;
  */
 public class HdMaxcastMessage implements IEventHandler<EIMaxcastMessage>
 {
-    private final UnicastInputOutputStack _stack;
+    private final CoreProtocolReactor _reactor;
 
     @Inject
-    public HdMaxcastMessage(UnicastInputOutputStack stack)
+    public HdMaxcastMessage(CoreProtocolReactor reactor)
     {
-        _stack = stack;
+        _reactor = reactor;
     }
 
     @Override
     public void handle_(EIMaxcastMessage ev, Prio prio)
     {
-        ((CoreProtocolReactor)_stack.inputTop()).onMaxcastMessageReceived_(ev._ep, ev.is());
+        _reactor.onMaxcastMessageReceived_(ev._ep, ev.is());
     }
 }

@@ -5,9 +5,7 @@
 package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.OA;
@@ -15,15 +13,12 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker.TypeNameOID;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -49,7 +44,7 @@ public class SeedCreator
      * Create a seed file from the current contents of the database
      * @return Absolute path of the created seed file
      */
-    public String create_(SID sid, String path) throws Exception
+    public String create_(SID sid, String path) throws SQLException, ExBadArgs
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) throw new ExBadArgs("Cannot create seed for " + sid.toStringFormal());
@@ -72,7 +67,7 @@ public class SeedCreator
     }
 
     private void populate_(SIndex sidx, final SeedDatabase sdb)
-            throws ExNotFound, SQLException, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
+            throws SQLException
     {
         l.info("populating seed");
 

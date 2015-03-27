@@ -455,6 +455,12 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
                 : unset(oa.flags(), OA.FLAG_EXPELLED_ORG);
         _mdb.setOAFlags_(soid, flags, t);
 
+        if (nowExpelled) {
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectExpelled_(soid, t);
+            }
+        }
+
         // must not keep children with stale expelled flags in the cache
         _cacheOA.invalidateAll_();
     }

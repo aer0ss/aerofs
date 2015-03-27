@@ -12,7 +12,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class TransportMessage
 {
-    private final InputStream payloadInputStream;
+    private final ChannelBuffer payload;
     private final PBTPHeader header;
     private final DID did;
     private final UserID userID;
@@ -33,8 +32,8 @@ public final class TransportMessage
     {
         this.did = checkNotNull(did);
         this.userID = checkNotNull(userID);
-        this.payloadInputStream = new ChannelBufferInputStream(channelBuffer);
-        this.header = TransportProtocolUtil.processUnicastHeader(payloadInputStream);
+        this.payload = channelBuffer;
+        this.header = TransportProtocolUtil.processUnicastHeader(new ChannelBufferInputStream(payload));
     }
 
     public PBTPHeader getHeader()
@@ -69,8 +68,8 @@ public final class TransportMessage
     /**
      * @return an input stream that contains the payload bytes that have been sent after the PBTPHeader
      */
-    public InputStream getPayload()
+    public ChannelBuffer getPayload()
     {
-        return payloadInputStream;
+        return payload;
     }
 }

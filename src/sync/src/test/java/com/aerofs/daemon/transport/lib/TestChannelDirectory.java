@@ -50,12 +50,9 @@ public class TestChannelDirectory extends AbstractTest
     }
 
 
-    private IChannelData getConnectedChannelData()
+    private ChannelData getConnectedChannelData()
     {
-        IChannelData mock = mock(IChannelData.class);
-        when(mock.getRemoteDID()).thenReturn(mock(DID.class));
-        when(mock.getRemoteUserID()).thenReturn(mock(UserID.class));
-        return mock;
+        return new ChannelData(UserID.DUMMY, DID.generate());
     }
 
     private Channel[] getMockChannels(int count, ChannelState state)
@@ -68,7 +65,7 @@ public class TestChannelDirectory extends AbstractTest
             when(c.getCloseFuture()).thenReturn(future);
 
             if (state.equals(ChannelState.VERIFIED)) {
-                IChannelData data = getConnectedChannelData(); // best variable name evar
+                ChannelData data = getConnectedChannelData(); // best variable name evar
                 when(c.getAttachment()).thenReturn(data);
             }
 

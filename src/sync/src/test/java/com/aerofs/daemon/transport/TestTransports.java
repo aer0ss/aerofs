@@ -252,7 +252,7 @@ public final class TestTransports
             private final Map<DID, Map<StreamID, TransportInputStream>> streamDataMap = Maps.newHashMap();
 
             @Override
-            public void onNewStream(DID did, StreamID streamID)
+            public void onNewStream(DID did, StreamID streamID, InputStream is)
             {
                 if (!streamDataMap.containsKey(did)) {
                     streamDataMap.put(did, Maps.<StreamID, TransportInputStream>newHashMap());
@@ -261,7 +261,7 @@ public final class TestTransports
                 Map<StreamID, TransportInputStream> streamMap = streamDataMap.get(did);
                 checkState(!streamMap.containsKey(streamID));
 
-                TransportInputStream transportInputStream = new TransportInputStream(did, streamID, transport1.getTransport().q());
+                TransportInputStream transportInputStream = new TransportInputStream(did, streamID, is, transport1.getTransport().q());
                 streamMap.put(streamID, transportInputStream);
 
                 // create the receiver (-> transport1)
@@ -269,18 +269,6 @@ public final class TestTransports
                 streamReceiver.start();
 
                 receiverCreated.release();
-            }
-
-            @Override
-            public void onIncomingStreamChunk(DID did, StreamID streamID, InputStream chunkInputStream)
-            {
-                Map<StreamID, TransportInputStream> streamMap = streamDataMap.get(did);
-                checkNotNull(streamMap, "no streams for %s", did);
-
-                TransportInputStream stream = streamMap.get(streamID);
-                checkNotNull(stream, "no stream for streamID %s", streamID);
-
-                stream.offer(chunkInputStream);
             }
         });
 

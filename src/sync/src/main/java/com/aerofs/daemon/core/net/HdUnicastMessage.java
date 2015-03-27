@@ -10,12 +10,12 @@ import com.google.inject.Inject;
  */
 public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
 {
-    private final UnicastInputOutputStack _stack;
+    private final IUnicastInputLayer _input;
 
     @Inject
-    public HdUnicastMessage(UnicastInputOutputStack stack)
+    public HdUnicastMessage(IUnicastInputLayer input)
     {
-        _stack = stack;
+        _input = input;
     }
 
     @Override
@@ -23,6 +23,6 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
     {
         PeerContext pc = new PeerContext(ev._ep, ev._userID);
         RawMessage r = new RawMessage(ev.is(), ev.wireLength());
-        _stack.input().onUnicastDatagramReceived_(r, pc);
+        _input.onUnicastDatagramReceived_(r, pc);
     }
 }

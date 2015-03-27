@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.health_check;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.net.TransferStatisticsManager;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
@@ -17,9 +16,8 @@ import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.metriks.IMetriks;
-import com.aerofs.proto.Diagnostics.TransportTransfer;
-import com.aerofs.proto.Diagnostics.TransportTransferDiagnostics;
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.protobuf.Message;
 import org.slf4j.Logger;
@@ -51,23 +49,20 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
     private final InjectableCfg _cfg;
     private final CoreQueue _q;
     private final Devices _devices;
-    private final TransferStatisticsManager _tsm;
     private final Transports _tps;
     private final UploadState _ul;
     private final DownloadState _dl;
-    private final IMetriks _metriks;
 
     @Inject
-    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, Devices devices, TransferStatisticsManager tsm, Transports tps, UploadState ul, DownloadState dl, IMetriks metriks)
+    DiagnosticsDumper(InjectableCfg cfg, CoreQueue q, Devices devices, Transports tps,
+                      UploadState ul, DownloadState dl)
     {
         _cfg = cfg;
         _q = q;
         _devices = devices;
-        _tsm = tsm;
         _tps = tps;
         _ul = ul;
         _dl = dl;
-        _metriks = metriks;
     }
 
     @Override
@@ -90,7 +85,6 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
             dumpDiagnostics(builder, "dls", _dl); // runs holding the core lock
             dumpDiagnostics(builder, "devices", _devices); // runs holding the core lock
             dumpTransportDiagnostics(builder); // runs without holding core lock
-            dumpTransportTransferDiagnostics(builder); // runs without holding core lock
 
             l.info("diagnostics:{}", builder.toString());
         } catch (Throwable t) {
@@ -126,11 +120,9 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
     {
         final AtomicReference<Message> diagnostics = new AtomicReference<>(null);
 
-        _q.enqueueBlocking(new AbstractEBSelfHandling()
-        {
+        _q.enqueueBlocking(new AbstractEBSelfHandling() {
             @Override
-            public void handle_()
-            {
+            public void handle_() {
                 synchronized (_locker) {
                     diagnostics.set(component.dumpDiagnostics_());
                     _locker.notifyAll();
@@ -161,23 +153,10 @@ public final class DiagnosticsDumper implements HealthCheckService.ScheduledRunn
 
         Message transportDiagnostics = _tps.dumpDiagnostics_();
         builder.append("transports:").append(prettyPrint(transportDiagnostics)).append(_newline);
-    }
 
-    private void dumpTransportTransferDiagnostics(StringBuilder builder)
-    {
-        // print
-        TransportTransferDiagnostics transferDiagnostics = _tsm.getAndReset();
-        builder.append("transfer:").append(prettyPrint(transferDiagnostics)).append(_newline);
-
-        // send
-        // FIXME (AG): add an method called "addAll" that automatically adds all fields
-        l.info("send transfer");
-        for (TransportTransfer transfer : transferDiagnostics.getTransferList()) {
-            _metriks.newMetrik("transfer")
-                    .addField("transport_id", transfer.getTransportId())
-                    .addField("bytes_transferred", transfer.getBytesTransferred())
-                    .addField("bytes_errored", transfer.getBytesErrored())
-                    .send();
-        }
+        builder.append("transfer:").append(new Gson().toJson(ImmutableMap.of(
+                "in", _tps.bytesIn(),
+                "out", _tps.bytesOut()
+        )));
     }
 }

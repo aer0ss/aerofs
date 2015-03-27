@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.net.UnicastInputOutputStack;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -48,7 +47,6 @@ public class Core implements IModule
     private final TokenManager _tokenManager;
     private final VerkehrPubSubClient _vk;
     private final ACLNotificationSubscriber _aclsub;
-    private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
     private final NotificationService _ns;
     private final RitualNotificationServer _rns;
@@ -78,7 +76,6 @@ public class Core implements IModule
             IDBCW dbcw,
             VerkehrPubSubClient vk,
             ACLNotificationSubscriber aclsub,
-            UnicastInputOutputStack stack,
             RitualNotificationServer rns,
             NotificationService ns,
             ILinker linker,
@@ -108,7 +105,6 @@ public class Core implements IModule
         _dbcw = dbcw;
         _vk = vk;
         _aclsub = aclsub;
-        _stack = stack;
         _linker = linker;
         _rns = rns;
         _ns = ns;
@@ -159,7 +155,6 @@ public class Core implements IModule
         }
 
         _ss.init_();
-        _stack.init_();
         _aclsub.init_();
         _cnsub.init_();
         _ns.init_();

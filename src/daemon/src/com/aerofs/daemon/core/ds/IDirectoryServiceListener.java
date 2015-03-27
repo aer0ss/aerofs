@@ -19,14 +19,14 @@ import java.sql.SQLException;
  */
 public interface IDirectoryServiceListener
 {
-    void objectCreated_(SOID obj, OID parent, Path pathTo, Trans t) throws SQLException;
-    void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException;
-    void objectMoved_(SOID obj, OID parentFrom, OID parentTo,
-            Path pathFrom, Path pathTo, Trans t) throws SQLException;
+    default void objectCreated_(SOID obj, OID parent, Path pathTo, Trans t) throws SQLException {}
+    default void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException {}
+    default void objectMoved_(SOID obj, OID parentFrom, OID parentTo,
+            Path pathFrom, Path pathTo, Trans t) throws SQLException {}
 
-    void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException;
-    void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException;
-    void objectContentDeleted_(SOKID obj, Trans t) throws SQLException;
+    default void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException {}
+    default void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException {}
+    default void objectContentDeleted_(SOKID obj, Trans t) throws SQLException {}
 
     /**
      * Called from deleteOA_ *after* the object is removed from the DB
@@ -34,5 +34,9 @@ public interface IDirectoryServiceListener
      *
      * IMPORTANT: hold on to the given OA as long as needed, the OID is *gone* from the DB
      */
-    void objectObliterated_(OA oa, Trans t) throws SQLException;
+    default void objectObliterated_(OA oa, Trans t) throws SQLException {}
+
+    // NB: only called for explicitly expelled object
+    // NOT for every implicitly expelled children
+    default void objectExpelled_(SOID soid, Trans t) throws SQLException {}
 }

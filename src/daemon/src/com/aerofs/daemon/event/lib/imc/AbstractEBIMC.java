@@ -32,11 +32,6 @@ abstract public class AbstractEBIMC implements IEBIMC {
         if (_e != null) throw _e;
     }
 
-    public void enqueueBlocking(Prio prio)
-    {
-        _imce.enqueueBlocking_(this, prio);
-    }
-
     public IIMCExecutor imce()
     {
         return _imce;

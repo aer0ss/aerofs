@@ -4,156 +4,135 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.google.common.base.Preconditions.checkState;
 
 // we maintain outgoing stream state at the transport layer rather than
 // the core because transport has better knowledge on when a stream has
 // to be ended due to network errors. also, some other protocols may need
 // more stream-related state than what is maintained here.
 //
-// NB. access to this object must be protected by synchronized, as transports
-// may be multi-threaded.
-//
-// FIXME (AG): This class should be refactored and replaced with atomic maps. (Thanks JP!)
+// NB: there is one StreamManager per Transport
 //
 public class StreamManager
 {
     private static final Logger l = Loggers.getLogger(StreamManager.class);
 
-    public static class OutgoingStream {
-        final DID _did;
-        final Object _cookie;
-        //int _seq; the core checks the sequence numbers end-to-end already.
-                // and therefore this field is useful only for debugging
+    private final Map<DID, Map<StreamID, Boolean>> _osk = new ConcurrentHashMap<>();
+    private final Map<DID, Map<StreamID, Boolean>> _isk = new ConcurrentHashMap<>();
 
-        OutgoingStream(DID did, Object cookie)
-        {
-            _did = did;
-            _cookie = cookie;
-        }
-    }
-
-    private static class IncomingStream {
-        boolean _begun;
-        //int _seq; the core checks the sequence numbers end-to-end already.
-        // and therefore this field is useful only for debugging
-    }
-
-    // TODO ask the core to pass down device ids, instead of storing them here?
-    private final Map<StreamID, OutgoingStream> _sid2ostrm =
-        new TreeMap<StreamID, OutgoingStream>();
-    private final Map<DID, Set<StreamID>> _did2sids =
-        new TreeMap<DID, Set<StreamID>>();
-    private final Map<DID, Map<StreamID, IncomingStream>> _did2istrms =
-        new TreeMap<DID, Map<StreamID, IncomingStream>>();
-
-    public synchronized void newOutgoingStream(StreamID sid, OutgoingStream ostrm)
+    private static void put(Map<DID, Map<StreamID, Boolean>> m, StreamKey sk)
     {
-        assert sid != null;
-        Util.verify(_sid2ostrm.put(sid, ostrm) == null);
-        Set<StreamID> sids = _did2sids.get(ostrm._did);
-        if (sids == null) {
-            sids = new TreeSet<StreamID>();
-            _did2sids.put(ostrm._did, sids);
+        Map<StreamID, Boolean> s = m.get(sk.did);
+        if (s == null) {
+            m.putIfAbsent(sk.did, new ConcurrentHashMap<>());
+            s = m.get(sk.did);
         }
-        Util.verify(sids.add(sid));
+        s.put(sk.strmid, true);
     }
 
-    public synchronized OutgoingStream getOutgoingStreamThrows(StreamID id)
-        throws ExStreamInvalid
+    private static void remove(Map<DID, Map<StreamID, Boolean>> m, StreamKey sk)
     {
-        OutgoingStream ostrm = _sid2ostrm.get(id);
-        if (ostrm == null) throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
+        Map<StreamID, Boolean> s = m.get(sk.did);
+        if (s != null) s.remove(sk.strmid);
+    }
+
+    private final long _timeout;
+    private final AtomicInteger _id = new AtomicInteger();
+    private final Map<StreamKey, OutgoingStream> _ostrms = new ConcurrentHashMap<>();
+    private final Map<StreamKey, IncomingStream> _istrms = new ConcurrentHashMap<>();
+
+    public StreamManager(long timeout)
+    {
+        _timeout = timeout;
+    }
+
+    public StreamKey newOutgoingStreamKey(DID did) {
+        StreamKey sk;
+        do {
+            sk = new StreamKey(did, new StreamID(_id.getAndIncrement()));
+        } while (_ostrms.containsKey(sk));
+        return sk;
+    }
+
+    public OutgoingStream newOutgoingStream(StreamKey sk, Channel channel) {
+        OutgoingStream ostrm = new OutgoingStream(this, sk, channel, _timeout);
+        put(_osk, sk);
+        checkState(_ostrms.put(sk, ostrm) == null);
         return ostrm;
     }
 
-    public synchronized OutgoingStream removeOutgoingStream(StreamID sid)
-    {
-        OutgoingStream ostrm = _sid2ostrm.remove(sid);
-        if (ostrm != null) {
-            Set<StreamID> sids = _did2sids.get(ostrm._did);
-            assert sids != null;
-            Util.verify(sids.remove(sid));
-            if (sids.isEmpty()) _did2sids.remove(ostrm._did);
-        }
-
-        return ostrm;
+    public void pauseOutgoingStream(StreamKey sk) {
+        OutgoingStream os = _ostrms.get(sk);
+        if (os != null) os.pause();
     }
 
-    public synchronized void removeAllOutgoingStreams(DID did)
-    {
-        Set<StreamID> sids = _did2sids.remove(did);
-        if (sids != null) {
-            for (StreamID sid : sids) {
-                l.info("{} remove outgoing stream {}", did, sid);
-                _sid2ostrm.remove(sid);
-            }
-        }
+    public void resumeOutgoingStream(StreamKey sk) {
+        OutgoingStream os = _ostrms.get(sk);
+        if (os != null) os.resume();
     }
 
-    // TODO use StreamKey (also for relevant events)?
-    public synchronized void newIncomingStream(DID did, StreamID strm)
+    public OutgoingStream removeOutgoingStream(StreamKey sk)
     {
-        Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
-        if (strms == null) {
-            strms = new TreeMap<StreamID, IncomingStream>();
-            _did2istrms.put(did, strms);
-        }
-        Util.verify(strms.put(strm, new IncomingStream()) == null);
+        remove(_osk, sk);
+        return _ostrms.remove(sk);
     }
 
-    public synchronized void removeIncomingStream(DID did, StreamID strm)
+    public void removeAllOutgoingStreams(DID did)
     {
-        Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
-        if (strms != null && strms.remove(strm) != null && strms.isEmpty()) {
-            _did2istrms.remove(did);
+        Map<StreamID, Boolean> s = _osk.remove(did);
+        if (s == null) return;
+
+        for (StreamID streamID : s.keySet()) {
+            l.info("{} remove outgoing stream {}", did, streamID);
+            _ostrms.remove(new StreamKey(did, streamID));
         }
     }
 
-    public synchronized Set<StreamID> removeAllIncomingStreams(DID did)
+    public void newIncomingStream(StreamKey sk, Channel channel)
     {
-        Map<StreamID, IncomingStream> strms = _did2istrms.remove(did);
-        if (strms == null) return Collections.emptySet();
-        else return strms.keySet();
+        put(_isk, sk);
+        checkState(_istrms.put(sk, new IncomingStream(sk, channel, _timeout)) == null);
     }
 
-    // FIXME (AG): This is the worst 14 lines of code ever. Like Ever. Like Ever Ever.
-    /**
-     * @return  Whether the stream has already begun. If it has not already begun, then it is marked
-     *          as begun from now on.
-     * @throws ExStreamInvalid if the stream is not found
-     */
-    public synchronized boolean hasStreamBegun(DID did, StreamID sid)
-            throws ExStreamInvalid
+    public IncomingStream getIncomingStream(StreamKey sk) throws ExStreamInvalid
     {
-        Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
-        if (strms == null) {
-            throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
-        }
-
-        IncomingStream strm = strms.get(sid);
-        if (strm == null) {
-            throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
-        } else if (strm._begun) {
-            return true;
-        } else {
-            strm._begun = true;
-            strms.put(sid, strm);
-            return false;
-        }
+        IncomingStream istrm = _istrms.get(sk);
+        if (istrm == null) throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
+        return istrm;
     }
 
-    public synchronized boolean streamExists(DID did, StreamID streamID)
+    public void removeIncomingStream(StreamKey sk, InvalidationReason reason)
     {
-        Map<StreamID, IncomingStream> streams = _did2istrms.get(did);
-        return streams != null && streams.containsKey(streamID);
+        remove(_isk, sk);
+        IncomingStream is = _istrms.remove(sk);
+        if (is != null) is.fail(reason);
+    }
+
+    public Set<StreamID> removeAllIncomingStreams(DID did)
+    {
+        Map<StreamID, Boolean> s = _isk.remove(did);
+        if (s == null) return Collections.emptySet();
+
+        for (StreamID streamID : s.keySet()) {
+            IncomingStream is = _istrms.remove(new StreamKey(did, streamID));
+            if (is != null) is.fail(InvalidationReason.STREAM_NOT_FOUND);
+        }
+
+        return s.keySet();
+    }
+
+    public boolean streamExists(DID did, StreamID streamID)
+    {
+        return _istrms.containsKey(new StreamKey(did, streamID));
     }
 }

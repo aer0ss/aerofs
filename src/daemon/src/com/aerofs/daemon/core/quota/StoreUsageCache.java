@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.quota;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
@@ -32,7 +32,7 @@ class StoreUsageCache
         _ds = ds;
 
         // invalidate the cache on any content change
-        _ds.addListener_(new DirectoryServiceAdapter()
+        _ds.addListener_(new IDirectoryServiceListener()
         {
             @Override
             public void objectContentCreated_(SOKID obj, Path path, Trans t) { invalidate_(obj); }

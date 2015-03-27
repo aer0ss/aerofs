@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.transport.lib.IChannelData;
+import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import org.jboss.netty.channel.Channel;
@@ -17,7 +17,6 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
 import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
-import static com.google.common.base.Preconditions.checkState;
 
 @Sharable
 public final class IncomingChannelHandler extends SimpleChannelHandler
@@ -35,15 +34,13 @@ public final class IncomingChannelHandler extends SimpleChannelHandler
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        checkState(e.getChannel().getAttachment() != null);
-
-        IChannelData channelData = getChannelData(e.getChannel());
+        ChannelData channelData = getChannelData(e.getChannel());
         DID did = channelData.getRemoteDID();
         Channel channel = e.getChannel();
 
         l.info("{} incoming connection on {}", did, TransportUtil.hexify(channel));
         incomingChannelListener.onIncomingChannel(did, channel);
 
-        super.channelConnected(ctx, e);
+        ctx.sendUpstream(e);
     }
 }

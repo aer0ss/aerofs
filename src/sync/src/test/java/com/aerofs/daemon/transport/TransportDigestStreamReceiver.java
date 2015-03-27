@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.ids.DID;
+import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +16,12 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-
 final class TransportDigestStreamReceiver
 {
     private static final Logger l = LoggerFactory.getLogger(TransportDigestStreamReceiver.class);
 
     private final Semaphore receivedStreamSemaphore = new Semaphore(0);
-    private final AtomicReference<byte[]> receivedBytesDigest = new AtomicReference<byte[]>(null);
+    private final AtomicReference<byte[]> receivedBytesDigest = new AtomicReference<>(null);
     private final Thread streamReceiverThread;
 
     public TransportDigestStreamReceiver(final DID sourcedid, final TransportInputStream inputStream, final int expectedIncomingByteCount, final String digestType)
@@ -39,8 +37,7 @@ final class TransportDigestStreamReceiver
                 try {
                     digestInputStream = new DigestInputStream(inputStream, MessageDigest.getInstance(digestType));
 
-                    int bytesRead = digestInputStream.read(new byte[expectedIncomingByteCount]);
-                    assertThat(bytesRead, equalTo(expectedIncomingByteCount));
+                    ByteStreams.readFully(digestInputStream, new byte[expectedIncomingByteCount]);
 
                     receivedBytesDigest.set(digestInputStream.getMessageDigest().digest());
                     l.info(">>> complete reading stream <- {} digest:{}", sourcedid, receivedBytesDigest.get());

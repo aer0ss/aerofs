@@ -13,11 +13,9 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -35,13 +33,11 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -58,11 +54,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.DigestException;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkState;
 
-public class ReceiveAndApplyUpdate
+public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
 {
     private static final Logger l = Loggers.getLogger(ReceiveAndApplyUpdate.class);
 
@@ -76,11 +74,15 @@ public class ReceiveAndApplyUpdate
     private final TransManager _tm;
     private final AnalyticsEventCounter _conflictCounter;
     private final ChangeEpochDatabase _cedb;
+    private final CoreScheduler _sched;
+
+    private final Set<OngoingTransfer> _ongoing = new HashSet<>();
 
     @Inject
     public ReceiveAndApplyUpdate(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             IPhysicalStorage ps, DownloadState dlState, ChangeEpochDatabase cedb,
-            IncomingStreams iss, BranchDeleter bd, TransManager tm, Analytics analytics)
+            IncomingStreams iss, BranchDeleter bd, TransManager tm, Analytics analytics,
+            CoreScheduler sched)
     {
         _ds = ds;
         _pvc = pvc;
@@ -91,14 +93,23 @@ public class ReceiveAndApplyUpdate
         _bd = bd;
         _tm = tm;
         _cedb = cedb;
-        _conflictCounter = new AnalyticsEventCounter(analytics)
-        {
+        _sched = sched;
+        _ds.addListener_(this);
+        _conflictCounter = new AnalyticsEventCounter(analytics) {
             @Override
             public IAnalyticsEvent createEvent(int count)
             {
                 return new FileConflictEvent(count);
             }
         };
+    }
+
+    @Override
+    public void objectExpelled_(SOID expulsionRoot, Trans t) throws SQLException {
+        for (OngoingTransfer dl : _ongoing) {
+            OA oa = _ds.getOANullable_(dl.soid());
+            if (oa == null || oa.isExpelled()) dl.abort();
+        }
     }
 
     private void updatePrefixVersion_(SOKID k, Version vRemote, boolean isStreaming)
@@ -205,7 +216,7 @@ public class ReceiveAndApplyUpdate
     private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
             final long totalFileLength, final long prefixLength, SOKID k,
             Version vRemote, @Nullable KIndex matchingLocalBranch, Token tk)
-            throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
+            throws ExOutOfSpace, ExNotFound, ExAborted, ExNoResource, ExTimeout,
             SQLException, IOException, DigestException
     {
         final boolean isStreaming = msg.streamKey() != null;
@@ -286,33 +297,27 @@ public class ReceiveAndApplyUpdate
                 checkState(prefix.getLength_() == prefixLength,
                         "%s %s != %s", k, prefix.getLength_(), prefixLength);
 
-                ElapsedTimer timer = new ElapsedTimer();
-
-                // Read from the incoming message/stream
-                InputStream is = msg.is();
-                long copied = ByteStreams.copy(is, prefixStream);
-
-                if (isStreaming) {
-                    // it's a stream
-                    SOCID socid = new SOCID(k.soid(), CID.CONTENT);
-                    long remaining = totalFileLength - copied - prefixLength;
-                    while (remaining > 0) {
-                        // sending notifications is not cheap, hence the rate-limiting
-                        if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
-                            OA oa = _ds.getOANullable_(k.soid());
-                            if (oa == null || oa.isExpelled()) {
-                                prefixStream.close();
-                                prefix.delete_();
-                                throw new ExAborted("expelled " + k);
-                            }
-                            _dlState.progress_(socid, msg.ep(), totalFileLength - remaining,
-                                    totalFileLength);
-                            timer.restart();
-                        }
-                        is = _iss.recvChunk_(msg.streamKey(), tk);
-                        remaining -= ByteStreams.copy(is, prefixStream);
+                OngoingTransfer dl = new OngoingTransfer(_sched, _dlState, msg.ep(), k.soid(), totalFileLength);
+                _ongoing.add(dl);
+                try {
+                    long remaining;
+                    TCB tcb = isStreaming ? tk.pseudoPause_("write"): null;
+                    try {
+                        remaining = writePrefix(msg.is(), prefixStream,
+                                totalFileLength - prefixLength, dl);
+                    } finally {
+                        if  (tcb != null) tcb.pseudoResumed_();
                     }
-                    checkState(remaining == 0, "%s %s %s", k, msg.ep(), remaining);
+
+                    if (remaining != 0) {
+                        throw new ExAborted("incomplete transfer");
+                    }
+                } catch (ExAborted e) {
+                    prefixStream.close();
+                    prefix.delete_();
+                    throw e;
+                } finally {
+                    _ongoing.remove(dl);
                 }
             }
         } finally {
@@ -322,15 +327,39 @@ public class ReceiveAndApplyUpdate
         return prefixStream.digest();
     }
 
+    private long writePrefix(InputStream is, PrefixOutputStream prefixStream, long remaining,
+                             OngoingTransfer ongoing)
+            throws IOException, ExAborted {
+        ElapsedTimer timer = new ElapsedTimer();
+
+        byte[] buf = new byte[4096];
+        while (remaining > 0) {
+            int n = is.read(buf, 0, (int) Math.min(buf.length, remaining));
+            if (n == -1) break;
+            remaining -= n;
+            prefixStream.write(buf, 0, n);
+            l.trace("written {}>{}", n, remaining);
+            // sending notifications is not cheap, hence the rate-limiting
+            if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
+                if (ongoing.aborted()) {
+                    throw new ExAborted();
+                }
+                ongoing.progress(remaining);
+                timer.restart();
+            }
+        }
+
+        return remaining;
+    }
+
     public ContentHash download_(IPhysicalPrefix prefix, DigestedMessage msg, SOKID k, Version vRemote,
             @Nullable ContentHash remoteHash, @Nullable KIndex localBranchWithMatchingContent, Token tk)
-            throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted, ExStreamInvalid,
+            throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted,
             ExNoResource, ExOutOfSpace, ExNotFound, DigestException
     {
         PBGetComponentResponse response = msg.pb().getGetComponentResponse();
 
         // Write the new content to the prefix file
-        // TODO: ideally we'd release the core lock around this entire call
         ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
                 response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 

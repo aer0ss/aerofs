@@ -1,6 +1,8 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.daemon.lib.ITransferStat;
+import com.aerofs.daemon.transport.lib.OutgoingStream;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
@@ -17,7 +19,7 @@ public interface ITransport extends ITransferStat
      * @throws Exception if there is any setup error; if an exception is thrown this
      * module cannot be started and cannot be used
      */
-    public void init() throws Exception;
+    void init() throws Exception;
 
     /**
      * Start the transport.
@@ -42,7 +44,7 @@ public interface ITransport extends ITransferStat
      *
      * @return <em>constant</em> identifier for the transport.
      */
-    public String id();
+    String id();
 
     // TODO (AG): Remove this
     /**
@@ -51,7 +53,7 @@ public interface ITransport extends ITransferStat
      *
      * @return <em>constant</em> ranking relative to siblings for the transport.
      */
-    public int rank();
+    int rank();
 
     /**
      * Indicate whether multicast is supported by the transport implementation.
@@ -67,6 +69,8 @@ public interface ITransport extends ITransferStat
      * @return queue by which you can deliver events to this module.
      */
     IBlockingPrioritizedEventSink<IEvent> q();
+
+    OutgoingStream newOutgoingStream(DID did) throws ExDeviceUnavailable, ExTransportUnavailable;
 
     /**
      * Return transport diagnostics.

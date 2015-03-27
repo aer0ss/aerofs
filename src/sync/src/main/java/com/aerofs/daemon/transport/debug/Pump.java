@@ -8,22 +8,16 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.*;
-import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.net.throttling.GlobalLimiter;
-import com.aerofs.daemon.core.net.throttling.LimitMonitor;
+import com.aerofs.daemon.core.net.HdUnicastMessage;
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.event.net.rx.EIChunk;
-import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.defects.Defects;
@@ -38,18 +32,12 @@ import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.lib.RoundTripTimes;
-import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
@@ -73,6 +61,7 @@ import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
 import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
+import static com.aerofs.daemon.core.tc.TC.*;
 import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
@@ -93,19 +82,15 @@ public final class Pump implements IProgram, IUnicastInputLayer
     private ITransport transport;
 
     // replicate core event handling
-    private final UnicastInputOutputStack stack = new UnicastInputOutputStack();
     private IncomingStreams iss;
-    private OutgoingStreams oss;
 
     private final CoreQueue queue = new CoreQueue();
     private final CoreScheduler sched = new CoreScheduler(queue);
     private final TokenManager tokenManager = new TokenManager(queue);
     private final CoreEventDispatcher disp = new CoreEventDispatcher(ImmutableSet.of(
             d ->  {
-                d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(stack));
-                d.setHandler_(EIStreamBegun.class, new HdStreamBegun(stack));
-                d.setHandler_(EIChunk.class, new HdChunk(stack));
-                d.setHandler_(EIStreamAborted.class, new HdStreamAborted(stack));
+                d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(this));
+                d.setHandler_(EIStreamBegun.class, new HdStreamBegun(this));
             }
     ));
     private final TC tc = new TC(sched, disp, queue, tokenManager, () -> {});
@@ -137,35 +122,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
             }
         }
 
-        iss = new IncomingStreams(stack);
-        oss = new OutgoingStreams(stack);
-
-        CoreDeviceLRU dlru = new CoreDeviceLRU();
-        TransferStatisticsManager tsm = new TransferStatisticsManager();
-
-        stack.inject_(new UnicastOutputBottomLayer.Factory(tokenManager, dlru, oss, tsm) {
-                         @Override
-                         public IUnicastOutputLayer create_() {
-                             return new UnicastOutputBottomLayer(this) {
-                                 @Override
-                                 public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
-                                         throws ExNoResource
-                                 {
-                                     _f._dlru.addDevice(ep.did());
-
-                                     EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
-                                     ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
-                                 }
-                             };
-                         }
-
-                      },
-                () -> this,
-                new GlobalLimiter.Factory(sched),
-                new LimitMonitor.Factory(sched, dlru),
-                new IncomingStreamsThrottler(Cfg.db(), new Metrics(), iss));
-
-        stack.init_();
+        iss = new IncomingStreams();
 
         transport = newTransport(args[0]);
 
@@ -201,9 +158,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
         if (transportId.equalsIgnoreCase("t")) {
             return transportFactory.newTransport(LANTCP);
         } else if (transportId.equalsIgnoreCase("z")) {
-            Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
-            zephyr.enableMulticast();
-            return zephyr;
+            return transportFactory.newTransport(ZEPHYR);
         } else {
             throw new ExUnsupportedTransport(transportId);
         }
@@ -211,11 +166,9 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
     private TransportFactory newTransportFactory()
     {
-        CfgAbsRTRoot absRTRoot = new CfgAbsRTRoot();
         CfgLocalUser localid = new CfgLocalUser();
         CfgLocalDID localdid = new CfgLocalDID();
         CfgScrypted scrypted = new CfgScrypted();
-        CfgLolol lolol = new CfgLolol();
         Timer timer = TimerUtil.getGlobalTimer();
         MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
@@ -229,6 +182,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 localid.get(),
                 localdid.get(),
                 scrypted.get(),
+                Cfg.timeout(),
                 false,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
@@ -263,30 +217,22 @@ public final class Pump implements IProgram, IUnicastInputLayer
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc) {
         StreamKey key = new StreamKey(pc.ep().did(), streamId);
         try {
-            recvThroughputCounter.observe(r._wirelen);
             iss.begun_(key, pc);
-            Token tk = tokenManager.acquireThrows_(Cat.UNLIMITED, "rcv:" + key);
-            while (true) {
-                try (InputStream is = iss.recvChunk_(key, tk)) {
-                    recvThroughputCounter.observe(is.available());
+            tokenManager.inPseudoPause_(Cat.UNLIMITED, "rcv:" + key, () -> {
+                try (InputStream is = r._is) {
+                    int n;
+                    byte[] buf = new byte[4096];
+                    while ((n = is.read(buf)) != -1) {
+                        recvThroughputCounter.observe(n);
+                    }
                 }
-            }
+                l.info("{} done process stream", pc.ep().did());
+                return null;
+            });
         } catch (Exception e) {
             l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e));
             iss.end_(key);
         }
-    }
-
-    @Override
-    public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc) {
-        StreamKey key = new StreamKey(pc.ep().did(), streamId);
-        iss.processChunk_(key, seq, r._is);
-    }
-
-    @Override
-    public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason) {
-        StreamKey key = new StreamKey(ep.did(), streamId);
-        iss.onAbortBySender_(key, reason);
     }
 
     private void handlePresence_(EIStoreAvailability presence)
@@ -331,7 +277,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
         protected void resched_() {
             if (scheduled) return;
             scheduled = true;
-            if (!queue.enqueue_(this, TC.currentThreadPrio())) {
+            if (!queue.enqueue_(this, currentThreadPrio())) {
                 sched.schedule_(this);
             }
         }
@@ -358,7 +304,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
         @Override
         public void handleThrows_() {
             try {
-                stack.output().sendUnicastDatagram_(CHUNK, new Endpoint(transport, remote));
+                transport.q().enqueueThrows(new EOUnicastMessage(remote, CHUNK), TC.currentThreadPrio());
             } catch (Exception e) {
                 SystemUtil.fatal(e);
             }
@@ -375,16 +321,18 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
         @Override
         public void handleThrows_() throws Exception{
-            OutgoingStream os = oss.newStream(new Endpoint(transport, remote), tk);
+            OutgoingStream os = transport.newOutgoingStream(remote);
             try {
                 while (doSend) {
-                    os.sendChunk_(CHUNK);
+                    os.write(CHUNK);
                     sendThroughputCounter.observe(CHUNK.length);
                 }
-                os.end_();
+                l.info("done send stream {}", remote);
             } catch (Exception e) {
-                os.abort_(InvalidationReason.INTERNAL_ERROR);
+                os.abort(InvalidationReason.INTERNAL_ERROR);
                 throw e;
+            } finally {
+                os.close();
             }
         }
     }

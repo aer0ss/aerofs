@@ -7,7 +7,6 @@ package com.aerofs.daemon.transport;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -81,8 +80,6 @@ public final class TransportReader
                         handleUnicastMessage((EIUnicastMessage)event);
                     } else if (event instanceof EIStreamBegun) {
                         handleNewIncomingStream((EIStreamBegun)event);
-                    } else if (event instanceof EIChunk) {
-                        handleIncomingStreamChunk((EIChunk) event);
                     } else {
                         l.warn("ignore transport event of type:{}", event.getClass().getSimpleName());
                     }
@@ -127,12 +124,6 @@ public final class TransportReader
 
     private void handleNewIncomingStream(EIStreamBegun event)
     {
-        transportListener.onNewStream(event._ep.did(), event._streamId);
-        transportListener.onIncomingStreamChunk(event._ep.did(), event._streamId, event.is());
-    }
-
-    private void handleIncomingStreamChunk(EIChunk event)
-    {
-        transportListener.onIncomingStreamChunk(event._ep.did(), event._streamId, event.is());
+        transportListener.onNewStream(event._ep.did(), event._streamId, event.is());
     }
 }

@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
+import com.aerofs.daemon.transport.lib.StreamKey;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.proto.Core.PBCore;

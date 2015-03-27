@@ -17,14 +17,14 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Set;
 
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
@@ -54,7 +53,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
 
     private static final Logger l = Loggers.getLogger(Transports.class);
 
-    private final Set<ITransport> availableTransports = Sets.newHashSet();
+    private final ImmutableList<ITransport> availableTransports;
 
     private volatile boolean started = false;
 
@@ -81,6 +80,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 localid.get(),
                 localdid.get(),
                 scrypted.get(),
+                Cfg.timeout(),
                 false,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
@@ -104,22 +104,17 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 serverSslEngineFactory,
                 roundTripTimes);
 
+        ImmutableList.Builder<ITransport> bd = ImmutableList.builder();
         if (enabledTransports.isTcpEnabled()) {
-            addTransport(transportFactory.newTransport(LANTCP));
+            bd.add(transportFactory.newTransport(LANTCP));
         }
         if (enabledTransports.isZephyrEnabled()) {
-            Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
-            zephyr.enableMulticast();
-            addTransport(zephyr);
+            bd.add(transportFactory.newTransport(ZEPHYR));
         }
+        availableTransports = bd.build();
     }
 
-    private void addTransport(ITransport transport)
-    {
-        availableTransports.add(transport);
-    }
-
-    public Collection<ITransport> getAll_()
+    public Collection<ITransport> getAll()
     {
         return availableTransports;
     }

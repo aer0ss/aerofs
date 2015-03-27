@@ -10,7 +10,6 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
@@ -20,20 +19,21 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.List;
 
+import static com.aerofs.daemon.transport.lib.TransportUtil.newExTransportOrFatalOnError;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class Unicast implements ILinkStateListener, IUnicastInternal, IUnicastConnector, IIncomingChannelListener
+public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConnector, IIncomingChannelListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
@@ -176,8 +176,7 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IUni
     /**
      * Disconnects from a remote peer.
      */
-    @Override
-    public void disconnect(DID did, Exception cause)
+    private void disconnect(DID did, Exception cause)
     {
         l.info("{} disconnect", did, LogUtil.suppress(cause));
 
@@ -208,9 +207,23 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IUni
     }
 
     @Override
-    public Object send(final DID did, final @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cookie)
-        throws ExTransportUnavailable, ExDeviceUnavailable
-    {
+    public Object send(final DID did, byte[][] bss, final @Nullable IResultWaiter wtr)
+            throws ExTransportUnavailable, ExDeviceUnavailable {
+        Channel channel;
+        synchronized (this) {
+            if (reuseChannels) {
+                channel = directory.chooseActiveChannel(did).getChannel();
+            } else { // TODO: remove this case, used in unit tests only :(
+                channel = directory.createChannel(did).getChannel();
+            }
+        }
+
+        send(channel, bss, wtr);
+        return channel;
+    }
+
+    @Override
+    public void send(@Nonnull Object cookie, byte[][] bss, final @Nullable IResultWaiter wtr) {
         // Use the MessageHandler as the cookie to send the packet if the cookie is present.
         // This is to bind an outgoing stream to a particular connection, needed for the
         // following scenario:
@@ -222,43 +235,30 @@ public final class Unicast implements ILinkStateListener, IUnicastInternal, IUni
         // 5. the rest of the chunks in the stream will be sent via the latter link, which violates
         // streams' guarantee of in-order delivery.
 
-        Channel channel;
-        synchronized (this) {
-            if (cookie!= null) {
-                channel = (Channel) cookie;
-            } else if (reuseChannels) {
-                channel = directory.chooseActiveChannel(did).getChannel();
-            } else { // TODO: remove this case, used in unit tests only :(
-                channel = directory.createChannel(did).getChannel();
-            }
-        }
+        send((Channel) cookie, bss, wtr);
+    }
 
+    private void send(Channel channel, byte[][] bss, @Nullable IResultWaiter wtr)
+    {
         ChannelFuture writeFuture = channel.write(bss);
-        writeFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                if (future.isSuccess()) {
-                    if (wtr != null) {
-                        wtr.okay();
-                    }
-                } else {
-                    if (wtr != null) {
-                        wtr.error(TransportUtil.newExTransportOrFatalOnError("fail send packet to " + did, future.getCause()));
-                    }
-                }
+        if (wtr == null) return;
+        writeFuture.addListener(cf -> {
+            if (cf.isSuccess()) {
+                wtr.okay();
+            } else {
+                DID did;
+                try {
+                    did = TransportUtil.getChannelData(channel).getRemoteDID();
+                } catch (Throwable t) { did = null; }
+                wtr.error(newExTransportOrFatalOnError("fail send packet to " + did, cf.getCause()));
             }
         });
-
-        return channel;
     }
 
     public void sendControl(DID did, PBTPHeader h)
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
-        send(did, null, Prio.LO, TransportProtocolUtil.newControl(h), null);
+        send(did, TransportProtocolUtil.newControl(h), null);
     }
 
     /**

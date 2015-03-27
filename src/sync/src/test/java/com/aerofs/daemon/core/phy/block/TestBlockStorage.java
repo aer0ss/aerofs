@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
@@ -77,7 +76,6 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock CoreScheduler sched;
     @Mock CfgAbsDefaultAuxRoot auxRoot;
     @Mock CfgStoragePolicy storagePolicy;
-    @Mock IIMCExecutor iimc;
 
     class TestableTrans extends Trans
     {

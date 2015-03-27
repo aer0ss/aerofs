@@ -6,10 +6,8 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.Hasher;
@@ -22,7 +20,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -35,7 +32,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
@@ -48,16 +44,12 @@ import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.DigestException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -264,14 +256,9 @@ public class ContentUpdater
 
         final PBGetComponentResponse response = msg.pb().getGetComponentResponse();
         final @Nullable ContentHash hRemote;
-        if (response.hasHashLength()) {
-            l.debug("hash included");
-            if (msg.streamKey() != null) {
-                hRemote = readContentHashFromStream(msg.streamKey(), msg.is(),
-                        response.getHashLength(), tk);
-            } else {
-                hRemote = readContentHashFromDatagram(msg.is(), response.getHashLength());
-            }
+        if (response.hasHash()) {
+            hRemote = new ContentHash(response.getHash());
+            l.debug("hash included {}", hRemote);
         } else {
             hRemote = null;
         }
@@ -288,7 +275,7 @@ public class ContentUpdater
                 return null;
             }
 
-            if (!response.hasHashLength()) throw new ExProtocolError();
+            if (hRemote == null) throw new ExProtocolError();
 
             // TODO(phoenix): validate against RCDB entries
             KIndex target = KIndex.MASTER;
@@ -436,67 +423,11 @@ public class ContentUpdater
     }
 
     private static boolean isContentSame(SOCKID k, @Nonnull ContentHash hLocal,
-            @Nonnull ContentHash hRemote)
-    {
+            @Nonnull ContentHash hRemote) {
         l.debug("Local hash: {} Remote hash: {}", hLocal, hRemote);
         boolean result = hRemote.equals(hLocal);
         l.debug("Comparing hashes: {} {}", result, k);
         return result;
-    }
-
-    /**
-     * Reads the content hash of a remote file from an incoming datagram's InputStream.
-     *
-     * @param is The InputStream from which to read the hash
-     * @param hashLength The length of the hash
-     * @return The ContentHash read from the message
-     */
-    private ContentHash readContentHashFromDatagram(InputStream is, int hashLength)
-            throws IOException
-    {
-        // If the protobuf, hash, and file content all fit into a single datagram,
-        // then the hash and file content will be found in message.is().
-        DataInputStream dis = new DataInputStream(is);
-        byte[] hashBuf = new byte[hashLength];
-        dis.readFully(hashBuf);
-        // N.B. don't close is - it'll close msg.is(), which will keep us from reading
-        // the file content after the hash.
-        return new ContentHash(hashBuf);
-    }
-
-    /**
-     * Reads the content hash of a remote file from an incoming stream. This method will
-     * release the CoreLock and block to wait for incoming stream chunks.
-     *
-     * @param streamKey The stream from which to read the ContentHash
-     * @param is The stream of bytes we have already received from the stream
-     * @param hashLength The length of the hash
-     * @param tk The token to use when releasing the CoreLock
-     * @return The ContentHash read from the incoming stream
-     */
-    private ContentHash readContentHashFromStream(StreamKey streamKey, InputStream is,
-            int hashLength, Token tk)
-            throws IOException, ExAborted, ExTimeout, ExStreamInvalid, ExNoResource
-    {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-        // First copy any data that we have already received from the stream
-        long hashBytesRead = ByteStreams.copy(is, os);
-
-        while (hashBytesRead < hashLength) {
-            // This code assumes that the hash and following data will arrive in separate
-            // chunks.  While this is true now, it may not be once the underlying layers
-            // are allowed to fragment/reassemble.
-            is = _iss.recvChunk_(streamKey, tk);
-            try {
-                hashBytesRead += ByteStreams.copy(is, os);
-            } finally {
-                // FIXME: this close logic is probably broken but probably never user anyway...
-                is.close();
-            }
-            l.debug("Read {} hash bytes of {}", hashBytesRead, hashLength);
-        }
-        return new ContentHash(os.toByteArray());
     }
 
     /**

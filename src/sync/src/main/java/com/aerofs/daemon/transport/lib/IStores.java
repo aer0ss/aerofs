@@ -8,5 +8,5 @@ import com.aerofs.ids.SID;
 
 public interface IStores
 {
-    public void updateStores(SID[] sidsAdded, SID[] sidsRemoved);
+    void updateStores(SID[] sidsAdded, SID[] sidsRemoved);
 }

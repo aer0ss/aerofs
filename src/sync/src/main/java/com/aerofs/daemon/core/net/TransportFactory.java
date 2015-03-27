@@ -62,6 +62,7 @@ public final class TransportFactory
     private final UserID userID;
     private final DID did;
     private final byte[] scrypted;
+    private final long streamTimeout;
     private final boolean listenToMulticastOnLoopback;
     private final InetSocketAddress xmppServerAddress;
     private final String xmppServerDomain;
@@ -89,6 +90,7 @@ public final class TransportFactory
             UserID userID,
             DID did,
             byte[] scrypted,
+            long streamTimeout,
             boolean listenToMulticastOnLoopback,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
@@ -115,6 +117,7 @@ public final class TransportFactory
         this.userID = userID;
         this.did = did;
         this.scrypted = scrypted;
+        this.streamTimeout = streamTimeout;
         this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
         this.xmppServerAddress = xmppServerAddress;
         this.xmppServerDomain = xmppServerDomain;
@@ -163,6 +166,7 @@ public final class TransportFactory
         return new TCP(
                 userID,
                 did,
+                streamTimeout,
                 transportId,
                 transportRank,
                 transportEventSink,
@@ -186,6 +190,7 @@ public final class TransportFactory
                 userID,
                 did,
                 scrypted,
+                streamTimeout,
                 transportId,
                 transportRank,
                 transportEventSink,

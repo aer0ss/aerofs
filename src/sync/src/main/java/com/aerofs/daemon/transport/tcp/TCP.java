@@ -8,6 +8,8 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -16,21 +18,9 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.IAddressResolver;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TransportEventQueue;
-import com.aerofs.daemon.transport.lib.TransportStats;
-import com.aerofs.daemon.transport.lib.TransportUtil;
-import com.aerofs.daemon.transport.lib.Unicast;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
-import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -41,12 +31,14 @@ import com.aerofs.proto.Diagnostics.TCPChannel;
 import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
+import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -62,6 +54,8 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.HEARTBEAT_INTERVAL;
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
+import static com.aerofs.proto.Transport.PBStream.Type.BEGIN_STREAM;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from Stores and make this final
@@ -82,13 +76,14 @@ public class TCP implements ITransport, IAddressResolver
     private final Unicast unicast;
     private final Multicast multicast;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
-    private final StreamManager streamManager = new StreamManager();
+    private final StreamManager streamManager;
     private final PresenceService presenceService = new PresenceService();
     private final ChannelMonitor monitor;
 
     public TCP(
             UserID localUser,
             DID localdid,
+            long streamTimeout,
             String id,
             int pref,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
@@ -113,6 +108,7 @@ public class TCP implements ITransport, IAddressResolver
         this.pref = pref;
         this.transportStats = new TransportStats();
         this.outgoingEventSink = outgoingEventSink;
+        this.streamManager = new StreamManager(streamTimeout);
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
 
@@ -158,17 +154,9 @@ public class TCP implements ITransport, IAddressResolver
         //  Since the Notifier as we use it does not provide a way to guarantee safe ordering, we
         // do so explicitly with the following trivial compound notifier.
         //
-        linkStateService.addListener(new ILinkStateListener() {
-            @Override
-            public void onLinkStateChanged(
-                    ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current,
-                    ImmutableSet<NetworkInterface> added,
-                    ImmutableSet<NetworkInterface> removed)
-            {
-                unicast.onLinkStateChanged(previous, current, added, removed);
-                multicast.onLinkStateChanged(previous, current, added, removed);
-            }
+        linkStateService.addListener((previous, current, added, removed) -> {
+            unicast.onLinkStateChanged(previous, current, added, removed);
+            multicast.onLinkStateChanged(previous, current, added, removed);
         }, sameThreadExecutor());
 
         // presence hookups
@@ -197,14 +185,7 @@ public class TCP implements ITransport, IAddressResolver
             {
                 final List<DID> evicted = Lists.newArrayList();
 
-                arp.visitARPEntries(new ARP.IARPVisitor()
-                {
-                    @Override
-                    public void visit(DID did, ARPEntry arp)
-                    {
-                        evicted.add(did);
-                    }
-                });
+                arp.visitARPEntries((did, arp1) -> evicted.add(did));
 
                 // Call remove() out of the visitor to avoid holding the ARP lock
                 for (DID did : evicted) {
@@ -238,14 +219,9 @@ public class TCP implements ITransport, IAddressResolver
             {
                 final List<DID> evicted = Lists.newArrayList();
 
-                arp.visitARPEntries(new ARP.IARPVisitor()
-                {
-                    @Override
-                    public void visit(DID did, ARPEntry arp)
-                    {
-                        if (arp.lastUpdatedTimer.elapsed() > ARP_GC_INTERVAL) {
-                            evicted.add(did);
-                        }
+                arp.visitARPEntries((did, arp1) -> {
+                    if (arp1.lastUpdatedTimer.elapsed() > ARP_GC_INTERVAL) {
+                        evicted.add(did);
                     }
                 });
 
@@ -327,6 +303,26 @@ public class TCP implements ITransport, IAddressResolver
         return transportEventQueue;
     }
 
+    @Override
+    public OutgoingStream newOutgoingStream(DID did)
+            throws ExDeviceUnavailable, ExTransportUnavailable
+    {
+        StreamKey sk = streamManager.newOutgoingStreamKey(did);
+
+        PBTPHeader h = PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(Transport.PBStream
+                        .newBuilder()
+                        .setType(BEGIN_STREAM)
+                        .setStreamId(sk.strmid.getInt()))
+                .build();
+
+        // NB. we will not catch failures of sending ctrl msg. however it
+        // will be reflected when sending the payload data below
+        Channel channel = (Channel)unicast.send(did, TransportProtocolUtil.newControl(h), null);
+        return streamManager.newOutgoingStream(sk, channel);
+    }
+
     IBlockingPrioritizedEventSink<IEvent> sink()
     {
         return outgoingEventSink;
@@ -368,22 +364,17 @@ public class TCP implements ITransport, IAddressResolver
 
         // reachable_devices
 
-        arp.visitARPEntries(new IARPVisitor()
-        {
-            @Override
-            public void visit(DID did, ARPEntry arp)
-            {
-                TCPDevice.Builder deviceBuilder = TCPDevice
-                        .newBuilder()
-                        .setDid(BaseUtil.toPB(did))
-                        .setDeviceAddress(TransportUtil.fromInetSockAddress(arp.remoteAddress, false));
+        arp.visitARPEntries((did, arp1) -> {
+            TCPDevice.Builder deviceBuilder = TCPDevice
+                    .newBuilder()
+                    .setDid(BaseUtil.toPB(did))
+                    .setDeviceAddress(TransportUtil.fromInetSockAddress(arp1.remoteAddress, false));
 
-                for (Message message : unicast.getChannelDiagnostics(did)) {
-                    deviceBuilder.addChannel((TCPChannel) message);
-                }
-
-                diagnostics.addReachableDevices(deviceBuilder);
+            for (Message message : unicast.getChannelDiagnostics(did)) {
+                deviceBuilder.addChannel((TCPChannel) message);
             }
+
+            diagnostics.addReachableDevices(deviceBuilder);
         });
 
         return diagnostics.build();

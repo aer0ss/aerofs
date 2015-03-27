@@ -14,7 +14,6 @@ import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.tcp.UnicastTCPDevice;
-import com.aerofs.lib.event.Prio;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
@@ -101,7 +100,13 @@ public final class TestTCPUnicast
             throws ExTransportUnavailable, ExDeviceUnavailable, InterruptedException, ExecutionException
     {
         Waiter waiter = new Waiter();
-        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(data), sendingChannel);
+        Channel channel;
+        if (sendingChannel != null) {
+            senderDevice.unicast.send(sendingChannel, TransportProtocolUtil.newDatagramPayload(data), waiter);
+            channel = sendingChannel;
+        } else {
+            channel = (Channel) senderDevice.unicast.send(receiverDevice.did, TransportProtocolUtil.newDatagramPayload(data), waiter);
+        }
 
         // wait until we trigger that the packet is sent
         waiter.future.get();
@@ -139,7 +144,7 @@ public final class TestTCPUnicast
         // otherDevice --- packet ---> localDevice
         //
         Waiter waiter = new Waiter();
-        otherDevice.unicast.send(localDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+        otherDevice.unicast.send(localDevice.did, TransportProtocolUtil.newDatagramPayload(TEST_DATA), waiter);
 
         // wait...we should get an exception because the packet can't be sent
         boolean exceptionThrown = false;
@@ -177,7 +182,7 @@ public final class TestTCPUnicast
         // otherDevice --- packet ---> localDevice
         //
         Waiter waiter = new Waiter();
-        otherDevice.unicast.send(localDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+        otherDevice.unicast.send(localDevice.did, TransportProtocolUtil.newDatagramPayload(TEST_DATA), waiter);
 
         // wait...we should get an exception because the packet can't be sent
         // i.e. this should fail
@@ -211,7 +216,7 @@ public final class TestTCPUnicast
 
         // attempt to send out the packet to this unavailable device
         Waiter waiter = new Waiter();
-        localDevice.unicast.send(unavilableDevice, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(TEST_DATA), null);
+        localDevice.unicast.send(unavilableDevice, TransportProtocolUtil.newDatagramPayload(TEST_DATA), waiter);
 
         // wait...we should get an exception
         boolean exceptionThrown = false;
@@ -275,7 +280,7 @@ public final class TestTCPUnicast
 
         // send a packet to the remote device (which will force a new channel to be created)
         Waiter waiter = new Waiter();
-        Channel localChannel = (Channel) localDevice.unicast.send(otherDevice.did, waiter, Prio.LO, new byte[][]{TEST_DATA}, null); // IMPORTANT: PURPOSELY BROKEN PACKET
+        Channel localChannel = (Channel) localDevice.unicast.send(otherDevice.did, new byte[][]{TEST_DATA}, waiter); // IMPORTANT: PURPOSELY BROKEN PACKET
 
         // wait until we trigger the failure
         waiter.future.get();
@@ -317,7 +322,7 @@ public final class TestTCPUnicast
 
         // send a packet to the remote device (which will force a new channel to be created)
         Waiter waiter = new Waiter();
-        localDevice.unicast.send(unreachableDevice, waiter, Prio.LO, TEST_PAYLOAD, null); // send a valid packet to a fake DID
+        localDevice.unicast.send(unreachableDevice, TEST_PAYLOAD, waiter); // send a valid packet to a fake DID
 
         // verification
         //    |

@@ -7,16 +7,10 @@ import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.event.net.rx.EIChunk;
-import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
-import com.aerofs.daemon.event.net.tx.EOBeginStream;
-import com.aerofs.daemon.event.net.tx.EOChunk;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
-import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
-import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -28,15 +22,19 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class provides a number of thread-safe {@link com.aerofs.daemon.transport.ITransport} and
@@ -74,30 +72,6 @@ public abstract class TransportProtocolUtil
         };
     }
 
-    /*
-     * @param streamId null for non-stream messages
-     * @param seq 0 for non-stream messages
-     */
-    public static byte[][] newPayload(@Nullable StreamID streamId, int seq, byte[] bs)
-    {
-        PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder();
-
-        if (streamId != null) {
-            bdHeader.setType(STREAM)
-                    .setStream(PBStream.newBuilder()
-                            .setType(Type.PAYLOAD)
-                            .setStreamId(streamId.getInt())
-                            .setSeqNum(seq));
-        } else {
-            bdHeader.setType(DATAGRAM);
-        }
-
-        return new byte[][] {
-            Util.writeDelimited(bdHeader.build()).toByteArray(),
-            bs
-        };
-    }
-
     /**
      * Generate a <code>byte[][]</code> for control messages.
      * Control messages are those with non PAYLOAD types.
@@ -127,60 +101,70 @@ public abstract class TransportProtocolUtil
      * Process the contents of a unicast packet addressed to this peer once its
      * framing header is removed
      *
-     * @param ep {@link com.aerofs.daemon.event.net.Endpoint} identifying which device/transport sent the
+     * @param ep {@link Endpoint} identifying which device/transport sent the
      * unicast packet
      * @param userID the cname-verified user id of the remote peer, or null
-     * @param h {@link com.aerofs.proto.Transport.PBTPHeader} containing the
+     * @param h {@link PBTPHeader} containing the
      * {@link com.aerofs.daemon.transport.ITransport} framing header
-     * @param is {@link java.io.InputStream} from which the payload should be
+     * @param is {@link InputStream} from which the payload should be
      * read <b>IMPORTANT:</b>the header has already been read from this
      * <code>InputStream</code>
      * @param wirelen original length of the received packet, <i>including</i>
      * the transport framing header
-     * @param sink {@link IBlockingPrioritizedEventSink} into which the payload should be
+     * @param channel
+     *@param sink {@link IBlockingPrioritizedEventSink} into which the payload should be
      * enqueued for further processing
-     * @param sm {@link com.aerofs.daemon.transport.lib.StreamManager} to call and use if the unicast packet is
-     * part of a stream
-     * @return non-null if the caller must send the returned control message
+     * @param sm {@link StreamManager} to call and use if the unicast packet is
+ * part of a stream   @return non-null if the caller must send the returned control message
      * back to the sender
      * @throws Exception if the payload cannot be processed
      */
     public static PBTPHeader processUnicastPayload(Endpoint ep, @Nullable UserID userID, PBTPHeader h,
-            InputStream is, int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+                                                   ChannelBuffer is, int wirelen, Channel channel, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {
             // Datagram
-            sink.enqueueThrows(new EIUnicastMessage(ep, userID, is, wirelen), Prio.LO);
-
+            sink.enqueueThrows(new EIUnicastMessage(ep, userID, new ChannelBufferInputStream(is), wirelen), Prio.LO);
         } else {
             // Stream
             PBStream wireStream = h.getStream();
             StreamID streamId = new StreamID(wireStream.getStreamId());
 
-            assert wireStream.hasSeqNum();
+            checkArgument(wireStream.hasSeqNum());
             int seq = wireStream.getSeqNum();
 
-            boolean alreadyBegun;
             try {
-                alreadyBegun = sm.hasStreamBegun(ep.did(), streamId);
+                processStreamPayload(ep, userID, is, wirelen, channel, sink, sm, streamId, seq);
             } catch (ExStreamInvalid e) {
                 l.warn("{} stream {} over {} invalid - send rx abort", ep.did(), streamId, ep.tp());
                 return newAbortIncomingStreamHeader(streamId, e.getReason());
             }
-
-            EIChunk event = alreadyBegun ? new EIChunk(ep, userID, streamId, seq, is, wirelen)
-                                         : new EIStreamBegun(ep, userID, streamId, is, wirelen);
-            try {
-                sink.enqueueThrows(event, Prio.LO);
-            } catch (Exception e) {
-                l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), e);
-                sm.removeIncomingStream(ep.did(), streamId);
-                throw e;
-            }
         }
 
         return null;
+    }
+
+    private static void processStreamPayload(Endpoint ep, @Nullable UserID userID, ChannelBuffer is,
+            int wirelen, Channel channel, IBlockingPrioritizedEventSink<IEvent> sink,
+            StreamManager sm, StreamID streamId, int seq) throws ExStreamInvalid, ExNoResource {
+        StreamKey sk = new StreamKey(ep.did(), streamId);
+        IncomingStream strm = sm.getIncomingStream(sk);
+        checkState(strm._channel == channel);
+
+        if (strm.begin()) {
+            try {
+                l.trace("{} first stream chunk", channel);
+                strm.offer(is);
+                sink.enqueueThrows(new EIStreamBegun(ep, userID, streamId, strm, wirelen), Prio.LO);
+            } catch (Exception e) {
+                l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), e);
+                sm.removeIncomingStream(sk, InvalidationReason.INTERNAL_ERROR);
+                throw e;
+            }
+        } else {
+            strm.offer(seq, is);
+        }
     }
 
     public static PBTPHeader newAbortIncomingStreamHeader(StreamID streamId, InvalidationReason reason)
@@ -191,6 +175,26 @@ public abstract class TransportProtocolUtil
                         .setType(Type.RX_ABORT_STREAM)
                         .setStreamId(streamId.getInt())
                         .setReason(reason))
+                .build();
+    }
+
+    public static PBTPHeader newPauseIncomingStreamHeader(StreamID streamId)
+    {
+        return PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(PBStream.newBuilder()
+                        .setType(Type.PAUSE_STREAM)
+                        .setStreamId(streamId.getInt()))
+                .build();
+    }
+
+    public static PBTPHeader newResumeIncomingStreamHeader(StreamID streamId)
+    {
+        return PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(PBStream.newBuilder()
+                        .setType(Type.RESUME_STREAM)
+                        .setStreamId(streamId.getInt()))
                 .build();
     }
 
@@ -215,49 +219,54 @@ public abstract class TransportProtocolUtil
      *
      * @param ep {@link Endpoint} that sent the control message
      * @param h {@link PBTPHeader} control message itself
-     * @param sink queue the {@link com.aerofs.daemon.transport.ITransport} uses
-     * to communicate with the {@link com.aerofs.daemon.core.Core}
-     * @param sm {@link StreamManager} the {@link com.aerofs.daemon.transport.ITransport} uses to manage streams
-     * @return {@link PBTPHeader} response required to the control packet
+     * @param channel
+     * @param sm {@link StreamManager} the {@link com.aerofs.daemon.transport.ITransport} uses to manage streams   @return {@link PBTPHeader} response required to the control packet
      * @throws ExProtocolError if the control packet has an unrecognized type and cannot
      * be processed
      * @throws ExNoResource if a task required to process the control packet cannot
      * be enqueued in the <code>Core</code> sink
      */
-    // FIXME: shouldn't we enqueue blocking into core?
     public static PBTPHeader processUnicastControl(Endpoint ep, PBTPHeader h,
-            IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+                                                   Channel channel, StreamManager sm)
         throws ExProtocolError, ExNoResource
     {
         switch (h.getType()) {
         case STREAM:
             assert h.hasStream();
-            return processStreamControl(ep, h.getStream(), sink, sm);
+            return processStreamControl(ep, h.getStream(), channel, sm);
         default:
             throw new ExProtocolError(PBTPHeader.Type.class);
         }
     }
 
     private static PBTPHeader processStreamControl(Endpoint ep, PBStream wireStream,
-            IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+                                                   Channel channel, StreamManager sm)
             throws ExProtocolError, ExNoResource
     {
         StreamID streamId = new StreamID(wireStream.getStreamId());
+        StreamKey sk = new StreamKey(ep.did(), streamId);
         switch (wireStream.getType()) {
         case BEGIN_STREAM:
             l.debug("{} begin stream {} over {}", ep.did(), streamId, ep.tp());
-            sm.newIncomingStream(ep.did(), streamId);
+            sm.newIncomingStream(sk, channel);
             break;
         case TX_ABORT_STREAM:
             l.warn("{} aborted sending stream {} over {} rsn:{}", ep.did(), streamId, ep.tp(), wireStream.getReason());
-            sm.removeIncomingStream(ep.did(), streamId);
-            // it must be the last statement of the case block as it may throw
-            sink.enqueueThrows(new EIStreamAborted(ep, streamId, wireStream.getReason()), Prio.LO);
+            sm.removeIncomingStream(sk, wireStream.getReason());
             break;
         case RX_ABORT_STREAM:
             l.warn("{} aborted receiving stream {} over {} rsn:{}", ep.did(), streamId, ep.tp(), wireStream.getReason());
-            sm.removeOutgoingStream(streamId);
+            OutgoingStream os = sm.removeOutgoingStream(sk);
+            if (os != null) os.fail(wireStream.getReason());
             // the core will notice that the stream was removed when sending the next chunk
+            break;
+        case PAUSE_STREAM:
+            l.info("{} pause outgoing stream {} over {}", ep.did(), streamId, ep.tp());
+            sm.pauseOutgoingStream(sk);
+            break;
+        case RESUME_STREAM:
+            l.info("{} resume outgoing stream {} over {}", ep.did(), streamId, ep.tp());
+            sm.resumeOutgoingStream(sk);
             break;
         default:
             throw new ExProtocolError(PBTPHeader.Type.class);
@@ -270,15 +279,11 @@ public abstract class TransportProtocolUtil
             EventDispatcher dispatcher,
             IStores stores,
             StreamManager streamManager,
-            IUnicastInternal unicast)
+            IUnicast unicast)
     {
         dispatcher
             .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(unicast))
-            .setHandler_(EOBeginStream.class, new HdBeginStream(streamManager, unicast))
-            .setHandler_(EOChunk.class, new HdChunk(streamManager, unicast))
-            .setHandler_(EOTxEndStream.class, new HdTxEndStream(streamManager))
             .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager))
-            .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(streamManager, unicast))
             .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores));
     }
 
@@ -299,15 +304,10 @@ public abstract class TransportProtocolUtil
             // forces the core to abort these streams.
         }
 
-        try {
-            if (inbound) {
-                for (StreamID streamID : sm.removeAllIncomingStreams(ep.did())) {
-                    l.info("{} remove incoming stream {} over {}", ep.did(), streamID, ep.tp());
-                    sink.enqueueThrows(new EIStreamAborted(ep, streamID, STREAM_NOT_FOUND), Prio.LO);
-                }
+        if (inbound) {
+            for (StreamID streamID : sm.removeAllIncomingStreams(ep.did())) {
+                l.info("{} remove incoming stream {} over {}", ep.did(), streamID, ep.tp());
             }
-        } catch (ExNoResource e) {
-            l.warn("{} fail enqueue sessionEnded for {} cause:{}", ep.did(), ep.tp(), e);
         }
     }
 

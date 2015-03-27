@@ -84,7 +84,13 @@ def wait_file(path, size=None):
     _wait_path(path)
     assertTrue(os.path.isfile(path), path + ' must be a file')
     if size is not None:
-        assertEqual(size, os.path.getsize(path))
+        sz = os.path.getsize(path)
+        # see comment in _accept_content below
+        if "win32" in sys.platform:
+            while sz == 0:
+                time.sleep(0.1)
+                sz = os.path.getsize(path)
+        assertEqual(size, sz)
 
 
 def wait_file_with_content(path, content, base=None):

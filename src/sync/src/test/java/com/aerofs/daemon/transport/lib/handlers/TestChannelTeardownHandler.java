@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.base.C;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -44,7 +45,7 @@ public final class TestChannelTeardownHandler
     }
 
     private IBlockingPrioritizedEventSink<IEvent> outgoingEventSink = spy(new BlockingPrioQueue<IEvent>(100));
-    private StreamManager streamManager = spy(new StreamManager());
+    private StreamManager streamManager = spy(new StreamManager(30 * C.SEC));
 
     @Test
     public void shouldCloseOutboundPeerStreamsWhenChannelCloseIsCalled()

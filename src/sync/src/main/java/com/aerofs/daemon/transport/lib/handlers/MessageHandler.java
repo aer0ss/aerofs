@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.lib.IChannelData;
+import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.daemon.transport.lib.TransportDefects;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.lib.SystemUtil;
@@ -205,7 +205,7 @@ public final class MessageHandler extends SimpleChannelHandler
 
         checkState(hasValidChannelData(channel), "message received for %s before peer verified", channel);
 
-        IChannelData channelData = TransportUtil.getChannelData(e.getChannel());
+        ChannelData channelData = TransportUtil.getChannelData(e.getChannel());
         TransportMessage message = new TransportMessage((ChannelBuffer) e.getMessage(), channelData.getRemoteDID(), channelData.getRemoteUserID());
         fireMessageReceived(ctx, message);
     }
@@ -299,8 +299,10 @@ public final class MessageHandler extends SimpleChannelHandler
             }
 
             if (!pendingWritesQueueFlushed.get()) {
-                IChannelData channelData = getChannelData(writeFuture.getChannel());
-                l.error("{} write queue for {} not flushed after {} ms", channelData.getRemoteDID(), TransportUtil.hexify(channel), QUEUE_FLUSH_INTERVAL * NUM_QUEUE_FLUSH_WAITS);
+                ChannelData channelData = getChannelData(writeFuture.getChannel());
+                l.error("{} write queue for {} not flushed after {} ms",
+                        channelData.getRemoteDID(), TransportUtil.hexify(channel),
+                        QUEUE_FLUSH_INTERVAL * NUM_QUEUE_FLUSH_WAITS);
                 channel.close();
                 return; // IMPORTANT: EARLY RETURN
             }
@@ -332,12 +334,17 @@ public final class MessageHandler extends SimpleChannelHandler
                 public void operationComplete(ChannelFuture writeFuture)
                         throws Exception
                 {
-                    IChannelData channelData = getChannelData(writeFuture.getChannel());
+                    ChannelData channelData = getChannelData(writeFuture.getChannel());
 
                     if (writeFuture.isSuccess()) {
-                        l.trace("{} wrote {} bytes over {}", channelData.getRemoteDID(), length, TransportUtil.hexify(writeFuture.getChannel()));
+                        l.trace("{} wrote {} bytes over {}",
+                                channelData.getRemoteDID(), length,
+                                TransportUtil.hexify(writeFuture.getChannel()));
                     } else {
-                        l.trace("{} fail write of {} bytes on {}", channelData.getRemoteDID(), length, TransportUtil.hexify(writeFuture.getChannel()), writeFuture.getCause());
+                        l.trace("{} fail write of {} bytes on {}",
+                                channelData.getRemoteDID(), length,
+                                TransportUtil.hexify(writeFuture.getChannel()),
+                                writeFuture.getCause());
                     }
                 }
             });

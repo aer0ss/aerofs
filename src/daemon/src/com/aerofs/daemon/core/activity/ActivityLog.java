@@ -5,7 +5,7 @@ import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
@@ -56,7 +56,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog extends DirectoryServiceAdapter implements IVersionControlListener
+public class ActivityLog implements IDirectoryServiceListener, IVersionControlListener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry

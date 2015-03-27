@@ -9,7 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.expel.Expulsion.IExpulsionListener;
 import com.aerofs.daemon.core.multiplicity.singleuser.ISharedFolderOp.SharedFolderOpType;
@@ -39,7 +39,7 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
  * folder (mostly to avoid automatically re-joining it when a new device is installed).
  * When anchor is renamed it triggers shared folder name update in db for this particular user
  */
-class SharedFolderAutoUpdater extends DirectoryServiceAdapter implements IExpulsionListener
+class SharedFolderAutoUpdater implements IDirectoryServiceListener, IExpulsionListener
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoUpdater.class);
 

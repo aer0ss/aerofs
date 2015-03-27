@@ -4,29 +4,20 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.*;
 import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.transport.lib.OutgoingStream;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.collector.SenderFilters.SenderFilterAndIndex;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
 import com.aerofs.daemon.lib.db.ver.NativeTickRow;
 import com.aerofs.lib.Tick;
@@ -37,7 +28,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBGetVersionsRequest;
@@ -63,7 +53,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
@@ -81,33 +70,21 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
     private final ImmigrantVersionControl _ivc;
     private final TransportRoutingLayer _trl;
     private final Metrics _m;
-    private final IncomingStreams _iss;
-    private final OutgoingStreams _oss;
     private final MapSIndex2Store _sidx2s;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
     private final IPulledDeviceDatabase _pulleddb;
-    private final TokenManager _tokenManager;
-    // The following dependency exists only to use and log OAs in
-    //  enforceTicksAreMonotonicallyIncreasing(...)
-    // TODO (MJ) remove when the use of OAs is not necessary for repairing the db
-    private final DirectoryService _ds;
-    // The following dependency exists only to repair the db in enforceTicksAreMonotonicallyIncreasing()
-    // TODO (MJ) remove when repairing the db is disabled
-    private final TransManager _tm;
     private final MapSIndex2Contributors _sidx2contrib;
     private final LocalACL _lacl;
     private final CfgLocalUser _cfgLocalUser;
 
     @Inject
-    public GetVersionsRequest(IncomingStreams iss, OutgoingStreams oss, Metrics m,
+    public GetVersionsRequest(Metrics m,
             TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
-            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
-            DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
+            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb,
+            IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
     {
-        _iss = iss;
-        _oss = oss;
         _m = m;
         _trl = trl;
         _nvc = nvc;
@@ -116,9 +93,6 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
         _pulleddb = pddb;
-        _tokenManager = tokenManager;
-        _ds = ds;
-        _tm = tm;
         _sidx2contrib = sidx2contrib;
         _lacl = lacl;
         _cfgLocalUser = cfgLocalUser;
@@ -214,12 +188,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         BlockSender sender = new BlockSender(msg.ep(), response.getRpcid(), CoreProtocolUtil.typeString(response), os);
 
         try {
-            if (msg.streamKey() != null) {
-                // NB: this code path should not be taken: streaming calls is not currently possible
-                processRequestFromStream_(msg.did(), msg.user(), msg.is(), msg.streamKey(), sender);
-            } else {
-                processRequestBlock_(msg.did(), msg.user(), msg.is(), sender);
-            }
+            processRequest_(msg.did(), msg.user(), msg.is(), sender);
 
             // EndOfStream marker
             sender.writeBlock_(PBGetVersionsResponseBlock.newBuilder().setIsLastBlock(true).build(), null);
@@ -231,28 +200,14 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         }
     }
 
-    private void processRequestFromStream_(DID from, UserID user, InputStream is, StreamKey key, BlockSender sender)
+    private void processRequest_(DID from, UserID user, InputStream is, BlockSender sender)
             throws Exception
     {
-        try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "GetVersReq(" + from + ")")) {
-            while (processRequestBlock_(from, user, is, sender)) {
-                is = _iss.recvChunk_(key, tk);
-            }
-        }
-    }
-
-    private boolean processRequestBlock_(DID from, UserID user, InputStream is, BlockSender sender)
-            throws Exception
-    {
-        while (is.available() > 0) {
+        while (true) {
             PBGetVersionsRequestBlock block = PBGetVersionsRequestBlock.parseDelimitedFrom(is);
             processRequestBlock_(from, user, block, sender);
-            if (block.getIsLastBlock()) {
-                if (is.available() > 0) throw new ExProtocolError();
-                return false;
-            }
+            if (block.getIsLastBlock()) break;
         }
-        return true;
     }
 
     private void processRequestBlock_(DID from, UserID user, PBGetVersionsRequestBlock requestBlock, BlockSender sender)
@@ -386,7 +341,6 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         private ByteArrayOutputStream _os;
 
         private OutgoingStream _stream;     // null for atomic messages
-        private Token _tk;                  // null for atomic messages
         private boolean _streamOkay;        // invalid for atomic messages
         private @Nullable Throwable _cause; // the reason why a block could not be sent
 
@@ -408,12 +362,11 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
 
             if (os2 != _os) {
                 if (_stream == null) {
-                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "SendVersion(" + _rpcid  + ", " + _ep + ")");
-                    _stream = _oss.newStream(_ep, _tk);
+                    _stream = _ep.tp().newOutgoingStream(_ep.did());
                 }
 
                 if (iter != null) iter.close_();
-                _stream.sendChunk_(_os.toByteArray());
+                _stream.write(_os.toByteArray());
                 _os = os2;
             }
         }
@@ -426,7 +379,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
             if (_stream == null) {
                 _trl.sendUnicast_(_ep, _msgType, _rpcid, _os);
             } else {
-                _stream.sendChunk_(_os.toByteArray());
+                _stream.write(_os.toByteArray());
                 _streamOkay = true;
             }
         }
@@ -439,15 +392,11 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
             if (_stream != null) {
                 if (_streamOkay) {
                     l.trace("{} finish sending blocks over {}", _ep.did(), _ep.tp());
-                    _stream.end_();
                 } else {
                     l.warn("{} abort sending blocks over {} err:{}", _ep.did(), _ep.tp(), _cause != null ? _cause : "unknown");
-                    _stream.abort_(InvalidationReason.INTERNAL_ERROR);
+                    _stream.abort(InvalidationReason.INTERNAL_ERROR);
                 }
-            }
-
-            if (_tk != null) {
-                _tk.reclaim_();
+                _stream.close();
             }
         }
 
@@ -590,102 +539,6 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         // We don't permit any duplicate ticks to be of the alias type (odd-valued)
         checkState(!tick.isAlias(), loggedData);
 
-        // Get the target (or original) OA for the two SOCIDs to determine whether the DB needs
-        // repairing
-        final OA oa = _ds.getAliasedOANullable_(socid.soid());
-        final OA oaLast = _ds.getAliasedOANullable_(socidLast.soid());
-        final String loggedDataWithOA = loggedData + " oaLast [" + oaLast + "] oa [" + oa + "]";
-
-        // It should not be possible for a (locally known) alias object to have META data.
-        // However, this case can still be observed in devices that received non-alias ticks
-        // incorrectly for alias objects (see NativeVersionControl.tickReceived()).
-        // We repair these devices' DBs by deleting the tick for the known aliased object.
-        if (oa != null && !oa.soid().equals(socid.soid())) {
-            l.warn("{} is the target of {}", oa, socid);
-
-            // Assert that oaLast is the target of socid
-            checkState(oaLast != null && oa.soid().equals(oaLast.soid()), loggedDataWithOA);
-
-            // delete the tick for socid
-            deleteDuplicateTick(socid, new SOCID(oa.soid(), socid.cid()), did, tick,
-                    loggedDataWithOA);
-
-        } else if (oaLast != null && !oaLast.soid().equals(socidLast.soid())) {
-            l.warn("{} is the target of {}", oaLast, socidLast);
-
-            // Assert that oa is the target of socidLast
-            checkState(oa != null && oa.soid().equals(oaLast.soid()), loggedDataWithOA);
-
-            // delete the tick for socidLast
-            deleteDuplicateTick(socidLast, new SOCID(oaLast.soid(), socidLast.cid()), did, tick,
-                    loggedDataWithOA);
-        }
-
-        // If execution arrived here, either
-        // 1) One or both of the OAs are null, implying >= 1 of the duplicate ticks is a KML; OR
-        // 2) Both OIDs have a downloaded component (ie the OAs are non-null) but
-        //    neither OID seems to be aliased to the other.
-        // Both are legitimate cases that require no database repair. See Comment A in
-        // NativeVersionControl
-    }
-
-    private void deleteDuplicateTick(SOCID socidToDelete, SOCID socidTarget, DID did, Tick tick,
-            String loggedData)
-            throws SQLException, ExAborted
-    {
-        // The alias object socid should have no oa
-        checkState(!_ds.hasOA_(socidToDelete.soid()), "%s %s", socidToDelete, loggedData);
-
-        Version vToDelete = Version.of(did, tick);
-
-        // Assume that vToDelete is entirely duplicated in the target object's versions.
-        // (so it is safe to simply delete it from the alias object (either KML or local))
-        Version vAllTarget = _nvc.getAllVersions_(socidTarget);
-        checkState(vToDelete.isEntirelyShadowedBy_(vAllTarget), "%s %s %s",
-                vToDelete, vAllTarget, loggedData);
-
-        try (Trans t = _tm.begin_()) {
-            if (vToDelete.isEntirelyShadowedBy_(_nvc.getKMLVersion_(socidToDelete))) {
-                // vToDelete is a KML for socidToDelete
-                _nvc.deleteKMLVersionPermanently_(socidToDelete, vToDelete, t);
-
-                loggedData = "Delete KML " + vToDelete + " of " + socidToDelete + ". " + loggedData;
-
-            } else {
-                // vToDelete is not a KML (as it failed the previous branch)
-                // so assert that it is in the local versions of socidToDelete
-                Version vAllLocalVersions = _nvc.getAllLocalVersions_(socidToDelete);
-                checkState(vToDelete.isEntirelyShadowedBy_(vAllLocalVersions),
-                        "%s %s %s", vToDelete, vAllLocalVersions, loggedData);
-
-                // Assume the branch of the version to delete is MASTER
-                // (otherwise I'm unsure how to resolve this)
-                SOCKID sockidToDelete = new SOCKID(socidTarget);
-                Version vsockidToDelete = _nvc.getLocalVersion_(sockidToDelete);
-                checkState(vToDelete.isEntirelyShadowedBy_(vsockidToDelete),
-                        "%s %s %s", vToDelete, vsockidToDelete, loggedData);
-
-                _nvc.deleteLocalVersionPermanently_(sockidToDelete, vToDelete, t);
-
-                loggedData = "Delete " + vToDelete + " of " + sockidToDelete + ". " + loggedData;
-            }
-            t.commit_();
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-        }
-
-        // Assert that the given alias object has no non-alias ticks remaining
-        // (it's possible to fail here; then need to do a more thorough cleaning of the object)
-        Version vAllSocidToDelete = _nvc.getAllVersions_(socidToDelete);
-        checkState(vAllSocidToDelete.isAliasOnly_(), "%s %s", vAllSocidToDelete, loggedData);
-
-        // Throw an exception to abort the current GetVersionsResponse,
-        // but on the next try the db should be fixed.
-        ExAborted e = new ExAborted("GVR dup tick repair. " + loggedData);
-        newDefectWithLogs("get_versions_request.delete_duplicate_ticks")
-                .setMessage("GVR dup tick repair")
-                .setException(e)
-                .sendAsync();
-        throw e;
+        l.info("weird tick: {}", loggedData);
     }
 }

@@ -143,6 +143,7 @@ public class TestACLEnforcement_GetComponentRequest extends AbstractTest
     private void verifyReplierSendsNoReply()
     {
         // verify that the replier sends no reply
-        verifyNoMoreInteractions(replier._oss, replier._trl);
+        // TODO: check for no stream activity...
+        verifyNoMoreInteractions(replier._trl);
     }
 }

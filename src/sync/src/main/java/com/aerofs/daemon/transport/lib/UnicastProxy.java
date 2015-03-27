@@ -8,8 +8,8 @@ import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
-import com.aerofs.lib.event.Prio;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public final class UnicastProxy implements IUnicast
@@ -22,9 +22,12 @@ public final class UnicastProxy implements IUnicast
     }
 
     @Override
-    public Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
-            throws ExTransportUnavailable, ExDeviceUnavailable
-    {
-        return unicast.send(did, wtr, pri, bss, cke);
+    public Object send(DID did, byte[][] bss, @Nullable IResultWaiter wtr) throws ExTransportUnavailable, ExDeviceUnavailable {
+        return unicast.send(did, bss, wtr);
+    }
+
+    @Override
+    public void send(@Nonnull Object cookie, byte[][] bss, @Nullable IResultWaiter wtr) {
+        unicast.send(cookie, bss, wtr);
     }
 }

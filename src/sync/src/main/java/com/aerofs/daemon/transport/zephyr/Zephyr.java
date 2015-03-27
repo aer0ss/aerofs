@@ -7,6 +7,9 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -14,13 +17,6 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.ChannelMonitor;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.daemon.transport.lib.StreamManager;
-import com.aerofs.daemon.transport.lib.TransportEventQueue;
-import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
@@ -34,7 +30,9 @@ import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
+import com.aerofs.proto.Transport;
 import com.google.common.collect.Sets;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -51,6 +49,8 @@ import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMultica
 import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode.TWOWAY;
+import static com.aerofs.proto.Transport.PBStream.Type.BEGIN_STREAM;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.base.Preconditions.checkState;
 
 public final class Zephyr implements ITransport
@@ -64,7 +64,7 @@ public final class Zephyr implements ITransport
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
 
-    private final StreamManager streamManager = new StreamManager();
+    private final StreamManager streamManager;
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
 
@@ -80,6 +80,7 @@ public final class Zephyr implements ITransport
             UserID localid,
             DID localdid,
             byte[] scrypted,
+            long streamTimeout,
             String id,
             int rank,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
@@ -111,6 +112,7 @@ public final class Zephyr implements ITransport
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
         this.scheduler = new Scheduler(this.transportEventQueue, id + "-sch");
+        this.streamManager = new StreamManager(streamTimeout);
 
         this.id = id;
         this.rank = rank;
@@ -170,10 +172,7 @@ public final class Zephyr implements ITransport
         // information will already be sent by the time the presence manager registers to get them.
         xmppConnectionService.addListener(xmppPresenceProcessor);
         xmppConnectionService.addListener(multicast);
-    }
 
-    public void enableMulticast()
-    {
         l.debug("{}: enabling multicast", id());
 
         multicastEnabled = true;
@@ -227,6 +226,26 @@ public final class Zephyr implements ITransport
     public IBlockingPrioritizedEventSink<IEvent> q()
     {
         return transportEventQueue;
+    }
+
+    @Override
+    public OutgoingStream newOutgoingStream(DID did)
+            throws ExDeviceUnavailable, ExTransportUnavailable
+    {
+        StreamKey sk = streamManager.newOutgoingStreamKey(did);
+
+        Transport.PBTPHeader h = Transport.PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(Transport.PBStream
+                        .newBuilder()
+                        .setType(BEGIN_STREAM)
+                        .setStreamId(sk.strmid.getInt()))
+                .build();
+
+        // NB. we will not catch failures of sending ctrl msg. however it
+        // will be reflected when sending the payload data below
+        Channel channel = (Channel)zephyrConnectionService.send(did, TransportProtocolUtil.newControl(h), null);
+        return streamManager.newOutgoingStream(sk, channel);
     }
 
     @Override

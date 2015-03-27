@@ -156,23 +156,22 @@ message PBGetComponentResponse {
     // present only for metadata
     optional PBMeta meta = 3;
 
-    // present only in streams.  gives the total length of the file for which content will stream
+    // gives the total length of the file
     optional uint64 file_total_length = 4;
+
+    // present only for contents.
+    optional uint64 mtime = 5;
+
+    // sha256 of the entire file content
+    optional bytes hash = 6;
 
     // present only for contents. must be equal to the same field in PBGetComponentRequest if not zero.
     // It represents the length of the file prefix that we are skipping in our file_content
     // That is, the file content length in this is file_total_length - prefix_length.
-    optional uint64 prefix_length = 5 [ default = 0 ];
-
-    // present only for contents.
-    optional uint64 mtime = 6;
-
-    // The length of the hash_content which follows this PBGetComponentResponse, if it exists.
-    optional uint32 hash_length = 7;
+    optional uint64 prefix_length = 7 [ default = 0 ];
 
     optional bool is_content_same = 8 [default = false];
 
-    // followed by: optional bytes hash_content
     // followed by: optional bytes file_content
 }
 

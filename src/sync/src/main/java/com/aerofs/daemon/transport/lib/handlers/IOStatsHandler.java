@@ -35,22 +35,22 @@ public final class IOStatsHandler extends SimpleChannelHandler
             throws Exception
     {
         if (e.getMessage() instanceof ChannelBuffer) {
-            ChannelBuffer incoming = (ChannelBuffer) e.getMessage();
-            bytesReceived.addAndGet(incoming.readableBytes());
-            transportStats.addBytesReceived(incoming.readableBytes());
+            long n = ((ChannelBuffer) e.getMessage()).readableBytes();
+            bytesReceived.getAndAdd(n);
+            transportStats.addBytesReceived(n);
         }
 
-        super.messageReceived(ctx, e);
+        ctx.sendUpstream(e);
     }
 
     @Override
     public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e)
             throws Exception
     {
-        bytesSent.addAndGet(e.getWrittenAmount());
+        bytesSent.getAndAdd(e.getWrittenAmount());
         transportStats.addBytesSent(e.getWrittenAmount());
 
-        super.writeComplete(ctx, e);
+        ctx.sendUpstream(e);
     }
 
     public long getBytesSentOnChannel()

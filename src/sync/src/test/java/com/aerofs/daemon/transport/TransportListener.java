@@ -14,9 +14,7 @@ import java.util.Collection;
 
 public class TransportListener
 {
-    public void onNewStream(DID did, StreamID streamID) {}
-
-    public void onIncomingStreamChunk(DID did, StreamID streamID, InputStream inputStream) {}
+    public void onNewStream(DID did, StreamID streamID, InputStream inputStream) {}
 
     public void onStoreAvailableForDevice(DID did, Collection<SID> sids) {}
 

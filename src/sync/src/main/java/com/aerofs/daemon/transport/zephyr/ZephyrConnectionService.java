@@ -3,6 +3,7 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -10,22 +11,12 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExTransport;
 import com.aerofs.daemon.transport.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.ChannelDirectory;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.IUnicastConnector;
-import com.aerofs.daemon.transport.lib.IUnicastInternal;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.TransportStats;
-import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.signalling.ISignallingServiceListener;
-import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.ZephyrChannel;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
@@ -43,10 +34,10 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
+import static com.aerofs.daemon.transport.lib.TransportUtil.newExTransportOrFatalOnError;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClient;
 import static com.aerofs.defects.Defects.newMetric;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
@@ -75,16 +67,9 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements ILinkStateListener, IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IUnicastConnector
+final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZephyrSignallingService, ISignallingServiceListener, IUnicastConnector
 {
-    private static final Predicate<Channel> TRUE_FILTER = new Predicate<Channel>()
-    {
-        @Override
-        public boolean apply(@Nullable Channel channel)
-        {
-            return true;
-        }
-    };
+    private static final Predicate<Channel> TRUE_FILTER = channel -> true;
 
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
@@ -211,15 +196,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
 
             // only remove the channels with a local address
             // that matches one belonging to the removed interface
-            channelsToDisconnectFilter = new Predicate<Channel>()
-            {
-                @Override
-                public boolean apply(@Nullable Channel entry)
-                {
-                    InetAddress address = ((InetSocketAddress) checkNotNull(entry).getLocalAddress()).getAddress();
-                    l.trace("local address:{}", address);
-                    return removedAddresses.contains(address);
-                }
+            channelsToDisconnectFilter = entry -> {
+                InetAddress address = ((InetSocketAddress) checkNotNull(entry).getLocalAddress()).getAddress();
+                l.trace("local address:{}", address);
+                return removedAddresses.contains(address);
             };
 
         } else {
@@ -258,8 +238,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         return connectFuture;
     }
 
-    @Override
-    public void disconnect(DID did, Exception cause)
+    private void disconnect(DID did, Exception cause)
     {
         l.info("{} disconnect cause:{}", did, cause.getMessage());
 
@@ -278,58 +257,57 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
     }
 
     @Override
-    public Object send(final DID did, @Nullable final IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
-    {
-        l.trace("{} send cke:{}", did, cke);
-
+    public Object send(DID did, byte[][] bss, @Nullable IResultWaiter wtr)
+            throws ExTransportUnavailable, ExDeviceUnavailable {
+        l.trace("{} send cke:{}", did, null);
         Channel channel;
-        try {
-            synchronized (this) {
-                // DirectoryChannel does not require outside synchronization. However, it
-                // allows for more than one channel being created (if multiple threads arrive at
-                // the zero-available state simultaneously). Zephyr does not want more than one
-                // channel instance per DID, so we give the channel directory a stronger guarantee.
-                // Lock ordering is important: always lock this first. ChannelDirectory will not
-                // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
-                channel = directory.chooseActiveChannel(did).getChannel();
-            }
-        } catch (ExTransport ex) {
-            l.warn("{} z: channel failed", did, LogUtil.suppress(ex));
-            return null;
+        synchronized (this) {
+            // DirectoryChannel does not require outside synchronization. However, it
+            // allows for more than one channel being created (if multiple threads arrive at
+            // the zero-available state simultaneously). Zephyr does not want more than one
+            // channel instance per DID, so we give the channel directory a stronger guarantee.
+            // Lock ordering is important: always lock this first. ChannelDirectory will not
+            // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
+            channel = directory.chooseActiveChannel(did).getChannel();
         }
 
-        if (channel == null) { // can happen because the upper layer hasn't yet been notified of a disconnection
+        // can happen because the upper layer hasn't yet been notified of a disconnection
+        if (channel == null) {
             l.warn("{} no channel", did);
+            ExDeviceUnavailable e = new ExDeviceUnavailable("no connection");
             if (wtr != null) {
-                wtr.error(new ExDeviceUnavailable("no connection"));
+                wtr.error(e);
             }
-            return null;
+            throw e;
         }
 
-        if (cke != null && (cke instanceof Channel) && !cke.equals(channel)) { // this is a stream using an older channel
-            l.warn("{} fail send - stale channel", did);
-            if (wtr != null) {
-                wtr.error(new ExDeviceUnavailable("stale connection"));
-            }
-            return null;
-        }
+        send(channel, bss, wtr);
+        return channel;
+    }
 
+    @Override
+    public void send(@Nonnull Object cookie, byte[][] bss, @Nullable IResultWaiter wtr) {
+        Channel channel = (Channel)cookie;
+        DID did = TransportUtil.getChannelData(channel).getRemoteDID();
+        l.trace("{} send cke:{}", did, cookie);
+        send(channel, bss, wtr);
+    }
+
+    public void send(Channel channel, byte[][] bss, @Nullable final IResultWaiter wtr)
+    {
         ChannelFuture writeFuture = channel.write(bss);
-        writeFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                if (future.isSuccess()) {
-                    if (wtr != null) wtr.okay();
-                } else {
-                    if (wtr != null) wtr.error(TransportUtil.newExTransportOrFatalOnError("fail send packet to " + did, future.getCause()));
-                }
+        if (wtr == null) return;
+        writeFuture.addListener(cf -> {
+            if (cf.isSuccess()) {
+                wtr.okay();
+            } else {
+                DID did;
+                try {
+                    did = TransportUtil.getChannelData(channel).getRemoteDID();
+                } catch (Throwable t) { did = null; }
+                wtr.error(newExTransportOrFatalOnError("fail send packet to " + did, cf.getCause()));
             }
         });
-
-        return channel; // this is the channel used to send the packets
     }
 
     //
@@ -349,14 +327,9 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicastInter
         // hasn't completed, then you're going to be sitting around waiting for
         // timeouts. Instead, why not just close you right now?
 
-        Predicate<Channel> handshakeIncompletePredicate = new Predicate<Channel>()
-        {
-            @Override
-            public boolean apply(@Nullable Channel entry)
-            {
-                ZephyrClientHandler zephyrClient = getZephyrClient(checkNotNull(entry));
-                return (!zephyrClient.hasHandshakeCompleted()); // keep alive if you've completed handshaking
-            }
+        Predicate<Channel> handshakeIncompletePredicate = entry -> {
+            ZephyrClientHandler zephyrClient = getZephyrClient(checkNotNull(entry));
+            return (!zephyrClient.hasHandshakeCompleted()); // keep alive if you've completed handshaking
         };
 
         // FIXME: Can this be a source of deadlock? disconnectChannels holds 'this' but might need

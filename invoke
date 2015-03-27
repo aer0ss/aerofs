@@ -95,7 +95,6 @@ PROTO_MAPPINGS = {
                               os.path.join(SRC_SYNC, "src", "proto"),
                             ],
                 "protos": [ os.path.join(SRC_SYNC, "src", "proto", "core.proto"),
-                            os.path.join(SRC_SYNC, "src", "proto", "limit.proto"),
                             os.path.join(SRC_SYNC, "src", "proto", "transport.proto"),
                           ],
             },

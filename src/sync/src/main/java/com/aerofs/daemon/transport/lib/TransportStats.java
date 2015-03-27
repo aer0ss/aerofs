@@ -13,7 +13,7 @@ public final class TransportStats
 
     public void addBytesReceived(long count)
     {
-        bytesSent.addAndGet(count);
+        bytesSent.getAndAdd(count);
     }
 
     public long getBytesReceived()
@@ -23,7 +23,7 @@ public final class TransportStats
 
     public void addBytesSent(long count)
     {
-        bytesReceived.addAndGet(count);
+        bytesReceived.getAndAdd(count);
     }
 
     public long getBytesSent()

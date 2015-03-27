@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.zephyr;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.ids.DID;
@@ -16,15 +15,13 @@ import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.lib.Waiter;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.zephyr.server.ZephyrServer;
+import com.aerofs.zephyr.server.core.Dispatcher;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.Timeout;
 import org.mockito.InOrder;
 import org.slf4j.Logger;
@@ -32,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.Properties;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -53,6 +50,10 @@ public final class TestZephyrUnicast
 
     private static final byte[] TEST_DATA = "hello".getBytes(Charsets.US_ASCII);
 
+    private static int zephyrPort = ThreadLocalRandom.current().nextInt(10000) + 5000;
+    private static ZephyrServer relay;
+    private static Thread relayThread;
+
     private UnicastZephyrDevice localDevice;
     private UnicastZephyrDevice otherDevice;
 
@@ -64,17 +65,31 @@ public final class TestZephyrUnicast
     @Rule
     public LoggingRule loggingRule = new LoggingRule(l);
 
+    @BeforeClass
+    public static void starrRelay() throws Exception
+    {
+        relay = new ZephyrServer("localhost", (short)zephyrPort, new Dispatcher());
+        relay.init();
+        relayThread = new Thread(relay::start);
+        relayThread.start();
+    }
+    @AfterClass
+    public static void stopRelay() throws Exception
+    {
+        relay.stop();
+        relayThread.join();
+    }
+
     @Before
     public void setup()
             throws Exception
     {
-        Random random = new Random();
         SecureRandom secureRandom = new SecureRandom();
         MockCA mockCA = new MockCA("test-ca", new SecureRandom());
         IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
-        localDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, new UnicastTransportListener(), roundTripTimes);
-        otherDevice = new UnicastZephyrDevice(random, secureRandom, BaseParam.Zephyr.SERVER_ADDRESS.getHostName(), BaseParam.Zephyr.SERVER_ADDRESS.getPort(), mockCA, new UnicastTransportListener(), roundTripTimes);
+        localDevice = new UnicastZephyrDevice(secureRandom, "localhost", zephyrPort, mockCA, new UnicastTransportListener(), roundTripTimes);
+        otherDevice = new UnicastZephyrDevice(secureRandom, "localhost", zephyrPort, mockCA, new UnicastTransportListener(), roundTripTimes);
 
         localDevice.init();
         otherDevice.init();
@@ -95,7 +110,7 @@ public final class TestZephyrUnicast
             throws Exception
     {
         Waiter waiter = new Waiter();
-        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(data), null);
+        Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, TransportProtocolUtil.newDatagramPayload(data), waiter);
 
         // wait until we trigger that the packet is sent
         waiter.future.get();
@@ -156,7 +171,7 @@ public final class TestZephyrUnicast
 
         // send a packet to the remote device (which will force a new channel to be created)
         Waiter waiter = new Waiter();
-        Channel localChannel = (Channel) localDevice.unicast.send(otherDevice.did, waiter, Prio.LO, new byte[][]{TEST_DATA}, null); // IMPORTANT: PURPOSELY BROKEN PACKET
+        Channel localChannel = (Channel) localDevice.unicast.send(otherDevice.did, new byte[][]{TEST_DATA}, waiter); // IMPORTANT: PURPOSELY BROKEN PACKET
 
         // wait until we trigger the failure
         waiter.future.get();
@@ -197,8 +212,7 @@ public final class TestZephyrUnicast
 
         // send a packet to the remote device (which will force a new channel to be created)
         Waiter waiter = new Waiter();
-        localDevice.unicast.send(unreachableDevice, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(
-                TEST_DATA), null); // send a valid packet to a fake DID
+        localDevice.unicast.send(unreachableDevice, TransportProtocolUtil.newDatagramPayload(TEST_DATA), waiter); // send a valid packet to a fake DID
 
         // verification
         //    |
