@@ -63,6 +63,8 @@ public class CAResource
             throw new InvalidCSRException();
         }
 
+        l.info("signing a csr for service {} with CSR subject of {}", service, pkcs.getSubject());
+
         long serialNo =  getUnusedSerialNumber();
         X509CertificateHolder signedCert = _certificateSigner.signCSR(pkcs, serialNo);
         _db.addSignedCertificate(serialNo, signedCert);

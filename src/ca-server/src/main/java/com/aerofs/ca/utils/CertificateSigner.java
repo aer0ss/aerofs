@@ -142,7 +142,7 @@ public class CertificateSigner {
         for (RDN rdn : csr.getSubject().getRDNs(BCStyle.CN)) {
             for (AttributeTypeAndValue at : rdn.getTypesAndValues()) {
                 if (InetAddresses.isInetAddress(at.getValue().toString())) {
-                    certGen.addExtension(Extension.subjectAlternativeName, false, new GeneralName(GeneralName.iPAddress, at.getValue().toString()));
+                    certGen.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(new GeneralName(GeneralName.iPAddress, at.getValue().toString())));
                 }
             }
         }

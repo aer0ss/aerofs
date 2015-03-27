@@ -10,10 +10,7 @@ import com.jayway.restassured.response.Response;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
@@ -207,7 +204,7 @@ public class TestCAResource
         X509CertificateHolder crt = CertificateUtils.pemToCert(resp.getBody().asByteArray());
         Extension extension = crt.getExtension(Extension.subjectAlternativeName);
         assertTrue(extension != null);
-        assertEquals(extension.getParsedValue(), new GeneralName(GeneralName.iPAddress, ipAddr));
+        assertEquals(extension.getParsedValue(), new GeneralNames(new GeneralName(GeneralName.iPAddress, ipAddr)));
     }
 
     private PKCS10CertificationRequest newCsr()
