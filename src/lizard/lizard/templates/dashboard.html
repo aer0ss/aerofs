@@ -29,13 +29,13 @@
                     <dd>{{ newest_license.expiry_date | date }}</dd>
                 </dl>
             {% endif %}
-            {% if not newest_license.is_trial and renewal_seats < newest_license.seats %}
+            {% if not active_license.is_trial and renewal_seats < active_license.seats %}
                 <h4>Renewal information</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>Seats:</dt>
                     <dd>{{ renewal_seats }}</dd>
                     <dt>Renews on:</dt>
-                    <dd>{{ newest_license.expiry_date | date }}</dd>
+                    <dd>{{ active_license.expiry_date | date }}</dd>
                 </dl>
             {% endif %}
                 <h4>Purchase Licenses</h4>
@@ -46,7 +46,7 @@
                         {{ form.hidden_tag() }}
                         <p>
                             {{ render_field(form.count, type="number", no_divs=True, label_width=5, class="form-control")}}
-                            {% if newest_license.is_trial %}
+                            {% if active_license.is_trial %}
                         </p>
                         <p>
                             <button type="submit" class="btn btn-success btn-block">Purchase licenses</button>

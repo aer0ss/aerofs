@@ -472,15 +472,7 @@ def receipt(id):
 @login.login_required
 def dashboard():
     user = login.current_user
-
     customer = user.customer
-
-    active_license = user.customer.licenses.filter_by(state=models.License.states.FILLED).order_by(
-                models.License.is_trial.asc(),
-                models.License.expiry_date.desc(),
-                models.License.modify_date.desc(),
-            ).first()
-
     newest_license = customer.newest_license()
 
     if newest_license is None:
@@ -523,7 +515,7 @@ def dashboard():
 
     return render_template("dashboard.html",
             form=form,
-            active_license=active_license,
+            active_license=customer.newest_filled_license(),
             newest_license=newest_license,
             renewal_seats=(customer.renewal_seats or newest_license.seats),
             appliance_version=appliance.latest_appliance_version(),
@@ -557,7 +549,7 @@ def download_qcow():
 @login.login_required
 def download_latest_license():
     user = login.current_user
-    license = user.customer.newest_license()
+    license = user.customer.newest_filled_license()
     if license is None or license.blob is None:
         # (the user shouldn't see this route if they don't have a Filled license)
         abort(404)

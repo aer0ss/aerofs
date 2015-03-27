@@ -86,30 +86,36 @@ class Customer(db.Model, TimeStampedMixin):
     # This is used at the time of renewal.
     renewal_seats = db.Column(db.Integer, nullable=True)
 
-    # sort by paid accounts first, then expiry date, then modified date
+    # Return the most recently updated Filled license. No sorting on trial/paid here.
+    def newest_filled_license(self):
+        return self.licenses.filter_by(state=License.states.FILLED).order_by(
+                License.modify_date.desc()
+            ).first()
+
+    # Return the most interesting license request for billing / purchase requests.
+    # If there is a Pending license, definitely return it.
+    # Otherwise, among Filled licenses, return the most recently updated.
+    # If there are none of those, return a Held or Ignored license request.
+    # NOTE that the newest_license is not necessarily an "active", usable license.
     def newest_license(self):
         active_license = self.licenses.filter_by(state=License.states.FILLED).order_by(
-                    License.is_trial.asc(),
-                    License.expiry_date.desc(),
                     License.modify_date.desc(),
+                    License.expiry_date.desc(),
                 ).first()
 
         pending_license = self.licenses.filter_by(state=License.states.PENDING).order_by(
-                    License.is_trial.asc(),
-                    License.expiry_date.desc(),
                     License.modify_date.desc(),
+                    License.expiry_date.desc(),
                 ).first()
 
         held_license = self.licenses.filter_by(state=License.states.ON_HOLD).order_by(
-                    License.is_trial.asc(),
-                    License.expiry_date.desc(),
                     License.modify_date.desc(),
+                    License.expiry_date.desc(),
                 ).first()
 
         ignored_license = self.licenses.filter_by(state=License.states.IGNORED).order_by(
-                    License.is_trial.asc(),
-                    License.expiry_date.desc(),
                     License.modify_date.desc(),
+                    License.expiry_date.desc(),
                 ).first()
 
         return pending_license or active_license or held_license or ignored_license
