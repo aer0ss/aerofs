@@ -95,7 +95,7 @@ main() {
 
     echo "Launching new VM..."
     # The "docker-appliance-" prefix must be consistent with ship.yml.jinja
-    local OVA=${THIS_DIR}/../../out.ship/preloaded/docker-appliance-*.ova
+    local OVA=${THIS_DIR}/../../out.ship/appliance/preloaded/docker-appliance-*.ova
 
     # For some reaon "vboxmanage import" doesn't handle '..' in paths very well. So convert to real path.
     # (OSX has no realpath command.)

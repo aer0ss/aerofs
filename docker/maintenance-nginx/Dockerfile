@@ -1,4 +1,4 @@
-FROM nginx
+FROM nginx:1.7.11
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
