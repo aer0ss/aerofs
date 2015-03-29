@@ -10,7 +10,7 @@ REQUIREMENTS_FILE = buildroot/requirements-exact.txt
 MIGRATION_SH = $(ROOT)/migration.sh
 
 image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH)
-	docker build --no-cache -t $(IMAGE_NAME) .
+	docker build -t $(IMAGE_NAME) .
 
 $(ROOT)/%: %
 	mkdir -p $(@D)
@@ -26,6 +26,9 @@ $(REQUIREMENTS_FILE): requirements-exact.txt
 	mkdir -p $(@D)
 	cp $< $@
 	echo psutil >> $@
+
+$(ROOT)/migration.sh: migration.sh migration.sh.docker.patch
+	$(call patch,$@,$<,$(@F))
 
 $(ROOT)/web/views/maintenance/templates/auditing.mako: web/views/maintenance/templates/auditing.mako auditing.mako.docker.patch
 	$(call patch,$@,$<,$(@F))

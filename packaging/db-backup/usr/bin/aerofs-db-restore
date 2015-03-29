@@ -11,6 +11,15 @@ function malformed_db_backup()
     echo "ERROR: Malformed db backup file: $@."
 }
 
+function drop_and_restore_db()
+{
+    echo ">>>   Drop $1..."
+    echo "drop database if exists \`$1\`; " | mysql
+    echo ">>>   Restoring $1..."
+    mysql <<< "create database $1"
+    mysql -D $1 -o $1 < aerofs-db-backup/mysql.dump
+}
+
 if [ $# -ne 1 ]
 then
     usage
@@ -91,20 +100,18 @@ else
     echo ">>> Clearing flyway-managed databases..."
     for db in bifrost aerofs_sp polaris
     do
-        echo ">>>   Drop $db..."
-        echo "drop database if exists \`$db\`; " | mysql
+        drop_and_restore_db $db
     done
 
     # We need the mysql schema for the migration.sh, so we only drop aerofs_ca if
     # the CA has already been migrated
     if [ -e aerofs-db-backup/ca-files/migrated ]
     then
-        echo ">>>   Drop aerofs_ca..."
-        echo "drop database if exists \`aerofs_ca\`; " | mysql
+        drop_and_restore_db aerofs_ca
+    else
+        echo ">>> Migrating CA files..."
+        /opt/ca-server/migration.sh
     fi
-
-    echo ">>> Restoring mysql database..."
-    mysql < aerofs-db-backup/mysql.dump
 
     # As a compromise between CI and packaging complexity, we ship polaris
     # in the private cloud appliance. It is running but clients do not
@@ -114,20 +121,6 @@ else
     # TODO: remove this when polaris schema is stable
     echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql
 
-    echo ">>> Restoring CA files..."
-    service ca-server stop 1>/dev/null 2>/dev/null || true
-    rm -rf /opt/ca/prod
-    mkdir -p /opt/ca/prod
-    cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
-
-    if [ ! -e /opt/ca/prod/migrated ]; then
-        /opt/bunker/migration.sh
-        rm -rf /opt/ca/prod
-        mkdir -p /opt/ca/prod
-        touch /opt/ca/prod/migrated
-    fi
-
-    service ca-server start 1>/dev/null 2>/dev/null
 fi
 
 # Only restore verkehr topics for backups that are new enough to contain
