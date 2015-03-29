@@ -8,6 +8,8 @@ import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -58,6 +60,7 @@ public class ACLSynchronizer
     private final IMapSID2SIndex _sid2sidx;
     private final CfgLocalUser _cfgLocalUser;
     private final SPBlockingClient.Factory _factSP;
+    private final MapSIndex2Store _sidx2s;
 
     private class ServerACLReturn
     {
@@ -74,13 +77,14 @@ public class ACLSynchronizer
     @Inject
     public ACLSynchronizer(TokenManager tokenManager, TransManager tm, ACLFilter filter, LocalACL lacl,
             IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
-            CfgLocalUser cfgLocalUser, InjectableSPBlockingClientFactory factSP)
+            MapSIndex2Store sidx2s, CfgLocalUser cfgLocalUser, InjectableSPBlockingClientFactory factSP)
     {
         _tokenManager = tokenManager;
         _tm = tm;
         _filter = filter;
         _lacl = lacl;
         _storeJoiner = storeJoiner;
+        _sidx2s = sidx2s;
         _sidx2sid = sIndex2SID;
         _sid2sidx = sid2SIndex;
         _cfgLocalUser = cfgLocalUser;
@@ -113,7 +117,7 @@ public class ACLSynchronizer
     public void syncToLocal_() throws Exception
     {
         long localEpochBeforeSPCall = _filter.getEpoch_();
-        updateACLFromSP_(localEpochBeforeSPCall);
+        updateACLFromSP_(localEpochBeforeSPCall, -1);
     }
 
     /**
@@ -128,7 +132,7 @@ public class ACLSynchronizer
                     serverEpoch, localEpochBeforeSPCall);
             return;
         }
-        updateACLFromSP_(localEpochBeforeSPCall);
+        updateACLFromSP_(localEpochBeforeSPCall, serverEpoch);
     }
 
     /**
@@ -140,7 +144,7 @@ public class ACLSynchronizer
      * the result of the SP call is superior to the local epoch *after* the core lock is retaken
      * (RPC is done with core lock released).
      */
-    private void updateACLFromSP_(long localEpochBeforeSPCall) throws Exception
+    private void updateACLFromSP_(long localEpochBeforeSPCall, long minServerEpoch) throws Exception
     {
         ServerACLReturn serverACLReturn = getServerACL_(localEpochBeforeSPCall);
 
@@ -149,6 +153,11 @@ public class ACLSynchronizer
         //
         long localEpochAfterSPCall = _filter.getEpoch_();
         if (serverACLReturn._serverEpoch <= localEpochAfterSPCall) {
+            if (serverACLReturn._serverEpoch < minServerEpoch) {
+                l.info("server epoch lower than notified {} < {}",
+                        serverACLReturn._serverEpoch, minServerEpoch);
+                throw new ExRetryLater("mismatching server epoch");
+            }
             l.info("server has no acl updates {} {} {}",
                     localEpochBeforeSPCall, localEpochAfterSPCall, serverACLReturn._serverEpoch);
             return;
@@ -211,6 +220,11 @@ public class ACLSynchronizer
 
         if (updateEpoch) {
             updateEpoch_(serverACLReturn._serverEpoch);
+            if (serverACLReturn._serverEpoch < minServerEpoch) {
+                l.info("server epoch lower than notified {} < {}",
+                        serverACLReturn._serverEpoch, minServerEpoch);
+                throw new ExRetryLater("mismatching server epoch");
+            }
         } else {
             throw new ExRetryLater("incomplete acl update");
         }
@@ -253,10 +267,21 @@ public class ACLSynchronizer
             _lacl.set_(sidx, info._roles, t);
 
             // TODO: handle changes of the external bit
-            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
-                // not known and accessible: auto-join
-                checkArgument(info._name != null, sid);
-                _storeJoiner.joinStore_(sidx, sid, info, t);
+            if (!stores.contains(sidx)) {
+                if (_sidx2sid.getNullable_(sidx) == null) {
+                    // not known and accessible: auto-join
+                    checkArgument(info._name != null, sid);
+                    _storeJoiner.joinStore_(sidx, sid, info, t);
+                } else {
+                    // already joined (p2p anchor propagation): kick sync
+                    final SIndex s = sidx;
+                    t.addListener_(new AbstractTransListener() {
+                        @Override
+                        public void committed_() {
+                            _sidx2s.get_(s).accessible_();
+                        }
+                    });
+                }
             }
 
             t.commit_();

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
@@ -28,6 +29,7 @@ public class LegacyStore extends Store
     {
         private final Devices _devices;
         private final AntiEntropy _ae;
+        private final NewUpdatesSender _nus;
         private final Collector.Factory _factCollector;
         private final SenderFilters.Factory _factSF;
         private final IPulledDeviceDatabase _pddb;
@@ -38,6 +40,7 @@ public class LegacyStore extends Store
                 SenderFilters.Factory factSF,
                 Collector.Factory factCollector,
                 AntiEntropy ae,
+                NewUpdatesSender nus,
                 Devices devices,
                 IPulledDeviceDatabase pddb,
                 PauseSync pauseSync)
@@ -45,6 +48,7 @@ public class LegacyStore extends Store
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
+            _nus = nus;
             _devices = devices;
             _pddb = pddb;
             _pauseSync = pauseSync;
@@ -86,15 +90,12 @@ public class LegacyStore extends Store
      * Called after the Store is created.
      * If there are no OPM devices for this store, do nothing.
      */
+    @Override
     void postCreate_()
     {
         _f._devices.afterAddingStore_(_sidx);
 
-        // make sure collector is started if peers are online
-        if (hasOnlinePotentialMemberDevices_()) {
-            // we map online devices in the collector as OPM devices of a member store
-            getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
-        }
+        getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
 
         _f._pauseSync.addListener_(this);
     }
@@ -103,6 +104,7 @@ public class LegacyStore extends Store
      * Pre-deletion trigger. Before we remove a Store from the map, mark the devices offline
      * for this store.
      */
+    @Override
     void preDelete_()
     {
         _f._pauseSync.removeListener_(this);
@@ -111,6 +113,14 @@ public class LegacyStore extends Store
 
         // stop collector if needed
         getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOffline_);
+    }
+
+    @Override
+    public void accessible_() {
+        startAntiEntropy_();
+        try {
+            _f._nus.sendForStore_(_sidx, null);
+        } catch (Exception e) {}
     }
 
     ////////

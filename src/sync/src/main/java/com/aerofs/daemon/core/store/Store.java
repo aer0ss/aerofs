@@ -91,6 +91,9 @@ public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listen
     @Override
     public void onResumeSync_() {}
 
+    // called if ACL for the store are received *after* the store is created
+    public void accessible_() {}
+
     /** Notifier called when a device becomes potentially online for this store. */
     public void notifyDeviceOnline_(DID did) {}
 

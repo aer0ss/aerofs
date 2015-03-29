@@ -87,11 +87,7 @@ public class ReadOnlyPolarisStore extends Store
 
         _f._devices.afterAddingStore_(_sidx);
 
-        // make sure collector is started if peers are online
-        if (hasOnlinePotentialMemberDevices_()) {
-            // we map online devices in the collector as OPM devices of a member store
-            getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
-        }
+        getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOnline_);
 
         _f._pauseSync.addListener_(this);
     }

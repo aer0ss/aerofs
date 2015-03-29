@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.store.LegacyStore;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.To;
@@ -10,6 +11,7 @@ import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
@@ -17,6 +19,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
@@ -53,16 +56,21 @@ public class AntiEntropy
     private final GetVersionsRequest _pgvc;
     private final To.Factory _factTo;
     private final MapSIndex2Store _sidx2s;
+    private final LocalACL _lacl;
+    private final CfgLocalUser _localUser;
 
     private final Map<SIndex, Request> _requests = Maps.newHashMap();
 
     @Inject
-    public AntiEntropy(CoreScheduler sched, GetVersionsRequest pgvc, MapSIndex2Store sidx2s, To.Factory factTo)
+    public AntiEntropy(CoreScheduler sched, GetVersionsRequest pgvc, MapSIndex2Store sidx2s,
+                       To.Factory factTo, LocalACL lacl, CfgLocalUser localUser)
     {
         _sched = sched;
         _pgvc = pgvc;
+        _lacl = lacl;
         _sidx2s = sidx2s;
         _factTo = factTo;
+        _localUser = localUser;
     }
 
     /**
@@ -177,6 +185,16 @@ public class AntiEntropy
             if (dids.isEmpty()) {
                 l.debug("{}: no online devs. return", s);
                 return false;
+            }
+
+            try {
+                if (!_lacl.get_(_sidx).containsKey(_localUser.get())) {
+                    l.debug("{} not accessible. return", _sidx);
+                    return false;
+                }
+            } catch (SQLException e) {
+                l.warn("failed to check acl for {}", _sidx, e);
+                return true;
             }
 
             To to = _factTo.create_(dids.get(ThreadLocalRandom.current().nextInt(dids.size())));
