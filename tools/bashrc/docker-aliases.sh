@@ -19,6 +19,6 @@ alias dk-exec="docker exec -it"
 
 # Remove, start, stop, and restart all containers
 alias dk-destroy="${DEV_DIR}/dk-destroy.sh"
-alias dk-start="${DEV_DIR}/crane.sh run -dall"
-alias dk-halt="${DEV_DIR}/crane.sh kill -dall"
-alias dk-restart="${DEV_DIR}/crane.sh kill -dall && ${DEV_DIR}/crane.sh run -dall"
+alias dk-start="${DEV_DIR}/dk-crane.sh run -dall"
+alias dk-halt="${DEV_DIR}/dk-crane.sh kill -dall"
+alias dk-restart="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh run -dall"
