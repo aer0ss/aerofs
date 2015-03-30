@@ -9,6 +9,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -25,6 +26,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.ids.UserID;
+import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Common.PBPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
@@ -52,6 +54,7 @@ import java.util.Collection;
 import static com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -69,6 +72,7 @@ public class TestACLSynchronizer extends AbstractTest
     @Mock TransManager tm;
     @Mock IStoreJoiner storeJoiner;
     @Mock SIDMap sm;
+    @Mock MapSIndex2Store sidx2s;
     @Mock CfgLocalUser cfgLocalUser;
     @Mock SPBlockingClient spClient;
     @Mock InjectableSPBlockingClientFactory factSP;
@@ -128,7 +132,7 @@ public class TestACLSynchronizer extends AbstractTest
         lacl = new LocalACL(cfgLocalUser, tm, sm, adb);
 
         aclsync = new ACLSynchronizer(tokenManager, tm, filter, lacl, storeJoiner,
-                sm, sm, cfgLocalUser, factSP);
+                sm, sm, sidx2s, cfgLocalUser, factSP);
     }
 
     @After
@@ -171,11 +175,28 @@ public class TestACLSynchronizer extends AbstractTest
         when(spClient.getACL(anyLong()))
                 .thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
 
-        aclsync.syncToLocal_(42L);
+        aclsync.syncToLocal_(12L);
 
         verify(spClient).signInRemote();
         verify(spClient).getACL(10L);
         assertEquals(15L, adb.getEpoch_());
+    }
+
+    @Test
+    public void shouldGetACLOnDifferentEpochAndRetry() throws Exception
+    {
+        adb.setEpoch_(10L, t);
+        when(spClient.getACL(anyLong()))
+                .thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
+
+        try {
+            aclsync.syncToLocal_(42L);
+            fail();
+        } catch (ExponentialRetry.ExRetryLater e) {
+            verify(spClient).signInRemote();
+            verify(spClient).getACL(10L);
+            assertEquals(15L, adb.getEpoch_());
+        }
     }
 
     @Test
