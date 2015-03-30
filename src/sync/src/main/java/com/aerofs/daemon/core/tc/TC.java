@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.tc.TokenManager.ITokenUseListener;
-import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.lib.db.trans.TransBoundaryChecker;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -164,14 +164,14 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     private final StrictLock _l;
     private final CoreEventDispatcher _disp;
     private final CoreScheduler _sched;
-    private final TransManager _tm;
+    private final TransBoundaryChecker _tm;
 
     private final Condition _resumed;
     private final ThreadGroup _threadGroup = new ThreadGroup("core");
 
     @Inject
     public TC(CoreScheduler sched, CoreEventDispatcher disp, CoreQueue q, TokenManager tokenManager,
-            TransManager tm)
+            TransBoundaryChecker tm)
     {
         _sched = sched;
         _disp = disp;

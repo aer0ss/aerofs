@@ -15,9 +15,7 @@ import com.aerofs.daemon.core.health_check.DeadlockDetector;
 import com.aerofs.daemon.core.health_check.DiagnosticsDumper;
 import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
-import com.aerofs.daemon.core.net.CoreProtocolReactor;
-import com.aerofs.daemon.core.net.RPC;
-import com.aerofs.daemon.core.net.TransportEventHandlerRegistrar;
+import com.aerofs.daemon.core.net.*;
 import com.aerofs.daemon.core.notification.ISnapshotableNotificationEmitter;
 import com.aerofs.daemon.core.notification.PathStatusNotifier;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
@@ -33,6 +31,8 @@ import com.aerofs.daemon.core.transfers.download.IContentDownloads;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.*;
+import com.aerofs.daemon.lib.db.trans.TransBoundaryChecker;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
@@ -79,6 +79,10 @@ public class CoreModule extends AbstractModule
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
 
         bind(NewUpdatesSender.class).asEagerSingleton();
+
+        bind(TransBoundaryChecker.class).to(TransManager.class);
+        bind(IUnicastInputLayer.Factory.class).to(CoreProtocolReactor.Factory.class);
+        bind(IUnicastOutputLayer.Factory.class).to(UnicastOutputBottomLayer.Factory.class);
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);

@@ -11,6 +11,10 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
  */
 public interface IUnicastInputLayer
 {
+    interface Factory {
+        IUnicastInputLayer create_();
+    }
+
     /**
      * Called when an atomic message is received from a peer
      *

@@ -8,18 +8,27 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.daemon.core.CoreEventDispatcher;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.net.throttling.GlobalLimiter;
+import com.aerofs.daemon.core.net.throttling.LimitMonitor;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.daemon.core.net.ChunksCounter;
-import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
@@ -27,10 +36,7 @@ import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
-import com.aerofs.lib.IProgram;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -40,7 +46,8 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.proto.Transport;
+import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -61,12 +68,11 @@ import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
 import static com.google.common.base.Preconditions.checkArgument;
 
-public final class Pump implements IProgram
+public final class Pump implements IProgram, IUnicastInputLayer
 {
     private static final Logger l = Loggers.getLogger(Pump.class);
     private static final byte[] CHUNK = new byte[10 * C.KB];
 
-    private final BlockingPrioQueue<IEvent> incomingEventSink = new BlockingPrioQueue<IEvent>(1024);
     private final LinkStateService linkStateService = new LinkStateService();
     private final SendThread sendThread = new SendThread();
 
@@ -77,11 +83,25 @@ public final class Pump implements IProgram
     private ITransport transport;
     private @Nullable DID remote;
 
+    // replicate core event handling
+    private final UnicastInputOutputStack stack = new UnicastInputOutputStack();
+
+    private final CoreQueue queue = new CoreQueue();
+    private final CoreScheduler sched = new CoreScheduler(queue);
+    private final TokenManager tokenManager = new TokenManager(queue);
+    private final CoreEventDispatcher disp = new CoreEventDispatcher(ImmutableSet.of(
+            d ->  {
+                d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(stack));
+            }
+    ));
+    private final TC tc = new TC(sched, disp, queue, tokenManager, () -> {});
+
     @Override
     public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
             throws Exception
     {
         Util.initDriver("pp");
+        Defects.init(prog, rtRoot);
 
         l.info(Arrays.toString(args));
         checkArgument(args.length == 2 || args.length == 3, String.format("usage: SEND:(%s [t|z|j] send [did]) RECV:(%s [t|z|j] recv)", prog, prog));
@@ -95,6 +115,38 @@ public final class Pump implements IProgram
             throughputCounter = new ThroughputCounter("recv");
         }
 
+        {
+            CoreDeviceLRU dlru = new CoreDeviceLRU();
+            IncomingStreams iss = new IncomingStreams(stack);
+            OutgoingStreams oss = new OutgoingStreams(stack);
+            TransferStatisticsManager tsm = new TransferStatisticsManager();
+
+            stack.inject_(new UnicastOutputBottomLayer.Factory(tokenManager, dlru, oss, tsm) {
+                             @Override
+                             public IUnicastOutputLayer create_() {
+                                 return new UnicastOutputBottomLayer(this) {
+                                     @Override
+                                     public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
+                                             throws ExNoResource
+                                     {
+                                         _f._dlru.addDevice(ep.did());
+
+                                         EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
+                                         ev.setWaiter(sendThread.waiter);
+                                         ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
+                                     }
+                                 };
+                             }
+
+                          },
+                    () -> this,
+                    new GlobalLimiter.Factory(sched),
+                    new LimitMonitor.Factory(sched, dlru),
+                    new IncomingStreamsThrottler(Cfg.db(), new Metrics(), iss));
+        }
+
+        stack.init_();
+
         remote = (isSender ? new DID(DID.fromStringFormal(args[2])) : null);
         transport = newTransport(args[0]);
 
@@ -107,20 +159,19 @@ public final class Pump implements IProgram
 
         transport.q().enqueueBlocking(new EOUpdateStores(new SID[]{Cfg.rootSID()}, new SID[]{}), LO);
 
-        // start listening
-
-        OutArg<Prio> eventPriority = new OutArg<Prio>(LO);
-        //noinspection InfiniteLoopStatement
-        while (true) {
-            IEvent incoming = incomingEventSink.dequeue(eventPriority);
-            if (incoming instanceof EIUnicastMessage) {
-                handleUnicastMessage((EIUnicastMessage)incoming);
-            } else if (incoming instanceof EIStoreAvailability) {
+        // start event handling
+        disp.setDefaultHandler_((incoming, prio) -> {
+            if (incoming instanceof EIStoreAvailability) {
                 handlePresence((EIStoreAvailability) incoming);
             } else {
                 handleOther(incoming);
             }
-        }
+        });
+        tc.start_();
+
+        // halt main  thread
+        Object obj = new Object();
+        synchronized (obj) { ThreadUtil.waitUninterruptable(obj); }
     }
 
     private ITransport newTransport(String transportId)
@@ -178,7 +229,7 @@ public final class Pump implements IProgram
                 BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
                 timer,
-                incomingEventSink,
+                queue,
                 linkStateService,
                 maxcastFilterReceiver,
                 clientChannelFactory,
@@ -188,10 +239,25 @@ public final class Pump implements IProgram
                 roundTripTimes);
     }
 
-    private void handleUnicastMessage(EIUnicastMessage unicastMessage)
-    {
-        throughputCounter.observe(unicastMessage.wireLength());
-        l.debug("recv incoming d:{}", unicastMessage._ep.did());
+    @Override
+    public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc) {
+        throughputCounter.observe(r._wirelen);
+        l.debug("recv incoming d:{}", pc.ep().did());
+    }
+
+    @Override
+    public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc) {
+
+    }
+
+    @Override
+    public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc) {
+
+    }
+
+    @Override
+    public void onStreamAborted_(StreamID streamId, Endpoint ep, Transport.PBStream.InvalidationReason reason) {
+
     }
 
     private void handlePresence(EIStoreAvailability presence)
@@ -232,10 +298,12 @@ public final class Pump implements IProgram
                 if (doSend) {
                     chunksCounter.waitIfTooManyChunks();
                     chunksCounter.incChunkCount();
-                    EOUnicastMessage ev = new EOUnicastMessage(remote, CHUNK);
-                    ev.setWaiter(waiter);
-                    transport.q().enqueueBlocking(ev, LO);
-                    throughputCounter.observe(ev.byteArray().length);
+                    try {
+                        stack.output().sendUnicastDatagram_(CHUNK, new Endpoint(transport, remote));
+                    } catch (Exception e) {
+                        SystemUtil.fatal(e);
+                    }
+                    throughputCounter.observe(CHUNK.length);
                 } else {
                     synchronized (doSendLock) {
                         if (!doSend) {

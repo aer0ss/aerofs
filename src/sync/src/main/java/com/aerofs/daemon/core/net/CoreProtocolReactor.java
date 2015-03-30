@@ -41,7 +41,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
         void handle_(DigestedMessage msg) throws Exception;
     }
 
-    public static class Factory
+    public static class Factory implements IUnicastInputLayer.Factory
     {
         private final CoreDeviceLRU _dlru;
         private final DeviceToUserMapper _d2u;
@@ -64,7 +64,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             _handlers = bd.build();
         }
 
-        public CoreProtocolReactor create_()
+        @Override
+        public IUnicastInputLayer create_()
         {
             return new CoreProtocolReactor(this);
         }

@@ -22,8 +22,7 @@ import com.google.common.collect.Lists;
  *
  *  The try block is always required.
  */
-public class TransManager
-{
+public class TransManager implements TransBoundaryChecker {
     private final Trans.Factory _factTrans;
     private final ArrayList<ITransListener> _listeners = Lists.newArrayList();
 
@@ -55,6 +54,7 @@ public class TransManager
         return _ongoing;
     }
 
+    @Override
     public void assertNoOngoingTransaction_()
     {
         Preconditions.checkState(_ongoing == null || _ongoing.ended_());

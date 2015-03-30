@@ -21,7 +21,7 @@ public class CoreEventDispatcher extends EventDispatcher
         for (ICoreEventHandlerRegistrar registrar : registrars) registrar.registerHandlers_(this);
 
         // Use a default handler to notify the end user about unsupported functions that are
-        // otherwise implemented in subsystems that are not activiated in this particular
+        // otherwise implemented in subsystems that are not activated in this particular
         // distribution. Since UI in different distributions should have been specialized to avoid
         // calling unsupported functions, this default handler is used mainly for users accessing
         // the Ritual API.

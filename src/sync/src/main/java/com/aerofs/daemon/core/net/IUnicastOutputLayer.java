@@ -9,6 +9,10 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public interface IUnicastOutputLayer
 {
+    interface Factory {
+        IUnicastOutputLayer create_();
+    }
+
     void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws Exception;
 

@@ -27,9 +27,9 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
     private static final Logger l = Loggers.getLogger(UnicastOutputBottomLayer.class);
 
-    public static class Factory
+    public static class Factory implements IUnicastOutputLayer.Factory
     {
-        private final CoreDeviceLRU _dlru;
+        public final CoreDeviceLRU _dlru;
         private final TokenManager _tokenManager;
         private final OutgoingStreams _outgoingStreams;
         private final TransferStatisticsManager _tsm;
@@ -47,15 +47,15 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
             _tsm = tsm;
         }
 
-        public UnicastOutputBottomLayer create_()
+        public IUnicastOutputLayer create_()
         {
             return new UnicastOutputBottomLayer(this);
         }
     }
 
-    private final Factory _f;
+    protected final Factory _f;
 
-    private UnicastOutputBottomLayer(Factory f)
+    protected UnicastOutputBottomLayer(Factory f)
     {
         _f = f;
     }

@@ -12,8 +12,8 @@ import java.io.IOException;
 
 public class UnicastInputOutputStack
 {
-    private CoreProtocolReactor.Factory _factInputTop;
-    private UnicastOutputBottomLayer.Factory _factOutputBottom;
+    private IUnicastInputLayer.Factory _factInputTop;
+    private IUnicastOutputLayer.Factory _factOutputBottom;
     private GlobalLimiter.Factory _factGlobalLimiter;
     private LimitMonitor.Factory _factLimitMonitor;
 
@@ -21,11 +21,11 @@ public class UnicastInputOutputStack
 
     private IUnicastInputLayer _unicastInputBottom;
     private IUnicastOutputLayer _unicastOutputTop;
-    private CoreProtocolReactor _unicastInputTop;
+    private IUnicastInputLayer _unicastInputTop;
 
     @Inject
-    public void inject_(UnicastOutputBottomLayer.Factory factOutputBottom,
-            CoreProtocolReactor.Factory factInputTop,
+    public void inject_(IUnicastOutputLayer.Factory factOutputBottom,
+            IUnicastInputLayer.Factory factInputTop,
             GlobalLimiter.Factory factGlobalLimiter, LimitMonitor.Factory factLimitMonitor,
             IncomingStreamsThrottler incomingStreamsThrottler)
     {
@@ -36,7 +36,7 @@ public class UnicastInputOutputStack
         _incomingStreamsThrottler = incomingStreamsThrottler;
     }
 
-    public CoreProtocolReactor inputTop()
+    public IUnicastInputLayer inputTop()
     {
         return _unicastInputTop;
     }
@@ -55,8 +55,8 @@ public class UnicastInputOutputStack
     {
         // NOTE: The GlobalLimiter and the LimitMonitor are collectively the ThrottleLayer
 
-        CoreProtocolReactor unicastInputTop = _factInputTop.create_();
-        UnicastOutputBottomLayer unicastOutputBottom = _factOutputBottom.create_();
+        IUnicastInputLayer unicastInputTop = _factInputTop.create_();
+        IUnicastOutputLayer unicastOutputBottom = _factOutputBottom.create_();
         GlobalLimiter limiter = _factGlobalLimiter.create_(unicastOutputBottom);
         LimitMonitor limitMonitor = _factLimitMonitor.create_(limiter, unicastInputTop, unicastOutputBottom);
 
