@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.phy.DigestSerializer;
+import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -108,7 +109,8 @@ public class InMemoryDS
         Store.Factory factStore = usePolaris.get()
                 ? polarisStoreFactory()
                 : new LegacyStore.Factory(factSF, factCollector, mock(AntiEntropy.class),
-                        mock(Devices.class), mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
+                        mock(NewUpdatesSender.class), mock(Devices.class),
+                        mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
 
         stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
 
