@@ -6,6 +6,7 @@ import sys
 import tarfile
 import time
 import zipfile
+import errno
 
 import requests
 from syncdet import case
@@ -19,15 +20,31 @@ from cfg import get_cfg, get_native_homedir, is_teamserver
 ### LIB FUNCTIONS ###
 #####           #####
 
+def make_writable(path):
+    print "make writable {}".format(path)
+    try:
+        os.chmod(path, 0755)
+    except OSError as e:
+        if e.errno == errno.EACCES:
+            make_writable(os.path.dirname(path))
+            os.chmod(path, 0755)
+        else:
+            raise
+
+
 def del_rw(action, name, exc):
     if action == os.remove or action == os.rmdir:
-        os.chmod(name, stat.S_IWRITE | stat.S_IREAD)
+        make_writable(os.path.dirname(name))
+        os.chmod(name, 0777)
         action(name)
     else:
         raise
 
 
 def rm_rf(path):
+    if 'win32' in sys.platform and not path.startswith("\\\\?\\"):
+        path = unicode("\\\\?\\" + path)
+
     if not os.path.exists(path):
         return
     if os.path.isdir(path):
