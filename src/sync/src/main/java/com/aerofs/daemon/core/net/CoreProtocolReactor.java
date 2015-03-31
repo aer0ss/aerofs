@@ -152,7 +152,6 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
     // FIXME (AG): have this class handle buffering data into the stream instead of pushing the responsibility to the reactors
     // FIXME (AG): makes an assumption that the first chunk contains a complete PB message
-    // will ensure that all messages can now be streamed (which is the right thing to do)
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
@@ -168,7 +167,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             handle_(msg);
         } catch (Exception e) {
-            l.warn("{} fail process stream head cause:{}", LogUtil.suppress(e));
+            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e));
             _f._iss.end_(key);
         }
     }

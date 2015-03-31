@@ -13,18 +13,24 @@ import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
+import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.net.throttling.GlobalLimiter;
 import com.aerofs.daemon.core.net.throttling.LimitMonitor;
+import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.event.net.rx.EIChunk;
+import com.aerofs.daemon.event.net.rx.EIStreamAborted;
+import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -45,17 +51,22 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.proto.Transport;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
+import java.io.InputStream;
 import java.net.Proxy;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Client;
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
@@ -67,6 +78,7 @@ import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 public final class Pump implements IProgram, IUnicastInputLayer
 {
@@ -74,17 +86,17 @@ public final class Pump implements IProgram, IUnicastInputLayer
     private static final byte[] CHUNK = new byte[10 * C.KB];
 
     private final LinkStateService linkStateService = new LinkStateService();
-    private final SendThread sendThread = new SendThread();
+    private List<Producer> producers = new LinkedList<>();
 
-    private final Object doSendLock = new Object();
-    private ThroughputCounter throughputCounter;
-    private volatile boolean doSend;
-    private boolean isSender;
+    private ThroughputCounter sendThroughputCounter = new ThroughputCounter("send");
+    private ThroughputCounter recvThroughputCounter = new ThroughputCounter("recv");
+
     private ITransport transport;
-    private @Nullable DID remote;
 
     // replicate core event handling
     private final UnicastInputOutputStack stack = new UnicastInputOutputStack();
+    private IncomingStreams iss;
+    private OutgoingStreams oss;
 
     private final CoreQueue queue = new CoreQueue();
     private final CoreScheduler sched = new CoreScheduler(queue);
@@ -92,62 +104,70 @@ public final class Pump implements IProgram, IUnicastInputLayer
     private final CoreEventDispatcher disp = new CoreEventDispatcher(ImmutableSet.of(
             d ->  {
                 d.setHandler_(EIUnicastMessage.class, new HdUnicastMessage(stack));
+                d.setHandler_(EIStreamBegun.class, new HdStreamBegun(stack));
+                d.setHandler_(EIChunk.class, new HdChunk(stack));
+                d.setHandler_(EIStreamAborted.class, new HdStreamAborted(stack));
             }
     ));
     private final TC tc = new TC(sched, disp, queue, tokenManager, () -> {});
 
+    // PROG RTROOT [t|z|j] ([send|stream] <did>)*
     @Override
-    public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
+    public void launch_(String rtRoot, String prog, String[] args)
             throws Exception
     {
         Util.initDriver("pp");
         Defects.init(prog, rtRoot);
 
         l.info(Arrays.toString(args));
-        checkArgument(args.length == 2 || args.length == 3, String.format("usage: SEND:(%s [t|z|j] send [did]) RECV:(%s [t|z|j] recv)", prog, prog));
+        checkArgument(args.length % 2 == 1,
+                String.format("usage: %s (t|z|j) [(send|stream) <did>]*", prog));
 
-        isSender = args[1].equalsIgnoreCase("send");
-        if (isSender) {
-            throughputCounter = new ThroughputCounter("send");
-            checkArgument(args.length == 3, String.format("usage: SEND:(%s [t|z|j] send [did])", prog));
-            sendThread.start();
-        } else {
-            throughputCounter = new ThroughputCounter("recv");
+        for (int i = 1; i < args.length; i += 2) {
+            switch (args[i].toLowerCase()) {
+                case "send":
+                    checkState(i + 1 < args.length);
+                    producers.add(new Sender(new DID(DID.fromStringFormal(args[i + 1]))));
+                    break;
+                case "stream":
+                    checkState(i + 1 < args.length);
+                    producers.add(new Streamer(new DID(DID.fromStringFormal(args[i + 1]))));
+                    break;
+                default:
+                    throw new IllegalArgumentException("unsupported producer: " + args[i]);
+            }
         }
 
-        {
-            CoreDeviceLRU dlru = new CoreDeviceLRU();
-            IncomingStreams iss = new IncomingStreams(stack);
-            OutgoingStreams oss = new OutgoingStreams(stack);
-            TransferStatisticsManager tsm = new TransferStatisticsManager();
+        iss = new IncomingStreams(stack);
+        oss = new OutgoingStreams(stack);
 
-            stack.inject_(new UnicastOutputBottomLayer.Factory(tokenManager, dlru, oss, tsm) {
-                             @Override
-                             public IUnicastOutputLayer create_() {
-                                 return new UnicastOutputBottomLayer(this) {
-                                     @Override
-                                     public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
-                                             throws ExNoResource
-                                     {
-                                         _f._dlru.addDevice(ep.did());
+        CoreDeviceLRU dlru = new CoreDeviceLRU();
+        TransferStatisticsManager tsm = new TransferStatisticsManager();
 
-                                         EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
-                                         ev.setWaiter(sendThread.waiter);
-                                         ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
-                                     }
-                                 };
-                             }
+        stack.inject_(new UnicastOutputBottomLayer.Factory(tokenManager, dlru, oss, tsm) {
+                         @Override
+                         public IUnicastOutputLayer create_() {
+                             return new UnicastOutputBottomLayer(this) {
+                                 @Override
+                                 public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
+                                         throws ExNoResource
+                                 {
+                                     _f._dlru.addDevice(ep.did());
 
-                          },
-                    () -> this,
-                    new GlobalLimiter.Factory(sched),
-                    new LimitMonitor.Factory(sched, dlru),
-                    new IncomingStreamsThrottler(Cfg.db(), new Metrics(), iss));
-        }
+                                     EOUnicastMessage ev = new EOUnicastMessage(ep.did(), bs);
+                                     ep.tp().q().enqueueBlocking(ev, TC.currentThreadPrio());
+                                 }
+                             };
+                         }
+
+                      },
+                () -> this,
+                new GlobalLimiter.Factory(sched),
+                new LimitMonitor.Factory(sched, dlru),
+                new IncomingStreamsThrottler(Cfg.db(), new Metrics(), iss));
 
         stack.init_();
 
-        remote = (isSender ? new DID(DID.fromStringFormal(args[2])) : null);
         transport = newTransport(args[0]);
 
         // start transport
@@ -162,9 +182,9 @@ public final class Pump implements IProgram, IUnicastInputLayer
         // start event handling
         disp.setDefaultHandler_((incoming, prio) -> {
             if (incoming instanceof EIStoreAvailability) {
-                handlePresence((EIStoreAvailability) incoming);
+                handlePresence_((EIStoreAvailability) incoming);
             } else {
-                handleOther(incoming);
+                l.warn("ignore event:{}", incoming.getClass().getSimpleName());
             }
         });
         tc.start_();
@@ -241,97 +261,137 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc) {
-        throughputCounter.observe(r._wirelen);
+        recvThroughputCounter.observe(r._wirelen);
         l.debug("recv incoming d:{}", pc.ep().did());
     }
 
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc) {
-
+        StreamKey key = new StreamKey(pc.ep().did(), streamId);
+        try {
+            recvThroughputCounter.observe(r._wirelen);
+            iss.begun_(key, pc);
+            Token tk = tokenManager.acquireThrows_(Cat.UNLIMITED, "rcv:" + key);
+            while (true) {
+                try (InputStream is = iss.recvChunk_(key, tk)) {
+                    recvThroughputCounter.observe(is.available());
+                }
+            }
+        } catch (Exception e) {
+            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e));
+            iss.end_(key);
+        }
     }
 
     @Override
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc) {
-
+        StreamKey key = new StreamKey(pc.ep().did(), streamId);
+        iss.processChunk_(key, seq, r._is);
     }
 
     @Override
-    public void onStreamAborted_(StreamID streamId, Endpoint ep, Transport.PBStream.InvalidationReason reason) {
-
+    public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason) {
+        StreamKey key = new StreamKey(ep.did(), streamId);
+        iss.onAbortBySender_(key, reason);
     }
 
-    private void handlePresence(EIStoreAvailability presence)
+    private void handlePresence_(EIStoreAvailability presence)
     {
-        if (presence._online && presence._did2sids.containsKey(remote)) {
-            l.info("device reachable d:{}", remote);
+        for (Producer p : producers) {
+            p.handlePresence_(presence._online, presence._did2sids);
+        }
+    }
 
-            if (isSender) {
-                synchronized (doSendLock) {
-                    doSend = true;
-                    doSendLock.notify();
-                }
+    private abstract class Producer extends AbstractEBSelfHandling {
+        protected boolean scheduled;
+        protected boolean doSend;
+
+        protected Token tk;
+        protected final DID remote;
+
+        Producer(DID did)
+        {
+            remote = did;
+        }
+
+        @Override
+        public void handle_() {
+            scheduled = false;
+            if (!doSend) return;
+
+            if (tk == null) {
+                tk = tokenManager.acquire_(Cat.UNLIMITED, "snd:" + remote);
             }
 
-        } else if (!presence._online && presence._did2sids.containsKey(remote)) {
-            l.info("device unreachable d:{}", remote);
+            try {
+                handleThrows_();
+            } catch (Exception e) {
+                l.warn("producer error", e);
+            }
 
-            if (isSender) {
+            resched_();
+        }
+
+        protected abstract void handleThrows_() throws Exception;
+
+        protected void resched_() {
+            if (scheduled) return;
+            scheduled = true;
+            if (!queue.enqueue_(this, TC.currentThreadPrio())) {
+                sched.schedule_(this);
+            }
+        }
+
+        public void handlePresence_(boolean online, ImmutableMap<DID, Collection<SID>> did2sids) {
+            if (!did2sids.containsKey(remote)) return;
+            if (online) {
+                l.info("device reachable d:{}", remote);
+                doSend = true;
+                resched_();
+            } else {
+                l.info("device unreachable d:{}", remote);
                 doSend = false;
             }
         }
     }
 
-    private void handleOther(IEvent incoming)
-    {
-        l.warn("ignore event:{}", incoming.getClass().getSimpleName());
-    }
-
-    private class SendThread extends Thread
-    {
-        private final ChunksCounter chunksCounter = new ChunksCounter();
-
-        @Override
-        public void run()
+    private class Sender extends Pump.Producer {
+        Sender(DID did)
         {
-            //noinspection InfiniteLoopStatement
-            while (true) {
-                if (doSend) {
-                    chunksCounter.waitIfTooManyChunks();
-                    chunksCounter.incChunkCount();
-                    try {
-                        stack.output().sendUnicastDatagram_(CHUNK, new Endpoint(transport, remote));
-                    } catch (Exception e) {
-                        SystemUtil.fatal(e);
-                    }
-                    throughputCounter.observe(CHUNK.length);
-                } else {
-                    synchronized (doSendLock) {
-                        if (!doSend) {
-                            try {
-                                doSendLock.wait();
-                                l.info("start send thd d:{}", remote);
-                            } catch (InterruptedException e) {
-                                // ignored
-                            }
-                        }
-                    }
-                }
-            }
+            super(did);
         }
 
-        private final IResultWaiter waiter = new IResultWaiter()
-        {
-            @Override
-            public void okay()
-            {
-                chunksCounter.decChunkCount();
+        @Override
+        public void handleThrows_() {
+            try {
+                stack.output().sendUnicastDatagram_(CHUNK, new Endpoint(transport, remote));
+            } catch (Exception e) {
+                SystemUtil.fatal(e);
             }
+            sendThroughputCounter.observe(CHUNK.length);
+        }
+    }
 
-            @Override
-            public void error(Exception e)
-            {
-                chunksCounter.decChunkCount();
+    private class Streamer extends Pump.Producer
+    {
+        Streamer(DID did)
+        {
+            super(did);
+        }
+
+        @Override
+        public void handleThrows_() throws Exception{
+            OutgoingStream os = oss.newStream(new Endpoint(transport, remote), tk);
+            try {
+                while (doSend) {
+                    os.sendChunk_(CHUNK);
+                    sendThroughputCounter.observe(CHUNK.length);
+                }
+                os.end_();
+            } catch (Exception e) {
+                os.abort_(InvalidationReason.INTERNAL_ERROR);
+                throw e;
             }
-        };
+        }
     }
 }

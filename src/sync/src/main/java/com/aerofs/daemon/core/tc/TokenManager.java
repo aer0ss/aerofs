@@ -42,7 +42,7 @@ public class TokenManager implements IDumpStatMisc
         Preconditions.checkState(Prio.values().length == 2);
     }
 
-    static interface ITokenUseListener
+    interface ITokenUseListener
     {
         void prePause_(TCB tcb, Token tk, String reason) throws ExAborted;
         void postPause_(TCB tcb) throws ExAborted;
@@ -72,8 +72,7 @@ public class TokenManager implements IDumpStatMisc
             }
         };
 
-        private final EnumMap<Prio, Set<Token>> _tokenSetMap = new EnumMap<Prio, Set<Token>>(
-            Prio.class);
+        private final EnumMap<Prio, Set<Token>> _tokenSetMap = new EnumMap<>(Prio.class);
         {
             _tokenSetMap.put(Prio.LO, _lo);
             _tokenSetMap.put(Prio.HI, _hi);

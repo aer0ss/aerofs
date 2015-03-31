@@ -41,15 +41,6 @@ public class ChunksCounter
         }
     }
 
-    public void waitIfTooManyChunks()
-    {
-        try {
-            waitIfTooManyChunks_(null);
-        } catch (ExAborted exAborted) {
-            // Ignored. Never actually thrown when we call waitIfTooManyChunks_() with null
-        }
-    }
-
     /**
      * Wait until we've sent some chunks.
      * @param tk if non-null, we will call pseudo pause/resume on the token
