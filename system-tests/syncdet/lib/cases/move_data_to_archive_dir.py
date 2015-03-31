@@ -11,26 +11,19 @@ based on a map file that must be deployed to ~/syncdet/deploy/aerofs.map
 
 """
 import os
-import sys
-import shutil
 
 from syncdet import case
 
 from ..app.cfg import get_cfg
-from ..app.install import rm_rf, cleanup_win_root_anchor
+from ..app.install import rm_rf
 from ..app.aerofs_proc import stop_all
 from lib import jretrace
 
 
 def move_data_to_archive_dir():
     archive_dir = os.path.join(os.path.expanduser('~'), 'archive')
-    if 'win32' in sys.platform:
-        cleanup_win_root_anchor(archive_dir)
-        if os.path.exists(archive_dir):
-            os.rmdir(archive_dir)
-    else:
-        # make sure we only archive this suite's data
-        rm_rf(archive_dir)
+    # make sure we only archive this suite's data
+    rm_rf(archive_dir)
 
     # kill aerofs processes so the rtroot is unchanged during the copy
     stop_all()

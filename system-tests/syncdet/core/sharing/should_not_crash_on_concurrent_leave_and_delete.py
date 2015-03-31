@@ -8,7 +8,7 @@ daemon back up on A
 """
 
 import os
-from lib import aero_shutil as shutil
+import shutil
 from lib.files import instance_unique_path, wait_path_to_disappear
 from lib import ritual
 from syncdet.case.sync import sync

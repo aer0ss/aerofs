@@ -22,6 +22,7 @@ def main():
     print 'delete'
 
     r = ritual.connect()
+    r.wait_path(instance_path())
     r.delete_object(instance_path())
 
     print 'check history'

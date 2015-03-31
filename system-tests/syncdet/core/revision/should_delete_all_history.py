@@ -1,5 +1,5 @@
 import os
-from lib import aero_shutil as shutil
+import shutil
 from lib import ritual
 from syncdet.case.sync import sync
 from syncdet.case.assertion import assertEqual

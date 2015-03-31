@@ -5,7 +5,7 @@ Ritual's expulsion api.
 
 """
 import os
-from lib import aero_shutil as shutil
+import shutil
 
 from syncdet.case.assertion import assertFalse
 from syncdet.case import sync

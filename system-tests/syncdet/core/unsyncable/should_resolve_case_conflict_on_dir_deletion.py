@@ -3,7 +3,7 @@ Check that a new winner is picked when the current winner of a case conflict is 
 """
 
 import os
-from lib import aero_shutil as shutil
+import shutil
 from . import mkspec, folders_creator, observe_folders_virtual, observe_folders_physical, observe_any_folders_physical
 from lib.files import instance_unique_path
 from lib.network_partition import NetworkPartition

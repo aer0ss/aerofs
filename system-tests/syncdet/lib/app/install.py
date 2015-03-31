@@ -1,5 +1,5 @@
 import os
-from .. import aero_shutil as shutil
+import shutil
 import stat
 import subprocess
 import sys
@@ -19,35 +19,23 @@ from cfg import get_cfg, get_native_homedir, is_teamserver
 ### LIB FUNCTIONS ###
 #####           #####
 
+def del_rw(action, name, exc):
+    if action == os.remove or action == os.rmdir:
+        os.chmod(name, stat.S_IWRITE | stat.S_IREAD)
+        action(name)
+    else:
+        raise
+
+
 def rm_rf(path):
     if not os.path.exists(path):
         return
     if os.path.isdir(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=del_rw)
     elif os.path.isfile(path):
         os.remove(path)
     else:
         raise ValueError('{} is not a file or a directory - cowardly refusing to delete it'.format(path))
-
-
-def cleanup_win_root_anchor(root_anchor):
-    files_and_dirs_paths = []
-    for root, dirs, files in os.walk(unicode(root_anchor), topdown=False):
-        # Without adding the magic_prefix "\\\\?\\" files, dir aren't returned
-        # properly by os.walk(for example dir with name com2.txt is classified as file
-        # eventhough it isn't) So we combine them in a list
-        # and then delete them based on if they are files or dir.
-        file_paths = files_and_dirs_paths.extend([os.path.join(root, fname) for fname in files])
-        dir_paths = files_and_dirs_paths.extend([os.path.join(root, dname) for dname in dirs])
-
-    import shutil as py_shutil
-    for path in files_and_dirs_paths:
-        prefixed_path = "\\\\?\\" + path
-        os.chmod(prefixed_path, 0777)
-        if os.path.isfile(prefixed_path):
-            os.remove(prefixed_path)
-        else:
-            py_shutil.rmtree(prefixed_path)
 
 
 def mkdir_p(path):
@@ -238,10 +226,7 @@ class BaseAeroFSInstaller(object):
     def remove_root_anchor(self):
         print 'removing root anchor...'
         root_anchor = self.get_default_root_anchor()
-        if 'win32' in sys.platform:
-            cleanup_win_root_anchor(root_anchor)
-        else:
-            rm_rf(root_anchor)
+        rm_rf(root_anchor)
         remove_auxroot(root_anchor)
 
     def remove_rtroot(self):

@@ -3,7 +3,7 @@ import sys
 
 from syncdet import case
 from lib.app.cfg import get_cfg
-from lib import aero_shutil as shutil
+import shutil
 from safetynet import param
 
 def ignore_special(folder, children):

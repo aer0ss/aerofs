@@ -3,7 +3,7 @@ Check that case-conflicted files and folders are deleted when the parent folder 
 """
 
 import os
-from lib import aero_shutil as shutil
+import shutil
 from syncdet.case.assertion import assertFalse
 from lib.files import instance_unique_path, wait_dir
 from . import mkspec, instance_path

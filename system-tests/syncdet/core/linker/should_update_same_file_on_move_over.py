@@ -3,7 +3,7 @@ When an existing object is moved over another existing object of the same type,
 the scanner/linker should update the target object instead of renaming it to
 make way and copying source.
 """
-from lib import aero_shutil as shutil
+import shutil
 import common
 
 def replace(path, content, r):

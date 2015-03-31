@@ -6,7 +6,7 @@ $ python -m unittest -v test_dirtree
 import unittest
 import tempfile
 import os
-from .. import aero_shutil as shutil
+import shutil
 from os.path import join
 
 from dirtree import DirTree

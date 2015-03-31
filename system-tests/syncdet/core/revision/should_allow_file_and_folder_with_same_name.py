@@ -4,7 +4,7 @@ for a given name
 """
 
 import os
-from lib import aero_shutil as shutil
+import shutil
 import time
 from lib import ritual
 from common import RevisionTest

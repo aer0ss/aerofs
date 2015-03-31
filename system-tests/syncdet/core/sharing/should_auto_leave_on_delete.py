@@ -1,5 +1,5 @@
 import os
-from lib import aero_shutil as shutil
+import shutil
 import time
 
 from aerofs_common import param
