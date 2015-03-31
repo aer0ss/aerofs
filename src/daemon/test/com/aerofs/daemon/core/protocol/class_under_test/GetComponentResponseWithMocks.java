@@ -27,7 +27,6 @@ import com.aerofs.daemon.core.protocol.GetComponentResponse;
 import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.MetaUpdater;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
-import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOKID;
 
@@ -55,7 +54,6 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public final NativeVersionControl _nvc = mock(NativeVersionControl.class);
     public final ObjectCreator _oc = mock(ObjectCreator.class);
     public final ObjectMover _om = mock(ObjectMover.class);
-    public final StoreCreator _sc = mock(StoreCreator.class);
     public final VersionUpdater _vu = mock(VersionUpdater.class);
     public final BranchDeleter _bd = mock(BranchDeleter.class);
     public final Hasher _hasher = mock(Hasher.class);
@@ -75,7 +73,7 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
 
     public GetComponentResponseWithMocks()
     {
-        _mu.inject_(_tm, _ds, _nvc, _mdiff, _al, _a2t, _lacl, _emd, _oc, _om, _sc, _vu);
+        _mu.inject_(_tm, _ds, _nvc, _mdiff, _al, _a2t, _lacl, _emd, _oc, _om, _vu);
         try {
             when(_cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
         } catch (SQLException e) { fail(); }

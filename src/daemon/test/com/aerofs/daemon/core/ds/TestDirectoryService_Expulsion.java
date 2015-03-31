@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.ds;
 
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -39,7 +40,8 @@ public class TestDirectoryService_Expulsion extends AbstractTest
     final SIndex sidx = new SIndex(1);
 
     private final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
-    private final IMetaDatabase mdb = new MetaDatabase(dbcw);
+    private final StoreCreationOperators sco = new StoreCreationOperators();
+    private final IMetaDatabase mdb = new MetaDatabase(dbcw, sco);
 
     // System under test
     private final DirectoryServiceImpl ds = new DirectoryServiceImpl();

@@ -1,15 +1,10 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam;
-import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
@@ -22,19 +17,16 @@ public class StoreCreator
 
     private final StoreHierarchy _ss;
     private final IPhysicalStorage _ps;
-    private final IMetaDatabase _mdb;
     private final IMapSID2SIndex _sid2sidx;
     private final LogicalStagingArea _sa;
     private final StoreCreationOperators _sco;
     private final CfgUsePolaris _usePolaris;
 
     @Inject
-    public StoreCreator(IMetaDatabase mdb,
-            IMapSID2SIndex sid2sidx, StoreHierarchy ss, IPhysicalStorage ps, LogicalStagingArea sa,
-            StoreCreationOperators sco, CfgUsePolaris usePolaris)
+    public StoreCreator(IMapSID2SIndex sid2sidx, StoreHierarchy ss, StoreCreationOperators sco,
+            IPhysicalStorage ps, LogicalStagingArea sa, CfgUsePolaris usePolaris)
     {
         _ss = ss;
-        _mdb = mdb;
         _sid2sidx = sid2sidx;
         _ps = ps;
         _sa = sa;
@@ -91,12 +83,6 @@ public class StoreCreator
 
         l.info("create store {} {}", sidx, sid);
 
-        // create root directory; its parent is itself
-        _mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
-
-        // create trash directory
-        _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, LibParam.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
-
         // TODO: ACL-controlled central/distrib store assignment and version conversion
         boolean usePolaris = _usePolaris.get();
 
@@ -105,38 +91,5 @@ public class StoreCreator
         _ss.add_(sidx, name, usePolaris, t);
 
         return sidx;
-    }
-
-    public enum Conversion
-    {
-        NONE,
-        REMOTE_ANCHOR,
-        LOCAL_ANCHOR
-    }
-
-    /**
-     * @return the type of folder->anchor conversion detected, if any
-     */
-    public Conversion detectFolderToAnchorConversion_(OID oidLocal, OA.Type typeLocal, OID oidRemote,
-            OA.Type typeRemote)
-    {
-        OID oidAnchor, oidDir;
-        Conversion conversion;
-        if (typeRemote == Type.ANCHOR && typeLocal == Type.DIR)  {
-            oidAnchor = oidRemote;
-            oidDir =  oidLocal;
-            conversion = Conversion.REMOTE_ANCHOR;
-        } else if (typeRemote == Type.DIR &&  typeLocal == Type.ANCHOR) {
-            oidAnchor =  oidLocal;
-            oidDir = oidRemote;
-            conversion = Conversion.LOCAL_ANCHOR;
-        } else {
-            return Conversion.NONE;
-        }
-
-        SID sid = SID.anchorOID2storeSID(oidAnchor);
-        return SID.folderOID2convertedStoreSID(oidDir).equals(sid) ||
-                SID.folderOID2legacyConvertedStoreSID(oidDir).equals(sid)
-                ? conversion : Conversion.NONE;
     }
 }

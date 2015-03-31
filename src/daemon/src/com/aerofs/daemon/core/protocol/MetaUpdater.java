@@ -25,8 +25,6 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.StoreCreator;
-import com.aerofs.daemon.core.store.StoreCreator.Conversion;
 import com.aerofs.daemon.core.transfers.download.ExUnsolvedMetaMetaConflict;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
@@ -34,6 +32,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -80,13 +79,12 @@ public class MetaUpdater
     private NativeVersionControl _nvc;
     private ObjectMover _om;
     private ObjectCreator _oc;
-    private StoreCreator _sc;
     private VersionUpdater _vu;
 
     @Inject
     public void inject_(TransManager tm, DirectoryService ds, NativeVersionControl nvc, MetaDiff mdiff,
             Aliasing al, MapAlias2Target a2t, LocalACL lacl, IEmigrantDetector emd,
-            ObjectCreator oc, ObjectMover om, StoreCreator sc, VersionUpdater vu)
+            ObjectCreator oc, ObjectMover om, VersionUpdater vu)
     {
         _tm = tm;
         _ds = ds;
@@ -98,10 +96,8 @@ public class MetaUpdater
         _nvc = nvc;
         _oc = oc;
         _om = om;
-        _sc = sc;
         _vu = vu;
     }
-
 
     void processMetaResponse_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
             throws Exception
@@ -426,6 +422,38 @@ public class MetaUpdater
         }
     }
 
+    private enum Conversion
+    {
+        NONE,
+        REMOTE_ANCHOR,
+        LOCAL_ANCHOR
+    }
+
+    /**
+     * @return the type of folder->anchor conversion detected, if any
+     */
+    private static Conversion detectFolderToAnchorConversion_(OID oidLocal, OA.Type typeLocal, OID oidRemote,
+                                                             OA.Type typeRemote)
+    {
+        OID oidAnchor, oidDir;
+        Conversion conversion;
+        if (typeRemote == OA.Type.ANCHOR && typeLocal == OA.Type.DIR)  {
+            oidAnchor = oidRemote;
+            oidDir =  oidLocal;
+            conversion = Conversion.REMOTE_ANCHOR;
+        } else if (typeRemote == OA.Type.DIR &&  typeLocal == OA.Type.ANCHOR) {
+            oidAnchor =  oidLocal;
+            oidDir = oidRemote;
+            conversion = Conversion.LOCAL_ANCHOR;
+        } else {
+            return Conversion.NONE;
+        }
+
+        SID sid = SID.anchorOID2storeSID(oidAnchor);
+        return SID.folderOID2convertedStoreSID(oidDir).equals(sid) ||
+                SID.folderOID2legacyConvertedStoreSID(oidDir).equals(sid)
+                ? conversion : Conversion.NONE;
+    }
 
     /**
      *  Resolves name conflict either by aliasing if received object wasn't
@@ -457,7 +485,7 @@ public class MetaUpdater
         l.info("name conflict on {}: local {} {} remote {} {}", pLocal, soidLocal.oid(),
                 oaLocal.type(), soidRemote.oid(), typeRemote);
 
-        Conversion conversion = _sc.detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(),
+        Conversion conversion = detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(),
                 soidRemote.oid(), typeRemote);
 
         if (conversion != Conversion.NONE) {

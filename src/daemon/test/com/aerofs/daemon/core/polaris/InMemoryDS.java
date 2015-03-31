@@ -78,7 +78,7 @@ public class InMemoryDS
     public InMemoryDS(IDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
     {
         sm = new SIDMap(new SIDDatabase(dbcw));
-        MetaDatabase mdb = new MetaDatabase(dbcw);
+        MetaDatabase mdb = new MetaDatabase(dbcw, sco);
         StoreDatabase sdb = new StoreDatabase(dbcw);
         MetaChangesDatabase mcdb = new MetaChangesDatabase(dbcw, sco, sdo);
         ChangeEpochDatabase cedb = new ChangeEpochDatabase(dbcw);
@@ -95,7 +95,7 @@ public class InMemoryDS
             resolver = new SingleuserPathResolver.Factory((SingleuserStoreHierarchy)sh, sm, sm);
         }
 
-        sc = new StoreCreator(mdb, sm, sh, ps, mock(LogicalStagingArea.class), sco, usePolaris);
+        sc = new StoreCreator(sm, sh, sco, ps, mock(LogicalStagingArea.class), usePolaris);
 
         SenderFilters.Factory factSF = mock(SenderFilters.Factory.class);
         try {

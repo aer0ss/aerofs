@@ -17,8 +17,11 @@ import javax.annotation.Nullable;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.store.IStoreCreationOperator;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
@@ -41,12 +44,24 @@ import com.google.inject.Inject;
 /*
  * When possible, use the DirectoryService class which provides a high-level wrapper for this class.
  */
-public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMetaDatabaseWalker
+public class MetaDatabase extends AbstractDatabase
+        implements IMetaDatabase, IMetaDatabaseWalker, IStoreCreationOperator
 {
     @Inject
-    public MetaDatabase(IDBCW dbcw)
+    public MetaDatabase(IDBCW dbcw, StoreCreationOperators sco)
     {
         super(dbcw);
+        sco.add_(this);
+    }
+
+    @Override
+    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException {
+        try {
+            insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
+            insertOA_(sidx, OID.TRASH, OID.ROOT, LibParam.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
+        } catch (ExAlreadyExist e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     PreparedStatement _psGetChild;
@@ -88,13 +103,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         try {
             if (_psInsOA == null) _psInsOA = c()
                 .prepareStatement("insert into " + T_OA + "("
-                    + C_OA_SIDX + ","
-                    + C_OA_PARENT + ","
-                    + C_OA_NAME + ","
-                    + C_OA_OID + ","
-                    + C_OA_TYPE + ","
-                    + C_OA_FLAGS + ")"
-                    + " values (?,?,?,?,?,?)");
+                        + C_OA_SIDX + ","
+                        + C_OA_PARENT + ","
+                        + C_OA_NAME + ","
+                        + C_OA_OID + ","
+                        + C_OA_TYPE + ","
+                        + C_OA_FLAGS + ")"
+                        + " values (?,?,?,?,?,?)");
             _psInsOA.setInt(1, sidx.getInt());
             _psInsOA.setBytes(2, oidParent.getBytes());
             _psInsOA.setString(3, name);
