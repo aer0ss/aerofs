@@ -24,6 +24,9 @@ cd ~/repos/aerofs/src/web && ~/env/bin/python test_all.py
 
 Compiling Less and JS:
 ======================
+0. Install npm 
+$ brew install npm
+
 1. Install npm packages for compiling and minifying.
 $ npm install -g less minifier uglify-js
 
