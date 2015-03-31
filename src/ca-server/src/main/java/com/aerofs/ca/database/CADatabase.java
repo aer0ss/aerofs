@@ -35,7 +35,8 @@ public class CADatabase
                 if (caData.serialNumberTaken(serial)) {
                     return false;
                 }
-                caData.takeSerialNumber(serial);
+                // if taking the serial number somehow doesn't affect a row, throw an exception and rollback
+                throwIfDidNotUpdateOneRow(caData.takeSerialNumber(serial));
                 return true;
             });
         } catch (CallbackFailedException e) {
@@ -51,7 +52,7 @@ public class CADatabase
 
             throwIfNotSetUp(caData);
 
-            caData.addSignedCertificate(serial, cert.getEncoded());
+            throwIfDidNotUpdateOneRow(caData.addSignedCertificate(serial, cert.getEncoded()));
             return null;
         });
     }
@@ -89,8 +90,9 @@ public class CADatabase
             caData.clearServerConfig();
             // if we're setting a new CA, we don't need to hold onto the old signed certificates
             caData.clearSignedCerts();
-            caData.setKeyAndCert(privateKey.getEncoded(), cert.getEncoded());
-            caData.addSignedCertificate(cert.getSerialNumber().longValue(), cert.getEncoded());
+            throwIfDidNotUpdateOneRow(caData.setKeyAndCert(privateKey.getEncoded(), cert.getEncoded()));
+            throwIfDidNotUpdateOneRow(caData.takeSerialNumber(cert.getSerialNumber().longValue()));
+            throwIfDidNotUpdateOneRow(caData.addSignedCertificate(cert.getSerialNumber().longValue(), cert.getEncoded()));
 
             return null;
         });
@@ -110,6 +112,14 @@ public class CADatabase
     {
         if (database.getNumRows() != 1) {
             throw new Exception("CA not set up before querying");
+        }
+    }
+
+    private static void throwIfDidNotUpdateOneRow(int updated)
+            throws Exception
+    {
+        if (updated != 1) {
+            throw new Exception("SQL Statement did not update one row as expected");
         }
     }
 }

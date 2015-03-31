@@ -21,15 +21,15 @@ public interface ServerConfigDAO
     public byte[] getPrivateKey();
 
     @SqlUpdate("delete from server_configuration")
-    public void clearServerConfig();
+    public int clearServerConfig();
 
     @SqlUpdate("delete from signed_certificates")
-    public void clearSignedCerts();
+    public int clearSignedCerts();
 
     // store DER encoding of a private key and x509 certificate
     // BouncyCastle uses DER encoding as its default, so key.getEncoded() satisfies this
     @SqlUpdate("insert into server_configuration(ca_key, ca_cert) values(:key, :cert)")
-    public void setKeyAndCert(@Bind("key") byte[] privateKey, @Bind("cert") byte[] caCert);
+    public int setKeyAndCert(@Bind("key") byte[] privateKey, @Bind("cert") byte[] caCert);
 
     // return DER encoding of a x509 certificate
     @Nullable
@@ -40,8 +40,8 @@ public interface ServerConfigDAO
     public boolean serialNumberTaken(@Bind("serial") long serialNumber);
 
     @SqlUpdate("insert into signed_certificates(serial_number, certificate) values(:serial, 'NOT A CERT')")
-    public void takeSerialNumber(@Bind("serial") long serialNumber);
+    public int takeSerialNumber(@Bind("serial") long serialNumber);
 
     @SqlUpdate("update signed_certificates set certificate = :cert where serial_number = :serial")
-    public void addSignedCertificate(@Bind("serial") long serialNumber, @Bind("cert") byte[] cert);
+    public int addSignedCertificate(@Bind("serial") long serialNumber, @Bind("cert") byte[] cert);
 }
