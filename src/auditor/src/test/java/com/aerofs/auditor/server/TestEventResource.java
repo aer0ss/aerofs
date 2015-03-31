@@ -4,6 +4,7 @@
 
 package com.aerofs.auditor.server;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.google.gson.JsonObject;
 import com.jayway.restassured.http.ContentType;
 import org.junit.Test;
@@ -23,6 +24,7 @@ public class TestEventResource extends AuditorTest
         expect()
                 .statusCode(200)
         .given().contentType(ContentType.JSON)
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .body(postBody.toString())
         .when().post(AUDIT_URL);
     }
@@ -38,6 +40,7 @@ public class TestEventResource extends AuditorTest
         expect()
                 .statusCode(200)
         .given().contentType(ContentType.JSON)
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .body(postBody.toString())
                 .when().post(AUDIT_URL);
     }
@@ -55,6 +58,7 @@ public class TestEventResource extends AuditorTest
         expect()
                 .statusCode(500)
         .given().contentType(ContentType.JSON)
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .body(postBody.toString())
                 .when().post(AUDIT_URL);
     }
@@ -66,6 +70,7 @@ public class TestEventResource extends AuditorTest
                 .statusCode(400)
         .given()
                 .contentType(ContentType.JSON)
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .content("{}")
                 .post(AUDIT_URL);
     }
@@ -77,6 +82,7 @@ public class TestEventResource extends AuditorTest
                 .statusCode(415) // unsupported media type
         .given()
                 .content("{}")
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .post(AUDIT_URL);
     }
 
@@ -86,6 +92,7 @@ public class TestEventResource extends AuditorTest
         expect()
                 .statusCode(405)
         .given()
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .get(AUDIT_URL);
     }
 

@@ -6,11 +6,16 @@ package com.aerofs.auditor.server;
 
 import com.aerofs.auditor.downstream.Downstream;
 import com.aerofs.auth.server.AeroPrincipalBinder;
+import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
+import com.aerofs.auth.server.shared.AeroService;
+import com.aerofs.auth.server.shared.AeroServiceSharedSecretAuthenticator;
 import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+
+import java.io.IOException;
 
 public class Auditor extends Service<AuditorConfiguration>
 {
@@ -31,6 +36,8 @@ public class Auditor extends Service<AuditorConfiguration>
     public void init(AuditorConfiguration configuration, Environment environment)
             throws Exception
     {
+        SharedSecret secret = new SharedSecret(getDeploymentSecret(configuration));
+        environment.addAuthenticator(new AeroServiceSharedSecretAuthenticator(secret));
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());
         environment.addAuthenticator(new LegacyAuthenticator());
 
@@ -45,5 +52,9 @@ public class Auditor extends Service<AuditorConfiguration>
         });
 
         environment.addResource(EventResource.class);
+    }
+
+    protected String getDeploymentSecret(AuditorConfiguration configuration) throws IOException {
+        return AeroService.loadDeploymentSecret(configuration.getDeploymentSecretPath());
     }
 }

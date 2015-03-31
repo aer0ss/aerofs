@@ -75,10 +75,11 @@ public class LegacyAuthenticator implements Authenticator
         List<String> authHeaders = headers.get(HEADER_AUTH_REQ);
 
         if (authHeaders == null || authHeaders.size() == 0) {
-            // this is a dangerous hack
-            // if no headers are present we assume that it's a backend service (namely SP) that's talking to us
-            return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED, new AeroSecurityContext(new AeroServicePrincipal("UNKNOWN"), Roles.SERVICE, AUTHENTICATION_SCHEME));
-        } else if (authHeaders.size() > 1) {
+            // If not prompted by an nginx header, don't bother attempting to allow this auth mechanism
+            return AuthenticationResult.UNSUPPORTED;
+        }
+        if (authHeaders.size() != 1) {
+            // Too many headers?  Something's up, complain loudly.
             throw new AuthenticationException("invalid value for hdr:" + HEADER_AUTH_REQ);
         }
 

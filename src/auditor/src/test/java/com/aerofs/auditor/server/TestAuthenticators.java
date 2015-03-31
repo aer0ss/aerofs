@@ -5,6 +5,7 @@
 package com.aerofs.auditor.server;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -31,6 +32,16 @@ public class TestAuthenticators extends AuditorTest
                 .statusCode(400)
         .given().contentType(ContentType.JSON)
                 .header("Aerofs-Auth-Required", "True")
+                .body(getMinimalEvent().toString())
+        .when().post(AUDIT_URL);
+    }
+
+    @Test
+    public void shouldRejectRequestWithNoAuthorization()
+    {
+        expect()
+                .statusCode(403)
+        .given().contentType(ContentType.JSON)
                 .body(getMinimalEvent().toString())
         .when().post(AUDIT_URL);
     }
@@ -114,7 +125,7 @@ public class TestAuthenticators extends AuditorTest
     }
 
     @Test
-    public void shouldAuthenticate()
+    public void shouldAuthenticateUsingLegacyAuthenticator()
     {
         expect()
                 .statusCode(200)
@@ -129,12 +140,25 @@ public class TestAuthenticators extends AuditorTest
     }
 
     @Test
-    public void shouldAuthenticateUsingNonLegacyAuthenticator()
+    public void shouldAuthenticateUsingDeviceCertAuthenticator()
     {
         expect()
                 .statusCode(200)
         .given().contentType(ContentType.JSON)
                 .header("Authorization", AeroDeviceCert.getHeaderValue(user.getString(), did.toStringFormal()))
+                .header("Verify", "SUCCESS")
+                .header("DName", getDName())
+                .body(getMinimalEvent().toString())
+        .when().post(AUDIT_URL);
+    }
+
+    @Test
+    public void shouldAuthenticateUsingServiceSharedSecretAuthenticator()
+    {
+        expect()
+                .statusCode(200)
+        .given().contentType(ContentType.JSON)
+                .header("Authorization", AeroService.getHeaderValue("sparta", AuditorTestServer.getTestDeploymentSecret()))
                 .header("Verify", "SUCCESS")
                 .header("DName", getDName())
                 .body(getMinimalEvent().toString())

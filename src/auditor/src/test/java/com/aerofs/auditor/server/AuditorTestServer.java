@@ -62,6 +62,17 @@ public final class AuditorTestServer extends ExternalResource
                 }
             });
         }
+
+        @Override
+        public String getDeploymentSecret(AuditorConfiguration configuration)
+        {
+            return getTestDeploymentSecret();
+        }
+    }
+
+    public static String getTestDeploymentSecret()
+    {
+        return "d9d0da52a3198a22d687ed0288bee2bb";
     }
 
     private final TestAuditor _auditor = new TestAuditor();
