@@ -41,3 +41,23 @@
  
  fi
  
+@@ -134,7 +132,18 @@
+ fi
+ 
+ echo ">>> Restoring configuration properties..."
+-cp -a aerofs-db-backup/external.properties /opt/config/properties
++PROPS=/opt/config/properties/external.properties
++
++# The string replacement is to support restoring from legacy appliances
++sed -e "s/email_host=localhost/email_host=postfix.service/" aerofs-db-backup/external.properties > ${PROPS}
++
++# Add default properties specific to the dockerize appliance if they aren't present
++for i in $(cat /external.properties.docker.default); do
++    KEY=$(echo "$i" | sed -e "s/=.*//")
++    if [ -z "$(grep "^${KEY}=" ${PROPS})" ]; then
++        echo "${i}" >> ${PROPS}
++    fi
++done
+ 
+ popd 1>/dev/null 2>/dev/null
+ 
