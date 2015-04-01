@@ -228,12 +228,10 @@ This step requires a running local prod. In addition, you need to be on the VPN 
     cd $HOME/repos/aerofs/
     ./invoke clean proto
     gradle clean dist
-    ./invoke --mode PRIVATE --product CLIENT setupenv
+    ./invoke --product CLIENT setupenv
     approot/run ~/rtroot/user1 gui
 
 Running gradle will compile the Java source code and create the class files needed to run the client. Running invoke will create a directory called approot and populate it with all environment-dependent resources.
-
-The `--mode PRIVATE` flag points the client to your private environment. Specify `--mode PUBLIC` to build clients for the public production environment (discouraged).
 
 Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
 
@@ -284,7 +282,7 @@ Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup-syncd
 Build client packages for all OSes:
 
     $ cd ~/repos/aerofs
-    $ invoke --product=CLIENT --mode=PRIVATE  --unsigned setupenv clean proto build_client package_clients
+    $ invoke --product=CLIENT --unsigned setupenv clean proto build_client package_clients
     $ invoke prepare_syncdet --product=CLIENT
 
 Replace CLIENT WITH TEAM_SERVER if you are testing the team server.

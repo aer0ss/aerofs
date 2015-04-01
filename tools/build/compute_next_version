@@ -9,53 +9,51 @@ set -e -u
 # build number is incremented, and the result is used.
 #
 
-include include/common ${1}
+include include/common PRIVATE
 
 function DieUsage {
-    echo "usage: $0 [build mode] [signed]" >&2
+    echo "usage: $0 [signed]" >&2
     echo " " >&2
-    echo "[build mode]: PUBLIC|PRIVATE " >&2
-    echo "[signed]:     SIGNED|UNSIGNED" >&2
+    echo "[signed]: SIGNED|UNSIGNED" >&2
     echo " " >&2
-    echo "example: $0 PUBLIC SIGNED" >&2
+    echo "example: $0 SIGNED" >&2
     exit $ERRBADARGS
 }
 
-[ $# -ne 2 ] && DieUsage
+[ $# -ne 1 ] && DieUsage
 
-case ${2:-} in
-    SIGNED|UNSIGNED) SIGN_MODE=$2 ;;
+case ${1:-} in
+    SIGNED|UNSIGNED) SIGN_MODE=$1 ;;
     *) DieUsage ;;
 esac
 
 function compute_next_release_version() {
-    local local_CURRENT_RELEASE_VERSION="$( current_release_version )"
-    [[ $local_CURRENT_RELEASE_VERSION != "" ]] || exit $ERRBADVERSION
-    local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
-    local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
-    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
+    local CUR_VER="$( current_release_version )"
+    [[ $CUR_VER != "" ]] || exit $ERRBADVERSION
+    local CUR_VER_MAJOR_MINOR="$( echo $CUR_VER | sed -e 's/\.[0-9]*$//' )"
+    local CUR_VER_BUILD="$( echo $CUR_VER | sed -e 's/.*\.//' )"
+    local NEXT_VER_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
 
-    readonly local_CURRENT_RELEASE_VERSION_STRING
-    readonly local_CURRENT_RELEASE_VERSION
-    readonly local_CURRENT_RELEASE_VERSION_MAJOR_MINOR
-    readonly local_CURRENT_RELEASE_VERSION_BUILD_NUMBR
-    readonly local_LOCAL_VERSION_MAJOR_MINOR
+    readonly CUR_VER
+    readonly CUR_VER_MAJOR_MINOR
+    readonly CUR_VER_BUILD
+    readonly NEXT_VER_MAJOR_MINOR
 
-    local local_BUILD_NUMBER=""
-    if [ $local_CURRENT_RELEASE_VERSION_MAJOR_MINOR == $local_LOCAL_VERSION_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
-        local_BUILD_NUMBER="$( expr $local_CURRENT_RELEASE_VERSION_BUILD_NUMBR \+ 1 )"
+    local BUILD_NUMBER=""
+    if [ $CUR_VER_MAJOR_MINOR == $NEXT_VER_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
+        BUILD_NUMBER="$( expr $CUR_VER_BUILD \+ 1 )"
     else
-        local_BUILD_NUMBER=1 # reset build number to 1
+        BUILD_NUMBER=1 # reset build number to 1
     fi
 
-    readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
+    readonly NEW_VER="$NEXT_VER_MAJOR_MINOR.$BUILD_NUMBER"
 }
 
 if [ "$SIGN_MODE" == "SIGNED" ] ; then
     compute_next_release_version
 else
-    RELEASE_VERSION=0.$(date +%y%m%d.1%H%M)
+    NEW_VER=0.$(date +%y%m%d.1%H%M)
 fi
 
 # Print the result so ant can use it:
-echo $RELEASE_VERSION
+echo $NEW_VER

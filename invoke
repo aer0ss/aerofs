@@ -8,11 +8,11 @@
 # * Regenerate all the protobuf stuff:
 #   ./invoke proto
 # * Populate an approot:
-#   ./invoke --product CLIENT --mode PRIVATE setupenv
+#   ./invoke --product CLIENT setupenv
 # * Clean and build from scratch everything needed to bring up a local prod VM
-#   ./invoke --mode=PRIVATE --unsigned clean proto build_client package_clients build_servers package_servers
+#   ./invoke --unsigned clean proto build_client package_clients build_servers package_servers
 # * All the tasks involved in producing release candidate appliance images:
-#   ./invoke --mode=PRIVATE --signed --format=ova --format=qcow2 clean proto build_client package_clients build_servers package_servers bake
+#   ./invoke --signed --format=ova --format=qcow2 clean proto build_client package_clients build_servers package_servers bake
 # * Install AeroFS via syncdet on your default actors
 #   ./invoke --syncdet-extra-args=--case-arg=--transport=default --syncdet-case=lib.cases.clean_install syncdet
 #
@@ -569,10 +569,10 @@ def prepare_syncdet(args):
         else:
             raise ValueError(colored("ambigous {} - options {}".format(dest_filename, source_filenames), Colors.RED))
 
-@required_args('product', 'mode', 'target_os', 'approot')
+@required_args('product', 'target_os', 'approot')
 def setupenv(args):
     command = [ os.path.join(TOOLS_DIR, "populate", "populate"),
-                args.mode.upper(),
+                'PRIVATE',
                 args.product.upper(),
                 args.target_os,
                 os.path.join(GIT_ROOT, 'resource'),
@@ -588,11 +588,11 @@ def build_client(args):
 
 def compute_next_version(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', args.mode, signed_arg ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', signed_arg ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 
-@required_args('mode', 'signed')
+@required_args('signed')
 def package_clients(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
     version = args.release_version or compute_next_version(args)
@@ -604,7 +604,7 @@ def package_clients(args):
     for product in products:
         cmdline = [ BOOTSTRAP_ENTRY,
                 "package",
-                args.mode,
+                "PRIVATE",
                 product,
                 version,
                 signed_arg,
@@ -614,22 +614,6 @@ def package_clients(args):
         if args.obfuscated == False:
             cmdline.append("--no-obfuscate")
         subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-@required_args('mode')
-def deploy_clients(args):
-    if args.mode != "PUBLIC":
-        raise ValueError(colored("mode must be PUBLIC to call deploy_clients", Colors.RED))
-    cmdline = [ BOOTSTRAP_ENTRY, 'deploy', 'PUBLIC' ]
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-#@required_args('mode')
-#def deploy_servers(args):
-#    upload_servers(args)
-#    puppet_deploy(args)
-#    puppet_kick_master(args)
-#    puppet_kick_agents(args)
-#    server_sanity_check(args)
-#    update_cloudfront(args)
 
 def _syncdet(args, case=None, scenario=None, extra_args=None):
     # extract args
@@ -691,7 +675,6 @@ commands = {
     "build_protoc_plugins": build_protoc_plugins,
     "build_servers": build_servers,
     "clean": clean,
-    "deploy_clients": deploy_clients,
     "markdown": markdown,
     "markdown_watch": markdown_watch,
     "package_clients": package_clients,
@@ -714,8 +697,6 @@ def reconstitute_command_line(executable, args, incomplete_commands):
     if args.format:
         for fmt in args.format:
             cmdline.extend(["--format", fmt])
-    if args.mode:
-        cmdline.extend(["--mode", args.mode])
     if args.product:
         cmdline.extend(["--product", args.product])
     if args.release_version:
@@ -750,7 +731,6 @@ def main():
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
     parser.add_argument("--bin", action='store', default=os.environ["USER"].upper())
     parser.add_argument("--format", action='append', choices=['ova', 'qcow2', 'raw', 'vdi'])
-    parser.add_argument("--mode", action='store', choices=['PUBLIC', 'PRIVATE'])
     parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
