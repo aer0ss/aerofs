@@ -4,13 +4,11 @@
 
 package com.aerofs.daemon.core.polaris.api;
 
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
 
-@NoObfuscation
 public class RemoteChange
 {
     public enum Type {

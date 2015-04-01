@@ -4,11 +4,8 @@
 
 package com.aerofs.sp.server.audit;
 
-
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.ids.SID;
 
-@NoObfuscation
 public class AuditFolder
 {
     final String id;

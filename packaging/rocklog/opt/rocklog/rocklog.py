@@ -7,7 +7,6 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 from pyelasticsearch import ElasticSearch
-from retrace_client import RetraceClient
 
 ELASTIC_SEARCH_URL = 'http://localhost:9200'
 CARBON_ADDRESS = ('metrics.aerofs.com', 2003)
@@ -50,9 +49,7 @@ def defects():
         defect = request.json
 
         if EXCEPTION_KEY in defect:
-            retracer = RetraceClient(50123, defect[VERSION_KEY])
-            defect[EXCEPTION_KEY] = decode_exception(defect[EXCEPTION_KEY], retracer)
-            retracer.close()
+            defect[EXCEPTION_KEY] = format_exception(defect[EXCEPTION_KEY])
 
             if not MESSAGE_KEY in defect:
                 # If no message for this defect, use the first line of the exception
@@ -101,29 +98,30 @@ def success_response():
     return resp
 
 
-def decode_exception(exception, rc):
+def format_exception(exception, rc):
     """
-    Takes a JSON exception object (with a stacktrace and possibly nested exceptions), unobfuscate the elements, and
-    converts everything into a string.
-    rc: RetraceClient instance
+    Takes a JSON exception object (with a stacktrace and possibly nested exceptions), and converts
+    it into a string.
     """
+
     if not exception: return ""
 
     if "message" in exception:
         message = exception['message']
     else:
         message = ""
-    result = rc.retrace(exception['type'])['classname'] + ': ' + message + '\n'
+
+    result = exception['type'] + ': ' + message + '\n'
     result += '\n'.join([stackframe_to_string(frame, rc) for frame in exception.get('stacktrace', [])])
+
     if exception.get('cause', {}):
-        result += '\n\nCaused by: ' + decode_exception(exception['cause'], rc)
+        result += '\n\nCaused by: ' + format_exception(exception['cause'], rc)
 
     return result
 
 
 def stackframe_to_string(frame, rc):
-    r = rc.retrace(frame['class'], frame['method'], frame['line'])
-    return r['classname'] + '.' + r['methodname'] + ':' + str(frame['line'])
+    return str(frame['class']) + '.' + str(frame['method']) + ':' + str(frame['line'])
 
 if __name__ == "__main__":
     app.run()

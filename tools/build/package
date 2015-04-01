@@ -8,7 +8,7 @@ set -eu
 ###############################################################################
 
 function DieUsage {
-    echo "usage: $0 <build_mode> <build_product> <version> <sign_mode> [--no-obfuscate]" >&2
+    echo "usage: $0 <build_mode> <build_product> <version> <sign_mode>" >&2
     echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
     echo "       [--build-windows-exe] [--build-osx-packages] [--build-all]" >&2
     echo " " >&2
@@ -16,7 +16,6 @@ function DieUsage {
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<version>: formatted <major>.<minor>.<build>" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
-    echo "[--no-obfuscate]: skip obfuscation of java code (default is to obfuscate)" >&2
     echo "[--build-linux-tgz]: build the Linux installer .tgz" >&2
     echo "[--build-linux-update-tgzs]: build the Linux updater .tgz" >&2
     echo "[--build-linux-deb]: build the Linux installer .deb " >&2
@@ -25,7 +24,7 @@ function DieUsage {
     echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
     echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED --build-all" >&2
-    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED --no-obfuscate --build-linux-tgz" >&2
+    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz" >&2
     exit $ERRBADARGS
 }
 
@@ -56,9 +55,6 @@ RELEASE_FLAGS=""
 BUILD_FLAGS=""
 while [ "${1:-}" != "" ]; do
     case "$1" in
-        "--no-obfuscate")
-            RELEASE_FLAGS="$1"
-            ;;
         "--build-linux-tgz" | "--build-linux-update-tgzs" | "--build-linux-deb" | "--build-windows-exe" | "--build-osx-packages")
             BUILD_FLAGS="${BUILD_FLAGS} $1"
             ;;

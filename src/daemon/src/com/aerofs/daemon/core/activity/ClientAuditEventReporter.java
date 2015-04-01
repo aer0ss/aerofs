@@ -9,7 +9,6 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam.Audit;
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.ids.DID;
@@ -86,7 +85,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
     // GSON objects
     //
 
-    @NoObfuscation
     private static class PathComponents
     {
         final String sid;
@@ -99,7 +97,6 @@ public final class ClientAuditEventReporter // this can be final because it's no
         }
     }
 
-    @NoObfuscation
     private static class SIDOID
     {
         final String sid;

@@ -4,8 +4,6 @@
 
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 import java.util.List;
 
 /**
@@ -14,7 +12,6 @@ import java.util.List;
  *
  * The path elements are ordered starting from the root down to the innermost Folder.
  */
-@NoObfuscation
 public class ParentPath
 {
     public final List<Folder> folders;

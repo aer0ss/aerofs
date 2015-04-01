@@ -1,7 +1,5 @@
 package com.aerofs.daemon.rest.resources;
 
-
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
@@ -35,7 +33,6 @@ public class VersionResource
      * filtering and may not be used to service users outside of the org. The
      * value will only be taken into account if it comes from a Team Server.
      */
-    @NoObfuscation
     public static class TeamServerInfo extends Version
     {
         public final List<UserID> users;

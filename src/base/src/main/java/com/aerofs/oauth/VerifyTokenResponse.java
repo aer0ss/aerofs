@@ -1,13 +1,10 @@
 package com.aerofs.oauth;
 
-import com.aerofs.base.NoObfuscation;
-
 import java.util.Set;
 
 /**
  * Representation of the answer to a Resource Server when asked to verify a token.
  */
-@NoObfuscation
 public class VerifyTokenResponse {
     public static final VerifyTokenResponse NOT_FOUND = new VerifyTokenResponse("not_found");
     public static final VerifyTokenResponse EXPIRED = new VerifyTokenResponse("token_expired");

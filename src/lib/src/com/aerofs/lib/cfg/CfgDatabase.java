@@ -119,7 +119,8 @@ public class CfgDatabase
 
         /**
          * @param str the string representation of the key. Ideally it should be derived from
-         * symbol names but not possible due to obfuscation. TODO use ProGuard annotations?
+         * symbol names but not possible due to obfuscation.
+         * TODO (MP) revisit now that we no longer obfuscate jars.
          */
         Key(String str, @Nullable String defaultValue)
         {

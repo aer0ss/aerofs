@@ -18,7 +18,6 @@
  */
 package com.aerofs.oauth;
 
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.UserID;
 import com.google.common.collect.Lists;
@@ -32,7 +31,6 @@ import java.util.Map;
 /**
  * {@link Principal} that can contain roles and additional attributes.
  */
-@NoObfuscation
 public class AuthenticatedPrincipal implements Serializable, Principal
 {
     public static final String USERID_ATTRIB = "userid";

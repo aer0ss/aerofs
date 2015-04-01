@@ -4,12 +4,9 @@
 
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 /**
  * To be returned with any error code
  */
-@NoObfuscation
 public class Error
 {
     public enum Type

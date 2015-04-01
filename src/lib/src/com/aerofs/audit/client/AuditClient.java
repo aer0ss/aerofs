@@ -4,7 +4,6 @@
 
 package com.aerofs.audit.client;
 
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.Maps;
 import com.google.gson.FieldNamingPolicy;
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -39,7 +37,6 @@ public class AuditClient
     Logger l = LoggerFactory.getLogger(AuditClient.class);
 
     /** The general topic this audit belongs to. */
-    @NoObfuscation
     public enum AuditTopic
     {
         FILE,

@@ -5,8 +5,8 @@ set -x
 ###############################################################################
 #
 # This script moves platform specific libraries to the proper locations,
-# creates an obfuscated jar for AeroFS and prepares the code for packaging.
-# Everything here is done on the local system.
+# creates a jar for AeroFS and prepares the code for packaging. Everything here
+# is done on the local system.
 #
 ###############################################################################
 
@@ -19,21 +19,18 @@ include common ${1:-} ${2:-}
 ###############################################################################
 function DieUsage() {
     set +x
-    echo "usage: $0 [build mode] [build product] [release version] [--no-obfuscate]" >&2
+    echo "usage: $0 [build mode] [build product] [release version]" >&2
     echo " " >&2
     echo "[build mode]: PUBLIC|PRIVATE" >&2
     echo "[build product]: CLIENT|TEAM_SERVER" >&2
     echo "[release version]: major.minor.build" >&2
-    echo "--no-obfuscate: optional (default is to obfuscate)" >&2
     echo " " >&2
     echo "example: $0 PUBLIC TEAM_SERVER 0.4.99" >&2
     exit $ERRBADARGS
 }
 
-[[ $# -eq 3 || $# -eq 4 ]] || DieUsage
+[[ $# -eq 3 ]] || DieUsage
 readonly RELEASE_VERSION="$3"
-
-if [ $# -eq 4 ] && [ "$4" != "--no-obfuscate" ]; then DieUsage; fi
 
 ######################################################################
 #
@@ -209,39 +206,7 @@ function create_java_jar() {
     done
 
     # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com $local_JAR_PROPERTY_FLAGS
-}
-
-######################################################################
-#
-# Runs ProGuard on the unobfuscated aerofs jar
-#
-# We now use the same class files for both regular client and team server,
-# so the proguard maps should be indistinguishable.
-#
-######################################################################
-function obfuscate_java() {
-    echo ">> obfuscating jar"
-
-    local local_PG_AEROFS_DIR=`echo $AEROFS_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-    local local_PG_RELEASE_DIR=`echo $LOCAL_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-    local local_PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-
-    # TODO: (WW) Verify these packages are valid before removing
-    "${PROGUARD_HOME}/bin/proguard.sh" -injars "${local_PG_AEROFS_DIR}/aerofs.unobf.jar" -outjars "${local_PG_AEROFS_DIR}/aerofs.jar" \
-        -printmapping "${local_PG_RELEASE_DIR}/aerofs.map" \
-        -repackageclasses "com.aerofs" \
-        -dontwarn 'com.aerofs.tools.**' \
-        -dontnote 'com.aerofs.l.*' \
-        @"${local_PG_HOME}/aerofs.pro"
-
-    rm -rf "${local_PG_AEROFS_DIR}/aerofs.unobf.jar"
-}
-
-function skip_obfuscate_java() {
-    echo ">> skipping obfuscation of jar"
-    local local_PG_AEROFS_DIR=`echo $AEROFS_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-    mv "${local_PG_AEROFS_DIR}/aerofs.unobf.jar" "${local_PG_AEROFS_DIR}/aerofs.jar"
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com $local_JAR_PROPERTY_FLAGS
 }
 
 ######################################################################
@@ -285,11 +250,6 @@ echo ">> make release resources"
 compute_product_names
 copy_resources_to_local_release_directories
 create_java_jar
-if [ "${4:-}" == "--no-obfuscate" ]; then
-    skip_obfuscate_java
-else
-    obfuscate_java
-fi
 write_version_and_checksums
 
 exit 0

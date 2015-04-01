@@ -42,7 +42,6 @@ fi
 readonly GIT_ROOT="$(cd "$GIT_ROOT" && pwd)"
 readonly TOOLS_ROOT="${GIT_ROOT}/tools"
 readonly BUILD_SCRIPT_DIR="${TOOLS_ROOT}/build"
-readonly PROGUARD_HOME="${TOOLS_ROOT}/proguard"
 readonly LOCAL_NSIS_DIR="${TOOLS_ROOT}/win_installer"
 
 # Local resources directories
@@ -92,11 +91,6 @@ readonly PACKAGE_DIR="$BUILD_OUTPUT_DIR/packages"
 # Some OSX specific constants
 readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
 readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
-
-# Proguard maps server credentials and paths
-readonly MAP_SERVER="rocklog.aerofs.com"
-readonly MAP_SERVER_LOGIN=${MAP_SERVER}
-readonly MAP_FILES_DIR="/maps"
 
 readonly SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 
@@ -342,13 +336,6 @@ function notify_successful_deployment {
     echo ">> notifying team of successful deployment via Slack"
     echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
         $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message -c good -u $SLACK_WEBHOOK -f "Deploy" > /dev/null
-}
-
-# Uploads proguard map file to the servers that need it.
-function upload_map {
-    declare MAP_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.map"
-    echo "uploading proguard map file to $MAP_SERVER..."
-    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
 }
 
 # Tags this release in the codeline.

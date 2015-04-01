@@ -1,3 +1,0 @@
-#!/bin/sh
-
-exec java -Xss300000 -jar /usr/share/java/retrace.jar "$@"

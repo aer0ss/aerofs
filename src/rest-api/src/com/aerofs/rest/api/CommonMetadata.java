@@ -4,15 +4,12 @@
 
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 import javax.annotation.Nullable;
 import java.util.Comparator;
 
 /**
  * Metadata shared by {@link File} and {@link Folder}
  */
-@NoObfuscation
 public class CommonMetadata
 {
     // object id

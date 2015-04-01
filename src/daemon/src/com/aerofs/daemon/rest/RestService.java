@@ -88,8 +88,8 @@ public class RestService extends Service
     @Override
     protected Set<Class<?>> singletons()
     {
-        // specify all providers explicitly instead of using a package scanner
-        // because we flatten packages in the proguard step
+        // TODO (MP) reconsider this, as we no longer obfuscate jars.
+        // Specify all providers explicitly instead of using a package scanner
         return ImmutableSet.of(
                 FactoryReaderProvider.class,
                 JsonExceptionMapper.class,

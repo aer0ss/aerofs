@@ -4,14 +4,12 @@
 
 package com.aerofs.sp.server.audit;
 
-import com.aerofs.base.NoObfuscation;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@NoObfuscation
 public class AuditCaller
 {
     final String email;

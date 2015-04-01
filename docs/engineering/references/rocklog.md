@@ -16,7 +16,7 @@ that was posted using the RockLog client API.
 ### RockLog
 
 RockLog itself is a small python server. It implements a route for POST at `/defects` that
-simply retraces the defect from the JSON and saves the unobfuscated content to ElasticSearch.
+saves the content to ElasticSearch.
 
 Location on server: `/opt/rocklog/`
 
@@ -40,17 +40,6 @@ Location on server: `/opt/rocklog/tornado_server.py`
 Source: `src/rocklog/`
 
 Control: `service tornado {stop|start|restart}`
-
-
-## Retrace server
-
-This is a small Java server that wraps access to the ProGuard Retrace tool.
-
-Listener: port `50123`
-
-Source: https://github.com/aerofs/RetraceServer
-
-Control: `service retrace_server {stop|start|restart}`
 
 
 ## ElasticSearch

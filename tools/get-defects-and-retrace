@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script retrives defect log files.
+# This script retrives defect log files and retrace them.
 set -eu
 
 if [ $# -eq 0 ]; then
@@ -11,6 +11,13 @@ fi
 
 DEFECTS="$@"
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+retrace()
+{
+    FOLDER=$1
+    PROGRAM=$2
+    python ${BASE}/retrace.py "$FOLDER/$PROGRAM.log"
+}
 
 main()
 {
@@ -33,6 +40,12 @@ main()
 
             echo "Retracing logs for $DEFECT"
 
+            for i in daemon cli gui; do
+                if [ -f "$destdir/$i.log" ]; then
+                    retrace "$destdir" $i
+                fi
+            done
+
             if [ ! -z "$(ls $destdir/name*map 2>/dev/null)" ]
             then
                 echo "Reverse crc logs for $DEFECT"
@@ -48,6 +61,7 @@ main()
                 done
             fi
 
+            rm -f "$destdir/obfuscated"*
             rm -f "$destdir/unmapped"*
             rm -f "$destdir/name"*"map"
         done

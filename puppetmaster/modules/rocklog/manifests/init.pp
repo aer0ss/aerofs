@@ -68,5 +68,4 @@ class rocklog(
 
     include rocklog::elasticsearch
     include rocklog::kibana
-    include rocklog::retrace
 }

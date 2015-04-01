@@ -50,7 +50,6 @@ function UploadArtifacts {
     s3cmd --acl-public --guess-mime-type put $FileList s3://$BUCKET
 }
 
-upload_map
 UploadArtifacts
 tag_release private
 notify_successful_deployment # This notification has ... arguable utility?

@@ -4,15 +4,12 @@
 
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 import javax.annotation.Nullable;
 import java.util.Date;
 
 /**
  * Represents metadata for a single file
  */
-@NoObfuscation
 public class File extends CommonMetadata
 {
     // last modified time of this file

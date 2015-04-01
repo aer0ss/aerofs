@@ -85,7 +85,7 @@ function _package()
 
 function _package_clients()
 {
-    do_in $AEROFS_ROOT ./invoke --unsigned --unobfuscated build_client package_clients
+    do_in $AEROFS_ROOT ./invoke --unsigned build_client package_clients
 }
 
 # -----------------------------------------------------------

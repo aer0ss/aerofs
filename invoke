@@ -608,10 +608,6 @@ def package_clients(args):
                 version,
                 signed_arg,
                 "--build-all"]
-        # Default (no value) is obfuscated.  Explicitly saying --obfuscate
-        # obfuscates.  Only saying --unobfuscated disables obfuscation.
-        if args.obfuscated == False:
-            cmdline.append("--no-obfuscate")
         subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def _syncdet(args, case=None, scenario=None, extra_args=None):
@@ -734,8 +730,6 @@ def main():
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
     parser.add_argument("--unsigned", action='store_const', dest='signed', const=False)
-    parser.add_argument("--obfuscated", action='store_const', dest='obfuscated', const=True)
-    parser.add_argument("--unobfuscated", action='store_const', dest='obfuscated', const=False)
     parser.add_argument("--syncdet-case", action='append')
     parser.add_argument("--syncdet-case-timeout", action='store', type=int, default=180)
     parser.add_argument("--syncdet-config", action='store', default='/etc/syncdet/config.yaml')

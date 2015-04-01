@@ -4,9 +4,6 @@
 
 package com.aerofs.daemon.core.polaris.api;
 
-import com.aerofs.base.NoObfuscation;
-
-@NoObfuscation
 public enum ObjectType
 {
     ROOT,

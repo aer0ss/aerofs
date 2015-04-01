@@ -1,7 +1,3 @@
-
-// we put it here instead of com.aerofs.gui to facilitate ProGuard so remove
-// the entire gui package.
-//
 package com.aerofs.gui;
 
 import com.aerofs.LaunchArgs;

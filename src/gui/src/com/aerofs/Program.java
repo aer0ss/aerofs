@@ -1,6 +1,3 @@
-// we put it here instead of com.aerofs.ui so ProGuard can rename the entire ui
-// package.
-//
 package com.aerofs;
 
 import com.aerofs.cli.CLIProgram;

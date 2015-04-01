@@ -1,14 +1,11 @@
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * Represent a listing of the contents of a folder
  */
-@NoObfuscation
 public class ChildrenList
 {
     // NB: deprecated in 1.2

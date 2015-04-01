@@ -4,14 +4,11 @@
 
 package com.aerofs.rest.api;
 
-import com.aerofs.base.NoObfuscation;
-
 import javax.annotation.Nullable;
 
 /**
  * Contains detailed metadata for a single folder.
  */
-@NoObfuscation
 public class Folder extends CommonMetadata
 {
     // whether this folder is an anchor
