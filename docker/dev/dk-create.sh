@@ -34,7 +34,7 @@ THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 if [ ${BUILD} = 1 ]; then
     info "Building protobuf & client packages for Docker images..."
-    "${THIS_DIR}/../../invoke" proto build_client package_clients --mode PRIVATE --unsigned
+    "${THIS_DIR}/../../invoke" proto build_client package_clients --unsigned
 
     info "Building Docker images..."
     make -C "${THIS_DIR}/.."
