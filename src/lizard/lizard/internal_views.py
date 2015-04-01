@@ -92,14 +92,16 @@ PAGE_SIZE = 10
 @blueprint.route("/all_accounts", methods=["GET"])
 def all_accounts():
     # URL Parameters.
-    account_name = request.args.get('account_name', None)
+    search_terms = request.args.get('search_terms', None)
     page = int(request.args.get('page', 1))
     # Form.
     form = forms.AllAccountsSearchForm()
-    form.account_name.data = account_name
+    form.search_terms.data = search_terms
     # Search.
-    if account_name:
-        query = models.Customer.query.filter(models.Customer.name.ilike("%" + account_name + "%"))
+    if search_terms:
+        query = models.Customer.query.filter(
+            models.Customer.name.ilike("%" + search_terms + "%") |
+            models.Customer.admins.any(models.Admin.email.ilike("%" + search_terms + "%")))
     else:
         query = models.Customer.query
     # Ordering.
@@ -113,7 +115,7 @@ def all_accounts():
             accounts=accounts,
             page=page,
             total_pages=total_pages,
-            request_args={'account_name': account_name})
+            request_args={'search_terms': search_terms})
 
 @blueprint.route("/paying_accounts", methods=["GET"])
 def paying_accounts():
