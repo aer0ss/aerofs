@@ -20,3 +20,36 @@
  deployment.installer_folder = /opt/repackaging/installers/original
  
  # Pyramid settings
+@@ -34,10 +34,10 @@
+ session.timeout = 31536000
+ 
+ [loggers]
+-keys = root, bunker
++keys = root, web
+ 
+ [handlers]
+-keys = console, filelog
++keys = console
+ 
+ [formatters]
+ keys = generic
+@@ -46,17 +46,11 @@
+ level = DEBUG
+ handlers = console
+ 
+-[logger_bunker]
++[logger_web]
+ level = DEBUG
+-handlers = filelog
++handlers = console
+ qualname = web
+ 
+-[handler_filelog]
+-class = FileHandler
+-args = ('/var/log/bunker/bunker.log','a')
+-level = DEBUG
+-formatter = generic
+-
+ [handler_console]
+ class = StreamHandler
+ args = (sys.stderr,)

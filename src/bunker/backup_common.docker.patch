@@ -48,7 +48,7 @@
 +            $.post("${request.route_path('json-backup')}")
 +            .done(function() {
 +                waitForBackup(onBackupDone);
-+            }).fail(failed)
++            }).fail(failed);
 +        }
  
 -            runBootstrapTask('db-backup', function() {

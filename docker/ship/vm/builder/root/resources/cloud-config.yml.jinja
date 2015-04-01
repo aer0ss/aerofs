@@ -56,7 +56,7 @@ coreos:
   oem:
     id: ship-enterprise
     name: Ship Enterprise
-    version-id: {{ tag }}
+    version-id: 0.1.1
     home-url: http://www.shipenterprise.com/
     bug-report-url: http://www.shipenterprise.com/
 
@@ -77,7 +77,6 @@ write_files:
   - path: {{ getty_drop_in }}
     content: |
       [Service]
-      ExecStart=
       ExecStart=-/sbin/agetty --noclear --skip-login --autologin root --login-program {{ getty_run }} %I $TERM
 
   - path: {{ getty_run }}

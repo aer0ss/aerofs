@@ -18,12 +18,7 @@ COPY buildroot/requirements-exact.txt /
 RUN \
     apt-get update && apt-get install -y gcc &&\
     pip install -r /requirements-exact.txt &&\
-    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/* &&\
-    #
-    # PREDOCKER forward logs to docker log collector
-    #
-    mkdir -p /var/log/bunker &&\
-    ln -sf /dev/stdout /var/log/bunker/bunker.log
+    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/*
 
 # Add source files last
 COPY root buildroot /
