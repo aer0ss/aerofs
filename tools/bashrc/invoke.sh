@@ -29,7 +29,7 @@ _invoke()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Keep these up to date with the options invoke supports.
-    opts="--appliance-dir --approot --bin --format --mode --product --release-version --signed --unsigned --obfuscated --unobfuscated --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
+    opts="--appliance-dir --approot --bin --format --product --release-version --signed --unsigned --obfuscated --unobfuscated --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
     commands="bake build_client build_protoc_plugins build_servers clean deploy_clients markdown markdown_watch package_clients package_servers prepare_syncdet proto setupenv test_js test_python test_system test_system_archive"
 
     # If the previous arg is one of these, give context specific completion options
@@ -54,11 +54,6 @@ _invoke()
         --format)
             local formats="ova qcow2 raw vdi"
             COMPREPLY=( $(compgen -W "${formats}" -- ${cur}) )
-            return 0
-            ;;
-        --mode)
-            local modes="PUBLIC PRIVATE"
-            COMPREPLY=( $(compgen -W "${modes}" -- ${cur}) )
             return 0
             ;;
         --product)

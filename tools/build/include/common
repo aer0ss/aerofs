@@ -286,15 +286,6 @@ function is_ci() {
     return 1
 }
 
-###############################################################################
-#
-# Echo the PUBLIC version string in the format of "Version=1.2.3"
-#
-###############################################################################
-function public_version_file_content() {
-    wget --no-check-certificate --no-cache -q -O- https://${RELEASE_DOMAIN_PUBLIC}/${CANARY_VER}
-}
-
 RELEASE_VERSION_REGEX="^[0-9]+\\.[0-9]+\\.[0-9]+$"
 
 ###############################################################################
@@ -314,18 +305,18 @@ function check_version_format() {
 
 ###############################################################################
 #
-# Gets the current active version on S3, like "0.4.98"
+# Gets the currently deployed version, like "0.4.98"
 #
 ###############################################################################
 function current_release_version() {
-    local local_PUBLIC_VERSION_FILE_CONTENT="$( public_version_file_content )"
-    local local_PUBLIC_VERSION="$( echo $local_PUBLIC_VERSION_FILE_CONTENT | sed -e 's/.*=//' )"
-    if [[ ! $local_PUBLIC_VERSION =~ $RELEASE_VERSION_REGEX ]] ; then
+    local VERSION_FILE="$(ssh privatecloud.aerofs.com cat /opt/lizard/state/release_version)"
+    local VERSION="$( echo $VERSION_FILE | sed -e 's/.*=//' )"
+    if [[ ! $VERSION =~ $RELEASE_VERSION_REGEX ]] ; then
         echo ""
         exit $ERRBADVERSION
     fi
 
-    echo "$local_PUBLIC_VERSION"
+    echo "$VERSION"
 }
 
 # Gets the product names from the labeling file.

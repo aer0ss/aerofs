@@ -587,8 +587,7 @@ def build_client(args):
     print colored("Client built.", Colors.GREEN)
 
 def compute_next_version(args):
-    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', signed_arg ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version' ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 

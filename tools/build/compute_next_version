@@ -11,49 +11,23 @@ set -e -u
 
 include include/common PRIVATE
 
-function DieUsage {
-    echo "usage: $0 [signed]" >&2
-    echo " " >&2
-    echo "[signed]: SIGNED|UNSIGNED" >&2
-    echo " " >&2
-    echo "example: $0 SIGNED" >&2
-    exit $ERRBADARGS
-}
+CUR_VER="$( current_release_version )"
+[[ $CUR_VER != "" ]] || exit $ERRBADVERSION
+CUR_VER_MAJOR_MINOR="$( echo $CUR_VER | sed -e 's/\.[0-9]*$//' )"
+CUR_VER_BUILD="$( echo $CUR_VER | sed -e 's/.*\.//' )"
+NEXT_VER_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
 
-[ $# -ne 1 ] && DieUsage
+readonly CUR_VER
+readonly CUR_VER_MAJOR_MINOR
+readonly CUR_VER_BUILD
+readonly NEXT_VER_MAJOR_MINOR
 
-case ${1:-} in
-    SIGNED|UNSIGNED) SIGN_MODE=$1 ;;
-    *) DieUsage ;;
-esac
-
-function compute_next_release_version() {
-    local CUR_VER="$( current_release_version )"
-    [[ $CUR_VER != "" ]] || exit $ERRBADVERSION
-    local CUR_VER_MAJOR_MINOR="$( echo $CUR_VER | sed -e 's/\.[0-9]*$//' )"
-    local CUR_VER_BUILD="$( echo $CUR_VER | sed -e 's/.*\.//' )"
-    local NEXT_VER_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
-
-    readonly CUR_VER
-    readonly CUR_VER_MAJOR_MINOR
-    readonly CUR_VER_BUILD
-    readonly NEXT_VER_MAJOR_MINOR
-
-    local BUILD_NUMBER=""
-    if [ $CUR_VER_MAJOR_MINOR == $NEXT_VER_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
-        BUILD_NUMBER="$( expr $CUR_VER_BUILD \+ 1 )"
-    else
-        BUILD_NUMBER=1 # reset build number to 1
-    fi
-
-    readonly NEW_VER="$NEXT_VER_MAJOR_MINOR.$BUILD_NUMBER"
-}
-
-if [ "$SIGN_MODE" == "SIGNED" ] ; then
-    compute_next_release_version
+BUILD_NUMBER=""
+if [ $CUR_VER_MAJOR_MINOR == $NEXT_VER_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
+    BUILD_NUMBER="$( expr $CUR_VER_BUILD \+ 1 )"
 else
-    NEW_VER=0.$(date +%y%m%d.1%H%M)
+    BUILD_NUMBER=1 # reset build number to 1
 fi
 
 # Print the result so ant can use it:
-echo $NEW_VER
+echo "$NEXT_VER_MAJOR_MINOR.$BUILD_NUMBER"
