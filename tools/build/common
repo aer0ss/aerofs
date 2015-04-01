@@ -8,7 +8,7 @@ set -e -u
 #
 # This file should be included with the following syntax:
 #
-# include include/common $MODE $PRODUCT
+# include common $MODE $PRODUCT
 #
 ###############################################################################
 
@@ -137,29 +137,13 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/$LOWERCASE_PRODUCT/labeling.prop
 #
 ###############################################################################
 
-###############################################################################
-#
-# Returns 0 if the deployment mode is one that is recognized, or ERRBADMODE
-# otherwise
-#
-# Args:
-#    1: mode to check
-#
-###############################################################################
-function is_valid_mode() {
-    if [[ "$1" != "PUBLIC" && "$1" != "PRIVATE" ]]; then
-        return $ERRBADMODE
-    fi
-    return 0
-}
-
 # check that a valid mode was specified
 readonly MODE="${1:-}"
-if ! is_valid_mode $MODE ; then
-    echo "error: invalid build mode $MODE. Expected PUBLIC|PRIVATE." >&2
+if [ ${MODE} != PRIVATE ]; then
+    echo "error: invalid build mode $MODE. Expected PRIVATE." >&2
     exit $ERRBADMODE
 fi
-readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
+readonly LOWERCASE_MODE="private"
 
 ###############################################################################
 #
@@ -169,18 +153,7 @@ readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
 
 # We use the same user account when deploying to public/private.
 # TODO (MP) use a more reasonable username.
-case ${LOWERCASE_MODE} in
-public)
-    readonly RELEASE_SERVER_USERNAME=release-prod
-    ;;
-private)
-    readonly RELEASE_SERVER_USERNAME=release-prod
-    ;;
-*)
-    readonly RELEASE_SERVER_USERNAME=release-${LOWERCASE_MODE}
-    ;;
-esac
-
+readonly RELEASE_SERVER_USERNAME=release-prod
 readonly RELEASE_SERVER="b.arrowfs.org"
 readonly RELEASE_SERVER_LOGIN="${RELEASE_SERVER_USERNAME}@${RELEASE_SERVER}"
 readonly RELEASE_SERVER_SHELL="bash -s -e -u"
@@ -190,29 +163,8 @@ readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 # Release server paths
 #
 ###############################################################################
-readonly RELEASE_FILES_DIR="/home/${RELEASE_SERVER_USERNAME}"
-readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
 readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
 readonly CURRENT_VER="current.ver"
-readonly CANARY_VER="canary.ver"
-readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
-
-###############################################################################
-#
-# Cloudfront/S3 constants
-#
-###############################################################################
-# N.B. no need to create a cache/nocache variant for PRIVATE since the
-# installers are packaged into openstack images anyway.
-# TODO (MP) rename the release domain.
-readonly RELEASE_DOMAIN_PRIVATE="nocache.client.enterprise.aerofs.com"
-readonly RELEASE_DOMAIN_PUBLIC="nocache.client.aerofs.com"
-case "$MODE" in
-    "PUBLIC") readonly RELEASE_DOMAIN=$RELEASE_DOMAIN_PUBLIC ;;
-    "PRIVATE") readonly RELEASE_DOMAIN=$RELEASE_DOMAIN_PRIVATE ;;
-esac
-readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
-readonly UNSECURED_PASSPHRASE=temp123
 
 ###############################################################################
 #
@@ -233,54 +185,6 @@ function is_client() {
 ###############################################################################
 function is_team_server() {
     if [ "$PRODUCT" == "TEAM_SERVER" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the deployment mode is PRIVATE, 1 otherwise
-#
-###############################################################################
-function is_private() {
-    if [ "$MODE" == "PRIVATE" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the deployment mode is PUBLIC, 1 otherwise
-#
-###############################################################################
-function is_public() {
-    if [ "$MODE" == "PUBLIC" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the deployment mode is PUBLIC or PRIVATE, 1 otherwise
-#
-###############################################################################
-function is_public_or_private() {
-    if [ "$MODE" == "PUBLIC" ] || [ "$MODE" == "PRIVATE" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the deployment mode is CI, 1 otherwise
-#
-###############################################################################
-function is_ci() {
-    if [ "$MODE" == "CI" ]; then
         return 0
     fi
     return 1

@@ -9,7 +9,7 @@ set -e -u
 # build number is incremented, and the result is used.
 #
 
-include include/common PRIVATE
+include common PRIVATE
 
 CUR_VER="$( current_release_version )"
 [[ $CUR_VER != "" ]] || exit $ERRBADVERSION

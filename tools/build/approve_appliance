@@ -7,7 +7,7 @@ set -e -u
 #
 
 MODE=PRIVATE
-include include/common $MODE
+include common $MODE
 
 function DieUsage {
     echo "usage: $0 [signed] [version] [appliance_path]" >&2

@@ -16,7 +16,7 @@ set -e -u
 # file if they weren't imported before.
 if [ x"${__SAFETYNET_CONSTANTS_INCLUDE__:-}" == x ] ; then readonly __SAFETYNET_CONSTANTS_INCLUDE__=true
 
-include include/common PUBLIC
+include common PUBLIC
 
 readonly ERRSAFETYNET=30
 

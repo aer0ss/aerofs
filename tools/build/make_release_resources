@@ -10,7 +10,7 @@ set -x
 #
 ###############################################################################
 
-include include/common ${1:-} ${2:-}
+include common ${1:-} ${2:-}
 
 ###############################################################################
 #
@@ -91,11 +91,9 @@ function copy_resources_to_local_release_directories() {
     find "${local_BIN}/" -name .DS_Store  | xargs rm -f
     find "${local_BIN}/" -name .gitignore | xargs rm -f
 
-    if is_public_or_private ; then
-        # TODO: (AG) move these as excludes into build.xml
-        # TODO: (WW) Verify this package is valid before removing
-        rm -rf "${local_BIN}/com/aerofs/tools"
-    fi
+    # TODO: (AG) move these as excludes into build.xml
+    # TODO: (WW) Verify this package is valid before removing
+    rm -rf "${local_BIN}/com/aerofs/tools"
 
     # remove platform-specific gradle-resolved deps
     # they will be resolved appropriately for each packkage later on
