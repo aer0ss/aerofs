@@ -152,19 +152,15 @@ public class VirtualChannel extends AbstractChannel
     }
 
     @Override
-    public int getInterestOps()
+    public boolean isWritable()
     {
-        /**
-         * The virtual channel is effectively writable if both itself and the underlying physical
-         * accept writes.
-         */
-        return super.getInterestOps() | (_tunnel._channel.getInterestOps() & OP_WRITE);
+        return super.isWritable() && _tunnel._channel.isWritable();
     }
 
     @Override
     public ChannelFuture setReadable(boolean readable)
     {
-        int virtual = super.getInterestOps();
+        int virtual = getInternalInterestOps();
         return setInterestOps(readable ? virtual | OP_READ : virtual & ~OP_READ);
     }
 
@@ -186,10 +182,8 @@ public class VirtualChannel extends AbstractChannel
      */
     void makeWritable(boolean writable)
     {
-        int prev = getInterestOps();
-        int ops = super.getInterestOps();
-        setInterestOpsNow(writable ? ops & ~OP_WRITE : ops | OP_WRITE);
-        if (prev != getInterestOps()) {
+        boolean changed = writable ? setWritable() : setUnwritable();
+        if (changed) {
             l.info("tunnel remote {} {}", writable ? "resume" : "suspend", this);
             Channels.fireChannelInterestChanged(this);
         }
@@ -214,14 +208,14 @@ public class VirtualChannel extends AbstractChannel
      */
     private void onInterestChanged(int ops, ChannelFuture future)
     {
-        int prev = super.getInterestOps();
+        int prev = getInternalInterestOps();
         // local interest change cannot affect writability, which reflects remote interest
         ops = (ops & ~OP_WRITE) | (prev & OP_WRITE);
-        boolean readable = (ops & OP_READ) == 0;
-        setInterestOpsNow(ops);
+        setInternalInterestOps(ops);
         if (prev != ops) {
-            l.info("tunnel local {} {}", readable ? "suspend" : "resume", this);
-            _tunnel.onReadabilityChanged(this, readable, future);
+            boolean suspend = (ops & OP_READ) == 0;
+            l.info("tunnel local {} {}", suspend ? "suspend" : "resume", this);
+            _tunnel.onReadabilityChanged(this, suspend, future);
         } else {
             future.setSuccess();
         }

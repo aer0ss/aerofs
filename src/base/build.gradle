@@ -92,7 +92,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
     compile 'com.google.guava:guava:17.0'
     compile 'com.google.protobuf:protobuf-java:2.6.1'
-    compile 'io.netty:netty:3.9.5.Final'
+    compile 'io.netty:netty:3.10.2.Final-SNAPSHOT'
     compile 'javax.inject:javax.inject:1'
     compile 'org.ocpsoft.prettytime:prettytime:2.1.3.Final'
     compile 'org.slf4j:slf4j-api:1.7.12'

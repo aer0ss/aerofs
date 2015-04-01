@@ -19,7 +19,7 @@ dependencies {
     compile 'com.sun.jersey:jersey-core:1.17.1'
     compile 'com.sun.jersey:jersey-server:1.17.1'
     compile ('com.sun.jersey.contribs:jersey-guice:1.17.1') { transitive = false }
-    compile 'io.netty:netty:3.9.5.Final'
+    compile 'io.netty:netty:3.10.2.Final-SNAPSHOT'
     compile 'javax.inject:javax.inject:1'
     compile 'org.slf4j:slf4j-api:1.7.12'
     compile 'org.slf4j:jcl-over-slf4j:1.7.12'

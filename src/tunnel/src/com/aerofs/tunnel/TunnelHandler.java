@@ -291,11 +291,11 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         return _channel.write(message);
     }
 
-    void onReadabilityChanged(final VirtualChannel virtualChannel, boolean readable,
+    void onReadabilityChanged(final VirtualChannel virtualChannel, boolean suspend,
             final ChannelFuture future)
     {
         try {
-            writeMsg(readable ? MSG_SUSPEND : MSG_RESUME, virtualChannel.getConnectionId());
+            writeMsg(suspend ? MSG_SUSPEND : MSG_RESUME, virtualChannel.getConnectionId());
             future.setSuccess();
             Channels.fireChannelInterestChanged(virtualChannel);
         } catch (ClosedChannelException e) {
