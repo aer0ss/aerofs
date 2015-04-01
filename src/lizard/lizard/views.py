@@ -545,6 +545,13 @@ def download_qcow():
     # TODO: log that this user has started downloading the QCow2.
     return redirect(appliance.qcow_url(version))
 
+@blueprint.route("/appliance_version", methods=["GET"])
+def get_appliance_version():
+    version = appliance.latest_appliance_version()
+    return Response(version,
+            mimetype='text/plain'
+            )
+
 @blueprint.route("/download_latest_license", methods=["GET"])
 @login.login_required
 def download_latest_license():

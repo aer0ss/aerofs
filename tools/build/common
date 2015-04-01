@@ -213,8 +213,7 @@ function check_version_format() {
 #
 ###############################################################################
 function current_release_version() {
-    local VERSION_FILE="$(ssh privatecloud.aerofs.com cat /opt/lizard/state/release_version)"
-    local VERSION="$( echo $VERSION_FILE | sed -e 's/.*=//' )"
+    local VERSION="$(curl --silent https://privatecloud.aerofs.com/appliance_version)"
     if [[ ! $VERSION =~ $RELEASE_VERSION_REGEX ]] ; then
         echo ""
         exit $ERRBADVERSION
