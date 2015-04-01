@@ -1,9 +1,9 @@
 import os
-import shutil
 import time
 
 from aerofs_common import param
 from lib import ritual
+from lib.app.install import rm_rf
 import lib.files
 
 
@@ -19,7 +19,7 @@ def main():
     r.share_folder(folder)
 
     # remove parent folder
-    shutil.rmtree(lib.files.instance_unique_path())
+    rm_rf(lib.files.instance_unique_path())
 
     # wait for leave to be processed
     while folder in set(ritual.connect().list_admitted_or_linked_shared_folders()):

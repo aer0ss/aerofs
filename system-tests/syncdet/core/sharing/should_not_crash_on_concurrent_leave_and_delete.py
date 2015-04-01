@@ -8,11 +8,11 @@ daemon back up on A
 """
 
 import os
-import shutil
 from lib.files import instance_unique_path, wait_path_to_disappear
 from lib import ritual
 from syncdet.case.sync import sync
 from lib.app import aerofs_proc
+from lib.app.install import rm_rf
 
 def shared_folder():
     return os.path.join(instance_unique_path(), "shared")
@@ -30,7 +30,7 @@ def delete():
     # notify daemon stopped
     sync(2)
 
-    shutil.rmtree(shared_folder())
+    rm_rf(shared_folder())
 
     # wait for folder to be left
     sync(3)

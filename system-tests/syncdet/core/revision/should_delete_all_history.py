@@ -1,6 +1,6 @@
 import os
-import shutil
 from lib import ritual
+from lib.app.install import rm_rf
 from syncdet.case.sync import sync
 from syncdet.case.assertion import assertEqual
 from lib.files import instance_unique_path, wait_file_with_content, wait_path_to_disappear
@@ -29,7 +29,7 @@ def creator():
 
     sync(0)
 
-    shutil.rmtree(instance_unique_path())
+    rm_rf(instance_unique_path())
 
     sync(1)
 

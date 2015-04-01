@@ -3,11 +3,11 @@ Check that case-conflicted files and folders are deleted when the parent folder 
 """
 
 import os
-import shutil
 from syncdet.case.assertion import assertFalse
 from lib.files import instance_unique_path, wait_dir
 from . import mkspec, instance_path
 from lib.network_partition import GlobalNetworkPartition
+from lib.app.install import rm_rf
 from lib import ritual
 from syncdet.case.sync import sync
 
@@ -21,7 +21,7 @@ def observer():
     sync('files')
 
     with GlobalNetworkPartition():
-        shutil.rmtree(instance_unique_path())
+        rm_rf(instance_unique_path())
 
         r.wait_path_to_disappear(instance_unique_path())
 

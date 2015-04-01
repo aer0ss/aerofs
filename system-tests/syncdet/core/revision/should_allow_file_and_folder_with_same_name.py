@@ -4,9 +4,9 @@ for a given name
 """
 
 import os
-import shutil
 import time
 from lib import ritual
+from lib.app.install import rm_rf
 from common import RevisionTest
 from syncdet.case import sync
 from syncdet.case.assertion import assertEqual
@@ -102,10 +102,7 @@ class _ShouldAllowFileAndFolderWithSameNameTestModifier(_ShouldAllowFileAndFolde
 
     def _remove_or_wait_for_path(self, path):
         """ We remove the path """
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
+        rm_rf(path)
 
 class _ShouldAllowFileAndFolderWithSameNameTestObserver(_ShouldAllowFileAndFolderWithSameNameTest):
     """ The Observer in the test waits for files and contains the Revision History """

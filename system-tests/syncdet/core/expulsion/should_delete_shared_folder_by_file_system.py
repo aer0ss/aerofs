@@ -5,7 +5,8 @@ Ritual's expulsion api.
 
 """
 import os
-import shutil
+
+from lib.app.install import rm_rf
 
 from syncdet.case.assertion import assertFalse
 from syncdet.case import sync
@@ -29,7 +30,7 @@ def deleter():
     # wait until the shared folder has been received
     sync.sync(0)
 
-    shutil.rmtree(files.instance_unique_path())
+    rm_rf(files.instance_unique_path())
 
     r.wait_path_to_disappear(files.instance_unique_path())
     assertFalse(os.path.exists(files.instance_unique_path()))
