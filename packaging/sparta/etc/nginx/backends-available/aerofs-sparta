@@ -2,7 +2,7 @@
 # NB: regexp match take precendence over prefix match
 # which allows us to leave the havre-related config blissfully
 # unaware of this mess
-location ~* /api/v[0-9]+\.[0-9]+/(users|shares|devices) {
+location ~* /api/v[0-9]+\.[0-9]+/(users|shares|devices|organizations) {
     # Implement wide-open CORS support
     #
     # If the request method is OPTIONS and the Access-Control-Request-Method header is a

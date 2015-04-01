@@ -410,7 +410,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{id}/pending/{email}")
-    public Response getPendingMember(@Auth IUserAuthToken token,
+    public Response getPendingMember(@Auth IAuthToken token,
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user)
             throws SQLException, ExNotFound
@@ -533,17 +533,18 @@ public class SharedFolderResource extends AbstractSpartaResource
     @Since("1.3")
     @GET
     @Path("/{id}/urls")
-    public Response listURLs(@Auth IUserAuthToken token,
+    public Response listURLs(@Auth IAuthToken token,
             @PathParam("id") SharedFolder sf)
             throws ExNotFound, ExNoPerm, SQLException
     {
-        requirePermissionOnFolder(Scope.READ_ACL, token, sf.id());
-        User caller = _factUser.create(token.user());
+        User caller = validateAuth(token, Scope.READ_ACL, sf);
 
         // FIXME: that seems overly restrictive
         // surely it would be good for users to know which files have been shared via links
         // even if they can't create/remove/edit links in this shared folder
-        sf.throwIfNoPrivilegeToChangeACL(caller);
+        if (caller != null) {
+            sf.throwIfNoPrivilegeToChangeACL(caller);
+        }
 
         // TODO: etag support
         List<com.aerofs.rest.api.UrlShare> urls = Lists.newArrayList();

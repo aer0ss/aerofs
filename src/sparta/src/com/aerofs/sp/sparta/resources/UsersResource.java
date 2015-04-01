@@ -118,7 +118,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.1")
     @GET
     @Path("/{email}")
-    public Response get(@Auth IUserAuthToken token,
+    public Response get(@Auth IAuthToken token,
             @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
