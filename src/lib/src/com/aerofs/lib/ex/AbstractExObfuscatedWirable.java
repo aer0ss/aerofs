@@ -6,7 +6,7 @@ package com.aerofs.lib.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
+import com.aerofs.lib.formatted.FormattedMessage;
 import com.aerofs.proto.Common.PBException;
 
 abstract class AbstractExObfuscatedWirable extends AbstractExWirable implements IExObfuscated
@@ -23,7 +23,7 @@ abstract class AbstractExObfuscatedWirable extends AbstractExWirable implements 
 
     protected AbstractExObfuscatedWirable(FormattedMessage message)
     {
-        super(message._obfuscated);
+        super(message._internal);
         _plainTextMessage = message._plainText;
     }
 

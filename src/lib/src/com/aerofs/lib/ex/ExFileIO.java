@@ -5,8 +5,8 @@
 package com.aerofs.lib.ex;
 
 import com.aerofs.base.ex.IExObfuscated;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
+import com.aerofs.lib.formatted.MessageFormatters;
+import com.aerofs.lib.formatted.FormattedMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,17 +33,17 @@ import java.io.IOException;
      */
     public ExFileIO(String message, File... files)
     {
-        this(ObfuscatingFormatters.formatFileMessage(message, files));
+        this(MessageFormatters.formatFileMessage(message, files));
     }
 
     public ExFileIO(String message, Iterable<File> files)
     {
-        this(ObfuscatingFormatters.formatFileMessage(message, files));
+        this(MessageFormatters.formatFileMessage(message, files));
     }
 
     private ExFileIO(FormattedMessage formattedMessage)
     {
-        super(formattedMessage._obfuscated);
+        super(formattedMessage._internal);
         _plainTextMessage = formattedMessage._plainText;
     }
 

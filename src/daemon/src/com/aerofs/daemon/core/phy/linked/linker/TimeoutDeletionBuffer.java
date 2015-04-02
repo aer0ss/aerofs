@@ -20,7 +20,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -361,7 +360,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
             if (physicalObjectDisappeared(oa)) {
                 l.info("delete {} {}", soid,
-                        ObfuscatingFormatters.obfuscatePath(oa.name()));
+                        oa.name());
                 _od.delete_(soid, PhysicalOp.MAP, t);
             }
             return true;

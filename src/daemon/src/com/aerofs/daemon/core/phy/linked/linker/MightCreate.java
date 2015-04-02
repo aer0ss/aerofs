@@ -20,7 +20,6 @@ import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.os.IOSUtil;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -201,8 +200,8 @@ public class MightCreate
         if (sourcePath != null && detectHardLink_(sourcePath, targetPath, fnt._fid)) {
             // TODO: report to UI
             l.info("ignore hardlink {}<->{}",
-                    ObfuscatingFormatters.obfuscatePath(sourcePath),
-                    ObfuscatingFormatters.obfuscatePath(targetPath));
+                    sourcePath,
+                    targetPath);
             return Result.IGNORED;
         }
 

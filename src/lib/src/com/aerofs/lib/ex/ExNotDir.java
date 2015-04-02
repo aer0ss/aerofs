@@ -1,6 +1,6 @@
 package com.aerofs.lib.ex;
 
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.aerofs.lib.formatted.MessageFormatters;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
@@ -17,7 +17,7 @@ public class ExNotDir extends AbstractExObfuscatedWirable
 
     public ExNotDir(String message, File file)
     {
-        super(ObfuscatingFormatters.formatFileMessage(message, file));
+        super(MessageFormatters.formatFileMessage(message, file));
     }
 
     public ExNotDir(PBException pb)

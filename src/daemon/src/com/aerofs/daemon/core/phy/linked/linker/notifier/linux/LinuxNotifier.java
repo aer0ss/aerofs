@@ -12,7 +12,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.injectable.InjectableJNotify;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -579,7 +578,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
     private IEvent mightCreate(LinkerRoot root, String path, RescanSubtree rescanSubtree)
     {
         if (l.isDebugEnabled()) {
-            l.debug("mightCreate(" + ObfuscatingFormatters.obfuscatePath(path) + ")");
+            l.debug("mightCreate({})", path);
         }
         return new EIMightCreateNotification(root, path, rescanSubtree);
     }
@@ -587,7 +586,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
     private IEvent mightDelete(LinkerRoot root, String path)
     {
         if (l.isDebugEnabled()) {
-            l.debug("mightDelete(" + ObfuscatingFormatters.obfuscatePath(path) + ")");
+            l.debug("mightDelete({})", path);
         }
         return new EIMightDeleteNotification(root, path);
     }

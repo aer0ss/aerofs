@@ -18,7 +18,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.aerofs.lib.formatted.MessageFormatters;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
@@ -148,8 +148,8 @@ public class SanityPoller
         if (f.getUsableSpace() == 0L || f.getFreeSpace() == 0L) {
             // FIXME(AT) logging is probably not the best idea when the disk is full for real.
             // but I want these information to further investigate the above issue.
-            l.warn(ObfuscatingFormatters.formatFileMessage("full disk detected at {}",
-                    f)._obfuscated);
+            l.warn(MessageFormatters.formatFileMessage("full disk detected at {}",
+                    f)._internal);
             l.info("usable: {}", f.getUsableSpace());
             l.info("free: {}", f.getFreeSpace());
             l.info("total: {}", f.getTotalSpace());

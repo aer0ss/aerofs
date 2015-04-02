@@ -13,7 +13,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -102,7 +101,7 @@ public class ScanSessionQueue implements IDumpStatMisc
             return FluentIterable.from(ImmutableSet.copyOf(_absPaths))
                     .transform(path -> {
                         if (path != null) {
-                            return ObfuscatingFormatters.obfuscatePath(path);
+                            return path;
                         }
                         return null;
                     })

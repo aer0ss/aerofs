@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -50,12 +49,12 @@ public class PathCombo implements Comparable<PathCombo>
     }
 
     /**
-     * @return obfuscated path string
+     * @return path string
      */
     @Override
     public String toString()
     {
-        return ObfuscatingFormatters.obfuscatePath(_path);
+        return _path.toString();
     }
 
     @Override

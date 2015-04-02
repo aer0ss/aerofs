@@ -7,8 +7,8 @@ package com.aerofs.lib.ex;
 import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.aerofs.lib.formatted.FormattedMessage;
+import com.aerofs.lib.formatted.MessageFormatters;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,17 +30,17 @@ public class ExFileNotFound extends FileNotFoundException implements IExObfuscat
 
     public ExFileNotFound(File file)
     {
-        this(ObfuscatingFormatters.formatFileMessage("file {} not found", file));
+        this(MessageFormatters.formatFileMessage("file {} not found", file));
     }
 
     public ExFileNotFound(Path path)
     {
-        this(ObfuscatingFormatters.formatPathMessage("path {} not found", path));
+        this(MessageFormatters.formatPathMessage("path {} not found", path));
     }
 
     private ExFileNotFound(FormattedMessage formattedMessage)
     {
-        super(formattedMessage._obfuscated);
+        super(formattedMessage._internal);
         _plainTextMessage = formattedMessage._plainText;
     }
 

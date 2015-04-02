@@ -48,7 +48,6 @@ import static com.aerofs.daemon.core.ds.OA.Type.DIR;
 import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
-import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.obfuscatePath;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -249,7 +248,7 @@ class MightCreateOperations
             break;
         }
 
-        l.info("move for confict {} {}->{}", oa.soid(), pc, obfuscatePath(name));
+        l.info("move for confict {} {}->{}", oa.soid(), pc, name);
 
         // randomize FID in case of conflict
         FID fidTarget = oa.fid();
@@ -321,7 +320,7 @@ class MightCreateOperations
 
 
             // move the logical object
-            l.info("move {} {}->{}", soid, obfuscatePath(pLogical), obfuscatePath(pPhysical));
+            l.info("move {} {}->{}", soid, pLogical, pPhysical);
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
