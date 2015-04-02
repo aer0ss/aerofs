@@ -158,3 +158,16 @@ subprojects {
     task deps(type: DependencyReportTask) {}
 }
 
+apply plugin: "idea"
+idea {
+    module {
+        excludeDirs = []
+        excludeDirs << file(".gradle")
+        excludeDirs << file("approot")
+        excludeDirs << file("resource")
+        excludeDirs << file("out.gradle")
+        excludeDirs << file("out.shell")
+        excludeDirs << file("out.idea")
+        excludeDirs << file("packaging/build")
+    }
+}
