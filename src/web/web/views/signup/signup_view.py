@@ -4,16 +4,18 @@ Basic unit tests for each view so that we can catch stupid errors such as
 missing import statements.
 """
 import logging
+import json
 from pyramid.httpexceptions import HTTPBadRequest, HTTPFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
+from pyramid.response import Response
 
 from aerofs_common.exception import ExceptionReply
 import aerofs_sp.gen.common_pb2 as common
 from web.sp_util import exception2error
 
 from web.error import error
-from web.util import get_error, get_rpc_stub, is_private_deployment, is_valid_password
+from web.util import get_error, get_rpc_stub, is_private_deployment, is_valid_password, send_sales_email
 from web.views.login.login_view import URL_PARAM_EMAIL, URL_PARAM_PASSWORD, \
         URL_PARAM_REMEMBER_ME
 from web.login_util import URL_PARAM_NEXT
@@ -166,6 +168,37 @@ def json_request_to_sign_up(request):
         common.PBException.NO_PERM: _("The first user has been created. New users "
                                       "can be created only by invitations from existing users.")
     })
+
+
+@view_config(
+    route_name='json.business_inquiry',
+    renderer='json',
+    permission=NO_PERMISSION_REQUIRED
+    )
+def json_business_inquiry(request):
+    body = u''
+    for key in request.params:
+        body += "{}: {}\n".format(key, request.params[key])
+    send_sales_email('webform@aerofs.com',
+        "[BUSINESS_USER] Contact inquiry from {}".format(
+        request.params['email']), body)
+
+    r = Response(status=200)
+    r.body = json.dumps({
+        'email': request.params['email'],
+        'first_name': request.params['first_name'],
+        'last_name': request.params['last_name'],
+        'company': request.params['org_name'],
+        'title': request.params['title'],
+        'employees': request.params['org_size'],
+        'comment': request.params['comment'],
+        'phone': request.params['phone'],
+    })
+    # use for testing from the static site only
+    # r.headerlist = {'Access-Control-Allow-Origin': '*'}
+
+    return r
+
 
 
 @view_config(

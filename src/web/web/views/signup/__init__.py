@@ -12,3 +12,4 @@ def includeme(config):
         # in bunker.
         'create_first_user'
     ])
+    config.add_route('json.business_inquiry', 'business_inquiry')
