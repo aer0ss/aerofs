@@ -47,7 +47,7 @@ dependencies {
     compile 'ch.qos.logback:logback-classic:1.1.+'
     compile 'commons-lang:commons-lang:2.6'
     compile 'com.aerofs:sqlite-jdbc:3.8.7'
-    compile 'com.aerofs:jnotify:0.95'
+    compile 'com.aerofs:jnotify:0.96'
     compile 'com.aerofs:aerofsd:0.1.0'
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'

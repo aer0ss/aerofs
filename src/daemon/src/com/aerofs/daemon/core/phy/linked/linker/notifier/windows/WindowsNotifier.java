@@ -5,8 +5,10 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import net.contentobjects.jnotify.win32.IWin32NotifyListener;
 import net.contentobjects.jnotify.win32.JNotify_win32;
@@ -54,7 +56,7 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
                         JNotify_win32.FILE_NOTIFY_CHANGE_ATTRIBUTES |
                         JNotify_win32.FILE_NOTIFY_CHANGE_SIZE |
                         JNotify_win32.FILE_NOTIFY_CHANGE_LAST_WRITE |
-                             // We don't care about last access time.
+                        // We don't care about last access time.
                         //JNotify_win32.FILE_NOTIFY_CHANGE_LAST_ACCESS |
                         JNotify_win32.FILE_NOTIFY_CHANGE_CREATION |
                         JNotify_win32.FILE_NOTIFY_CHANGE_SECURITY, true);
@@ -83,12 +85,20 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
     }
 
     @Override
-    public void notifyChange(int watchID, int action, String root, String name)
+    public void notifyChange(int watchID, int action, String name)
     {
+        LinkerRoot lr = _id2root.get(watchID);
+        // avoid race condition between FS notification and root removal
+        if (lr == null) {
+            l.debug("ignore notif for removed root {}", watchID);
+            return;
+        }
+        String root = lr.absRootAnchor();
+
         logEvent(watchID, action, root, name);
 
         if (!Linker.isInternalPath(name)) {
-            IEvent event = buildMightCreateOrMightDelete(watchID, action, root, name);
+            IEvent event = buildMightCreateOrMightDelete(lr, action, root, name);
             // We need to do the enqueueing without holding the object lock as some core threads
             // may add new roots as part of a transaction and that would cause a deadlock...
             if (event != null) {
@@ -115,16 +125,15 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
         case JNotify_win32.FILE_ACTION_RENAMED_NEW_NAME:
             l.debug("winnotify: RENAMED_NEW_NAME {}: {} {}", watchID, root, name);
             break;
+        case JNotify_win32.FILE_ACTION_QUEUE_OVERFLOW:
+            l.debug("winnotify: QUEUE_OVERFLOW {}: {}", watchID, root);
+            break;
         }
     }
 
-    private IEvent buildMightCreateOrMightDelete(int watchID, int action, String root,
+    private IEvent buildMightCreateOrMightDelete(LinkerRoot lr, int action, String root,
             String name)
     {
-        LinkerRoot lr = _id2root.get(watchID);
-        // avoid race condition between FS notification and root removal
-        if (lr == null) return null;
-
         switch (action) {
         case JNotify_win32.FILE_ACTION_ADDED:
             return mightCreate(lr, root, name);
@@ -136,6 +145,14 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
             return mightDelete(lr, root, name);
         case JNotify_win32.FILE_ACTION_RENAMED_NEW_NAME:
             return mightCreate(lr, root, name);
+        case JNotify_win32.FILE_ACTION_QUEUE_OVERFLOW:
+            return new AbstractEBSelfHandling() {
+                @Override
+                public void handle_()
+                {
+                    lr.scanImmediately_(ImmutableSet.of(root), true);
+                }
+            };
         default:
             Preconditions.checkState(false, "unknown notification type from jnotify");
             return null;

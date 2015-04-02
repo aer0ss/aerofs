@@ -148,8 +148,11 @@ subprojects {
     //-------------------------------------------------------------------------
     // tasks
     //-------------------------------------------------------------------------
+    task cleanDist(type: Delete) {
+        delete "${buildDir}/dist"
+    }
 
-    task dist(type: Copy, description: "Assemble all runtime dependencies for ${name}") {
+    task dist(type: Copy, dependsOn:cleanDist, description: "Assemble all runtime dependencies for ${name}") {
         from configurations.runtime
         from jar
         into "${buildDir}/dist"

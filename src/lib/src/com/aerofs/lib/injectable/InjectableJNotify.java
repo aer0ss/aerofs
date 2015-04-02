@@ -1,5 +1,6 @@
 package com.aerofs.lib.injectable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.os.OSUtil;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.linux.INotifyListener;
@@ -25,7 +26,7 @@ public class InjectableJNotify
 
     public void win32_setLogFile(String path)
     {
-        JNotify_win32.initLogger(path);
+        JNotify_win32.initLogger(path, Loggers.getLogger(InjectableJNotify.class).isTraceEnabled());
     }
 
     public void win32_setNotifyListener(IWin32NotifyListener l)
