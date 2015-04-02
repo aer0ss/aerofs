@@ -78,9 +78,20 @@ def get_teamserver_unattended_setup_dict():
         d.update({
             's3_access_key': details['s3_access_key'],
             's3_bucket_id': details['s3_bucket_id'],
-            's3_encryption_password': details['s3_encryption_password'],
-            's3_secret_key': details['s3_secret_key']
+            's3_secret_key': details['s3_secret_key'],
         })
+    if details['storage_type'] == 'SWIFT':
+        d.update({
+            'swift_auth_mode': details['swift_auth_mode'],
+            'swift_username': details['swift_username'],
+            'swift_password': details['swift_password'],
+            'swift_url': details['swift_url'],
+            'swift_container': details['swift_container'],
+            })
+    # Remote storage backends
+    if details['storage_type'] in ['S3', 'SWIFT']:
+        d.update({'remote_storage_encryption_password': details['remote_storage_encryption_password']})
+
     return d
 
 

@@ -6,16 +6,14 @@ package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.daemon.core.phy.block.encrypted.EncryptedBackend;
 import com.aerofs.lib.ContentBlockHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
-import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.log.LogUtil;
 import com.amazonaws.AmazonClientException;
@@ -30,50 +28,30 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import javax.crypto.SecretKey;
 import java.io.*;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 
 import static com.google.common.base.Preconditions.checkState;
 
 /**
  * BlockStorage backend based on Amazon S3
- *
- * The blocks are transparently encrypted locally before on the way to remote storage and
- * transparently decrypted on the way back.
  */
-public class S3Backend implements IBlockStorageBackend
+public class S3Backend extends EncryptedBackend
 {
     private static final Logger l = Loggers.getLogger(S3Backend.class);
 
-    private static final String BLOCK_SUFFIX = ".chunk.gz.aes";
-
     private final AmazonS3 _s3Client;
     private final S3BucketIdConfig _s3BucketIdConfig;
-    private final S3CryptoConfig _s3CryptoConfig;
-
-    private SecretKey _secretKey;
 
     @Inject
     public S3Backend(AmazonS3 s3Client, S3BucketIdConfig s3BucketIdConfig,
-            S3CryptoConfig s3CryptoConfig)
+            S3Config.CryptoConfig cryptoConfig)
     {
+        super(cryptoConfig);
         _s3Client = s3Client;
         _s3BucketIdConfig = s3BucketIdConfig;
-        _s3CryptoConfig = s3CryptoConfig;
-    }
-
-    @Override
-    public void init_() throws IOException
-    {
-        try {
-            _secretKey = _s3CryptoConfig.getSecretKey();
-        } catch (NoSuchAlgorithmException|InvalidKeySpecException e) {
-            ExitCode.S3_BAD_CREDENTIALS.exit();
-        }
     }
 
     @Override
@@ -87,18 +65,6 @@ public class S3Backend implements IBlockStorageBackend
             throw new IOException(e);
         }
         return wrapForDecoding(o.getObjectContent());
-    }
-
-    private InputStream wrapForDecoding(InputStream in) throws IOException
-    {
-        boolean ok = false;
-        try {
-            in = new CipherFactory(_secretKey).decryptingHmacedInputStream(in);
-            ok = true;
-            return in;
-        } finally {
-            if (!ok) in.close();
-        }
     }
 
     /**
@@ -314,7 +280,7 @@ public class S3Backend implements IBlockStorageBackend
     {
         String prefix = _s3BucketIdConfig.getS3DirPath();
         if (!prefix.isEmpty() && prefix.charAt(prefix.length() - 1) != '/') prefix += '/';
-        return prefix + "chunks/";
+        return prefix + BLOCK_DIR;
     }
 
     private String getBlockKey(String baseKey)

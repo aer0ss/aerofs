@@ -13,8 +13,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
-import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
-import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.testlib.UnitTestTempDir;
 
 public class S3TestConfig
@@ -48,8 +46,8 @@ public class S3TestConfig
         return _s3BucketIdConfig;
     }
 
-    private S3EncryptionPasswordConfig _s3EncryptionPasswordConfig =
-            new S3EncryptionPasswordConfig() {
+    private S3Config.EncryptionPasswordConfig _encryptionPasswordConfig =
+            new S3Config.EncryptionPasswordConfig() {
         @Override
         public char[] getPassword()
         {
@@ -57,19 +55,19 @@ public class S3TestConfig
         }
     };
 
-    public S3EncryptionPasswordConfig getS3EncryptionPasswordConfig()
+    public S3Config.EncryptionPasswordConfig getS3EncryptionPasswordConfig()
     {
-        return _s3EncryptionPasswordConfig;
+        return _encryptionPasswordConfig;
     }
 
-    private S3CryptoConfig _s3CryptoConfig;
+    private S3Config.CryptoConfig _cryptoConfig;
     {
-        _s3CryptoConfig = new S3CryptoConfig(_s3EncryptionPasswordConfig);
+        _cryptoConfig = new S3Config.CryptoConfig(_encryptionPasswordConfig);
     }
 
-    public S3CryptoConfig getS3CryptoConfig()
+    public S3Config.CryptoConfig getS3CryptoConfig()
     {
-        return _s3CryptoConfig;
+        return _cryptoConfig;
     }
 
     private AmazonS3 _s3Client;

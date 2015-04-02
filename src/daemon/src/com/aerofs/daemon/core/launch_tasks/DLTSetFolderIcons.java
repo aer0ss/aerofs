@@ -83,8 +83,8 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
         // don't update icons on Linux
         if (OSUtil.isLinux()) return;
 
-        // don't set any folder icons if we are using S3 storage.
-        if (_cfgStorageType.get() == StorageType.S3) return;
+        // don't set any folder icons if we are using S3/SWIFT storage.
+        if (_cfgStorageType.get().isRemote()) return;
 
         l.info("Setting folder icons.");
 

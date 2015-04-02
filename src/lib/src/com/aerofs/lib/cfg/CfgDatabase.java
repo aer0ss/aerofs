@@ -96,7 +96,16 @@ public class CfgDatabase
         S3_BUCKET_ID("s3_bucket_id", null),
         // This field stores scrypt of the password provided by the user, salted by user id.
         // i.e. value = base64(scrypt(password|user))
-        S3_ENCRYPTION_PASSWORD("s3_encryption_password", null),
+        STORAGE_ENCRYPTION_PASSWORD("remote_storage_encryption_password", null),
+        // Old name for the encryption password
+        S3_LEGACY_ENCRYPTION_PASSWORD("s3_encryption_password", null),
+
+        // Config for Swift
+        SWIFT_AUTHMODE("swift_auth_mode", null),
+        SWIFT_USERNAME("swift_username", null),
+        SWIFT_PASSWORD("swift_password", null),
+        SWIFT_URL("swift_url", null),
+        SWIFT_CONTAINER("swift_container", "aerofs"),
 
         CONTACT_EMAIL("contact_email", ""),
 

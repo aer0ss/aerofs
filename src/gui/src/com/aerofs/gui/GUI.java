@@ -505,7 +505,7 @@ public class GUI implements IUI
             unattendedSetup.populateModelFromSetupFile(model);
 
             if (L.isMultiuser()) {
-                if (model._storageType == StorageType.S3) {
+                if (model._storageType.isRemote()) {
                     model._isLocal = false;
                 } else {
                     model._isLocal = true;

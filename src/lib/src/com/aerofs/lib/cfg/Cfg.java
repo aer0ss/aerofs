@@ -366,8 +366,8 @@ public class Cfg
     {
         return L.isMultiuser()
                 ? (_db.getNullable(Key.S3_BUCKET_ID) != null
-                           ? StorageType.S3
-                           : StorageType.LOCAL)
+                    ? StorageType.S3
+                        : StorageType.LOCAL)
                 : StorageType.LINKED;
     }
 

@@ -63,7 +63,7 @@ JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'
 S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
               's3_secret_key': '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',
-              's3_encryption_password': 'password'}
+              'remote_storage_encryption_password': 'password'}
 
 ADMIN_USERID = 'admin@syncfs.com'
 ADMIN_PASS = 'temp123'

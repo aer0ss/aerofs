@@ -1,15 +1,11 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-
-import javax.crypto.SecretKey;
-
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.google.inject.Inject;
 
-public class S3Config
+import com.aerofs.daemon.core.phy.block.encrypted.BackendConfig;
+
+public class S3Config extends BackendConfig
 {
     private S3Config() {}
 
@@ -52,53 +48,6 @@ public class S3Config
             assert !value.endsWith("/");
 
             return value;
-        }
-}
-
-    public static interface S3EncryptionPasswordConfig
-    {
-        public char[] getPassword();
-
-        public static class S3EncryptionPasswordFromDB implements S3EncryptionPasswordConfig
-        {
-            private final CfgDatabase _db;
-
-            @Inject
-            public S3EncryptionPasswordFromDB(CfgDatabase db)
-            {
-                _db = db;
-            }
-
-            @Override
-            public char[] getPassword()
-            {
-                return _db.get(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD).toCharArray();
-            }
-        }
-    }
-
-    public static class S3CryptoConfig
-    {
-        private final S3EncryptionPasswordConfig _passwordConfig;
-        private SecretKey _secretKey;
-
-        @Inject
-        public S3CryptoConfig(S3EncryptionPasswordConfig passConfig)
-        {
-            _passwordConfig = passConfig;
-        }
-
-        public synchronized SecretKey getSecretKey()
-                throws NoSuchAlgorithmException, InvalidKeySpecException
-        {
-            if (_secretKey == null) {
-                // Drew: we're doing some sorta interesting things to go from password ->
-                // scrypt(password) -> base64(scrypt(password)) -> PBKDF2(base64(scrypt(password))) to
-                // get the actual AES key. I'd say we can safely drop the PBKDF2 bit and just
-                // base64-decode the output of scrypt.
-                _secretKey = SecUtil.getAESSecretKey(_passwordConfig.getPassword(), true);
-            }
-            return _secretKey;
         }
     }
 }

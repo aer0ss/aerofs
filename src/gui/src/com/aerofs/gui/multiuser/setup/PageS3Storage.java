@@ -73,7 +73,7 @@ public class PageS3Storage extends AbstractSetupWorkPage
         Composite compConfig = createConfigurationComposite(content);
 
         Label lblPassDesc = createLabel(content, SWT.WRAP);
-        lblPassDesc.setText(S.SETUP_S3_PASSWD_DESC);
+        lblPassDesc.setText(S.SETUP_STORAGE_PASSWD_DESC);
 
         Composite compPassphrase = createPassphraseComposite(content);
 
@@ -206,11 +206,11 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void readFromModel(SetupModel model)
     {
-        _txtEndpoint.setText(Objects.firstNonNull(model._s3Config._endpoint,
+        _txtEndpoint.setText(Objects.firstNonNull(model._backendConfig._s3Config._endpoint,
                 LibParam.DEFAULT_S3_ENDPOINT));
-        _txtBucketName.setText(Objects.firstNonNull(model._s3Config._bucketID, ""));
-        _txtAccessKey.setText(Objects.firstNonNull(model._s3Config._accessKey, ""));
-        _txtSecretKey.setText(Objects.firstNonNull(model._s3Config._secretKey, ""));
+        _txtBucketName.setText(Objects.firstNonNull(model._backendConfig._s3Config._bucketID, ""));
+        _txtAccessKey.setText(Objects.firstNonNull(model._backendConfig._s3Config._accessKey, ""));
+        _txtSecretKey.setText(Objects.firstNonNull(model._backendConfig._s3Config._secretKey, ""));
         // do not load the pass-phrase
 
         validateInput();
@@ -219,11 +219,11 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void writeToModel(SetupModel model)
     {
-        model._s3Config._endpoint = _txtEndpoint.getText().trim();
-        model._s3Config._bucketID = _txtBucketName.getText().trim();
-        model._s3Config._accessKey = _txtAccessKey.getText();
-        model._s3Config._secretKey = _txtSecretKey.getText();
-        model._s3Config._passphrase = _txtPass1.getText();
+        model._backendConfig._s3Config._endpoint = _txtEndpoint.getText().trim();
+        model._backendConfig._s3Config._bucketID = _txtBucketName.getText().trim();
+        model._backendConfig._s3Config._accessKey = _txtAccessKey.getText();
+        model._backendConfig._s3Config._secretKey = _txtSecretKey.getText();
+        model._backendConfig._passphrase = _txtPass1.getText();
     }
 
     @Override

@@ -10,7 +10,8 @@ public enum StorageType
 {
     LINKED(S.LINKED_DESCRIPTION),
     LOCAL(S.LOCAL_DESCRIPTION),
-    S3(S.S3_DESCRIPTION);
+    S3(S.S3_DESCRIPTION),
+    SWIFT(S.SWIFT_DESCRIPTION);
 
     private final String _description;
 
@@ -33,5 +34,8 @@ public enum StorageType
     {
         return v != null ? valueOf(v) : null;
     }
-}
 
+    public boolean isRemote() {
+        return (this == S3 || this == SWIFT);
+    }
+}

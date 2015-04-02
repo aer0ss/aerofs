@@ -7,7 +7,7 @@ import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SetupModel.S3Config;
+import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdCLIActor;
 import com.aerofs.controller.UnattendedSetup;
@@ -125,14 +125,16 @@ public class CLISetup
             getDeviceName(cli);
             getStorageType(cli);
             if (_model._storageType == StorageType.S3) {
-                getS3Config(cli, _model._s3Config);
+                getS3Config(cli, _model._backendConfig);
+            } else if (_model._storageType == StorageType.SWIFT) {
+                getSwiftConfig(cli, _model._backendConfig);
             } else {
                 getRootAnchor(cli);
             }
             getAPIAccess(cli);
         }
 
-        if (_model._storageType == StorageType.S3) {
+        if (_model._storageType.isRemote()) {
             _model._isLocal = false;
         } else {
             _model._isLocal = true;
@@ -211,23 +213,46 @@ public class CLISetup
         _model.setDeviceName(cli.askText(S.SETUP_DEV_ALIAS, _model.getDeviceName()));
     }
 
-    private void getS3Config(CLI cli, S3Config cfg) throws ExNoConsole
+    private void getS3Config(CLI cli, BackendConfig cfg) throws ExNoConsole
     {
-        while (cfg._endpoint == null || cfg._endpoint.isEmpty()) {
-            cfg._endpoint = cli.askText(S.SETUP_S3_ENDPOINT, LibParam.DEFAULT_S3_ENDPOINT);
+        while (cfg._s3Config._endpoint == null || cfg._s3Config._endpoint.isEmpty()) {
+            cfg._s3Config._endpoint = cli.askText(S.SETUP_S3_ENDPOINT, LibParam.DEFAULT_S3_ENDPOINT);
         }
-        while (cfg._bucketID == null || cfg._bucketID.isEmpty()) {
-            cfg._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
+        while (cfg._s3Config._bucketID == null || cfg._s3Config._bucketID.isEmpty()) {
+            cfg._s3Config._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
         }
-        while (cfg._accessKey == null || cfg._accessKey.isEmpty()) {
-            cfg._accessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
+        while (cfg._s3Config._accessKey == null || cfg._s3Config._accessKey.isEmpty()) {
+            cfg._s3Config._accessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
         }
-        while (cfg._secretKey == null || cfg._secretKey.isEmpty()) {
-            cfg._secretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
+        while (cfg._s3Config._secretKey == null || cfg._s3Config._secretKey.isEmpty()) {
+            cfg._s3Config._secretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
         }
         while (cfg._passphrase == null || cfg._passphrase.length() == 0) {
             cfg._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
-                    S.SETUP_S3_ENCRYPTION_PASSWORD));
+                    S.SETUP_STORAGE_ENCRYPTION_PASSWORD));
+        }
+    }
+
+    private void getSwiftConfig(CLI cli, BackendConfig cfg) throws ExNoConsole
+    {
+        while (cfg._swiftConfig._authMode == null || cfg._swiftConfig._authMode.isEmpty()) {
+            cfg._swiftConfig._authMode = cli.askText(S.SETUP_SWIFT_AUTH_MODE, null);
+        }
+        while (cfg._swiftConfig._url == null || cfg._swiftConfig._url.isEmpty()) {
+            cfg._swiftConfig._url = cli.askText(S.SETUP_SWIFT_URL, null);
+        }
+        while (cfg._swiftConfig._username == null || cfg._swiftConfig._username.isEmpty()) {
+            cfg._swiftConfig._username = cli.askText(S.SETUP_SWIFT_USERNAME, null);
+        }
+        while (cfg._swiftConfig._password == null || cfg._swiftConfig._password.isEmpty()) {
+            cfg._swiftConfig._password = cli.askText(S.SETUP_SWIFT_PASSWORD, null);
+        }
+        while (cfg._swiftConfig._container == null || cfg._swiftConfig._container.isEmpty()) {
+            cfg._swiftConfig._container = cli.askText(S.SETUP_SWIFT_CONTAINER, null);
+        }
+        while (cfg._passphrase == null || cfg._passphrase.length() == 0) {
+            cfg._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
+                    S.SETUP_STORAGE_ENCRYPTION_PASSWORD));
         }
     }
 

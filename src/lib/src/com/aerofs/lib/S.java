@@ -61,11 +61,24 @@ public class S
             SETUP_STORAGE_LINK       = "<a>Learn more about storage options</a>.",
             SETUP_BTN_INSTALL        = "Install",
 
+            // used in setup Swift storage screen
+            SETUP_SWIFT_CONFIG_DESC    = "AeroFS supports OpenStack Swift storage backend, with basic auth mode.",
+
+            SETUP_SWIFT_URL            = "URL",
+            SETUP_SWIFT_AUTH_MODE      = "Authentication Mode",
+            SETUP_SWIFT_USERNAME       = "Username",
+            SETUP_SWIFT_PASSWORD       = "Password",
+            SETUP_SWIFT_CONTAINER      = "Container",
+
+            SETUP_SWIFT_URL_GUI        = SETUP_SWIFT_URL + ":",
+            SETUP_SWIFT_AUTH_MODE_GUI  = SETUP_SWIFT_AUTH_MODE + ":",
+            SETUP_SWIFT_USERNAME_GUI   = SETUP_SWIFT_USERNAME + ":",
+            SETUP_SWIFT_PASSWORD_GUI   = SETUP_SWIFT_PASSWORD + ":",
+            SETUP_SWIFT_CONTAINER_GUI  = SETUP_SWIFT_CONTAINER + ":",
+
             // used in setup S3 storage screen
             SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as " +
                     "Amazon S3, OpenStack Swift, and Cloudian. <a>Learn more</a>.",
-            SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
-                    "used to encrypt your data before sending it to S3:",
             SETUP_S3_ENDPOINT_GUI    = "Endpoint:",
             SETUP_S3_BUCKET_NAME_GUI = "Bucket Name:",
             SETUP_S3_ACCESS_KEY_GUI  = "Access Key:",
@@ -77,9 +90,13 @@ public class S
             SETUP_S3_BUCKET_NAME     = "Bucket name",
             SETUP_S3_ACCESS_KEY      = "Access key",
             SETUP_S3_SECRET_KEY      = "Secret key",
-            S3_ENCRYPTION_PASSWORD   = "Data encryption passphrase",
-            SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
-                " (used to encrypt your data before sending to S3)",
+
+            // Shared strings
+            SETUP_STORAGE_PASSWD_DESC = "Please create an encryption passphrase. This will be " +
+                    "used to encrypt your data before sending it to the storage backend:",
+            STORAGE_ENCRYPTION_PASSWORD = "Data encryption passphrase",
+            SETUP_STORAGE_ENCRYPTION_PASSWORD = "Create an " + STORAGE_ENCRYPTION_PASSWORD +
+                " (used to encrypt your data before sending to the storage backend)",
             SETUP_NOT_ADMIN          = "This account is not an administrator account for the " +
                     "organization. Only administrator accounts can be used to install a Team " +
                     "Server.",
@@ -214,7 +231,8 @@ public class S
             INVITING = "Inviting...",
             LINKED_DESCRIPTION = "Store files on the local disk",
             LOCAL_DESCRIPTION = "Store compressed files on the local disk",
-            S3_DESCRIPTION = "Store files on Amazon S3 or OpenStack Swift",
+            S3_DESCRIPTION = "Store files on Amazon S3",
+            SWIFT_DESCRIPTION = "Store files on OpenStack Swift",
             USERS_DIR = "users",
             SHARED_DIR = "shared",
             URL_ROLES = "https://support.aerofs.com/entries/22831810",

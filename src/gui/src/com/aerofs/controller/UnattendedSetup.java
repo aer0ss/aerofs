@@ -62,15 +62,28 @@ public class UnattendedSetup
 
         model._storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
 
-        String s3BucketId = props.getProperty(Key.S3_BUCKET_ID.keyString());
-        if (s3BucketId != null) {
-            model._s3Config._endpoint = props.getProperty(Key.S3_ENDPOINT.keyString(), LibParam.DEFAULT_S3_ENDPOINT);
-            model._s3Config._bucketID = s3BucketId;
-            model._s3Config._accessKey = props.getProperty(Key.S3_ACCESS_KEY.keyString());
-            model._s3Config._secretKey = props.getProperty(Key.S3_SECRET_KEY.keyString());
-            model._s3Config._passphrase = props.getProperty(Key.S3_ENCRYPTION_PASSWORD.keyString());
+        // External backend
+        model._backendConfig._storageType = model._storageType;
 
-            if (model._storageType == null) model._storageType = StorageType.S3;
+        // Amazon S3
+        if (model._storageType == StorageType.S3) {
+            model._backendConfig._s3Config = new SetupModel.S3Config();
+            model._backendConfig._s3Config._endpoint = props.getProperty(Key.S3_ENDPOINT.keyString(), LibParam.DEFAULT_S3_ENDPOINT);
+            model._backendConfig._s3Config._bucketID = props.getProperty(Key.S3_BUCKET_ID.keyString());
+            model._backendConfig._s3Config._accessKey = props.getProperty(Key.S3_ACCESS_KEY.keyString());
+            model._backendConfig._s3Config._secretKey = props.getProperty(Key.S3_SECRET_KEY.keyString());
+            model._backendConfig._passphrase = props.getProperty(Key.STORAGE_ENCRYPTION_PASSWORD.keyString());
+        }
+
+        // OpenStack Swift
+        if (model._storageType == StorageType.SWIFT) {
+            model._backendConfig._swiftConfig = new SetupModel.SwiftConfig();
+            model._backendConfig._swiftConfig._authMode = props.getProperty(Key.SWIFT_AUTHMODE.keyString());
+            model._backendConfig._swiftConfig._username = props.getProperty(Key.SWIFT_USERNAME.keyString());
+            model._backendConfig._swiftConfig._password = props.getProperty(Key.SWIFT_PASSWORD.keyString());
+            model._backendConfig._swiftConfig._url = props.getProperty(Key.SWIFT_URL.keyString());
+            model._backendConfig._swiftConfig._container = props.getProperty(Key.SWIFT_CONTAINER.keyString());
+            model._backendConfig._passphrase = props.getProperty(Key.STORAGE_ENCRYPTION_PASSWORD.keyString());
         }
     }
 

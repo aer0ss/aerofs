@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.phy.block.cache.CacheBackendModule;
 import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
+import com.aerofs.daemon.core.phy.block.swift.SwiftBackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -178,6 +179,9 @@ public class DaemonProgram implements IProgram
              * leftover from previous installs of S3 client on the same bucket).
              */
             return BlockStorageModules.proxy(new S3BackendModule(),
+                    new CacheBackendModule(), new GZipBackendModule());
+        case SWIFT:
+            return BlockStorageModules.proxy(new SwiftBackendModule(),
                     new CacheBackendModule(), new GZipBackendModule());
         default:
             throw new AssertionError("unsupport storage backend " + storageType);

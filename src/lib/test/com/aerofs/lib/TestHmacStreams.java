@@ -4,8 +4,8 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.base.BaseSecUtil.HmacInputStream;
-import com.aerofs.base.BaseSecUtil.HmacOutputStream;
+import com.aerofs.base.BaseSecUtil.HmacVerifyingInputStream;
+import com.aerofs.base.BaseSecUtil.HmacAppendingOutputStream;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 
@@ -57,7 +57,7 @@ public class TestHmacStreams extends AbstractTest
 
         // Read message back from hmac'd bytestring
         ByteArrayInputStream byte_in = new ByteArrayInputStream(hmaced_message);
-        InputStream in = new HmacInputStream(key, byte_in);
+        InputStream in = new HmacVerifyingInputStream(key, byte_in);
         byte[] dataReadBack = new byte[randomData.length];
         int bytes_read = 0;
         int total_bytes_read = 0;
@@ -86,7 +86,7 @@ public class TestHmacStreams extends AbstractTest
         byte[] data = {0};
         ByteArrayInputStream byte_in = new ByteArrayInputStream(data);
         // This should throw an IOException because the underlying stream has insufficient data.
-        InputStream in = new HmacInputStream(key, byte_in);
+        InputStream in = new HmacVerifyingInputStream(key, byte_in);
         byte[] dataReadBack = new byte[1];
         int bytes_read = 0;
         while(bytes_read != -1) {
@@ -116,7 +116,7 @@ public class TestHmacStreams extends AbstractTest
 
         // Try to read message back from hmac'd bytestring
         ByteArrayInputStream byte_in = new ByteArrayInputStream(hmaced_message);
-        InputStream in = new HmacInputStream(key, byte_in);
+        InputStream in = new HmacVerifyingInputStream(key, byte_in);
         byte[] dataReadBack = new byte[randomData.length];
         int bytes_read = 0;
         int total_bytes_read = 0;
@@ -137,7 +137,7 @@ public class TestHmacStreams extends AbstractTest
     private byte[] hmacit(SecretKey key, byte[] bytes) throws IOException, GeneralSecurityException
     {
         ByteArrayOutputStream byte_out = new ByteArrayOutputStream();
-        OutputStream out = new HmacOutputStream(key, byte_out);
+        OutputStream out = new HmacAppendingOutputStream(key, byte_out);
         out.write(bytes);
         // We shouldn't write the HMAC until we've closed the file.
         byte_out.flush();

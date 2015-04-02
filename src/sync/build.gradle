@@ -20,6 +20,7 @@ sourceSets {
 dependencies {
     compile name: 'smack'
     compile name: 'smackx'
+    compile 'org.javaswift:joss:0.9.8'
     compile 'com.amazonaws:aws-java-sdk-s3:1.9.+'
     compile 'io.netty:netty-codec-http:4.1.+'
     compile 'io.netty:netty-handler:4.1+'

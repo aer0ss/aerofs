@@ -10,7 +10,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.controller.SetupModel.S3Config;
+import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
@@ -32,6 +32,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,7 +91,7 @@ public class Setup
     void setupSingleuser(
             SPBlockingClient client, UserID userId, byte[] scrypted,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3cfg, boolean apiAccess)
+            StorageType storageType, BackendConfig backendConfig, boolean apiAccess)
             throws Exception
     {
         try {
@@ -103,7 +104,7 @@ public class Setup
 
             preSetup(rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, scrypted,
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig, scrypted,
                     client, apiAccess);
 
             UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
@@ -116,16 +117,16 @@ public class Setup
     void setupMultiuser(
             SPBlockingClient client, UserID userId,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3cfg, boolean apiAccess) throws Exception
+            StorageType storageType, BackendConfig backendConfig, boolean apiAccess) throws Exception
     {
         try {
             preSetup(rootAnchorPath, storageType);
 
-            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, client,
+            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig, client,
                     apiAccess);
 
             // Send event for S3 Setup
-            if (s3cfg != null) {
+            if (backendConfig != null && backendConfig._storageType == StorageType.S3) {
                 UIGlobals.analytics().track(SimpleEvents.ENABLE_S3);
             }
             UIGlobals.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
@@ -156,7 +157,7 @@ public class Setup
      * @param sp must have been signed in
      */
     private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3config, byte[] scrypted, SPBlockingClient sp,
+            StorageType storageType, BackendConfig backendConfig, byte[] scrypted, SPBlockingClient sp,
             boolean apiAccess)
             throws Exception
     {
@@ -165,7 +166,7 @@ public class Setup
         DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
         initializeConfiguration(userID, userID.getString(), did, rootAnchorPath, storageType,
-                s3config, scrypted, sp, apiAccess);
+                backendConfig, scrypted, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
 
@@ -173,7 +174,7 @@ public class Setup
     }
 
     private void setupMultiuserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, S3Config s3config, SPBlockingClient sp, boolean apiAccess)
+            StorageType storageType, BackendConfig backendConfig, SPBlockingClient sp, boolean apiAccess)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -186,7 +187,7 @@ public class Setup
                 deviceName, sp);
 
         initializeConfiguration(tsUserId, userID.getString(), tsDID, rootAnchorPath, storageType,
-                s3config, tsScrypted, sp, apiAccess);
+                backendConfig, tsScrypted, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
     }
@@ -282,7 +283,7 @@ public class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, String contactEmail, DID did,
-            String rootAnchorPath, StorageType storageType, S3Config s3config, byte[] scrypted,
+            String rootAnchorPath, StorageType storageType, BackendConfig backendConfig, byte[] scrypted,
             SPBlockingClient userSp, boolean apiAccess)
             throws Exception
     {
@@ -298,13 +299,28 @@ public class Setup
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
         map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         map.put(Key.REST_SERVICE, Boolean.toString(apiAccess));
-        if (s3config != null) {
-            map.put(Key.S3_ENDPOINT, s3config._endpoint);
-            map.put(Key.S3_BUCKET_ID, s3config._bucketID);
-            map.put(Key.S3_ACCESS_KEY, s3config._accessKey);
-            map.put(Key.S3_SECRET_KEY, s3config._secretKey);
-            map.put(Key.S3_ENCRYPTION_PASSWORD, Base64.encodeBytes(
-                    SecUtil.scrypt(s3config._passphrase.toCharArray(), userId)));
+
+        // Register the storage type
+        if (backendConfig != null) {
+            checkState(backendConfig._storageType == storageType);
+            checkState(backendConfig._passphrase != null);
+            map.put(Key.STORAGE_ENCRYPTION_PASSWORD, Base64.encodeBytes(
+                    SecUtil.scrypt(backendConfig._passphrase.toCharArray(), userId)));
+        }
+
+        // Configure specific backends
+        if (storageType == StorageType.S3) {
+            map.put(Key.S3_ENDPOINT, backendConfig._s3Config._endpoint);
+            map.put(Key.S3_BUCKET_ID, backendConfig._s3Config._bucketID);
+            map.put(Key.S3_ACCESS_KEY, backendConfig._s3Config._accessKey);
+            map.put(Key.S3_SECRET_KEY, backendConfig._s3Config._secretKey);
+        }
+        if (storageType == StorageType.SWIFT) {
+            map.put(Key.SWIFT_AUTHMODE, backendConfig._swiftConfig._authMode);
+            map.put(Key.SWIFT_URL, backendConfig._swiftConfig._url);
+            map.put(Key.SWIFT_USERNAME, backendConfig._swiftConfig._username);
+            map.put(Key.SWIFT_PASSWORD, backendConfig._swiftConfig._password);
+            map.put(Key.SWIFT_CONTAINER, backendConfig._swiftConfig._container);
         }
 
         Cfg.recreateSchema_();

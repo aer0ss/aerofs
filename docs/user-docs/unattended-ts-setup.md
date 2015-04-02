@@ -13,14 +13,24 @@
     `storage_type = LINKED` [Preserves folder structure storage]  
     `storage_type = LOCAL` [Uses compressed and deduplicated storage]  
     `storage_type = S3` [Uses compressed and deduplicated storage pn S3]
+    `storage_type = SWIFT` [Uses compressed and deduplicated storage on OpenStack Swift]
 
     **S3 Credentials [Optional - required only if you specified S3 for the storage type]:**
 
-    `s3_endpoint = <endpoint>`  
-    `s3_bucket_id = <bucket_name>`  
-    `s3_access_key = <access_key>`  
-    `s3_secret_key = <secret_key>`  
-    `s3_encryption_password = <encryption_password>`
+    `s3_endpoint = <endpoint>`
+    `s3_bucket_id = <bucket_name>`
+    `s3_access_key = <access_key>`
+    `s3_secret_key = <secret_key>`
+    `remote_storage_encryption_password = <encryption_password>`
+
+    **Swift Credentials [Optional - required only if you specified SWIFT for the storage type]:**
+
+    `swift_auth_mode = <basic (ony method supported>`
+    `swift_username = <username>`
+    `swift_password = <password>`
+    `swift_url = <endpoint_url>`
+    `swift_container = <existing_container>`
+    `remote_storage_encryption_password = <encryption_password>`
 
 3. Run `aerofsts-cli`
 
@@ -46,4 +56,17 @@ Sample unattended-setup.properties file for S3 Storage:
     s3_bucket_id = testbucket
     s3_access_key = JKHIEAKGHGGE5K89
     s3_secret_key = Lkihg/ieabherGuDier2x9pULle
-    s3_encryption_password = passencrypt
+    remote_storage_encryption_password = passencrypt
+
+
+Sample unattended-setup.properties file for SWIFT Storage:
+
+    userid = john@acme.com
+    password = testpass
+    storage_type: SWIFT
+    swift_auth_mode: basic
+    swift_username: test:tester
+    swift_password: testing
+    swift_url: http://192.168.33.10:8080/auth/v1.0
+    swift_container: container_aerofs
+    remote_storage_encryption_password: aaa

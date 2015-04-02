@@ -14,7 +14,6 @@ public abstract class InstallActor
         @Override
         void install(Setup setup, SetupModel model) throws Exception
         {
-            // TODO: support other storage types?
             setup.setupSingleuser(
                     model.getClient(),
                     model.getUserID(),
@@ -41,8 +40,8 @@ public abstract class InstallActor
                             ? model._localOptions._useBlockStorage
                                     ? StorageType.LOCAL
                                     : StorageType.LINKED
-                            : StorageType.S3,
-                    model._isLocal ? null : model._s3Config,
+                            : model._backendConfig._storageType,
+                    model._isLocal ? null : model._backendConfig,
                     model.isAPIAccessEnabled()
             );
        }

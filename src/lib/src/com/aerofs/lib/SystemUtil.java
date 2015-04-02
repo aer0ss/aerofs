@@ -46,11 +46,14 @@ public abstract class SystemUtil
         // manually by DaemonMonitor.
         SHUTDOWN_REQUESTED(77, "manual shutdown"),
         RELOCATE_ROOT_ANCHOR(78, "root anchor relocated"),
-        // Incorrect S3 access key, secret key, or bucket name for accessing bucket.
+        // Incorrect S3/Swift access key, secret key, or bucket name for accessing bucket.
         S3_BAD_CREDENTIALS(79, "bad s3 credentials"),
+        SWIFT_BAD_CREDENTIALS(84, "bad swift credentials"),
+        // Error in the storage cryptographic system
+        REMOTE_STORAGE_INVALID_CONFIG(85, "invalid remote storage configuration"),
         // Java may have a limited encryption key length due to export restriction. See the users of
         // this enum for more information.
-        S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(80, "s3 encryption key failure"),
+        STORAGE_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(80, "storage backend encryption key failure"),
         // Failed to create a jnotify watch on the root anchor (or an external root)
         JNOTIFY_WATCH_CREATION_FAILED(81, "jnotify watch failed"),
         // Core DB was restored from a backup or otherwise tampered with

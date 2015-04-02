@@ -178,14 +178,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
     private static abstract class AbstractRelocator implements IRelocator
     {
-        protected final boolean _isS3Storage;
+        protected final boolean _isRemoteStorage;
         protected final InjectableFile.Factory _factFile;
 
 
         AbstractRelocator(InjectableFile.Factory factFile)
         {
             _factFile = factFile;
-            _isS3Storage = Cfg.storageType() == StorageType.S3;
+            _isRemoteStorage = Cfg.storageType().isRemote();
         }
 
         protected SID _sid;
@@ -316,7 +316,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         {
             beforeRootRelocation(t);
 
-            if (!_isS3Storage) {
+            if (!_isRemoteStorage) {
                 OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
             }
 

@@ -7,6 +7,7 @@ package com.aerofs.base;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
@@ -21,12 +22,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -52,10 +48,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public abstract class BaseSecUtil
 {
@@ -333,12 +326,29 @@ public abstract class BaseSecUtil
             }
         }
 
+        public InputStream encryptingInputStream(InputStream in) throws IOException
+        {
+            boolean ok = false;
+            try {
+                Cipher cipher = newEncryptingCipher();
+                in = new SequenceInputStream(Collections.enumeration(ImmutableList.of(
+                        new ByteArrayInputStream(cipher.getIV()),
+                        new CipherInputStream(in, cipher))));
+                ok = true;
+                return in;
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e);
+            } finally {
+                if (!ok) in.close();
+            }
+        }
+
         @SuppressWarnings("resource")
         public OutputStream encryptingHmacedOutputStream(OutputStream out) throws IOException
         {
             boolean ok = false;
             try {
-                out = new HmacOutputStream(_secret, out);
+                out = new HmacAppendingOutputStream(_secret, out);
                 out = encryptingOutputStream(out);
                 ok = true;
                 return out;
@@ -346,6 +356,22 @@ public abstract class BaseSecUtil
                 throw new IOException(e);
             } finally {
                 if (!ok) out.close();
+            }
+        }
+
+        @SuppressWarnings("resource")
+        public InputStream encryptingHmacedInputStream(InputStream in) throws IOException
+        {
+            boolean ok = false;
+            try {
+                in = encryptingInputStream(in);
+                in = new HmacAppendingInputStream(_secret, in);
+                ok = true;
+                return in;
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e);
+            } finally {
+                if (!ok) in.close();
             }
         }
 
@@ -371,7 +397,7 @@ public abstract class BaseSecUtil
         {
             boolean ok = false;
             try {
-                in = new HmacInputStream(_secret, in);
+                in = new HmacVerifyingInputStream(_secret, in);
                 in = decryptingInputStream(in);
                 ok = true;
                 return in;
@@ -383,11 +409,11 @@ public abstract class BaseSecUtil
         }
     }
 
-    public static class HmacOutputStream extends OutputStream
+    public static class HmacAppendingOutputStream extends OutputStream
     {
         private final OutputStream _inner_stream;
         private final Mac _mac;
-        public HmacOutputStream(Key key, OutputStream out)
+        public HmacAppendingOutputStream(Key key, OutputStream out)
                 throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException
         {
             _inner_stream = out;
@@ -418,7 +444,78 @@ public abstract class BaseSecUtil
         }
     }
 
-    public static class HmacInputStream extends InputStream
+    /**
+     * Append the Hmac to the InputStream
+     */
+    public static class HmacAppendingInputStream extends InputStream
+    {
+        private InputStream _inner_stream;
+        private boolean _inner_stream_terminated;
+        private final Mac _mac;
+
+        /**
+         * Append the Hmac of the input stream at the end of it
+         *
+         * @param key The key
+         * @param in The input InputStream
+         * @throws NoSuchProviderException
+         * @throws NoSuchAlgorithmException
+         * @throws InvalidKeyException
+         * @throws IOException
+         */
+        public HmacAppendingInputStream(Key key, InputStream in)
+                throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException,
+                IOException
+        {
+            _inner_stream = in;
+            _inner_stream_terminated = false;
+            _mac = Mac.getInstance("HmacSHA256");
+            _mac.init(key);
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            byte[] array = new byte[1];
+            int result = read(array, 0, 1);
+            if (result == -1)
+                return result;
+            return array[0];
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException
+        {
+            if (b == null) throw new NullPointerException();
+
+            // Read from the input stream
+            int actually_read = _inner_stream.read(b, 0, len);
+
+            if (!_inner_stream_terminated) {
+                // Handle as usual...
+
+                if (actually_read == -1) {
+                    // We've reached the end of the input stream.  We should append the HMAC now.
+
+                    _inner_stream.close();
+                    _inner_stream_terminated = true;
+
+                    // We replace the original input stream by the hmac
+                    _inner_stream = new ByteArrayInputStream(_mac.doFinal());
+
+                    return read(b, off, len);
+                }
+
+                // Before returning to the user, update the MAC.
+                _mac.update(b, off, actually_read);
+            }
+
+            // Return.
+            return actually_read;
+        }
+    }
+
+    public static class HmacVerifyingInputStream extends InputStream
     {
         private final InputStream _inner_stream;
         private final Mac _mac;
@@ -428,7 +525,7 @@ public abstract class BaseSecUtil
         // We must keep at least _mac_length bytes in _buffer that we do not hand to the
         // client.  When we reach EOF, we should hand off all but the last _mac_length bytes,
         // check the MAC, and throw if it's bad.
-        public HmacInputStream(Key key, InputStream in)
+        public HmacVerifyingInputStream(Key key, InputStream in)
                 throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException,
                 IOException
         {

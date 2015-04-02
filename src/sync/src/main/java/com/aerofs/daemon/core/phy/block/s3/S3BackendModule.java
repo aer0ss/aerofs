@@ -7,8 +7,6 @@ package com.aerofs.daemon.core.phy.block.s3;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig;
-import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -39,9 +37,9 @@ public class S3BackendModule extends AbstractBackendModule
     }
 
     @Provides
-    public S3EncryptionPasswordConfig provideS3EncryptionPasswordConfig(CfgDatabase db)
+    public S3Config.EncryptionPasswordConfig provideS3EncryptionPasswordConfig(CfgDatabase db)
     {
-        return new S3EncryptionPasswordFromDB(db);
+        return new S3Config.EncryptionPasswordConfig.EncryptionPasswordFromDB(db);
     }
 
     @Provides

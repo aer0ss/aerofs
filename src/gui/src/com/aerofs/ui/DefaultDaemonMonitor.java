@@ -180,10 +180,18 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             throw new ExUIMessage(
                     "The S3 credentials were incorrect. Please check that you have" +
                     " the correct bucket name and AWS access and secret key.");
-        } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getCode()) {
+        } else if (exitCode == SWIFT_BAD_CREDENTIALS.getCode()) {
+            throw new ExUIMessage(
+                    "The SWIFT credentials were incorrect. Please check that you have" +
+                    " the correct container name and Swift access.");
+        } else if (exitCode == REMOTE_STORAGE_INVALID_CONFIG.getCode()) {
+            throw new ExUIMessage(
+                    "The backend storage configuration was invalid. Please check that you have" +
+                    " provided valid configuration options (algorithm, key syntax, bucket or container syntax).");
+        } else if (exitCode == STORAGE_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getCode()) {
             throw new ExUIMessage(
                     L.product() + " couldn't launch due to issues with your " +
-                    S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
+                    S.STORAGE_ENCRYPTION_PASSWORD + ". If your Java runtime" +
                     " is provided by Oracle with limited" +
                     " crypto key strength, please download the Unlimited Strength" +
                     " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +

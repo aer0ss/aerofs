@@ -38,7 +38,7 @@ public class SetupModel
         _isLocal = true;
         // TODO: storage options should use inheritance
         _localOptions = new LocalOptions();
-        _s3Config = new S3Config();
+        _backendConfig = new BackendConfig();
         _sp = null;
         // The default value is controlled by CfgRestService and provided here. For both clients
         // and Team Servers, this value should be used to initialize the UI state.
@@ -143,6 +143,27 @@ public class SetupModel
         }
     }
 
+    /**
+     * Encapsulate the specific backend configuration variables,
+     * plus the encryption passphrase
+     *
+     * _s3Config and _swiftConfig are always instanciated, and use if needed,
+     * depending of the _storageType value.
+     */
+    public static class BackendConfig
+    {
+        public StorageType _storageType;
+        public String _passphrase;
+
+        public S3Config _s3Config;
+        public SwiftConfig _swiftConfig;
+
+        public BackendConfig(){
+            _s3Config = new S3Config();
+            _swiftConfig = new SwiftConfig();
+        }
+    }
+
     // handles the setup for using S3 storage
     public static class S3Config
     {
@@ -150,7 +171,16 @@ public class SetupModel
         public String _bucketID;
         public String _accessKey;
         public String _secretKey;
-        public String _passphrase;
+    }
+
+    // handles the setup for using Swift storage
+    public static class SwiftConfig
+    {
+        public String _authMode;
+        public String _username;
+        public String _password;
+        public String _url;
+        public String _container;
     }
 
     private String getPasswordValue() { return (_password == null) ? "" : _password; }
@@ -171,7 +201,7 @@ public class SetupModel
     private String          _devAlias;
     public boolean          _isLocal;
     public LocalOptions     _localOptions;
-    public S3Config         _s3Config;
+    public BackendConfig    _backendConfig;
 
     private SPBlockingClient _sp;
 
