@@ -11,7 +11,7 @@ from pyramid.httpexceptions import HTTPNoContent, HTTPBadRequest, HTTPFound, HTT
 import requests
 
 from web.util import get_rpc_stub, get_deployment_secret
-from web.oauth import get_bifrost_client, is_aerofs_mobile_client_id
+from web.oauth import get_privileged_bifrost_client, is_aerofs_mobile_client_id
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 
 
@@ -183,7 +183,7 @@ def get_devices_for_user(request, user):
     # list_user_devices call against SP, which will refuse if the requester is
     # not permitted to ask about the target user.  Bifrost currently lacks
     # access controls for this.
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request, service_name="web")
     r = bifrost_client.get_access_tokens_for(user)
     bifrost_client.raise_on_error()
     mobile_devices = [t for t in r.json()["tokens"] if is_aerofs_mobile_client_id(t["client_id"])]

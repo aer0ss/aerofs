@@ -40,6 +40,8 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.oauth.PrincipalFactory;
+import com.aerofs.rest.auth.PrivilegedServiceToken;
+import com.aerofs.restless.Auth;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
@@ -48,20 +50,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,18 +94,16 @@ public class TokenResource
     @Inject
     private PrincipalFactory _principalFactory;
 
+    /**
+     * List tokens issued on behalf of the specified user.
+     */
     @GET
-    @Path("/tokenlist")
+    @Path("/users/{owner}/tokens")
     @Transactional(readOnly = true)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listTokens(@QueryParam("owner") String owner)
+    public Response listTokens(@Auth PrivilegedServiceToken authToken, @PathParam("owner") String owner)
     {
         try {
-            if (owner == null) {
-                l.warn("GET /tokenlist with no owner specified");
-                return Response.status(Status.BAD_REQUEST).build();
-            }
-
             l.info("listing access tokens for {}", owner);
 
             List<AccessToken> tokens = accessTokenRepository.findByOwner(owner);
@@ -135,34 +123,13 @@ public class TokenResource
         }
     }
 
-    @DELETE
-    @Path("/token/{token}")
-    public Response deleteToken(@PathParam("token") String token)
-    {
-        try {
-            l.info("delete token {}", token);
-            AccessToken accessToken = accessTokenRepository.findByToken(token);
-
-            if (accessToken == null) {
-                l.info("token not found: {}", token);
-                return Response.status(Status.NOT_FOUND).build();
-            }
-
-            accessTokenRepository.delete(accessToken);
-
-            return Response.ok().build();
-
-        } catch (Exception e) {
-            l.error(e.toString());
-            return Response.serverError().build();
-        }
-    }
-
-    /** Personal tokens issued by this user */
+    /**
+     * Delete all personal tokens issued by this user
+     */
     @DELETE
     @Path("/users/{owner}/tokens")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAllTokens(@PathParam("owner") String owner)
+    public Response deleteAllTokens(@Auth PrivilegedServiceToken authToken, @PathParam("owner") String owner)
     {
         try {
             l.info("delete all tokens for owner {}", owner);
@@ -174,11 +141,13 @@ public class TokenResource
         }
     }
 
-    /** Delegated tokens issued by this user */
+    /**
+     * Delete delegated tokens issued by this (probably admin) user
+     */
     @DELETE
     @Path("/users/{owner}/delegates")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAdminTokens(@PathParam("owner") String owner)
+    public Response deleteAdminTokens(@Auth PrivilegedServiceToken authToken, @PathParam("owner") String owner)
     {
         try {
             l.info("delete admin tokens for owner {}", owner);
@@ -194,6 +163,9 @@ public class TokenResource
         return clientID.equals("aerofs-android") || clientID.equals("aerofs-ios");
     }
 
+    /**
+     * A client would like to grant a new token to an app with parameters as specified in formParameters
+     */
     @POST
     @Path("/token")
     @Produces(MediaType.APPLICATION_JSON)
@@ -258,6 +230,32 @@ public class TokenResource
                 StringUtils.join(token.getScopes(), ','));
 
         return Response.ok().entity(response).build();
+    }
+
+    /**
+     * Delete a token.  No auth is needed, as possession of the token is proof of authorization.
+     */
+    @DELETE
+    @Path("/token/{token}")
+    public Response deleteToken(@PathParam("token") String token)
+    {
+        try {
+            l.info("delete token {}", token);
+            AccessToken accessToken = accessTokenRepository.findByToken(token);
+
+            if (accessToken == null) {
+                l.info("token not found: {}", token);
+                return Response.status(Status.NOT_FOUND).build();
+            }
+
+            accessTokenRepository.delete(accessToken);
+
+            return Response.ok().build();
+
+        } catch (Exception e) {
+            l.error(e.toString());
+            return Response.serverError().build();
+        }
     }
 
     /**

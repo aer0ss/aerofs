@@ -87,7 +87,7 @@ Information about a particular client is requested with a `GET` to `/clients/<cl
 Part         | Value
 ------------:|------
 Path         | `/clients/<client_id>`
-Authorization| None (handled externally)
+Authorization| Aero-Service-Shared-Secret
 Method       | `GET`
 Query Params | None
 Body         | None
@@ -116,7 +116,7 @@ A client list is requested with a `GET` to the `/clients` endpoint.
 Part         | Value
 ------------:|------
 Path         | `/clients/`
-Authorization| None (handled externally)
+Authorization| Aero-Service-Shared-Secret
 Method       | `GET`
 Query Params | None
 Body         | None
@@ -179,21 +179,15 @@ See response to `GET /authorize` in the Bifrost user documentation.
 
 ### Access Token List Request
 
-To list access tokens, clients submit a GET to the `/token` endpoint.
+To list access tokens, clients submit a GET to the `/users/{userid}/tokens` endpoint.
 
 Part         | Value
 ------------:|------
-Path         | `/tokenlist/`
-Authorization| None (auth should be handled externally)
+Path         | `/users/{userid}/tokens`
+Authorization| Aero-Service-Shared-Secret (though Aero-Delegated-User would be preferable if we had a rules engine that worked for this)
 Method       | `GET`
-Query Params | As described below
+Query Params | None
 Body         | None
-
-Query parameters:
-
-Field          | Req?   | Description
---------------:|--------|------------
-owner          | Req    | userid of the owner whose tokens should be listed
 
 ### Access Token List Response
 

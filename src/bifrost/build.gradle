@@ -55,6 +55,8 @@ dependencies {
     compile 'org.hibernate:hibernate-validator:4.3.0.Final'
     compile project(':src/lib')
     compile project(':src/restless')
+    compile project(':src/rest-api')
+    compile project(':src/aero-auth')
     runtime 'mysql:mysql-connector-java:5.1.+'
     testutilCompile 'com.jayway.restassured:rest-assured:2.3.+'
     testutilCompile project(path: ':src/lib', configuration: 'testutil')

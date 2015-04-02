@@ -4,6 +4,7 @@
 import base64
 import logging
 import re
+import urllib
 
 from pyramid.security import authenticated_userid
 import requests
@@ -20,13 +21,13 @@ def get_bifrost_client(request, service_name=None):
     base_url = _get_bifrost_url(request)
     secret = util.get_deployment_secret(request.registry.settings)
     userid = authenticated_userid(request)
-    service = service_name or 'web' # web always uses delegated requests
+    service = service_name or 'web' # web mostly uses delegated requests
     return DelegatedBifrostClient(base_url, deployment_secret=secret, delegated_user=userid, service_name=service)
 
 def get_privileged_bifrost_client(request, service_name=None):
     base_url = _get_bifrost_url(request)
     secret = util.get_deployment_secret(request.registry.settings)
-    service = service_name or 'bunker' # only bunker should be making privileged requests
+    service = service_name or 'bunker' # bunker mostly makes the privileged requests
     return PrivilegedBifrostClient(base_url, deployment_secret=secret, service_name=service)
 
 class BifrostClient(object):
@@ -53,16 +54,6 @@ class BifrostClient(object):
         resp = failed_response or self.last_response
         if not resp.ok:
             util.flash_error(request, _get_error_message_for_bifrost_resonse(resp))
-
-    def delete_all_tokens(self, owner):
-        url = '{}/users/{}/tokens'.format(self.base_url, owner)
-        self.last_response = requests.delete(url, headers=self._authorization_headers())
-        return self.last_response
-
-    def delete_delegated_tokens(self, owner):
-        url = '{}/users/{}/delegates'.format(self.base_url, owner)
-        self.last_response = requests.delete(url, headers=self._authorization_headers())
-        return self.last_response
 
     def get_new_oauth_token(self, mobile_access_code, client_id, client_secret, expires_in=0, scopes=None):
         # N.B. the get_mobile_access_code RPC returns a proof-of-identity nonce that
@@ -93,18 +84,6 @@ class BifrostClient(object):
         self.last_response = requests.delete(url, headers=self._authorization_headers())
         return self.last_response
 
-    def get_app_info(self, client_id):
-        url = '{}/clients/{}'.format(self.base_url, client_id)
-        self.last_response = requests.get(url, headers=self._authorization_headers())
-        return self.last_response
-
-    def get_access_tokens_for(self, owner):
-        url = '{}/tokenlist'.format(self.base_url)
-        self.last_response = requests.get(url, params={
-            'owner': owner,
-        }, headers=self._authorization_headers())
-        return self.last_response
-
 class PrivilegedBifrostClient(BifrostClient):
     def __init__(self, base_url, custom_cert=None, custom_cert_bundle=None,
             service_name=None, deployment_secret=None):
@@ -123,6 +102,7 @@ class PrivilegedBifrostClient(BifrostClient):
                 )
         }
 
+    # These should probably always be privileged-only
     def get_registered_apps(self):
         url = '{}/clients'.format(self.base_url)
         self.last_response = requests.get(url, headers=self._authorization_headers())
@@ -137,8 +117,30 @@ class PrivilegedBifrostClient(BifrostClient):
         }, headers=self._authorization_headers())
         return self.last_response
 
+    def get_app_info(self, client_id):
+        url = '{}/clients/{}'.format(self.base_url, client_id)
+        self.last_response = requests.get(url, headers=self._authorization_headers())
+        return self.last_response
+
     def delete_app(self, client_id):
         url = '{}/clients/{}'.format(self.base_url, client_id)
+        self.last_response = requests.delete(url, headers=self._authorization_headers())
+        return self.last_response
+
+    # These methods could be moved back to the unprivileged client when the server can
+    # handle delegated auth better.
+    def get_access_tokens_for(self, owner):
+        url = '{}/users/{}/tokens'.format(self.base_url, urllib.quote_plus(owner, safe=""))
+        self.last_response = requests.get(url, headers=self._authorization_headers())
+        return self.last_response
+
+    def delete_all_tokens(self, owner):
+        url = '{}/users/{}/tokens'.format(self.base_url, owner)
+        self.last_response = requests.delete(url, headers=self._authorization_headers())
+        return self.last_response
+
+    def delete_delegated_tokens(self, owner):
+        url = '{}/users/{}/delegates'.format(self.base_url, owner)
         self.last_response = requests.delete(url, headers=self._authorization_headers())
         return self.last_response
 

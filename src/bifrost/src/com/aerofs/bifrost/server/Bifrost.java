@@ -4,6 +4,7 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.auth.server.shared.AeroService;
 import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
@@ -29,6 +30,9 @@ import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.lib.LibParam;
+import com.aerofs.rest.auth.DelegatedUserExtractor;
+import com.aerofs.rest.auth.SharedSecretExtractor;
+import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -57,9 +61,14 @@ public class Bifrost extends Service
     }
 
     @Inject
-    public Bifrost(Injector injector)
+    public Bifrost(Injector injector, String deploymentSecret)
     {
         super("bifrost", new InetSocketAddress(getIntegerProperty("bifrost.port", 8700)), injector);
+
+        addResource(new AuthProvider(
+                new SharedSecretExtractor(deploymentSecret),
+                new DelegatedUserExtractor(deploymentSecret)
+        ));
 
         addResource(AuthorizeResource.class);
         addResource(VerifyResource.class);
@@ -83,6 +92,7 @@ public class Bifrost extends Service
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
         ServerConfigurationLoader.initialize("bifrost", extra);
+        String deploymentSecret = AeroService.loadDeploymentSecret();
 
         Class.forName(LibParam.MYSQL.MYSQL_DRIVER);
 
@@ -90,7 +100,7 @@ public class Bifrost extends Service
                 databaseModule(), bifrostModule(), spModule());
 
         // Note, we expect nginx or similar to provide ssl termination...
-        new Bifrost(inj)
+        new Bifrost(inj, deploymentSecret)
                 .start();
     }
 

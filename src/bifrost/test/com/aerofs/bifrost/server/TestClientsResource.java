@@ -4,9 +4,13 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.jayway.restassured.response.Response;
 import static com.jayway.restassured.path.json.JsonPath.from;
+
+import com.jayway.restassured.specification.RequestSpecification;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -27,38 +31,42 @@ public class TestClientsResource extends BifrostTest
     public void shouldRejectPostWithoutRequiredParameters() throws Exception
     {
         // this request is missing resource_server_key
-        expect()
-                .statusCode(400)
-        .given()
+        givenAuthorizedClient()
                 .formParam("client_name", "new-app-name")
                 .formParam("redirect_uri", "aerofs://redirect")
+        .expect()
+                .statusCode(400)
+        .when()
                 .post(CLIENTS_URL);
 
         // this request is missing client_name
-        expect()
-                .statusCode(400)
-        .given()
+        givenAuthorizedClient()
                 .formParam("resource_server_key", RESOURCEKEY)
                 .formParam("redirect_uri", "aerofs://redirect")
+        .expect()
+                .statusCode(400)
+        .when()
                 .post(CLIENTS_URL);
 
         // this request is missing redirect_uri
-        expect()
-                .statusCode(400)
-                .given()
+        givenAuthorizedClient()
                 .formParam("client_name", "new-app-name")
                 .formParam("resource_server_key", RESOURCEKEY)
+        .expect()
+                .statusCode(400)
+        .when()
                 .post(CLIENTS_URL);
     }
 
     @Test
     public void shouldRejectPostWithBadResourceServerKey() throws Exception
     {
-        expect()
-                .statusCode(400)
-        .given()
+        givenAuthorizedClient()
                 .formParam("client_name", "new-app-name")
                 .formParam("resource_server_key", "this-is-not-a-resource-server")
+        .expect()
+                .statusCode(400)
+        .when()
                 .post(CLIENTS_URL);
     }
 
@@ -67,7 +75,7 @@ public class TestClientsResource extends BifrostTest
     {
         String client_name = "new-app-name";
 
-        Response response = given()
+        Response response = givenAuthorizedClient()
                 .formParam("client_name", client_name)
                 .formParam("resource_server_key", RESOURCEKEY)
                 .formParam("redirect_uri", "aerofs://redirect")
@@ -91,7 +99,8 @@ public class TestClientsResource extends BifrostTest
     @Test
     public void shouldListClientsOnGet() throws Exception
     {
-        Response response = given().get(CLIENTS_URL);
+        Response response = givenAuthorizedClient()
+                .get(CLIENTS_URL);
 
         assertEquals(200, response.getStatusCode());
 
@@ -130,16 +139,18 @@ public class TestClientsResource extends BifrostTest
     @Test
     public void shouldGet404OnClientInfoWithBadId() throws Exception
     {
-        expect()
+        givenAuthorizedClient()
+        .expect()
                 .statusCode(404)
-        .given()
+        .when()
                 .get(CLIENTS_URL + "/" + "nothing-to-see-here-folks");
     }
 
     @Test
     public void shouldGetClientInfoOnGetById() throws Exception
     {
-        Response response = given().get(CLIENTS_URL + "/" + CLIENTID);
+        Response response = givenAuthorizedClient()
+                .get(CLIENTS_URL + "/" + CLIENTID);
         assertEquals(200, response.getStatusCode());
 
         String json = response.asString();
@@ -152,9 +163,10 @@ public class TestClientsResource extends BifrostTest
     @Test
     public void shouldRejectDeleteToNonexistentClient() throws Exception
     {
-        expect()
+        givenAuthorizedClient()
+        .expect()
                 .statusCode(400)
-        .given()
+        .when()
                 .delete(CLIENTS_URL + "/i-am-not-a-client");
     }
 
@@ -162,7 +174,7 @@ public class TestClientsResource extends BifrostTest
     public void shouldDeleteClient() throws Exception
     {
         // create a client first, and make sure it's in the db
-        Response response = given()
+        Response response = givenAuthorizedClient()
                 .formParam("client_name", "new-client-w00t")
                 .formParam("resource_server_key", RESOURCEKEY)
                 .formParam("redirect_uri", "aerofs://redirect")
@@ -176,11 +188,38 @@ public class TestClientsResource extends BifrostTest
         assertNotNull(_clientRepository.findByClientId(r_client_id));
 
         // then delete the client, and make sure it's not in the db
-        expect()
+        givenAuthorizedClient()
+        .expect()
                 .statusCode(200)
-        .given()
+        .when()
                 .delete(CLIENTS_URL + "/" + r_client_id);
 
         assertNull(_clientRepository.findByClientId(r_client_id));
+    }
+
+    @Test
+    public void should401WithoutAuthHeader() throws Exception
+    {
+        expect()
+                .statusCode(401)
+        .given()
+                .get(CLIENTS_URL);
+    }
+
+    @Test
+    public void should401WithWrongDeploymentSecret() throws Exception
+    {
+        expect()
+                .statusCode(401)
+        .given()
+                .header(HttpHeaders.Names.AUTHORIZATION,
+                        AeroService.getHeaderValue("bunker", "00000000000000000000000000000000" ))
+                .get(CLIENTS_URL);
+    }
+
+    private RequestSpecification givenAuthorizedClient()
+    {
+        return given()
+                .header(HttpHeaders.Names.AUTHORIZATION, AeroService.getHeaderValue("bunker", testDeploymentSecret()));
     }
 }

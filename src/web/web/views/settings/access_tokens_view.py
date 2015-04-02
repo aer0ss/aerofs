@@ -7,7 +7,8 @@ from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 
 from web import util
-from web.oauth import get_bifrost_client, is_valid_access_token, is_builtin_client_id
+from web.oauth import get_bifrost_client, get_privileged_bifrost_client, \
+        is_valid_access_token, is_builtin_client_id
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ def app_authorization(request):
     user_redirect_uri = get_exactly_one_or_throw_400(request.params, "redirect_uri")
 
     # verify that the client id is for a valid app
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request, service_name="web")
     r = bifrost_client.get_app_info(client_id)
     if r.status_code == 404:
         raise HTTPBadRequest(detail="client_id {} not found".format(client_id))
@@ -149,7 +150,7 @@ def app_authorization(request):
     request_method='GET'
 )
 def access_tokens(request):
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request, service_name="web")
     r = bifrost_client.get_access_tokens_for(authenticated_userid(request))
     if r.ok:
         # Skip builtin clients (e.g. android, ios, web acess tokens)

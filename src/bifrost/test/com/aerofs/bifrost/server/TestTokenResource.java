@@ -4,6 +4,7 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.ExInvalidID;
@@ -14,6 +15,8 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
+import com.jayway.restassured.specification.RequestSpecification;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,7 +50,7 @@ public class TestTokenResource extends BifrostTest
     {
         when(_spClient.authorizeAPIClient(eq(GOOD_NONCE), anyString())).thenReturn(
                 AuthorizeAPIClientReply.newBuilder()
-                        .setUserId("test1@b.c")
+                        .setUserId(USERNAME)
                         .setOrgId("2")
                         .setIsOrgAdmin(true)
                         .build());
@@ -76,7 +79,7 @@ public class TestTokenResource extends BifrostTest
         expect()
                 .statusCode(401)
         .given()
-                .header("Authorization", buildAuthHeader(CLIENTID, "bad-secret"))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, "bad-secret"))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -88,7 +91,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldGetTokenForMobileAccessCode() throws Exception
     {
         String response = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -104,9 +107,9 @@ public class TestTokenResource extends BifrostTest
 
         // Verify the token has orgid and userid:
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
-                .get("/tokeninfo").asString();
+                .get(TOKENINFO_URL).asString();
 
         Map<String, Map<String, String>> princ = from(verifyResponse).get("principal");
         Map<String, String> attr = princ.get("attributes");
@@ -138,7 +141,7 @@ public class TestTokenResource extends BifrostTest
         String authCode = getCodeFromAuthorizationEndpoint("user.read");
 
         String tokenResponse = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
@@ -153,7 +156,7 @@ public class TestTokenResource extends BifrostTest
         expect()
                 .statusCode(400)
         .given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
@@ -165,7 +168,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldGetTokenWithClientExpiryIfNoneRequested() throws Exception
     {
         String tokenResponse = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -186,7 +189,7 @@ public class TestTokenResource extends BifrostTest
         long requestedExpiresIn = 86400L;
 
         String tokenResponse = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -209,7 +212,7 @@ public class TestTokenResource extends BifrostTest
         long requestedExpiresIn = _clientRepository.findByClientId(CLIENTID).getExpireDuration();
 
         String tokenResponse = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -235,7 +238,7 @@ public class TestTokenResource extends BifrostTest
         expect()
                 .statusCode(400)
         .given()
-                .header("Authorization", buildAuthHeader(CLIENTSHORTEXPIRYID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTSHORTEXPIRYID, CLIENTSECRET))
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
@@ -280,7 +283,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldUseDefaultClientScopesIfNoneProvidedWithSPNonce() throws Exception
     {
         String response = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -292,9 +295,9 @@ public class TestTokenResource extends BifrostTest
         assertFalse(token.isEmpty());
 
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
-                .get("/tokeninfo").asString();
+                .get(TOKENINFO_URL).asString();
 
         ArrayList<String> scopes = from(verifyResponse).get("scopes");
         assertEquals(_clientRepository.findByClientId(CLIENTID).getScopes(), Sets.newHashSet(scopes));
@@ -304,7 +307,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldUseScopesInRequestWithSPNonce() throws Exception
     {
         String response = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -317,9 +320,9 @@ public class TestTokenResource extends BifrostTest
         assertFalse(token.isEmpty());
 
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
-                .get("/tokeninfo").asString();
+                .get(TOKENINFO_URL).asString();
 
         ArrayList<String> scopes = from(verifyResponse).get("scopes");
         assertEquals(Sets.newHashSet("files.read", "user.read"), Sets.newHashSet(scopes));
@@ -329,7 +332,7 @@ public class TestTokenResource extends BifrostTest
     public void shouldUseScopesWithSOIDInRequestWithSPNonce() throws Exception
     {
         String response = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
                 .formParam("code_type", "device_authorization")
@@ -342,9 +345,9 @@ public class TestTokenResource extends BifrostTest
         assertFalse(token.isEmpty());
 
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
-                .get("/tokeninfo").asString();
+                .get(TOKENINFO_URL).asString();
 
         ArrayList<String> scopes = from(verifyResponse).get("scopes");
         assertEquals(Sets.newHashSet("files.read:" + VALID_SOID, "user.read"),
@@ -357,7 +360,7 @@ public class TestTokenResource extends BifrostTest
         String authCode = getCodeFromAuthorizationEndpoint("files.read");
 
         String tokenResponse = given()
-                .header("Authorization", buildAuthHeader(CLIENTID, CLIENTSECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(CLIENTID, CLIENTSECRET))
                 .formParam("redirect_uri", CLIENTREDIRECT)
                 .formParam("client_id", CLIENTID)
                 .formParam("grant_type", "authorization_code")
@@ -370,9 +373,9 @@ public class TestTokenResource extends BifrostTest
         assertFalse(token.isEmpty());
 
         String verifyResponse = given()
-                .header("Authorization", buildAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
                 .queryParam("access_token", token)
-                .get("/tokeninfo").asString();
+                .get(TOKENINFO_URL).asString();
 
         // ensure token has the scope that was authorized by the user
         ArrayList<String> scopes = from(verifyResponse).get("scopes");
@@ -380,19 +383,10 @@ public class TestTokenResource extends BifrostTest
     }
 
     @Test
-    public void shouldGet400OnGetTokenListWithNoOwner() throws Exception
-    {
-        expect()
-                .statusCode(400)
-        .given()
-                .get(TOKENLIST_URL);
-    }
-
-    @Test
     @SuppressWarnings("rawtypes")
     public void shouldListTokensOnGet() throws Exception
     {
-        Response response = given()
+        Response response = givenServiceAuthorizedClient()
                 .queryParam("owner", USERNAME)
                 .get(TOKENLIST_URL);
 
@@ -437,9 +431,10 @@ public class TestTokenResource extends BifrostTest
     {
         assertFalse("tokens exist", _accessTokenRepository.findByOwner(USERNAME).isEmpty());
 
-        expect()
+        givenServiceAuthorizedClient()
+        .expect()
                 .statusCode(200)
-        .given()
+        .when()
                 .delete(USERS_URL + "/" + USERNAME + "/tokens");
 
         assertTrue("deleted them", _accessTokenRepository.findByOwner(USERNAME).isEmpty());
@@ -455,9 +450,10 @@ public class TestTokenResource extends BifrostTest
 
         assertEquals("2 tokens", 2, _accessTokenRepository.findByOwner(USERNAME).size());
 
-        expect()
+        givenServiceAuthorizedClient()
+        .expect()
                 .statusCode(200)
-        .given()
+        .when()
                 .delete(USERS_URL + "/" + USERNAME + "/delegates");
 
         assertEquals("1 tokens", 1, _accessTokenRepository.findByOwner(USERNAME).size());
@@ -485,24 +481,34 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void deleteAllTokens_shouldRequireOwner() throws Exception
     {
-        expect()
+        givenServiceAuthorizedClient()
+        .expect()
                 .statusCode(400)
-        .given()
+        .when()
                 .delete(USERS_URL);
     }
 
     @Test
     public void deleteAllTokens_shouldSucceedIfNoWorkPerformed() throws Exception
     {
-        expect()
+        givenServiceAuthorizedClient()
+        .expect()
                 .statusCode(200)
-        .given()
+        .when()
                 .delete(USERS_URL + "/" + "joe@example.com" + "/tokens");
     }
 
-    private String buildAuthHeader(String user, String password)
+    private String buildBasicAuthHeader(String user, String password)
     {
         String mashup = user + ":" + password;
         return "Basic " + Base64.encodeBytes(mashup.getBytes());
+    }
+
+    // Ideally we'd use delegated-user auth, but that requires that bifrost be able to know that e.g.
+    // yuri@aerofs.com is allowed to access drew@aerofs.com's tokens.
+    private RequestSpecification givenServiceAuthorizedClient()
+    {
+        return given()
+                .header(HttpHeaders.Names.AUTHORIZATION, AeroService.getHeaderValue("bunker", testDeploymentSecret()));
     }
 }

@@ -8,7 +8,7 @@ from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 
 from web import util
-from web.oauth import get_bifrost_client
+from web.oauth import get_privileged_bifrost_client
 from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled
 from web.auth import is_admin
@@ -199,7 +199,7 @@ def json_set_auth_level(request):
 
     # When demoting a user, remove any admin tokens they may have auth'ed:
     log.warn('set auth level to %' + str(level))
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request, service_name="web")
     r = bifrost_client.delete_delegated_tokens(user)
     if not r.ok:
         log.error('bifrost returned error:' + str(r))
@@ -231,7 +231,7 @@ def json_deactivate_user(request):
     user = request.json_body[URL_PARAM_USER]
     erase_devices = str2bool(request.json_body[URL_PARAM_ERASE_DEVICES])
 
-    bifrost_client = get_bifrost_client(request)
+    bifrost_client = get_privileged_bifrost_client(request, service_name="web")
     r = bifrost_client.delete_all_tokens(user)
     if not r.ok:
         log.error('bifrost returned error:' + str(r))

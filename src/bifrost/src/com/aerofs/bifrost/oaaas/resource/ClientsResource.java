@@ -9,6 +9,8 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 import com.aerofs.bifrost.server.Transactional;
+import com.aerofs.rest.auth.PrivilegedServiceToken;
+import com.aerofs.restless.Auth;
 import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -51,7 +53,7 @@ public class ClientsResource
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes("application/x-www-form-urlencoded")
-    public Response newClient(final MultivaluedMap<String, String> formParameters)
+    public Response newClient(@Auth PrivilegedServiceToken authToken, final MultivaluedMap<String, String> formParameters)
     {
         /**
          * FIXME: If we don't wrap this in a try/catch, the server will not return 500,
@@ -118,7 +120,7 @@ public class ClientsResource
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listClients()
+    public Response listClients(@Auth PrivilegedServiceToken authToken)
     {
         try {
             l.debug("GET /clients");
@@ -150,7 +152,7 @@ public class ClientsResource
 
     @GET @Path("{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clientInfo(@PathParam("clientId") String clientId)
+    public Response clientInfo(@Auth PrivilegedServiceToken authToken, @PathParam("clientId") String clientId)
     {
         try {
             l.debug("GET /clients/{}", clientId);
@@ -179,7 +181,7 @@ public class ClientsResource
     }
 
     @DELETE @Path("{clientId}")
-    public Response deleteClient(@PathParam("clientId") String clientId)
+    public Response deleteClient(@Auth PrivilegedServiceToken authToken, @PathParam("clientId") String clientId)
     {
         try {
             l.info("DELETE /clients/{}", clientId);

@@ -16,6 +16,7 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
@@ -54,14 +55,15 @@ public abstract class BifrostTest extends AbstractTest
     public final static String CLIENTSECRET = "test-app-secret";
     public final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
     public final static String CLIENTSHORTEXPIRYID = "test-app-short-expiry-id";
-    public final static String USERNAME = "user";
+    public final static String USERNAME = "user@b.c";
     public final static String RW_TOKEN = "rwtoken";
     public final static String RO_TOKEN = "rotoken";
     public final static String EXPIRED = "expired";
     protected final static String AUTH_URL = "/authorize";
     protected final static String TOKEN_URL = "/token";
+    protected final static String TOKENINFO_URL = "/tokeninfo";
     protected final static String USERS_URL = "/users";
-    protected final static String TOKENLIST_URL = "/tokenlist";
+    protected final static String TOKENLIST_URL = USERS_URL + "/" + USERNAME + "/tokens";
     protected final static String CLIENTS_URL = "/clients";
 
     @Mock SessionFactory _sessionFactory;
@@ -89,7 +91,7 @@ public abstract class BifrostTest extends AbstractTest
         _accessTokenRepository = _injector.getInstance(AccessTokenRepository.class);
         _resourceServerRepository = _injector.getInstance(ResourceServerRepository.class);
 
-        _service = new Bifrost(_injector);
+        _service = new Bifrost(_injector, testDeploymentSecret());
         _service.start();
         _port = _service.getListeningPort();
 
@@ -122,6 +124,11 @@ public abstract class BifrostTest extends AbstractTest
             res.put(elems[0], elems[1]);
         }
         return res;
+    }
+
+    protected String testDeploymentSecret()
+    {
+        return "3c561ee35982c3b0c562b45d3cca9b3d";
     }
 
     public static void createTestEntities(UserID user, Injector inj)
