@@ -77,6 +77,8 @@ write_files:
   - path: {{ getty_drop_in }}
     content: |
       [Service]
+      {# Clear ExecStart before we can overwrite it #}
+      ExecStart=
       ExecStart=-/sbin/agetty --noclear --skip-login --autologin root --login-program {{ getty_run }} %I $TERM
 
   - path: {{ getty_run }}
@@ -91,7 +93,10 @@ write_files:
       {# Create files if not exist #}
       mkdir -p {{ loader_run }}
       [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
-      [[ -f {{ tag_file }} ]] || echo '{{ tag }}' > {{ tag_file }}
+      [[ -f {{ tag_file }} ]] || {
+        TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
+        echo ${TAG} > {{ tag_file }}
+      }
 
       IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
       docker run --rm -v {{ loader_getty }}:/host "${IMAGE}" install-getty /host
@@ -133,8 +138,11 @@ write_files:
         {# Create files if not exist #}
         mkdir -p {{ loader_run }}
         [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
-        [[ -f {{ tag_file }} ]] || echo '{{ tag }}' > {{ tag_file }}
         [[ -f {{ target_file }} ]] || echo '{{ target }}' > {{ target_file }}
+        [[ -f {{ tag_file }} ]] || {
+          TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
+          echo ${TAG} > {{ tag_file }}
+        }
 
         IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
 

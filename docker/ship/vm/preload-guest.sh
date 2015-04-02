@@ -64,5 +64,8 @@ for i in ${IMAGES}; do
     docker rmi "${PRELOAD_REPO}/${i}"
 done
 
+# cloud-config uses loader:latest to figure out the tag string
+docker tag "${REPO}/${LOADER_IMAGE}:${TAG}" "${REPO}/${LOADER_IMAGE}"
+
 # The caller can't use exit codes to detect failures (set -e is evil). So instead we use a flag file.
 touch "${DONE_FILE}"

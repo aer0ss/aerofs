@@ -24,7 +24,7 @@ fi
 push() {
     (set +e
         RETRY=0
-        for i in 1 2 3; do
+        while true; do
             RETRY=$[RETRY + 1]
             docker push $1
             if [ $? = 0 ]; then
@@ -32,6 +32,8 @@ push() {
             elif [ ${RETRY} = 5 ]; then
                 echo "ERROR: Retried too many times. I gave up."
                 exit 22
+            else
+                echo "Retry #${RETRY}..."
             fi
         done
     )

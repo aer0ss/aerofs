@@ -58,7 +58,6 @@ if __name__ == "__main__":
             loader_image=y['loader'],
             swap_size=y['swap-size'],
             repo=y['repo'],
-            tag=argv[5],
             target=y['target'],
             extra_files=get_files(argv[2])
         ))
