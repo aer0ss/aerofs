@@ -39,10 +39,6 @@ from aerofs_sp import connection
 from aerofs_sp.gen import sp_pb2
 
 
-# read config .ini file for sp proto version
-ini_config = ConfigParser()
-ini_config.read(os.path.join(file_root, "../../src/web/development/modes/private.ini"))
-
 #################################
 ##   DEFAULT/CONSTANT VALUES   ##
 #################################
@@ -61,7 +57,7 @@ ARCHIVE_DIR = '~/archive'
 CODE_URL = "http://share.syncfs.com:21337/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
 CI_SP_URL = "https://share.syncfs.com:4433/sp"
-CI_SP_VERSION = ini_config.getint('app:main', 'sp.version')
+CI_SP_VERSION = '21' # update this if we ever bump SP version before burning it
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
