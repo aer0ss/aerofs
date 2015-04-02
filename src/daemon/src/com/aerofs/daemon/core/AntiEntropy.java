@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *     source of the NewUpdate message. Such "reactive" requests are rate-limited to at most
  *     1 per store per device per second.
  *   - slow path, wherein for each store, a device periodically pick a random available peer
- *     and sends it a GetVers request. The frequence of such "proactive" requests is roughly
+ *     and sends it a GetVers request. The frequency of such "proactive" requests is roughly
  *     2 per store per minute.
  *
  * The use of periodic request shields us from the unreliable nature of the fast path (most
@@ -178,18 +178,18 @@ public class AntiEntropy
         {
             LegacyStore s = (LegacyStore)_sidx2s.getNullable_(_sidx);
             if (s == null) {
-                l.debug("{} no longer exists. return", _sidx);
+                l.info("{} no longer exists. return", _sidx);
                 return false;
             }
             ArrayList<DID> dids = new ArrayList<>(s.getOnlinePotentialMemberDevices_().keySet());
             if (dids.isEmpty()) {
-                l.debug("{}: no online devs. return", s);
+                l.info("{}: no online devs. return", s);
                 return false;
             }
 
             try {
                 if (!_lacl.get_(_sidx).containsKey(_localUser.get())) {
-                    l.debug("{} not accessible. return", _sidx);
+                    l.info("{} not accessible. return", _sidx);
                     return false;
                 }
             } catch (SQLException e) {
