@@ -69,7 +69,7 @@ You may run the `verify` command to verify the two files are correctly installed
     
 The Loader image's name is specified as the only command argument.
 
-### Step 2. Generate outputs
+### Step 2. Build the system
 
 First, make sure that all the Docker images required by your app are locally accessible,
 i.e. `docker run <image>:latest` should work for all the images.
@@ -107,6 +107,22 @@ will be named "foo.ova", "foo.qcow2", and so on.
 Lastly, call "vm/build.sh" to generate VM images to folder "out":
 
     $ <path_to_ship>/vm/build.sh ship.yml out
+
+### Step 3. Deliver the system
+
+The build script prints the paths to build artifacts including cloud-config file and
+VM images at the end of the process. Simply deliver these artifacts to your customers
+or upload them to your CDN.
+
+When the system launches, all output formats except `vm/preloaded` pull container images
+from the registry defined in the ship.yml file. Therefore, in addition to the build
+artifacts, you also need to push container images to the registry.
+
+The script `push-images.sh` pushes all the application images in localhost to the 
+registry specified by ship.yml's `repo` field. If `push-repo` field is present, it
+will be used instead. Once all the images are pushed, the script updates the Loader's
+`latest` tag in the registry to point to the newly pushed version. This last step
+makes the update available to the public.
 
 
 ### Loader API
@@ -223,10 +239,6 @@ To test the generated VM image in Continuous Integration systems, you may follow
 to inject commands into the image. It is useful, say, if you want to set up a
 [static IP](https://coreos.com/docs/cluster-management/setup/network-config-with-networkd/)
 so test suites can easily find the VM.
-
-### Publishing images to repository
-
-
 
 
 ## IT admin & site engineer manual
