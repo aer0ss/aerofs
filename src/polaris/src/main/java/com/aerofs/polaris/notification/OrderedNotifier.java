@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Naive implementation of an ordered notification system.
+ * Updates for a particular store are guaranteed to always have increasing timestamps
  */
 public final class OrderedNotifier implements ManagedNotifier {
 
@@ -116,19 +117,17 @@ public final class OrderedNotifier implements ManagedNotifier {
 
                             @Override
                             public void onSuccess(@Nullable Void result) {
-                                ListenableFuture<Void> updateFuture = databaseExecutor.submit(new Callable<Void>() {
-                                    @Override
-                                    public Void call() {
-                                        updateNotifiedTimestamp(state);
-                                        pending.remove(state.store);
-                                        return null;
-                                    }
+                                ListenableFuture<Void> updateFuture = databaseExecutor.submit(() -> {
+                                    updateNotifiedTimestamp(state);
+                                    pending.remove(state.store);
+                                    return null;
                                 });
 
                                 Futures.addCallback(updateFuture, new FutureCallback<Void>() {
 
                                     @Override
                                     public void onSuccess(@Nullable Void result) {
+                                        // could just always notify on store update, will exit early later anyways - currently we check timestamps twice when shouldNotify is true
                                         Timestamps timestamps = getTimestamps(state.store);
                                         if (shouldNotify(state.store, timestamps)) {
                                             notifyStoreUpdated(state.store);
