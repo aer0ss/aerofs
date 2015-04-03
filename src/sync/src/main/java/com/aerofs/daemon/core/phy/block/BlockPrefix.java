@@ -102,7 +102,7 @@ class BlockPrefix implements IPhysicalPrefix
         } catch (IllegalArgumentException|IOException e) {
             BlockStorage.l.warn("failed to reload hash for {}", _f, e);
             _f.deleteIgnoreErrorRecursively();
-            throw e;
+            throw (e instanceof IllegalArgumentException) ? new IOException("corrupted prefix") : e;
         }
     }
 
