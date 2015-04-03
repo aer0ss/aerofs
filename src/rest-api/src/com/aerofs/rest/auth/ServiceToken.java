@@ -5,18 +5,17 @@ import com.aerofs.oauth.Scope;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class ServiceToken implements IAuthToken
-{
-    private final String service;
+public class ServiceToken implements IAuthToken {
+    private final String _service;
 
-    public ServiceToken(String service)
+    ServiceToken(String service)
     {
-        this.service = service;
+        _service = service;
     }
 
     public String service()
     {
-        return service;
+        return _service;
     }
 
     @Override

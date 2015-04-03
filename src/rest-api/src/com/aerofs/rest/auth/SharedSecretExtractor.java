@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SharedSecretExtractor implements AuthTokenExtractor<ServiceToken>
+public class SharedSecretExtractor implements AuthTokenExtractor<PrivilegedServiceToken>
 {
     private final static Pattern SHARED_SECRET_PATTERN =
             Pattern.compile("Aero-Service-Shared-Secret ([a-zA-Z0-9\\-_]+) ([0-9a-f]{32})");
@@ -30,7 +30,7 @@ public class SharedSecretExtractor implements AuthTokenExtractor<ServiceToken>
 
     @Nullable
     @Override
-    public ServiceToken extract(HttpContext context)
+    public PrivilegedServiceToken extract(HttpContext context)
     {
         HttpRequestContext req = context.getRequest();
 
@@ -45,6 +45,6 @@ public class SharedSecretExtractor implements AuthTokenExtractor<ServiceToken>
             throw AuthTokenExtractor.unauthorized("invalid secret", challenge());
         }
 
-        return new ServiceToken(m.group(1));
+        return new PrivilegedServiceToken(m.group(1));
     }
 }
