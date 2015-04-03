@@ -216,7 +216,7 @@ public final class MessageHandler extends SimpleChannelHandler
     {
         Channel channel = ctx.getChannel();
 
-        checkState(TransportUtil.hasValidChannelData(channel), "connnected event fired for %s before peer verified", channel);
+        checkState(TransportUtil.hasValidChannelData(channel), "connected event fired for %s before peer verified", channel);
 
         super.channelConnected(ctx, e);
 
@@ -231,7 +231,7 @@ public final class MessageHandler extends SimpleChannelHandler
         try {
             // remove the write queue
             synchronized (writeLock) {
-                checkState(pendingWrites != null); // if the channel is closed, it should happen after the channelConnected event
+                if (pendingWrites == null) return;
                 writesToSend = pendingWrites;
                 pendingWrites = null;
             }
@@ -254,10 +254,8 @@ public final class MessageHandler extends SimpleChannelHandler
             }
 
             // fail all packets we didn't write out
-            if (writesToSend != null) {
-                while ((pending = writesToSend.poll()) != null) {
-                    pending.future.setFailure(e);
-                }
+            while ((pending = writesToSend.poll()) != null) {
+                pending.future.setFailure(e);
             }
 
             // finish off by rethrowing the exception

@@ -15,7 +15,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +50,7 @@ public final class ConnectTimeoutHandler extends SimpleChannelHandler
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        timeout.cancel();
+        if (timeout != null) timeout.cancel();
         ctx.getPipeline().remove(this);
         super.channelDisconnected(ctx, e);
     }
@@ -67,19 +66,17 @@ public final class ConnectTimeoutHandler extends SimpleChannelHandler
 
     Timeout createTimeout(final ChannelHandlerContext ctx)
     {
-        return timer.newTimeout(new TimerTask() {
-            @Override
-            public void run(Timeout timeout) throws Exception
-            {
-                Channel channel = ctx.getChannel();
-                Preconditions.checkNotNull(channel);
+        return timer.newTimeout(timeout1 -> {
+            Channel channel = ctx.getChannel();
+            Preconditions.checkNotNull(channel);
 
-                l.debug("connect timer {}:{}", TransportUtil.hexify(channel), TransportUtil.getChannelState(channel));
+            l.debug("connect timer {}:{}", TransportUtil.hexify(channel),
+                    TransportUtil.getChannelState(channel));
 
-                if (TransportUtil.getChannelState(channel) != ChannelState.VERIFIED) {
-                    l.warn("Timeout waiting for verification {}", TransportUtil.hexify(channel));
-                    Channels.fireExceptionCaughtLater(channel, new ExTimeout("Timed out waiting for CName verification"));
-                }
+            if (TransportUtil.getChannelState(channel) != ChannelState.VERIFIED) {
+                l.warn("Timeout waiting for verification {}", TransportUtil.hexify(channel));
+                Channels.fireExceptionCaughtLater(channel,
+                        new ExTimeout("Timed out waiting for CName verification"));
             }
         }, connectTimeout, TimeUnit.MILLISECONDS);
     }
