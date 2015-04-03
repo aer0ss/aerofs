@@ -134,8 +134,8 @@ monitor its state. All API calls should prefix the URL with a version string, e.
 - `POST /boot`
 - `POST /boot/{target}` reboots to a specific target. The Loader restarts, too,
 after returning the response to the client.
-Use "current" to refer to the target currently used by Loader. When a parameter
-is absent from the URL, "current" is used.
+Use "current" to refer to the current target. It is also the default value if the
+target field is absent.
 The "default" target refers to the default group defined in crane.yml or all the containers if no default group is defined.
 The command persists across host reboots. That is, When the host computer restarts,
 the Loader loads the app using the target specified in the last `POST /boot`.
@@ -167,31 +167,14 @@ all the containers defined in crane.yml rather than only those launched by the c
         ...
       }
 
-- `POST /latest-tag/{registry}` checks for updates. It pulls the "latest" Loader image
-from the given registry and returns the tag specified by the Loader's tag file. The result
-can be retrieved using `GET /latest-tag`. Status code 202 Accepted is returned on success.
+- `GET /tags/latest`
+- `GET /tags/latest/{registry}` returns the latest tag available in the given registry.
+If the registry field is absent, the current registry is queried.
 
-- `GET /latest-tag/{registry}` returns the status of the last `POST /latest-tag`.
-It replies with one of the following responses:
-
-      202: { "status": "pulling" }
-  
-      201: {
-        "status": "done",
-        "latest": "v1.2.3"
-      }
-  
-      500: { 
-        "status": "error",
-        "error": "unable to reach host"
-      }
-      
-  It returns an error if `POST /latest-tag` has not been invoked since the last boot.
-
-- `POST /images/{registry}/{tag}` pulls all the application images of the given tag from
+- `POST /images/pull/{registry}` pulls all the application images of the given tag from
 the given registry. The list of the images is retrieved from the Loader image of the given tag. Status code 202 Accepted is returned on success.
 
-- `GET /images/{registry}/{tag}` returns the status of the last `POST /images`.
+- `GET /images/pull/{registry}` returns the status of the last `POST /images/pull`.
 It replies with one of the following responses:
 
       202: { "status": "pulling" }

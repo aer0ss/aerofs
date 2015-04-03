@@ -28,8 +28,8 @@ def install_getty(dest):
 def main():
     if len(argv) == 1:
         # Simulate the API by default
-        undefined = '(undefined - for testing purposes, use the Loader\'s simulate-api command to define it)'
-        api.start(undefined, undefined, '/dev/null', '/dev/null', loader.get_tag())
+        undefined = '(undefined - use `simulate-api` command to define it)'
+        loader.simulate_api(undefined, undefined)
 
     elif argv[1] == 'images':
         for i in loader.get_images():

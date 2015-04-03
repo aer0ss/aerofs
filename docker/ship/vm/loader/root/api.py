@@ -2,6 +2,7 @@ from flask import Flask, json, jsonify, request
 from uuid import uuid4
 from common import call_crane, my_container_name, my_image_name, MODIFIED_YML_PATH
 import yaml
+import requests
 
 PREFIX = '/v1'
 CURRENT = 'current'
@@ -82,7 +83,7 @@ def shutdown_server():
     # app.run() will exit.
 
 
-@app.route(PREFIX + "/containers")
+@app.route(PREFIX + "/containers", methods=["GET"])
 def get_containers():
     with open(MODIFIED_YML_PATH) as f:
         y = yaml.load(f)
@@ -94,3 +95,22 @@ def get_containers():
         ret[key] = c['image']
 
     return json.dumps(ret)
+
+
+@app.route(PREFIX + "/tags/latest", methods=["GET"])
+@app.route(PREFIX + "/tags/latest/<repo>", methods=["GET"])
+def get_latest_tag(repo=None):
+    if not repo:
+        repo = _current_repo
+    url = 'https://{}/v1/repositories/{}/tags'.format(repo, my_image_name())
+    print "Querying latest tag at {}...".format(url)
+    r = requests.get(url)
+    if 200 <= r.status_code < 300:
+        print "Server {} returned: {}".format(repo, r.text)
+        ret = r.json()
+        for k, v in ret.iteritems():
+            if k != 'latest' and v == ret['latest']:
+                return '"{}"'.format(k)
+        return '"The latest tag does not correspond to a version."', 502
+    else:
+        return r.text, r.status_code
