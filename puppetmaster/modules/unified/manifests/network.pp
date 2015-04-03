@@ -54,12 +54,6 @@ class unified::network {
         dport => 443,
         action => "accept",
     }->
-    firewall {"202 allow stun":
-        table => "filter",
-        chain => "INPUT",
-        dport => 3478,
-        action => "accept",
-    }->
     firewall {"203 allow https service port":
         table => "filter",
         chain => "INPUT",

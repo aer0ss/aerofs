@@ -1,7 +1,0 @@
-Package: aerofs-stun
-Section: admin
-Priority: required
-Depends: make, gcc
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS stun server package.
-Architecture: all

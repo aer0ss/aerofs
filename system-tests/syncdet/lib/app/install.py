@@ -86,9 +86,8 @@ def get_teamserver_unattended_setup_dict():
 
 def get_transport_flags(transport):
     flags = {
-        'tcp': ['nozephyr', 'nostun'],
-        'zephyr': ['notcp', 'nostun'],
-        'jingle': ['notcp', 'nozephyr'],
+        'tcp': ['nozephyr'],
+        'zephyr': ['notcp'],
         'default': [],
         None: []
     }

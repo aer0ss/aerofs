@@ -72,7 +72,6 @@ public class CompTransports extends Composite
     public enum Transport
     {
         TCP("LAN", Images.ICON_SIGNAL3),
-        JINGLE("WAN", Images.ICON_SIGNAL2),
         ZEPHYR("Relay", Images.ICON_SIGNAL1);
 
         protected String _label;
@@ -117,13 +116,6 @@ public class CompTransports extends Composite
                             reply.getTcpDiagnostics().getReachableDevicesCount());
                 } else {
                     _deviceCounts.remove(Transport.TCP);
-                }
-
-                if (reply.hasJingleDiagnostics()) {
-                    _deviceCounts.put(Transport.JINGLE,
-                            reply.getJingleDiagnostics().getReachableDevicesCount());
-                } else {
-                    _deviceCounts.remove(Transport.JINGLE);
                 }
 
                 if (reply.hasZephyrDiagnostics()) {

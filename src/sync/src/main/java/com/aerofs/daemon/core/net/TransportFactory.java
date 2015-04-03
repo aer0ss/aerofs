@@ -10,7 +10,6 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
@@ -25,16 +24,15 @@ import java.net.Proxy;
 
 public final class TransportFactory
 {
-    public static enum TransportType
+    public enum TransportType
     {
         LANTCP("t", 0),
-        JINGLE("j", 1),
         ZEPHYR("z", 2);
 
         private final String id;
         private final int rank;
 
-        private TransportType(String id, int rank)
+        TransportType(String id, int rank)
         {
             this.id = id;
             this.rank = rank;
@@ -61,13 +59,10 @@ public final class TransportFactory
         }
     }
 
-    private String absRtRoot;
     private final UserID userID;
     private final DID did;
     private final byte[] scrypted;
     private final boolean listenToMulticastOnLoopback;
-    private final boolean enableJingleLibraryLogging;
-    private final InetSocketAddress stunServerAddress;
     private final InetSocketAddress xmppServerAddress;
     private final String xmppServerDomain;
     private final long xmppServerConnectionLinkStateChangePingInterval;
@@ -91,13 +86,10 @@ public final class TransportFactory
     private final IRoundTripTimes roundTripTimes;
 
     public TransportFactory(
-            String absRtRoot,
             UserID userID,
             DID did,
             byte[] scrypted,
             boolean listenToMulticastOnLoopback,
-            boolean enableJingleLibraryLogging,
-            InetSocketAddress stunServerAddress,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
             long xmppServerConnectionLinkStateChangePingInterval,
@@ -120,13 +112,10 @@ public final class TransportFactory
             SSLEngineFactory serverSslEngineFactory,
             IRoundTripTimes roundTripTimes)
     {
-        this.absRtRoot = absRtRoot;
         this.userID = userID;
         this.did = did;
         this.scrypted = scrypted;
         this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
-        this.enableJingleLibraryLogging = enableJingleLibraryLogging;
-        this.stunServerAddress = stunServerAddress;
         this.xmppServerAddress = xmppServerAddress;
         this.xmppServerDomain = xmppServerDomain;
         this.xmppServerConnectionLinkStateChangePingInterval = xmppServerConnectionLinkStateChangePingInterval;
@@ -158,8 +147,6 @@ public final class TransportFactory
             return newLanTcp(transportId, transportRank);
         case ZEPHYR:
             return newZephyr(transportId, transportRank);
-        case JINGLE:
-            return newJingle(transportId, transportRank);
         default:
             throw new ExUnsupportedTransport(transportType.name());
         }
@@ -219,35 +206,6 @@ public final class TransportFactory
                 zephyrHandshakeTimeout,
                 zephyrServerAddress,
                 proxy,
-                roundTripTimes);
-    }
-
-    private ITransport newJingle(String transportId, int transportRank)
-    {
-        return new Jingle(
-                userID,
-                did,
-                stunServerAddress,
-                xmppServerAddress,
-                xmppServerDomain,
-                xmppServerConnectionLinkStateChangePingInterval,
-                numPingsBeforeDisconnectingXmppServerConnection,
-                xmppServerConnectionInitialReconnectInterval,
-                xmppServerConnectionMaxReconnectInterval,
-                channelConnectTimeout,
-                heartbeatInterval,
-                maxFailedHeartbeats,
-                scrypted,
-                absRtRoot,
-                enableJingleLibraryLogging,
-                transportId,
-                transportRank,
-                timer,
-                transportEventSink,
-                linkStateService,
-                maxcastFilterReceiver,
-                clientSslEngineFactory,
-                serverSslEngineFactory,
                 roundTripTimes);
     }
 }

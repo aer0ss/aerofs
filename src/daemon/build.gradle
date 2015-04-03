@@ -31,7 +31,6 @@ dependencies {
     compile 'org.apache.tika:tika-core:1.4'
     compile name: 'netty-native-socket'
     compile name: 'junixsocket-1.3'
-    compile project(':src/libjingle.binding')
     compile project(':src/lib')
     compile project(':src/oauth-verify')
     compile project(':src/rest-api')

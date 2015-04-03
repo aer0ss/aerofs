@@ -22,8 +22,6 @@ Used to queue command notifications from central services to client applications
 
 ## Overview
 
-Clients use [libjingle](https://developers.google.com/talk/libjingle/) to establish direct connections over UDP over the WAN.  libjingle requires an [XMPP](http://en.wikipedia.org/wiki/XMPP) server.
-
 We run an instance of [ejabberd](http://www.ejabberd.im/) on `x.aerofs.com` for clients to use for discovery.  Due to the higher IO characteristics, we currently run this server on Digital Ocean.
 
 ## Administration

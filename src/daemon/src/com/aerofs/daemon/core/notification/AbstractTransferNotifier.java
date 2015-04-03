@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.transfers.ITransferStateListener;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.FullName;
@@ -92,8 +91,6 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
     {
         if (transport instanceof TCP) {
             return PBTransportMethod.TCP;
-        } else if (transport instanceof Jingle) {
-            return PBTransportMethod.JINGLE;
         } else if (transport instanceof Zephyr) {
             return PBTransportMethod.ZEPHYR;
         } else if (transport == null) {

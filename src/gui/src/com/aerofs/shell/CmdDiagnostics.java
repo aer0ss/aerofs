@@ -54,10 +54,6 @@ public class CmdDiagnostics extends AbstractShellCommand<ShProgram>
             out.print("lan:");
             out.println(prettyPrint(transportDiagnostics.getTcpDiagnostics()));
         }
-        if (transportDiagnostics.hasJingleDiagnostics()) {
-            out.print("wan:");
-            out.println(prettyPrint(transportDiagnostics.getJingleDiagnostics()));
-        }
         if (transportDiagnostics.hasZephyrDiagnostics()) {
             out.print("relay:");
             out.println(prettyPrint(transportDiagnostics.getZephyrDiagnostics()));

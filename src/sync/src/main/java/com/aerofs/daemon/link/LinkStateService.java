@@ -192,7 +192,7 @@ public class LinkStateService
             // BUGBUG There is a small probability that we might lose change notifications
             // between two consecutive calls to waitForNetworkInterfaceChange(). A proper fix is
             // to use asynchronous callbacks. But calling back from C to Java is not straight-
-            // forward (see libjingle-binding implementation).
+            // forward.
             //
             // We didn't implement Driver.waitForNetworkInterfaceChange for UNIX OSes, assuming
             // getActiveInterfaces doesn't take too long or too much CPU on these OSes.

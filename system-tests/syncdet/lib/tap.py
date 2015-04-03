@@ -29,7 +29,6 @@ from aerofs_ritual.gen import tap_pb2
 
 _TRANSPORT_NAME_TO_TYPE = {
     'zephyr': tap_pb2.StartTransportCall.ZEPHYR,
-    'jingle': tap_pb2.StartTransportCall.JINGLE,
     'tcpmt': tap_pb2.StartTransportCall.TCPMT
 }
 
@@ -49,7 +48,7 @@ def connect(transport, rpc_host='localhost', rpc_port=3001):
     """
     Connects to the remote host and returns a Transport object through
     which remote calls can be made. The 'transport' argument specifies
-    what transport to use (zephyr, jingle, tcpmt)
+    what transport to use (zephyr, tcpmt)
     """
     t = tap_pb2.TapServiceRpcStub(connection.SyncConnectionService(rpc_host, rpc_port))
     try:

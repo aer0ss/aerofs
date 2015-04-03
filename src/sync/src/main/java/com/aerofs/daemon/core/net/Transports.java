@@ -19,11 +19,9 @@ import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.collect.Sets;
@@ -38,7 +36,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
 
-import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -65,11 +62,9 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     // NOTE: I probably have to create a TransportModule (Guice) and bind BlockingPrioQueue<IEvent> to CoreQueue
     @Inject
     public Transports(
-            CfgAbsRTRoot absRTRoot,
             CfgLocalUser localid,
             CfgLocalDID localdid,
             CfgScrypted scrypted,
-            CfgLolol lolol,
             CfgEnabledTransports enabledTransports,
             Timer timer,
             CoreQueue coreQueue,
@@ -83,13 +78,10 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             throws ExUnsupportedTransport
     {
         TransportFactory transportFactory = new TransportFactory(
-                absRTRoot.get(),
                 localid.get(),
                 localdid.get(),
                 scrypted.get(),
                 false,
-                lolol.get(),
-                DaemonParam.Jingle.STUN_SERVER_ADDRESS,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
                 5 * C.SEC,
@@ -115,18 +107,9 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
         if (enabledTransports.isTcpEnabled()) {
             addTransport(transportFactory.newTransport(LANTCP));
         }
-        if (enabledTransports.isJingleEnabled()) {
-            addTransport(transportFactory.newTransport(JINGLE));
-        }
         if (enabledTransports.isZephyrEnabled()) {
             Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
-            // zephyr and jingle both use xmpp for multicast
-            // if both multicast channels were enabled simultaneously we would get duplicate messages
-            // although this is nbd, it is noisy
-            // as a result, we only enable _1_ of the 2 multicast channels
-            // if both zephyr and jingle are enabled, then we use jingle's channel,
-            // otherwise, we enable multicast for zephyr
-            if (!enabledTransports.isJingleEnabled()) zephyr.enableMulticast();
+            zephyr.enableMulticast();
             addTransport(zephyr);
         }
     }

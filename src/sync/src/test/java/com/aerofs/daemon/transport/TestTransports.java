@@ -69,7 +69,7 @@ public final class TestTransports
     @Parameters
     public static Collection<Object[]> transports()
     {
-        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}}; // jingle cannot be tested in-process
+        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}};
         return Arrays.asList(data);
     }
 

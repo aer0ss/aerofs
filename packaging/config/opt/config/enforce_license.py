@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # A script which is run periodically to see if the current license file has expired.
 # If the license file doesn't exist or is not currently valid, then it shuts
-# down verkehr and zephyr. Ideally it shuts down ejabberd to disable jingle transfers,
-# but ejabberd can't be shut down reliably.
+# down verkehr and zephyr.
 
 from aerofs_licensing import license_file
 import os

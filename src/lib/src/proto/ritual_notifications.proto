@@ -42,8 +42,7 @@ enum PBTransportMethod {
     // n.b. NOT_AVAILABLE MUST be 0
     NOT_AVAILABLE = 0; // this indicates that the method is not set or not available
     TCP = 1;
-    JINGLE = 2;
-    ZEPHYR = 3;
+    ZEPHYR = 2;
 }
 
 message PBTransferEvent {

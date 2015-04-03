@@ -54,7 +54,6 @@ These will be built for the MVP.
 
 ### Transports
 * LAN
-* Jingle
 * Zephyr
 * TCP-WAN
 

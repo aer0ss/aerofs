@@ -139,7 +139,6 @@ public class S
             LBL_COL_PROGRESS         = "Progress",
 
             LBL_TRANSPORT_TCP        = "LAN",
-            LBL_TRANSPORT_JINGLE     = "WAN",
             LBL_TRANSPORT_ZEPHYR     = "Relay",
 
             LBL_IDLE                 = "Idle",
@@ -152,10 +151,6 @@ public class S
                     "These computers discover each other using IP multicast, and then they " +
                     "establish peer-to-peer connections to coordinate and sync. " +
                     "<a>Learn more</a>",
-            LNK_JINGLE_DESC          = "The computers on the WAN network sync files over peer-" +
-                    "to-peer connections. These computers discover each other using a common " +
-                    "presence server, and then they establish peer-to-peer connection to " +
-                    "coordinate and sync. <a>Learn more</a>",
             LBL_XMPP_DESC            = "The presence server allows computers to find each other.",
             LNK_ZEPHYR_DESC          = "The computers on the Relay network sync files via an " +
                     "intermediate server acting as a relay. These computers discover each " +

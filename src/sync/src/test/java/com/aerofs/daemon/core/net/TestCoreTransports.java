@@ -13,9 +13,7 @@ import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.testlib.LoggerSetup;
-import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -36,10 +34,8 @@ import org.mockito.Mock;
 import java.util.Collection;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -80,7 +76,7 @@ public class TestCoreTransports extends AbstractTest
     }
 
     @Test
-    public void shouldEnableMulticastForZephyrWhenJingleIsUnavailable()
+    public void shouldEnableMulticastForZephyr()
             throws ExUnsupportedTransport
     {
         CfgEnabledTransports enabledTransports = mock(CfgEnabledTransports.class);
@@ -88,15 +84,12 @@ public class TestCoreTransports extends AbstractTest
         // disable every transport other than zephyr
         // even in this configuration multicast should be enabled for zephyr
         when(enabledTransports.isTcpEnabled()).thenReturn(false);
-        when(enabledTransports.isJingleEnabled()).thenReturn(false);
         when(enabledTransports.isZephyrEnabled()).thenReturn(true);
 
         Transports transports = new Transports(
-                _absRTRoot,
                 _localUser,
                 _localDID,
                 _scrypted,
-                _cfgLolol,
                 enabledTransports,
                 _timer,
                 _coreQueue,
@@ -113,52 +106,5 @@ public class TestCoreTransports extends AbstractTest
         assertThat(constructedTransports, hasSize(1));
         assertThat(constructedTransports.iterator().next().id(), equalTo(TransportType.ZEPHYR.getId()));
         assertThat(constructedTransports.iterator().next().supportsMulticast(), equalTo(true));
-    }
-
-    // We need the suppresswarnings for the containsInAnyOrder assertion.
-    @SuppressWarnings({"unchecked"})
-    @Test
-    public void shouldDisableMulticastForZephyrWhenJingleIsEnabled()
-            throws ExUnsupportedTransport
-    {
-        CfgEnabledTransports enabledTransports = mock(CfgEnabledTransports.class);
-
-        // disable every transport other than zephyr
-        // even in this configuration multicast should be enabled for zephyr
-        when(enabledTransports.isTcpEnabled()).thenReturn(false);
-        when(enabledTransports.isJingleEnabled()).thenReturn(true);
-        when(enabledTransports.isZephyrEnabled()).thenReturn(true);
-
-        Transports transports = new Transports(
-                _absRTRoot,
-                _localUser,
-                _localDID,
-                _scrypted,
-                _cfgLolol,
-                enabledTransports,
-                _timer,
-                _coreQueue,
-                _maxcastFilterReceiver,
-                _linkStateService,
-                _clientSslEngineFactory,
-                _serverSSLEngineFactory,
-                _clientSocketChannelFactory,
-                _serverSocketChannelFactory,
-                _roundTripTimes);
-
-        Collection<ITransport> constructedTransports = transports.getAll_();
-
-        assertThat(constructedTransports, hasSize(2));
-
-        // noinspection unchecked
-        assertThat(constructedTransports, containsInAnyOrder(instanceOf(Jingle.class), instanceOf(Zephyr.class)));
-
-        for (ITransport transport : constructedTransports) {
-            if (transport instanceof Zephyr) {
-                assertThat(transport.supportsMulticast(), equalTo(false));
-            } else {
-                assertThat(transport.supportsMulticast(), equalTo(true));
-            }
-        }
     }
 }

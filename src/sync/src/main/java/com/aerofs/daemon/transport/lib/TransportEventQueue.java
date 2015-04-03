@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the blocking queue. The event-processing thread dequeues the event
  * and runs its associated handler, i.e. processing the event.
  * <p/>
- * This class can be embedded in a transport implementation (TCP, Zephyr, Jingle, <em>etc.</em>).
+ * This class can be embedded in a transport implementation (TCP, Zephyr, <em>etc.</em>).
  */
 public final class TransportEventQueue implements IBlockingPrioritizedEventSink<IEvent>
 {

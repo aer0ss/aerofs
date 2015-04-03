@@ -122,13 +122,10 @@ public final class TransportResource extends ExternalResource
         // [sigh] It's stupid to have to create this every time. I think it should be injected in
         // too bad JUnit doesn't allow nested @Rule definitions
         TransportFactory transportFactory = new TransportFactory(
-                logFilePath.getAbsolutePath(),
                 userID,
                 did,
                 scrypted,
                 true,
-                true,
-                InetSocketAddress.createUnresolved("localhost", 3478),
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
                 2 * C.SEC,

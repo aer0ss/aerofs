@@ -14,8 +14,6 @@ base.verkehr.port.admin=25234
 base.verkehr.port.subscribe=443
 base.xmpp.address=www.aerofs.com:5222
 base.zephyr.address=relay.aerofs.com:443
-# private deployments use 3478, the standard STUN port
-daemon.stun.address=stun.l.google.com:19302
 
 api.url=https://api.aerofs.com:4433/api/
 api.tunnel.host=api.aerofs.com

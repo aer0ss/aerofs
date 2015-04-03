@@ -36,29 +36,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-// [sigh]
-//
-// I hate the fact that I had to _COPY AND PASTE_ the damn test three times,
-// but using PowerMockito makes it very hard to do the right thing (and I have
-// to use PowerMockito due to TransportProtocolUtil
-//
-// the right thing to do is use ChannelTeardownHandler in TCP, Jingle and Zephyr and then
-// inline the TransportProtocolUtil.sessionEnded method into ChannelTeardownHandler (thus removing
-// the need for PowerMockito entirely, allowing me to use Parameterized runners, etc.)
-//
-// till then, this will have to do, and I will live with this shame
-
-// I have to put PowerMockIgnore here because of this:
-// http://stackoverflow.com/questions/8179399/javax-xml-parsers-saxparserfactory-classcastexception
 public final class TestChannelTeardownHandler
 {
     static
     {
         LoggerSetup.init();
     }
-
-    // I can't mock out any objects here because of this bug:
-    // https://code.google.com/p/powermock/issues/detail?id=414
 
     private IBlockingPrioritizedEventSink<IEvent> outgoingEventSink = spy(new BlockingPrioQueue<IEvent>(100));
     private StreamManager streamManager = spy(new StreamManager());
@@ -75,15 +58,9 @@ public final class TestChannelTeardownHandler
         DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
         when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                closeFuture.setSuccess();
-                return null;
-            }
+        doAnswer(invocation -> {
+            closeFuture.setSuccess();
+            return null;
         }).when(channel).close();
 
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
@@ -112,14 +89,9 @@ public final class TestChannelTeardownHandler
         DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
         when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                closeFuture.setSuccess();
-                return null;
-            }
+        doAnswer(invocation -> {
+            closeFuture.setSuccess();
+            return null;
         }).when(channel).close();
 
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
@@ -148,14 +120,9 @@ public final class TestChannelTeardownHandler
         DID did = DID.generate();
         when(channel.getCloseFuture()).thenReturn(closeFuture);
         when(channel.getAttachment()).thenReturn(new ChannelData(UserID.DUMMY, did));
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                closeFuture.setSuccess();
-                return null;
-            }
+        doAnswer(invocation -> {
+            closeFuture.setSuccess();
+            return null;
         }).when(channel).close();
 
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);

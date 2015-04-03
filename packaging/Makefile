@@ -34,7 +34,6 @@ PACKAGES= \
 	servlet-tools \
 	sp \
 	sparta \
-	stun \
 	verification \
 	verkehr \
 	web \

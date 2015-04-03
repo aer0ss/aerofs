@@ -1,19 +1,9 @@
 package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.lib.LibParam.Daemon;
-
-import java.net.InetSocketAddress;
-
-import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
-import static com.google.common.base.Preconditions.checkState;
 
 public class DaemonParam
 {
-    static {
-        checkState(Daemon.HEARTBEAT_TIMEOUT > Jingle.CALL_TIMEOUT);
-    }
-
     public static final int QUEUE_LENGTH_DEFAULT        = 1024;
 
     //
@@ -44,14 +34,6 @@ public class DaemonParam
     public static class Zephyr
     {
         public static final long HANDSHAKE_TIMEOUT    = 10 * C.SEC;
-    }
-
-    public static class Jingle
-    {
-        public static final long CALL_TIMEOUT                     = 30 * C.SEC;
-        public static final InetSocketAddress STUN_SERVER_ADDRESS = getAddressProperty(
-                "daemon.stun.address",
-                InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }
 
     public static class DB

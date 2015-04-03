@@ -17,7 +17,6 @@ localhost:9019 - verkehr http
 localhost:9079 - verkehr httpadmin
 localhost:9293 - verkehr publish
 localhost:25234 - verkehr admin
-localhost:9999 - restund (secondary IP)
 devman:
   localhost:9020 - http
   localhost:9021 - admin
@@ -34,7 +33,6 @@ nginx, proxying for:
 verkehr:
   29438 - subscribe
 5222 - ejabberd
-3478 - restund (main IP)
 8888 - zephyr
 8084 - havre (daemons connect here)
 ```
@@ -44,16 +42,12 @@ verkehr:
 Note that clients can wind up using different ports through the use of the pb (portbase) file.
 
 ```
-50193 - client default portbase
-60193 - team server default portbase
+50193 (localhost) - client default portbase
+60193 (localhost) - team server default portbase
 ```
 
 ```
-pb + 0 : FSI (legacy and unused, I believe)
-pb + 1 : ritual notifications (daemon listens, GUI connects to receive notifications)
-pb + 2 : UI (used for shellext to connect to GUI)
 pb + 3 : UI singleton (used to ensure only one instance of GUI will run per user)
-pb + 4 : ritual client (daemon listens, GUI/shell)
 ```
 
-The client also listens on random ephemeral UDP ports for jingle and TCP ports for the TCP tranport.
+The client also listens on random ephemeral TCP ports for the TCP tranport.

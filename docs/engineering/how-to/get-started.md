@@ -100,7 +100,6 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `swig` is used for our native libraries
   * `s3cmd` (developer version required) is used for pushing assets and installers to S3 buckets and cloudfront.  Only the `--devel` version of `s3cmd` supports `--cf-invalidate`
   * `qt` provides `qmake` which generates Makefiles for many of our native libraries
-  * `scons` and `swtoolkit` are used to build libjingle
   * `apt-cacher-ng` is used to speed up local prod VM builds.
   * `ruby` and `kramdown` are used by tools/markdown_watch.sh to compile .md files into .html
   * `makensis` is used to build Windows installers

@@ -1,9 +1,0 @@
-#!/bin/bash
-set -e
-
-# TODO (MP) uninstall re and restund. Their makefile doesn't support it yet :(
-
-if [ $1 == purge ]
-then
-    rm -rf /opt/stun
-fi

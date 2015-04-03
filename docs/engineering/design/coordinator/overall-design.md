@@ -409,7 +409,7 @@ indexed and stored on the Agent.
 #### Design notes, Transport
 
 The Storage Agent uses the same transport mechanisms that the Devices rely on; TCP-LAN,
-Jingle, and Zephyr.
+and Zephyr.
 
 A new Transport type (TCP-WAN) is proposed. This transport would be supported by the
 Storage Agent, and with some small firewall changes, it provides a fully-DLP-secured

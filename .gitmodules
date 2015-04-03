@@ -1,3 +1,0 @@
-[submodule "src/libjingle"]
-	path = src/libjingle
-	url = ssh://gerrit.arrowfs.org:29418/libjingle

@@ -46,7 +46,6 @@ public class LibParam extends BaseParam
     public static final String AEROFS_JAR              = "aerofs.jar";
     public static final String PORTBASE                = "pb";
     public static final String NODM                    = "nodm";
-    public static final String NOSTUN                  = "nostun";
     public static final String NOTCP                   = "notcp";
     public static final String NOZEPHYR                = "nozephyr";
     public static final String NOAUTOUPDATE            = "noautoupdate";

@@ -18,7 +18,6 @@ import org.eclipse.swt.widgets.Group;
 public class CompDetail extends Group implements ISelectionChangedListener
 {
     protected final CompTCP     _compTCP;
-    protected final CompJingle  _compJingle;
     protected final CompZephyr  _compZephyr;
     protected final StackLayout _layout;
 
@@ -27,7 +26,6 @@ public class CompDetail extends Group implements ISelectionChangedListener
         super(parent, SWT.NONE);
 
         _compTCP = new CompTCP(this);
-        _compJingle = new CompJingle(this);
         _compZephyr = new CompZephyr(this);
 
         _layout = new StackLayout();
@@ -47,12 +45,10 @@ public class CompDetail extends Group implements ISelectionChangedListener
 
         if (data == null) {
             _compTCP.setData(null);
-            _compJingle.setData(null);
             _compZephyr.setData(null);
         } else {
             TransportDiagnostics transportDiagnostics = (TransportDiagnostics) data;
             _compTCP.setData(transportDiagnostics.hasTcpDiagnostics() ? transportDiagnostics.getTcpDiagnostics() : null);
-            _compJingle.setData(transportDiagnostics.hasJingleDiagnostics() ? transportDiagnostics.getJingleDiagnostics() : null);
             _compZephyr.setData(transportDiagnostics.hasZephyrDiagnostics() ? transportDiagnostics.getZephyrDiagnostics() : null);
         }
     }
@@ -70,9 +66,6 @@ public class CompDetail extends Group implements ISelectionChangedListener
         switch (transport) {
         case TCP:
             _layout.topControl = _compTCP;
-            break;
-        case JINGLE:
-            _layout.topControl = _compJingle;
             break;
         case ZEPHYR:
             _layout.topControl = _compZephyr;

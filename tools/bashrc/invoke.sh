@@ -62,7 +62,7 @@ _invoke()
             return 0
             ;;
         --syncdet-transport)
-            local transports="default tcp jingle zephyr"
+            local transports="default tcp zephyr"
             COMPREPLY=( $(compgen -W "${transports}" -- ${cur}) )
             return 0
             ;;

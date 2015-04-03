@@ -24,7 +24,6 @@ dependencies {
     compile 'io.netty:netty-codec-http:4.1.+'
     compile 'io.netty:netty-handler:4.1+'
     compile 'io.netty:netty-transport:4.1.+'
-    compile project(':src/libjingle.binding')
     compile project(':src/lib')
     compile project(path: ':src/verkehr', configuration: 'wireClient')
     compile project(path: ':src/zephyr', configuration: 'client')

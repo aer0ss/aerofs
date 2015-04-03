@@ -71,7 +71,6 @@ import java.util.List;
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Client;
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
 import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
-import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
@@ -121,7 +120,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
         l.info(Arrays.toString(args));
         checkArgument(args.length % 2 == 1,
-                String.format("usage: %s (t|z|j) [(send|stream) <did>]*", prog));
+                String.format("usage: %s (t|z) [(send|stream) <did>]*", prog));
 
         for (int i = 1; i < args.length; i += 2) {
             switch (args[i].toLowerCase()) {
@@ -205,8 +204,6 @@ public final class Pump implements IProgram, IUnicastInputLayer
             Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
             zephyr.enableMulticast();
             return zephyr;
-        } else if (transportId.equalsIgnoreCase("j")) {
-            return transportFactory.newTransport(JINGLE);
         } else {
             throw new ExUnsupportedTransport(transportId);
         }
@@ -229,13 +226,10 @@ public final class Pump implements IProgram, IUnicastInputLayer
         ServerSocketChannelFactory serverChannelFactory = getServerChannelFactory();
         IRoundTripTimes roundTripTimes = new RoundTripTimes();
         return new TransportFactory(
-                absRTRoot.get(),
                 localid.get(),
                 localdid.get(),
                 scrypted.get(),
                 false,
-                lolol.get(),
-                DaemonParam.Jingle.STUN_SERVER_ADDRESS,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
                 5 * C.SEC,

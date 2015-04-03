@@ -17,7 +17,6 @@ public class TestTransportFactory
     public void shouldDefineTransportsInCorrectOrder()
     {
         // higher numbers are worse
-        assertThat(TransportType.ZEPHYR.getRank(), greaterThan(TransportType.JINGLE.getRank()));
-        assertThat(TransportType.JINGLE.getRank(), greaterThan(TransportType.LANTCP.getRank()));
+        assertThat(TransportType.ZEPHYR.getRank(), greaterThan(TransportType.LANTCP.getRank()));
     }
 }

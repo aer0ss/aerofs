@@ -1,8 +1,0 @@
-name 'aerofs-stun'
-version '0.0.1'
-source 'UNKNOWN'
-author 'aerofs'
-license 'Apache License, Version 2.0'
-summary 'Module for the stun server'
-description 'Set up a stun server'
-project_page 'UNKNOWN'

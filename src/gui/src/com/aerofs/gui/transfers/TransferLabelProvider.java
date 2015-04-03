@@ -106,8 +106,6 @@ public class TransferLabelProvider extends LabelProvider implements ITableLabelP
         switch (transport) {
         case TCP:
             return Images.get(Images.ICON_SIGNAL3);
-        case JINGLE:
-            return Images.get(Images.ICON_SIGNAL2);
         case ZEPHYR:
             return Images.get(Images.ICON_SIGNAL1);
         default:
@@ -162,8 +160,6 @@ public class TransferLabelProvider extends LabelProvider implements ITableLabelP
         switch (transport) {
         case TCP:
             return S.LBL_TRANSPORT_TCP;
-        case JINGLE:
-            return S.LBL_TRANSPORT_JINGLE;
         case ZEPHYR:
             return S.LBL_TRANSPORT_ZEPHYR;
         default:

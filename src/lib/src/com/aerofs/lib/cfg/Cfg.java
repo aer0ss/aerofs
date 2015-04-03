@@ -45,11 +45,11 @@ import java.util.Scanner;
 public class Cfg
 {
     public static enum PortType {
-        FSI,
-        RITUAL_NOTIFICATION,
-        UI,
+        @Deprecated FSI,
+        @Deprecated RITUAL_NOTIFICATION,
+        @Deprecated UI,
         UI_SINGLETON,
-        RITUAL
+        @Deprecated RITUAL
     }
 
     public static enum NativeSocketType {
@@ -76,7 +76,6 @@ public class Cfg
     private static SID _rootSID;
     private static boolean _useDM;
     private static boolean _useTCP;
-    private static boolean _useJingle;
     private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
     private static boolean _isAggressiveCheckingEnabled;
@@ -161,7 +160,6 @@ public class Cfg
         _portbase = readPortbase();
         _useDM = disabledByFile(rtRoot, LibParam.NODM);
         _useTCP = disabledByFile(rtRoot, LibParam.NOTCP);
-        _useJingle = disabledByFile(rtRoot, LibParam.NOSTUN);
         _useZephyr = disabledByFile(rtRoot, LibParam.NOZEPHYR);
         _useAutoUpdate = disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
         _isAggressiveCheckingEnabled = enabledByFile(rtRoot, LibParam.AGGRESSIVE_CHECKS);
@@ -386,11 +384,6 @@ public class Cfg
     public static boolean useTCP()
     {
         return _useTCP;
-    }
-
-    public static boolean useJingle()
-    {
-        return _useJingle;
     }
 
     public static boolean useZephyr()

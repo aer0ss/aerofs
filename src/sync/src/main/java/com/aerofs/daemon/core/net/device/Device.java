@@ -31,18 +31,18 @@ import java.util.TreeMap;
 // technically, Devices should simply have the following map:
 // did => sid*, where sid is a union of all the sids 'available' on each transport
 // while intellectually appealing, this _cannot_ currently work because of the
-// way multicast is implemented in jingle and zephyr
+// way multicast is implemented in zephyr
 //
 // to explain, consider the following case for device D1:
 // tcp online: S1, S2, S3
-// jingle online: S1, S2
+// zephyr online: S1, S2
 //
 // what stores are available on D1?
 //
 // the logical answer would be "S1, S2, S3", since stores are _transport independent_
-// and we still have a connection via jingle to that device. unfortunately, because
-// both jingle and zephyr use multicast chatrooms for each store, any multicast messages
-// sent to S3 on D1 via jingle are dropped.
+// and we still have a connection via zephyr to that device. unfortunately, because
+// zephyr use multicast chatrooms for each store, any multicast messages sent to S3 on
+// D1 via zephyr are dropped.
 //
 // until we can fix this, the combination of Devices and Device will be substantially
 // more complicated than they 'could' be. it's also possible that we will miss
