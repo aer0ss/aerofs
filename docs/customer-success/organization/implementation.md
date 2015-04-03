@@ -12,8 +12,8 @@ an implementation contact as well.
 
 It is the implementation engineer's reponsibility to work with the customer to
 deploy and scale the solution, as well as liason with other technical
-departments (support, solutions, engineering, product) when necessary. The
-implementation engineer remains the primary technical point of contact
+departments (sales, support, solutions, engineering, product) when necessary.
+The implementation engineer remains the primary technical point of contact
 throughout the customer lifecycle.
 
 ## Meta
