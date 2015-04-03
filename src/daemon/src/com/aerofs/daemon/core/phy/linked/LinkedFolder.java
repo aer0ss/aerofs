@@ -158,7 +158,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         // ACL updates are likely to be processed before the event leaves the buffer and thus to
         // try, and fail, to delete an already deleted folder.
 
-        if (_path.isRepresentable()) {
+        if (!_path.isInAuxRoot()) {
             _fidm.throwIfFIDInconsistent_();
             _f.deleteOrThrowIfExist();
         } else {
@@ -173,21 +173,17 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
             _f.deleteOrThrowIfExistRecursively();
         }
 
-        TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
-            @Override
-            public void run_() throws IOException
-            {
-                try {
-                    _f.mkdir();
-                } catch (IOException e) {
-                    // InjectableFile.mkdir throws IOException if File.mkdir returns false
-                    // That can happen if the directory already exists, which is very much
-                    // unexpected in this case but not a good enough reason to wreak havoc with
-                    // a transaction rollback
-                    if (!(_f.exists() && _f.isDirectory())) {
-                        throw new IOException("fs rollback failed: " + _f.exists()
-                                + " " + _f.isDirectory(), e);
-                    }
+        TransUtil.onRollback_(_f, t, () -> {
+            try {
+                _f.mkdir();
+            } catch (IOException e) {
+                // InjectableFile.mkdir throws IOException if File.mkdir returns false
+                // That can happen if the directory already exists, which is very much
+                // unexpected in this case but not a good enough reason to wreak havoc with
+                // a transaction rollback
+                if (!(_f.exists() && _f.isDirectory())) {
+                    throw new IOException("fs rollback failed: " + _f.exists()
+                            + " " + _f.isDirectory(), e);
                 }
             }
         });

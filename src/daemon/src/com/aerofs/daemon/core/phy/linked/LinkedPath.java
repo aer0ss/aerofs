@@ -18,9 +18,10 @@ public class LinkedPath
 {
     // true if physical file in linked root (as opposed to aux folder)
     private enum Type {
-        Representable,      // regular object or child of a NRO
-        NonRepresentable,   // Non-Representable Object
-        Auxiliary           // prefix, conflict branch, ...
+        Representable,              // regular object
+        RepresentableChildOfNRO,    // child of a NRO
+        NonRepresentable,           // Non-Representable Object
+        Auxiliary                   // prefix, conflict branch, ...
     }
 
     private final Type _type;
@@ -50,7 +51,7 @@ public class LinkedPath
 
     public static LinkedPath representableChildOfNonRepresentable(Path virtual, String physical)
     {
-        return new LinkedPath(Type.Representable, virtual, physical);
+        return new LinkedPath(Type.RepresentableChildOfNRO, virtual, physical);
     }
 
     public static LinkedPath nonRepresentable(Path virtual, String physical)
@@ -63,10 +64,14 @@ public class LinkedPath
         return new LinkedPath(Type.Auxiliary, virtual, physical);
     }
 
+    public boolean isInAuxRoot()
+    {
+        return _type != Type.Representable;
+    }
 
     public boolean isRepresentable()
     {
-        return _type == Type.Representable;
+        return _type == Type.Representable || _type == Type.RepresentableChildOfNRO;
     }
 
     public boolean isNonRepresentable()

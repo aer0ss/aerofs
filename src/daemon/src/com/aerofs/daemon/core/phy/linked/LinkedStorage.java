@@ -632,7 +632,7 @@ public class LinkedStorage implements IPhysicalStorage
         final LinkerRoot r = _lrm.get_(f._path.virtual.sid());
         if (r == null) {
             l.warn("no linker root");
-        } else if (f._path.isNonRepresentable()) {
+        } else if (f._path.isInAuxRoot()) {
             // NROs created before mandatory hashing may not have been hashed, which will prevent
             // uploads from proceeding and result in this method being called, at which point we
             // should trigger a re-hashing

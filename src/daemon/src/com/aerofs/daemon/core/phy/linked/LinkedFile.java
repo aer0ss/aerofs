@@ -106,7 +106,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         case APPLY:
             // NROs are not managed by the linker/scanner so we have to be more
             // forgiving in case of inconsistency to avoid getting stuck
-            if (_path.isRepresentable()) _fidm.throwIfFIDInconsistent_();
+            if (!_path.isInAuxRoot()) _fidm.throwIfFIDInconsistent_();
 
             try {
                 _s.move_(this, lf, t);
@@ -220,7 +220,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         try {
             return new FileInputStream(_f.getImplementation());
         } catch (FileNotFoundException e) {
-            if (_path.isRepresentable()) {
+            if (!_path.isInAuxRoot()) {
                 checkNotNull(_path.virtual);
                 LinkerRoot lr = _s._lrm.get_(_path.virtual.sid());
                 if (lr != null) {
