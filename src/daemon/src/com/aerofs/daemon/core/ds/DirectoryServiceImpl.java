@@ -165,14 +165,14 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
                  *
                  * For each object, the DB only stores the "self" expulsion flag
                  * but for simplicity the OA exposes the inherited expulsion flag
-                 * (i.e wheter the object itself or any of its ancestors is expelled)
+                 * (i.e whether the object itself or any of its ancestors is expelled)
                  */
                 if (oa != null) {
                     // TODO: loop detection?
                     int flags = oa.flags();
                     if (!oa.parent().isRoot()) {
                         OA parent = getOANullableNoFilter_(new SOID(soid.sidx(), oa.parent()));
-                        checkNotNull(parent);
+                        checkNotNull(parent, "%s -> %s", soid, oa.parent());
                         if (parent.isExpelled()) flags |= OA.FLAG_EXPELLED_INH;
                     }
                     oa.setFlags(flags | OA.FLAG_DS_VALIDATED);

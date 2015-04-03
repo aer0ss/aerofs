@@ -161,7 +161,7 @@ class ScanSession
         final Trans _t;
         final int _updates;
 
-        ExSplitTrans(Trans t, int updates, Exception cause)
+        ExSplitTrans(Trans t, int updates, Throwable cause)
         {
             super(cause);
             _t = t;
@@ -185,8 +185,7 @@ class ScanSession
         // Initialization
         if (_stack == null) {
             if (l.isInfoEnabled()) {
-                String obfuscatedPaths = Joiner.on(", ").join(_sortedPCRoots);
-                l.info("[" + obfuscatedPaths + "] " + _recursive);
+                l.info("[" + Joiner.on(", ").join(_sortedPCRoots) + "] " + _recursive);
             }
             _stack = Lists.newLinkedList();
         } else {
@@ -211,6 +210,7 @@ class ScanSession
                         t = e._t;
                         if (e.getCause() != null) {
                             Throwables.propagateIfPossible(e.getCause(), Exception.class);
+                            throw new RuntimeException(e.getCause());
                         }
                     }
 
@@ -262,19 +262,10 @@ class ScanSession
 
     private void addRootPathComboToStack_()
     {
-        Set<String> rescan = Sets.newHashSet();
-        PathCombo lastRescan = null;
-
         Iterator<PathCombo> iter = _sortedPCRoots.iterator();
-        while (iter.hasNext()) {
+        if (iter.hasNext()) {
             PathCombo pcRoot = iter.next();
-            if (isScannableDir(pcRoot._absPath)) {
-                // The order of scan is the natural order of the list, as required by the
-                // constructor.
-                _stack.push(pcRoot);
-                iter.remove();
-                break;
-            } else {
+            while (!(pcRoot._path.isEmpty() || isScannableDir(pcRoot._absPath))) {
                 /*
                  * In a perfect world this race condition could be safely ignored, however
                  * nothing is ever quite that simple in this wretched world. One would think
@@ -287,20 +278,13 @@ class ScanSession
                  * the parent folders, in which case safety can only be achieved by forcing
                  * a re-scan of the parent.
                  */
-                l.warn("root {} no longer a dir. skip", pcRoot._absPath);
-                iter.remove();
-                // if the pcRoot is the root of an external... no chance it's under a rescan path
-                if (pcRoot._path.isEmpty()) continue;
-
-                PathCombo p = pcRoot.parent();
-                if (lastRescan == null || !p._path.isStrictlyUnder(lastRescan._path)) {
-                    rescan.add(p._absPath);
-                    lastRescan = p;
-                }
+                l.warn("{} no longer a dir. go up", pcRoot._absPath);
+                pcRoot = pcRoot.parent();
             }
-        }
 
-        if (!rescan.isEmpty()) _root.scanImmediately_(rescan, false);
+            iter.remove();
+            _stack.push(pcRoot);
+        }
     }
 
     /**
@@ -346,7 +330,7 @@ class ScanSession
             // on first launch, report indexing progress
             _f._spr.folderScanned_(potentialUpdates - lastNotification);
 
-        } catch (Exception e) {
+        } catch (Exception|Error e) {
             if (split != null) {
                 // if an exception is thrown after a new trans was started we need to make
                 // sure the caller is aware of it otherwise it will try to rollback an already
