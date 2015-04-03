@@ -12,11 +12,15 @@
 # do not compare file content.
 
 is_gzip() {
-    [[ $(file --brief --mime "$1") =~ application/x-gzip ]] && echo 1 || echo 0
+    local MIME=$(file --brief --mime "$1")
+    # Mac returns 'x-gzip' and Linux returns 'gzip'
+    ([[ ${MIME} =~ application/x-gzip ]] || [[ ${MIME} =~ application/gzip ]]) && echo 1 || echo 0
 }
 
 is_tar() {
-    [[ $(file --brief --mime "$1") =~ application/x-tar ]] && echo 1 || echo 0
+    local MIME=$(file --brief --mime "$1")
+    # Mac returns 'x-tar' and Linux returns 'tar'
+    ([[ ${MIME} =~ application/x-tar ]] || [[ ${MIME} =~ application/tar ]]) && echo 1 || echo 0
 }
 
 NO_DIFF=0
