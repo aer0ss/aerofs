@@ -42,3 +42,11 @@ for training the IT adminisrator and other individuals within the customer's
 organization.
 
 This responsibility is shared with the support group.
+
+### Professional Services
+
+At times, the responsibilities of the implementation engineer can border
+professional services work. For now, to increase traction, we allow those lines
+to blur and we provide "free" professional services in some cases. In the
+future, we might choose to more explicitly define our implementation PS
+offering. Such future offerings might include "premium" support.
