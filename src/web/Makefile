@@ -15,6 +15,11 @@ $(DST_DIR)/%: %
 	mkdir -p $(@D)
 	cp $< $@
 
+$(DST_DIR)/web/views/devices/devices_view.py: web/views/devices/devices_view.py devices_view.py.docker.patch
+	mkdir -p $(@D)
+	cp $< $@
+	patch $@ < devices_view.py.docker.patch
+
 $(DST_DIR)/web/util.py: web/util.py
 	mkdir -p $(@D)
 	sed -e "s/'base.sp.url'/'deployment.sp_server_uri'/" $< > $@

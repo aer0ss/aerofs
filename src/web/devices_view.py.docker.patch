@@ -1,0 +1,33 @@
+@@ -192,7 +192,7 @@
+ 
+     last_seen_data = {}
+     try:
+-        last_seen_data = _get_last_seen_data(_get_verkehr_url(request.registry.settings), deployment_secret, user, devices)
++        last_seen_data = _get_last_seen_data(deployment_secret, user, devices)
+     except Exception as e:
+         log.error('get_last_seen failed. use null values: {}'.format(e))
+ 
+@@ -271,13 +271,7 @@
+     return decoded_id
+ 
+ 
+-def _get_verkehr_url(settings):
+-   host = settings.get('base.verkehr.host', 'verkehr.aerofs.com')
+-   port = settings.get('base.verkehr.port.rest', 25234)
+-   return 'http://{}:{}'.format(host, port)
+-
+-
+-def _get_last_seen_data(verkehr_url, deployment_secret, user_id, devices):
++def _get_last_seen_data(deployment_secret, user_id, devices):
+     """
+     Call verkehr to retrieve last seen time and location for the given list of devices.
+     @return a dict of:
+@@ -292,7 +286,7 @@
+         did = device.device_id.encode('hex')
+ 
+         last_seen_topic = quote('online/{}'.format(did), safe='') # by setting safe to empty we also quote '/'
+-        url = '{}/v2/topics/{}/updates'.format(verkehr_url, last_seen_topic)
++        url = 'http://verkehr.service:25234/v2/topics/{}/updates'.format(last_seen_topic)
+         auth_headers = {
+             "Authorization": "Aero-Delegated-User {} {} {}".format(
+                 "web",
