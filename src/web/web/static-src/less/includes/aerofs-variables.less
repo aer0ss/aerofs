@@ -4,8 +4,19 @@
 // N.B. never modify bootstrap/variables.less (or anything copied from the
 // Bootstrap library). Use this file to override variables.
 //
+/* Variables */
+@lightestblue: #e4f1f9;
+@ltblue: #add5ea;
+@medblue: #3594c9;
+@darkblue: #0e6290;
+@darkestblue: #0A2C49;
+@haze: rgba(255,255,255,.8);
+@gold: #fdd251;
+@oatmeal: #f9f9f9;
+@darkoats: #e7e7e7;
 
-@blue:                  #71c9f1;
+
+@blue:                  @ltblue;
 @yellow:                #fddb0e;
 @green:                 #5cb85c;
 @red:                   #d9534f;
@@ -18,7 +29,7 @@
 @font-family-sans-serif:  'Open Sans', sans-serif;
 @font-size-base:          11pt;
 @headings-font-weight:    300;
-@headings-color:          @base02;
+@headings-color:          @darkestblue;
 
 @standard-padding: 22px;
 
@@ -26,8 +37,7 @@
 // -------------------------
 // Note: we use aerofs.less to override buttons' foreground colors
 
-// This color is sampled from the dropbown menu background in the hover state.
-@btn-primary-bg:        #358ac3;
+@btn-primary-bg:        @medblue;
 // Since @btn-primary-bg has been changed, copy this line from
 // variable.less to update @btnPrimaryBackgroundHighlight.
 @btnPrimaryBackgroundHighlight:     spin(@btn-primary-bg, 20%);
@@ -38,10 +48,10 @@
 // Base colors
 // We use a naming scheme similar to Solarized (http://ethanschoonover.com/solarized)
 // The 0 prefix indicates a dark color, and the larger the number, the darker (or the lighter if no 0)
-@base2:                 #e7eef3;
-@base1:                 #add5ea;
-@base01:                #0d7bb3;
-@base02:                #156290;
+@base2:                 @lightestblue;
+@base1:                 @ltblue;
+@base01:                @darkblue;
+@base02:                @darkestblue;
 
 // override Bootstrap <hr> border color to be less disruptive
 @hrBorder:	            @base1;

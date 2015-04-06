@@ -1,13 +1,17 @@
 /* Variables */
-@blue: #4BAFEE;
-@ltblue: #aad3e9;
-@medblue: #358ac3;
-@darkblue: #0E6190;
+@lightestblue: #e4f1f9;
+@ltblue: #add5ea;
+@medblue: #3594c9;
+@darkblue: #0e6290;
 @darkestblue: #0A2C49;
 @haze: rgba(255,255,255,.8);
 @gold: #fdd251;
 @oatmeal: #f9f9f9;
 @darkoats: #e7e7e7;
+
+@headertext: black;
+@subheadertext: #333;
+@stdtext: #666;
 
 @navheight: 50px;
 @signupformbuttonwidth: 160px;
@@ -17,7 +21,8 @@
 // Default font size and weight
 .standardtext {
     font: 400 16px/24px 'Open Sans';
-    color: #878787;
+    font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    color: @stdtext;
 }
 /* Mixin: Inside a div have an image vertically and horizontally centered
    Height determines the height of the image
@@ -38,7 +43,7 @@
 .gold-button {
     background-color: @gold;
     border-color: darken(@gold, 20%);
-    color: #000;
+    color: black;
     font-weight: 600;
     &:hover {
         background-color: lighten(@gold, 7%);
@@ -59,29 +64,26 @@
 /* Default styles for blog on marketing site */
 .blogpost {
   .standardtext();
-  font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'san-serif';
-  font-size: 16px;
-  color: #777;
   padding-top: @navheight;
   h1 {
     font: 300 36px/48px 'Open Sans';
-    color: #000;
+    color: @headertext;
     }
 
   h2 {
   font: 400 24px/30px 'Open Sans';
-  color: #000; }
+  color: @headertext; }
 
   h3 {
   font: 400 18px/30px 'Open Sans';
-  color: #333; }
+  color: @subheadertext; }
 
   h4 {
-  font: 400 16px/24px 'Open Sans';
-  color: #AAA; }
+  font: 600 16px/24px 'Open Sans';
+  color: @subheadertext; }
 
   p {
-  color: #000;
+  color: @stdtext;
   }
 
   blockquote {
@@ -92,34 +94,37 @@
 /* Default styles for elements on entire marketing site */
 body {
   .standardtext();
-  font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', 'Arial', 'san-serif';
-  font-size: 16px;
-  color: #777; 
-  padding-top: @navheight;
+  padding-top: 0;
+
+  &.has_nav {
+    padding-top: @navheight;
+  }
+
   h1 {
-    font: 300 48px/70px 'Open Sans';
-    letter-spacing: -2px;
-    color: #000;
-    }
-  h2 {
+    color: @headertext;
+    font-weight: 600;
+  }
+
+  article:not(.customer-stats) h1, h2 {
     font: 300 36px/48px 'Open Sans';
-    color: #000;
-    }
+    letter-spacing: -1px;
+    color: @headertext;
+  }
 
   h3 {
   font: 400 24px/30px 'Open Sans';
-  color: #000; }
+  color: @headertext; }
 
   h4 {
-  font: 400 18px/30px 'Open Sans';
-  color: #333; }
+  font: 700 18px/30px 'Open Sans';
+  color: @subheadertext; }
 
   h5 {
-  font: 400 16px/24px 'Open Sans';
-  color: #AAA; }
+  font: 700 16px/24px 'Open Sans';
+  color: #aaa; }
 
   strong {
-    color: black;
+    color: @subheadertext;
   }
 
   input {
@@ -129,13 +134,13 @@ body {
   color: #878787; }
 
   li {
-    color: #000;
+    color: @headertext;
     text-align: left; 
     p {
       line-height: 157%;
       display: inline-block;
       vertical-align: text-top;
-      color: #878787;
+      color: @stdtext;
     }
   }
 
@@ -174,8 +179,8 @@ body {
 
   /* On pages where articles alternate colors */
   .wrapper {
-    .zebra:nth-child(even), .zebra-reversed:nth-child(even) {
-      background-color: #f7f7f7;
+    .zebra:nth-child(odd), .zebra-reversed:nth-child(even) {
+      background-color: @oatmeal;
     }
   }
   .zebra-reversed {
@@ -280,32 +285,8 @@ body .gold-button {
     }
 }
 
-.submenu {
-  height: @navheight;
-  background: @ltblue;
-  position: absolute;
-  top: @navheight;
-  left: 0;
-  width: 100%;
-  display: none;
-  z-index: @navindex - 1;
-  ul {
-    display: none;
-    padding: 0;
-    li {
-      display: inline-block;
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-      a {
-        display: inline-block;
-        padding: 13px 15px;
-        &:hover {
-            background: @haze;
-          }
-      }
-    }
-  }
+.navbar-nav .dropdown-menu {
+  border-top: none;
 }
 
 /* Applies to col-sm, but not smaller or larger*/
@@ -326,35 +307,41 @@ body .gold-button {
   padding: 10px 15px 5px 0;
   margin: 0;
 }
+
 .top-header {
   padding: @navheight/2 0;
   background: @darkblue;
-  h1 {
-    letter-spacing: -2px;
-    color: white;
-    font: 600 60px/120% 'Open Sans';
-    text-align: center;
-    span {
-      font-weight: 400;
-    }
-  }
-  h3 {
-    font-size: 32px;
-    font-weight: 300;
-    margin-top: 15px;
-    letter-spacing: -1px; 
-    line-height: 1.5;
-  }
-  h3, h4 {
+
+  h1, h2, h3, h4 {
     color: @darkoats;
     text-align: center;
   }
 
-  &.front-page h1 {
-    text-align: right;
+  h1 {
+    color: white;
+    font: 600 60px/120% 'Open Sans';
+    letter-spacing: -2px;
+    span {
+      font-weight: 400;
+    }
   }
-  &.front-page h3 {
-    text-align: right;
+
+  h2, h3 {
+    font-weight: 300;
+    font-size: 32px;
+    margin-top: 15px;
+    letter-spacing: -1px; 
+    line-height: 1.5;
+  }
+
+  h1, h2, h3 {
+    text-align: center;
+  }
+
+  &.front-page {
+    h1, h2, h3 {
+      text-align: right;
+    }
   }
 
   h4 {
@@ -406,7 +393,7 @@ body .gold-button {
 
     &.bottom-signup {
         margin-bottom: 0;
-        background: @darkblue url('../../images/fog-background.png') bottom repeat;
+        background: @darkblue;
         border-top: 1pt solid @medblue;
         border-bottom: 1pt solid @medblue;
         span:not(.try-out) {
@@ -429,7 +416,7 @@ body .gold-button {
         }
 
         input {
-            border-color: darken(@blue, 20%);
+            border-color: @medblue;
             color: black;
             width: 72%;
         }
@@ -456,7 +443,7 @@ body .gold-button {
         -webkit-mask-image:-webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0)));
     }
     .img-wrapper {
-        background-color: @blue;
+        background-color: @medblue;
         width: 1071px;
         height: 545px;
         position: absolute;
@@ -487,7 +474,7 @@ body .gold-button {
     .pricing {
         h2, h3, h4 {
             margin: 0;
-            padding: 0 12px;
+            padding: .5em 12px 6px 12px;
         }
         h2 {
             line-height: 48px;
@@ -497,13 +484,12 @@ body .gold-button {
             font: 600 42px/60px 'Open Sans';
             background: @darkblue;
             color: white;
-            margin-bottom: 0;
-            margin-top: .5em;
             min-height: 60px;
+            padding: 0;
         }
         h4 {
-            color: @haze;
-            padding-top: 10px;
+            color: @ltblue;
+            font-weight: 400;
         }
         header {
             background: @darkestblue;
@@ -521,7 +507,7 @@ body .gold-button {
             .gold-button();
 
             h2 {
-              color: #000;
+              color: @headertext;
             }
         }
     }
@@ -832,7 +818,8 @@ h5.openstack-summit-boilerplate {
   h3 {
     margin-top: 0px;
     margin-bottom: 0px;
-    padding-top: 10px;
+    padding-top: 14px;
+    text-align: right;
   }
   background: @oatmeal;
   .absolute-center(40px, 1.5);
