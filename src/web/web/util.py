@@ -200,7 +200,7 @@ def is_linksharing_enabled(settings):
     return str2bool(get_settings_nonempty(settings, 'url_sharing.enabled', True))
 
 def is_restricted_external_sharing_enabled(settings):
-    return str2bool(settings.get['sharing_rules.restrict_external_sharing'])
+    return str2bool(get_settings_nonempty(settings, 'sharing_rules.restrict_external_sharing', False))
 
 def add_routes(config, routes):
     """
