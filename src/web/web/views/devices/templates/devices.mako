@@ -15,8 +15,8 @@
             <h2>${page_heading}</h2>
             <div class="my-table" ng-controller="DevicesController">
                 <div class="my-table-head row">
-                    <div class="col-sm-6 hidden-xs">Name</div>
-                    <div class="col-sm-2 hidden-xs">Most recent activity</div>
+                    <div class="col-sm-6 col-md-4 hidden-xs">Name</div>
+                    <div class="col-sm-2 col-md-4 hidden-xs">Most recent activity</div>
                     <div class="col-sm-2 hidden-xs">IP address</div>
                 </div>
                 <div class="my-table-body">

@@ -1,6 +1,6 @@
 <div class="col-sm-12">
     <div class="row" style="padding-bottom: 10px;">
-        <div class="col-sm-6">
+        <div class="col-sm-6 col-md-4">
             <span data-toggle="tooltip" 
                 class="help os_name_tooltip" 
                 ng-title="device.os_name || 'Unknown operating system'" 
@@ -25,7 +25,7 @@
                 <button type="button" class="close" ng-click="device.changingName = false"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </span>
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-2 col-md-4">
             {{ device.last_seen || "N/A" }}
         </div>
         <div class="col-sm-2">
