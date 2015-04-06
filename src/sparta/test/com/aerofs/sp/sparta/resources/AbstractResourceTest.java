@@ -89,9 +89,9 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static SessionFactory sessionFactory;
     private static Session session;
     private static Bifrost bifrost;
+    protected static String deploymentSecret = "81706d9d9cbdbc4e6f14e08117cfcd73";
 
     protected Sparta sparta;
-    protected String deploymentSecret;
     protected Injector inj;
 
     protected static final UserID user = UserID.fromInternal("user@bar.baz");
@@ -129,7 +129,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         when(sessionFactory.openSession()).thenReturn(session);
 
         // start OAuth service
-        bifrost = new Bifrost(bifrostInjector());
+        bifrost = new Bifrost(bifrostInjector(), deploymentSecret);
         bifrost.start();
         l.info("OAuth service at {}", bifrost.getListeningPort());
 
@@ -229,12 +229,10 @@ public class AbstractResourceTest extends AbstractBaseTest
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
 
         when(verkehrClient.publish(anyString(), any(byte[].class)))
-                .thenAnswer(new Answer<ListenableFuture<Void>>()
-                {
+                .thenAnswer(new Answer<ListenableFuture<Void>>() {
                     @Override
                     public ListenableFuture<Void> answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
+                            throws Throwable {
                         SettableFuture<Void> f = SettableFuture.create();
                         f.set(null);
                         return f;
@@ -242,11 +240,9 @@ public class AbstractResourceTest extends AbstractBaseTest
                 });
 
         when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
-                new Answer<ListenableFuture<Void>>()
-                {
+                new Answer<ListenableFuture<Void>>() {
                     @Override
-                    public ListenableFuture<Void> answer(InvocationOnMock invocation)
-                    {
+                    public ListenableFuture<Void> answer(InvocationOnMock invocation) {
                         SettableFuture<Void> f = SettableFuture.create();
                         f.set(null);
                         return f;
@@ -275,7 +271,6 @@ public class AbstractResourceTest extends AbstractBaseTest
         o.setOrganization(org, AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        deploymentSecret = UniqueID.generate().toStringFormal();
         sparta = new Sparta(inj, deploymentSecret);
         sparta.start();
 

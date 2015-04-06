@@ -293,7 +293,7 @@ public class AbstractRestTest extends AbstractTest
         ConfigurationProperties.setProperties(prop);
 
         // start OAuth service
-        bifrost = new Bifrost(bifrostInjector());
+        bifrost = new Bifrost(bifrostInjector(), testDeploymentSecret());
         bifrost.start();
         l.info("OAuth service at {}", bifrost.getListeningPort());
 
@@ -320,6 +320,11 @@ public class AbstractRestTest extends AbstractTest
                         .allowAllHostnames())
                 .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
                         .gsonObjectMapperFactory(new GOMF()));
+    }
+
+    static String testDeploymentSecret()
+    {
+        return "d5beeb631f223a644a32ca343d9da6de";
     }
 
     private static class GOMF implements GsonObjectMapperFactory
