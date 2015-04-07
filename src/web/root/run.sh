@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+DEPLOYMENT_SECRET=$(cat /data/deployment_secret)
 # Authorize a given service to bifrost, and print out client secret.
 #
 function authorize() {
@@ -8,11 +9,13 @@ function authorize() {
     NAME=$2
     EXPIRES=$3
     URL='bifrost.service:8700'
+    AUTH_HEADER="Authorization: Aero-Service-Shared-Secret bootstrap $DEPLOYMENT_SECRET"
 
-    RET=$(curl -S -s -o /dev/null -w "%{http_code}" $URL/clients/$ID)
+    RET=$(curl -S -s -H "$AUTH_HEADER" -o /dev/null -w "%{http_code}" $URL/clients/$ID)
     if [ $RET == 404 ]; then
         # The client hasn't registered. Register now.
         RET=$(curl -S -s -o /dev/null -w "%{http_code}" $URL/clients \
+            -H "$AUTH_HEADER"
             --data-urlencode "client_id=$ID" \
             --data-urlencode "client_name=$NAME" \
             --data-urlencode "redirect_uri=aerofs://redirect" \
@@ -28,7 +31,7 @@ function authorize() {
     fi
 
     # Retrieve client secret
-    RESP=$(curl -S -s $URL/clients/$ID)
+    RESP=$(curl -S -s -H "$AUTH_HEADER" $URL/clients/$ID)
     if [ x"$RESP" == x ]; then
         echo "GET $URL/clients/$ID returns error"
         exit 77
