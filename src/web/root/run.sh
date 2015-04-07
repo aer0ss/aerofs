@@ -15,7 +15,7 @@ function authorize() {
     if [ $RET == 404 ]; then
         # The client hasn't registered. Register now.
         RET=$(curl -S -s -o /dev/null -w "%{http_code}" $URL/clients \
-            -H "$AUTH_HEADER"
+            -H "$AUTH_HEADER" \
             --data-urlencode "client_id=$ID" \
             --data-urlencode "client_name=$NAME" \
             --data-urlencode "redirect_uri=aerofs://redirect" \
