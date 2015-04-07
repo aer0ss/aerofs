@@ -9,19 +9,23 @@ import com.aerofs.polaris.api.types.Timestamps;
 import com.aerofs.polaris.dao.NotifiedTimestamps;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.sql.Time;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -89,6 +93,19 @@ public final class OrderedNotifier implements ManagedNotifier {
     @Override
     public void start() throws Exception {
         LOGGER.info("starting ordered notifier");
+        queueNeededNotifications();
+    }
+
+    private void queueNeededNotifications()
+    {
+        Set<Timestamps> needNotification = dbi.inTransaction((conn, status) -> {
+            NotifiedTimestamps timestamps = conn.attach(NotifiedTimestamps.class);
+            Set<Timestamps> results = Sets.newHashSet();
+            timestamps.getStoresNeedingNotifications().forEachRemaining(results::add);
+            return results;
+        });
+
+        needNotification.stream().forEach(x -> notifyStoreUpdated(x.store, x.databaseTimestamp));
     }
 
     @Override

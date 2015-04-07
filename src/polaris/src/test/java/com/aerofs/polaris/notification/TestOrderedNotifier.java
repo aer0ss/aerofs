@@ -242,5 +242,24 @@ public final class TestOrderedNotifier {
         assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
     }
 
+    @Test
+    public void shouldPublishNeededNotificationsOnStartup() throws Exception {
+        UniqueID store = UniqueID.generate();
+        setLatestLogicalTimestamp(dbi, store, 2918);
+
+        // publish should always succeed
+        when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(Futures.immediateFuture(null));
+
+        // starting the notifier with a db indicating this store needs notifying
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(-1L));
+
+        notifier.start();
+
+        verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 2918)));
+        // database should be updated by the end of this
+        assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
+        assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
+    }
 
 }

@@ -2,6 +2,7 @@ package com.aerofs.polaris.dao;
 
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.Timestamps;
+import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -24,6 +25,9 @@ public interface NotifiedTimestamps {
     // is this join after the where clause? could join on both conditions
     @SqlQuery("select actual.store_oid, actual.logical_timestamp, coalesce(notify.logical_timestamp, -1) from store_max_logical_timestamp as actual left join store_notified_logical_timestamp as notify on actual.store_oid = notify.store_oid where actual.store_oid = :store_oid")
     Timestamps getActualAndNotifiedTimestamps(@Bind("store_oid") UniqueID store);
+
+    @SqlQuery("select actual.store_oid, actual.logical_timestamp, coalesce(notify.logical_timestamp, -1) from store_max_logical_timestamp as actual left join store_notified_logical_timestamp as notify on actual.store_oid = notify.store_oid where actual.logical_timestamp > coalesce(notify.logical_timestamp, -1)")
+    ResultIterator<Timestamps> getStoresNeedingNotifications();
 
     @SuppressWarnings("unused")
     void close();
