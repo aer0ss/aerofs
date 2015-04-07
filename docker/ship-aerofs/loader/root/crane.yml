@@ -155,6 +155,7 @@ containers:
         - config:config.service
         - sp:sp.service
         - havre:havre.service
+        - auditor:auditor.service
 
   bifrost:
     image: aerofs/bifrost
@@ -267,6 +268,8 @@ containers:
         - verkehr:verkehr.service
         - auditor:auditor.service
         - config:config.service
+        # Implicit dependency through a hack. See Bifrost's run.sh. TODO (WW) remove this dependency
+        # - bifrost:bifrost.service
 
   verification:
     image: aerofs/verification

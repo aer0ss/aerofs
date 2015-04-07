@@ -43,8 +43,8 @@ def force_login(request):
     # Test against '/' so that we don't get annoying next=%2F in the url when we
     # click on the home button.
     if next_url and next_url != '/':
-        loc = request.route_url(login_route, _query={URL_PARAM_NEXT: next_url})
+        loc = request.route_path(login_route, _query={URL_PARAM_NEXT: next_url})
     else:
-        loc = request.route_url(login_route)
+        loc = request.route_path(login_route)
 
     return HTTPFound(location=loc)

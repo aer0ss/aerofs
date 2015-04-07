@@ -18,6 +18,10 @@ it's in progress.
 4. Now you can rebuild and reload individual service containers.
 
         $ make -C src/bifrost && dk-reload bifrost
+        
+5. Learn more about the dk command family using:
+
+        $ dk-help
 
 # Build appliance VM (optional)
 

@@ -10,6 +10,7 @@ FIXES = \
 	../libservlet/src/com/aerofs/servlets/lib/AsyncEmailSender.java \
 	../libservlet/src/com/aerofs/sp/server/lib/session/RequestRemoteAddress.java \
 	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
+	src/com/aerofs/sp/server/BifrostClient.java \
 	src/com/aerofs/sp/server/SPServlet.java
 
 image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP)

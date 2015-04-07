@@ -97,7 +97,7 @@ def login_view(request):
 
     # if openid_enabled is false we don't need to do any of the following. :(
     next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
-    openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'),
+    openid_url = "{0}?{1}".format(request.route_path('login_openid_begin'),
                                   url.urlencode({URL_PARAM_NEXT: next_url}))
     identifier = settings.get('identity_service_identifier', 'OpenID')
     external_hint = 'AeroFS user with no {} account?'.format(identifier)

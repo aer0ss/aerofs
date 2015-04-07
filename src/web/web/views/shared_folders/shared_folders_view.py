@@ -44,7 +44,7 @@ def my_shared_folders(request):
 
     return _shared_folders(request,
             _("Manage shared folders"),
-            request.route_url('json.get_my_shared_folders'),
+            request.route_path('json.get_my_shared_folders'),
             can_administer=False)
 
 @view_config(
@@ -59,7 +59,7 @@ def user_shared_folders(request):
 
     return _shared_folders(request,
             _("${name}'s shared folders", {'name': full_name}),
-            request.route_url('json.get_user_shared_folders', _query={
+            request.route_path('json.get_user_shared_folders', _query={
                 URL_PARAM_USER: email
                 }))
 
@@ -74,7 +74,7 @@ def org_shared_folders(request):
 
     return _shared_folders(request,
             _("Shared folders in my organization"),
-            request.route_url('json.get_org_shared_folders'),
+            request.route_path('json.get_org_shared_folders'),
             has_pagination=True,
             can_administer=True)
 

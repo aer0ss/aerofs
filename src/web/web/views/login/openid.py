@@ -51,7 +51,7 @@ def _begin_sp_auth(request):
     nonces = sp.open_id_begin_transaction()
     request.session['sp_session_nonce'] = nonces.sessionNonce
     request.session[_SESSION_KEY_NEXT] = resolve_next_url(request, DEFAULT_DASHBOARD_NEXT)
-    _next = request.route_url('login_openid_complete')
+    _next = "https://{}{}".format(settings['base.host.unified'], request.route_path('login_openid_complete'))
 
     _url = "{0}/oa?{1}".format(settings['openid.service.url'],
         url.urlencode({

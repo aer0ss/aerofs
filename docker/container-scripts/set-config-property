@@ -12,7 +12,7 @@ V=$(echo "$2" | sed ':a;N;$!ba;s/\n/\\n/g')
 
 DEPLOYMENT_SECRET=$(cat /data/deployment_secret)
 
-curl -XPOST --silent --show-error \
-     --header "Authorization: Aero-Service-Shared-Secret $DEPLOYMENT_SECRET" \
+curl -XPOST --fail --silent --show-error \
+     --header "Authorization: Aero-Service-Shared-Secret container-scripts $DEPLOYMENT_SECRET" \
      --data-urlencode "key=$1" --data-urlencode "value=${V}" \
      config.service:5434/set
