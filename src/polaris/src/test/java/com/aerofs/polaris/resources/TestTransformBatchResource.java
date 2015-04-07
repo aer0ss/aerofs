@@ -28,6 +28,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -79,7 +81,7 @@ public final class TestTransformBatchResource {
         }
 
         // should have received a *single* notification, since all changes were to the same shared folder
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
     }
 
     @Test
@@ -126,7 +128,7 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
     }
 
     @Test
@@ -167,7 +169,7 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
     }
 
     @Test
@@ -208,6 +210,6 @@ public final class TestTransformBatchResource {
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.NAME_CONFLICT));
 
         // should have received a notification for the completed operation
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(store);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
     }
 }

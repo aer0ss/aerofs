@@ -11,7 +11,7 @@ import com.aerofs.polaris.api.operation.Updated;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RolesAllowed(Roles.USER)
@@ -45,13 +45,13 @@ public final class TransformBatchResource {
     @Produces(MediaType.APPLICATION_JSON)
     public TransformBatchResult submitBatch(@Context AeroUserDevicePrincipal principal, TransformBatch batch) {
         List<TransformBatchOperationResult> results = Lists.newArrayListWithCapacity(batch.operations.size());
-        Set<UniqueID> updatedStores = Sets.newHashSet();
+        Map<UniqueID, Long> updatedStores = Maps.newHashMap();
 
         for (TransformBatchOperation operation: batch.operations) {
             try {
                 List<Updated> updated = objectStore.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
                 results.add(new TransformBatchOperationResult(updated));
-                updatedStores.addAll(updated.stream().map(u -> u.object.store).collect(Collectors.toList()));
+                updated.stream().collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max)).forEach((k, v) -> updatedStores.merge(k, v, Math::max));
             } catch (Exception e) {
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
                 LOGGER.warn("fail transform batch operation {}", operation, e);

@@ -121,7 +121,7 @@ public final class TestOrderedNotifier {
         SettableFuture<Void> future = SettableFuture.create();
         when(publisher.publishUpdate(anyString(), any(Update.class))).thenReturn(future);
 
-        notifier.notifyStoreUpdated(store); // <--- CALL
+        notifier.notifyStoreUpdated(store, 3024L); // <--- CALL
 
         // check that we attempted to publish the update
         verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 3024)));
@@ -145,7 +145,7 @@ public final class TestOrderedNotifier {
         UniqueID store = UniqueID.generate();
         setLatestLogicalTimestamp(dbi, store, 1983);
 
-        notifier.notifyStoreUpdated(store); // <--- CALL
+        notifier.notifyStoreUpdated(store, 1983L); // <--- CALL
 
         // first time around the publish fails :(
         future0.setException(new RuntimeException("publish failed"));
@@ -176,7 +176,7 @@ public final class TestOrderedNotifier {
         UniqueID store = UniqueID.generate();
         setLatestLogicalTimestamp(dbi, store, 1983);
 
-        notifier.notifyStoreUpdated(store); // <--- CALL
+        notifier.notifyStoreUpdated(store, 1983L); // <--- CALL
 
         // now, modify the logical timestamp associated with this store again
         // note that it's *this* timestamp that should be picked up with the second call
@@ -216,7 +216,7 @@ public final class TestOrderedNotifier {
         // first db call should fail, the second should succeed
         when(dbi.open()).thenThrow(new RuntimeException("first db call fails")).thenCallRealMethod();
 
-        notifier.notifyStoreUpdated(store); // <--- CALL
+        notifier.notifyStoreUpdated(store, 2918L); // <--- CALL
 
         // database should be updated by the end of this
         assertThat(getLatestLogicalTimestamp(dbi,store), equalTo(2918L));
@@ -235,7 +235,7 @@ public final class TestOrderedNotifier {
         // first db call should succeed, the second should fail, and following should succeed
         when(dbi.open()).thenCallRealMethod().thenThrow(new RuntimeException("second db call fails")).thenCallRealMethod();
 
-        notifier.notifyStoreUpdated(store); // <--- CALL
+        notifier.notifyStoreUpdated(store, 2918L); // <--- CALL
 
         // database should be updated by the end of this
         assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));

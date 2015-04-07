@@ -165,23 +165,24 @@ public final class TestOrderedNotifierThreadSafety {
             try {
                 for (int i = 0; i < NUM_TRANSFORMS_PER_THREAD; i++) {
                     UniqueID store = stores[random.nextInt(stores.length)];
-                    addTransform(store);
-                    notifier.notifyStoreUpdated(store);
+                    long timestamp = addTransform(store);
+                    notifier.notifyStoreUpdated(store, timestamp);
                 }
             } catch (Exception e) {
                 LOGGER.warn("fail add transform and notify publication in {}", getName());
             }
         }
 
-        private void addTransform(UniqueID store) {
-            dbi.inTransaction((conn, status) -> {
+        private long addTransform(UniqueID store) {
+
+            return dbi.inTransaction((conn, status) -> {
                 Transforms transforms = conn.attach(Transforms.class);
                 long  logicalTimestamp = transforms.add(DID.generate(), store, store, TransformType.INSERT_CHILD, /* don't care */ 888, OID.generate(), "hello".getBytes(Charsets.UTF_8), System.currentTimeMillis(), null);
 
                 LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
                 timestamps.updateLatest(store, logicalTimestamp);
 
-                return null;
+                return logicalTimestamp;
             });
         }
     }
