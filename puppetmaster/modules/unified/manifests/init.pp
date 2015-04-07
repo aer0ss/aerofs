@@ -66,14 +66,6 @@ class unified {
         source => "puppet:///modules/unified/nginx/ca",
         require => Package["nginx", "aerofs-ca-server"],
     }
-    file {"/etc/nginx/sites-available/aerofs-cfg-public":
-        source => "puppet:///modules/unified/nginx/cfg-public",
-        require => Package["nginx"],
-    }
-    file {"/etc/nginx/sites-available/aerofs-cfg-private":
-        source => "puppet:///modules/unified/nginx/cfg-private",
-        require => Package["nginx"],
-    }
     file {"/etc/nginx/sites-available/aerofs-service":
         source => "puppet:///modules/unified/nginx/service",
         require => Package["nginx"],
@@ -83,11 +75,6 @@ class unified {
         require => Package["nginx"],
     }
 
-    file{ "/etc/nginx/sites-enabled/aerofs-cfg-private":
-        ensure  => link,
-        target  => "/etc/nginx/sites-available/aerofs-cfg-private",
-        require => File["/etc/nginx/sites-available/aerofs-cfg-private"],
-    }
     file{ "/etc/nginx/sites-enabled/aerofs-ca":
         ensure  => link,
         target  => "/etc/nginx/sites-available/aerofs-ca",

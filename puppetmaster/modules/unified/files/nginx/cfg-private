@@ -1,9 +1,0 @@
-server {
-    # Internal config values (server access only).
-    listen localhost:5436;
-    access_log /var/log/nginx/cfg-private.access.log;
-
-    location / {
-        proxy_pass http://127.0.0.1:5434/server;
-    }
-}

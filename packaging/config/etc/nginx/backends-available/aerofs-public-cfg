@@ -1,7 +1,0 @@
-    # For now, we only expose the client config, but once authentication with
-    # license file checksum is built into the config server, we could also
-    # expose the server config and the rest of the backend.
-    location /config/client {
-        # proxies to python config server
-        proxy_pass http://127.0.0.1:5434/client;
-    }

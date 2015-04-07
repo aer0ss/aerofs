@@ -1,3 +1,4 @@
-location /config/client {
-  proxy_pass http://config.service:5434/client;
+location /config {
+  rewrite /config/(.+) /$1 break;
+  proxy_pass http://config.service:5434;
 }
