@@ -99,7 +99,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
         try {
             byte[] serialized = mapper.writeValueAsBytes(update);
-            ListenableFuture<Void> publishFuture = verkehrClient.publish(UrlEscapers.urlPathSegmentEscaper().escape(PolarisUtilities.getVerkehrUpdateTopic(topic)), serialized);
+            ListenableFuture<Void> publishFuture = verkehrClient.publish(PolarisUtilities.getVerkehrUpdateTopic(UrlEscapers.urlPathSegmentEscaper().escape(topic)), serialized);
             Futures.addCallback(publishFuture, new FutureCallback<Void>() {
 
                 @Override
