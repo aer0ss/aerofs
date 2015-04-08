@@ -46,9 +46,10 @@ class SwiftMagicChunk extends AbstractMagicChunk
         try {
             downloadMagicChunk();
             return;
-        } catch (IOException e) {
+        } catch (IOException | CommandException e) {
             // Here we can't catch the JavaSwift-specific NotFoundException, because errors are proxied and
             // wrapped into an IOException
+            // ... unless we are running unittests !
             CommandException cause = getCauseOfClass(e, CommandException.class);
             if (cause == null) {
                 throw e;
