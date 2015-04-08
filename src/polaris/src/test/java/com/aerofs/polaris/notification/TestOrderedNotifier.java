@@ -10,7 +10,6 @@ import com.aerofs.baseline.logging.LoggingConfiguration;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
-import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.dao.types.DIDTypeArgument;
 import com.aerofs.polaris.dao.types.OIDTypeArgument;
@@ -123,7 +122,7 @@ public final class TestOrderedNotifier {
         notifier.notifyStoreUpdated(store, 3024L); // <--- CALL
 
         // check that we attempted to publish the update
-        verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 3024)));
+        verify(publisher).publishUpdate(eq(store.toStringFormal()), eq(new Update(store, 3024)));
 
         // publish succeeds!
         future.set(null);
@@ -157,7 +156,7 @@ public final class TestOrderedNotifier {
         future1.set(null);
 
         // check that we actually called the publisher
-        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 1983))); // first call (unsuccessful), second call succeeds
+        verify(publisher, times(2)).publishUpdate(eq(store.toStringFormal()), eq(new Update(store, 1983))); // first call (unsuccessful), second call succeeds
 
         // database updated
         assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(1983L));
@@ -193,7 +192,7 @@ public final class TestOrderedNotifier {
 
         // check that we actually called the publisher
         ArgumentCaptor<Update> captor = ArgumentCaptor.forClass(Update.class);
-        verify(publisher, times(2)).publishUpdate(eq(getVerkehrUpdateTopic(store)), captor.capture()); // first call (unsuccessful), second call succeeds
+        verify(publisher, times(2)).publishUpdate(eq(store.toStringFormal()), captor.capture()); // first call (unsuccessful), second call succeeds
         List<Update> updates = captor.getAllValues();
         assertThat(updates.get(0), equalTo(new Update(store, 1983))); // first call was made with the initial value at the time of the publish call
         assertThat(updates.get(1), equalTo(new Update(store, 2005))); // second call was made with the second value which existed at the time of the publish retry
@@ -255,14 +254,10 @@ public final class TestOrderedNotifier {
 
         notifier.start();
 
-        verify(publisher).publishUpdate(eq(getVerkehrUpdateTopic(store)), eq(new Update(store, 2918)));
+        verify(publisher).publishUpdate(eq(store.toStringFormal()), eq(new Update(store, 2918)));
         // database should be updated by the end of this
         assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
         assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
-    }
-
-    private static String getVerkehrUpdateTopic(UniqueID store) {
-        return PolarisUtilities.getVerkehrUpdateTopic(store.toStringFormal());
     }
 
 }
