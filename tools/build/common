@@ -331,11 +331,19 @@ function publish_public_to_s3() {
 ENDCMDS
 }
 
-# Emails team@aerofs.com about this deployment and sends message to #eng channel on Slack
-function notify_successful_deployment {
+# Send message to #eng channel on Slack.
+function notify_successful_build {
     echo ">> notifying team of successful deployment via Slack"
-    echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
-        $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message -c good -u $SLACK_WEBHOOK -f "Deploy" > /dev/null
+
+    for room in "#eng" "#success"
+    do
+        echo "Build notification: PC $RELEASE_VERSION pushed to S3 (by $(whoami)). This version is not yet available to the public." |
+            $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
+                -r "$room"
+                -c good \
+                -u $SLACK_WEBHOOK \
+                -f "Build" > /dev/null
+    done
 }
 
 # Tags this release in the codeline.

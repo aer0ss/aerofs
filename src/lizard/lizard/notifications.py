@@ -1,6 +1,7 @@
 import datetime
 import json
 import smtplib
+import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -11,16 +12,17 @@ from . import appliance
 # TODO: extract these into external configuration
 SENDER_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
+SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 
 def _make_email_message(email_address, subject, text_body, html_body):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = SENDER_ADDR
-    msg['To'] = email_address
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = SENDER_ADDR
+    msg["To"] = email_address
 
     # Record the MIME types of both parts
-    part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8') # text/plain
-    part2 = MIMEText(html_body.encode('utf-8'), 'html', 'utf-8') # text/html
+    part1 = MIMEText(text_body.encode("utf-8"), "plain", "utf-8") # text/plain
+    part2 = MIMEText(html_body.encode("utf-8"), "html", "utf-8") # text/html
 
     # Attach parts into message container.
     # According to RFC 2046, the last part of a multipart message, in this case
@@ -36,7 +38,7 @@ def _make_email_message(email_address, subject, text_body, html_body):
     return msg
 
 def _verification_email_for(email_address, signup_code):
-    signup_url = url_for('.signup_completion_page', signup_code=signup_code, _external=True)
+    signup_url = url_for(".signup_completion_page", signup_code=signup_code, _external=True)
     print u"will email verification to {}, link {}".format(email_address, signup_url)
 
     text_body = render_template("emails/signup_email.txt", signup_url=signup_url)
@@ -45,7 +47,7 @@ def _verification_email_for(email_address, signup_code):
             text_body, html_body)
 
 def _invite_email_for(email_address, company, invite_code):
-    invite_url = url_for('.accept_organization_invite', invite_code=invite_code, _external=True)
+    invite_url = url_for(".accept_organization_invite", invite_code=invite_code, _external=True)
     print u"will email invite to {}, link {}".format(email_address, invite_url)
 
     text_body = render_template("emails/invite_email.txt",
@@ -133,24 +135,19 @@ def send_password_reset_email(email_address, link):
 def send_private_cloud_question_email(requester, message):
     subject = "[Private Cloud Question] - {}".format(requester)
     text_body = message
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = requester
-    msg['To'] = SALES_ADDR
-    part1 = MIMEText(text_body.encode('utf-8'), 'plain', 'utf-8')
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = requester
+    msg["To"] = SALES_ADDR
+    part1 = MIMEText(text_body.encode("utf-8"), "plain", "utf-8")
     msg.attach(part1)
     _send_email(SALES_ADDR, msg)
 
-def send_internal_appliance_release_email(email_address, appliance_version):
-    template_args = {
-            "version": appliance_version,
-            "now": datetime.datetime.today(),
-            "ova_link": appliance.ova_url(appliance_version),
-            "qcow_link": appliance.qcow_url(appliance_version),
-    }
-    text_body = render_template("emails/internal_release_email.txt", **template_args)
-    html_body = render_template("emails/internal_release_email.html", **template_args)
-    msg = _make_email_message(email_address,
-            "[Appliance Release] PC {} released".format(appliance_version),
-            text_body, html_body)
-    _send_email(email_address, msg)
+def send_internal_appliance_release_notification(appliance_version):
+    text = "Release notification: PC {} is now available to the public.".format(appliance_version)
+    for room in ["#eng", "#success"]:
+        payload = {"text": text, "channel": room, "username": "Release"}
+        headers = {"Content-type": "application/json"}
+        # N.B. Slack is super picky about the format of the JSON payload. Requests doesn't do it in
+        # a way that makes Slack happy, but json.dumps does.
+        requests.post(SLACK_WEBHOOK, data=json.dumps(payload), headers=headers)

@@ -6,7 +6,7 @@ from flask import Blueprint, url_for, render_template, redirect, Response, reque
 
 from aerofs_licensing import unicodecsv
 from lizard import db
-from . import appliance, emails, forms, models
+from . import appliance, notifications, forms, models
 
 import stripe
 
@@ -222,7 +222,7 @@ def upload_bundle():
                 # email all admins in org
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
-                    emails.send_license_available_email(admin, license_request.customer)
+                    notifications.send_license_available_email(admin, license_request.customer)
                 # Prefer committing after sending the emails.  In the case of a
                 # failure, admins listed before the one triggering the failure
                 # will get duplicate emails, but if you commit before sending
@@ -250,7 +250,7 @@ def release():
         else:
             appliance.set_public_version(version)
             flash(u'Released version {}'.format(version), 'success')
-            emails.send_internal_appliance_release_email("team@aerofs.com", version)
+            notifications.send_internal_appliance_release_notification(version)
             return redirect(url_for('.release'))
     return render_template("release_version.html",
             form=form,

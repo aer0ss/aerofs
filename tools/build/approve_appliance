@@ -52,7 +52,7 @@ function UploadArtifacts {
 
 UploadArtifacts
 tag_release private
-notify_successful_deployment # This notification has ... arguable utility?
+notify_successful_build
 
 echo ">> Tagged and bagged!"
 echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."

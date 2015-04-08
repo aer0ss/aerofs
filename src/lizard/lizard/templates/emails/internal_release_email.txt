@@ -1,5 +1,0 @@
-aerofs-appliance-{{ version }} went live at {{ now }}
-
-Download links:
-  - OVA: {{ ova_link }}
-  - QCOW: {{ qcow_link }}

@@ -1,6 +1,8 @@
-Use this vagrant folder to create a Linux vagrant box. Use this box to build Linux-specific packages for production systems.
+Use this vagrant folder to create a Linux vagrant box. Use this box to build
+Linux-specific packages for production systems.
 
-For the time being the only package this box can build is nginx. We hope to add support for more packages in the future.
+For the time being the only package this box can build is nginx. We hope to add
+support for more packages in the future.
 
 Usage
 ---
@@ -15,4 +17,5 @@ And then from within the ssh shell:
 
 Once built, a .deb package will be avalable in this folder.
 
-Then, upload the .deb to apt.aerofs.com, and manually `reprepro` it into everyone's repo, including _default_.
+Then, upload the .deb to apt.aerofs.com, and manually `reprepro` it into
+everyone's repo, including _default_.

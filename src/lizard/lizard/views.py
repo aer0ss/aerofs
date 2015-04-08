@@ -12,7 +12,7 @@ from itsdangerous import TimestampSigner
 import markupsafe
 
 from lizard import analytics_client, db, login_manager, csrf, stripe, filters
-from . import appliance, emails, forms, models
+from . import appliance, notifications, forms, models
 import pricing
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
@@ -106,7 +106,7 @@ def signup_request_page():
             record.job_title = form.job_title.data
             db.session.add(record)
             db.session.commit()
-        emails.send_verification_email(form.email.data, record.signup_code)
+        notifications.send_verification_email(form.email.data, record.signup_code)
 
         # can post to pardot directly now that we cookie the user earlier
         # in the process on the marketing site itself
@@ -275,7 +275,7 @@ def invite_to_organization():
             db.session.add(record)
             db.session.commit()
         # Send the invite email
-        emails.send_invite_email(record.email, customer, record.invite_code)
+        notifications.send_invite_email(record.email, customer, record.invite_code)
 
         flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
         return redirect(url_for('.administrators'))
@@ -580,7 +580,7 @@ def start_password_reset():
                     }
             reset_token = base64.urlsafe_b64encode(s.sign(json.dumps(token)))
             reset_link = url_for(".complete_password_reset", reset_token=reset_token, _external=True)
-            emails.send_password_reset_email(email, reset_link)
+            notifications.send_password_reset_email(email, reset_link)
 
         # Note: pretend that password reset worked even if the email given
         # was not known to avoid leaking which emails are registered admins.
@@ -635,7 +635,7 @@ def contact_us():
     user = login.current_user
     form = forms.ContactForm()
     if form.validate_on_submit():
-        emails.send_private_cloud_question_email(user.email, form.message.data)
+        notifications.send_private_cloud_question_email(user.email, form.message.data)
         flash(u"Message sent successfully.  We'll be in touch.", 'success')
         return redirect(url_for(".dashboard"))
     return render_template("contact_us.html", form=form)
