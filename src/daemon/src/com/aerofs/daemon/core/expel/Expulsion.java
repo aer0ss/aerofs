@@ -133,7 +133,7 @@ public class Expulsion
 
         if (wasExpelled == nowExpelled) return;
 
-        l.debug("set expulsion of " + soid + " with " + expelled);
+        l.info("set expulsion of {} with {}", soid, expelled);
 
         if (expelled) {
             _exdb.insertExpelledObject_(soid, t);
