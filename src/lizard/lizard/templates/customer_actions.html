@@ -2,6 +2,10 @@
 {% from "_formhelpers.html" import render_field, submit_button %}
 {% from "_licensehelper.html" import render_license_table %}
 
+{% block head %}
+<link href="{{ url_for('static', filename='css/bootstrap-datepicker.min.css') }}" rel="stylesheet" />
+{% endblock %}
+
 {% block title %}Customer View | Licensing Admin{% endblock %}
 
 {% block content %}
@@ -29,4 +33,16 @@
         {{ render_field(form.allow_device_restriction) }}
         {{ submit_button("Create license request") }}
     </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/bootstrap-datepicker.min.js') }}" ></script>
+<script>
+$(document).ready(function() { 
+    $('#expiry_date').datepicker({
+        format: "yyyy-mm-dd"
+    });
+});
+
+</script>
 {% endblock %}
