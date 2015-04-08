@@ -64,6 +64,7 @@ public class SanityPoller
         // S3 storage only uses the prefix folder in the auxroot...
         StorageType storageType = Cfg.storageType();
         if (storageType == StorageType.S3) return;
+        if (storageType == StorageType.SWIFT) return;
 
         // We poll for the existence of the root anchor. We used to use
         // JNotify for this but it cause problems and only gave a negligible

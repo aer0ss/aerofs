@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 
+import static com.aerofs.gui.GUIUtil.updateFont;
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
@@ -57,6 +58,7 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         Composite composite = new Composite(parent, SWT.NONE);
 
         Label lblMessage = createLabel(composite, SWT.NONE);
+        updateFont(lblMessage, 110, SWT.NONE);
         lblMessage.setText(S.SETUP_MESSAGE);
 
         Label lblUserID = createLabel(composite, SWT.NONE);

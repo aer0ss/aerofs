@@ -129,6 +129,10 @@ public class Setup
             if (backendConfig != null && backendConfig._storageType == StorageType.S3) {
                 UIGlobals.analytics().track(SimpleEvents.ENABLE_S3);
             }
+            // Send event for Swift Setup
+            if (backendConfig != null && backendConfig._storageType == StorageType.SWIFT) {
+                UIGlobals.analytics().track(SimpleEvents.ENABLE_SWIFT);
+            }
             UIGlobals.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
 
         } catch (Exception e) {

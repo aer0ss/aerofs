@@ -13,16 +13,8 @@ import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -50,8 +42,6 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
     private boolean _inProgress;
 
     protected abstract @Nonnull Logger getLogger();
-
-    protected abstract @Nonnull Button getDefaultButton();
 
     // return the list of controls to disable while work is in progress
     //   the list may contain null elements.
@@ -125,20 +115,6 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
 
     protected abstract ErrorMessage[] getErrorMessages(Exception e);
 
-    // subclass should override to validate user input
-    protected boolean isInputValid()
-    {
-        return true;
-    }
-
-    // invoke to validate user input, which will update the state of the default button accordingly
-    protected final void validateInput()
-    {
-        Button button = getDefaultButton();
-        button.setEnabled(isInputValid());
-        if (button.getEnabled()) getShell().setDefaultButton(button);
-    }
-
     // an utility method to create a listener that invokes doWork when invoked
     protected final SelectionListener createListenerToDoWork()
     {
@@ -163,5 +139,22 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
                 validateInput();
             }
         };
+    }
+
+    // subclass should override to validate user input
+    protected boolean isInputValid()
+    {
+        return true;
+    }
+
+    protected abstract @Nonnull
+    Button getDefaultButton();
+
+    // invoke to validate user input, which will update the state of the default button accordingly
+    protected final void validateInput()
+    {
+        Button button = getDefaultButton();
+        button.setEnabled(isInputValid());
+        if (button.getEnabled()) getShell().setDefaultButton(button);
     }
 }

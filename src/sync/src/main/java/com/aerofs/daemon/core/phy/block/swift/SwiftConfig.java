@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.block.swift;
 
+import com.aerofs.base.C;
 import com.aerofs.daemon.core.phy.block.encrypted.BackendConfig;
 import org.javaswift.joss.client.factory.AccountConfig;
 import org.javaswift.joss.client.factory.AccountFactory;
@@ -13,6 +14,9 @@ public class SwiftConfig extends BackendConfig
     private final String _url;
     private final AuthenticationMethod _authMethod;
     private final String _containerName;
+
+    // Timeout
+    private static final Long CONNECTION_TIMEOUT = 10*C.SEC;
 
     public SwiftConfig(String username, String password, String url, AuthenticationMethod authMethod, String containerName)
     {
@@ -42,6 +46,7 @@ public class SwiftConfig extends BackendConfig
         config.setPassword(_password);
         config.setAuthUrl(_url);
         config.setAuthenticationMethod(_authMethod);
+        config.setSocketTimeout(CONNECTION_TIMEOUT.intValue());
         return config;
     }
 

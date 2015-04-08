@@ -11,9 +11,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -85,7 +83,7 @@ public abstract class AbstractSetupPage extends Composite
 
         Label title = createLabel(header, SWT.NONE);
         title.setText(S.SETUP_TITLE);
-        GUIUtil.changeFont(title, 16, SWT.BOLD);
+        GUIUtil.updateFont(title, 120, SWT.BOLD);
 
         Label logo = createLabel(header, SWT.NONE);
         logo.setImage(Images.get(Images.IMG_SETUP));

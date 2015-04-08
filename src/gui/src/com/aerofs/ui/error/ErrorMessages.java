@@ -99,7 +99,7 @@ public class ErrorMessages
      *    showUnnormalized() does not normalize them.
      */
     static private ErrorMessage[] _commonMessages = new ErrorMessage[] {
-            new ErrorMessage(ExNoConsole.class, "No console is availabble for user input."),
+            new ErrorMessage(ExNoConsole.class, "No console is available for user input."),
     };
 
     /**

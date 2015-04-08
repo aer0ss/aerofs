@@ -48,6 +48,7 @@ public class SwiftBackend extends EncryptedBackend
         currentContainer = currentAccount.getContainer(containerName);
 
         if (!currentContainer.exists()) {
+            l.debug("Container '{}' doesn't exist, creating...", containerName);
             currentContainer.create();
             currentContainer.makePrivate();
         }

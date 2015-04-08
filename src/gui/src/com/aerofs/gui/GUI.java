@@ -505,10 +505,10 @@ public class GUI implements IUI
             unattendedSetup.populateModelFromSetupFile(model);
 
             if (L.isMultiuser()) {
-                if (model._storageType.isRemote()) {
-                    model._isLocal = false;
-                } else {
-                    model._isLocal = true;
+
+                model._isLocal = !model._storageType.isRemote();
+
+                if(model._isLocal) {
                     model._localOptions._useBlockStorage = model._storageType == StorageType.LOCAL;
                 }
             } else {

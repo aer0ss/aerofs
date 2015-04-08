@@ -7,6 +7,7 @@ package com.aerofs.gui.multiuser.setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -15,12 +16,16 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
+import static com.aerofs.gui.GUIUtil.updateFont;
 import static com.aerofs.gui.GUIUtil.createLabel;
 
 public class PageSelectStorage extends AbstractSetupPage
 {
     private Button      _btnLocalStorage;
     private Button      _btnS3Storage;
+    private Button      _btnSwiftStorage;
+
+    private Button      _btnNext;
 
     public PageSelectStorage(Composite parent)
     {
@@ -32,7 +37,9 @@ public class PageSelectStorage extends AbstractSetupPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        createLabel(content, SWT.NONE).setText(S.SETUP_STORAGE_MESSAGE);
+        Label lblMessage = createLabel(content, SWT.NONE);
+        updateFont(lblMessage, 110, SWT.NONE);
+        lblMessage.setText(S.SETUP_STORAGE_MESSAGE);
 
         createChoicesComposite(content);
 
@@ -41,7 +48,7 @@ public class PageSelectStorage extends AbstractSetupPage
         layout.marginBottom = 0;
         layout.marginLeft = 0;
         layout.marginRight = 0;
-        layout.spacing = 30;
+        layout.spacing = 15;
         layout.center = true;
         content.setLayout(layout);
 
@@ -59,12 +66,15 @@ public class PageSelectStorage extends AbstractSetupPage
         _btnS3Storage = GUIUtil.createButton(composite, SWT.RADIO);
         _btnS3Storage.setText(S.SETUP_STORAGE_S3);
 
+        _btnSwiftStorage = GUIUtil.createButton(composite, SWT.RADIO);
+        _btnSwiftStorage.setText(S.SETUP_STORAGE_SWIFT);
+
         RowLayout layout = new RowLayout(SWT.VERTICAL);
         layout.marginTop = 0;
         layout.marginBottom = 0;
         layout.marginLeft = 0;
         layout.marginRight = 0;
-        layout.spacing = 30;
+        layout.spacing = 10;
         composite.setLayout(layout);
 
         return composite;
@@ -76,8 +86,8 @@ public class PageSelectStorage extends AbstractSetupPage
         Button btnBack = createButton(parent, S.BTN_BACK, false);
         btnBack.addSelectionListener(createListenerToGoBack());
 
-        Button btnNext = createButton(parent, S.BTN_CONTINUE, true);
-        btnNext.addSelectionListener(new SelectionAdapter()
+        _btnNext = createButton(parent, S.BTN_CONTINUE, true);
+        _btnNext.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
@@ -92,12 +102,27 @@ public class PageSelectStorage extends AbstractSetupPage
     protected void readFromModel(SetupModel model)
     {
         _btnLocalStorage.setSelection(model._isLocal);
-        _btnS3Storage.setSelection(!model._isLocal);
+        _btnS3Storage.setSelection(!model._isLocal && model._backendConfig._storageType == StorageType.S3);
+        _btnSwiftStorage.setSelection(!model._isLocal && model._backendConfig._storageType == StorageType.SWIFT);
+
+        if (model._isLocal) {
+            _btnLocalStorage.setFocus();
+        } else if (model._backendConfig._storageType == StorageType.S3) {
+            _btnS3Storage.setFocus();
+        } else if (model._backendConfig._storageType == StorageType.SWIFT) {
+            _btnSwiftStorage.setFocus();
+        } // else leave the focus to default
     }
 
     @Override
     protected void writeToModel(SetupModel model)
     {
         model._isLocal = _btnLocalStorage.getSelection();
+
+        if (_btnS3Storage.getSelection()) {
+            model._backendConfig._storageType = StorageType.S3;
+        } else if (_btnSwiftStorage.getSelection()) {
+            model._backendConfig._storageType = StorageType.SWIFT;
+        }
     }
 }

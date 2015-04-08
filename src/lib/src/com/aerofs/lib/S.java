@@ -44,7 +44,8 @@ public class S
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your organization's data?",
             SETUP_STORAGE_LOCAL      = "On this computer",
-            SETUP_STORAGE_S3         = "On S3-compatible storage\n(Amazon S3, OpenStack Swift, Cloudian)",
+            SETUP_STORAGE_S3         = "On S3-compatible storage\n(Amazon S3, Cloudian)",
+            SETUP_STORAGE_SWIFT      = "On Openstack Swift storage",
 
             // used in setup local storage screen
             ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
@@ -62,29 +63,34 @@ public class S
             SETUP_BTN_INSTALL        = "Install",
 
             // used in setup Swift storage screen
-            SETUP_SWIFT_CONFIG_DESC    = "AeroFS supports OpenStack Swift storage backend, with basic auth mode.",
+            SETUP_SWIFT_CONFIG_DESC    = L.brand() + " can store data on OpenStack Swift using basic authentication." +
+                    "\n<a>Learn more</a>.",
 
             SETUP_SWIFT_URL            = "URL",
             SETUP_SWIFT_AUTH_MODE      = "Authentication Mode",
             SETUP_SWIFT_USERNAME       = "Username",
             SETUP_SWIFT_PASSWORD       = "Password",
+            SETUP_SWIFT_CONFIRM        = "Confirm",
             SETUP_SWIFT_CONTAINER      = "Container",
 
             SETUP_SWIFT_URL_GUI        = SETUP_SWIFT_URL + ":",
             SETUP_SWIFT_AUTH_MODE_GUI  = SETUP_SWIFT_AUTH_MODE + ":",
             SETUP_SWIFT_USERNAME_GUI   = SETUP_SWIFT_USERNAME + ":",
             SETUP_SWIFT_PASSWORD_GUI   = SETUP_SWIFT_PASSWORD + ":",
+            SETUP_SWIFT_CONFIRM_GUI    = SETUP_SWIFT_CONFIRM + ":",
             SETUP_SWIFT_CONTAINER_GUI  = SETUP_SWIFT_CONTAINER + ":",
 
             // used in setup S3 storage screen
             SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as " +
-                    "Amazon S3, OpenStack Swift, and Cloudian. <a>Learn more</a>.",
+                    "Amazon S3, and Cloudian.\n<a>Learn more</a>.",
             SETUP_S3_ENDPOINT_GUI    = "Endpoint:",
             SETUP_S3_BUCKET_NAME_GUI = "Bucket Name:",
             SETUP_S3_ACCESS_KEY_GUI  = "Access Key:",
             SETUP_S3_SECRET_KEY_GUI  = "Secret Key:",
-            SETUP_S3_ENC_PASSWD_GUI  = "Encryption Passphrase:",
-            SETUP_S3_CONF_PASSWD     = "Confirm Passphrase:",
+
+            // Encryption passphrase used in both S3 and Swift
+            SETUP_STORAGE_ENC_PASSWD_GUI = "Encryption Passphrase:",
+            SETUP_STORAGE_CONF_PASSWD = "Confirm Passphrase:",
 
             SETUP_S3_ENDPOINT        = "Endpoint",
             SETUP_S3_BUCKET_NAME     = "Bucket name",
@@ -92,7 +98,7 @@ public class S
             SETUP_S3_SECRET_KEY      = "Secret key",
 
             // Shared strings
-            SETUP_STORAGE_PASSWD_DESC = "Please create an encryption passphrase. This will be " +
+            SETUP_STORAGE_PASSWD_DESC = "Please create an encryption passphrase. This passphrase will be " +
                     "used to encrypt your data before sending it to the storage backend:",
             STORAGE_ENCRYPTION_PASSWORD = "Data encryption passphrase",
             SETUP_STORAGE_ENCRYPTION_PASSWORD = "Create an " + STORAGE_ENCRYPTION_PASSWORD +
@@ -121,6 +127,11 @@ public class S
 
             SETUP_DEFAULT_SIGNIN_ERROR = "Sorry, " + L.product() + " has failed to sign in.",
             SETUP_DEFAULT_INSTALL_ERROR = "Sorry, " + L.product() + " has failed to install.",
+
+            SETUP_SWIFT_CONNECTION_ERROR = "We weren't able to connect to the Swift node, " +
+                    "please make sure the URL and credentials are correct.",
+            SETUP_S3_CONNECTION_ERROR = "We weren't able to connect to the S3 bucket, " +
+                    "please make sure the URL and credentials are correct, and you have read access to the bucket.",
 
             MANUAL_REINSTALL = "\nPlease delete \"" + Cfg.absRTRoot() + "\" and restart "
                     + L.product(),

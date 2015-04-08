@@ -10,6 +10,7 @@ import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.StorageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
@@ -125,7 +126,15 @@ public class DlgMultiuserSetup extends AeroFSDialog
             {
                 switch (event.detail) {
                 case SWT.TRAVERSE_PAGE_NEXT:
-                    loadPage(_model._isLocal ? createLocalStoragePage() : createS3StoragePage());
+                    if (_model._isLocal) {
+                        loadPage(createLocalStoragePage());
+                    }
+                    else if (_model._backendConfig._storageType == StorageType.S3) {
+                        loadPage(createS3StoragePage());
+                    }
+                    else if (_model._backendConfig._storageType == StorageType.SWIFT) {
+                        loadPage(createSwiftStoragePage());
+                    }
                     break;
                 case SWT.TRAVERSE_PAGE_PREVIOUS:
                     loadPage(createLoginPage());
@@ -167,11 +176,58 @@ public class DlgMultiuserSetup extends AeroFSDialog
             {
                 switch (event.detail) {
                 case SWT.TRAVERSE_PAGE_NEXT:
-                    closeDialog(_model);
+                    loadPage(createPassphraseStoragePage());
                     break;
                 case SWT.TRAVERSE_PAGE_PREVIOUS:
                     loadPage(createSelectStoragePage());
                     break;
+                }
+            }
+        });
+        return page;
+    }
+
+    private AbstractSetupPage createSwiftStoragePage()
+    {
+        PageSwiftStorage page = new PageSwiftStorage(getShell());
+        page.addTraverseListener(new TraverseListener()
+        {
+            @Override
+            public void keyTraversed(TraverseEvent event)
+            {
+                switch (event.detail) {
+                    case SWT.TRAVERSE_PAGE_NEXT:
+                        loadPage(createPassphraseStoragePage());
+                        break;
+                    case SWT.TRAVERSE_PAGE_PREVIOUS:
+                        loadPage(createSelectStoragePage());
+                        break;
+                }
+            }
+        });
+        return page;
+    }
+
+    private AbstractSetupPage createPassphraseStoragePage()
+    {
+        PagePassphrase page = new PagePassphrase(getShell());
+        page.addTraverseListener(new TraverseListener()
+        {
+            @Override
+            public void keyTraversed(TraverseEvent event)
+            {
+                switch (event.detail) {
+                    case SWT.TRAVERSE_PAGE_NEXT:
+                        closeDialog(_model);
+                        break;
+                    case SWT.TRAVERSE_PAGE_PREVIOUS:
+                        if (_model._backendConfig._storageType == StorageType.S3) {
+                            loadPage(createS3StoragePage());
+                        }
+                        else if (_model._backendConfig._storageType == StorageType.SWIFT) {
+                            loadPage(createSwiftStoragePage());
+                        }
+                        break;
                 }
             }
         });

@@ -29,6 +29,7 @@ public class AnalyticsEvents
         UNLINK_DEVICE("Unlink Device"),
         REINSTALL_CLIENT("Reinstall Single User Client"),
         ENABLE_S3("Enable S3"),
+        ENABLE_SWIFT("Enable SWIFT"),
         SIGN_IN("Sign In"),
         EXCLUDE_FOLDER("Exclude Folder"),       // exclude a folder from sync
         INCLUDE_FOLDER("Include Folder"),       // readmit an excluded folder

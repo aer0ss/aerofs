@@ -268,10 +268,14 @@ public class GUIUtil
                 (fd.getHeight() * 0.9f), fd.getStyle());
     }
 
-    public static void changeFont(Control control, int height, int style)
+    /**
+     * @param height, the ratio (out of 100) to adjust the control's font height by.
+     *                In other words, 100 -> 100% -> unchanged, 120 -> 120% -> 20% taller, 80 -> 80% -> 20% shorter.
+     */
+    public static void updateFont(Control control, int height, int style)
     {
         FontData fd = control.getFont().getFontData()[0];
-        control.setFont(SWTResourceManager.getFont(fd.getName(), height, style));
+        control.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * height / 100, style));
     }
 
     public static boolean isWindowBuilderPro()
