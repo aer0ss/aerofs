@@ -7,11 +7,6 @@ import com.aerofs.polaris.dao.NotifiedTimestamps;
 import org.skife.jdbi.v2.DBI;
 
 abstract class NotifierUtilities {
-
-    static String getVerkehrUpdateTopic(UniqueID store) {
-        return PolarisUtilities.getVerkehrUpdateTopic(store.toStringFormal());
-    }
-
     static void setLatestLogicalTimestamp(DBI dbi, UniqueID store, long timestamp) {
         dbi.inTransaction((conn, status) -> {
             LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);

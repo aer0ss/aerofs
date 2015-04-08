@@ -10,6 +10,7 @@ import com.aerofs.baseline.logging.LoggingConfiguration;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
+import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.dao.types.DIDTypeArgument;
 import com.aerofs.polaris.dao.types.OIDTypeArgument;
@@ -32,12 +33,10 @@ import org.skife.jdbi.v2.DBI;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
 import static com.aerofs.polaris.notification.NotifierUtilities.getLatestLogicalTimestamp;
 import static com.aerofs.polaris.notification.NotifierUtilities.getLatestNotifiedLogicalTimestamp;
-import static com.aerofs.polaris.notification.NotifierUtilities.getVerkehrUpdateTopic;
 import static com.aerofs.polaris.notification.NotifierUtilities.setLatestLogicalTimestamp;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -260,6 +259,10 @@ public final class TestOrderedNotifier {
         // database should be updated by the end of this
         assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
         assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(2918L));
+    }
+
+    private static String getVerkehrUpdateTopic(UniqueID store) {
+        return PolarisUtilities.getVerkehrUpdateTopic(store.toStringFormal());
     }
 
 }

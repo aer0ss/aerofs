@@ -195,7 +195,7 @@ public final class OrderedNotifier implements ManagedNotifier {
 
     private ListenableFuture<Void> publishStoreNotification(NotifyState state) {
         LOGGER.debug("publish {} to {}", state.updateTimestamp, state.store);
-        return publisher.publishUpdate(PolarisUtilities.getVerkehrUpdateTopic(state.store.toStringFormal()), new Update(state.store, state.updateTimestamp));
+        return publisher.publishUpdate(state.store.toStringFormal(), new Update(state.store, state.updateTimestamp));
     }
 
     private void updateNotifiedTimestamp(NotifyState state) {
