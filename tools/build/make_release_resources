@@ -225,9 +225,7 @@ function write_version_and_checksums() {
     local local_CHKSUM_LIST="\
         aerofs.jar:${AEROFS_RELEASE_DIR}/aerofs.jar \
         aerofsd.dll:${AEROFS_RELEASE_WIN_DIR}/aerofsd.dll \
-        aerofsj.dll:${AEROFS_RELEASE_WIN_DIR}/aerofsj.dll \
         libaerofsd.dylib:${AEROFS_RELEASE_OSX_DIR}/libaerofsd.dylib \
-        libaerofsj.dylib:${AEROFS_RELEASE_OSX_DIR}/libaerofsj.dylib \
     "
 
     for i in $local_CHKSUM_LIST; do
