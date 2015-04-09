@@ -3,7 +3,7 @@
  base.www.url=https://{{ base_host }}
  base.sp.url=https://{{ base_host }}:4433/sp/
 -base.verkehr.host={{ base_host }}
-+base.verkehr.host=verhehr.service
++base.verkehr.host=verkehr.service
  base.verkehr.port.pb=29438
  base.verkehr.port.rest=25234
  base.xmpp.address={{ base_host }}:5222
