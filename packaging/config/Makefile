@@ -19,10 +19,15 @@ $(ROOT)/%: %
 	mkdir -p $(@D)
 	cp $< $@
 
+$(ROOT)/opt/config/templates/common.tmplt: opt/config/templates/common.tmplt common.tmplt.docker.patch
+	mkdir -p $(@D)
+	cp $< $@
+	patch $@ < $(@F).docker.patch
+
 $(ROOT)/opt/config/templates/server.tmplt: opt/config/templates/server.tmplt server.tmplt.docker.patch
 	mkdir -p $(@D)
 	cp $< $@
-	patch $@ < server.tmplt.docker.patch
+	patch $@ < $(@F).docker.patch
 
 $(ROOT)/opt/config/main.py: opt/config/main.py main.docker.patch
 	mkdir -p $(@D)
@@ -32,11 +37,6 @@ $(ROOT)/opt/config/main.py: opt/config/main.py main.docker.patch
 $(ROOT)/opt/config/entry.py: opt/config/entry.py
 	mkdir -p $(@D)
 	sed -e 's/127\.0\.0\.1/0.0.0.0/' $< > $@
-
-$(ROOT)/opt/config/templates/common.tmplt: opt/config/templates/common.tmplt
-	mkdir -p $(@D)
-	cp $< $@
-	echo "docker=1" >> $@
 
 $(DEFAULT_PROPS_FILE): opt/config/properties/external.properties external.properties.docker.patch
 	mkdir -p $(@D)

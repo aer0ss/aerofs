@@ -1,6 +1,6 @@
 # Ship Enterprise
 
-_It's a ship to carry enterprise-grade containers_<br />
+_It's a ship that carries enterprise-grade containers_<br />
 _It's to ship apps to enterprises_<br />
 _It's the starship Enterprise for fearless engineers_
 

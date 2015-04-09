@@ -1,9 +1,0 @@
-@@ -315,7 +315,7 @@ public class SPServlet extends AeroServlet
-         Executor nioExecutor = Executors.newCachedThreadPool();
-         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
-         return VerkehrClient.create(
--                BaseParam.Verkehr.HOST,
-+                "verkehr.service",
-                 BaseParam.Verkehr.REST_PORT,
-                 MILLISECONDS.convert(30, SECONDS),
-                 MILLISECONDS.convert(60, SECONDS),
