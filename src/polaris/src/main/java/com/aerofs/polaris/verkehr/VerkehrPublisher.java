@@ -7,7 +7,6 @@ import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -99,7 +98,7 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
 
         try {
             byte[] serialized = mapper.writeValueAsBytes(update);
-            ListenableFuture<Void> publishFuture = verkehrClient.publish(PolarisUtilities.getVerkehrUpdateTopic(UrlEscapers.urlPathSegmentEscaper().escape(topic)), serialized);
+            ListenableFuture<Void> publishFuture = verkehrClient.publish(PolarisUtilities.getVerkehrUpdateTopic(topic), serialized);
             Futures.addCallback(publishFuture, new FutureCallback<Void>() {
 
                 @Override

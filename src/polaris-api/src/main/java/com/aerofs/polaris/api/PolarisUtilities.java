@@ -2,6 +2,7 @@ package com.aerofs.polaris.api;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
+import com.google.common.net.UrlEscapers;
 
 import javax.annotation.Nullable;
 
@@ -10,7 +11,7 @@ public abstract class PolarisUtilities {
     public static final String VERKEHR_UPDATE_TOPIC_PREFIX = "pol/";
 
     public static String getVerkehrUpdateTopic(String store) {
-        return VERKEHR_UPDATE_TOPIC_PREFIX + store;
+        return UrlEscapers.urlPathSegmentEscaper().escape(VERKEHR_UPDATE_TOPIC_PREFIX + store);
     }
 
     public static String hexEncode(byte[] bytes) {
