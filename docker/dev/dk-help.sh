@@ -27,13 +27,13 @@ Example:
 
 Follow these steps to start developing and testing an AeroFS service 'foo' from scratch:
 
-    $ docker/upgrade-tools.sh   # install required tools and create a docker-machine VM. it may take a while.
-    $ bash -l                   # start a new bash
-    $ dk-create                 # build and launch the entire appliance. it may take a while.
-    $ make -C src/foo           # rebuild foo's Docker image after some code change
-    $ dk-reload foo             # reload the container 'foo' using the newly built image (see docker/crane.yml for container names)
-    $ dk-exec foo ps aux        # list all running processes in the container 'foo'
-    $ dk-crane status           # list container status
-    $ dk-halt                   # stop the entire appliance. Use dk-start to restart it
+    $ docker/dev/upgrade-tools.sh # install required tools and create a docker-machine VM. it may take a while.
+    $ bash -l                     # start a new bash
+    $ dk-create                   # build and launch the entire appliance. it may take a while.
+    $ make -C src/foo             # rebuild foo's Docker image after some code change
+    $ dk-reload foo               # reload the container 'foo' using the newly built image (see docker/crane.yml for container names)
+    $ dk-exec foo ps aux          # list all running processes in the container 'foo'
+    $ dk-crane status             # list container status
+    $ dk-halt                     # stop the entire appliance. Use dk-start to restart it
 
 END
