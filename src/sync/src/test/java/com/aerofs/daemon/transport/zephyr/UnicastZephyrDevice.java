@@ -151,4 +151,11 @@ public final class UnicastZephyrDevice
         unicast.start();
         transportReader.start();
     }
+
+    public void stop()
+    {
+        transportReader.stop();
+        unicast.stop();
+        xmppConnectionService.stop();
+    }
 }

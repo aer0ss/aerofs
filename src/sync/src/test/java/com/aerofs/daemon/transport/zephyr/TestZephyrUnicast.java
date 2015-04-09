@@ -17,11 +17,11 @@ import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.lib.Waiter;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Charsets;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import java.security.SecureRandom;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -84,9 +83,16 @@ public final class TestZephyrUnicast
         otherDevice.start();
     }
 
+    @After
+    public void tearDown()
+    {
+        localDevice.stop();
+        otherDevice.stop();
+    }
+
     // returns the MessageHandler used to send the packet
     private Channel sendPacketAndWaitForItToBeReceived(UnicastZephyrDevice senderDevice, UnicastZephyrDevice receiverDevice, byte[] data)
-            throws ExDeviceOffline, InterruptedException, ExecutionException
+            throws Exception
     {
         Waiter waiter = new Waiter();
         Channel channel = (Channel) senderDevice.unicast.send(receiverDevice.did, waiter, Prio.LO, TransportProtocolUtil.newDatagramPayload(data), null);

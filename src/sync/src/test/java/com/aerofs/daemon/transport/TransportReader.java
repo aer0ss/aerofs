@@ -71,10 +71,7 @@ public final class TransportReader
             while (running) {
                 try {
                     OutArg<Prio> outArg = new OutArg<Prio>(null);
-                    IEvent event = outgoingEventSink.tryDequeue(outArg); // FIXME (AG): _have_ to use tryDequeue because dequeue is uninterruptible (WTF)
-                    if (event == null) {
-                        continue;
-                    }
+                    IEvent event = outgoingEventSink.dequeueInterruptibly(outArg);
 
                     l.trace("handling event type:{}", event.getClass().getSimpleName());
 
@@ -89,14 +86,10 @@ public final class TransportReader
                     } else {
                         l.warn("ignore transport event of type:{}", event.getClass().getSimpleName());
                     }
-                } catch (Throwable t) {
-                    if (Thread.interrupted()) {
-                        l.warn("thread interrupted - checking if reader stopped");
-                        checkState(!running, "thread interrupted, but stop() was not called");
-                        break;
-                    } else {
-                        throw new IllegalStateException("incoming transport event reader caught err", t);
-                    }
+                } catch (InterruptedException t) {
+                    l.warn("thread interrupted - checking if reader stopped");
+                    checkState(!running, "thread interrupted, but stop() was not called");
+                    break;
                 }
             }
 
@@ -118,15 +111,18 @@ public final class TransportReader
     }
 
     private void handleUnicastMessage(EIUnicastMessage event)
-            throws IOException
     {
-        int numBytes = event.is().available();
-        byte[] packet = new byte[numBytes];
+        try {
+            int numBytes = event.is().available();
+            byte[] packet = new byte[numBytes];
 
-        // noinspection ResultOfMethodCallIgnored
-        event.is().read(packet);
+            // noinspection ResultOfMethodCallIgnored
+            event.is().read(packet);
 
-        transportListener.onIncomingPacket(event._ep.did(), event._userID, packet);
+            transportListener.onIncomingPacket(event._ep.did(), event._userID, packet);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void handleNewIncomingStream(EIStreamBegun event)

@@ -18,7 +18,6 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
     private final Condition _cvDeq;
     private final Condition _cvEnq;
     private final PrioQueue<T> _pq;
-    private boolean _overflow;
 
     // the number of high-priority producers waiting on the lock
     private final AtomicInteger _hiProducers = new AtomicInteger();
@@ -157,7 +156,6 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
     public boolean enqueue_(T ev, Prio prio)
     {
         if (_pq.isFull_()) {
-            _overflow = true;
             return false;
         } else {
             enqueueImpl_(ev, prio);
@@ -178,11 +176,11 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
      * @param outPrio The priority of the dequeued element
      * @return An element in the queue
      */
-    public T dequeue(OutArg<Prio> outPrio)
+    public T dequeueInterruptibly(OutArg<Prio> outPrio) throws InterruptedException
     {
         _l.lock();
         try {
-            return dequeue_(outPrio);
+            return dequeueInterruptibly_(outPrio);
         } finally {
             _l.unlock();
         }
@@ -224,6 +222,25 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         return ev;
     }
 
+    public T dequeueInterruptibly_(OutArg<Prio> outPrio) throws InterruptedException
+    {
+        assert _l.isHeldByCurrentThread();
+
+        while (true) {
+            while (_pq.isEmpty_()) {
+                _cvDeq.await();
+            }
+
+            if (!spin_()) break;
+        }
+
+        T ev = _pq.dequeue_(outPrio);
+
+        if (!_pq.isFull_()) _cvEnq.signal();
+
+        return ev;
+    }
+
     public boolean isEmpty()
     {
         _l.lock();
@@ -243,14 +260,5 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
         _pq.dumpStatMisc(indent, indentUnit, ps);
-    }
-
-    // return true and reset the overflow bit if enqueue() or enqueue_()
-    // has failed since the last call to this method; return false otherwise.
-    public boolean resetOverflowBit_()
-    {
-        boolean old = _overflow;
-        _overflow = false;
-        return old;
     }
 }
