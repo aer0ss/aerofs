@@ -10,12 +10,20 @@
 {% set getty_restarted = '/ship/getty/restarted' %}
 {% set getty_run = '/ship/getty/run' %}
 {% set enable_swap = '/ship/enable-swap' %}
+{% set ship_service = 'ship.service' %}
 {% set sail = '/ship/sail' %}
 {% set loader_getty = '/ship/loader/getty' %}
 {% set loader_run = '/ship/loader/run' %}
 {% set repo_file = loader_run + '/repo' %}
 {% set tag_file = loader_run + '/tag' %}
 {% set target_file = loader_run + '/target' %}
+{% set httpd_service = 'httpd.service' %}
+{% set httpd = '/ship/httpd' %}
+{% set httpd_sh = httpd + '/httpd.sh' %}
+{% set httpd_conf = httpd + '/httpd.conf' %}
+{% set httpd_index_html = httpd + '/index.html' %}
+{% set httpd_jquery_css = httpd + '/jquery.css' %}
+{% set httpd_status_json = httpd + '/status.json' %}
 
 hostname: {{ hostname }}
 
@@ -36,7 +44,15 @@ coreos:
         [Service]
         ExecStart={{ getty_restart }}
 
-    - name: ship.service
+    - name: swap.service
+      command: start
+      content: |
+        [Unit]
+        Description=Enable Swap
+        [Service]
+        ExecStart={{ enable_swap }}
+
+    - name: {{ ship_service }}
       command: start
       content: |
         [Unit]
@@ -45,13 +61,14 @@ coreos:
         [Service]
         ExecStart={{ sail }}
 
-    - name: swap.service
-      command: start
+    - name: {{ httpd_service }}
+      {# Don't start the service here. ship.service controls its lifecycle. #}
       content: |
         [Unit]
-        Description=Enable Swap
+        Description=Bash httpd
         [Service]
-        ExecStart={{ enable_swap }}
+        WorkingDirectory={{ httpd }}
+        ExecStart=/usr/bin/ncat --keep-open -lp 80 -e {{ httpd_sh }}
 
   oem:
     id: ship-enterprise
@@ -67,8 +84,7 @@ write_files:
   - path: {{ getty_restart }}
     permissions: 0700
     content: |
-      #!/bin/bash
-      set -ex
+      #!/bin/bash -ex
       if [ -f {{ getty_restarted }} ]; then exit 0; fi
       systemctl daemon-reload
       systemctl restart getty@tty1
@@ -84,19 +100,14 @@ write_files:
   - path: {{ getty_run }}
     permissions: 0700
     content: |
-      #!/bin/bash
-      set -e
+      #!/bin/bash -e
       {# No more console pollution from dmesg #}
       dmesg -n 1
       echo 'Loading console service...'
 
-      {# Create files if not exist #}
-      mkdir -p {{ loader_run }}
-      [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
-      [[ -f {{ tag_file }} ]] || {
-        TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
-        echo ${TAG} > {{ tag_file }}
-      }
+      {# We assume the tag file is created _after_ Loader image is pulled and repo file is created. #}
+      [[ -f {{ tag_file }} ]] || { echo; echo 'Waiting for application images to be downloaded...'; }
+      while [[ ! -f {{ tag_file }} ]]; do sleep 1; done
 
       IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
       docker run --rm -v {{ loader_getty }}:/host "${IMAGE}" install-getty /host
@@ -120,8 +131,46 @@ write_files:
   - path: {{ sail }}
     permissions: 0700
     content: |
-      #!/bin/bash
-      set -ex
+      #!/bin/bash -ex
+
+      {# Write repo and target files #}
+      mkdir -p {{ loader_run }}
+      [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
+      [[ -f {{ target_file }} ]] || echo '{{ target }}' > {{ target_file }}
+
+      {# Set total to 0 if unknown #}
+      write_status_json() {
+        cat > {{ httpd_status_json }} <<END
+      {"done":$1,"total":$2}
+      END
+      }
+
+      {# Start httpd to show progress via Web. If Loader is not present, the docker run command below will #}
+      {# automatically pull it, and hence set the status to pulling Loader. #}
+      write_status_json 0 0
+      systemctl start {{ httpd_service }}
+
+      {# Write tag file. Getty_run assumes the it's created _after_ Loader image is pulled and repo file is created. #}
+      [[ -f {{ tag_file }} ]] || {
+        TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
+        echo ${TAG} > {{ tag_file }}
+      }
+
+      {# Pull any images that don't exist locally #}
+      IMAGES=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} images)
+      TOTAL=$(wc -w <<< "${IMAGES}")
+      DONE=0
+      write_status_json ${DONE} ${TOTAL}
+      for i in ${IMAGES}; do
+          IMAGE="$(cat {{ repo_file }})/${i}:$(cat {{ tag_file }})"
+          set +e; docker inspect "${IMAGE}" 1>/dev/null 2>/dev/null; EXIT=$?; set -e
+          [[ ${EXIT} = 0 ]] || docker pull "${IMAGE}"
+          DONE=$((DONE+1))
+          write_status_json ${DONE} ${TOTAL}
+      done
+
+      systemctl stop {{ httpd_service }}
+
       while true; do
         {# A potential bug in CoreOS (as of 554.0.0) may cause scope units remain running after a container stops. #}
         {# Stop the unit here as it would block the container from restarting. #}
@@ -135,15 +184,7 @@ write_files:
           )
         done
 
-        {# Create files if not exist #}
-        mkdir -p {{ loader_run }}
-        [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
-        [[ -f {{ target_file }} ]] || echo '{{ target }}' > {{ target_file }}
-        [[ -f {{ tag_file }} ]] || {
-          TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
-          echo ${TAG} > {{ tag_file }}
-        }
-
+        {# Re-read repo/tag files every time as they may change across boots #}
         IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
 
         {# Use the same container name across restarts as crane/docker doesn't update container links on restarts. #}
@@ -163,6 +204,26 @@ write_files:
         docker start -a "${CONTAINER}"
         echo 'Loader stopped'
       done
+
+  - path: {{ httpd_conf }}
+    content: |
+      serve_ship_log() { journalctl -u {{ ship_service }}; exit 0; }
+      serve_404() { send_response 404 <<< "404 Not Found"; exit 0; }
+      on_uri_match '^/$' serve_file "{{ httpd_index_html }}"
+      on_uri_match '^/ship.log$' serve_ship_log
+      on_uri_match '^/status.json$' serve_file "{{ httpd_status_json }}"
+      unconditionally serve_404
+
+  - path: {{ httpd_index_html }}
+    encoding: gz+b64
+    content: |
+      {{ httpd_files['index.html'] }}
+
+  - path: {{ httpd_sh }}
+    permissions: 0700
+    encoding: gz+b64
+    content: |
+      {{ httpd_files['httpd.sh'] }}
 
 {% for key in extra_files %}
   - path: /{{ key }}

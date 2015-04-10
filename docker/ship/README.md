@@ -200,6 +200,19 @@ Only the containers in the target group and their dependencies are launched.
 - `POST /gc` removes old containers and their volume data that are left behind from
   `POST /switch`.
 
+### Web access
+
+The system implements a Web server that shows Docker image pulling progress as soon as the VM
+starts. It runs on port 80 of the VM and stops right before launching application contianers. After the Web server stops, the front-end code continuously polls the URL
+`http://<ip_of_vm>/ship-ready`. On the first successful response of this URL,
+code redirects the browser to `http://<ip_of_vm>`, which is expected to be the application's
+front page.
+
+To integrate with this Web access, the application shall:
+
+ 1. serve port 80 in plain HTTP as the application's front page. Redirects are allowed;
+ 2. return status code 2xx on the route `/ship-ready` if and only if the application is
+    ready to serve requests.
 
 ### Testing and CI
 
@@ -224,16 +237,27 @@ to inject commands into the image. It is useful, say, if you want to set up a
 so test suites can easily find the VM.
 
 
-## IT admin & site engineer manual
+## IT administrator manual
 
-The VM's console service has two hidden commands:
+### Console access
 
-**logs** shows logs of a given Docker container running at the current tag (i.e. version).
+The VM's virtual terminal allows admins to view and modify the VM's networking settings.
+Additionally, the console has two commands that are hidden from the menu:
 
-**root-shell** launches an interactive shell with root privileges. An environmental variable
+Type `logs` to show Docker logs of a given container running at the current tag (i.e. version).
+
+Type `root-shell` to launch an interactive shell with root privileges. An environmental variable
 `TAG` will be set to be the current tag. You may use it to access the containers conveniently:
 
     $ docker logs loader-$TAG
+    
+### Web access
+
+As soon as the VM starts the admin can visit the VM's IP on a browser to monitor
+appliance loading progress. It is particularly useful for the `cloudinit` output format
+as it may take time to pull application images from the Internet. After the application is
+successfully launched, the Web UI automatically redirects the browser to the application's
+front page.
 
 ## Internal design notes
 

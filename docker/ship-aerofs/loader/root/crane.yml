@@ -355,6 +355,9 @@ containers:
         - "80:80"
         - "443:443"
       link:
+        # nginx doesn't talk to bunker. added the dep anyway so nginx starts after bunker
+        # -- needed for appliance readiness detection via HTTP.
+        - maintenance-bunker:bunker.service
         - ca:ca.service
         - config:config.service
       volumes-from:
@@ -389,5 +392,4 @@ groups:
 
   # Bunker relies on this group's name to detect if the system is in maintenance mode.
   maintenance:
-    - maintenance-bunker
     - maintenance-nginx

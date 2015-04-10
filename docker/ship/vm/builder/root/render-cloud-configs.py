@@ -24,13 +24,16 @@ def get_files(parent):
 
     file_map = {}
     for basename in file_list:
-        with open(join(parent, basename)) as f:
-            out = StringIO.StringIO()
-            with gzip.GzipFile(fileobj=out, mode='w') as gz:
-                gz.write(f.read())
-            file_map[basename] = base64.b64encode(out.getvalue())
-
+        file_map[basename] = get_file(join(parent, basename))
     return file_map
+
+
+def get_file(path):
+    with open(path) as f:
+        out = StringIO.StringIO()
+        with gzip.GzipFile(fileobj=out, mode='w') as gz:
+            gz.write(f.read())
+        return base64.b64encode(out.getvalue())
 
 
 if __name__ == "__main__":
@@ -59,6 +62,7 @@ if __name__ == "__main__":
             swap_size=y['swap-size'],
             repo=y['repo'],
             target=y['target'],
+            httpd_files=get_files(join(RESOURCES, 'httpd')),
             extra_files=get_files(argv[2])
         ))
 
