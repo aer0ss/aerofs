@@ -46,7 +46,7 @@ info "Removing AeroFS containers..."
 info "Launching 'maintenance' container group..."
 "${THIS_DIR}/dk-crane.sh" run -dall maintenance
 
-IP=$(docker-machine ip dev)
+IP=$(docker-machine ip docker-dev)
 
 for PORT in {8484,80}; do
     URL="http://${IP}:${PORT}"

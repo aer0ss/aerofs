@@ -90,7 +90,7 @@ END
 ${SUDO} mv /tmp/dk-ip /usr/local/bin/dk-ip
 ${SUDO} chmod +x /usr/local/bin/dk-ip
 
-# Create a docker machine 'dev'
+# Create a docker machine 'docker-dev'
 #if [ -z "$(vboxmanage list vms | grep "^\"${VM}\"")" ]
 echo "$(vboxmanage list vms)"
 if [ -z "$(vboxmanage list vms | grep "${VM}")" ]
