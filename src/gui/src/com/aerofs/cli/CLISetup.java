@@ -235,8 +235,9 @@ public class CLISetup
 
     private void getSwiftConfig(CLI cli, BackendConfig cfg) throws ExNoConsole
     {
-        while (cfg._swiftConfig._authMode == null || cfg._swiftConfig._authMode.isEmpty()) {
-            cfg._swiftConfig._authMode = cli.askText(S.SETUP_SWIFT_AUTH_MODE, null);
+        while (cfg._swiftConfig._authMode == null || cfg._swiftConfig._authMode.isEmpty()
+                || !("basic".equals(cfg._swiftConfig._authMode) || "keystone".equals(cfg._swiftConfig._authMode))) {
+            cfg._swiftConfig._authMode = cli.askText(S.SETUP_SWIFT_AUTH_MODE_CLI, null);
         }
         while (cfg._swiftConfig._url == null || cfg._swiftConfig._url.isEmpty()) {
             cfg._swiftConfig._url = cli.askText(S.SETUP_SWIFT_URL, null);
@@ -249,6 +250,10 @@ public class CLISetup
         }
         while (cfg._swiftConfig._container == null || cfg._swiftConfig._container.isEmpty()) {
             cfg._swiftConfig._container = cli.askText(S.SETUP_SWIFT_CONTAINER, null);
+        }
+        if ("keystone".equals(cfg._swiftConfig._authMode)) {
+            cfg._swiftConfig._tenantId = cli.askText(S.SETUP_SWIFT_TENANT_ID, null);
+            cfg._swiftConfig._tenantName = cli.askText(S.SETUP_SWIFT_TENANT_NAME, null);
         }
         while (cfg._passphrase == null || cfg._passphrase.length() == 0) {
             cfg._passphrase = String.valueOf(inputAndConfirmPasswd(cli,

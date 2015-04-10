@@ -16,22 +16,45 @@ import org.eclipse.swt.widgets.*;
 
 import javax.annotation.Nonnull;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 import static com.google.common.base.Objects.firstNonNull;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
+/**
+ * This page will ask for:
+ *  - Auth mode
+ *  - URL
+ *  - username
+ *  - password
+ */
 public class PageSwiftStorage extends PageStorageBackend
 {
+    private Combo       _comboAuthMode;
     private Text        _txtUrl;
-    private Text        _txtContainerName;
     private Text        _txtUsername;
     private Text        _txtPassword;
+
+    // Use BASIC as Keystone is still experimental
+    static private final String DEFAULT_AUTHMODE = "basic";
+
+    /**
+     * This contains the available authentication modes: basic and keystone.
+     * We use a map because we need a human-friendly value and the exact value for the database
+     */
+    Map<String, String> authModes = new HashMap<String, String>();
 
     public PageSwiftStorage(Composite parent)
     {
         super(parent);
+
+        authModes.put("basic", "Basic");
+        authModes.put("keystone", "Keystone (BETA)");
     }
 
     @Override
@@ -47,8 +70,8 @@ public class PageSwiftStorage extends PageStorageBackend
 
         ModifyListener onInputChanged = e -> validateInput();
 
+        _comboAuthMode.addModifyListener(onInputChanged);
         _txtUrl.addModifyListener(onInputChanged);
-        _txtContainerName.addModifyListener(onInputChanged);
         _txtUsername.addModifyListener(onInputChanged);
         _txtPassword.addModifyListener(onInputChanged);
 
@@ -67,7 +90,12 @@ public class PageSwiftStorage extends PageStorageBackend
     @Override
     protected void goNextPage()
     {
-        _dialog.loadPage(PageID.PAGE_PASSPHRASE);
+        if ("basic".equals(_model._backendConfig._swiftConfig._authMode)) {
+            _dialog.loadPage(PageID.PAGE_SWIFT_CONTAINER);
+        }
+        else {
+            _dialog.loadPage(PageID.PAGE_SWIFT_TENANT);
+        }
     }
 
     @Override
@@ -79,14 +107,15 @@ public class PageSwiftStorage extends PageStorageBackend
     {
         Composite compConfig = new Composite(parent, SWT.NONE);
 
+        Label lblAuthMode = createLabel(compConfig, SWT.NONE);
+        lblAuthMode.setText(S.SETUP_SWIFT_AUTH_MODE_GUI);
+        _comboAuthMode = new Combo(compConfig, SWT.DROP_DOWN | SWT.READ_ONLY);
+        _comboAuthMode.setItems(authModes.values().toArray(new String[0]));
+
         Label lblUrl = createLabel(compConfig, SWT.NONE);
         lblUrl.setText(S.SETUP_SWIFT_URL_GUI);
         _txtUrl = new Text(compConfig, SWT.BORDER);
         _txtUrl.setFocus();
-
-        Label lblContainerName = createLabel(compConfig, SWT.NONE);
-        lblContainerName.setText(S.SETUP_SWIFT_CONTAINER_GUI);
-        _txtContainerName = new Text(compConfig, SWT.BORDER);
 
         Label lblUsername = createLabel(compConfig, SWT.NONE);
         lblUsername.setText(S.SETUP_SWIFT_USERNAME_GUI);
@@ -103,10 +132,10 @@ public class PageSwiftStorage extends PageStorageBackend
         layout.verticalSpacing = 5;
         compConfig.setLayout(layout);
 
+        lblAuthMode.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
+        _comboAuthMode.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         lblUrl.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtUrl.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        lblContainerName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtContainerName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         lblUsername.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtUsername.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
@@ -118,8 +147,9 @@ public class PageSwiftStorage extends PageStorageBackend
     @Override
     protected void readFromModel(SetupModel model)
     {
+        // Default to Keystone mode
+        _comboAuthMode.setText(authModes.get(firstNonNull(model._backendConfig._swiftConfig._authMode, DEFAULT_AUTHMODE)));
         _txtUrl.setText(firstNonNull(model._backendConfig._swiftConfig._url, ""));
-        _txtContainerName.setText(firstNonNull(model._backendConfig._swiftConfig._container, ""));
         _txtUsername.setText(firstNonNull(model._backendConfig._swiftConfig._username, ""));
         _txtPassword.setText(firstNonNull(model._backendConfig._swiftConfig._password, ""));
 
@@ -129,10 +159,8 @@ public class PageSwiftStorage extends PageStorageBackend
     @Override
     protected void writeToModel(SetupModel model)
     {
-        // For now, only "basic" mode is supported
-        model._backendConfig._swiftConfig._authMode     = "BASIC";
+        model._backendConfig._swiftConfig._authMode     = (_comboAuthMode.getText().equals("Basic")) ? "basic" : "keystone";
         model._backendConfig._swiftConfig._url          = _txtUrl.getText().trim();
-        model._backendConfig._swiftConfig._container    = _txtContainerName.getText().trim();
         model._backendConfig._swiftConfig._username     = _txtUsername.getText();
         model._backendConfig._swiftConfig._password     = _txtPassword.getText();
     }
@@ -141,7 +169,7 @@ public class PageSwiftStorage extends PageStorageBackend
     protected boolean isInputValid()
     {
         return isNotBlank(_txtUrl.getText())
-                && isNotBlank(_txtContainerName.getText())
+                && isNotEmpty(_comboAuthMode.getText())
                 && isNotEmpty(_txtUsername.getText())
                 && isNotEmpty(_txtPassword.getText());
     }
@@ -150,7 +178,7 @@ public class PageSwiftStorage extends PageStorageBackend
     protected @Nonnull
     Control[] getControls()
     {
-        return new Control[] {_txtUrl, _txtContainerName, _txtUsername, _txtPassword, _btnContinue, _btnBack};
+        return new Control[] {_comboAuthMode, _txtUrl, _txtUsername, _txtPassword, _btnContinue, _btnBack};
     }
 
     @Override
@@ -158,6 +186,9 @@ public class PageSwiftStorage extends PageStorageBackend
     {
         SwiftConnectionChecker connChecker = new SwiftConnectionChecker(_model);
         connChecker.checkConnection();
+
+        // Save the list of the containers for later use
+        _model._backendConfig._swiftConfig._containerList = connChecker.listContainers();
     }
 
     @Override

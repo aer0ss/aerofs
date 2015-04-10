@@ -325,6 +325,8 @@ public class Setup
             map.put(Key.SWIFT_USERNAME, backendConfig._swiftConfig._username);
             map.put(Key.SWIFT_PASSWORD, backendConfig._swiftConfig._password);
             map.put(Key.SWIFT_CONTAINER, backendConfig._swiftConfig._container);
+            map.put(Key.SWIFT_TENANT_ID, backendConfig._swiftConfig._tenantId);
+            map.put(Key.SWIFT_TENANT_NAME, backendConfig._swiftConfig._tenantName);
         }
 
         Cfg.recreateSchema_();

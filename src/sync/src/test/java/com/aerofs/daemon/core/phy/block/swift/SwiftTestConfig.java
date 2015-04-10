@@ -19,8 +19,10 @@ public class SwiftTestConfig
                 "test:tester",
                 "testing",
                 "http://192.168.33.10:8080/auth/v1.0",
-                AuthenticationMethod.BASIC,
-                "container_test"
+                AuthenticationMethod.KEYSTONE,
+                "container_test",
+                "FakeTenantID",
+                null // We can pass an empty tenant name (or ID)
         );
     }
 

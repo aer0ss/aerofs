@@ -7,8 +7,9 @@ import org.javaswift.joss.model.Account;
 
 class MockedSwiftConfig extends SwiftConfig
 {
-    public MockedSwiftConfig(String username, String password, String url, AuthenticationMethod authMethod, String containerName) {
-        super(username, password, url, authMethod, containerName);
+    public MockedSwiftConfig(String username, String password, String url, AuthenticationMethod authMethod,
+                             String containerName, String tenantId, String tenantName) {
+        super(username, password, url, authMethod, containerName, tenantId, tenantName);
     }
 
     public AccountConfig getAccountConfig()

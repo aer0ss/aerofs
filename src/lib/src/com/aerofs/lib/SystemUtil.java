@@ -51,6 +51,8 @@ public abstract class SystemUtil
         SWIFT_BAD_CREDENTIALS(84, "bad swift credentials"),
         // Error in the storage cryptographic system
         REMOTE_STORAGE_INVALID_CONFIG(85, "invalid remote storage configuration"),
+        // We were not able to read the Magic Chunk with the given passphrase
+        STORAGE_BAD_PASSPHRASE(86, "invalid passphrase"),
         // Java may have a limited encryption key length due to export restriction. See the users of
         // this enum for more information.
         STORAGE_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(80, "storage backend encryption key failure"),
@@ -62,6 +64,7 @@ public abstract class SystemUtil
         FILESYSTEM_PROBE_FAILED(83, "filesystem checks failed"),
         ////////
 
+        // Warning: duplicate error code 83
         NEW_VERSION_AVAILABLE(83, "new version available");
 
         // Exit code when we try to relaunch the daemon while Windows is shutting down

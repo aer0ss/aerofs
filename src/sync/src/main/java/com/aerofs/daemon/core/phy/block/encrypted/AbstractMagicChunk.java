@@ -63,6 +63,10 @@ public abstract class AbstractMagicChunk implements IBlockStorageInitable
                 // This can happen when there are illegal characters such as spaces in the bucket
                 // name, because the bucket name will be used as the hostname part of a URL.
                 SystemUtil.ExitCode.REMOTE_STORAGE_INVALID_CONFIG.exit();
+            } else if ("HMAC didn't match expected value".equals(e.getMessage())) {
+                // This can happen when the passphrase if wrong: there is already a MagicChunk in the container/bucket
+                //  but we can't read it with the given passphrase
+                SystemUtil.ExitCode.STORAGE_BAD_PASSPHRASE.exit();
             } else {
                 throw e;
             }

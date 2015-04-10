@@ -81,6 +81,8 @@ public class UnattendedSetup
             model._backendConfig._swiftConfig._authMode = props.getProperty(Key.SWIFT_AUTHMODE.keyString());
             model._backendConfig._swiftConfig._username = props.getProperty(Key.SWIFT_USERNAME.keyString());
             model._backendConfig._swiftConfig._password = props.getProperty(Key.SWIFT_PASSWORD.keyString());
+            model._backendConfig._swiftConfig._tenantId = props.getProperty(Key.SWIFT_TENANT_ID.keyString());
+            model._backendConfig._swiftConfig._tenantName = props.getProperty(Key.SWIFT_TENANT_NAME.keyString());
             model._backendConfig._swiftConfig._url = props.getProperty(Key.SWIFT_URL.keyString());
             model._backendConfig._swiftConfig._container = props.getProperty(Key.SWIFT_CONTAINER.keyString());
             model._backendConfig._passphrase = props.getProperty(Key.STORAGE_ENCRYPTION_PASSWORD.keyString());

@@ -11,6 +11,9 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.base.Preconditions;
+import org.javaswift.joss.model.Container;
+
+import java.util.Collection;
 
 /**
  * This class collects various pieces of information necessary to run setup and delegate to other
@@ -176,11 +179,15 @@ public class SetupModel
     // handles the setup for using Swift storage
     public static class SwiftConfig
     {
-        public String _authMode;
+        public String _authMode; // Valid values: "basic" or "keystone"
         public String _username;
         public String _password;
+        public String _tenantId;
+        public String _tenantName;
         public String _url;
         public String _container;
+        // The container list is only used during the setup, to allow the user to choose between them
+        public Collection<Container> _containerList;
     }
 
     private String getPasswordValue() { return (_password == null) ? "" : _password; }

@@ -7,6 +7,15 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.javaswift.joss.client.factory.AccountConfig;
 import org.javaswift.joss.client.factory.AccountFactory;
+import org.javaswift.joss.client.factory.AuthenticationMethod;
+import org.javaswift.joss.command.shared.identity.tenant.Tenant;
+import org.javaswift.joss.command.shared.identity.tenant.Tenants;
+import org.javaswift.joss.exception.UnauthorizedException;
+import org.javaswift.joss.model.Account;
+import org.javaswift.joss.model.Container;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 
 /**
@@ -20,6 +29,7 @@ import org.javaswift.joss.client.factory.AccountFactory;
 public class SwiftConnectionChecker {
 
     protected SetupModel _model;
+    protected Account account;
 
     // Timeout when checking the connection
     public static final Long CONNECTION_TIMEOUT = 10* C.SEC;
@@ -29,16 +39,53 @@ public class SwiftConnectionChecker {
         _model = model;
     }
 
+    /**
+     * This will check the connection to the Swift backend and raise an exception if there is a problem.
+     * @throws Exception
+     */
     public void checkConnection() throws Exception
     {
         AccountConfig config = new AccountConfig();
         config.setUsername(_model._backendConfig._swiftConfig._username);
         config.setPassword(_model._backendConfig._swiftConfig._password);
         config.setAuthUrl(_model._backendConfig._swiftConfig._url);
-        config.setAuthenticationMethod(_model._backendConfig._swiftConfig._authMode);
-        new AccountFactory(config)
+
+        switch (_model._backendConfig._swiftConfig._authMode) {
+            case "basic": config.setAuthenticationMethod(AuthenticationMethod.BASIC); break;
+            case "keystone": config.setAuthenticationMethod(AuthenticationMethod.KEYSTONE); break;
+        }
+
+        account = new AccountFactory(config)
                 .setHttpClient(buildHttpClient())
                 .createAccount();
+    }
+
+    /**
+     * This will return the list of available tenants, if available.
+     *
+     * @return Tenants
+     * @throws Exception
+     */
+    public Tenants listTenants() throws Exception
+    {
+        if (account == null) {
+            checkConnection();
+        }
+
+        return account.getTenants();
+    }
+
+    /**
+     * This will return the list of available containers.
+     * @throws Exception
+     */
+    public Collection<Container> listContainers() throws Exception
+    {
+        if (account == null) {
+            checkConnection();
+        }
+
+        return account.list();
     }
 
     /**

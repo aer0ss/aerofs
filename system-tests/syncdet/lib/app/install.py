@@ -75,18 +75,27 @@ def get_teamserver_unattended_setup_dict():
         'storage_type': details['storage_type']
     }
     if details['storage_type'] == 'S3':
-        d.update({
-            's3_access_key': details['s3_access_key'],
-            's3_bucket_id': details['s3_bucket_id'],
-            's3_secret_key': details['s3_secret_key'],
-        })
+        d.update({ key: details[key] for key in [
+            's3_access_key',
+            's3_bucket_id',
+            's3_secret_key',
+        ]})
     if details['storage_type'] == 'SWIFT':
         d.update({
-            'swift_auth_mode': details['swift_auth_mode'],
-            'swift_username': details['swift_username'],
-            'swift_password': details['swift_password'],
-            'swift_url': details['swift_url'],
-            'swift_container': details['swift_container'],
+            key: details[key]
+            for key in [
+                'swift_auth_mode',
+                'swift_username',
+                'swift_password',
+                'swift_url',
+                'swift_container',
+            ]
+        })
+
+        if details['swift_auth_mode'] == "keystone":
+            d.update({
+                key: details[key]
+                for key in ['swift_tenant_id', 'swift_tenant_name']
             })
     # Remote storage backends
     if details['storage_type'] in ['S3', 'SWIFT']:

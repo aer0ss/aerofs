@@ -31,6 +31,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
         PAGE_S3_STORAGE,
         PAGE_SWIFT_STORAGE,
         PAGE_PASSPHRASE,
+        PAGE_SWIFT_CONTAINER,
+        PAGE_SWIFT_TENANT,
     }
 
     private SetupModel _model;
@@ -63,6 +65,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
         _pages.put(PageID.PAGE_LOCAL_STORAGE, new PageLocalStorage(shell));
         _pages.put(PageID.PAGE_S3_STORAGE, new PageS3Storage(shell));
         _pages.put(PageID.PAGE_SWIFT_STORAGE, new PageSwiftStorage(shell));
+        _pages.put(PageID.PAGE_SWIFT_CONTAINER, new PageSwiftContainer(shell));
+        _pages.put(PageID.PAGE_SWIFT_TENANT, new PageSwiftTenant(shell));
         _pages.put(PageID.PAGE_PASSPHRASE, new PagePassphrase(shell));
 
         for (AbstractSetupPage page : _pages.values()) {
@@ -74,8 +78,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
         loadPage(PageID.PAGE_LOGIN);
     }
 
-    public void loadPage(PageID pageID)
-    {
+    public void loadPage(PageID pageID) {
         AbstractSetupPage page = _pages.get(pageID);
 
         page.readFromModel(_model);

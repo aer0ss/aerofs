@@ -66,14 +66,23 @@ public class S
 
             // used in setup Swift storage screen
             SETUP_SWIFT_CONFIG_DESC    = L.brand() + " can store data on OpenStack Swift using basic\n" +
-                    "authentication. <a>Learn more</a>.",
+                    "or Keystone authentication. <a>Learn more</a>.",
+            SETUP_SWIFT_SELECT_TENANT    = "For Keystone authentication, we can identify the tenant\n" +
+                    "by its name or ID. You only need to fill one of the fields.",
+            SETUP_SWIFT_KEYSTONE_BETA  = "WARNING: this is an experimental feature and is still in beta.\n" +
+                    "Please use it at your own risk.",
+
+            SETUP_SWIFT_SELECT_CONTAINER = "Please enter the name of the container you want to use.\nIf it doesn't exist, we will try to create it.",
 
             SETUP_SWIFT_URL            = "URL",
             SETUP_SWIFT_AUTH_MODE      = "Authentication Mode",
+            SETUP_SWIFT_AUTH_MODE_CLI  = "Authentication Mode ('basic' or 'keystone')",
             SETUP_SWIFT_USERNAME       = "Username",
             SETUP_SWIFT_PASSWORD       = "Password",
             SETUP_SWIFT_CONFIRM        = "Confirm",
             SETUP_SWIFT_CONTAINER      = "Container",
+            SETUP_SWIFT_TENANT_ID      = "Tenant ID",
+            SETUP_SWIFT_TENANT_NAME    = "Tenant Name",
 
             SETUP_SWIFT_URL_GUI        = SETUP_SWIFT_URL + ":",
             SETUP_SWIFT_AUTH_MODE_GUI  = SETUP_SWIFT_AUTH_MODE + ":",
@@ -81,6 +90,8 @@ public class S
             SETUP_SWIFT_PASSWORD_GUI   = SETUP_SWIFT_PASSWORD + ":",
             SETUP_SWIFT_CONFIRM_GUI    = SETUP_SWIFT_CONFIRM + ":",
             SETUP_SWIFT_CONTAINER_GUI  = SETUP_SWIFT_CONTAINER + ":",
+            SETUP_SWIFT_TENANT_ID_GUI  = SETUP_SWIFT_TENANT_ID + ":",
+            SETUP_SWIFT_TENANT_NAME_GUI = SETUP_SWIFT_TENANT_NAME + ":",
 
             // used in setup S3 storage screen
             SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as Amazon S3,\n" +

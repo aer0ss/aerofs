@@ -104,6 +104,8 @@ public class CfgDatabase
         SWIFT_AUTHMODE("swift_auth_mode", null),
         SWIFT_USERNAME("swift_username", null),
         SWIFT_PASSWORD("swift_password", null),
+        SWIFT_TENANT_ID("swift_tenant_id", null),
+        SWIFT_TENANT_NAME("swift_tenant_name", null),
         SWIFT_URL("swift_url", null),
         SWIFT_CONTAINER("swift_container", "aerofs"),
 

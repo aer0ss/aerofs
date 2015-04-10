@@ -184,6 +184,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             throw new ExUIMessage(
                     "The SWIFT credentials were incorrect. Please check that you have" +
                     " the correct container name and Swift access.");
+        } else if (exitCode == STORAGE_BAD_PASSPHRASE.getCode()) {
+            throw new ExUIMessage(
+                    "The given passphrase is wrong. This happens when the remote storage" +
+                    " backend has already been used with a different passphrase. Wipe it or" +
+                    " use the good passphrase.");
         } else if (exitCode == REMOTE_STORAGE_INVALID_CONFIG.getCode()) {
             throw new ExUIMessage(
                     "The backend storage configuration was invalid. Please check that you have" +

@@ -34,8 +34,11 @@ public class SwiftBackendModule extends AbstractBackendModule
             case "basic":
                 authMethod = AuthenticationMethod.BASIC;
                 break;
+            case "keystone":
+                authMethod = AuthenticationMethod.KEYSTONE;
+                break;
             default:
-                throw new IllegalStateException("Unsupported Swift auth mode (only supports 'basic')");
+                throw new IllegalStateException("Unsupported Swift auth mode (only supports 'basic' and 'keystone')");
         }
 
         return new SwiftConfig(
@@ -43,7 +46,9 @@ public class SwiftBackendModule extends AbstractBackendModule
             db.get(CfgDatabase.Key.SWIFT_PASSWORD),
             db.get(CfgDatabase.Key.SWIFT_URL),
             authMethod,
-            db.get(CfgDatabase.Key.SWIFT_CONTAINER)
+            db.get(CfgDatabase.Key.SWIFT_CONTAINER),
+            db.getNullable(CfgDatabase.Key.SWIFT_TENANT_ID),
+            db.getNullable(CfgDatabase.Key.SWIFT_TENANT_NAME)
         );
     }
 }

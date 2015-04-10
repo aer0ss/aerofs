@@ -20,7 +20,7 @@ You will need the following syncdet *actors* configuration:
               swift_auth_mode: basic
               swift_username: test:tester
               swift_password: testing
-              swift_url: http://192.168.33.10:8080/auth/v1.0
+              swift_url: http://192.168.8.80:8080/auth/v1.0
               swift_container: container_aerofs
               remote_storage_encryption_password: somethingunique
         - address: 192.168.50.11
@@ -29,6 +29,9 @@ If you have no Swift container available, configure a new one:
 
 ### Setting up a Swift node
 
+    pip install python-swiftclient
+    # You may have to restart your shell because the newly installed `swift` executable will
+    # replace the swift compiler.
     git clone https://github.com/aerofs/vagrant-swift-all-in-one swift-vm && cd swift-vm
     vagrant up
     # List the containers on the node (should be empty)
@@ -39,6 +42,36 @@ If you have no Swift container available, configure a new one:
     swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing list
 
 Warning: it seems the backend properly works at the first `up` of the VM. If you `halt` it, you better `destroy` it...
+
+Check the new VM's IP (check `/etc/syncdet/syncdet.yaml`) and remember to launch it *after* the syncdet actors.
+
+#### Accessing it
+
+You can access the node with these default credentials:
+
+Username: `test:tester`
+
+Password: `testing`
+
+Endpoint URL: `http://192.168.8.80:8080/auth/v1.0`
+
+If you have installed the `python-swiftclient`* package (`pip install python-swiftclient`), you can do the following to manage the node:
+
+    # Check the connection and get an auth token (useless for us)
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing stat -v
+    # Retrieve the list of containers
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing list
+
+    # Delete a container
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing delete images2
+    # Create a container
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing post kikoo
+
+    # Retrieve a file
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing list images
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing download images test.jpg
+
+\*beware of the conflict with the existing `swift` compiler, you will need to reload your terminal.
 
 ### Building / Setup
 

@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
@@ -26,7 +25,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
-import static com.aerofs.gui.GUIUtil.updateFont;
 
 public class PagePassphrase extends AbstractSetupWorkPage
 {
@@ -144,7 +142,7 @@ public class PagePassphrase extends AbstractSetupWorkPage
         if (_model._backendConfig._storageType == StorageType.S3) {
             _dialog.loadPage(PageID.PAGE_S3_STORAGE);
         } else if (_model._backendConfig._storageType == StorageType.SWIFT) {
-            _dialog.loadPage(PageID.PAGE_SWIFT_STORAGE);
+            _dialog.loadPage(PageID.PAGE_SWIFT_CONTAINER);
         }
     }
 
