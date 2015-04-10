@@ -20,6 +20,7 @@ public final class InsertChild extends Operation {
     @NotNull
     public final UniqueID child;
 
+    // Null for client-side optimizations of inserting a child that we already have records for
     @Nullable
     public final ObjectType childObjectType;
 

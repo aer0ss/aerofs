@@ -12,17 +12,9 @@ import com.aerofs.baseline.db.Databases;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.api.PolarisModule;
-import com.aerofs.polaris.dao.types.DIDTypeArgument;
-import com.aerofs.polaris.dao.types.OIDTypeArgument;
-import com.aerofs.polaris.dao.types.ObjectTypeArgument;
-import com.aerofs.polaris.dao.types.OneColumnDIDMapper;
-import com.aerofs.polaris.dao.types.OneColumnOIDMapper;
-import com.aerofs.polaris.dao.types.OneColumnSIDMapper;
-import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
-import com.aerofs.polaris.dao.types.SIDTypeArgument;
-import com.aerofs.polaris.dao.types.TransformTypeArgument;
-import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
+import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.logical.ObjectStore;
+import com.aerofs.polaris.logical.StoreMigrator;
 import com.aerofs.polaris.logical.TreeCommand;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
@@ -30,6 +22,7 @@ import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.polaris.notification.OrderedNotifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
 import com.aerofs.polaris.resources.BatchResource;
+import com.aerofs.polaris.resources.JobsResource;
 import com.aerofs.polaris.resources.ObjectsResource;
 import com.aerofs.polaris.resources.TransformsResource;
 import com.aerofs.polaris.sparta.SpartaAccessManager;
@@ -44,7 +37,6 @@ import org.skife.jdbi.v2.DBI;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
 
 // explicitly not final so that I can override the injected components in the tests
@@ -78,6 +70,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new DIDTypeArgument.DIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
+        dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
         dbi.registerMapper(new OneColumnUniqueIDMapper());
         dbi.registerMapper(new OneColumnDIDMapper());
         dbi.registerMapper(new OneColumnOIDMapper());
@@ -104,6 +97,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(VerkehrPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class).in(Singleton.class);
+                bind(StoreMigrator.class).to(StoreMigrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);
             }
@@ -112,6 +106,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addManaged(ManagedAccessManager.class);
         environment.addManaged(ManagedUpdatePublisher.class);
         environment.addManaged(ManagedNotifier.class);
+        environment.addManaged(StoreMigrator.class);
 
         // setup resource authorization
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());
@@ -130,6 +125,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addResource(BatchResource.class);
         environment.addResource(ObjectsResource.class);
         environment.addResource(TransformsResource.class);
+        environment.addResource(JobsResource.class);
     }
 
     protected String getDeploymentSecret(PolarisConfiguration configuration) throws IOException {

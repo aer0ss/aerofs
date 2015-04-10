@@ -21,8 +21,11 @@ public interface ObjectTypes {
     @SqlUpdate("insert into object_types(oid, object_type) values(:oid, :object_type)")
     int add(@Bind("oid") UniqueID oid, @Bind("object_type") ObjectType objectType);
 
+    @SqlUpdate("delete from object_types where oid = :oid")
+    int delete(@Bind("oid") UniqueID oid);
+
     @Nullable
-    @SqlQuery("select oid, object_type from object_types where oid = :oid")
+    @SqlQuery("select object_type from object_types where oid = :oid")
     ObjectType get(@Bind("oid") UniqueID oid);
 
     @RegisterMapper(OneColumnUniqueIDMapper.class)
@@ -34,8 +37,7 @@ public interface ObjectTypes {
 
     final class ObjectTypeMapper implements ResultSetMapper<ObjectType> {
 
-        private static final int COL_OID         = 1;
-        private static final int COL_OBJECT_TYPE = 2;
+        private static final int COL_OBJECT_TYPE = 1;
 
         @Override
         public ObjectType map(int index, ResultSet r, StatementContext ctx) throws SQLException {

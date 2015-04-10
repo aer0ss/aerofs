@@ -30,7 +30,14 @@ public interface Transforms {
     ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("store_oid") UniqueID store);
 
     @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid")
-    int getTransformCount(@Bind("store_oid") UniqueID store);
+    long getTransformCount(@Bind("store_oid") UniqueID store);
+
+    // these two methods are needed because "child_oid is null" is the only way to enforce that a column is null in mysql
+    @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid and oid = :oid and transform_type = :transform_type and child_oid = :child_oid")
+    long getLatestMatchingTransformTimestamp(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("child_oid") UniqueID child);
+
+    @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid and oid = :oid and transform_type = :transform_type and child_oid is null")
+    long getLatestMatchingTransformTimestamp(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType);
 
     @SuppressWarnings("unused")
     void close();

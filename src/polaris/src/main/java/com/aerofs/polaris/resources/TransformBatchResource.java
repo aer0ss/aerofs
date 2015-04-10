@@ -7,7 +7,7 @@ import com.aerofs.polaris.api.batch.transform.TransformBatch;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
-import com.aerofs.polaris.api.operation.Updated;
+import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Lists;
@@ -49,9 +49,9 @@ public final class TransformBatchResource {
 
         for (TransformBatchOperation operation: batch.operations) {
             try {
-                List<Updated> updated = objectStore.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
-                results.add(new TransformBatchOperationResult(updated));
-                updated.stream().collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max)).forEach((k, v) -> updatedStores.merge(k, v, Math::max));
+                OperationResult result = objectStore.performTransform(principal.getUser(), principal.getDevice(), operation.oid, operation.operation);
+                results.add(new TransformBatchOperationResult(result));
+                result.updated.stream().collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max)).forEach((k, v) -> updatedStores.merge(k, v, Math::max));
             } catch (Exception e) {
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
                 LOGGER.warn("fail transform batch operation {}", operation, e);

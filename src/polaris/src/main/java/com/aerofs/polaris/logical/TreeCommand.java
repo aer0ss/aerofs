@@ -3,6 +3,7 @@ package com.aerofs.polaris.logical;
 import com.aerofs.baseline.admin.Command;
 import com.aerofs.baseline.admin.Commands;
 import com.aerofs.baseline.db.TransactionIsolation;
+import com.aerofs.ids.Identifiers;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
@@ -42,7 +43,8 @@ public final class TreeCommand implements Command {
         ObjectNode forest = mapper.createObjectNode();
 
         String storeValue = queryParameters.getFirst("store");
-        OID store = storeValue == null ? null : new OID(storeValue);
+        UniqueID store = storeValue == null ? null : new UniqueID(storeValue);
+        Preconditions.checkArgument(store == null || Identifiers.isSharedFolder(store) || Identifiers.isRootStore(store), "store argument to tree command was not a valid store");
 
         objectStore.inTransaction(new StoreTransaction<Object>() {
             @Override
@@ -94,6 +96,7 @@ public final class TreeCommand implements Command {
                             }
                         }
 
+                        // Should this also include anchors?
                         if (child.objectType == ObjectType.FOLDER) {
                             folders.put(child.oid, node);
                         }

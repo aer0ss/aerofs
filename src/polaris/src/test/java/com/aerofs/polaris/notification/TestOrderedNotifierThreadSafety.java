@@ -20,12 +20,7 @@ import com.aerofs.polaris.api.types.TransformType;
 import com.aerofs.polaris.dao.LogicalTimestamps;
 import com.aerofs.polaris.dao.NotifiedTimestamps;
 import com.aerofs.polaris.dao.Transforms;
-import com.aerofs.polaris.dao.types.DIDTypeArgument;
-import com.aerofs.polaris.dao.types.OIDTypeArgument;
-import com.aerofs.polaris.dao.types.ObjectTypeArgument;
-import com.aerofs.polaris.dao.types.SIDTypeArgument;
-import com.aerofs.polaris.dao.types.TransformTypeArgument;
-import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
+import com.aerofs.polaris.dao.types.*;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -109,6 +104,7 @@ public final class TestOrderedNotifierThreadSafety {
         dbi.registerArgumentFactory(new DIDTypeArgument.DIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
+        dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
 
         // spy on dbi
         this.dbi = Mockito.spy(dbi);

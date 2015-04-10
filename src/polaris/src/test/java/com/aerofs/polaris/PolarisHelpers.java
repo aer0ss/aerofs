@@ -7,11 +7,8 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.api.PolarisModule;
-import com.aerofs.polaris.api.operation.InsertChild;
-import com.aerofs.polaris.api.operation.MoveChild;
-import com.aerofs.polaris.api.operation.RemoveChild;
-import com.aerofs.polaris.api.operation.Transforms;
-import com.aerofs.polaris.api.operation.UpdateContent;
+import com.aerofs.polaris.api.operation.*;
+import com.aerofs.polaris.api.types.JobStatus;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -23,6 +20,7 @@ import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.response.ValidatableResponse;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -154,6 +152,23 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
+    public static ValidatableResponse shareObject(RequestSpecification authenticated, OID object) {
+        return given()
+                .spec(authenticated)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Share())
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(object))
+                .then();
+    }
+
+    public static OperationResult shareFolder(RequestSpecification authenticated, OID folder)
+    {
+        return shareObject(authenticated, folder)
+                .assertThat().statusCode(HttpStatus.SC_OK)
+                .and().extract().response().as(OperationResult.class);
+    }
+
     public static void addLocation(RequestSpecification authentication, OID object, long version, DID device) {
         given()
                 .spec(authentication)
@@ -214,6 +229,18 @@ public abstract class PolarisHelpers {
                     .extract()
                     .body()
                     .asInputStream();
+    }
+
+    //
+    // get a job's status
+    //
+
+    public static JobStatus getJobStatus(RequestSpecification authenticated, UniqueID job) {
+        return given()
+                .spec(authenticated)
+                .when().get(PolarisTestServer.getJobURL(job))
+                .then().assertThat().statusCode(Response.Status.OK.getStatusCode())
+                .extract().as(JobStatus.Response.class).status;
     }
 
     private PolarisHelpers() {

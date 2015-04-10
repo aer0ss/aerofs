@@ -13,18 +13,10 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.batch.location.LocationUpdateType;
-import com.aerofs.polaris.api.operation.InsertChild;
-import com.aerofs.polaris.api.operation.MoveChild;
-import com.aerofs.polaris.api.operation.Operation;
-import com.aerofs.polaris.api.operation.RemoveChild;
-import com.aerofs.polaris.api.operation.Transforms;
-import com.aerofs.polaris.api.operation.UpdateContent;
-import com.aerofs.polaris.api.operation.Updated;
-import com.aerofs.polaris.api.types.LogicalObject;
-import com.aerofs.polaris.api.types.ObjectType;
-import com.aerofs.polaris.api.types.Transform;
-import com.aerofs.polaris.api.types.TransformType;
+import com.aerofs.polaris.api.operation.*;
+import com.aerofs.polaris.api.types.*;
 import com.aerofs.polaris.dao.Atomic;
+import com.aerofs.polaris.dao.types.LockableLogicalObject;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -38,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -95,6 +88,7 @@ public final class ObjectStore {
 
     private final AccessManager accessManager;
     private final DBI dbi;
+    private final StoreMigrator migrator;
 
     /**
      * Constructor.
@@ -103,9 +97,10 @@ public final class ObjectStore {
      * @param dbi database wrapper used to read/update the logical object database
      */
     @Inject
-    public ObjectStore(AccessManager accessManager, DBI dbi) {
+    public ObjectStore(AccessManager accessManager, DBI dbi, StoreMigrator migrator) {
         this.accessManager = accessManager;
         this.dbi = dbi;
+        this.migrator = migrator;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -291,13 +286,13 @@ public final class ObjectStore {
     public Transforms getTransforms(UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
         AccessToken accessToken = checkAccess(user, store, Access.READ);
         return inTransaction(dao -> {
-            int available = getTransformCount(dao, accessToken, store);
+            long available = getTransformCount(dao, accessToken, store);
             List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);
             return new Transforms(available, transforms);
         });
     }
 
-    private int getTransformCount(DAO dao, AccessToken accessToken, UniqueID store) throws NotFoundException, AccessException {
+    private long getTransformCount(DAO dao, AccessToken accessToken, UniqueID store) throws NotFoundException, AccessException {
         checkAccessGranted(dao, accessToken, store, Access.READ);
         verifyStore(store);
         return dao.transforms.getTransformCount(store);
@@ -336,15 +331,16 @@ public final class ObjectStore {
      * @throws NotFoundException if the {@code object} to be transformed (or one of its dependents) does not exist
      * @throws AccessException if {@code user} cannot transform {@code object} or one of its dependents
      */
-    public List<Updated> performTransform(UserID user, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException {
+    public OperationResult performTransform(UserID user, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException {
         AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
         return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
     }
 
-    private List<Updated> performTransform(DAO dao, AccessToken accessToken, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException, ParentConflictException, NameConflictException, VersionConflictException {
+    private OperationResult performTransform(DAO dao, AccessToken accessToken, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException, ParentConflictException, NameConflictException, VersionConflictException {
         checkAccessGranted(dao, accessToken, oid, Access.READ, Access.WRITE);
 
         List<Updated> updated = Lists.newArrayListWithExpectedSize(2);
+        UniqueID jobID = null;
 
         switch (operation.type) {
             case INSERT_CHILD: {
@@ -360,6 +356,7 @@ public final class ObjectStore {
                     Atomic atomic = new Atomic(2);
                     updated.add(insertChild(dao, device, mc.newParent, mc.child, null, mc.newChildName, true, atomic));
                     updated.add(removeChild(dao, device, oid, mc.child, atomic));
+                    Preconditions.checkState(updated.get(0).object.store.equals(updated.get(1).object.store), "cannot move object %s across store boundaries", mc.child);
                 }
                 break;
             }
@@ -373,50 +370,63 @@ public final class ObjectStore {
                 updated.add(makeContent(dao, device, oid, uc.localVersion, uc.hash, uc.size, uc.mtime));
                 break;
             }
+            case SHARE: {
+                updated.add(changeToStore(dao, device, oid));
+                jobID = migrator.migrateStore(SID.folderOID2convertedStoreSID(new OID(oid)), device);
+                break;
+            }
             default:
                 throw new IllegalArgumentException("unsupported operation " + operation.type);
         }
 
-        return updated;
+        return new OperationResult(updated, jobID);
     }
 
     private static Updated insertChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName, boolean allowReinsert, @Nullable Atomic atomic) throws ParentConflictException, NotFoundException, NameConflictException {
-        // check if the object was already inserted
-        if (!allowReinsert) {
-            UniqueID currentParentOid = dao.children.getParent(childOid);
+        UniqueID currentParentOid = dao.children.getParent(childOid);
 
-            if (!(currentParentOid == null || currentParentOid.equals(OID.TRASH))) {
-                LogicalObject conflictingParent = dao.objects.get(currentParentOid);
-                Preconditions.checkState(conflictingParent != null, "no parent object for %s", currentParentOid);
-                throw new ParentConflictException(childOid, parentOid, conflictingParent);
+        if (currentParentOid != null) {
+            LogicalObject currentParent = dao.objects.get(currentParentOid);
+            Preconditions.checkState(currentParent != null, "current parent with oid %s could not be found", currentParentOid);
+            // check if this operation would be a no-op
+            if (parentOid.equals(currentParentOid)) {
+                LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
+                long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(currentParent.store, currentParent.oid, TransformType.INSERT_CHILD, childOid);
+                Preconditions.checkState(matchingTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, currentParentOid);
+                return new Updated(matchingTransform, currentParent);
+            // check if the object is not a mount point and is being reinserted
+            } else if (!allowReinsert && !ObjectType.STORE.equals(childObjectType) && !currentParentOid.equals(OID.TRASH)) {
+                throw new ParentConflictException(childOid, parentOid, currentParent);
             }
         }
 
         // get the parent
-        LogicalObject parent = getParent(dao, parentOid);
+        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
         Preconditions.checkArgument(isFolder(parent.objectType), "cannot insert into %s", parent.objectType);
 
         // check for name conflicts within the parent
         checkForNameConflicts(dao, parentOid, childName);
 
         LogicalObject child;
-
-        // check if the caller is intending to create a new
-        // object or simply use an existing object
+        // check if the caller is intending to create a new object or simply use an existing object
         ObjectType storedChildObjectType = dao.objectTypes.get(childOid);
         if (storedChildObjectType != null) {
             Preconditions.checkArgument(childObjectType == null || childObjectType.equals(storedChildObjectType), "mismatched object type exp:%s act:%s", storedChildObjectType, childObjectType);
             child = dao.objects.get(childOid);
         } else {
-            Preconditions.checkArgument(childObjectType != null, "%s does not exist", childOid);
+            Preconditions.checkArgument(childObjectType == ObjectType.FOLDER || childObjectType == ObjectType.FILE, "new child object %s can not be created, as it is not a folder or file", childOid);
             child = newObject(dao, parent.store, childOid, childObjectType);
         }
 
         // by this point the child object should exist
         Preconditions.checkArgument(child != null, "%s does not exist", childOid);
 
+        if(childObjectType == ObjectType.STORE) {
+            Preconditions.checkState(isInRootStore(dao, parentOid), "can only insert mount points into user root stores");
+        }
+
         // attach the object to the requested parent
-        long transformTimestamp = attachChild(dao, device, parent, childOid, childName, atomic);
+        long transformTimestamp = attachChild(dao, device, parent, child, childName, atomic);
 
         LOGGER.info("insert {} into {}", childOid, parentOid);
 
@@ -426,7 +436,7 @@ public final class ObjectStore {
 
     private static Updated renameChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, byte[] newChildName) throws NotFoundException, NameConflictException {
         // get the parent
-        LogicalObject parent = getParent(dao, parentOid);
+        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
 
         // the child we're removing exists
         getExistingObject(dao, childOid);
@@ -436,6 +446,12 @@ public final class ObjectStore {
 
         // get the current child name (informational)
         byte[] currentChildName = dao.children.getChildName(parentOid, childOid);
+        if (Arrays.equals(newChildName, currentChildName)) {
+            LOGGER.info("no-op for renameChild operation on child {} of {}", childOid, parentOid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.RENAME_CHILD, childOid);
+            Preconditions.checkState(matchingTransform != 0L, "could not find transform renaming %s as a child of %s", childOid, parentOid);
+            return new Updated(matchingTransform, parent);
+        }
 
         // check for name conflicts with the new name
         checkForNameConflicts(dao, parentOid, newChildName);
@@ -453,20 +469,27 @@ public final class ObjectStore {
         Preconditions.checkArgument(!Identifiers.isRootStore(childOid), "cannot remove root store %s", childOid);
 
         // get the parent
-        LogicalObject parent = getParent(dao, parentOid);
+        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
 
         // the child we're removing exists
         LogicalObject child = getExistingObject(dao, childOid);
 
         // the child we're removing is actually the child of this object
         byte[] childName = dao.children.getChildName(parentOid, childOid);
-        Preconditions.checkArgument(childName != null, "%s is not a child of %s", childOid, parentOid);
+
+        if (childName == null) {
+            // child is not under this parent, may be a duplicate operation
+            LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.REMOVE_CHILD, child.oid);
+            Preconditions.checkArgument(matchingTransform != 0L, "%s is not a child of %s", childOid, parentOid);
+            return new Updated(matchingTransform, parent);
+        }
 
         // detach the child from its parent
-        long transformTimestamp = detachChild(dao, device, parent, childOid, atomic);
+        long transformTimestamp = detachChild(dao, device, parent, child, atomic);
 
-        // check if we should unroot the object
-        if (dao.children.getActiveReferenceCount(childOid) == 0) {
+        // check if we should unroot the object, though we don't unroot mount points (since their corresponding logical objects are stores)
+        if (child.objectType != ObjectType.STORE && dao.children.getActiveReferenceCount(childOid) == 0) {
             removeObjectFromStore(dao, child, childName);
         }
 
@@ -483,6 +506,15 @@ public final class ObjectStore {
         // check that we're trying to add content for a file
         Preconditions.checkArgument(isFile(object.objectType), "cannot add content for %s type", object.objectType);
 
+        // check if the new content matches the object's latest content (disregarding version)
+        Content currentObjectContent = dao.objectProperties.getLatest(oid);
+        if (currentObjectContent != null && currentObjectContent.equals(new Content(oid, object.version, contentHash, contentSize, contentTime))) {
+            LOGGER.info("no-op for makeContent operation on {}", oid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(object.store, oid, TransformType.UPDATE_CONTENT);
+            Preconditions.checkState(matchingTransform != 0L, "could not find transform updating content of %s", oid);
+            return new Updated(matchingTransform, object);
+        }
+
         // check that we're at the right version
         if (deviceVersion != object.version) {
             throw new VersionConflictException(oid, deviceVersion, object.version);
@@ -495,9 +527,33 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, oid));
     }
 
-    private static LogicalObject getParent(DAO dao, UniqueID oid) throws NotFoundException {
+    private static Updated changeToStore(DAO dao, DID device, UniqueID folderOID) {
+        // check that object exists
+        LogicalObject folder = getExistingObject(dao, folderOID);
+
+        // can only migrate normal folders in a user root
+        // N.B. can't check the logicalObject's store value because we might be under another folder that just got migrated, and the changes haven't been propagated to this folder yet
+        Preconditions.checkArgument(isInRootStore(dao, folderOID) && folder.objectType == ObjectType.FOLDER, "oid %s must be a folder in a user's root store", folderOID);
+
+        // cannot share a folder that contains shared folders
+        Preconditions.checkArgument(!containsSharedFolder(dao, folder.store, folderOID), "cannot share oid %s because it contains a shared folder", folderOID);
+
+        // need to replace the old folder transparently, which requires its name
+        UniqueID parentOID = dao.children.getParent(folderOID);
+        Preconditions.checkState(parentOID!= null, "folder to be migrated does not have a parent");
+        byte[] folderName = dao.children.getChildName(parentOID, folderOID);
+        Preconditions.checkState(folderName != null, "folder to be migrated does not have a name");
+
+        // change the object type to mount
+        long timestamp = convertToAnchor(dao, device, folder, folderName, parentOID);
+        newStore(dao, SID.folderOID2convertedStoreSID(new OID(folderOID)));
+
+        return new Updated(timestamp, getExistingObject(dao, folderOID));
+    }
+
+    private static LockableLogicalObject getParent(DAO dao, UniqueID oid) throws NotFoundException {
         // check if the parent exists
-        LogicalObject parent = dao.objects.get(oid);
+        LockableLogicalObject parent = dao.objects.get(oid);
 
         // if it doesn't exist, and it's a shared folder, create it
         if (parent == null) {
@@ -518,19 +574,45 @@ public final class ObjectStore {
         }
     }
 
+    private static boolean containsSharedFolder(DAO dao, UniqueID userRootStore, UniqueID oid) {
+        try (ResultIterator<UniqueID> mountPoints =  dao.mountPoints.listUserMountPointParents(userRootStore)) {
+            while (mountPoints.hasNext()) {
+                UniqueID mountPointParent = mountPoints.next();
+                while (!(Identifiers.isRootStore(mountPointParent) || oid.equals(mountPointParent))) {
+                    mountPointParent = dao.children.getParent(mountPointParent);
+                    Preconditions.checkArgument(mountPointParent != null, "cannot locate all mount points within user store %s", userRootStore);
+                }
+                if (oid.equals(mountPointParent)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private static boolean isInRootStore(DAO dao, UniqueID oid)
+    {
+        if (Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid) || OID.TRASH.equals(oid)) {
+            return Identifiers.isRootStore(oid);
+        }
+        UniqueID parentID = dao.children.getParent(oid);
+        Preconditions.checkArgument(parentID != null, "cannot find parent of oid %s", oid);
+        return isInRootStore(dao, parentID);
+    }
+
     //
     // primitive operations
     //
     // these methods do *not* check pre/post conditions
     //
 
-    private static LogicalObject newStore(DAO dao, UniqueID oid) {
+    private static LockableLogicalObject newStore(DAO dao, UniqueID oid) {
         verifyStore(oid);
 
         return newObject(dao, oid, oid, ObjectType.STORE);
     }
 
-    private static LogicalObject newObject(DAO dao, UniqueID store, UniqueID oid, ObjectType objectType) {
+    private static LockableLogicalObject newObject(DAO dao, UniqueID store, UniqueID oid, ObjectType objectType) {
         verifyStore(store);
 
         // create the object at the initial version
@@ -543,33 +625,43 @@ public final class ObjectStore {
         return dao.objects.get(oid);
     }
 
-    private static long attachChild(DAO dao, DID device, LogicalObject parent, UniqueID childOid, byte[] childName, @Nullable Atomic atomic) {
+    private static long attachChild(DAO dao, DID device, LogicalObject parent, LogicalObject child, byte[] childName, @Nullable Atomic atomic) {
         long newParentVersion = parent.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.INSERT_CHILD, newParentVersion, childOid, childName, atomic);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.INSERT_CHILD, newParentVersion, child.oid, childName, atomic);
 
         // update the version of the parent
         dao.objects.update(parent.store, parent.oid, newParentVersion);
 
         // create an entry for the child
-        dao.children.add(parent.oid, childOid, childName);
+        dao.children.add(parent.oid, child.oid, childName);
+
+        // update mountpoints table if adding a new mount point
+        if (child.objectType == ObjectType.STORE) {
+            dao.mountPoints.add(parent.store, child.oid, parent.oid);
+        }
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
     }
 
-    private static long detachChild(DAO dao, DID device, LogicalObject parent, UniqueID childOid, @Nullable Atomic atomic) {
+    private static long detachChild(DAO dao, DID device, LogicalObject parent, LogicalObject child, @Nullable Atomic atomic) {
         long newParentVersion = parent.version + 1;
 
         // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, childOid, null, atomic);
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, parent.store, parent.oid, TransformType.REMOVE_CHILD, newParentVersion, child.oid, null, atomic);
 
         // update the version of the parent
         dao.objects.update(parent.store, parent.oid, newParentVersion);
 
         // remove the entry for the child
-        dao.children.remove(parent.oid, childOid);
+        dao.children.remove(parent.oid, child.oid);
+
+        // update mountpoints table if the removed child was a mount point
+        if (child.objectType == ObjectType.STORE) {
+            dao.mountPoints.remove(parent.store, child.oid);
+        }
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
@@ -603,7 +695,29 @@ public final class ObjectStore {
         // update the version for the object
         dao.objects.update(file.store, file.oid, newVersion);
 
+        // add the location of the new content
+        dao.locations.add(file.oid, newVersion, device);
+
         // return the timestamp at which the transform was made
+        return logicalTimestamp;
+    }
+
+    private static long convertToAnchor(DAO dao, DID device, LogicalObject folder, byte[] folderName, UniqueID parent) {
+        long newVersion = folder.version + 1;
+
+        // add entry in transforms table and update our latest known max logical timestamp
+        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, folder.store, folder.oid, TransformType.SHARE, newVersion, null, null, null);
+
+        // replace the old folder's references with the new mount point's
+        UniqueID anchorOID = SID.folderOID2convertedAnchorOID(new OID(folder.oid));
+        dao.children.remove(parent, folder.oid);
+        dao.children.add(parent, anchorOID, folderName);
+        removeObjectFromStore(dao, folder, folderName);
+
+        dao.objects.update(folder.store, folder.oid, newVersion);
+
+        dao.mountPoints.add(folder.store, anchorOID, parent);
+
         return logicalTimestamp;
     }
 
@@ -752,14 +866,22 @@ public final class ObjectStore {
         dao.locations.remove(oid, version, did);
     }
 
-    private static LogicalObject getExistingObject(DAO dao, UniqueID oid) throws NotFoundException {
-        LogicalObject object = dao.objects.get(oid);
+    private static LockableLogicalObject getExistingObject(DAO dao, UniqueID oid) throws NotFoundException {
+        LockableLogicalObject object = dao.objects.get(oid);
 
         if (object == null) {
             throw new NotFoundException(oid);
         }
 
         return object;
+    }
+
+    private static LockableLogicalObject getUnlockedParent(DAO dao, UniqueID oid) throws ObjectLockedException {
+        LockableLogicalObject parent = getParent(dao, oid);
+        if (parent.locked) {
+            throw new ObjectLockedException(oid);
+        }
+        return parent;
     }
 
     private static boolean isFolder(ObjectType objectType) {

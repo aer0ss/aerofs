@@ -1,0 +1,11 @@
+{
+  "shared_file": {
+    "type": "FILE"
+  },
+  "shared_folder": {
+    "type": "FOLDER"
+  },
+  "new_file": {
+    "type": "FILE"
+  }
+}

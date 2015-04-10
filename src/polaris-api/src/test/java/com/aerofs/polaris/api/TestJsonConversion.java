@@ -13,18 +13,8 @@ import com.aerofs.polaris.api.batch.transform.TransformBatch;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
-import com.aerofs.polaris.api.operation.InsertChild;
-import com.aerofs.polaris.api.operation.MoveChild;
-import com.aerofs.polaris.api.operation.Operation;
-import com.aerofs.polaris.api.operation.RemoveChild;
-import com.aerofs.polaris.api.operation.UpdateContent;
-import com.aerofs.polaris.api.operation.Updated;
-import com.aerofs.polaris.api.types.Child;
-import com.aerofs.polaris.api.types.Content;
-import com.aerofs.polaris.api.types.LogicalObject;
-import com.aerofs.polaris.api.types.ObjectType;
-import com.aerofs.polaris.api.types.Transform;
-import com.aerofs.polaris.api.types.TransformType;
+import com.aerofs.polaris.api.operation.*;
+import com.aerofs.polaris.api.types.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -107,10 +97,10 @@ public final class TestJsonConversion {
         List<TransformBatchOperationResult> results = ImmutableList.of(
                 new TransformBatchOperationResult(new BatchError(PolarisError.INSUFFICIENT_PERMISSIONS, "message 1")),
                 new TransformBatchOperationResult(new BatchError(PolarisError.NAME_CONFLICT, "message 2")),
-                new TransformBatchOperationResult(ImmutableList.of(
-                        new Updated(1, new LogicalObject(OID.generate(), OID.generate(), 2, ObjectType.FOLDER)),
+                new TransformBatchOperationResult(new OperationResult(ImmutableList.of(
+                        new Updated(1, new LogicalObject(SID.generate(), OID.generate(), 2, ObjectType.FOLDER)),
                         new Updated(2, new LogicalObject(SID.generate(), OID.generate(), 1, ObjectType.FILE)),
-                        new Updated(3, new LogicalObject(SID.generate(), OID.generate(), 1, ObjectType.FILE)))),
+                        new Updated(3, new LogicalObject(SID.generate(), OID.generate(), 1, ObjectType.FILE))))),
                 new TransformBatchOperationResult(new BatchError(PolarisError.NO_SUCH_OBJECT, "message 3"))
         );
         TransformBatchResult batch = new TransformBatchResult(results);
@@ -161,7 +151,7 @@ public final class TestJsonConversion {
 
     @Test
     public void shouldSerializeAndDeserializeLogicalObject() throws IOException {
-        LogicalObject object = new LogicalObject(SID.generate(), OID.generate(), 20394, ObjectType.MOUNT_POINT);
+        LogicalObject object = new LogicalObject(SID.generate(), OID.generate(), 20394, ObjectType.STORE);
 
         String serialized = mapper.writeValueAsString(object);
         LOGGER.info("logical_object:{}", serialized);
@@ -196,7 +186,7 @@ public final class TestJsonConversion {
     @Test
     public void shouldSerializeAndDeserializeChildTransform() throws IOException {
         Transform transform = new Transform(129348, DID.generate(), SID.generate(), OID.generate(), TransformType.INSERT_CHILD, 23948, System.currentTimeMillis());
-        transform.setChildParameters(OID.generate(), ObjectType.MOUNT_POINT, PolarisUtilities.stringToUTF8Bytes("filename"));
+        transform.setChildParameters(OID.generate(), ObjectType.FILE, PolarisUtilities.stringToUTF8Bytes("filename"));
 
         String serialized = mapper.writeValueAsString(transform);
         LOGGER.info("child_transform:{}", serialized);
@@ -229,7 +219,7 @@ public final class TestJsonConversion {
 
         Transform transform = new Transform(129348, DID.generate(), SID.generate(), OID.generate(), TransformType.INSERT_CHILD, 23948, System.currentTimeMillis());
         transform.setAtomicOperationParameters("ID", 1, 2);
-        transform.setChildParameters(OID.generate(), ObjectType.MOUNT_POINT, PolarisUtilities.stringToUTF8Bytes("filename"));
+        transform.setChildParameters(OID.generate(), ObjectType.FILE, PolarisUtilities.stringToUTF8Bytes("filename"));
         transform.setContentParameters(hash, 2039, System.currentTimeMillis());
 
         String serialized = mapper.writeValueAsString(transform);
@@ -281,5 +271,27 @@ public final class TestJsonConversion {
 
         Operation operation = mapper.readValue(serialized, Operation.class);
         assertThat(operation, Matchers.<Operation>equalTo(updateContent));
+    }
+
+    @Test
+    public void shouldSerializeAndDeserializeMigrate() throws IOException {
+        Share share = new Share();
+
+        String serialized = mapper.writeValueAsString(share);
+        LOGGER.info("migrate:{}", serialized);
+
+        Operation operation = mapper.readValue(serialized, Operation.class);
+        assertThat(operation, Matchers.<Operation>equalTo(share));
+    }
+
+    @Test
+    public void shouldSerializeAndDeserializeJobStatus() throws IOException {
+        for (JobStatus status : JobStatus.values()) {
+            String serialized = mapper.writeValueAsString(status.asResponse());
+            LOGGER.info("jobstatus:{}", serialized);
+            JobStatus.Response deserialized = mapper.readValue(serialized, JobStatus.Response.class);
+
+            assertThat(deserialized.status, Matchers.equalTo(status));
+        }
     }
 }

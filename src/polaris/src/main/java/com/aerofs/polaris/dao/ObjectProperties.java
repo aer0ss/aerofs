@@ -16,6 +16,7 @@ import java.sql.SQLException;
 @RegisterMapper(ObjectProperties.ContentMapper.class)
 public interface ObjectProperties {
 
+    // TODO (RD) make users of this method verify that exactly one row was changed
     @SqlUpdate("insert into file_properties(oid, version, hash, size, mtime) values(:oid, :version, :hash, :size, :mtime)")
     int add(@Bind("oid") UniqueID oid, @Bind("version") long version, @Bind("hash") byte[] hash, @Bind("size") long size, @Bind("mtime") long mtime);
 

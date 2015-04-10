@@ -1,12 +1,6 @@
 package com.aerofs.polaris.logical;
 
-import com.aerofs.polaris.dao.Children;
-import com.aerofs.polaris.dao.Locations;
-import com.aerofs.polaris.dao.LogicalObjects;
-import com.aerofs.polaris.dao.LogicalTimestamps;
-import com.aerofs.polaris.dao.ObjectProperties;
-import com.aerofs.polaris.dao.ObjectTypes;
-import com.aerofs.polaris.dao.Transforms;
+import com.aerofs.polaris.dao.*;
 import org.skife.jdbi.v2.Handle;
 
 /**
@@ -22,6 +16,8 @@ public final class DAO {
     final ObjectTypes objectTypes;
     final Transforms transforms;
     final LogicalTimestamps logicalTimestamps;
+    final Migrations migrations;
+    final MountPoints mountPoints;
 
     DAO(Handle conn) {
         this.children = conn.attach(Children.class);
@@ -31,5 +27,7 @@ public final class DAO {
         this.objectTypes = conn.attach(ObjectTypes.class);
         this.transforms = conn.attach(Transforms.class);
         this.logicalTimestamps = conn.attach(LogicalTimestamps.class);
+        this.migrations = conn.attach(Migrations.class);
+        this.mountPoints = conn.attach(MountPoints.class);
     }
 }

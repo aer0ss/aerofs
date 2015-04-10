@@ -2,10 +2,7 @@ package com.aerofs.polaris;
 
 import com.aerofs.baseline.errors.BaseExceptionMapper;
 import com.aerofs.polaris.acl.AccessException;
-import com.aerofs.polaris.logical.NameConflictException;
-import com.aerofs.polaris.logical.NotFoundException;
-import com.aerofs.polaris.logical.ParentConflictException;
-import com.aerofs.polaris.logical.VersionConflictException;
+import com.aerofs.polaris.logical.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
@@ -49,6 +46,8 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
             return Response.Status.CONFLICT;
         } else if (throwable instanceof NotFoundException) {
             return Response.Status.NOT_FOUND;
+        } else if (throwable instanceof ObjectLockedException) {
+            return Response.Status.SERVICE_UNAVAILABLE;
         } else {
             return Response.Status.INTERNAL_SERVER_ERROR;
         }

@@ -14,6 +14,8 @@ public enum PolarisError {
 
     PARENT_CONFLICT(805),
 
+    OBJECT_LOCKED(806),
+
     UNKNOWN(888);
 
     private final int code;

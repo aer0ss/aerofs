@@ -8,5 +8,7 @@ public enum OperationType {
 
     REMOVE_CHILD,
 
-    UPDATE_CONTENT,;
+    UPDATE_CONTENT,
+
+    SHARE,;
 }

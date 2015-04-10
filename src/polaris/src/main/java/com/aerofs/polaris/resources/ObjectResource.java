@@ -7,7 +7,6 @@ import com.aerofs.polaris.api.operation.Operation;
 import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
-import com.google.common.collect.Maps;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -46,7 +45,7 @@ public final class ObjectResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public OperationResult update(@Context AeroUserDevicePrincipal principal, @PathParam("oid") UniqueID oid, Operation operation) {
-        OperationResult result = new OperationResult(objectStore.performTransform(principal.getUser(), principal.getDevice(), oid, operation));
+        OperationResult result = objectStore.performTransform(principal.getUser(), principal.getDevice(), oid, operation);
 
         Map<UniqueID, Long> updatedStores = result.updated.stream().collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
         updatedStores.forEach(notifier::notifyStoreUpdated);

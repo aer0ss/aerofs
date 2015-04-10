@@ -21,10 +21,7 @@ public enum ObjectType {
     FILE(2),
 
     /** folder on the filesystem */
-    FOLDER(3),
-
-    /** mount point for a shared folder */
-    MOUNT_POINT(4);
+    FOLDER(3),;
 
     public final int typeId;
 

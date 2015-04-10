@@ -76,8 +76,8 @@ public final class TestTransformBatchResource {
 
         for (TransformBatchOperationResult operationResult : result.results) {
             assertThat(operationResult.successful, is(true));
-            assertThat(operationResult.updated, hasSize(1));
-            assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
+            assertThat(operationResult.operationResult.updated, hasSize(1));
+            assertThat(operationResult.operationResult.updated.get(0).object.oid, equalTo(store));
         }
 
         // should have received a *single* notification, since all changes were to the same shared folder
@@ -113,14 +113,14 @@ public final class TestTransformBatchResource {
         // first result
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
+        assertThat(operationResult.operationResult.updated, hasSize(1));
+        assertThat(operationResult.operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);
         assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
+        assertThat(operationResult.operationResult.updated, hasSize(1));
+        assertThat(operationResult.operationResult.updated.get(0).object.oid, equalTo(store));
 
         // third result
         operationResult = result.results.get(2);
@@ -160,8 +160,8 @@ public final class TestTransformBatchResource {
         // first result
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
+        assertThat(operationResult.operationResult.updated, hasSize(1));
+        assertThat(operationResult.operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);
@@ -201,8 +201,8 @@ public final class TestTransformBatchResource {
         // first result
         operationResult = result.results.get(0);
         assertThat(operationResult.successful, is(true));
-        assertThat(operationResult.updated, hasSize(1));
-        assertThat(operationResult.updated.get(0).object.oid, equalTo(store));
+        assertThat(operationResult.operationResult.updated, hasSize(1));
+        assertThat(operationResult.operationResult.updated.get(0).object.oid, equalTo(store));
 
         // second result
         operationResult = result.results.get(1);

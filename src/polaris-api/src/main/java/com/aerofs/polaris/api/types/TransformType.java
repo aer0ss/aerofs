@@ -19,7 +19,10 @@ public enum TransformType {
     DELETE_CHILD(4),
 
     /** change the content of a file */
-    UPDATE_CONTENT(5);
+    UPDATE_CONTENT(5),
+
+    /** change a folder into a sf root */
+    SHARE(6),;
 
     public final int typeId;
 

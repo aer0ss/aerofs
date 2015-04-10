@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `objects` (
   `store_oid` BINARY(16) NOT NULL,
   `oid`       BINARY(16) NOT NULL,
   `version`   BIGINT     NOT NULL,
+  `locked`    TINYINT    DEFAULT 0,
   PRIMARY KEY (`oid`)
 ) ENGINE = InnoDB;
 
@@ -40,13 +41,16 @@ CREATE TABLE IF NOT EXISTS `locations` (
 
 CREATE INDEX `locations_index` ON `locations` (`oid`, `version`);
 
+/**
+ * there's a one-to-many relationship here from child_oid -> parent_oid
+ */
 CREATE TABLE IF NOT EXISTS `children` (
   `parent_oid` BINARY(16)      NOT NULL,
   `child_oid`  BINARY(16)      NOT NULL,
-  `child_name` VARBINARY(1020) NOT NULL
+  `child_name` VARBINARY(1020) NOT NULL,
+  PRIMARY KEY (`child_oid`, `parent_oid`)
 ) ENGINE = InnoDB;
 
-CREATE INDEX `parent_index`     ON `children` (`parent_oid`);
 CREATE INDEX `child_name_index` ON `children` (`parent_oid`, `child_name`(520));
 
 CREATE TABLE IF NOT EXISTS `transforms` (
@@ -86,6 +90,24 @@ CREATE TABLE IF NOT EXISTS `store_notified_logical_timestamp` (
 ) ENGINE = InnoDB;
 
 CREATE INDEX `store_notified_logical_timestamp_index` ON `store_notified_logical_timestamp` (`store_oid`, `logical_timestamp`);
+
+/**
+ * migration
+ */
+
+CREATE TABLE IF NOT EXISTS `store_migrations` (
+  `store_oid`         BINARY(16)        NOT NULL,
+  `originator`        BINARY(16)        NOT NULL,
+  `job_status`        INTEGER           NOT NULL,
+  PRIMARY KEY (`store_oid`)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS `user_mount_points` (
+  `user_root`     BINARY(16)        NOT NULL,
+  `mount_point`   BINARY(16)        NOT NULL,
+  `mount_parent`  BINARY(16)        NOT NULL,
+  PRIMARY KEY (`user_root`, `mount_point`)
+) ENGINE = InnoDB;
 
 /**
  * conversion from distributed system -> polaris

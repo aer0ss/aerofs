@@ -10,6 +10,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
+import com.aerofs.polaris.logical.StoreMigrator;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.Notifier;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -58,6 +59,10 @@ public final class PolarisTestServer extends ExternalResource {
 
     public static String getLocationURL(OID object, long version, DID device) {
         return String.format("%s/objects/%s/versions/%d/locations/%s", getServiceURL(), object.toStringFormal(), version, device.toStringFormal());
+    }
+
+    public static String getJobURL(UniqueID id) {
+        return String.format("%s/jobs/%s", getServiceURL(), id.toStringFormal());
     }
 
     public static String getLocationBatchURL() {

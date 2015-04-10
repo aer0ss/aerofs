@@ -1,8 +1,8 @@
 package com.aerofs.polaris.dao;
 
 import com.aerofs.ids.UniqueID;
-import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.dao.types.LockableLogicalObject;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-@RegisterMapper(LogicalObjects.LogicalObjectMapper.class)
+@RegisterMapper(LogicalObjects.LockableLogicalObjectMapper.class)
 public interface LogicalObjects {
 
     @SqlUpdate("insert into objects(store_oid, oid, version) values(:store_oid, :oid, :version)")
@@ -23,28 +23,35 @@ public interface LogicalObjects {
     @SqlUpdate("update objects set store_oid = :store_oid, version = :version where oid = :oid")
     int update(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("version") long version);
 
-    @Nullable
-    @SqlQuery("select store_oid, objects.oid, version, object_type from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid")
-    LogicalObject get(@Bind("oid") UniqueID oid);
+    @SqlUpdate("update objects set store_oid = :store_oid where oid = :oid")
+    int changeStore(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid);
+
+    @SqlUpdate("update objects set locked = :locked where oid = :oid")
+    int setLocked(@Bind("oid") UniqueID oid, @Bind("locked") boolean locked);
 
     @Nullable
-    @SqlQuery("select store_oid, objects.oid, version, object_type from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid and version = :version")
-    LogicalObject get(@Bind("oid") UniqueID oid, @Bind("version") long version);
+    @SqlQuery("select store_oid, objects.oid, version, object_type, locked from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid")
+    LockableLogicalObject get(@Bind("oid") UniqueID oid);
+
+    @Nullable
+    @SqlQuery("select store_oid, objects.oid, version, object_type, locked from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid and version = :version")
+    LockableLogicalObject get(@Bind("oid") UniqueID oid, @Bind("version") long version);
 
     @SuppressWarnings("unused")
     void close();
 
-    final class LogicalObjectMapper implements ResultSetMapper<LogicalObject> {
+    final class LockableLogicalObjectMapper implements ResultSetMapper<LockableLogicalObject> {
 
         private static final int COL_STORE_OID   = 1;
         private static final int COL_OID         = 2;
         private static final int COL_VERSION     = 3;
         private static final int COL_OBJECT_TYPE = 4;
+        private static final int COL_LOCKED      = 5;
 
         @Override
-        public LogicalObject map(int index, ResultSet r, StatementContext ctx) throws SQLException {
+        public LockableLogicalObject map(int index, ResultSet r, StatementContext ctx) throws SQLException {
             try {
-                return new LogicalObject(new UniqueID(r.getBytes(COL_STORE_OID)), new UniqueID(r.getBytes(COL_OID)), r.getLong(COL_VERSION), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)));
+                return new LockableLogicalObject(new UniqueID(r.getBytes(COL_STORE_OID)), new UniqueID(r.getBytes(COL_OID)), r.getLong(COL_VERSION), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getBoolean(COL_LOCKED));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

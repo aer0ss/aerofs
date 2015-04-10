@@ -119,6 +119,14 @@ public class SID extends UniqueID
     }
 
     /**
+     * Translate an arbitrary folder's OID into the anchor OID of the store to which this folder converts.
+     */
+    public static OID folderOID2convertedAnchorOID(OID oid)
+    {
+        return storeSID2anchorOID(folderOID2convertedStoreSID(oid));
+    }
+
+    /**
      * Translate an anchor OID to the original OID of the folder it was converted from.
      */
     public static OID anchorOID2folderOID(OID anchor)

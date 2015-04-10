@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-public final class LogicalObject {
+public class LogicalObject {
 
     @NotNull
     public final UniqueID store;

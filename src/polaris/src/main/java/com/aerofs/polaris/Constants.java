@@ -21,6 +21,8 @@ public abstract class Constants {
 
     public static final long INITIAL_OBJECT_VERSION = 0;
 
+    public static final long MIGRATION_OPERATION_BATCH_SIZE = 100;
+
     private Constants() {
         // to prevent instantiation by subclasses
     }

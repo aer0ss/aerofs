@@ -126,6 +126,48 @@ public final class TestTransformsResource {
     }
 
     @Test
+    public void shouldReturnCorrectTransformsWhenFolderIsMigrated() {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
+
+        PolarisHelpers.shareFolder(verified, folder);
+
+        // note that the object type in the previous transform has also changed
+        Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(2L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.SHARE, 1, null, null, null));
+
+        SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
+        assertThat(applied.transforms, nullValue());
+        assertThat(applied.maxTransformCount, is(0L));
+    }
+
+    @Test
+    public void shouldReturnCorrectTransformsWhenNonemptyFolderIsMigrated() {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
+        OID file = PolarisHelpers.newFile(verified, folder, "file");
+        PolarisHelpers.shareFolder(verified, folder);
+
+        Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
+        assertThat(applied.transforms, hasSize(4));
+        assertThat(applied.maxTransformCount, is(5L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.SHARE, 2, null, null, null));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(5, DEVICE, folder, TransformType.REMOVE_CHILD, 3, file, null, null));
+
+        SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
+        applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
+        assertThat(applied.transforms, hasSize(1));
+        assertThat(applied.maxTransformCount, is(4L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(4, DEVICE, sharedFolder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+    }
+
+    @Test
     public void shouldReturnNoTransformsWhenDeviceHasReceivedAllAvailableTransforms() {
         SID store = SID.generate();
         OID folder1 = PolarisHelpers.newFolder(verified, store, "folder_1");

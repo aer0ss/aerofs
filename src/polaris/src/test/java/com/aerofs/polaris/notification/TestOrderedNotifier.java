@@ -11,12 +11,7 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.api.notification.Update;
-import com.aerofs.polaris.dao.types.DIDTypeArgument;
-import com.aerofs.polaris.dao.types.OIDTypeArgument;
-import com.aerofs.polaris.dao.types.ObjectTypeArgument;
-import com.aerofs.polaris.dao.types.SIDTypeArgument;
-import com.aerofs.polaris.dao.types.TransformTypeArgument;
-import com.aerofs.polaris.dao.types.UniqueIDTypeArgument;
+import com.aerofs.polaris.dao.types.*;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
@@ -89,6 +84,7 @@ public final class TestOrderedNotifier {
         dbi.registerArgumentFactory(new DIDTypeArgument.DIDTypeArgumentFactory());
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
+        dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
 
         // spy on it
         this.dbi = Mockito.spy(dbi);
@@ -242,6 +238,8 @@ public final class TestOrderedNotifier {
 
     @Test
     public void shouldPublishNeededNotificationsOnStartup() throws Exception {
+        this.notifier.stop();
+
         UniqueID store = UniqueID.generate();
         setLatestLogicalTimestamp(dbi, store, 2918);
 
@@ -252,6 +250,7 @@ public final class TestOrderedNotifier {
         assertThat(getLatestLogicalTimestamp(dbi, store), equalTo(2918L));
         assertThat(getLatestNotifiedLogicalTimestamp(dbi, store), equalTo(-1L));
 
+        OrderedNotifier notifier = new OrderedNotifier(this.dbi, publisher, MoreExecutors.sameThreadExecutor(), MoreExecutors.listeningDecorator(MoreExecutors.sameThreadExecutor())); // tasks executed inline
         notifier.start();
 
         verify(publisher).publishUpdate(eq(store.toStringFormal()), eq(new Update(store, 2918)));

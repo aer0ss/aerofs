@@ -6,6 +6,7 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
+import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.acl.Access;
@@ -23,6 +24,7 @@ import org.apache.http.HttpStatus;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
+import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.Random;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
+import static com.jayway.restassured.RestAssured.when;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -336,6 +339,108 @@ public final class TestObjectResource {
 
         // should get only one update for store1
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store1), any(Long.class));
+    }
+
+    @Test
+    public void shouldMigrateFolder() throws Exception {
+        SID rootStore = SID.rootSID(USERID);
+        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared_folder");
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
+        PolarisHelpers.newFile(AUTHENTICATED, folder, "nested_file");
+        PolarisHelpers.newFile(AUTHENTICATED, rootStore, "file");
+        PolarisHelpers.newFile(AUTHENTICATED, sharedFolder, "shared_file");
+        PolarisHelpers.newFolder(AUTHENTICATED, sharedFolder, "shared_folder");
+
+        reset(polaris.getNotifier());
+
+        PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder);
+
+        SID sfSID = SID.folderOID2convertedStoreSID(sharedFolder);
+        PolarisHelpers.newFile(AUTHENTICATED, sfSID, "new_file");
+
+        checkTreeState(rootStore, "tree/ShouldProperlyMigrateStore1.json");
+        checkTreeState(sfSID, "tree/ShouldProperlyMigrateStore2.json");
+
+        // one notification from the share op, and one from the end of migration
+        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(rootStore), any(Long.class));
+        // one notification from the new file, and one from the end of migration
+        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(sfSID), any(Long.class));
+    }
+
+    @Test
+    public void shouldFailToInsertMountUnderSharedFolder() throws Exception {
+        SID store = SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, store, SID.generate(), "nested_sf", ObjectType.STORE)
+                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void shouldFailToShareFolderContainingSharedFolders() throws Exception {
+        SID rootStore = SID.rootSID(USERID);
+        OID mountPointDirectChild = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder1");
+        OID nestedMountPoint = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder2");
+        OID firstMountPoint = PolarisHelpers.newFolder(AUTHENTICATED, mountPointDirectChild, "shared_folder1");
+        OID intermediateFolder = PolarisHelpers.newFolder(AUTHENTICATED, nestedMountPoint, "intermediate_folder");
+        OID secondMountPoint = PolarisHelpers.newFolder(AUTHENTICATED, intermediateFolder, "shared_folder2");
+
+        PolarisHelpers.shareFolder(AUTHENTICATED, firstMountPoint);
+        PolarisHelpers.shareFolder(AUTHENTICATED, secondMountPoint);
+
+        PolarisHelpers.shareObject(AUTHENTICATED, mountPointDirectChild)
+                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+
+        PolarisHelpers.shareObject(AUTHENTICATED, nestedMountPoint)
+                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void shouldReturnPreviousTransformsForNoops() throws Exception {
+        SID store = SID.generate();
+        OID folder = OID.generate();
+        OID file = OID.generate();
+        OID renamedFile = OID.generate();
+        byte[] hash1 = new byte[32], hash2 = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash1);
+        random.nextBytes(hash2);
+        PolarisHelpers.newObject(AUTHENTICATED, store, folder, "folder", ObjectType.FOLDER)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(1));
+
+        PolarisHelpers.newObject(AUTHENTICATED, folder, file, "file", ObjectType.FILE)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(2));
+
+        PolarisHelpers.newObject(AUTHENTICATED, folder, renamedFile, "other_file", ObjectType.FILE)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(3));
+
+        PolarisHelpers.moveObject(AUTHENTICATED, folder, store, file, "moved_file")
+                .assertThat().body("updated[0].transform_timestamp", equalTo(4), "updated[1].transform_timestamp", equalTo(5));
+
+        PolarisHelpers.moveObject(AUTHENTICATED, folder, folder, renamedFile, "renamed_file")
+                .assertThat().body("updated[0].transform_timestamp", equalTo(6));
+
+        PolarisHelpers.newContent(AUTHENTICATED, file, Constants.INITIAL_OBJECT_VERSION, hash1, 100, 1024)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(7));
+
+        // any operations that would do no work should return the same timestamps as their original
+        PolarisHelpers.newObject(AUTHENTICATED, store, folder, "folder", ObjectType.FOLDER)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(1));
+
+        PolarisHelpers.moveObject(AUTHENTICATED, folder, store, file, "moved_file")
+                .assertThat().body("updated[0].transform_timestamp", equalTo(4), "updated[1].transform_timestamp", equalTo(5));
+
+        PolarisHelpers.moveObject(AUTHENTICATED, folder, folder, renamedFile, "renamed_file")
+                .assertThat().body("updated[0].transform_timestamp", equalTo(6));
+
+        PolarisHelpers.newContent(AUTHENTICATED, file, Constants.INITIAL_OBJECT_VERSION, hash1, 100, 1024)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(7));
+
+        // removes make some of the other operations no longer no-ops, so we test these at the end
+
+        PolarisHelpers.removeObject(AUTHENTICATED, folder, renamedFile)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(8));
+
+        PolarisHelpers.removeObject(AUTHENTICATED, folder, renamedFile)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(8));
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

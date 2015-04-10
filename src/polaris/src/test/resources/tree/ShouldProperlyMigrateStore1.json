@@ -1,0 +1,14 @@
+{
+  "shared_folder": {
+    "type": "STORE"
+  },
+  "folder": {
+    "type": "FOLDER",
+    "nested_file": {
+        "type": "FILE"
+    }
+  },
+  "file": {
+    "type": "FILE"
+  }
+}
