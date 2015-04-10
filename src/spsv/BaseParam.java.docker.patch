@@ -1,3 +1,12 @@
+@@ -137,7 +137,7 @@
+     public static class Verkehr
+     {
+         public static final String HOST =
+-                getStringProperty("base.verkehr.host", "verkehr.aerofs.com");
++                "verkehr.service";
+ 
+         public static final short PROTOBUF_PORT =
+                 (short) getIntegerProperty("base.verkehr.port.pb", 443).intValue();
 @@ -204,7 +204,7 @@
           * Hostname for private (server-component-only) access to the audit service.
           */
