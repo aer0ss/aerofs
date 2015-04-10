@@ -15,7 +15,7 @@ database:
   url: jdbc:mysql://MYSQL_URL/polaris
 
 verkehr:
-  url: http://localhost:9079
+  url: http://localhost:25234
   connectTimeout: 30000
   responseTimeout: 45000
   maxConnections: 10
