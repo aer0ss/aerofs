@@ -52,6 +52,9 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
     }
 
     @Override
+    public SOKID sokid() { return _sokid; }
+
+    @Override
     SOID soid()
     {
         return _sokid.soid();

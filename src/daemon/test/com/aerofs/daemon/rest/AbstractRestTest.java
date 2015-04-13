@@ -217,6 +217,12 @@ public class AbstractRestTest extends AbstractTest
         }
 
         @Override
+        public byte[] hashState_()
+        {
+            return null;
+        }
+
+        @Override
         public PrefixOutputStream newOutputStream_(boolean append) throws IOException
         {
             if (!append) baos = new ByteArrayOutputStream();

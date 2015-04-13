@@ -16,6 +16,7 @@ public interface IPhysicalPrefix
      * @return 0 if the file doesn't exist
      */
     long getLength_();
+    byte[] hashState_();
 
     PrefixOutputStream newOutputStream_(boolean append) throws IOException;
 

@@ -27,7 +27,7 @@ import static com.aerofs.daemon.core.protocol.CoreProtocolUtil.typeString;
  *     <li>message body</li>
  * </ul>
  */
-public class DigestedMessage
+public class DigestedMessage implements ResponseStream
 {
     private final PBCore _pb;
     private final InputStream _is;

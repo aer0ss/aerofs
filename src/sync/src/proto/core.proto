@@ -31,6 +31,7 @@ message PBCore {
         COMPUTE_HASH_REQUEST = 6;
         RESOLVE_USER_ID_REQUEST = 7;
         RESOLVE_USER_ID_RESPONSE = 8;
+        GET_CONTENT_REQUEST = 9;
     }
 
     required Type type = 1;
@@ -44,6 +45,8 @@ message PBCore {
     optional PBComputeHashRequest compute_hash_request = 8;
     optional PBGetComponentResponse get_component_response = 9;
     optional PBException exception_response = 10;
+    optional PBGetContentRequest get_content_request = 11;
+    optional PBGetContentResponse get_content_response = 12;
 }
 
 message PBUpdateSenderFilter {
@@ -143,6 +146,20 @@ message PBGetComponentRequest {
     optional bytes hash_content = 7;
 }
 
+// trimmed-down p2p transfer for Phoenix
+message PBGetContentRequest {
+    required bytes store_id = 1;
+    required bytes object_id = 2;
+    required uint64 local_version = 3;
+    optional Prefix prefix = 4;
+
+    message Prefix {
+        required uint64 version = 1;
+        required uint64 length = 2;
+        required bytes hash_state = 3;
+    }
+}
+
 message PBComputeHashRequest {
     required bytes store_id = 1;
     required bytes object_id = 2;
@@ -151,7 +168,6 @@ message PBComputeHashRequest {
 
 message PBGetComponentResponse {
     required PBVer version = 1;
-    repeated PBVer conflict_version = 2;
 
     // present only for metadata
     optional PBMeta meta = 3;
@@ -173,6 +189,15 @@ message PBGetComponentResponse {
     optional bool is_content_same = 8 [default = false];
 
     // followed by: optional bytes file_content
+}
+
+// trimmed-down p2p transfer for Phoenix
+message PBGetContentResponse {
+    required uint64 version = 1;
+    required uint64 length = 2;
+    required uint64 mtime = 3;
+    required bytes hash = 4;
+    optional uint64 prefix_length = 5 [default = 0];
 }
 
 //////////////////////////////////////

@@ -17,10 +17,7 @@ import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.OCID;
-import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.proto.Core.PBMeta.Type;
 import com.google.common.collect.ImmutableSet;
@@ -248,7 +245,7 @@ public class TestDownload extends AbstractDownloadTest
             public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 doNothing().when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
-                throw new ExRestartWithHashComputed("bla");
+                throw new ExRestartWithHashComputed(KIndex.MASTER);
             }
         }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 

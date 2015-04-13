@@ -13,6 +13,7 @@ import java.sql.SQLException;
  * Prefix versions are used to detect changes on partially downloaded files.
  * Use this class to fetch/manipulate prefix versions.
  */
+// TODO: track prefixes by content hash instead of (soid, version)
 public class PrefixVersionControl
 {
     private final IPrefixVersionDatabase _pvdb;

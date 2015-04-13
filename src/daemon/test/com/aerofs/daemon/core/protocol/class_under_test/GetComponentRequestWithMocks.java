@@ -11,22 +11,14 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
-import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
-import com.aerofs.daemon.core.protocol.ComponentContentSender;
 import com.aerofs.daemon.core.protocol.GetComponentRequest;
+import com.aerofs.daemon.core.protocol.LegacyContentSender;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.id.SIndex;
 
-import java.sql.SQLException;
-
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,9 +35,6 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
     public final IPhysicalStorage _ps = mock(IPhysicalStorage.class);
     public final OutboundEventLogger _oel = mock(OutboundEventLogger.class);
     public final TransManager _tm = mock(TransManager.class);
-    public final ChangeEpochDatabase _cedb = mock(ChangeEpochDatabase.class);
-    public final CentralVersionDatabase _cvdb = mock(CentralVersionDatabase.class);
-    public final ContentChangesDatabase _ccdb = mock(ContentChangesDatabase.class);
 
     // For GCCContentSender
     public final UploadState _ulstate = mock(UploadState.class);
@@ -53,17 +42,14 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
 
     private final CoreScheduler _sched = mock(CoreScheduler.class);
 
-    public final ComponentContentSender _gccContentSender =
-            new ComponentContentSender(_ulstate, _sched, _trl, _ps, _nvc, _m, _ds, _tokenManager);
+    public final LegacyContentSender _gccContentSender =
+            new LegacyContentSender(_ulstate, _sched, _trl, _m, _tokenManager);
     public final GetComponentRequest _gcc = new GetComponentRequest();
 
     public GetComponentRequestWithMocks()
     {
         when(_tm.begin_()).thenAnswer(invocation -> mock(Trans.class));
-        try {
-            when(_cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
-        } catch (SQLException e) { fail(); }
         _gcc.inject_(_trl, _lacl, _ps, _oel, _ds, _rpc, _pvc, _nvc, _emc, _gccContentSender, _a2t,
-                _sidx2sid, _sid2sidx, _cfgLocalUser, _cedb, _cvdb, _ccdb, _tm);
+                _sidx2sid, _sid2sidx, _cfgLocalUser, _tm);
     }
 }

@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import java.io.IOException;
 import java.security.MessageDigest;
 
+import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.TransUtil;
@@ -47,6 +48,17 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
     public long getLength_()
     {
         return _f.lengthOrZeroIfNotFile();
+    }
+
+    @Override
+    public byte[] hashState_()
+    {
+        try {
+            MessageDigest md = partialDigest(_f, true);
+            return DigestSerializer.serialize(md);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

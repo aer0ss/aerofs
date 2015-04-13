@@ -6,9 +6,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -20,16 +20,12 @@ import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
-import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
@@ -81,22 +77,18 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
     private TransportRoutingLayer _trl;
-    private ComponentContentSender _contentSender;
+    private LegacyContentSender _contentSender;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private CfgLocalUser _cfgLocalUser;
     private OutboundEventLogger _oel;
     private TransManager _tm;
-    private ChangeEpochDatabase _cedb;
-    private CentralVersionDatabase _cvdb;
-    private ContentChangesDatabase _ccdb;
 
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IEmigrantTargetSIDLister emc, ComponentContentSender contentSender, MapAlias2Target a2t,
+            IEmigrantTargetSIDLister emc, LegacyContentSender contentSender, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
-            ChangeEpochDatabase cedb, CentralVersionDatabase cvdb, ContentChangesDatabase ccdb,
             TransManager tm)
     {
         _trl = trl;
@@ -114,9 +106,6 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         _sid2sidx = sid2sidx;
         _cfgLocalUser = cfgLocalUser;
         _tm = tm;
-        _cedb = cedb;
-        _cvdb = cvdb;
-        _ccdb = ccdb;
     }
 
     /**
@@ -138,16 +127,10 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
                 .setObjectId(BaseUtil.toPB(socid.oid()))
                 .setComId(socid.cid().getInt());
 
-        boolean polaris = _cedb.getChangeEpoch_(socid.sidx()) != null;
-        if (polaris) {
-            checkState(socid.cid().isContent());
-            bd.setLocalVersion(Version.wrapCentral(_cvdb.getVersion_(socid.sidx(), socid.oid())).toPB_());
-        } else {
-            bd.setLocalVersion(_nvc.getAllLocalVersions_(socid).toPB_());
-        }
+        bd.setLocalVersion(_nvc.getAllLocalVersions_(socid).toPB_());
 
         if (socid.cid().isContent()) {
-            setIncrementalDownloadInfo_(socid, bd, polaris);
+            setIncrementalDownloadInfo_(socid, bd);
         }
 
         PBCore request = CoreProtocolUtil.newRequest(Type.GET_COMPONENT_REQUEST)
@@ -188,8 +171,7 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         }
     }
 
-    private void setIncrementalDownloadInfo_(SOCID socid, PBGetComponentRequest.Builder bd,
-            boolean polaris)
+    private void setIncrementalDownloadInfo_(SOCID socid, PBGetComponentRequest.Builder bd)
             throws SQLException, ExNotFound
     {
         OA oa = _ds.getOANullable_(socid.soid());
@@ -201,7 +183,7 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         // NB: the polaris codepath cannot handle "same content" responses gracefully
         // so we avoid sending the local hash when requesting content to ensure that
         // such a response never occurs
-        ContentHash h = !polaris && oa.caMasterNullable() != null ? _ds.getCAHash_(branch) : null;
+        ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch) : null;
         if (h != null) {
             bd.setHashContent(h.toPB());
             l.info("advertise hash in gcc {} {}", socid, h);
@@ -234,13 +216,6 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         if (socid.cid().isMeta()) return KIndex.MASTER;
         OA oa = _ds.getOANullable_(socid.soid());
         if (oa == null || oa.caMasterNullable() == null) return KIndex.MASTER;
-        if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
-            checkState(oa.cas().size() <= 2);
-            // serve conflict branch preferentially
-            //  - it cannot have local changes
-            //  - it always dominates the base version from which the local MASTER diverged
-            return new KIndex(oa.cas().size() - 1);
-        }
         for (KIndex kidx : oa.cas().keySet()) {
             Version v = _nvc.getLocalVersion_(new SOCKID(socid, kidx));
             if (!v.isDominatedBy_(vRemote)) return kidx;
@@ -304,32 +279,10 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
-        Long rcv = vRemote.unwrapCentral();
-
-        Version vLocal;
-        if (rcv != null) {
-            if (_cedb.getChangeEpoch_(sidx) == null) throw new ExProtocolError();
-            checkState(k.cid().isContent());
-            // TODO: in some cases it might be acceptable to transfer un-acked local changes
-            // if some care is given to versioning and hashing
-
-            // NB: only MASTER can have local changes
-            if (k.kidx().isMaster() && _ccdb.hasChange_(sidx, k.oid())) {
-                l.debug("{} {} has local change", msg.did(), k);
-                throw new ExUpdateInProgress();
-            }
-            Long lcv = _cvdb.getVersion_(sidx, k.oid());
-            if (lcv == null || lcv < rcv) {
-                l.debug("{} {} r {} >= {} l", msg.did(), k, rcv, lcv);
-                throw new ExNoComponentWithSpecifiedVersion();
-            }
-            vLocal = Version.wrapCentral(lcv);
-        } else {
-            vLocal = _nvc.getLocalVersion_(k);
-            if (vLocal.isDominatedBy_(vRemote)) {
-                l.debug("{} r {} >= l {}", msg.did(), vRemote, vLocal);
-                throw new ExNoComponentWithSpecifiedVersion();
-            }
+        Version vLocal = _nvc.getLocalVersion_(k);
+        if (vLocal.isDominatedBy_(vRemote)) {
+            l.debug("{} r {} >= l {}", msg.did(), vRemote, vLocal);
+            throw new ExNoComponentWithSpecifiedVersion();
         }
         sendResponse_(msg, k, vLocal);
     }
@@ -355,14 +308,21 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         if (k.cid().isMeta()) {
             sendMeta_(msg.ep(), k, bdCore, bdResponse);
         } else if (k.cid().isContent()) {
+            long prefixLength = request.getPrefixLength();
+            Version vPrefix = Version.fromPB(request.getPrefixVersion());
+            if (prefixLength != 0) {
+                l.info("recved prefix len {} v {}. local {}",
+                        prefixLength, vPrefix, vLocal);
+            }
+            if (!vPrefix.equals(vLocal)) {
+                prefixLength = 0;
+            }
             ContentHash contentHash = _contentSender.send_(
                     msg.ep(),
-                    k,
+                    content(k.sokid()),
                     bdCore,
                     bdResponse,
-                    vLocal,
-                    request.getPrefixLength(),
-                    Version.fromPB(request.getPrefixVersion()),
+                    prefixLength,
                     h);
             if (contentHash != null) updateHash_(k.sokid(), contentHash, msg.ep().did());
         } else {
@@ -370,6 +330,21 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         }
 
         if (k.cid().isContent()) _oel.log_(CONTENT_COMPLETION, k.soid(), msg.did());
+    }
+
+    // TODO: share w/ GetContentRequest
+    SendableContent content(SOKID k) throws SQLException, ExNotFound
+    {
+        OA oa = _ds.getOA_(k.soid());
+        CA ca = oa.caThrows(k.kidx());
+        long mtime = ca.mtime();
+        // N.B. this is the length of the complete file contents, regardless of whether we're
+        // skipping prefixLen bytes at the beginning of the content or not.
+        long fileLength = ca.length();
+        IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), k.kidx());
+
+        checkState(mtime >= 0, "%s %s %s", k, oa, mtime);
+        return new SendableContent(k, mtime, fileLength, _ds.getCAHash_(k), pf);
     }
 
     private void updateHash_(SOKID sokid, @Nonnull ContentHash h, DID remote)

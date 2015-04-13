@@ -67,10 +67,13 @@ public final class DigestSerializer
         return deserialize(d, -1);
     }
 
-    public static MessageDigest deserialize(byte[] d, long expectedBytesProcessed)
-    {
+    public static MessageDigest deserialize(byte[] d, long expectedBytesProcessed) {
         checkArgument(d.length == SERIALIZED_SIZE, "Invalid input size: %s", d.length);
-        ByteBuffer b = ByteBuffer.wrap(d);
+        return deserialize(ByteBuffer.wrap(d), expectedBytesProcessed);
+    }
+
+    public static MessageDigest deserialize(ByteBuffer b, long expectedBytesProcessed)
+    {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");

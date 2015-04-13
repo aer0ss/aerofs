@@ -8,6 +8,7 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge;
@@ -42,6 +43,8 @@ import javax.annotation.Nonnull;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.Stack;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Base download class that contains state and logic for low-level download
@@ -172,19 +175,26 @@ class Download
         protected final DownloadState _dlstate;
         protected final GetComponentRequest _gcc;
         protected final GetComponentResponse _gcr;
+        protected final ChangeEpochDatabase _cedb;
+        protected final GetContentRequest  _pgcc;
+        protected final GetContentResponse _pgcr;
         protected final DownloadDeadlockResolver _ddr;
         protected final IMapSIndex2SID _sidx2sid;
 
         @Inject
         protected Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 To.Factory factTo, GetComponentRequest gcc, GetComponentResponse gcr,
-                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid)
+                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid,
+                ChangeEpochDatabase cedb, GetContentRequest pgcc, GetContentResponse pgcr)
         {
             _ds = ds;
             _dls = dls;
             _dlstate = dlstate;
             _gcc = gcc;
             _gcr = gcr;
+            _cedb = cedb;
+            _pgcc = pgcc;
+            _pgcr = pgcr;
             _ddr = ddr;
             _factTo = factTo;
             _sidx2sid = sidx2sid;
@@ -291,7 +301,9 @@ class Download
             throws SQLException, ExAborted, ExNoAvailDevice, ExRemoteCallFailed
     {
         try {
-            return _f._gcc.remoteRequestComponent_(_socid, did, _tk);
+            return _f._cedb.getChangeEpoch_(_socid.sidx()) != null
+                    ? _f._pgcc.remoteRequestContent_(_socid.soid(), did, _tk)
+                    : _f._gcc.remoteRequestComponent_(_socid, did, _tk);
         } catch (SQLException | ExAborted | ExNoAvailDevice e) {
             throw e;
         } catch (Exception e) {
@@ -305,7 +317,12 @@ class Download
         try {
             boolean failed = true;
             try {
-                _f._gcr.processResponse_(_socid, msg, cxt);
+                if (_f._cedb.getChangeEpoch_(_socid.sidx()) != null) {
+                    checkState(_socid.cid().isContent());
+                    _f._pgcr.processResponse_(_socid.soid(), msg, cxt.token());
+                } else {
+                    _f._gcr.processResponse_(_socid, msg, cxt);
+                }
                 failed = false;
             } finally {
                 l.debug("{} ended {} {} over {}", msg.did(), _socid, failed ? "FAILED" : "OK", msg.tp());

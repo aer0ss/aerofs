@@ -20,30 +20,19 @@ import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.COMPLETED_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CONTENT_VALUE;
-import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.OUTBOUND_VALUE;
 
-/**
- *
- */
-public class OutboundEventLogger
+public class LegacyOutboundEventLogger implements OutboundEventLogger
 {
-    private final static Logger l = Loggers.getLogger(OutboundEventLogger.class);
+    private final static Logger l = Loggers.getLogger(LegacyOutboundEventLogger.class);
 
     private final DirectoryService _ds;
     private final IActivityLogDatabase _aldb;
     private final MapAlias2Target _a2t;
     private final TransManager _tm;
 
-    public static final int META_REQUEST = OUTBOUND_VALUE;
-
-    public static final int CONTENT_REQUEST = OUTBOUND_VALUE | CONTENT_VALUE;
-    public static final int CONTENT_COMPLETION = OUTBOUND_VALUE | CONTENT_VALUE | COMPLETED_VALUE;
-
     @Inject
-    public OutboundEventLogger(DirectoryService ds, IActivityLogDatabase aldb, TransManager tm,
-            MapAlias2Target a2t)
+    public LegacyOutboundEventLogger(DirectoryService ds, IActivityLogDatabase aldb, TransManager tm,
+                                     MapAlias2Target a2t)
     {
         _ds = ds;
         _a2t = a2t;

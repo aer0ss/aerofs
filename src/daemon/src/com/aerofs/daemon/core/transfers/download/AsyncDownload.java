@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
@@ -17,9 +18,6 @@ import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
-import com.aerofs.daemon.core.protocol.GetComponentRequest;
-import com.aerofs.daemon.core.protocol.GetComponentResponse;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
@@ -119,9 +117,10 @@ class AsyncDownload extends Download
         @Inject
         public Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 GetComponentRequest gcc, GetComponentResponse gcr, To.Factory factTo,
-                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid, RemoteChangeChecker changes)
+                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid, RemoteChangeChecker changes,
+                ChangeEpochDatabase cedb, GetContentRequest pgcc, GetContentResponse pgcr)
         {
-            super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid);
+            super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid, cedb, pgcc, pgcr);
             _changes = changes;
         }
 

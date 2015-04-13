@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.protocol.class_under_test;
 
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
@@ -21,12 +23,8 @@ import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.protocol.ComputeHash;
-import com.aerofs.daemon.core.protocol.ContentUpdater;
-import com.aerofs.daemon.core.protocol.GetComponentResponse;
-import com.aerofs.daemon.core.protocol.MetaDiff;
-import com.aerofs.daemon.core.protocol.MetaUpdater;
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
+import com.aerofs.daemon.core.protocol.*;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOKID;
 
@@ -58,18 +56,21 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public final BranchDeleter _bd = mock(BranchDeleter.class);
     public final Hasher _hasher = mock(Hasher.class);
     public final ComputeHash _computeHash = mock(ComputeHash.class);
-    public final ReceiveAndApplyUpdate _raau = mock(ReceiveAndApplyUpdate.class);
     public final ChangeEpochDatabase _cedb = mock(ChangeEpochDatabase.class);
     public final CentralVersionDatabase _cvdb = mock(CentralVersionDatabase.class);
     public final ContentChangesDatabase _ccdb = mock(ContentChangesDatabase.class);
     public final RemoteContentDatabase _rcdb = mock(RemoteContentDatabase.class);
+    private final PrefixVersionControl _pvc = mock(PrefixVersionControl.class);
+    private final CoreScheduler _sched = mock(CoreScheduler.class);
+    private final ContentReceiver _rc = new ContentReceiver(_pvc, _ps, mock(DownloadState.class), _iss, _tm, _sched);
+    private final ContentProvider _provider = new DaemonContentProvider(_ds, _ps, _ccdb, mock(Analytics.class));
 
+    public final LegacyCausality _legacyCausality = new LegacyCausality(_ds, _nvc, _bd);
     public final MetaUpdater _mu = new MetaUpdater();
     public final ContentUpdater _cu =
-            new ContentUpdater(_tm, _ds, _ps, _iss, _a2t, _lacl, _nvc, _bd, _hasher, _computeHash, _raau,
-            _cedb, _cvdb, _ccdb, _rcdb);
+            new ContentUpdater(_tm, _provider, _ps, _rc, _legacyCausality, _ds, _pvc);
     public final GetComponentResponse _gcr =
-            new GetComponentResponse(_mu, _cu, _iss);
+            new GetComponentResponse(_mu, _cu, _iss, _lacl, _a2t, _legacyCausality, _hasher, _computeHash);
 
     public GetComponentResponseWithMocks()
     {

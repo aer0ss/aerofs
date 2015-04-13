@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.protocol.GetContentRequest;
+import com.aerofs.daemon.core.protocol.GetContentResponse;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.net.device.Devices;
@@ -50,6 +53,9 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock Downloads dls;
     @Mock GetComponentRequest gcc;
     @Mock GetComponentResponse gcr;
+    @Mock ChangeEpochDatabase cedb;
+    @Mock GetContentRequest pgcc;
+    @Mock GetContentResponse pgcr;
     @Mock RemoteChangeChecker changes;
     @Mock DownloadDeadlockResolver ddr;
     @Mock IMapSIndex2SID sidx2sid;
@@ -83,9 +89,11 @@ public class AbstractDownloadTest extends AbstractTest
         AppRoot.set("dummy");
 
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
+        when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
 
         factTo = new To.Factory(mock(Devices.class));
-        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes);
+        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes,
+                cedb, pgcc, pgcr);
     }
 
 

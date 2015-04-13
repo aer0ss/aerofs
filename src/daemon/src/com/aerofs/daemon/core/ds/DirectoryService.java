@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Set;
 
-public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
+public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, IStoreDeletionOperator
 {
     public DirectoryService()
     {
@@ -127,6 +127,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return null if not found
      */
+    @Override
     @Nullable public final ResolvedPath resolveNullable_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);

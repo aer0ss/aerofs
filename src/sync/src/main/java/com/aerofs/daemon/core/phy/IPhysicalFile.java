@@ -4,12 +4,15 @@ import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.IReadableFile;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOKID;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 public interface IPhysicalFile extends IReadableFile, IPhysicalObject
 {
+    SOKID sokid();
+
     /**
      * @return the absolute path of the physical file in the file system,
      * or null if no such path exists

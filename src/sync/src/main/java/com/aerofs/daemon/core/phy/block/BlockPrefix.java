@@ -75,6 +75,21 @@ class BlockPrefix implements IPhysicalPrefix
         }
     }
 
+    @Override
+    public byte[] hashState_()
+    {
+        try {
+            long prefixLength = length();
+            if (prefixLength == 0) return null;
+            return DigestSerializer.serialize(
+                    DigestSerializer.deserialize(_f.newChild(HASH).toByteArray(), prefixLength));
+        } catch (Exception e) {
+            BlockStorage.l.warn("failed to reload hash for {}", _f, e);
+            _f.deleteIgnoreErrorRecursively();
+            return null;
+        }
+    }
+
     long length() throws IOException {
         long blocksLength = _f.newChild(BLOCK_HASH).lengthOrZeroIfNotFile();
         if (blocksLength % ContentBlockHash.UNIT_LENGTH != 0) {

@@ -6,9 +6,12 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
+import com.aerofs.daemon.core.activity.LegacyOutboundEventLogger;
+import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
+import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.health_check.CoreProgressWatcher;
 import com.aerofs.daemon.core.health_check.DeadlockDetector;
@@ -78,6 +81,13 @@ public class CoreModule extends AbstractModule
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
 
+        bind(IPathResolver.class).to(DirectoryServiceImpl.class);
+        bind(Causality.class).to(TransitionalCausality.class);
+        bind(ContentSender.class).to(LegacyContentSender.class);
+        bind(ContentReceiver.class).to(LegacyContentReceiver.class);
+        bind(ContentProvider.class).to(DaemonContentProvider.class);
+        bind(OutboundEventLogger.class).to(LegacyOutboundEventLogger.class);
+
         bind(NewUpdatesSender.class).asEagerSingleton();
 
         bind(TransBoundaryChecker.class).to(TransManager.class);
@@ -144,6 +154,7 @@ public class CoreModule extends AbstractModule
         multibind(binder(), CoreProtocolReactor.Handler.class, UpdateSenderFilter.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, RPC.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instanciation. However we don't want to leak the specific classes outside the package

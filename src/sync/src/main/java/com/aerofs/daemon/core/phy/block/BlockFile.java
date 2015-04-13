@@ -47,6 +47,9 @@ class BlockFile implements IPhysicalFile
         return "BlockFile(" + _sokid + "," + _path + ")";
     }
 
+    @Override
+    public SOKID sokid() { return _sokid; }
+
     private FileInfo info_() throws SQLException
     {
         return _info != null ? _info : _s.getFileInfoNullable_(_sokid);

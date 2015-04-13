@@ -6,43 +6,27 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents.FileConflictEvent;
-import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.ex.ExOutOfSpace;
-import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.object.BranchDeleter;
+import com.aerofs.daemon.core.net.ResponseStream;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.analytics.AnalyticsEventCounter;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.proto.Core.PBGetComponentResponse;
-import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -60,56 +44,29 @@ import java.util.Set;
 import static com.aerofs.defects.Defects.newMetric;
 import static com.google.common.base.Preconditions.checkState;
 
-public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
+public class ContentReceiver
 {
-    private static final Logger l = Loggers.getLogger(ReceiveAndApplyUpdate.class);
+    private static final Logger l = Loggers.getLogger(ContentReceiver.class);
 
-    private final DirectoryService _ds;
     private final PrefixVersionControl _pvc;
-    private final NativeVersionControl _nvc;
     private final IPhysicalStorage _ps;
     private final DownloadState _dlState;
     private final IncomingStreams _iss;
-    private final BranchDeleter _bd;
-    private final TransManager _tm;
-    private final AnalyticsEventCounter _conflictCounter;
-    private final ChangeEpochDatabase _cedb;
+    protected final TransManager _tm;
     private final CoreScheduler _sched;
 
-    private final Set<OngoingTransfer> _ongoing = new HashSet<>();
+    protected final Set<OngoingTransfer> _ongoing = new HashSet<>();
 
     @Inject
-    public ReceiveAndApplyUpdate(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IPhysicalStorage ps, DownloadState dlState, ChangeEpochDatabase cedb,
-            IncomingStreams iss, BranchDeleter bd, TransManager tm, Analytics analytics,
-            CoreScheduler sched)
+    public ContentReceiver(PrefixVersionControl pvc, IPhysicalStorage ps, DownloadState dlState,
+                           IncomingStreams iss, TransManager tm, CoreScheduler sched)
     {
-        _ds = ds;
         _pvc = pvc;
-        _nvc = nvc;
         _ps = ps;
         _dlState = dlState;
         _iss = iss;
-        _bd = bd;
         _tm = tm;
-        _cedb = cedb;
         _sched = sched;
-        _ds.addListener_(this);
-        _conflictCounter = new AnalyticsEventCounter(analytics) {
-            @Override
-            public IAnalyticsEvent createEvent(int count)
-            {
-                return new FileConflictEvent(count);
-            }
-        };
-    }
-
-    @Override
-    public void objectExpelled_(SOID expulsionRoot, Trans t) throws SQLException {
-        for (OngoingTransfer dl : _ongoing) {
-            OA oa = _ds.getOANullable_(dl.soid());
-            if (oa == null || oa.isExpelled()) dl.abort();
-        }
     }
 
     private void updatePrefixVersion_(SOKID k, Version vRemote, boolean isStreaming)
@@ -192,7 +149,10 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
             // persistent store (see above).
             Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
 
-            assert vPrefixOld.equals(vRemote) : Joiner.on(' ').join(vPrefixOld, vRemote, k);
+            if (!vPrefixOld.equals(vRemote)) {
+                throw new ExAborted("mismatching prefix version " + k + ": "
+                        + vPrefixOld + " != " + vRemote);
+            }
 
             l.debug("prefix accepted: {}", prefixLength);
         } else {
@@ -213,17 +173,22 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
         return prefix.newOutputStream_(true);
     }
 
-    private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, DigestedMessage msg,
-            final long totalFileLength, final long prefixLength, SOKID k,
-            Version vRemote, @Nullable KIndex matchingLocalBranch, Token tk)
-            throws ExOutOfSpace, ExNotFound, ExAborted, ExNoResource, ExTimeout,
-            SQLException, IOException, DigestException
+    protected void onMissingConflictBranch_(SOKID k)
+            throws SQLException, IOException, ExNotFound
     {
-        final boolean isStreaming = msg.streamKey() != null;
+        checkState(false, "expected conflict branch is missing: %s", k);
+    }
+
+    private @Nonnull ContentHash writeContentToPrefixFile_(IPhysicalPrefix prefix, ResponseStream rs,
+            final long totalFileLength, final long prefixLength, SOKID k,
+            Version vRemote, @Nullable IPhysicalFile matchingContent, Token tk)
+            throws ExNotFound, ExAborted, ExNoResource, SQLException, IOException, DigestException
+    {
+        final boolean isStreaming = rs.streamKey() != null;
 
         // Open the prefix file for writing, updating it as required
         final PrefixOutputStream prefixStream = createPrefixOutputStreamAndUpdatePrefixState_(
-                prefix, k, vRemote, prefixLength, matchingLocalBranch != null, isStreaming);
+                prefix, k, vRemote, prefixLength, matchingContent != null, isStreaming);
 
         // PrefixOutputStream relies on close() being called to preserve the SHA256 internal
         // state. If the internal state is not saved properly, further attempt to reopen the
@@ -238,51 +203,28 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
         Runtime.getRuntime().addShutdownHook(prefixCloser);
 
         try {
-            if (matchingLocalBranch != null && isStreaming) {
+            // TODO: block storage could efficiently leverage a copy() primitive
+            if (matchingContent != null && isStreaming) {
                 // We have this file locally and we are receiving the remote content via a stream.
                 // We can cancel the stream here and use the local content.
                 l.debug("reading content from local branch");
 
                 // Stop the stream since we will not be reading it from now on
-                _iss.end_(msg.streamKey());
-
-                // Use the content from the local branch
-                IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()), matchingLocalBranch);
+                _iss.end_(rs.streamKey());
 
                 try {
                     TCB tcb = tk.pseudoPause_("cp-prefix");
-                    try (InputStream is = file.newInputStream()) {
+                    try (InputStream is = matchingContent.newInputStream()) {
                         // release core lock to avoid blocking while copying a large prefix
                         ByteStreams.copy(is, prefixStream);
                     } finally {
                         tcb.pseudoResumed_();
                     }
                 } catch (FileNotFoundException e) {
-                    SOCKID conflict = new SOCKID(k.soid(), CID.CONTENT, matchingLocalBranch);
-
-                    if (!matchingLocalBranch.isMaster()) {
-                        // A conflict branch does not exist, even though there is an entry
-                        // in our database. This is an inconsistency, we must remove the
-                        // entry in our database. AeroFS will redownload the conflict at a later
-                        // point.
-                        l.error("known conflict branch has no associated file: {}", conflict);
-
-                        try (Trans t = _tm.begin_()) {
-                            if (_cedb.getChangeEpoch_(k.sidx()) != null) {
-                                // TODO(phoenix): version adjustment?
-                                //   rewind -> reset central version to base version of MASTER ca
-                                //   merge  -> update base version of MASTER CA
-                                // NB: currently, not doing anything is equivalent to a merge
-                                _ds.deleteCA_(k.soid(), matchingLocalBranch, t);
-                            } else {
-                                _bd.deleteBranch_(conflict, _nvc.getLocalVersion_(conflict), false,
-                                        t);
-                            }
-                            t.commit_();
-                        }
+                    if (!matchingContent.sokid().kidx().isMaster()) {
+                        onMissingConflictBranch_(matchingContent.sokid());
                     }
-
-                    l.warn("can't copy content from local branch {}", conflict);
+                    l.warn("can't copy content from local branch {}", matchingContent);
 
                     throw new ExAborted(e.getMessage());
                 }
@@ -290,20 +232,20 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
                 // We do not have the content locally, or we do but we are receiving the update via
                 // a datagram. The datagram is fully received at this point so there is no need to
                 // read from the file system the same content we already have in memory.
-                l.info("{} {} dl {} bytes", msg.did(), k, totalFileLength - prefixLength);
+                l.info("{} {} dl {} bytes", rs.did(), k, totalFileLength - prefixLength);
 
                 // assert after opening the stream otherwise the file length may
                 // have changed after the assertion and before newOutputStream()
                 checkState(prefix.getLength_() == prefixLength,
                         "%s %s != %s", k, prefix.getLength_(), prefixLength);
 
-                OngoingTransfer dl = new OngoingTransfer(_sched, _dlState, msg.ep(), k.soid(), totalFileLength);
+                OngoingTransfer dl = new OngoingTransfer(_sched, _dlState, rs.ep(), k.soid(), totalFileLength);
                 _ongoing.add(dl);
                 try {
                     long remaining;
                     TCB tcb = isStreaming ? tk.pseudoPause_("write"): null;
                     try {
-                        remaining = writePrefix(msg.is(), prefixStream,
+                        remaining = writePrefix(rs.is(), prefixStream,
                                 totalFileLength - prefixLength, dl);
                     } finally {
                         if  (tcb != null) tcb.pseudoResumed_();
@@ -352,19 +294,17 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
         return remaining;
     }
 
-    public ContentHash download_(IPhysicalPrefix prefix, DigestedMessage msg, SOKID k, Version vRemote,
-            @Nullable ContentHash remoteHash, @Nullable KIndex localBranchWithMatchingContent, Token tk)
-            throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted,
-            ExNoResource, ExOutOfSpace, ExNotFound, DigestException
+    public ContentHash download_(IPhysicalPrefix prefix, ResponseStream rs, SOKID k, Version vRemote,
+            long length, long prefixLength, @Nullable ContentHash remoteHash,
+            @Nullable IPhysicalFile matchingContent, Token tk)
+            throws SQLException, IOException, ExAborted, ExNoResource, ExNotFound, DigestException
     {
-        PBGetComponentResponse response = msg.pb().getGetComponentResponse();
-
         // Write the new content to the prefix file
-        ContentHash h = writeContentToPrefixFile_(prefix, msg, response.getFileTotalLength(),
-                response.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
+        ContentHash h = writeContentToPrefixFile_(prefix, rs, length, prefixLength, k, vRemote,
+                matchingContent, tk);
 
         if (remoteHash != null && !h.equals(remoteHash)) {
-            l.info("{} hash mismatch: {} {} {}", msg.did(), k, remoteHash, h);
+            l.info("{} hash mismatch: {} {} {}", rs.did(), k, remoteHash, h);
             // hash mismatch can be caused by data corruption on either end of the transfer or
             // inside the transport. Whatever the case may be, we simply can't commit the change.
             // Discard tainted prefix
@@ -373,7 +313,7 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
                     .addData("sokid", k.toString())
                     .addData("expected_hash", remoteHash.toHex())
                     .addData("actual_hash", h.toHex())
-                    .addData("remote_did", msg.did().toStringFormal())
+                    .addData("remote_did", rs.did().toStringFormal())
                     .sendAsync();
             // TODO: more specific exception
             // TODO: NAK to force the sender to recompute its local hash
@@ -381,66 +321,5 @@ public class ReceiveAndApplyUpdate implements IDirectoryServiceListener
         }
 
         return h;
-    }
-
-    public void apply_(SOKID k, PBGetComponentResponse response, IPhysicalPrefix prefix,
-            ContentHash h, Trans t)
-            throws Exception
-    {
-        // TODO(phoenix): validate prefix
-        // lookup expected size and hash for the given version in RemoteContentDatabase
-
-        // get length of the prefix before the actual transaction.
-        long len = prefix.getLength_();
-
-        // can't use the old values as the attributes might have changed
-        // during pauses, due to aliasing and such
-        OA oa = _ds.getOAThrows_(k.soid());
-        ResolvedPath path = _ds.resolve_(oa);
-        IPhysicalFile pf = _ps.newFile_(path, k.kidx());
-
-        // abort if the object is expelled. Although Download.java checks
-        // for this condition before starting the download, but the object
-        // may be expelled during pauses of the current thread.
-        if (oa.isExpelled()) {
-            prefix.delete_();
-            throw new ExAborted("expelled " + k);
-        }
-
-        CA ca = oa.caNullable(k.kidx());
-        boolean wasPresent = ca != null;
-        if (wasPresent && pf.wasModifiedSince(ca.mtime(), ca.length())) {
-            // the linked file modified via the local filesystem
-            // (i.e. the linker), but the linker hasn't received
-            // the notification yet. we should not overwrite the
-            // file in this case otherwise the local update will get
-            // lost.
-            //
-            // BUGBUG NB there is still a tiny time window between the
-            // test above and the apply_() below that the file is
-            // updated via the filesystem.
-            pf.onUnexpectedModification_(ca.mtime());
-            throw new ExAborted(k + " has changed locally: expected=("
-                    + ca.mtime() + "," + ca.length() + ") actual=("
-                    + pf.lastModified() + "," + pf.lengthOrZeroIfNotFile() + ")");
-        }
-
-        assert response.hasMtime();
-        long replyMTime = response.getMtime();
-        if (replyMTime < 0) throw new ExProtocolError("negative mtime");
-        long mtime = _ps.apply_(prefix, pf, wasPresent, replyMTime, t);
-
-        _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
-
-        if (!wasPresent) {
-            if (!k.kidx().equals(KIndex.MASTER)) {
-                // record creation of conflict branch here instead of in DirectoryService
-                // Aliasing and Migration may recreate them and we only want to record each
-                // conflict once
-                _conflictCounter.inc();
-            }
-            _ds.createCA_(k.soid(), k.kidx(), t);
-        }
-        _ds.setCA_(k, len, mtime, h, t);
     }
 }
