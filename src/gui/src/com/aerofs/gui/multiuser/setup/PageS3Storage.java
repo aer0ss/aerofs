@@ -6,6 +6,7 @@ package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.S;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -49,7 +50,7 @@ public class PageS3Storage extends PageStorageBackend
 
         Composite compConfig = createConfigurationComposite(content);
 
-        ModifyListener onInputChanged = createListenerToValidateInput();
+        ModifyListener onInputChanged = e -> validateInput();
 
         _txtEndpoint.addModifyListener(onInputChanged);
         _txtBucketName.addModifyListener(onInputChanged);
@@ -66,6 +67,18 @@ public class PageS3Storage extends PageStorageBackend
         compConfig.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         return content;
+    }
+
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.loadPage(PageID.PAGE_PASSPHRASE);
+    }
+
+    @Override
+    protected void goPreviousPage()
+    {
+        _dialog.loadPage(PageID.PAGE_SELECT_STORAGE);
     }
 
     protected Composite createConfigurationComposite(Composite parent)
@@ -90,7 +103,7 @@ public class PageS3Storage extends PageStorageBackend
         _txtSecretKey = new Text(compConfig, SWT.BORDER);
 
         GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 60;
+        layout.marginWidth = 20;
         layout.marginHeight = 10;
         layout.verticalSpacing = 5;
         compConfig.setLayout(layout);

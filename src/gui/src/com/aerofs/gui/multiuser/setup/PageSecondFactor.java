@@ -13,6 +13,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.SecondFactorPrompt;
 import com.aerofs.gui.SecondFactorPrompt.SecondFactorSetup;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.S;
 import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
@@ -85,13 +86,21 @@ public class PageSecondFactor extends AbstractSetupWorkPage
     @Override
     protected void populateButtonBar(Composite parent)
     {
-        _btnBack = createButton(parent, S.BTN_BACK, false);
-        _btnBack.addSelectionListener(createListenerToGoBack());
-
-        _btnContinue = createButton(parent, S.BTN_CONTINUE, true);
-        _btnContinue.addSelectionListener(createListenerToDoWork());
-
+        _btnBack = createButton(parent, S.BTN_BACK, BUTTON_BACK);
+        _btnContinue = createButton(parent, S.BTN_CONTINUE, BUTTON_DEFAULT);
         _compSpin = new CompSpin(parent, SWT.NONE);
+    }
+
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.loadPage(PageID.PAGE_SELECT_STORAGE);
+    }
+
+    @Override
+    protected void goPreviousPage()
+    {
+        _dialog.loadPage(PageID.PAGE_LOGIN);
     }
 
     @Nonnull

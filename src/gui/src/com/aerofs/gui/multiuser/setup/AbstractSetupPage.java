@@ -34,6 +34,7 @@ import static com.aerofs.gui.GUIUtil.createLabel;
  */
 public abstract class AbstractSetupPage extends Composite
 {
+    protected DlgMultiuserSetup _dialog;
     protected SetupModel _model;
 
     protected AbstractSetupPage(Composite parent, int style)
@@ -41,12 +42,17 @@ public abstract class AbstractSetupPage extends Composite
         super(parent, style);
     }
 
+    public void setDialog(DlgMultiuserSetup dialog)
+    {
+        _dialog = dialog;
+    }
+
     public void setModel(SetupModel model)
     {
         _model = model;
     }
 
-    // subclass should override this to update the UI state based on the model
+    // subclass should override this to update the UI state based on the values in the model
     protected void readFromModel(SetupModel model)
     {
 
@@ -71,8 +77,6 @@ public abstract class AbstractSetupPage extends Composite
 
         header.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         body.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-        readFromModel(_model);
     }
 
     protected Composite createHeader(Composite parent)
@@ -110,6 +114,7 @@ public abstract class AbstractSetupPage extends Composite
         GridLayout layout = new GridLayout();
         layout.marginHeight = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
         layout.marginWidth = 40;
+        layout.verticalSpacing = 10;
         body.setLayout(layout);
 
         content.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
@@ -135,29 +140,33 @@ public abstract class AbstractSetupPage extends Composite
 
     protected abstract void populateButtonBar(Composite parent);
 
+    protected static final int BUTTON_DEFAULT = 1;
+    protected static final int BUTTON_BACK = 2;
+
     // an utility method to create a button for the button bar
-    protected final Button createButton(Composite parent, String text, boolean isDefault)
+    protected Button createButton(Composite parent, String text, int style)
     {
         Button button = GUIUtil.createButton(parent, SWT.NONE);
 
         button.setText(text);
         button.setLayoutData(new RowData(100, SWT.DEFAULT));
 
-        if (isDefault) getShell().setDefaultButton(button);
+        if ((style & BUTTON_DEFAULT) != 0) {
+            getShell().setDefaultButton(button);
+        }
+
+        if ((style & BUTTON_BACK) != 0) {
+            button.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    goPreviousPage();
+                }
+            });
+        }
 
         return button;
     }
 
-    // an utility method to create a listener that'd traverse to the previous page when invoked
-    protected final SelectionListener createListenerToGoBack()
-    {
-        return new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                traverse(SWT.TRAVERSE_PAGE_PREVIOUS);
-            }
-        };
-    }
+    protected abstract void goNextPage();
+    protected abstract void goPreviousPage();
 }

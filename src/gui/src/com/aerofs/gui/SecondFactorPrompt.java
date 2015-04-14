@@ -61,38 +61,26 @@ public abstract class SecondFactorPrompt
         lblCode.setText("Authentication code:");
 
         _txtAuthCode = new Text(_content, SWT.BORDER);
-        _txtAuthCode.addVerifyListener(new VerifyListener()
-        {
-            @Override
-            public void verifyText(VerifyEvent e)
-            {
-                switch (e.keyCode) {
-                case SWT.BS:           // Backspace
-                case SWT.DEL:          // Delete
-                case SWT.HOME:         // Home
-                case SWT.END:          // End
-                case SWT.ARROW_LEFT:   // Left arrow
-                case SWT.ARROW_RIGHT:  // Right arrow
-                    return;
-                }
-                // Restrict to digits
-                if (!Character.isDigit(e.character)) {
-                    e.doit = false;
-                }
-                // Restrict to 6 characters max
-                if (_txtAuthCode.getText().length() >= 6) {
-                    e.doit = false;
-                }
+        _txtAuthCode.addVerifyListener(e -> {
+            switch (e.keyCode) {
+            case SWT.BS:           // Backspace
+            case SWT.DEL:          // Delete
+            case SWT.HOME:         // Home
+            case SWT.END:          // End
+            case SWT.ARROW_LEFT:   // Left arrow
+            case SWT.ARROW_RIGHT:  // Right arrow
+                return;
+            }
+            // Restrict to digits
+            if (!Character.isDigit(e.character)) {
+                e.doit = false;
+            }
+            // Restrict to 6 characters max
+            if (_txtAuthCode.getText().length() >= 6) {
+                e.doit = false;
             }
         });
-        _txtAuthCode.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                onTextChange();
-            }
-        });
+        _txtAuthCode.addModifyListener(e -> onTextChange());
         _txtAuthCode.setFocus();
 
         // Set layout
@@ -100,7 +88,7 @@ public abstract class SecondFactorPrompt
         layout.marginWidth = GUIParam.MARGIN;
         layout.marginHeight = GUIParam.MARGIN;
         layout.horizontalSpacing = 0;
-        layout.verticalSpacing = 10;
+        layout.verticalSpacing = 20;
         _content.setLayout(layout);
 
         GridData lblMessageLayoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1);

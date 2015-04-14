@@ -29,13 +29,8 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
     {
         super(parent, style);
 
-        getShell().addListener(SWT.Close, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                if (_inProgress) event.doit = false;
-            }
+        getShell().addListener(SWT.Close, event -> {
+            if (_inProgress) event.doit = false;
         });
     }
 
@@ -69,7 +64,7 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
             public void okay()
             {
                 setProgress(false);
-                traverse(SWT.TRAVERSE_PAGE_NEXT);
+                goNextPage();
             }
 
             @Override
@@ -115,30 +110,21 @@ public abstract class AbstractSetupWorkPage extends AbstractSetupPage
 
     protected abstract ErrorMessage[] getErrorMessages(Exception e);
 
-    // an utility method to create a listener that invokes doWork when invoked
-    protected final SelectionListener createListenerToDoWork()
+    @Override
+    protected Button createButton(Composite parent, String text, int style)
     {
-        return new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                doWork();
-            }
-        };
-    }
+        Button button = super.createButton(parent, text, style);
 
-    // an utility method to create a listener that'd validate user input when invoked
-    protected final ModifyListener createListenerToValidateInput()
-    {
-        return new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                validateInput();
-            }
-        };
+        if ((style & BUTTON_DEFAULT) != 0) {
+            button.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e) {
+                    doWork();
+                }
+            });
+        }
+
+        return button;
     }
 
     // subclass should override to validate user input

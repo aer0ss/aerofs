@@ -6,6 +6,7 @@ package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import org.eclipse.swt.SWT;
@@ -83,19 +84,36 @@ public class PageSelectStorage extends AbstractSetupPage
     @Override
     protected void populateButtonBar(Composite parent)
     {
-        Button btnBack = createButton(parent, S.BTN_BACK, false);
-        btnBack.addSelectionListener(createListenerToGoBack());
+        createButton(parent, S.BTN_BACK, BUTTON_BACK);
 
-        _btnNext = createButton(parent, S.BTN_CONTINUE, true);
+        _btnNext = createButton(parent, S.BTN_CONTINUE, BUTTON_DEFAULT);
         _btnNext.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
                 writeToModel(_model);
-                traverse(SWT.TRAVERSE_PAGE_NEXT);
+                goNextPage();
             }
         });
+    }
+
+    @Override
+    protected void goNextPage()
+    {
+        if (_model._isLocal) {
+            _dialog.loadPage(PageID.PAGE_LOCAL_STORAGE);
+        } else if (_model._backendConfig._storageType == StorageType.S3) {
+            _dialog.loadPage(PageID.PAGE_S3_STORAGE);
+        } else if (_model._backendConfig._storageType == StorageType.SWIFT) {
+            _dialog.loadPage(PageID.PAGE_SWIFT_STORAGE);
+        }
+    }
+
+    @Override
+    protected void goPreviousPage()
+    {
+        _dialog.loadPage(PageID.PAGE_LOGIN);
     }
 
     @Override

@@ -41,12 +41,8 @@ abstract public class PageStorageBackend extends AbstractSetupWorkPage
     protected void populateButtonBar(Composite parent)
     {
         _compSpin = new CompSpin(parent, SWT.NONE);
-
-        _btnBack = createButton(parent, S.BTN_BACK, false);
-        _btnBack.addSelectionListener(createListenerToGoBack());
-
-        _btnContinue = createButton(parent, S.BTN_CONTINUE, true);
-        _btnContinue.addSelectionListener(createListenerToDoWork());
+        _btnBack = createButton(parent, S.BTN_BACK, BUTTON_BACK);
+        _btnContinue = createButton(parent, S.BTN_CONTINUE, BUTTON_DEFAULT);
     }
 
     @Override

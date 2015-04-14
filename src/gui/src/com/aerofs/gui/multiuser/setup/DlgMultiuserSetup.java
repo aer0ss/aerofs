@@ -10,12 +10,12 @@ import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.StorageType;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.widgets.Shell;
+
+import java.util.Map;
+
+import static com.google.common.collect.Maps.newEnumMap;
 
 /**
  * N.B. openDialog should return a non-null result if the setup succeeded,
@@ -23,9 +23,20 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class DlgMultiuserSetup extends AeroFSDialog
 {
+    enum PageID {
+        PAGE_LOGIN,
+        PAGE_TWO_FACTOR,
+        PAGE_SELECT_STORAGE,
+        PAGE_LOCAL_STORAGE,
+        PAGE_S3_STORAGE,
+        PAGE_SWIFT_STORAGE,
+        PAGE_PASSPHRASE,
+    }
+
     private SetupModel _model;
 
-    private AbstractSetupPage _page;
+    private StackLayout _layout;
+    private Map<PageID, AbstractSetupPage> _pages;
 
     public DlgMultiuserSetup(Shell shell, SetupModel model)
     {
@@ -40,197 +51,36 @@ public class DlgMultiuserSetup extends AeroFSDialog
     @Override
     protected void open(Shell shell)
     {
-        shell.setLayout(new FillLayout());
+        _layout = new StackLayout();
+        shell.setLayout(_layout);
 
-        // show the starting page
-        loadPage(createLoginPage());
+        _pages = newEnumMap(PageID.class);
+
+        _pages.put(PageID.PAGE_LOGIN, LibParam.OpenId.enabled() ? new PageOpenIdSignIn(shell)
+                : new PageCredentialSignIn(shell));
+        _pages.put(PageID.PAGE_TWO_FACTOR, new PageSecondFactor(shell));
+        _pages.put(PageID.PAGE_SELECT_STORAGE, new PageSelectStorage(shell));
+        _pages.put(PageID.PAGE_LOCAL_STORAGE, new PageLocalStorage(shell));
+        _pages.put(PageID.PAGE_S3_STORAGE, new PageS3Storage(shell));
+        _pages.put(PageID.PAGE_SWIFT_STORAGE, new PageSwiftStorage(shell));
+        _pages.put(PageID.PAGE_PASSPHRASE, new PagePassphrase(shell));
+
+        for (AbstractSetupPage page : _pages.values()) {
+            page.setDialog(this);
+            page.setModel(_model);
+            page.initPage();
+        }
+
+        loadPage(PageID.PAGE_LOGIN);
     }
 
-    @Override
-    protected void setShellSize()
+    public void loadPage(PageID pageID)
     {
-        getShell().setSize(540, 420);
-    }
+        AbstractSetupPage page = _pages.get(pageID);
 
-    public void loadPage(AbstractSetupPage page)
-    {
-        /**
-         * dispose the previous page and loads the next
-         *
-         * since the meaningful states are stored in SetupModel, the only reason to keep
-         *   old pages around would be to optimize for the case of users going back
-         *   to previous pages.
-         */
-        if (_page != null) _page.dispose();
-        _page = page;
-        _page.setModel(_model);
-        _page.initPage();
+        page.readFromModel(_model);
+        _layout.topControl = page;
 
-        getShell().layout();
-    }
-
-    private AbstractSetupPage createLoginPage()
-    {
-        AbstractSetupPage page = (LibParam.OpenId.enabled() ?
-                                  new PageOpenIdSignIn(getShell()) : new PageCredentialSignIn(getShell()));
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                case SWT.TRAVERSE_PAGE_NEXT:
-                    if (_model.getNeedSecondFactor()) {
-                        loadPage(createTwoFactorPage());
-                    } else {
-                        loadPage(createSelectStoragePage());
-                    }
-                    break;
-                case SWT.TRAVERSE_PAGE_PREVIOUS:
-                    closeDialog();
-                    break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createTwoFactorPage()
-    {
-        AbstractSetupPage page = new PageSecondFactor(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                case SWT.TRAVERSE_PAGE_NEXT:
-                    loadPage(createSelectStoragePage());
-                    break;
-                case SWT.TRAVERSE_PAGE_PREVIOUS:
-                    loadPage(createLoginPage());
-                    break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createSelectStoragePage()
-    {
-        PageSelectStorage page = new PageSelectStorage(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                case SWT.TRAVERSE_PAGE_NEXT:
-                    if (_model._isLocal) {
-                        loadPage(createLocalStoragePage());
-                    }
-                    else if (_model._backendConfig._storageType == StorageType.S3) {
-                        loadPage(createS3StoragePage());
-                    }
-                    else if (_model._backendConfig._storageType == StorageType.SWIFT) {
-                        loadPage(createSwiftStoragePage());
-                    }
-                    break;
-                case SWT.TRAVERSE_PAGE_PREVIOUS:
-                    loadPage(createLoginPage());
-                    break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createLocalStoragePage()
-    {
-        PageLocalStorage page = new PageLocalStorage(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                case SWT.TRAVERSE_PAGE_NEXT:
-                    closeDialog(_model);
-                    break;
-                case SWT.TRAVERSE_PAGE_PREVIOUS:
-                    loadPage(createSelectStoragePage());
-                    break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createS3StoragePage()
-    {
-        PageS3Storage page = new PageS3Storage(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                case SWT.TRAVERSE_PAGE_NEXT:
-                    loadPage(createPassphraseStoragePage());
-                    break;
-                case SWT.TRAVERSE_PAGE_PREVIOUS:
-                    loadPage(createSelectStoragePage());
-                    break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createSwiftStoragePage()
-    {
-        PageSwiftStorage page = new PageSwiftStorage(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                    case SWT.TRAVERSE_PAGE_NEXT:
-                        loadPage(createPassphraseStoragePage());
-                        break;
-                    case SWT.TRAVERSE_PAGE_PREVIOUS:
-                        loadPage(createSelectStoragePage());
-                        break;
-                }
-            }
-        });
-        return page;
-    }
-
-    private AbstractSetupPage createPassphraseStoragePage()
-    {
-        PagePassphrase page = new PagePassphrase(getShell());
-        page.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent event)
-            {
-                switch (event.detail) {
-                    case SWT.TRAVERSE_PAGE_NEXT:
-                        closeDialog(_model);
-                        break;
-                    case SWT.TRAVERSE_PAGE_PREVIOUS:
-                        if (_model._backendConfig._storageType == StorageType.S3) {
-                            loadPage(createS3StoragePage());
-                        }
-                        else if (_model._backendConfig._storageType == StorageType.SWIFT) {
-                            loadPage(createSwiftStoragePage());
-                        }
-                        break;
-                }
-            }
-        });
-        return page;
+        getShell().layout(true);
     }
 }

@@ -10,6 +10,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.ui.error.ErrorMessage;
@@ -192,12 +193,20 @@ public class PageLocalStorage extends AbstractSetupWorkPage
     protected void populateButtonBar(Composite parent)
     {
         _compSpin = new CompSpin(parent, SWT.NONE);
+        _btnBack = createButton(parent, S.BTN_BACK, BUTTON_BACK);
+        _btnInstall = createButton(parent, S.SETUP_BTN_INSTALL, BUTTON_DEFAULT);
+    }
 
-        _btnBack = createButton(parent, S.BTN_BACK, false);
-        _btnBack.addSelectionListener(createListenerToGoBack());
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.closeDialog(_model);
+    }
 
-        _btnInstall = createButton(parent, S.SETUP_BTN_INSTALL, true);
-        _btnInstall.addSelectionListener(createListenerToDoWork());
+    @Override
+    protected void goPreviousPage()
+    {
+        _dialog.loadPage(PageID.PAGE_SELECT_STORAGE);
     }
 
     @Override

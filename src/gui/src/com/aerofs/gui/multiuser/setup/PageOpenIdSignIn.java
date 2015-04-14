@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.gui.setup.APIAccessSetupHelper;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.S;
@@ -47,11 +47,9 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        _btnContinue = GUIUtil.createButton(content, SWT.PUSH);
-        _btnContinue.setText("Sign in using the organization administrator's\n" +
-                Identity.SERVICE_IDENTIFIER + " account.");
-        _btnContinue.addSelectionListener(createListenerToDoWork());
-        getShell().setDefaultButton(_btnContinue);
+        String label = "Sign in using the organization administrator's\n" +
+                Identity.SERVICE_IDENTIFIER + " account.";
+        _btnContinue = createButton(content, label, BUTTON_DEFAULT);
 
         if (_helper._showAPIAccess) {
             Composite composite = new Composite(content, SWT.NONE);
@@ -82,8 +80,19 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
     {
         _compSpin = new CompSpin(parent, SWT.NONE);
 
-        Button btnQuit = createButton(parent, S.BTN_QUIT, false);
-        btnQuit.addSelectionListener(createListenerToGoBack());
+        createButton(parent, S.BTN_QUIT, BUTTON_BACK);
+    }
+
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.loadPage(_model.getNeedSecondFactor() ? PageID.PAGE_TWO_FACTOR : PageID.PAGE_SELECT_STORAGE);
+    }
+
+    @Override
+    protected void goPreviousPage()
+    {
+        _dialog.closeDialog();
     }
 
     @Override

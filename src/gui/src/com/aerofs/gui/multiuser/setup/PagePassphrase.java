@@ -9,7 +9,10 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import com.aerofs.ui.StorageDataEncryptionPasswordVerifier;
 import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
@@ -51,12 +54,11 @@ public class PagePassphrase extends AbstractSetupWorkPage
         Composite content = new Composite(parent, SWT.NONE);
 
         Label lblPassDesc = createLabel(content, SWT.WRAP);
-        updateFont(lblPassDesc, 110, SWT.NONE);
         lblPassDesc.setText(S.SETUP_STORAGE_PASSWD_DESC);
 
         Composite compPassphrase = createPassphraseComposite(content);
 
-        ModifyListener onInputChanged = createListenerToValidateInput();
+        ModifyListener onInputChanged = e -> validateInput();
         _txtPass1.addModifyListener(onInputChanged);
         _txtPass2.addModifyListener(onInputChanged);
 
@@ -90,7 +92,7 @@ public class PagePassphrase extends AbstractSetupWorkPage
         Composite compStatus = createStatusBar(composite);
 
         GridLayout layout = new GridLayout(2, true);
-        layout.marginWidth = 60;
+        layout.marginWidth = 20;
         layout.marginHeight = 10;
         layout.verticalSpacing = 5;
         composite.setLayout(layout);
@@ -126,12 +128,24 @@ public class PagePassphrase extends AbstractSetupWorkPage
     protected void populateButtonBar(Composite parent)
     {
         _compSpin = new CompSpin(parent, SWT.NONE);
+        _btnBack = createButton(parent, S.BTN_BACK, BUTTON_BACK);
+        _btnInstall = createButton(parent, S.SETUP_BTN_INSTALL, BUTTON_DEFAULT);
+    }
 
-        _btnBack = createButton(parent, S.BTN_BACK, false);
-        _btnBack.addSelectionListener(createListenerToGoBack());
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.closeDialog(_model);
+    }
 
-        _btnInstall = createButton(parent, S.SETUP_BTN_INSTALL, true);
-        _btnInstall.addSelectionListener(createListenerToDoWork());
+    @Override
+    protected void goPreviousPage()
+    {
+        if (_model._backendConfig._storageType == StorageType.S3) {
+            _dialog.loadPage(PageID.PAGE_S3_STORAGE);
+        } else if (_model._backendConfig._storageType == StorageType.SWIFT) {
+            _dialog.loadPage(PageID.PAGE_SWIFT_STORAGE);
+        }
     }
 
     @Override

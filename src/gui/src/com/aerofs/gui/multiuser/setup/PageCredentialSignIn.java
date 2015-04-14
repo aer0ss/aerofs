@@ -9,6 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
 import com.aerofs.gui.setup.APIAccessSetupHelper;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -61,6 +62,25 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         updateFont(lblMessage, 110, SWT.NONE);
         lblMessage.setText(S.SETUP_MESSAGE);
 
+        Composite compInput = createInputComposite(composite);
+
+        GridLayout layout = new GridLayout(1, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.horizontalSpacing = 0;
+        layout.verticalSpacing = 20;
+        composite.setLayout(layout);
+
+        lblMessage.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        compInput.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        return composite;
+    }
+
+    private Composite createInputComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
+
         Label lblUserID = createLabel(composite, SWT.NONE);
         lblUserID.setText(S.ADMIN_EMAIL + ": ");
 
@@ -95,13 +115,12 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         }
 
         GridLayout layout = new GridLayout(3, false);
-        layout.marginWidth = 0;
+        layout.marginWidth = 20;
         layout.marginHeight = 0;
         layout.horizontalSpacing = 0;
         layout.verticalSpacing = 10;
         composite.setLayout(layout);
 
-        lblMessage.setLayoutData(createMessageLayoutData());
         lblUserID.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtUserID.setLayoutData(createTextBoxLayoutData());
         lblPasswd.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
@@ -110,20 +129,13 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         lblDeviceName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtDeviceName.setLayoutData(createTextBoxLayoutData());
 
-        ModifyListener onInputChanged = createListenerToValidateInput();
+        ModifyListener onInputChanged = e -> validateInput();
 
         _txtUserID.addModifyListener(onInputChanged);
         _txtPasswd.addModifyListener(onInputChanged);
         _txtDeviceName.addModifyListener(onInputChanged);
 
         return composite;
-    }
-
-    private GridData createMessageLayoutData()
-    {
-        GridData layoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 3, 1);
-        layoutData.heightHint = 30;
-        return layoutData;
     }
 
     private GridData createTextBoxLayoutData()
@@ -139,12 +151,19 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
     protected void populateButtonBar(Composite parent)
     {
         _compSpin = new CompSpin(parent, SWT.NONE);
+        createButton(parent, S.BTN_QUIT, BUTTON_BACK);
+        _btnContinue = createButton(parent, S.BTN_CONTINUE, BUTTON_DEFAULT);
+    }
 
-        Button btnQuit = createButton(parent, S.BTN_QUIT, false);
-        btnQuit.addSelectionListener(createListenerToGoBack());
+    @Override
+    protected void goNextPage()
+    {
+        _dialog.loadPage(_model.getNeedSecondFactor() ? PageID.PAGE_TWO_FACTOR : PageID.PAGE_SELECT_STORAGE);
+    }
 
-        _btnContinue = createButton(parent, S.BTN_CONTINUE, true);
-        _btnContinue.addSelectionListener(createListenerToDoWork());
+    @Override
+    protected void goPreviousPage() {
+        _dialog.closeDialog();
     }
 
     @Override

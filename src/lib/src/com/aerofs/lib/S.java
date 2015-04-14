@@ -59,14 +59,14 @@ public class S
             SETUP_LINK               = "Preserve folder structure",
             SETUP_LINK_DESC          = "Files are accessible directly from the file system.",
             SETUP_BLOCK              = "Compressed and de-duplicated",
-            SETUP_BLOCK_DESC         = "Data is accessible only through the shell. " +
-                    "It may lead to significant space savings.",
+            SETUP_BLOCK_DESC         = "Data is accessible only through the shell. It may\n" +
+                    "lead to significant space savings.",
             SETUP_STORAGE_LINK       = "<a>Learn more about storage options</a>.",
             SETUP_BTN_INSTALL        = "Install",
 
             // used in setup Swift storage screen
-            SETUP_SWIFT_CONFIG_DESC    = L.brand() + " can store data on OpenStack Swift using basic authentication." +
-                    "\n<a>Learn more</a>.",
+            SETUP_SWIFT_CONFIG_DESC    = L.brand() + " can store data on OpenStack Swift using basic\n" +
+                    "authentication. <a>Learn more</a>.",
 
             SETUP_SWIFT_URL            = "URL",
             SETUP_SWIFT_AUTH_MODE      = "Authentication Mode",
@@ -83,8 +83,8 @@ public class S
             SETUP_SWIFT_CONTAINER_GUI  = SETUP_SWIFT_CONTAINER + ":",
 
             // used in setup S3 storage screen
-            SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as " +
-                    "Amazon S3, and Cloudian.\n<a>Learn more</a>.",
+            SETUP_S3_CONFIG_DESC     = "AeroFS supports S3-compatible storage such as Amazon S3,\n" +
+                    "and Cloudian. <a>Learn more</a>.",
             SETUP_S3_ENDPOINT_GUI    = "Endpoint:",
             SETUP_S3_BUCKET_NAME_GUI = "Bucket Name:",
             SETUP_S3_ACCESS_KEY_GUI  = "Access Key:",
@@ -100,8 +100,9 @@ public class S
             SETUP_S3_SECRET_KEY      = "Secret key",
 
             // Shared strings
-            SETUP_STORAGE_PASSWD_DESC = "Please create an encryption passphrase. This passphrase will be " +
-                    "used to encrypt your data before sending it to the storage backend:",
+            SETUP_STORAGE_PASSWD_DESC = "Please create an encryption passphrase. This passphrase will\n" +
+                    "be used to encrypt your data before sending it to the storage\n" +
+                    "backend.",
             STORAGE_ENCRYPTION_PASSWORD = "Data encryption passphrase",
             SETUP_STORAGE_ENCRYPTION_PASSWORD = "Create an " + STORAGE_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to the storage backend)",
