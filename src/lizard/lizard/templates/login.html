@@ -13,10 +13,16 @@
             {{ render_field(form.password, type="password", class="form-control") }}
             {{ submit_button("Sign In", horizontal=true) }}
         </form>
-        
+
         <div class="row">
             <div class="col-sm-10 col-sm-offset-2">
                 <p><a href="{{ url_for('.start_password_reset') }}">Forgot your password?</a></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-10 col-sm-offset-2">
+                <br/>
+                <p><a href="https://www.aerofs.com/login">Looking for AeroFS Hybrid Cloud?</a></p>
             </div>
         </div>
     </div>
