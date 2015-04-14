@@ -23,7 +23,7 @@
             <div class="row">
                 <div class="col-sm-12" id="footer-span">
                     <ul class="list-inline">
-                        <li class="pull-right">&copy; Air Computing Inc. 2014</li>
+                        <li class="pull-right">&copy; Air Computing Inc. 2015</li>
                     </ul>
                 </div>
             </div>

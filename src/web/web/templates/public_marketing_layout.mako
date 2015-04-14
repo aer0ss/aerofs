@@ -75,7 +75,7 @@
                         <li><a href="https://blog.aerofs.com">Blog</a></li>
                         <li><a href="https://www.twitter.com/aerofs">Twitter</a></li>
 
-                        <li class="pull-right">&copy; Air Computing Inc. 2014</li>
+                        <li class="pull-right">&copy; Air Computing Inc. 2015</li>
                     </ul>
                 </div>
             </div>
