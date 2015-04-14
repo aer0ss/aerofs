@@ -25,6 +25,8 @@ public class S
             LBL_UPDATE_LATEST        = "Your " + L.product() + " is up to date.",
             LBL_UPDATE_APPLY         = "A new update has been downloaded.",
             LBL_UPDATE_ERROR         = "An error was encountered.",
+            LBL_UPDATE_OUT_OF_DATE   = "Your " + L.product() + " is out of date.\n" +
+                    "Please notify your system administrators.",
 
             // used in setup login screen
             SETUP_TITLE              = "Setup AeroFS Team Server",
