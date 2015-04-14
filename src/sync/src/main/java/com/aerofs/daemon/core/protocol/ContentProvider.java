@@ -10,6 +10,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -20,7 +21,7 @@ public interface ContentProvider {
 
     boolean hasUnacknowledgedLocalChange(SOID soid) throws SQLException;
 
-    SendableContent content(SOKID k) throws SQLException, ExNotFound;
+    SendableContent content(SOKID k) throws SQLException, ExNotFound, IOException;
 
     IPhysicalFile fileWithMatchingContent(SOID soid, ContentHash h) throws SQLException, ExNotFound;
 

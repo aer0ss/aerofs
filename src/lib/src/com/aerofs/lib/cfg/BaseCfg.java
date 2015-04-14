@@ -105,31 +105,31 @@ public class BaseCfg {
         return  BaseSecUtil.newCertificateFromFile(certFileName);
     }
 
-    public String absRTRoot() {
+    protected String absRTRoot() {
         return _absRTRoot;
     }
 
-    public String absDefaultRootAnchor() {
+    protected String absDefaultRootAnchor() {
         return _absDefaultRootAnchor;
     }
 
-    public UserID user() {
+    protected UserID user() {
         return _user;
     }
 
-    public DID did() {
+    protected DID did() {
         return _did;
     }
 
-    public X509Certificate cert() {
+    protected X509Certificate cert() {
         return _cert;
     }
 
-    public String ver() {
+    protected String ver() {
         return _ver;
     }
 
-    public X509Certificate cacert() {
+    protected X509Certificate cacert() {
         return _cacert;
     }
 
@@ -164,11 +164,11 @@ public class BaseCfg {
         return _storageType;
     }
 
-    public long timeout() {
+    protected long timeout() {
         return _timeout;
     }
 
-    public PrivateKey privateKey()
+    protected PrivateKey privateKey()
     {
         return _privKey;
     }

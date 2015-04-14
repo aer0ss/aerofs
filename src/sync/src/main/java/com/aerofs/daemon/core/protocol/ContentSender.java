@@ -19,8 +19,11 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
-import com.aerofs.lib.*;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetContentRequest;
@@ -51,10 +54,12 @@ public class ContentSender
     private final CoreScheduler _sched;
 
     private final Set<OngoingTransfer> _ongoing = new HashSet<>();
+    private final CfgStorageType _cfgStorageType;
 
     @Inject
-    public ContentSender(UploadState ulstate, CoreScheduler sched, TransportRoutingLayer trl,
-                         Metrics m, TokenManager tokenManager)
+    public ContentSender(UploadState ulstate, CoreScheduler sched,
+                         TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
+                         CfgStorageType cfgStorageType)
     {
         _sched = sched;
         _ulstate = ulstate;
@@ -62,6 +67,7 @@ public class ContentSender
         _trl = trl;
         _m = m;
         _tokenManager = tokenManager;
+        _cfgStorageType = cfgStorageType;
     }
 
     public ContentHash send_(
@@ -85,7 +91,7 @@ public class ContentSender
         bd.setLength(content.length);
 
         if (content.hash == null) {
-            if (Cfg.storageType() == StorageType.LINKED) {
+            if (_cfgStorageType.get() == StorageType.LINKED) {
                 throw new ExUpdateInProgress("wait for hash to serve content");
             } else {
                 // NB: it is theoretically possible that some old block storage TS deployed before

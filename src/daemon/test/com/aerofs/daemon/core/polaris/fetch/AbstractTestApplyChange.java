@@ -7,6 +7,8 @@ import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
+import com.aerofs.daemon.core.expel.AbstractLogicalStagingArea;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
@@ -204,7 +206,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(IQuotaEnforcement.class).to(NullQuotaEnforcement.class);
 
                 bind(Store.Factory.class).to(PolarisStore.Factory.class);
-
+                bind(AbstractLogicalStagingArea.class).to(LogicalStagingArea.class);
                 bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
                 bind(IContentDownloads.class).to(Downloads.class);
                 bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);

@@ -1,26 +1,27 @@
 package com.aerofs.daemon.core.store;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Set;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.expel.LogicalStagingArea;
-import com.aerofs.labeling.L;
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-
-import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.expel.AbstractLogicalStagingArea;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class StoreDeleter
 {
@@ -28,20 +29,20 @@ public class StoreDeleter
 
     private final IPhysicalStorage _ps;
     private final StoreHierarchy _ss;
-    private final DirectoryService _ds;
+    private final IPathResolver _resolver;
     private final IMapSIndex2SID _sidx2sid;
     private final StoreDeletionOperators _operators;
     private final LocalACL _lacl;
-    private final LogicalStagingArea _sa;
+    private final AbstractLogicalStagingArea _sa;
 
     @Inject
-    public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
+    public StoreDeleter(IPhysicalStorage ps, IPathResolver resolver, IMapSIndex2SID sidx2sid,
             StoreHierarchy ss, LocalACL lacl, StoreDeletionOperators operators,
-            LogicalStagingArea sa)
+            AbstractLogicalStagingArea sa)
     {
         _ss = ss;
         _ps = ps;
-        _ds = ds;
+        _resolver = resolver;
         _lacl = lacl;
         _sidx2sid = sidx2sid;
         _operators = operators;
@@ -108,11 +109,13 @@ public class StoreDeleter
         ArrayList<SIndex> sidxChildren = Lists.newArrayList();
         ArrayList<ResolvedPath> pathChildren = Lists.newArrayList();
 
-        final ResolvedPath pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
+        final ResolvedPath pathNew = _resolver.resolveNullable_(new SOID(sidx, OID.ROOT));
+        checkState(pathNew != null);
 
         for (SIndex sidxChild : _ss.getChildren_(sidx)) {
             OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidxChild));
-            ResolvedPath pathNewChild = _ds.resolve_(new SOID(sidx, oidAnchor));
+            ResolvedPath pathNewChild = _resolver.resolveNullable_(new SOID(sidx, oidAnchor));
+            checkState(pathNewChild != null);
             ResolvedPath pathOldChild = pathOld;
 
             for (int i = pathNew.elements().length; i < pathNewChild.elements().length; i++) {

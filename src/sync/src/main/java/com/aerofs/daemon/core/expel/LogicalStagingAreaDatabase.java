@@ -24,7 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.SyncSchema.*;
 import static com.google.common.base.Preconditions.checkState;
 
 public class LogicalStagingAreaDatabase extends AbstractDatabase

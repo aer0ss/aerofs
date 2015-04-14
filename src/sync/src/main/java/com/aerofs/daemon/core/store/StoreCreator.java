@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.expel.LogicalStagingArea;
+import com.aerofs.daemon.core.expel.AbstractLogicalStagingArea;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
@@ -18,13 +18,13 @@ public class StoreCreator
     private final StoreHierarchy _ss;
     private final IPhysicalStorage _ps;
     private final IMapSID2SIndex _sid2sidx;
-    private final LogicalStagingArea _sa;
+    private final AbstractLogicalStagingArea _sa;
     private final StoreCreationOperators _sco;
     private final CfgUsePolaris _usePolaris;
 
     @Inject
     public StoreCreator(IMapSID2SIndex sid2sidx, StoreHierarchy ss, StoreCreationOperators sco,
-            IPhysicalStorage ps, LogicalStagingArea sa, CfgUsePolaris usePolaris)
+            IPhysicalStorage ps, AbstractLogicalStagingArea sa, CfgUsePolaris usePolaris)
     {
         _ss = ss;
         _sid2sidx = sid2sidx;

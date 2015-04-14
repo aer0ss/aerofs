@@ -88,7 +88,6 @@ public final class HealthCheckService implements IStartable
     public void start_()
     {
         l.info("scheduling health checks");
-
         for (ScheduledRunnable r : _runners) {
             _healthCheckExecutor.scheduleWithFixedDelay(new ServiceRunner(r, r.interval()),
                     r.delay(), r.interval(), MILLISECONDS);

@@ -69,9 +69,6 @@ public class CfgDatabase extends ICfgStore
     // first start of the daemon
     public static final CfgKey FIRST_START = new CfgKey("first_start", true);
 
-    // connecting to the REST API gateway to enable API access
-    // DO NOT use this directly, use CfgRestService instead
-    public static final CfgKey REST_SERVICE = new CfgKey("rest_service", null);
 
     // all the variables are protected by synchronized (this)
     private final IDBCW _dbcw;

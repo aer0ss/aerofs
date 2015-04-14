@@ -11,13 +11,6 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ex.*;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
-import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge;
-import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
-import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
-import com.aerofs.daemon.core.transfers.download.dependence.DownloadDependenciesGraph;
-import com.aerofs.daemon.core.transfers.download.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
-import com.aerofs.daemon.core.transfers.download.dependence.NameConflictDependencyEdge;
-import com.aerofs.daemon.core.transfers.download.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -25,6 +18,9 @@ import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.transfers.download.dependence.*;
+import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.transfers.download.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -41,6 +37,8 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.Stack;
 
+import static com.aerofs.daemon.core.transfers.download.IAsyncDownload.ExProcessReplyFailed;
+import static com.aerofs.daemon.core.transfers.download.IAsyncDownload.ExRemoteCallFailed;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -57,28 +55,6 @@ class Download
     protected Cxt _cxt;
 
     protected final Factory _f;
-
-    // wrappers to distinguish between exception provenance
-
-    /**
-     * Exception thrown before a remote GetComponentCall completed
-     */
-    class ExRemoteCallFailed extends ExWrapped
-    {
-        private static final long serialVersionUID = 0L;
-        ExRemoteCallFailed(Exception e) { super(e); }
-    }
-
-    /**
-     * Exception thrown when processing a reply to a GetComponentCall
-     * TODO: further distinguish between remote (specified in reply) and local exceptions
-     */
-    class ExProcessReplyFailed extends ExWrapped
-    {
-        private static final long serialVersionUID = 0L;
-        public final DID _did;
-        ExProcessReplyFailed(DID did, Exception e) { super(e); _did = did; }
-    }
 
     /**
      * A download context is used to resolve download dependencies arising from name conflicts,

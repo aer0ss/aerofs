@@ -136,11 +136,7 @@ public class CoreSchema extends SyncSchema
             C_EX_SIDX        = "e_s",       // SIndex
             C_EX_OID         = "e_o",       // OID
 
-            // Logical Staging Area
-            T_LSA               = "lsa",
-            C_LSA_SIDX          = "lsa_s",
-            C_LSA_OID           = "lsa_o",
-            C_LSA_HISTORY_PATH  = "lsa_p",  // path for sync history, empty if no history is kept
+
 
             // Activity Log Table. See IActivityLogDatabase.ActivityRow for field details.
             T_AL             = "ao",
@@ -430,8 +426,6 @@ public class CoreSchema extends SyncSchema
                 C_SC_DID + " blob," +
                 "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
                 ")" + dbcw.charSet());
-
-        createLogicalStagingArea(s, dbcw);
     }
 
     @Override
@@ -440,13 +434,4 @@ public class CoreSchema extends SyncSchema
         new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
     }
 
-    public static void createLogicalStagingArea(Statement s, IDBCW dbcw) throws SQLException
-    {
-        s.executeUpdate("create table " + T_LSA + "("
-                + C_LSA_SIDX + " integer not null,"
-                + C_LSA_OID + dbcw.uniqueIdType() + "not null,"
-                + C_LSA_HISTORY_PATH + " text not null,"
-                + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
-                + ")");
-    }
 }

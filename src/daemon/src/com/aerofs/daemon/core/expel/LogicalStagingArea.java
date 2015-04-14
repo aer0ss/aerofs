@@ -6,8 +6,6 @@ package com.aerofs.daemon.core.expel;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ContentVersionControl;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -19,16 +17,13 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
-import com.aerofs.daemon.lib.CleanupScheduler;
-import com.aerofs.daemon.lib.CleanupScheduler.CleanupHandler;
-import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -50,7 +45,7 @@ import static com.google.common.base.Preconditions.checkState;
  * data structures grow too large.
  *
  * Instead we adopt a model in which a first small transaction does the bare minimum required to
- * mark the tree as deleted and ensure that eexternally observable behavior is preserved. After
+ * mark the tree as deleted and ensure that externally observable behavior is preserved. After
  * that, the tree can be incrementally cleaned up in a series of small transactions. Besides
  * preventing OOMs and unbounded WAL growth, this ensures progress can be made in the face of
  * crashes.
@@ -78,47 +73,24 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * See also docs/design/scalable_deletion.md for the original design proposal.
  */
-public class LogicalStagingArea implements IStartable, CleanupHandler
+public class LogicalStagingArea extends AbstractLogicalStagingArea
 {
     private final static Logger l = Loggers.getLogger(LogicalStagingArea.class);
 
-    private final CleanupScheduler _sas;
     private final DirectoryService _ds;
-    private final IPhysicalStorage _ps;
     private final ContentVersionControl _cvc;
     private final PrefixVersionControl _pvc;
-    private final LogicalStagingAreaDatabase _sadb;
-    private final IMapSIndex2SID _sidx2sid;
-    private final StoreDeletionOperators _storeDeletionOperators;
-    private final TransManager _tm;
 
     @Inject
     public LogicalStagingArea(DirectoryService ds, IPhysicalStorage ps,
             ContentVersionControl cvc, PrefixVersionControl pvc, LogicalStagingAreaDatabase sadb,
-            CoreScheduler sched, IMapSIndex2SID sidx2sid,
-            StoreDeletionOperators storeDeletionOperators, TransManager tm)
+            CoreScheduler sched, IMapSIndex2SID sidx2sid, StoreDeletionOperators sdo,
+            TransManager tm)
     {
-        _sas = new CleanupScheduler(this, sched);
+        super(sidx2sid, sadb, sched, sdo, tm, ps);
         _ds = ds;
-        _ps = ps;
         _cvc = cvc;
         _pvc = pvc;
-        _sadb = sadb;
-        _sidx2sid = sidx2sid;
-        _storeDeletionOperators = storeDeletionOperators;
-        _tm = tm;
-    }
-
-    @Override
-    public String name()
-    {
-        return "logical-staging";
-    }
-
-    @Override
-    public void start_()
-    {
-        _sas.schedule_();
     }
 
     /**
@@ -135,6 +107,7 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
      * @param soid root of the object subtree to be cleaned up
      * @param pOld path to {@paramref soid} at the time of deletion/expulsion
      */
+    @Override
     public void stageCleanup_(SOID soid, ResolvedPath pOld, Trans t)
             throws Exception
     {
@@ -160,27 +133,6 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
     }
 
     /**
-     * Ensures that a given store is clean.
-     *
-     * This will cause a synchronous cleanup if the store was not already clean.
-     */
-    public void ensureStoreClean_(SIndex sidx, Trans t) throws Exception
-    {
-        l.info("ensure clean {}", sidx);
-
-        IDBIterator<StagedFolder> it = _sadb.listEntriesByStore_(sidx);
-        try {
-            while (it.next_()) {
-                StagedFolder f = it.get_();
-                immediateCleanup_(f.soid, f.historyPath, t);
-            }
-        } finally {
-            it.close_();
-        }
-        checkState(!_sadb.hasMoreEntries_(sidx));
-    }
-
-    /**
      * @pre both the old and new path are expelled
      *
      * If a path was staged, ensure that moving it around will not mess with cleanup (move under
@@ -203,7 +155,8 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
      *
      * @pre the subtree is being readmitted
      */
-    private void immediateCleanup_(final SOID soidRoot, Path historyPath, final Trans t)
+    @Override
+    protected void immediateCleanup_(final SOID soidRoot, Path historyPath, final Trans t)
             throws Exception
     {
         l.info("immediate cleanup {} {}", soidRoot, historyPath);
@@ -320,9 +273,6 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         });
     }
 
-    // relinquish the core lock every time a cleanup operation takes more than 100ms
-    private static  final long RESCHEDULE_THRESHOLD = 100;
-
     @Override
     public boolean process_() throws Exception
     {
@@ -342,9 +292,8 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         return false;
     }
 
-    private static final long SPLIT_TRANS_THRESHOLD = 2000;
-
-    private void processStagedFolder_(StagedFolder f) throws SQLException, IOException
+    @Override
+    protected void processStagedFolder_(StagedFolder f) throws SQLException, IOException
     {
         l.info("logical cleanup {} {}", f.soid, f.historyPath);
         Trans t = _tm.begin_();
@@ -378,29 +327,6 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         } finally {
             t.end_();
         }
-    }
-
-    private void finalize_(SOID soid, SID physicalRoot, Trans t) throws SQLException, IOException
-    {
-        l.info("cleaned {}", soid);
-        _sadb.removeEntry_(soid, t);
-
-        // if the whole store was staged and we just processed  the last staged
-        // folder in said store then it is time to perform store-wide, post-cleanup
-        // tasks
-        SIndex sidx = soid.sidx();
-        if (isStoreStaged_(sidx) && !_sadb.hasMoreEntries_(sidx)) {
-            finalizeStoreCleanup_(sidx, physicalRoot, t);
-        }
-    }
-
-    private void finalizeStoreCleanup_(SIndex sidx, SID physicalRoot, Trans t)
-            throws SQLException, IOException
-    {
-        l.info("finalize store cleanup {}", sidx);
-        SID sid = _sidx2sid.getAbsent_(sidx);
-        _ps.deleteStore_(physicalRoot, sidx, sid, t);
-        _storeDeletionOperators.runAllDeferred_(sidx, t);
     }
 
     private boolean cleanupObject_(OA oa, Path historyPath, Trans t)
@@ -445,24 +371,6 @@ public class LogicalStagingArea implements IStartable, CleanupHandler
         }
 
         _pvc.deleteAllPrefixVersions_(soid, t);
-    }
-
-    /**
-     * @return whether an object is *explicitly* staged
-     *
-     * An object can also be implicitly staged if any of its ancestors is explicitly staged.
-     */
-    private boolean isStaged_(SOID soid)  throws SQLException
-    {
-        return _sadb.historyPath_(soid) != null;
-    }
-
-    /**
-     * If a store is expelled it won't show up in the (in-memory) SIndex<->SID map
-     */
-    private boolean isStoreStaged_(SIndex sidx)
-    {
-        return _sidx2sid.getNullable_(sidx) == null;
     }
 
     /**

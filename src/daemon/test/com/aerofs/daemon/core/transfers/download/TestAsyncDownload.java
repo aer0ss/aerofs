@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -20,19 +20,18 @@ import org.mockito.stubbing.Answer;
 
 import java.util.Map;
 
+import static com.aerofs.daemon.core.lib.AsyncDownloadTestHelper.anyDM;
+import static com.aerofs.daemon.core.lib.AsyncDownloadTestHelper.endpoint;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * AsyncDownload contract:
  *   - tries to get rid of all KMLs about an object by asking a given set of device
  *   - call appropriate listeners on success/failure
+ *   N.B. Unlike some other classes that share code with corresponding storage agent tests,
+ *   this one doesn't because while the storage agent tests for things similar to this class,
+ *   the internals of the tests are different enough to offset value of code sharing.
  */
 public class TestAsyncDownload extends AbstractDownloadTest
 {

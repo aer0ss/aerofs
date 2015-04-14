@@ -81,7 +81,7 @@ public class DBUtil
     public static String insertOnDuplicateUpdate(String table, String updateParams,
             String... fields)
     {
-        return insertImpl(table, fields).append(" on duplicate key update ")
+        return insertImpl(insertStmt(),table, fields).append(" on duplicate key update ")
                 .append(updateParams)
                 .toString();
     }
@@ -104,6 +104,21 @@ public class DBUtil
         return (result == 1 || result == 2);
     }
 
+    private static String insertOrReplaceStmt()
+    {
+        return "insert or replace into ";
+    }
+
+    public static String insertOrReplaceInto(String table, String... fields)
+    {
+        return insertImpl(insertOrReplaceStmt(), table, fields).toString();
+    }
+
+    private static String insertStmt()
+    {
+        return "insert into ";
+    }
+
     /**
      * @param table table to update
      * @param fields fields to update
@@ -111,12 +126,12 @@ public class DBUtil
      */
     public static String insert(String table, String... fields)
     {
-        return insertImpl(table, fields).toString();
+        return insertImpl(insertStmt(), table, fields).toString();
     }
 
-    private static StringBuilder insertImpl(String table, String... fields)
+    private static StringBuilder insertImpl(String stmt, String table, String... fields)
     {
-        StringBuilder sb = new StringBuilder("insert into ").append(table).append(" (");
+        StringBuilder sb = new StringBuilder(stmt).append(table).append(" (");
         boolean first = true;
         for (String field : fields) {
             if (!first) sb.append(",");
@@ -292,4 +307,5 @@ public class DBUtil
             return rs.getLong(1);
         }
     }
+
 }

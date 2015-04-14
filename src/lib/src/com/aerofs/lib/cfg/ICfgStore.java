@@ -53,6 +53,10 @@ public abstract class ICfgStore {
     // storage type
     public static CfgKey STORAGE_TYPE = new CfgKey("storage_type", null);
 
+    // connecting to the REST API gateway to enable API access
+    // DO NOT use this directly, use CfgRestService instead
+    public static final CfgKey REST_SERVICE = new CfgKey("rest_service", null);
+
     // This field stores scrypt of the password provided by the user, salted by user id.
     // i.e. value = base64(scrypt(password|user))
     public static final CfgKey STORAGE_ENCRYPTION_PASSWORD =

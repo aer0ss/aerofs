@@ -15,6 +15,37 @@ sourceSets {
             srcDirs 'gen', 'src/main/java'
         }
     }
+
+    testutil {
+        java {
+            srcDir 'src/test/java'
+            include 'com/aerofs/daemon/core/lib/BaseDownloadsTest.java'
+            include 'com/aerofs/daemon/core/lib/BaseStoreJoinerTest.java'
+            include 'com/aerofs/daemon/core/lib/AsyncDownloadTestHelper.java'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+            exclude 'com/aerofs/daemon/core/lib/BaseDownloadsTest.java'
+            exclude 'com/aerofs/daemon/core/lib/BaseStoreJoinerTest.java'
+            exclude 'com/aerofs/daemon/core/lib/AsyncDownloadTestHelper.java'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
+        }
+    }
+}
+
+configurations {
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    testutil.extendsFrom testutilCompile
+
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom(testCompile, testutilRuntime)
 }
 
 dependencies {
@@ -26,4 +57,15 @@ dependencies {
     testCompile 'javax.mail:mail:1.4.2'
     testCompile project(':src/zephyr')
     testCompile project(path: ':src/lib', configuration: 'testutil')
+    testutilCompile project(path:':src/lib', configuration:'testutil')
+}
+
+task testutilJar(type: Jar) {
+    baseName 'aerofs-sync-testutil'
+    from sourceSets.testutil.output
+}
+
+artifacts {
+    testutil testutilJar
+    archives testutilJar
 }

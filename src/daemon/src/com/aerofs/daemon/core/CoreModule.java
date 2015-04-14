@@ -14,6 +14,8 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
+import com.aerofs.daemon.core.expel.AbstractLogicalStagingArea;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.health_check.CoreProgressWatcher;
 import com.aerofs.daemon.core.health_check.DeadlockDetector;
 import com.aerofs.daemon.core.health_check.DiagnosticsDumper;
@@ -95,6 +97,7 @@ public class CoreModule extends AbstractModule
         bind(TransBoundaryChecker.class).to(TransManager.class);
         bind(IUnicastInputLayer.class).to(CoreProtocolReactor.class);
 
+        bind(AbstractLogicalStagingArea.class).to(LogicalStagingArea.class);
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);
         bind(INativeVersionDatabase.class).to(NativeVersionDatabase.class);

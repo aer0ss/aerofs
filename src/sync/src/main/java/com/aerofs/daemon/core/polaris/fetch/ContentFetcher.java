@@ -5,20 +5,18 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.transfers.download.IContentDownloads;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.collector.IExPermanentError;
 import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.core.transfers.download.IContentDownloads;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -62,22 +60,17 @@ public class ContentFetcher
     {
         private final CoreScheduler _sched;
         private final TransManager _tm;
-        private final TokenManager _tokenManager;
-        private final RemoteContentDatabase _rcdb;
         private final ContentFetchQueueDatabase _cfqdb;
         private final IContentDownloads _dls;
         private final ExponentialRetry _er;
         private final ContentFetcherIterator.Factory _factCFI;
 
         @Inject
-        public Factory(CoreScheduler sched, TransManager tm, TokenManager tokenManager,
-                RemoteContentDatabase rcdb, ContentFetchQueueDatabase cfqdb, IContentDownloads dls,
-                ContentFetcherIterator.Factory factCFI)
+        public Factory(CoreScheduler sched, TransManager tm, ContentFetchQueueDatabase cfqdb,
+                IContentDownloads dls, ContentFetcherIterator.Factory factCFI)
         {
             _sched = sched;
             _tm = tm;
-            _tokenManager = tokenManager;
-            _rcdb = rcdb;
             _cfqdb = cfqdb;
             _dls = dls;
             _factCFI = factCFI;
@@ -184,7 +177,6 @@ public class ContentFetcher
     private boolean fetchLoop_(Trans t) throws SQLException
     {
         l.info("{} content fetch from {}", _sidx, _it);
-
         if (_it.started_()) {
             l.debug("{} continuation {}", _sidx, _it);
             if (!fetchOne_(_it.current_())) {

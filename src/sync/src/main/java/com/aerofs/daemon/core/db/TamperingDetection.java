@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCoreDatabaseParams;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
@@ -77,7 +78,7 @@ public class TamperingDetection
     {
         FID actual = getActualFID();
         byte[] expected = getExpectedFID();
-        File tag = new File(Cfg.absRTRoot(), LibParam.IGNORE_DB_TAMPERING);
+        File tag = new File(new CfgAbsRTRoot().get(), LibParam.IGNORE_DB_TAMPERING);
 
         l.info("{} {} {}",
                 actual, expected != null ? BaseUtil.hexEncode(expected) : null, tag.exists());

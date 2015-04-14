@@ -8,7 +8,6 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
-
 import java.io.PrintStream;
 import java.sql.SQLException;
 

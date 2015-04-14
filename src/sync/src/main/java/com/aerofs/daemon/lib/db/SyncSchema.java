@@ -79,7 +79,13 @@ public class SyncSchema implements ISchema
             C_UN_USER        = "un_u",      // String
             C_UN_FIRST_NAME  = "un_f",      // String. null if not provided by SP
             C_UN_LAST_NAME   = "un_l",      // String. null if not provided by SP
-            C_UN_TIME        = "un_t";      // long. the time when the entry is added
+            C_UN_TIME        = "un_t",      // long. the time when the entry is added
+
+            // Logical Staging Area
+            T_LSA               = "lsa",
+            C_LSA_SIDX          = "lsa_s",
+            C_LSA_OID           = "lsa_o",
+            C_LSA_HISTORY_PATH  = "lsa_p";  // path for sync history, empty if no history is kept
 
     @Inject
     public SyncSchema()
@@ -183,6 +189,19 @@ public class SyncSchema implements ISchema
                         C_DN_NAME + " text," +
                         C_DN_TIME + dbcw.longType() + " not null" +
                         ")" + dbcw.charSet());
+
+
+        createLogicalStagingArea(s, dbcw);
+    }
+
+    public static void createLogicalStagingArea(Statement s, IDBCW dbcw) throws SQLException
+    {
+        s.executeUpdate("create table " + T_LSA + "("
+                + C_LSA_SIDX + " integer not null,"
+                + C_LSA_OID + dbcw.uniqueIdType() + "not null,"
+                + C_LSA_HISTORY_PATH + " text not null,"
+                + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
+                + ")");
     }
 
     @Override

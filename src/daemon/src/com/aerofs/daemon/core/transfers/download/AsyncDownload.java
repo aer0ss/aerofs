@@ -4,12 +4,8 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.daemon.core.protocol.*;
-import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
@@ -17,13 +13,16 @@ import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
+import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgUsePolaris;
+import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -74,7 +73,7 @@ import static com.aerofs.daemon.core.transfers.download.Downloads.ExNoAvailDevic
  * one of these downloads may fail and have to be restarted if some of the objects in its graph are
  * changed in ways that break some assumptions in the download pipeline.
  */
-class AsyncDownload extends Download
+public class AsyncDownload extends Download implements IAsyncDownload
 {
     private final Factory _f;
 
@@ -110,7 +109,7 @@ class AsyncDownload extends Download
         }
     }
 
-    public static class Factory extends Download.Factory
+    public static class Factory extends Download.Factory implements IAsyncDownloadFactory
     {
         private final RemoteChangeChecker _changes;
 
@@ -124,10 +123,20 @@ class AsyncDownload extends Download
             _changes = changes;
         }
 
-        AsyncDownload create_(SOCID socid, Set<DID> dids, IDownloadCompletionListener listener,
+        // TODO(AS): Remove when only polaris is in in business exclusively.
+        IAsyncDownload create_(SOCID socid, Set<DID> dids, IDownloadCompletionListener listener,
                 @Nonnull Token tk)
         {
             return new AsyncDownload(this, socid, _factTo.create_(dids), listener, tk);
+        }
+
+        // TODO(AS) Right now only useful for testing but once polaris is in business, this is
+        // going to be used exclusively.
+        @Override
+        public IAsyncDownload create_(SOID soid, Set<DID> dids,
+                IDownloadCompletionListener listener, @Nonnull Token tk)
+        {
+            return new AsyncDownload(this, new SOCID(soid, CID.CONTENT), _factTo.create_(dids), listener, tk);
         }
     }
 
@@ -141,8 +150,7 @@ class AsyncDownload extends Download
 
     void include_(Set<DID> dids, IDownloadCompletionListener completionListener)
     {
-        dids.forEach(_from::add_);
-        _listeners.add(completionListener);
+        include_(dids, completionListener, _from, _listeners);
     }
 
     /**
@@ -151,32 +159,16 @@ class AsyncDownload extends Download
      */
     void do_()
     {
-        try {
-            final DID replier = doImpl_();
-            notifyListeners_(listener -> listener.onDownloadSuccess_(_socid, replier));
-        } catch (ExNoAvailDevice e) {
-            l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
-            // This download object tracked all reasons (Exceptions) for why each device was
-            // avoided. Thus if the To object indicated no devices were available, then inform
-            // the listener about all attempted devices, and why they failed to deliver the socid.
-            notifyListeners_(listener -> listener.onPerDeviceErrors_(_socid, _did2e));
-        } catch (RuntimeException e) {
-            // we don't want the catch-all block to swallow runtime exceptions
-            SystemUtil.fatal(e);
-        } catch (final Exception e) {
-            l.warn("{} :", _socid, BaseLogUtil.suppress(e, ExNoPerm.class));
-            notifyListeners_(listener -> listener.onGeneralError_(_socid, e));
-        } finally {
-            _tk.reclaim_();
-        }
+        do_(_socid, _tk,_did2e, _listeners);
     }
 
     /**
      * Try to download the target object until no KMLs are left or all devices have been tried
      */
-    private @Nullable DID doImpl_()
-            throws IOException, SQLException, ExAborted, ExNoAvailDevice, ExUnsatisfiedDependency,
-            ExNoPerm, ExSenderHasNoPerm, ExOutOfSpace
+    @Override
+    @Nullable
+    public DID doImpl_() throws IOException, SQLException, ExAborted, ExNoAvailDevice,
+            ExUnsatisfiedDependency, ExNoPerm, ExSenderHasNoPerm, ExOutOfSpace
     {
         while (true) {
             try {
@@ -188,7 +180,8 @@ class AsyncDownload extends Download
                 // before a successful remote call
                 final DID replier = download_();
 
-                notifyListeners_(listener -> listener.onPartialDownloadSuccess_(_socid, replier));
+                notifyListeners_(listener -> listener.onPartialDownloadSuccess_(_socid, replier),
+                        _listeners);
 
                 if (!_f._changes.hasRemoteChanges_(_socid)) return replier;
 
@@ -199,103 +192,56 @@ class AsyncDownload extends Download
 
                 // NB: this really shouldn't be necessary as To.pick_() already calls avoid_()
                 _from.avoid_(replier);
-
             } catch (ExRemoteCallFailed e) {
-                // NB: remote errors in the GCR are wrapped in ExProcessReplyFailed...
-                l.info("gcc fail {}: {}", _socid, Util.e(e._e));
-                onGeneralException(e._e, null);
+                handleRemoteCallFailed(e, _socid, _from, _did2e);
             } catch (ExProcessReplyFailed e) {
-                if (e._e instanceof ExNoPerm) {
-                    // collector should only collect permitted components. no_perm may happen when
-                    // other user just changed the permission before this call.
-                    l.error(_socid + ": we have no perm");
-                    throw (ExNoPerm)e._e;
-                } else if (e._e instanceof ExSenderHasNoPerm) {
-                    l.error(_socid + ": sender has no perm");
-                    avoidDevice_(e._did, e);
-                } else if (e._e instanceof ExNoComponentWithSpecifiedVersion) {
-                    l.info("{} from {}: {}", _socid, e._did,
-                            Util.e(e._e, ExNoComponentWithSpecifiedVersion.class));
-                    avoidDevice_(e._did, e._e);
-                } else if (e._e instanceof ExOutOfSpace) {
-                    throw (ExOutOfSpace)e._e;
-                } else if (e._e instanceof IOException) {
-                    // TODO: make sure we only abort in case of local I/O error
-                    throw (IOException)e._e;
-                } else {
-                    l.info("gcr fail {} from {}: {}", _socid, e._did, Util.e(e._e));
-
-                    onGeneralException(e._e, e._did);
-                }
+                handleProcessReplyFailed(e, _socid, _from, _did2e);
             } catch (ExUnsatisfiedDependency e) {
-                if (e._did == null) {
-                    // a non-specific dependency (i.e. CONTENT->META) could not be resolved
-                    if (e._e instanceof ExNoAvailDeviceForDep) {
-                        // rewrap per-device exception such that the Collector can correctly check
-                        // for permanent errors on the chain
-                        Map<DID, Exception> did2e = ((ExNoAvailDeviceForDep)e._e)._did2e;
-                        l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, did2e);
-                        for (DID did : did2e.keySet()) {
-                            if (!_did2e.containsKey(did)) {
-                                avoidDevice_(did,
-                                        new ExUnsatisfiedDependency(e._socid, did, did2e.get(did)));
-                            }
-                        }
-                        throw new ExNoAvailDevice();
-                    } else {
-                        l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, Util.e(e._e));
-                        throw e;
-                    }
-                } else {
-                    // the dependency chain could not be followed for a device, try another
-                    l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e,
-                            // suppress its stack trace since it has caused huge logs in Bloomberg
-                            // filled with traces from this error:
-                            //
-                            // com.aerofs.ExProcessReplyFailed: com.aerofs.ExFileNotFound:
-                            //    file /f2e88c90/8a08fc0c/3d9d184b/f75b2303 not found (attrs:edrwxav,edrwxav)
-                            //
-                            // TODO (WW) Remove it as soon as the root cause of the bug is fixed.
-                            // See the email thread "Re: huge log output"
-                            ExProcessReplyFailed.class));
-                    avoidDevice_(e._did, e);
-                }
+                handleUnsatisfiedDepedency(e);
             }
         }
     }
 
-    private static interface IDownloadCompletionListenerVisitor
+    private void handleUnsatisfiedDepedency(ExUnsatisfiedDependency e) throws ExNoAvailDevice,
+            ExUnsatisfiedDependency
     {
-        void notify_(IDownloadCompletionListener l);
-    }
-
-    private void notifyListeners_(IDownloadCompletionListenerVisitor visitor)
-    {
-        l.debug("notify {} listeners", _listeners.size());
-        for (IDownloadCompletionListener lst : _listeners) {
-            l.debug("  notify {}", lst);
-            visitor.notify_(lst);
+        if (e._did == null) {
+            // a non-specific dependency (i.e. CONTENT->META) could not be resolved
+            if (e._e instanceof ExNoAvailDeviceForDep) {
+                // rewrap per-device exception such that the Collector can correctly check
+                // for permanent errors on the chain
+                Map<DID, Exception> did2e = ((ExNoAvailDeviceForDep)e._e)._did2e;
+                l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, did2e);
+                for (DID did : did2e.keySet()) {
+                    if (!_did2e.containsKey(did)) {
+                        avoidDevice_(did,
+                                new ExUnsatisfiedDependency(e._socid, did, did2e.get(did)));
+                    }
+                }
+                throw new ExNoAvailDevice();
+            } else {
+                l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, Util.e(e._e));
+                throw e;
+            }
+        } else {
+            // the dependency chain could not be followed for a device, try another
+            l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e,
+                    // suppress its stack trace since it has caused huge logs in Bloomberg
+                    // filled with traces from this error:
+                    //
+                    // com.aerofs.ExProcessReplyFailed: com.aerofs.ExFileNotFound:
+                    //    file /f2e88c90/8a08fc0c/3d9d184b/f75b2303 not found (attrs:edrwxav,edrwxav)
+                    //
+                    // TODO (WW) Remove it as soon as the root cause of the bug is fixed.
+                    // See the email thread "Re: huge log output"
+                    ExProcessReplyFailed.class));
+            avoidDevice_(e._did, e);
         }
-    }
-
-    private void onGeneralException(Exception e, DID replier)
-    {
-        if (e instanceof RuntimeException) SystemUtil.fatal(e);
-
-        // RTN: retry now
-        l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");
-        if (replier != null) avoidDevice_(replier, e);
     }
 
     protected void avoidDevice_(DID replier, Exception e)
     {
-        // NB: is this really necessary?
-        // To.pick_() already calls avoid_() so the only case where a second call makes a difference
-        // is when a new download request was made for the same object while the core lock was
-        // released around a remote call. I can't help but wonder if calling avoid_() in such a case
-        // is actually a bug...
-        _from.avoid_(replier);
-        _did2e.put(replier, e);
+        avoidDevice_(replier, e, _from, _did2e);
     }
 
     @Override

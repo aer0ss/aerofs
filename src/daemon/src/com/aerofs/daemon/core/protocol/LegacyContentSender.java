@@ -17,6 +17,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetComponentResponse;
 import com.google.common.io.ByteStreams;
@@ -35,9 +36,10 @@ public class LegacyContentSender extends ContentSender
 
     @Inject
     public LegacyContentSender(UploadState ulstate, CoreScheduler sched,
-                               TransportRoutingLayer trl, Metrics m, TokenManager tokenManager)
+                               TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
+                               CfgStorageType cfgStorageType)
     {
-        super(ulstate, sched, trl, m, tokenManager);
+        super(ulstate, sched, trl, m, tokenManager, cfgStorageType);
         // TODO: abort ongoing download on hash change
     }
 

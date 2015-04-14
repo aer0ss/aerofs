@@ -15,7 +15,7 @@ public class SendableContent {
     ContentHash hash;
     final IPhysicalFile pf;
 
-    SendableContent(SOKID sokid, long mtime, long length, @Nullable ContentHash hash, IPhysicalFile pf) {
+    public SendableContent(SOKID sokid, long mtime, long length, @Nullable ContentHash hash, IPhysicalFile pf) {
         this.sokid = sokid;
         this.mtime = mtime;
         this.length = length;

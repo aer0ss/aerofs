@@ -24,10 +24,9 @@ public class CausalityResult {
 
     public final Version _vLocal;
 
-
-    CausalityResult(@Nonnull KIndex kidx, @Nonnull Version vAddLocal,
-                    @Nonnull Collection<KIndex> kidcsDel,
-                    @Nullable ContentHash h, @Nonnull Version vLocal, boolean avoidContentIO) {
+    public CausalityResult(@Nonnull KIndex kidx, @Nonnull Version vAddLocal,
+                           @Nonnull Collection<KIndex> kidcsDel,
+                           @Nullable ContentHash h, @Nonnull Version vLocal, boolean avoidContentIO) {
         _kidx = kidx;
         _vAddLocal = vAddLocal;
         _kidcsDel = kidcsDel;

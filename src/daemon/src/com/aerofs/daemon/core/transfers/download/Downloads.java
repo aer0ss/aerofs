@@ -6,15 +6,11 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.*;
 import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.ids.DID;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgUsePolaris;
@@ -26,7 +22,6 @@ import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -199,7 +194,7 @@ public class Downloads implements IContentDownloads
             @Nonnull Token tk)
     {
         l.debug("socid:{}", socid);
-        AsyncDownload dl = _factDL.create_(socid, dids, listener, tk);
+        AsyncDownload dl = (AsyncDownload) _factDL.create_(socid, dids, listener, tk);
 
         // try to immediately enqueue event, schedule if core queue full
         IEvent ev = makeDownloadEvent_(dl);

@@ -5,11 +5,11 @@
 package com.aerofs.daemon.core.polaris.db;
 
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
@@ -18,7 +18,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
@@ -249,6 +248,21 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
             ps.setBytes(5, oid.getBytes());
             checkState(ps.executeUpdate() == 1);
             return null;
+        });
+    }
+
+    private final PreparedStatementWrapper _pswHasChildren = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_REMOTE_LINK,
+                    C_REMOTE_LINK_SIDX + "=? and " + C_REMOTE_LINK_PARENT + "=?" + " limit 1",
+                    C_REMOTE_LINK_OID));
+    public boolean hasChildren_(SIndex sidx, OID oid) throws SQLException
+    {
+        return exec(_pswHasChildren, ps -> {
+            ps.setInt(1, sidx.getInt());
+            ps.setBytes(2, oid.getBytes());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         });
     }
 }

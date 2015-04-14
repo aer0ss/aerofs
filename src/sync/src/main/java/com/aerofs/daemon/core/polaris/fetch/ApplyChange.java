@@ -45,7 +45,7 @@ public class ApplyChange
      * with changes already accepted by Polaris and therefore need to be resolved.
      *
      * The Storage Agent is never a source of local changes, which allows a drastic reduction in
-     * complexity of the underlying logic and databse schema.
+     * complexity of the underlying logic and database schema.
      */
     public interface Impl {
         boolean ackMatchingSubmittedMetaChange_(SIndex sidx, RemoteChange rc, RemoteLink lnk,
@@ -218,9 +218,9 @@ public class ApplyChange
             return;
         }
 
-        _rpdb.removeParent_(sidx, oidChild, t);
-
+        // Remove parent after deleting since we use RemoteLinkDatabase to resolve path in SA.
         _impl.delete_(parent, oidChild, t);
+        _rpdb.removeParent_(sidx, oidChild, t);
     }
 
     private void renameChild(SOID parent, RemoteChange c, long mergeBoundary, Trans t)

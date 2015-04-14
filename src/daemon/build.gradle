@@ -15,6 +15,7 @@ sourceSets {
             srcDirs 'src'
         }
     }
+
     test {
         java {
             srcDirs 'test'
@@ -43,4 +44,5 @@ dependencies {
     testCompile project(':src/zephyr')
     testCompile project(path: ':src/bifrost', configuration: 'testutil')
     testCompile project(path: ':src/lib', configuration: 'testutil')
+    testCompile project(path: ':src/sync', configuration: 'testutil')
 }
