@@ -13,18 +13,18 @@ Prerequisites:
     - run upgrade-tools.sh and restart bash before using dk-* commands.
 
 Commands:
-    dk-createvm set up a VM for doing docker-related things
-    dk-create   build, launch, and configure appliance containers. Previous appliance containers will be destroyed.
-    dk-env      export DOCKER_HOST, DOCKER_CERT_PATH, and DOCKER_TLS_VERIFY into the environment
-    dk-reconfig identical to dk-create but it skips image building
-    dk-halt     stop all appliance containers
-    dk-start    start halted appliance containers
-    dk-restart  restart all appliance containers
-    dk-destroy  stop and remove all appliance containers
+    dk-createvm  set up a VM for doing docker-related things
+    dk-create    build, launch, and configure appliance containers. Previous appliance containers will be destroyed.
+    dk-env       export DOCKER_HOST, DOCKER_CERT_PATH, and DOCKER_TLS_VERIFY into the environment
+    dk-reconfig  identical to dk-create but it skips image building
+    dk-halt      stop all appliance containers
+    dk-start     start halted appliance containers
+    dk-restart   restart all appliance containers
+    dk-destroy   stop and remove all appliance containers
     dk-destroyvm additionally destroy the VM running the docker containers
-    dk-reload   remove and restart given containers and all the containers that depend on them
-    dk-exec     execute commands in a given running container
-    dk-crane    run `crane` commands using the appliance's crane file at docker/crane.yml
+    dk-reload    remove and restart given containers and all the containers that depend on them
+    dk-exec      execute commands in a given running container
+    dk-crane     run `crane` commands using the appliance's crane file at docker/crane.yml
 
 Example:
 
