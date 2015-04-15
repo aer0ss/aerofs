@@ -95,5 +95,5 @@ wait ${PID}
 
 success 'Services up and running. You may create the first user with:'
 echo
-success '   $ open http://$(dk-ip)'
+success '   $ open http://share.syncfs.com'
 echo
