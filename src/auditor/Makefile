@@ -21,3 +21,5 @@ FIXES = $(abspath \
 
 .restore-source:
 	for i in $(FIXES); do patch -R $$i < $$(basename $$i).docker.patch; done
+
+.PHONY: image .gradle .fix-source .restore-source

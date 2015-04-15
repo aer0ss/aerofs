@@ -77,3 +77,4 @@ upload-versions:
 clean:
 	@rm -rf build debs versions *.deb *.ver *.txt
 
+.PHONY: all ${PACKAGES} debs packagelist upload upload-versions clean

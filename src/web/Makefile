@@ -8,6 +8,8 @@ VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
 image: .make-source $(FILES:%=$(DST_DIR)/%) $(VERSION_FILE) $(DST_DIR)/production.ini.template
 	docker build -t $(IMAGE_NAME) .
 
+.PHONY: image .make-source
+
 .make-source:
 	$(MAKE) -C web
 

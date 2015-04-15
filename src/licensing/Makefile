@@ -12,3 +12,5 @@ $(DIST_FILE): $(SRC)
 
 clean:
 	rm -rf $(DIST_DIR)
+
+.PHONY: clean

@@ -70,4 +70,4 @@ clean:
 	# TODO (WW) clean buildroot?
 	$(MAKE) -C ship-aerofs clean
 
-.PHONY: ship
+.PHONY: all images base ship make-ship gc clean

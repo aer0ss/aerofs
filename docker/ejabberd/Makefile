@@ -51,3 +51,5 @@ $(ETC)/auth_all: ../../puppetmaster/modules/ejabberd/files/auth_all
 	mkdir -p $(@D)
 	cp $< $@
 	chmod +x $@
+
+.PHONY: image

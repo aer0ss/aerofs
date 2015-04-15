@@ -25,3 +25,5 @@ endif
 	# Remove old files from buildroot. TODO (WW) use the buildroot-syncroot approach
 	rm -rf $(DST_PKGS_DIR)/*
 	../../tools/lazy-copy.sh $(SRC_PKGS_DIR) $(DST_PKGS_DIR)
+
+.PHONY: image .copy-packages

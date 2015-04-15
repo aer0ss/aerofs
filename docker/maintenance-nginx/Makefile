@@ -8,3 +8,5 @@ image: $(RUN)
 $(RUN): ../nginx/root/run-common.sh
 	mkdir -p $(@D)
 	cp $< $@
+
+.PHONY: image

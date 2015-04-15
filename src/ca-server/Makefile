@@ -2,8 +2,8 @@ IMAGE_NAME = aerofs/ca
 DST_DIR = buildroot/opt/ca-server
 RSC_DIR = src/dist
 
-FIXES = \
-	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java
+FIXES = $(abspath \
+	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java)
 
 # PREDOCKER
 image: .fix-source .gradle $(DST_DIR)/ca.yml.tmplt .unfix-source
@@ -17,13 +17,10 @@ $(DST_DIR)/%: $(RSC_DIR)/%
 	mkdir -p $(@D)
 	cp $< $@
 
-.fix-source: $(FIXES)
-$(FIXES): .force
-	patch $(abspath $@) < $(@F).docker.patch
+.fix-source:
+	for i in $(FIXES) ; do patch $$i < $$(basename $$i).docker.patch ; done
 
-.force:
+.unfix-source:
+	for i in $(FIXES) ; do patch -R $$i < $$(basename $$i).docker.patch ; done
 
-UNFIXES = $(FIXES:%=unfix-%)
-.unfix-source: $(UNFIXES)
-$(UNFIXES):
-	patch -R $(abspath $(@:unfix-%=%)) < $(notdir $(@:unfix-%=%)).docker.patch
+.PHONY: image .gradle .fix-source .unfix-source

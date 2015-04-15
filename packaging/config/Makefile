@@ -42,3 +42,5 @@ $(DEFAULT_PROPS_FILE): opt/config/properties/external.properties external.proper
 	mkdir -p $(@D)
 	cp $< $@
 	patch $@ < external.properties.docker.patch
+
+.PHONY: image

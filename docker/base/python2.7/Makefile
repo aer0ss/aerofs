@@ -6,3 +6,5 @@ image:
 	$(MAKE) -C $(PYTHON_LIB_DIR)
 	../../../tools/lazy-copy.sh "$(PYTHON_LIB_DIR)/build" "buildroot/sdist"
 	docker build -t $(IMAGE_NAME) .
+
+.PHONY: image

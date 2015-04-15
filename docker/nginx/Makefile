@@ -39,3 +39,5 @@ $(DIR)/status: ../../packaging/sanity/etc/nginx/backends-available/aerofs-sanity
 
 $(DIR)/openid: ../../packaging/identity/etc/nginx/backends-available/aerofs-identity
 	sed -e 's/127.0.0.1/openid.service/' $< > $@
+
+.PHONY: image .fix-site-confs

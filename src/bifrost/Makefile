@@ -23,3 +23,5 @@ $(DST_DIR)/%: $(RSC_DIR)/%
 
 .fix-source:
 	for i in $(FIXES); do patch $$i < $$(basename $$i).docker.patch; done
+
+.PHONY: image .gradle .fix-source .restore-source

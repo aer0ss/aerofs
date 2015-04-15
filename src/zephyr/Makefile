@@ -9,3 +9,5 @@ image: $(DST_DIR)/banner.txt $(DST_DIR)/logback.xml
 $(DST_DIR)/%: resources/%
 	mkdir -p $(@D)
 	cp $< $@
+
+.PHONY: image

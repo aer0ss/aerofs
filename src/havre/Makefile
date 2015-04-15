@@ -26,3 +26,5 @@ $(DST_DIR)/havre.properties: $(RSC_DIR)/havre.properties
 	mkdir -p $(@D)
 	sed -e 's`/etc/ssl/certs/AeroFS_CA.pem`/opt/havre/cacert.pem`' \
 		-e 's`havre.proxy.host = 127.0.0.1`havre.proxy.host = 0.0.0.0`' $< > $@
+
+.PHONY: image .gradle .fix-source .restore-source

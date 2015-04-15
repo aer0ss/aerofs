@@ -8,3 +8,5 @@ image: $(WEB_INF_DIR)/web.xml
 $(WEB_INF_DIR)/%: %
 	mkdir -p $(@D)
 	cp $< $@
+
+.PHONY: image

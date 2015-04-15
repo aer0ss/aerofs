@@ -4,13 +4,13 @@ WEB_INF_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF
 LIB_DIR = $(WEB_INF_DIR)/lib
 CONF_PROP = $(WEB_INF_DIR)/classes/configuration.properties
 ZELDA_PROP = buildroot/etc/aerofs/zelda.properties
-FIXES = \
+FIXES = $(abspath \
 	../lib/src/com/aerofs/lib/LibParam.java \
 	../base/src/main/java/com/aerofs/base/BaseParam.java \
 	../libservlet/src/com/aerofs/servlets/lib/AsyncEmailSender.java \
 	../libservlet/src/com/aerofs/sp/server/lib/session/RequestRemoteAddress.java \
 	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
-	src/com/aerofs/sp/server/BifrostClient.java
+	src/com/aerofs/sp/server/BifrostClient.java)
 
 image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP)
 	docker build -t $(IMAGE_NAME) .
@@ -42,14 +42,10 @@ $(ZELDA_PROP): ../../puppetmaster/modules/public-zelda-creds/files/zelda.propert
 	mkdir -p $(@D)
 	cp $< $@
 
-.fix-source: $(FIXES)
-$(FIXES): .force
-	patch $(abspath $@) < $(@F).docker.patch
+.fix-source:
+	for i in $(FIXES) ; do patch $$i < $$(basename $$i).docker.patch; done
 
-.force:
+.unfix-source:
+	for i in $(FIXES) ; do patch -R $$i < $$(basename $$i).docker.patch ; done
 
-UNFIXES = $(FIXES:%=unfix-%)
-.unfix-source: $(UNFIXES)
-$(UNFIXES):
-	patch -R $(abspath $(@:unfix-%=%)) < $(notdir $(@:unfix-%=%)).docker.patch
-
+.PHONY: all image subdirs .gradle .fix-source .unfix-source $(DIRS:%=dockerize-%)

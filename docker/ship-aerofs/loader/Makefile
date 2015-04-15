@@ -9,3 +9,5 @@ image: $(TAG)
 $(TAG): ../../../out.gradle/packages/current.ver
 	mkdir -p $(@D)
 	sed -e 's/.*=//' $< > $@
+
+.PHONY: image

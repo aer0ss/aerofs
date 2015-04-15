@@ -13,6 +13,8 @@ EXTERNAL_PROP_DOCKER_DEFAULT=buildroot/external.properties.docker.default
 image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH) $(EXTERNAL_PROP_DOCKER_DEFAULT)
 	docker build -t $(IMAGE_NAME) .
 
+.PHONY: image
+
 $(ROOT)/%: %
 	mkdir -p $(@D)
 	cp $< $@ 

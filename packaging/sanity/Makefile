@@ -39,3 +39,5 @@ $(DST_PROBES_DIR)/sparta.sh: $(TRANSIENT_DIR)/sparta.sh
 $(DST_PROBES_DIR)/verkehr.sh: $(TRANSIENT_DIR)/verkehr.sh
 $(DST_PROBES_DIR)/zephyr.sh: $(TRANSIENT_DIR)/zephyr.sh
 $(DST_PROBES_DIR)/team-servers.sh: $(TRANSIENT_DIR)/team-servers.sh
+
+.PHONY: image

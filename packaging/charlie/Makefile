@@ -22,3 +22,5 @@ $(ROOT)/opt/charlie/charles.py: opt/charlie/charles.py
 $(CONFIG_FILE):
 	mkdir -p $(@D)
 	echo "CONFIG_SERVER_BASE_URI='dont_care'" > $@
+
+.PHONY: image
