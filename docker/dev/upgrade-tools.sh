@@ -62,7 +62,7 @@ if [ $(uname -s) = "Linux" ] ; then
         sudo chmod +x /usr/local/bin/docker-machine
 
     fi
-    if [ -z "$(make -v | grep 'GNU Make 4.0')" ] ; then
+    if [ -n "$(make -v | grep 'GNU Make 4.')" ] ; then
         yellow_print "WARNING : Make 4.00 is the default version for new Ubuntu installations, but we only support Make 3.8.
       The easiest way to solve this problem is to download and install make-3.81:
 
