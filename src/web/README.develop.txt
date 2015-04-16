@@ -8,24 +8,24 @@ of decreasing speed.
 Note: if you are editing static assets, you must do a `make` in `./web`, and
 can optionally do a `make watch`, which plays nicely with Workflow 1, below.
 
-### Workflow 1: Local Prod Soft Links
+### Workflow 1: Docker Mounts
+
+Set up your docker mounts using the following script.
 
 ```
-sudo rm -rf /opt/web/web && sudo ln -s /mnt/aerofs/src/web/web/ /opt/web/web && sudo ln -s /opt/repackaging/installers/modified /opt/web/web/static/installers
+./development/setup-docker.sh
 ```
 
-And to apply changes,
+After the above has been applied, pserve will automatically reload your
+changes. Don't forget to checkout the patched build files.
+
+### Workflow 2: Docker Deploy
+
+Build and deploy a web package to your local docker cluster.
 
 ```
-lp-ssh -c "sudo service web restart"
-```
-
-### Workflow 2: Local Prod Deploy
-
-Build and deploy a web deb to your local prod instance.
-
-```
-lp-deploy web && lp-ssh -c "sudo service web restart"
+cd ~/Repos/aerofs
+make -C src/web && dk-reload web
 ```
 
 ### Workflow 3: Appliance Deploy

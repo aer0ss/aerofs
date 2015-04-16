@@ -7,7 +7,7 @@
 Run AeroFS website in a virtual environment
 ================================================
 
-Set up your system using development/setup.sh (run without args for usage
+Set up your system using development/setup-env.sh (run without args for usage
 information). You can use the resulting virtualenv in ~/.aerofs-web-env in
 your IDE.
 
