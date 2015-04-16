@@ -20,5 +20,6 @@ public class SslHandshake extends SimpleChannelUpstreamHandler
             throws Exception
     {
         _ssl.handshake();
+        super.channelConnected(ctx, e);
     }
 }
