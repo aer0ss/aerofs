@@ -9,7 +9,7 @@ information, please see [this design doc](../docs/design/docker.html).
 
 2. Restart the bash terminal for changes to take effect.
    
-3. Build and launch the appliance. The first run takes about 30 minutes. Follow-up instructions
+3. Build and launch the appliance. The first run takes about 40 minutes. Follow-up instructions
 is printed at the end of the process. [Learn Docker](https://docs.docker.com/userguide/) while
 it's in progress.
 

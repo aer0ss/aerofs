@@ -157,6 +157,7 @@ containers:
         - sp:sp.service
         - havre:havre.service
         - auditor:auditor.service
+        - verkehr:verkehr.service
 
   bifrost:
     image: aerofs/bifrost
