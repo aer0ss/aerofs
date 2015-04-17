@@ -339,7 +339,7 @@ function notify_successful_build {
     do
         echo "Build notification: PC $RELEASE_VERSION pushed to S3 (by $(whoami)). This version is not yet available to the public." |
             $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
-                -r "$room"
+                -r "$room" \
                 -c good \
                 -u $SLACK_WEBHOOK \
                 -f "Build" > /dev/null
