@@ -11,17 +11,7 @@ info() { cecho ${CYAN} "$1"; }
 success() { cecho ${GREEN} "$1"; }
 error() { cecho ${RED} "$1"; }
 
-if [ $# = 0 ]; then
-    BUILD=1
-elif [ "$1" = nobuild ]; then
-    BUILD=0
-else
-    error "Usage: $0 [nobuild]"
-    error "       Specify 'nobuild' to skip building Docker images."
-    exit 11
-fi
-
-# VPN is required to build images and access devmail.aerofs.com during appliance setup
+# VPN is required to access devmail.aerofs.com during appliance setup
 (set +e
     curl newci.arrowfs.org >/dev/null 2>&1
     [[ $? = 0 ]] || (
@@ -31,14 +21,6 @@ fi
 )
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
-
-if [ ${BUILD} = 1 ]; then
-    info "Building protobuf & client packages for Docker images..."
-    "${THIS_DIR}/../../invoke" proto build_client package_clients --unsigned
-
-    info "Building Docker images..."
-    make -C "${THIS_DIR}/.."
-fi
 
 info "Removing AeroFS containers..."
 "${THIS_DIR}/dk-destroy.sh"
