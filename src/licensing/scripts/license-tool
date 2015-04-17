@@ -28,9 +28,8 @@ def caching_password_cb(uid_hint, passphrase_info, prev_was_bad, fd):
     if prev_was_bad:
         print "Passphrase was rejected."
         cached_password = None
-    print "Enter passphrase for {}".format(uid_hint)
     if not cached_password:
-        cached_password = getpass.getpass() + "\n"
+        cached_password = os.environ['PASSWORD'] 
     os.write(fd, cached_password)
 
 def check_arg_present(args, name):

@@ -5,7 +5,7 @@ import tarfile
 from flask import Blueprint, url_for, render_template, redirect, Response, request, flash
 
 from aerofs_licensing import unicodecsv
-from lizard import db
+from lizard import db, csrf
 from . import appliance, notifications, forms, models
 
 import stripe
@@ -192,10 +192,11 @@ def download_license_request_csv():
                 headers={"Content-Disposition": "attachment; filename=license_requests.csv"}
                 )
 
+@csrf.exempt
 @blueprint.route("/upload_bundle", methods=["GET", "POST"])
 def upload_bundle():
     print request.files
-    form = forms.InternalLicenseBundleUploadForm()
+    form = forms.InternalLicenseBundleUploadForm(csrf_enabled=False)
     if form.validate_on_submit():
         blob = form.license_bundle.data
         # Read tarball
