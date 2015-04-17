@@ -1,32 +1,38 @@
 package com.aerofs.lib.configuration;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.base.config.PropertiesHelper;
-import org.apache.commons.lang.StringUtils;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
+import com.google.common.collect.Range;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.Properties;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
  * The responsibility of this class is to execute the loading logic/policy.
  *
  * The class loads configuration in the following order:
- * - static configuration, provided at build time, at $approot/configuration.properties
+ * - static configuration, provided at build time, as a resource stream
  * - if the property "config.loader.is_private_deployment" is present and true, it
  *   loads the following:
  *   - site configuration, provided by installer, at $approot/site-config.properties
  *   - http configuration based on "config.loader.configuration_service_url"
- *     and "config.loader.base_ca_certificate" properties
+ *     and "config.loader.base_ca_certificate" properties in site-config.
  *
- * Sources are considered in the order they are added, the first source to supply a
+ * Sources are considered in the order they are added, the last source to supply a
  *   property defines the value of that property.
  */
 public class ClientConfigurationLoader
@@ -39,98 +45,249 @@ public class ClientConfigurationLoader
             = "config.loader.configuration_service_url";
     public static final String PROPERTY_BASE_CA_CERT
             = "config.loader.base_ca_certificate";
+    protected static final String PROPERTY_BASE_HOST
+            = "base.host.unified";
 
     static final String STATIC_CONFIG_FILE = "configuration.properties";
     static final String SITE_CONFIG_FILE = "site-config.properties";
     static final String HTTP_CONFIG_CACHE = "config-service-cache.properties";
 
-    private final HttpsDownloader _downloader;
-    private final PropertiesHelper _propertiesHelper = new PropertiesHelper();
+    private static final int CONNECTION_TIMEOUT = (int)(3 * C.SEC);
+    private static final int READ_TIMEOUT = (int)(3 * C.SEC);
 
-    private final String _approot;
-    private final String _rtroot;
+    private final String            _approot;
+    private final String            _rtroot;
+    private final PropertiesHelper  _helper;
 
-    public ClientConfigurationLoader(HttpsDownloader downloader, String approot, String rtroot)
+
+    public ClientConfigurationLoader(String approot, String rtroot, PropertiesHelper helper)
     {
-        _downloader = downloader;
         _approot = approot;
         _rtroot = rtroot;
+        _helper = helper;
     }
 
     /**
-     * loads configuration from multiple configuration sources based on the class logic.
+     * Loads configuration properties from multiple sources based on the class logic.
      *
-     * Throws ConfigurationException if this is a private deployment and we are unable to load
-     *   site config or http config.
+     * @return fully composed and rendered properties to use for the desktop client
+     * @throws SiteConfigException - failed to load site configuration.
+     * @throws HttpConfigException - failed to load http configuration.
+     * @throws RenderConfigException - failed to render configuration.
      */
     public Properties loadConfiguration()
-            throws ConfigurationException
+            throws SiteConfigException, HttpConfigException, RenderConfigException
     {
-        try {
-            Properties siteConfigProperties = new Properties();
-            Properties httpProperties = new Properties();
-            Properties staticProperties = getStaticProperties();
+        Properties properties = getStaticConfig();
 
-            File siteConfigFile = getSiteConfigFile();
+        // this check is probably too strict
+        if (isPrivateDeployment(properties)) {
+            Properties siteConfig, httpConfig;
 
-            if (staticProperties.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals(
-                    "true")) {
-                boolean loaded = false;
-                // Load site configuration file, failing if it doesn't exist.
-                // Avoiding using OSUtil because static initializers suck.
-                // We do crazy stuff on OSX because codesigning is mean, but not mean enough.
-                if (System.getProperty("os.name").startsWith("Mac OS X")) {
-                    // We need to read the config from Resources/site-config.lproj/locversion.plist,
-                    // which is conveniently omitted from the codesigning seal.
-                    // construct relative path from approot:
-                    File codesigningEvadingFile = new File(
-                            new File(
-                                    new File(_approot).getParentFile(),
-                                    "site-config.lproj"
-                            ),
-                            "locversion.plist"
-                    );
-                    if (codesigningEvadingFile.isFile()) {
-                        loadPropertiesFromFile(siteConfigProperties, codesigningEvadingFile);
-                        loaded = true;
-                    }
-                }
-
-                // Load config from site-config.properties, if it exists
-                if (siteConfigFile.isFile()) {
-                    loadPropertiesFromFile(siteConfigProperties, siteConfigFile);
-                    loaded = true;
-                }
-
-                if (!loaded) throw new FileNotFoundException("Missing " + siteConfigFile);
-
-                siteConfigProperties = _propertiesHelper.parseProperties(siteConfigProperties);
-
-                // Load HTTP configuration, warning if it cannot be loaded.
-                File httpConfigFile = getHttpConfigFile();
-                downloadHttpConfig(staticProperties, siteConfigProperties, httpConfigFile);
-                // N.B. we load the http config properties from cache even when we've failed download http config from
-                // the config server; this is intended as a fail-safe mechanism in case the client cannot reach the
-                // config server.
-                // However, this also opens up a hole where an adversary can edit the http config cache and then
-                // launch the client with no internet connection to configure the client with arbitrary configuration.
-                loadPropertiesFromFile(httpProperties, httpConfigFile);
-                httpProperties = _propertiesHelper.parseProperties(httpProperties);
-
-            } else if (siteConfigFile.exists()) {
-                // This ignores the repackaged OSX case, but I'm okay with this
-                throw new IncompatibleModeException();
+            try {
+                siteConfig = getSiteConfig();
+            } catch (Exception e) {
+                throw new SiteConfigException(e);
             }
 
-            // Join all properties together, logging a warning if any property is specified twice.
-            return _propertiesHelper.mergeProperties(staticProperties,
-                    siteConfigProperties, httpProperties);
+            try {
+                httpConfig = getHttpConfig(siteConfig);
+            } catch (Exception e) {
+                throw new HttpConfigException(e);
+            }
+
+            try {
+                properties = _helper.parseProperties(
+                        _helper.mergeProperties(httpConfig, siteConfig, properties));
+            } catch (Exception e) {
+                throw new RenderConfigException(e);
+            }
+        } else if (getDefaultSiteConfigFile().exists()) {
+            // This is a sign of errors in packaging or a bad installation.
+            throw new SiteConfigException("A site config file was found on a HC client.");
+        }
+
+        return properties;
+    }
+
+    // protected so we can mock this in unit tests
+    protected ClassLoader getContextClassLoader()
+    {
+        return Thread.currentThread().getContextClassLoader();
+    }
+
+    // N.B. this method defaults to an empty set of properties if we failed to load static config.
+    protected Properties getStaticConfig()
+    {
+        Properties properties = new Properties();
+
+        try {
+            ClassLoader classLoader = getContextClassLoader();
+            checkNotNull(classLoader, "Failed to get context class loader.");
+
+            try (InputStream in = classLoader.getResourceAsStream(STATIC_CONFIG_FILE)) {
+                checkNotNull(in, "Failed to open static config file in the resource.");
+                properties.load(in);
+            }
         } catch (Exception e) {
-            throw new ConfigurationException(e);
+            // proceed as if it's HC
+            LOGGER.warn("Failed to load static configuration; " +
+                    "proceeding with no static configuration.", e);
+        }
+
+        return properties;
+    }
+
+    protected boolean isPrivateDeployment(Properties staticConfig)
+    {
+        return staticConfig.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals("true");
+    }
+
+    /**
+     * @throws Exception if we failed to load site configuration (sanity check included).
+     */
+    private Properties getSiteConfig() throws Exception
+    {
+        Properties properties = new Properties();
+
+        // TODO (AT): I prefer to load site config entirely from one source (assuming valid)
+        // instead of composing from two sources. However, the author expected clobbering and it
+        // was unclear if we rely on this behaviour anywhere.
+        //
+        // Avoiding using OSUtil because static initializers suck.
+        // We do crazy stuff on OSX because codesigning is mean, but not mean enough.
+        if (System.getProperty("os.name").startsWith("Mac OS X")) {
+            // We need to read the config from Resources/site-config.lproj/locversion.plist,
+            // which is conveniently omitted from the codesigning seal.
+            // construct relative path from approot:
+            File codesigningEvadingFile = getOSXSiteConfigFile();
+
+            if (codesigningEvadingFile.isFile()) {
+                LOGGER.info("Loading OS-X specific site configuration.");
+                loadPropertiesFromFile(properties, codesigningEvadingFile);
+            }
+        }
+
+        // also load from the default site config and clobber properties from OS X-specific site
+        // config if applicable.
+        File siteConfigFile = getDefaultSiteConfigFile();
+
+        if (siteConfigFile.isFile()) {
+            LOGGER.info("Loading default site configuration.");
+            loadPropertiesFromFile(properties, siteConfigFile);
+        }
+
+        // we expect site configuration to include at least these 2 properties.
+        //
+        // N.B. it's possible that we have not loaded _any_ site config at this point because
+        // neither sources exist. In which case, we will certainly failed these checkes.
+        checkState(properties.containsKey(PROPERTY_CONFIG_SERVICE_URL)
+                && isNotBlank(properties.getProperty(PROPERTY_CONFIG_SERVICE_URL)));
+        checkState(properties.containsKey(PROPERTY_BASE_CA_CERT)
+                && isNotBlank(properties.getProperty(PROPERTY_BASE_CA_CERT)));
+
+        return properties;
+    }
+
+    /**
+     * @throws Exception if we failed to load http configuration (sanity check included).
+     */
+    private Properties getHttpConfig(Properties siteConfig)
+            throws Exception
+    {
+        Properties properties;
+
+        try {
+            properties = getRemoteHttpConfig(siteConfig);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to load remote http config; proceed with local http config.");
+            return getLocalHttpConfig();
+        }
+
+        // at this point, we know we've succeeded in loading the http config from remote and we
+        // simply need to save it to local cache for the future.
+        try (OutputStream out = new FileOutputStream(getLocalHttpConfigFile())) {
+            properties.store(out, "Http config downloaded from " +
+                    siteConfig.getProperty(PROPERTY_CONFIG_SERVICE_URL));
+        } catch (IOException e) {
+            LOGGER.warn("Failed to save remote http config to local; ignored.");
+        }
+
+        return properties;
+    }
+
+    /**
+     * @throws Exception if we failed to load http config from remote or if the http config we
+     *   have loaded failed the sanity check.
+     */
+    @SuppressWarnings("try")
+    private Properties getRemoteHttpConfig(Properties siteConfig)
+            throws Exception
+    {
+        String url = siteConfig.getProperty(PROPERTY_CONFIG_SERVICE_URL);
+        String cert = siteConfig.getProperty(PROPERTY_BASE_CA_CERT);
+
+        HttpsURLConnection conn = createConnection(url, new StringBasedCertificateProvider(cert));
+
+        try (Closeable ignored = conn::disconnect) {
+            conn.connect();
+
+            checkState(Range.closedOpen(200, 300).contains(conn.getResponseCode()));
+
+            Properties properties = new Properties();
+
+            try (InputStream in = conn.getInputStream()) {
+                properties.load(in);
+            }
+
+            // it's important to perform sanity check now because if we fail here, we can still
+            // fallback to local cache.
+            checkHttpConfig(properties);
+
+            return properties;
         }
     }
 
-    protected void loadPropertiesFromFile(Properties properties, File file)
+    /**
+     * @throws Exception if we failed to load http config from local cache or if the http config
+     *   we have loaded failed the sanity check.
+     */
+    private Properties getLocalHttpConfig()
+            throws Exception
+    {
+        Properties properties = new Properties();
+
+        loadPropertiesFromFile(properties, getLocalHttpConfigFile());
+        checkHttpConfig(properties);
+
+        return properties;
+    }
+
+    /**
+     * @throws Exception if the supplied http config failed the sanity check.
+     */
+    private void checkHttpConfig(Properties httpConfig)
+            throws Exception
+    {
+        checkState(httpConfig.containsKey(PROPERTY_BASE_HOST)
+                && isNotBlank(httpConfig.getProperty(PROPERTY_BASE_HOST)));
+    }
+
+    // this is protected so we can mock it in unit tests
+    protected HttpsURLConnection createConnection(String url, ICertificateProvider provider)
+            throws GeneralSecurityException, IOException
+    {
+        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+
+        conn.setSSLSocketFactory(new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
+                provider, null).getSSLContext().getSocketFactory());
+        conn.setConnectTimeout(CONNECTION_TIMEOUT);
+        conn.setReadTimeout(READ_TIMEOUT);
+
+        return conn;
+    }
+
+    private void loadPropertiesFromFile(Properties properties, File file)
             throws IOException
     {
         try (InputStream in = new FileInputStream(file)) {
@@ -138,91 +295,46 @@ public class ClientConfigurationLoader
         }
     }
 
-    protected File getSiteConfigFile()
+    protected File getOSXSiteConfigFile()
+    {
+        return new File(
+                new File(
+                        new File(_approot).getParentFile(),
+                        "site-config.lproj"
+                ),
+                "locversion.plist"
+        );
+    }
+
+    protected File getDefaultSiteConfigFile()
     {
         return new File(_approot, SITE_CONFIG_FILE);
     }
 
-    protected File getHttpConfigFile()
+    protected File getLocalHttpConfigFile()
     {
         return new File(_rtroot, HTTP_CONFIG_CACHE);
     }
 
-    /**
-     * Download http configuration from the configuration server. And suppress any exception
-     *   because we'll be falling back to the cache file if this fails.
-     */
-    protected void downloadHttpConfig(Properties staticProperties,
-            Properties siteConfigProperties, File httpConfigFile)
+    public static class SiteConfigException extends Exception
     {
-        Properties preHttpProperties = new Properties();
-        preHttpProperties.putAll(staticProperties);
-        preHttpProperties.putAll(siteConfigProperties);
+        private static final long serialVersionUID = 0;
 
-        String url = null;
-        try {
-            url = preHttpProperties.getProperty(PROPERTY_CONFIG_SERVICE_URL);
-            String certificate = preHttpProperties.getProperty(PROPERTY_BASE_CA_CERT, "");
-            ICertificateProvider certificateProvider = StringUtils.isBlank(certificate) ? null
-                    : new StringBasedCertificateProvider(certificate);
-
-            _downloader.download(url, certificateProvider, httpConfigFile);
-        } catch (Throwable t) {
-            // N.B. the best we can do is log the occurrence because if at this stage, none of the
-            // services are available and there's no way to report the defect back home.
-            LOGGER.warn("Failed to download http configuration at: {}", url, t);
-        }
+        public SiteConfigException(String message) { super(message); }
+        public SiteConfigException(Exception cause) { super(cause); }
     }
 
-    /**
-     * Reads the static configuration file. First look in the classpath then in the current
-     * directory.
-     *
-     * @return An InputStream corresponding to the static configuration file.
-     * @throws java.io.FileNotFoundException if the static configuration file could not be found.
-     */
-    private InputStream getStaticConfigInputStream()
-            throws FileNotFoundException
+    public static class HttpConfigException extends Exception
     {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        private static final long serialVersionUID = 0;
 
-        // Try context classloader.
-        if (classLoader != null) {
-            InputStream resource = classLoader.getResourceAsStream(STATIC_CONFIG_FILE);
-            if (resource != null) return resource;
-        }
-
-        throw new FileNotFoundException(STATIC_CONFIG_FILE);
+        public HttpConfigException(Exception cause) { super(cause); }
     }
 
-    protected Properties getStaticProperties()
-            throws ExBadArgs
+    public static class RenderConfigException extends Exception
     {
-        Properties staticProperties = new Properties();
+        private static final long serialVersionUID = 0;
 
-        // Load static configuration file, ignoring it if it doesn't exist.
-        try {
-            InputStream inputStream = getStaticConfigInputStream();
-            staticProperties.load(inputStream);
-        } catch (IOException e) {
-            LOGGER.warn("Failed to open {}. Assuming no staticProperties.", STATIC_CONFIG_FILE, e);
-            staticProperties = new Properties();
-        }
-
-        return _propertiesHelper.parseProperties(staticProperties);
-    }
-
-    public static class ConfigurationException extends Exception
-    {
-        private static final long serialVersionUID = 1L;
-        public ConfigurationException(Exception e) { super(e); }
-    }
-
-    public static class IncompatibleModeException extends Exception
-    {
-        // N.B. the serialVersionUID is necessary because Exception implements Serializable
-        //   and not providing serialVersionUID will throw a warning at compile time
-        //   causing CI to fail.
-        private static final long serialVersionUID = 1594312114711899559L;
+        public RenderConfigException(Exception cause) { super(cause); }
     }
 }
