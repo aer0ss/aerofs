@@ -7,38 +7,36 @@ information, please see [this design doc](../docs/design/docker.html).
 
         $ ~/repos/aerofs/docker/dev/upgrade-tools.sh
 
-2. Restart the bash terminal for changes to take effect.
-   
-3. Build and launch the appliance. The first run takes about 40 minutes. Follow-up instructions
+2. Build and launch the appliance. The first run takes about 40 minutes. Follow-up instructions
 is printed at the end of the process. [Learn Docker](https://docs.docker.com/userguide/) while
 it's in progress.
 
         $ dk-create
 
-4. Now you can rebuild and reload individual service containers.
+3. Now you can rebuild and reload individual service containers.
 
         $ make -C src/bifrost && dk-reload bifrost
-        
-5. Learn more about the dk command family using:
+
+4. Learn more about the dk command family using:
 
         $ dk-help
 
-# Build appliance VM (optional)
-
-You do NOT need the VM for most development work. Follow the commands below to build appliance
-VM images. The output file's location is printed at the end of this step.
-
-        $ dk-create && make -C docker ship
-
-
 # Tips and tricks
+
+## Reading the logs
+
+You can use this to read the logs of a given container:
+
+    docker logs <name-of-container>
+    # For example
+    docker logs loader
 
 ## Dependency graph
 
 Show the container dependency graph, with Bifrost's link dependency highlighted:
 
     $ crane graph -dlink bifrost | dot -Tpng > /tmp/containers.png && open /tmp/containers.png
-    
+
 ## Image graph
 
 Show the dependency graph of all local Docker images:

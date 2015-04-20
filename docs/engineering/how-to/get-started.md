@@ -25,6 +25,13 @@ Your private key is `$HOME/.ssh/id_rsa`.  Keep it secret.  Keep it safe.
 
 Your public key is `$HOME/.ssh/id_rsa.pub`. Provide this file to [Drew](drew@aerofs.ccom) or [Matt](matt@aerofs.com) for further account provisioning.
 
+## Install Tunnelblick and get on the AeroFS VPN
+
+Ping Matt to provision you a VPN config bundle.
+You will need it to access most of the internal servers and build the project.
+
+See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box.
+
 ## Register for Gerrit, our code review tool
 
 Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Weihan or Drew to add you to the 'Developers' group in Gerrit.
@@ -33,13 +40,13 @@ Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a us
 
 Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com credentials and use the interface to ask for access.  They will quickly be granted by someone with mighty admin powers.
 
-## Install AeroFS Canary and join the team folder
+## Install AeroFS client and join the team folder
 
-  * Once your AeroFS is installed, go to tray menu > Preferences... > Advanced..., and enable the Canary mode.
   * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
-  * [Download and install the AeroFS client](https://www.aerofs.com/download).
-  * [Accept the shared folder invitation](https://www.aerofs.com/accept).
+  * Go to [https://share.aerofs.com/](https://share.aerofs.com/)
+  * [Download and install the AeroFS client](https://share.aerofs.com/download).
+  * [Accept the shared folder invitation](https://share.aerofs.com/accept).
 
 ## Install XCode
 
@@ -47,10 +54,9 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
 
 ## Install XCode command line tools
 
-    $ gcc
-    $ xcode-select --install
+    gcc
     
-will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools. Note that there are _two sets_ of "command line developer tools," so one must run both commands to get both sets.
+In the past, it was necessary to also do `xcode-select --install`.
 
 ## Install JDK 8
 
@@ -128,7 +134,7 @@ To compile from IntelliJ you may need to force it to run under Java 8. To do tha
 in /Application/IntelliJ IDEA*.app/Contents/Info.plist
 change `JVMVersion` to `1.8*`
 
-You may also need to manually point IntelliJ to the newly installed JDK:
+You may also need to manually point IntelliJ to the newly installed JDK (you will need to open a project to set it up):
 
 File > Project Structure... > SDKs > + > JDK
 the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
@@ -136,7 +142,7 @@ the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.
 You may also need to manually point IntelliJ to the newly installed gradle:
 
 Preferences > Build, Execution, and Deployment > Built Tools > Gradle > Use local gradle distribution
-the path should be something like /usr/local/opt/gradle/libexec"
+the path should be something like "/usr/local/opt/gradle/libexec"
 
 Import the the "aerofs" and "baseline" repos into IntelliJ. Because IntelliJ has trouble parsing the gradle files completely it is necessary to manually enable some of the libraries we use:
 
@@ -175,7 +181,7 @@ This installs `git-review`, installs a post-commit hook for gerrit and adds the 
 
 ### Enable vim syntax highlighting
 
-    $ cat > ~/.vimrc <<END
+    cat > ~/.vimrc <<END
     syntax on
     set hlsearch
     END
@@ -201,24 +207,26 @@ Set a good root password for MySQL, then create the test user for MySQL:
 
 Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
 
-## Install Tunnelblick and get on the AeroFS VPN
-
-Ping Drew or Matt to provision you a VPN config bundle.
-
-See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box.
-
 ## Build and launch private AeroFS Service VM (aka local prod)
 
 This VM is required to run your private AeroFS clients that are isolated from the production and other developers' environments.
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
-     echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.profile
+     echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.bash_profile
      source ~/repos/aerofs/tools/bashrc/include.sh
-     ssh apt.aerofs.com # (create password and don't forget it!)
-     lp-create
+     # Now the real things
+     ~/repos/aerofs/docker/dev/upgrade-tools.sh
+     # Display the documentation
+     dk-help
+     dk-createvm && docker-machine upgrade && dk-create
 
-The last step may take a while (expect 30 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing. Once done, you can run `lp-ssh` to log in your VM. See [Local Production (aka. local prod)](../references/local-prod.html) for more information about the private environment.
+The last step may take a while (expect at least 45 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing.
+Especially, see `docker/README.md`.
+
+If you are not using the VPN/offline, you may want to add the following to your `/etc/hosts`:
+
+    192.168.99.100 share.syncfs.com
 
 ## Build and launch the client
 
@@ -245,17 +253,6 @@ If you work on UI code, it can be anonying that the daemon restarts every time y
      
 `nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The next time the UI launches it will not restart the daemon.
 
-## Serve web files properly
-
-By default, the VM uses its own copy of all the web files. This means that you can't see any changes to the website without restarting the entire web service. To fix this:
-
-    lp-ssh
-    cd /opt/web
-    sudo mv web web.back
-    sudo ln -s /mnt/aerofs/src/web/web web
-
-This replaces the VM's web folder with a symlink to the web folder in your repo. Now you can see e.g. CSS changes automatically appear, without having to restart anything.
-
 ## Compile static files
 
 Compiled files are not included in source control, so to get all the styles and JS working on the local version of the website you'll need to compile them. For how to do so, please see "Compiling Less and JS" in src/web/web/README.txt. 
@@ -264,13 +261,14 @@ You'll need to install some dependencies, then run `make watch` and hopefully ne
 
 ## Sign up accounts in local prod
 
-Go to the URL `https://share.syncfs.com` to create the first admin account.
+Go to the URL [https://share.syncfs.com](https://share.syncfs.com) to create the first admin account.
 
 Or, you can use the signup script:
 
-    ~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com
+    ~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com -p password
 
-When asked for vagrant password use: `vagrant`. It will create user signup record with default password `uiuiui`. You can specify -p flag to set custom password as TEST_USER_NAME you can use: YOUR_USER_NAME+ANY_SUFFIX@aerofs.com e.g. bob+test@aerofs.com.
+When asked for vagrant password use: `vagrant`. It will create user signup record with default password `uiuiui`.
+You can specify -p flag to set custom password as TEST_USER_NAME you can use: YOUR_USER_NAME+ANY_SUFFIX@aerofs.com e.g. bob+test@aerofs.com.
 
 ## Set up and run SyncDET tests
 
@@ -280,9 +278,9 @@ Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup-syncd
 
 Build client packages for all OSes:
 
-    $ cd ~/repos/aerofs
-    $ invoke --product=CLIENT --unsigned setupenv clean proto build_client package_clients
-    $ invoke prepare_syncdet --product=CLIENT
+    cd ~/repos/aerofs
+    invoke --product=CLIENT --unsigned setupenv clean proto build_client package_clients
+    invoke prepare_syncdet --product=CLIENT
 
 Replace CLIENT WITH TEAM_SERVER if you are testing the team server.
 

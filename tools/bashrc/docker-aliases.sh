@@ -21,5 +21,13 @@ alias dk-reload="${DEV_DIR}/dk-reload.sh"
 alias dk-restart="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance && ${DEV_DIR}/dk-crane.sh run -dall"
 alias dk-start="${DEV_DIR}/dk-crane.sh run -dall"
 
+# Autocomplete
+if [ -f $(brew --prefix)/etc/bash_completion ]; then
+ . $(brew --prefix)/etc/bash_completion
+fi
+
+bind "set completion-ignore-case on"
+bind "set show-all-if-ambiguous on"
+
 # Now, attempt to set up DOCKER_HOST and friends if docker-dev is running
 [[ "$(docker-machine ls | grep ${VM} | grep Running)" ]] && dk-env
