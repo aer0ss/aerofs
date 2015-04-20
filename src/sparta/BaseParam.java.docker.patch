@@ -3,7 +3,7 @@
  
          // TODO (MP) need create ServerParam.java (or something) and move this there.
 -        public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
-+        public static final String FILE = "/opt/bifrost/cacert.pem";
++        public static final String FILE = "/opt/sparta/cacert.pem";
      }
  
      public static class XMPP

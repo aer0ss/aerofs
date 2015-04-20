@@ -14,7 +14,6 @@ DIRS="
     base/python2.7
 
     ../src/auditor 
-    ../src/bifrost 
     ../src/bunker 
     ../src/ca-server 
     ../packaging/config 

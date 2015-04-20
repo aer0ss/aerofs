@@ -31,6 +31,9 @@ $(DST_PROBES_DIR)/ca.sh: $(PERSISTENT_DIR)/ca.sh
 $(DST_PROBES_DIR)/mysql.sh: $(PERSISTENT_DIR)/mysql.sh
 $(DST_PROBES_DIR)/redis.sh: $(PERSISTENT_DIR)/redis.sh
 $(DST_PROBES_DIR)/bifrost.sh: $(TRANSIENT_DIR)/bifrost.sh
+	mkdir -p $(@D)
+	sed -e 's`localhost`sparta.service`' $< > $@
+	chmod a+x $@
 $(DST_PROBES_DIR)/charlie.sh: $(TRANSIENT_DIR)/charlie.sh
 $(DST_PROBES_DIR)/ejabberd.sh: $(TRANSIENT_DIR)/ejabberd.sh
 $(DST_PROBES_DIR)/havre.sh: $(TRANSIENT_DIR)/havre.sh

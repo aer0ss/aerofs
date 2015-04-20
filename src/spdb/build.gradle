@@ -4,3 +4,18 @@
 
 archivesBaseName = 'aerofs-spdb'
 
+dependencies {
+    compile 'org.flywaydb:flyway-core:3.2.+'
+    compile 'org.apache.tomcat:tomcat-jdbc:7.0.+'
+    // For properties
+    compile project(':src/base')
+    // For LibParam
+    compile project(':src/lib')
+}
+
+
+jar {
+    manifest.attributes(
+        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+    )
+}

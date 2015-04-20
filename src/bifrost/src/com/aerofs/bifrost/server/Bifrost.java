@@ -35,6 +35,8 @@ import com.aerofs.rest.auth.SharedSecretExtractor;
 import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.IDataSourceProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -48,6 +50,7 @@ import org.hibernate.SessionFactory;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
+import java.sql.Connection;
 import java.util.Properties;
 import java.util.Set;
 
@@ -84,27 +87,7 @@ public class Bifrost extends Service
         return ImmutableSet.of(TransactionalWrapper.class);
     }
 
-    public static void main(String[] args) throws Exception
-    {
-        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
-
-        Properties extra = new Properties();
-        if (args.length > 0) extra.load(new FileInputStream(args[0]));
-
-        ServerConfigurationLoader.initialize("bifrost", extra);
-        String deploymentSecret = AeroService.loadDeploymentSecret();
-
-        Class.forName(LibParam.MYSQL.MYSQL_DRIVER);
-
-        Injector inj = Guice.createInjector(Stage.PRODUCTION,
-                databaseModule(), bifrostModule(), spModule());
-
-        // Note, we expect nginx or similar to provide ssl termination...
-        new Bifrost(inj, deploymentSecret)
-                .start();
-    }
-
-    static private Module spModule()
+    public static Module spModule()
     {
         return new AbstractModule() {
             private final SPBlockingClient.Factory factSP =
@@ -118,14 +101,15 @@ public class Bifrost extends Service
         };
     }
 
-    static private Module databaseModule()
+    public static Module databaseModule(IDataSourceProvider dsProvider)
     {
         return new AbstractModule()
         {
             @Override
             protected void configure()
             {
-                bind(SessionFactory.class).toInstance(BifrostSessionFactory.build(
+                BifrostSessionFactory factory = new BifrostSessionFactory(dsProvider);
+                bind(SessionFactory.class).toInstance(factory.build(
                         ResourceServer.class,
                         AccessToken.class,
                         Client.class,
@@ -135,7 +119,7 @@ public class Bifrost extends Service
         };
     }
 
-    static public Module bifrostModule()
+    public static Module bifrostModule()
     {
         return (new AbstractModule() {
             @Override

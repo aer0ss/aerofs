@@ -18,7 +18,7 @@
  sp.max.membership.sharedfolder=50
  sp.max.membership.group=50
  
-+base.bifrost.internal.host=bifrost.service
++base.bifrost.internal.host=sparta.service
 +
 +{# See bifrost/root/run.sh #}
 +hack_bifrost_service_ip={{ hack_bifrost_service_ip }}

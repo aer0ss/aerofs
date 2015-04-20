@@ -2,13 +2,13 @@
 set -e
 
 DEPLOYMENT_SECRET=$(cat /data/deployment_secret)
-# Authorize a given service to bifrost, and print out client secret.
+# Authorize a given service to sparta, and print out client secret.
 #
 function authorize() {
     ID=$1
     NAME=$2
     EXPIRES=$3
-    URL='bifrost.service:8700'
+    URL='sparta.service:8700'
     AUTH_HEADER="Authorization: Aero-Service-Shared-Secret bootstrap $DEPLOYMENT_SECRET"
 
     RET=$(curl -S -s -H "$AUTH_HEADER" -o /dev/null -w "%{http_code}" $URL/clients/$ID)

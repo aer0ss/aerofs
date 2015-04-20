@@ -85,7 +85,7 @@ class transient::services {
     # OAuth server
     #---------------
 
-    include bifrost
+    #include bifrost
 
     #--------------
     # (WIP) Polaris
@@ -142,10 +142,10 @@ class transient::services {
         require => Package["aerofs-sanity"],
     }
 
-    file {"/opt/sanity/probes/bifrost.sh":
-        source => "puppet:///modules/transient/probes/bifrost.sh",
-        require => Package["aerofs-sanity"],
-    }
+    #file {"/opt/sanity/probes/bifrost.sh":
+    #    source => "puppet:///modules/transient/probes/bifrost.sh",
+    #    require => Package["aerofs-sanity"],
+    #}
 
     file {"/opt/sanity/probes/sparta.sh":
         source => "puppet:///modules/transient/probes/sparta.sh",

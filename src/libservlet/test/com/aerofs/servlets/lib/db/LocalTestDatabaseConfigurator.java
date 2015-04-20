@@ -5,7 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.base.Loggers;
-import com.googlecode.flyway.core.Flyway;
+import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class LocalTestDatabaseConfigurator
         Flyway flyway = new Flyway();
         flyway.setDataSource("jdbc:mysql://" + params.getMySQLHost() + "/" + params.getMySQLDatabaseName(),
                 params.getMySQLUser(), params.getMySQLPass());
-        flyway.setInitOnMigrate(true);
+        flyway.setBaselineOnMigrate(true);
         flyway.setLocations("filesystem:" + params.getMySQLSchemaPath());
         flyway.setSchemas(params.getMySQLDatabaseName());
         flyway.migrate();

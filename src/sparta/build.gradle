@@ -24,11 +24,12 @@ sourceSets {
 
 dependencies {
     compile 'org.apache.tomcat:tomcat-jdbc:7.0.+'
-    compile 'com.googlecode.flyway:flyway-core:2.2.+'
+    compile 'org.flywaydb:flyway-core:3.2.+'
     compile project(':src/libservlet')
     compile project(':src/oauth-verify')
     compile project(':src/rest-api')
     compile project(':src/restless')
+    compile project(':src/bifrost')
     runtime project(':src/spdb')
     testCompile project(':src/bifrost')
     testCompile project(path: ':src/bifrost', configuration: 'testutil')

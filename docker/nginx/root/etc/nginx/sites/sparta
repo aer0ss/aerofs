@@ -51,3 +51,21 @@ location ~* /api/v[0-9]+\.[0-9]+/(users|shares|devices|organizations) {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }
+location /auth/ {
+    # proxy to Sparta, stripping the /auth/ uri prefix
+    rewrite /auth/(.+) /$1 break;
+    proxy_pass http://sparta.service:8700;
+    proxy_cache off;
+    proxy_buffering off;
+    proxy_cookie_path / /auth/;
+    proxy_http_version 1.1;
+    proxy_set_header Connection $http_connection;
+    proxy_ignore_headers X-Accel-Charset X-Accel-Buffering X-Accel-Limit-Rate X-Accel-Redirect X-Accel-Expires Expires Cache-Control Set-Cookie;
+    proxy_read_timeout 60;
+    proxy_send_timeout 60;
+    proxy_set_header Verify $ssl_client_verify;
+    proxy_set_header Serial $ssl_client_serial;
+    proxy_set_header DName $ssl_client_s_dn;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}

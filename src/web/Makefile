@@ -44,7 +44,7 @@ $(DST_DIR)/production.ini.template: ../../puppetmaster/modules/unified/files/pro
 	    -e 's`use = egg:aerofs-web`use = call:web:main`' \
 	    -e 's`virtualenv = /opt/web/pythonenv``' \
 	    -e 's`localhost:5434`config.service:5434`' \
-	    -e 's`localhost:8700`bifrost.service:8700`' \
+	    -e 's`localhost:8700`sparta.service:8700`' \
 	    -e 's`localhost:8080/sp`sp.service:8080`' \
 	    -e 's`localhost:8083`havre.service:8083`' \
 	    $< > $@

@@ -7,16 +7,15 @@ package com.aerofs.sp.sparta;
 import com.aerofs.lib.LibParam;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.googlecode.flyway.core.Flyway;
+import com.aerofs.servlets.lib.db.sql.IDataSourceProvider;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
+import org.flywaydb.core.Flyway;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-
-public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<Connection>
+public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<Connection>, IDataSourceProvider
 {
     final DataSource _ds = migrated(dataSource());
 
@@ -28,6 +27,11 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         } catch (SQLException e) {
             throw new ExDbInternal(e);
         }
+    }
+
+    public DataSource getDataSource()
+    {
+        return _ds;
     }
 
     private static DataSource dataSource()
@@ -60,7 +64,7 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         // Perform database migration (with implicit initialization)
         Flyway flyway = new Flyway();
         flyway.setDataSource(ds);
-        flyway.setInitOnMigrate(true);
+        flyway.setBaselineOnMigrate(true);
         flyway.setSchemas("aerofs_sp");
         flyway.migrate();
         return ds;

@@ -14,6 +14,7 @@ import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
 import com.aerofs.oauth.TokenVerifier;
@@ -128,14 +129,26 @@ public class Sparta extends Service
 
         String secret = AeroService.loadDeploymentSecret();
 
+        SpartaSQLConnectionProvider sqlConnProvider = new SpartaSQLConnectionProvider();
+
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
-                databaseModule(new SpartaSQLConnectionProvider()),
+                databaseModule(sqlConnProvider),
                 clientsModule(cacert, secret),
                 spartaModule(timer, clientFactory));
 
 
         // NB: we expect nginx or similar to provide ssl termination...
         new Sparta(inj, secret)
+                .start();
+
+        // And we embed a Bifrost out of whole cloth, too, because why not.
+        Injector bifrostInj = Guice.createInjector(Stage.PRODUCTION,
+                Bifrost.databaseModule(sqlConnProvider),
+                Bifrost.bifrostModule(),
+                Bifrost.spModule()
+                );
+
+        new Bifrost(bifrostInj, secret)
                 .start();
     }
 

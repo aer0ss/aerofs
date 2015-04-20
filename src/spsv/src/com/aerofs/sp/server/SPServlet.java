@@ -62,7 +62,7 @@ import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.googlecode.flyway.core.Flyway;
+import org.flywaydb.core.Flyway;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
@@ -305,7 +305,7 @@ public class SPServlet extends AeroServlet
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);
-        flyway.setInitOnMigrate(true);
+        flyway.setBaselineOnMigrate(true);
         flyway.setSchemas("aerofs_sp");
         flyway.migrate();
     }

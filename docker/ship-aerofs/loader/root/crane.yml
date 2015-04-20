@@ -79,7 +79,6 @@ containers:
         - sp:sp.service
         - havre:havre.service
         - sparta:sparta.service
-        - bifrost:bifrost.service
         - auditor:auditor.service
         - openid:openid.service
         - polaris:polaris.service
@@ -102,7 +101,7 @@ containers:
         - verification:verification.service
         - logcollection:logcollection.service
         - repackaging:repackaging.service
-        - bifrost:bifrost.service
+        - sparta:sparta.service
         - status:status.service
         - ntp:ntp.service
 # so that bunker can write to the autocomplete user table
@@ -152,24 +151,12 @@ containers:
       volumes-from:
         - data
       link:
-        - bifrost:bifrost.service
+        - sparta:sparta.service
         - config:config.service
         - sp:sp.service
         - havre:havre.service
         - auditor:auditor.service
         - verkehr:verkehr.service
-
-  bifrost:
-    image: aerofs/bifrost
-    run:
-      detach: true
-      # For /data/deployment-secret
-      volumes-from:
-        - data
-      link:
-        - config:config.service
-        - mysql:mysql.service
-        - sp:sp.service
 
   zephyr:
     image: aerofs/zephyr
@@ -206,7 +193,7 @@ containers:
         - data
       link:
         - ca-server:ca.service
-        - bifrost:bifrost.service
+        - sparta:sparta.service
 
   polaris:
     image: aerofs/polaris
@@ -232,8 +219,10 @@ containers:
         - config:config.service
         - mysql:mysql.service
         - redis:redis.service
-        - bifrost:bifrost.service
         - verkehr:verkehr.service
+        - postfix:postfix.service
+        # Still need to check session nonces, which currently only SP knows how to do
+        - sp:sp.service
 
   auditor:
     image: aerofs/auditor
@@ -270,8 +259,6 @@ containers:
         - verkehr:verkehr.service
         - auditor:auditor.service
         - config:config.service
-        # Implicit dependency through a hack. See Bifrost's run.sh. TODO (WW) remove this dependency
-        # - bifrost:bifrost.service
 
   verification:
     image: aerofs/verification
@@ -329,7 +316,6 @@ containers:
       volumes-from:
         - data
       link:
-        - bifrost:bifrost.service
         - loader:loader.service
         - ca-server:ca.service
         - charlie:charlie.service

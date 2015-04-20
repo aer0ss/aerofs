@@ -3,7 +3,8 @@ DST_DIR = buildroot/opt/sparta
 
 FIXES = $(abspath \
 	src/com/aerofs/sp/sparta/Sparta.java \
-	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java)
+	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
+	../base/src/main/java/com/aerofs/base/BaseParam.java)
 
 image: .fix-source .gradle .unfix-source $(DST_DIR)/logback.xml $(DST_DIR)/sparta.properties
 	docker build -t $(IMAGE_NAME) .
@@ -23,7 +24,6 @@ $(DST_DIR)/%: resources/%
 
 $(DST_DIR)/sparta.properties: resources/sparta.properties
 	sed -e 's|mysql://localhost/aerofs_sp|mysql://mysql.service/aerofs_sp|' \
-		-e 's|http://localhost:8700/tokeninfo|http://bifrost.service:8700/tokeninfo|' \
 		-e 's/127.0.0.1/0.0.0.0/' $< > $@
 
 .PHONY: image .gradle .fix-source .unfix-source
