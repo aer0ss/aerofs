@@ -8,10 +8,9 @@ config.loader.base_ca_certificate=-----BEGIN CERTIFICATE-----\nMIID5TCCAs2gAwIBA
 base.www.url=https://www.aerofs.com
 base.sp.url=https://sp.aerofs.com/sp/
 base.verkehr.host=verkehr.aerofs.com
-base.verkehr.port.publish=9293
-base.verkehr.port.admin=25234
+base.verkehr.port.rest=25234
 # private deployments use 29438
-base.verkehr.port.subscribe=443
+base.verkehr.port.pb=443
 base.xmpp.address=www.aerofs.com:5222
 base.zephyr.address=relay.aerofs.com:443
 
