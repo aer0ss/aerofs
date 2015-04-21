@@ -2,37 +2,26 @@ package com.aerofs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.config.PropertiesHelper;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.IProgram;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.lib.ProgramInformation;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.configuration.ClientConfigurationLoader;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.ConfigurationException;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import com.aerofs.lib.configuration.HttpsDownloader;
 import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
-import com.google.common.io.Files;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
+
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
 
 public class Main
 {
@@ -144,40 +133,47 @@ public class Main
             l.warn("The property java.library.path could not be set to {} - {}",appRoot, Util.e(e));
         }
 
-        // First things first, initialize the configuration subsystem.
         try {
-            // initializes configuration
-            initializeConfigurationSystem(appRoot, rtRoot);
-        } catch (Exception e) {
-            // WARNING: the following logic is fragile, the root problem is that
-            // initializeConfigurationSystem() needs to be reworked and updates its signature to
-            // explicitly throw IncompatibleModeException instead.
-            if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
-                String msg;
-                if (e instanceof ConfigurationException
-                        && e.getCause() instanceof IncompatibleModeException) {
-                    msg = "The application is configured to the wrong mode. Please reinstall " +
-                            L.product() + ".";
-                } else if (e instanceof IOException) {
-                    msg = L.product() + " failed to save the configuration to a file. " +
-                            "Please make sure the disk is not full and " + L.product() + " has " +
-                            "permission to write to " + appRoot;
-                } else {
-                    msg = "Unable to launch: configuration error.\n\nPlease verify that your " +
-                          L.brand() + " Appliance is reachable on the required ports (see " +
-                          "http://ae.ro/1kH9UgV for details).\n\nContact your systems administrator " +
-                          "if the problem persists.";
-                }
+            ClientConfigurationLoader loader = new ClientConfigurationLoader(appRoot, rtRoot,
+                    new PropertiesHelper());
+            Properties properties = loader.loadConfiguration();
+            ConfigurationProperties.setProperties(properties);
+        } catch (SiteConfigException e) {
+            // site config should be properly provisioned by the installation, so any error in
+            // loading site config is likely caused by bad installation.
+            InitErrors.setErrorMessage(
+                    L.product() + " encountered an error while loading the configuration. The " +
+                            L.product() + " installation is likely damaged.",
+                    "Please download a new installer, reinstall " + L.product() + ", and try " +
+                            "again.");
+        } catch (HttpConfigException e) {
+            // failing to load http config means that we've failed to load from both the remote
+            // _and_ local cache.
+            InitErrors.setErrorMessage(
+                    L.product() + " encountered an error while loading the configuration from " +
+                            "the " + L.brand() + " Appliance.",
+                    "Please make sure your computer is connected to the network and " +
+                            L.product() + " can make network connections to the " +
+                            L.brand() + " Appliance on the " +
+                            "<a href=\"http://ae.ro/1kH9UgV\">required ports</a>.\n\n" +
+                            "Please contact your system administrator if the problem persists.");
+        } catch (RenderConfigException e) {
+            // failing to render the configuration means that the config server and clients are
+            // working with bad values. In other words, the whole system is misconfigured.
+            //
+            // This situation is dire and the user should just reach out to AeroFS Support.
+            InitErrors.setErrorMessage(
+                    L.product() + " encountered an error while loading the configuration. The " +
+                            L.brand() + " Appliance is likely misconfigured.",
+                    "Please contact your system administrator and reach out to " +
+                            L.brand() + " Support.");
+        }
 
-                // This is a workaround for the following problem:
-                // We have an error message for the user but we are in Main, which lacks the access
-                // to resources (SWT) to display the error message. Hence we pass the error
-                // message forward as an application argument.
-                // FIXME(AT): refactor Main to only start the programs and have individual program
-                // run initialization (through inheritance maybe).
-                appArgs.add("-E" + msg);
-            } else {
-                System.err.println("failed in main(): " + Util.e(e));
+        if (InitErrors.hasErrorMessages()) {
+            // GUIProgram will handle main errors itself
+            if (!prog.equals(LibParam.GUI_NAME)) {
+                System.err.println(InitErrors.getTitle() + "\n\n" +
+                        InitErrors.getDescription());
                 ExitCode.CONFIGURATION_INIT.exit();
             }
         }
@@ -262,13 +258,5 @@ public class Main
             rtRootFile.setWritable(true, true);     // chmod o+w
             rtRootFile.setExecutable(true, true);   // chmod o+x
         }
-    }
-
-    private static void initializeConfigurationSystem(String appRoot, String rtroot)
-            throws ConfigurationException
-    {
-        ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader(), appRoot, rtroot);
-        ConfigurationProperties.setProperties(loader.loadConfiguration());
-        l.debug("Client configuration initialized");
     }
 }

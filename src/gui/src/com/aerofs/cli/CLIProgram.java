@@ -22,9 +22,6 @@ public class CLIProgram implements IProgram
     {
         Util.initDriver("cc"); // "cc" is the log file that aerofsd will write to
 
-        // process application arguments
-        for (String arg : args) processArgument(arg);
-
         // TODO (AT): really need to tidy up our launch sequence
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only
         // difference is how the exception is handled.
@@ -44,17 +41,5 @@ public class CLIProgram implements IProgram
         UI.set(cli);
         cli.scheduleLaunch(rtRoot);
         cli.enterMainLoop_();
-    }
-
-    /**
-     * Processing a single application argument. Supported arguments are:
-     *   -E[message] show error message and then immediately exit
-     */
-    private void processArgument(String arg)
-    {
-        if (arg.startsWith("-E")) {
-            System.err.println(arg.substring("-E".length()));
-            ExitCode.CONFIGURATION_INIT.exit();
-        }
     }
 }
