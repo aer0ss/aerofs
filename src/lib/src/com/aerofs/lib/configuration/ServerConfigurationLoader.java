@@ -8,27 +8,21 @@ import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.config.PropertiesHelper;
 import com.aerofs.base.ex.ExBadArgs;
-import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkState;
 
 public final class ServerConfigurationLoader
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerConfigurationLoader.class);
 
     private static final String SERVER_CONFIG_URL = ConfigurationUtils.CONFIGURATION_URL + "/server";
-
-    // used to do sanity check on remote http config
-    private static final String PROPERTY_BASE_HOST = "base.host.unified";
 
     public static void initialize(String serviceName) throws Exception
     {
@@ -73,22 +67,8 @@ public final class ServerConfigurationLoader
             HttpURLConnection conn = (HttpURLConnection)(new URL(SERVER_CONFIG_URL).openConnection());
             String authHeaderValue = AeroService.getHeaderValue(serviceName, AeroService.loadDeploymentSecret());
             conn.setRequestProperty("Authorization", authHeaderValue);
-
-            try {
-                conn.connect();
-
-                if (!Range.closedOpen(200, 300).contains(conn.getResponseCode())) {
-                    throw new IOException("Failed to load configuration from the config " +
-                            "server: " + conn.getResponseCode());
-                }
-
-                try (InputStream is = conn.getInputStream()) {
-                    httpProperties.load(is);
-                }
-
-                checkState(httpProperties.contains(PROPERTY_BASE_HOST));
-            } finally {
-                conn.disconnect();
+            try (InputStream is = conn.getInputStream()) {
+                httpProperties.load(is);
             }
         } catch (IOException e) {
             throw new ConfigurationUtils.ExHttpConfig("Couldn't load configuration from config server " + SERVER_CONFIG_URL + ".");

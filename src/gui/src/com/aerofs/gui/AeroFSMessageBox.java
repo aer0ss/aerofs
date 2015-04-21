@@ -1,8 +1,6 @@
 package com.aerofs.gui;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -127,12 +125,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         gd__text.widthHint = 360;
         _lnkMessage.setLayoutData(gd__text);
         _lnkMessage.setText(_msg);
-        _lnkMessage.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                GUIUtil.launch(e.text);
-            }
-        });
+        checkForLinks(_lnkMessage);
 
         if (!_allowClose) {
             getShell().addListener(SWT.Traverse, new Listener() {
@@ -171,8 +164,19 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         }
     }
 
-    // AeroFSMessageBox will attempt to detect hyperlinks in the message and automatically attach
-    // selection listeners to launch the url.
+    /**
+     * AeroFSMessageBox detects a pattern in the message and replaces it with a hyperlink.
+     *
+     * The exact pattern is:
+     *      <a href=\"url\">label</a>
+     *
+     * The pattern _is_ white space sensitive and strict. It will allow the callers to embed one
+     * hyperlink in the message and _all_ clicks on _any_ hyperlink direct end user's browser to the
+     * url indicated in the first hyperlink.
+     *
+     * FIXME (AT): this should be improved so that markup and message boxes are bound in a more
+     * cohesive way.
+     */
     protected void setMessage(String message)
     {
         _lnkMessage.setText(message);
@@ -189,5 +193,23 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public @Nullable Button getCancelBtn()
     {
         return _cancelBtn;
+    }
+
+    /**
+     * Checks for the presence of hyperlinks and add selection listener to open the first
+     * hyperlink if any hyperlink is clicked.
+     */
+    private void checkForLinks(Link link)
+    {
+        String prefix = "<a href=\"";
+        String text = link.getText();
+
+        int index = text.indexOf(prefix);
+        if (index >= 0) {
+            index += prefix.length();
+            int endIndex = text.indexOf("\"", index + 1);
+            String url = text.substring(index, endIndex);
+            link.addSelectionListener(createUrlLaunchListener(url));
+        }
     }
 }

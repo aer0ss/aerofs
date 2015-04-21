@@ -6,24 +6,15 @@ import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.InitErrors;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.swtdesigner.SWTResourceManager;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 
 public class GUIProgram implements IProgram
@@ -52,25 +43,20 @@ public class GUIProgram implements IProgram
                     System.loadLibrary("msvcp100");
                 } catch (UnsatisfiedLinkError e1) {
                     linkError = new UnsatisfiedLinkError(WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE);
-                    showInitErrors("", WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
+                    showError(WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
                 }
             }
             throw linkError;
         }
-
         // These are the launch time optional JVM args that can be passed on to the daemon.
         LaunchArgs launchArgs = new LaunchArgs();
-
-        // process JVM arguments
+        // process application arguments
         for (String arg : args) {
+            processArgument(arg);
+            // JVM arguments.
             if (arg.startsWith("-X")) {
                launchArgs.addArg(arg);
             }
-        }
-
-        if (InitErrors.hasErrorMessages()) {
-            showInitErrors(InitErrors.getTitle(), InitErrors.getDescription());
-            ExitCode.CONFIGURATION_INIT.exit();
         }
 
         // TODO (AT): really need to tidy up our launch sequence
@@ -79,7 +65,9 @@ public class GUIProgram implements IProgram
         try {
             Defects.init(prog, rtRoot);
         } catch (Exception e) {
-            showInitErrors("Failed to initialize the defects system.", "Cause: " + e.toString());
+            showError("Failed to initialize the defects system.\n\n" +
+                    "Cause: " + e.toString());
+            l.error("Failed to initialized the defects system.", e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
 
@@ -92,72 +80,22 @@ public class GUIProgram implements IProgram
         gui.enterMainLoop_();
     }
 
-    // N.B. this method is used to show errors that occur in early stages, so we should not use
-    // any configuration properties nor any other AeroFS utilities in this method.
-    private void showInitErrors(String title, String description)
+    /**
+     * Processing a single application argument. Supported arguments are:
+     *   -E[message] show error message and then immediately exit
+     */
+    private void processArgument(String arg)
     {
-        Display display = Display.getDefault();
-        Shell shell = new Shell(display);
-
-        CLabel icon = new CLabel(shell, SWT.NONE);
-        icon.setImage(display.getSystemImage(SWT.ICON_ERROR));
-
-        Label label = new Label(shell, SWT.WRAP);
-        Font font = label.getFont();
-        FontData fd = font.getFontData()[0];
-        label.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 11 / 10, SWT.BOLD));
-        label.setText(title);
-
-        Link link = new Link(shell, SWT.NONE);
-        link.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 11 / 10, SWT.NONE));
-        link.setText(description);
-        link.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                GUIUtil.launch(e.text);
-            }
-        });
-
-        Button button = new Button(shell, SWT.NONE);
-        button.setText(IDialogConstants.OK_LABEL);
-        button.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                shell.close();
-            }
-        });
-
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 16;
-        layout.marginHeight = 16;
-        layout.horizontalSpacing = 16;
-        layout.verticalSpacing = 16;
-
-        icon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, false, true, 1, 3));
-
-        GridData labelData = new GridData(SWT.LEFT, SWT.TOP, true, false);
-        labelData.widthHint = 300;
-        label.setLayoutData(labelData);
-
-        GridData linkData = new GridData(SWT.LEFT, SWT.TOP, true, false);
-        linkData.widthHint = 300;
-        link.setLayoutData(linkData);
-
-        GridData buttonData = new GridData(SWT.RIGHT, SWT.BOTTOM, true, false);
-        buttonData.widthHint = 80;
-        button.setLayoutData(buttonData);
-
-        shell.setDefaultButton(button);
-        shell.setLayout(layout);
-        shell.pack();
-        shell.setVisible(true);
-
-        GUIUtil.centerShell(shell);
-
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
-                display.sleep();
-            }
+        if (arg.startsWith("-E")) {
+            showError(arg.substring("-E".length()));
+            ExitCode.CONFIGURATION_INIT.exit();
         }
+    }
+
+    private void showError(String message)
+    {
+        MessageBox box = new MessageBox(new Shell(), SWT.OK | SWT.ICON_ERROR);
+        box.setMessage(message);
+        box.open();
     }
 }

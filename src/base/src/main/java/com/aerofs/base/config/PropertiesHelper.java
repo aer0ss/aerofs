@@ -42,10 +42,7 @@ public class PropertiesHelper
             for (Object sharedKey : intersection) {
                 String key = (String) sharedKey;
                 String val = p2.getProperty(key);
-                // having duplicated properties is alarming.
-                l.warn("Key {} set multiple times in configuration file.", key);
-                // do not log the actual value (sensitive) unless we are in debug
-                l.debug("Setting {} to {}", key, val);
+                l.debug("Key {} set multiple times in configuration files. Setting it to {}", key, val);
             }
         }
         Properties disjointUnion = new Properties();
