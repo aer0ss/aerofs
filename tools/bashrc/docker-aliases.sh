@@ -8,7 +8,7 @@ VM=docker-dev
 
 alias dk-crane="${DEV_DIR}/dk-crane.sh"
 alias dk-create="${DEV_DIR}/../build-images.sh --unsigned && ${DEV_DIR}/dk-reconfig.sh"
-alias dk-createvm="docker-machine create -d virtualbox --virtualbox-disk-size 50000 --virtualbox-memory 3072 ${VM}"
+alias dk-createvm="docker-machine create -d virtualbox --virtualbox-disk-size 50000 --virtualbox-memory 3072 ${VM} && dk-env"
 alias dk-destroy="${DEV_DIR}/dk-destroy.sh"
 alias dk-destroyvm="docker-machine rm ${VM}"
 alias dk-env='$(docker-machine env ${VM})'
@@ -21,5 +21,5 @@ alias dk-reload="${DEV_DIR}/dk-reload.sh"
 alias dk-restart="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance && ${DEV_DIR}/dk-crane.sh run -dall"
 alias dk-start="${DEV_DIR}/dk-crane.sh run -dall"
 
-# Now, attempt to set up DOCKER_HOST and friends:
-dk-env
+# Now, attempt to set up DOCKER_HOST and friends if docker-dev is running
+[[ "$(docker-machine ls | grep ${VM} | grep Running)" ]] && dk-env

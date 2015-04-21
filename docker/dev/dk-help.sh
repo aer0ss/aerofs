@@ -13,7 +13,7 @@ Prerequisites:
     - run upgrade-tools.sh and restart bash before using dk-* commands.
 
 Commands:
-    dk-createvm  set up a VM for doing docker-related things
+    dk-createvm  set up a VM for doing docker-related things and then run dk-env
     dk-create    build, launch, and configure appliance containers. Previous appliance containers will be destroyed.
     dk-env       export DOCKER_HOST, DOCKER_CERT_PATH, and DOCKER_TLS_VERIFY into the environment
     dk-reconfig  identical to dk-create but it skips image building
@@ -32,7 +32,6 @@ Follow these steps to start developing and testing an AeroFS service 'foo' from 
 
     $ docker/dev/upgrade-tools.sh # install required tools
     $ dk-createvm                 # create a docker-machine VM
-    $ dk-env                      # configure this shell to use the new VM's docker instance
     $ dk-create                   # build and launch the entire appliance. it may take a while.
     $ make -C src/foo             # rebuild foo's Docker image after some code change
     $ dk-reload foo               # reload the container 'foo' using the newly built image (see docker/crane.yml for container names)
