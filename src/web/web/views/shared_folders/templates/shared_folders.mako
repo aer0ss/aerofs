@@ -117,6 +117,7 @@
         rejoinFolderUrl = "${request.route_path('json.accept_folder_invitation')}";
         paginationLimit = parseInt("${pagination_limit}", 10);
         getUsersAndGroupsURL = "${request.route_path('json.list_org_users_and_groups')}";
+        getGroupsURL = "${request.route_path('json.list_org_groups')}";
         getGroupMembersURL = "${request.route_path('json.list_group_members')}";
     </script>
     <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
