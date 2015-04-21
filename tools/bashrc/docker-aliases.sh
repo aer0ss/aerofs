@@ -22,12 +22,17 @@ alias dk-restart="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh ki
 alias dk-start="${DEV_DIR}/dk-crane.sh run -dall"
 
 # Autocomplete
-if [ -n "$(which brew)" ] && [ -f $(brew --prefix)/etc/bash_completion ]; then
+if [ $(uname -s) = "Darwin" ] && [ -n "$(which brew)" ] && [ -f $(brew --prefix)/etc/bash_completion ]; then
  . $(brew --prefix)/etc/bash_completion
 fi
 
-bind "set completion-ignore-case on"
-bind "set show-all-if-ambiguous on"
+
+command -v bind &>/dev/null
+if [ $? -eq 0 ] ; then
+ # The bind command is supported on bash only
+ bind "set completion-ignore-case on"
+ bind "set show-all-if-ambiguous on"
+fi
 
 # Now, attempt to set up DOCKER_HOST and friends if docker-dev is running
-[[ "$(docker-machine ls | grep ${VM} | grep Running)" ]] && dk-env
+[[ -n "$(docker-machine ls | grep ${VM} | grep Running)" ]] && dk-env
