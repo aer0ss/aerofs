@@ -29,7 +29,6 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.update.Updater;
 import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -703,10 +702,6 @@ public class GUI implements IUI
     @Override
     public void preSetupUpdateCheck_() throws Exception
     {
-        // N.B. if the updater is disabled, the pre-setup update check is skipped for CLI as well
-        //   the logic here to duplicated due to its dependency on updater.
-        if (UIGlobals.updater().getUpdateStatus() != Updater.Status.DISABLED) {
-            new DlgPreSetupUpdateCheck(GUI.get().sh()).open();
-        }
+        new DlgPreSetupUpdateCheck(GUI.get().sh()).open();
     }
 }

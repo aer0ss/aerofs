@@ -154,14 +154,8 @@ public class DlgPreSetupUpdateCheck extends Shell
         case APPLY:
             UIGlobals.updater().execUpdateFromMenu();
             break;
-        case NONE:
-            break;
-        case DISABLED:
-            l.warn("ignored: update disabled; received unexpected update status: {}.", us);
-            break;
         default:
-            l.warn("ignored: received unrecognized update status: {}.", us);
-            break;
+            assert us == Status.NONE;
         }
     }
 }

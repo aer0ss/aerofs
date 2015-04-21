@@ -43,9 +43,6 @@ public class PropertiesHelper
                 String key = (String) sharedKey;
                 String val = p2.getProperty(key);
                 // having duplicated properties is alarming.
-                //
-                // Note that this is expected for clients that have updater disabled.
-                //
                 l.warn("Key {} set multiple times in configuration file.", key);
                 // do not log the actual value (sensitive) unless we are in debug
                 l.debug("Setting {} to {}", key, val);

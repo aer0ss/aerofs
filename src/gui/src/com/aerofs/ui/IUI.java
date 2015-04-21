@@ -7,7 +7,7 @@ import com.aerofs.lib.ex.ExNoConsole;
  */
 public interface IUI {
 
-    enum MessageType {
+    public static enum MessageType {
         INFO,
         WARN,
         ERROR,
@@ -16,7 +16,7 @@ public interface IUI {
 
     void show(MessageType mt, String msg);
 
-    interface IWaiter
+    static interface IWaiter
     {
         void done();
     }
