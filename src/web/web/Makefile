@@ -1,6 +1,5 @@
 SRC=static-src
 DEST=static
-MARKETING_DEST=../../../web
 DOCS_DEST=../../../docs/user-docs/api
 LESS=less
 JS=js
@@ -22,10 +21,7 @@ FILES_IN_JS = $(wildcard $(SRC)/$(JS)/*.js)
 FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_JS)))
 
 # A couple resources go in external folders, with special file paths.
-EXTERNAL_ASSETS_OUT = $(MARKETING_DEST)/styles/css/compiled/style.css \
-	$(MARKETING_DEST)/styles/css/compiled/syntax.min.css \
-	$(MARKETING_DEST)/js/recruiting.js \
-	$(DOCS_DEST)/css/compiled/aerofs.min.css \
+EXTERNAL_ASSETS_OUT = $(DOCS_DEST)/css/compiled/aerofs.min.css \
 	$(DOCS_DEST)/css/compiled/api.min.css
 
 # Compile the final targets
@@ -45,12 +41,10 @@ clean-watch:
 clean-dirs:
 	rm -rf $(DEST)/css/compiled/
 	rm -rf $(DEST)/js/compiled/
-	rm -rf $(MARKETING_DEST)/styles/css/compiled/
 	rm -rf $(DOCS_DEST)/css/compiled/
 	rm -f $(EXTERNAL_ASSETS_OUT)
 	mkdir $(DEST)/css/compiled/
 	mkdir $(DEST)/js/compiled/
-	mkdir $(MARKETING_DEST)/styles/css/compiled/
 	mkdir $(DOCS_DEST)/css/compiled/
 
 # Watch the filesystem and recompile on file modification
@@ -60,16 +54,6 @@ watch:
 	watchman -- trigger $(shell pwd) remakeless '*.less' -- python $(shell pwd)/make.py
 
 # Special rules for things which get placed outside of the web project
-# Marketing site files
-$(MARKETING_DEST)/js/recruiting.js: $(DEST)/js/compiled/recruiting.js
-	mkdir -p $(@D)
-	cp $? $@
-$(MARKETING_DEST)/styles/css/compiled/style.css: $(DEST)/css/compiled/aerofs-marketing.css
-	mkdir -p $(@D)
-	cp $? $@
-$(MARKETING_DEST)/styles/css/compiled/syntax.min.css: $(DEST)/css/compiled/syntax.min.css
-	mkdir -p $(@D)
-	cp $? $@
 # API docs site files
 $(DOCS_DEST)/css/compiled/aerofs.min.css: $(DEST)/css/compiled/aerofs.min.css
 	mkdir -p $(@D)
