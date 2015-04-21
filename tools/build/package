@@ -10,7 +10,8 @@ set -eu
 function DieUsage {
     echo "usage: $0 <build_mode> <build_product> <version> <sign_mode>" >&2
     echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
-    echo "       [--build-windows-exe] [--build-osx-packages] [--build-all]" >&2
+    echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
+    echo "       [--build-all]" >&2
     echo " " >&2
     echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
@@ -20,6 +21,7 @@ function DieUsage {
     echo "[--build-linux-update-tgzs]: build the Linux updater .tgz" >&2
     echo "[--build-linux-deb]: build the Linux installer .deb " >&2
     echo "[--build-windows-exe]: build the Windows installer .exe " >&2
+    echo "[--build-windows-msi]: build the Windows MSI installer " >&2
     echo "[--build-osx-packages]: build the OSX installer/updater packages " >&2
     echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
@@ -55,7 +57,7 @@ RELEASE_FLAGS=""
 BUILD_FLAGS=""
 while [ "${1:-}" != "" ]; do
     case "$1" in
-        "--build-linux-tgz" | "--build-linux-update-tgzs" | "--build-linux-deb" | "--build-windows-exe" | "--build-osx-packages")
+        "--build-linux-tgz" | "--build-linux-update-tgzs" | "--build-linux-deb" | "--build-windows-exe" | "--build-windows-msi" | "--build-osx-packages")
             BUILD_FLAGS="${BUILD_FLAGS} $1"
             ;;
         "--build-all")

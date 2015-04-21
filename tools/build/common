@@ -42,7 +42,8 @@ fi
 readonly GIT_ROOT="$(cd "$GIT_ROOT" && pwd)"
 readonly TOOLS_ROOT="${GIT_ROOT}/tools"
 readonly BUILD_SCRIPT_DIR="${TOOLS_ROOT}/build"
-readonly LOCAL_NSIS_DIR="${TOOLS_ROOT}/win_installer"
+readonly LOCAL_WINDOWS_DIR="${TOOLS_ROOT}/win_installer"
+readonly LOCAL_MSI_DIR="${TOOLS_ROOT}/win_installer/msi"
 
 # Local resources directories
 readonly BASE_RESOURCES_DIR="${GIT_ROOT}/resource"

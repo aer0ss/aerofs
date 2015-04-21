@@ -13,7 +13,8 @@ function DieUsage {
     set +x
     echo "usage: $0 <build_mode> <build_product> <release_version> <sign_mode>" >&2
     echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
-    echo "       [--build-windows-exe] [--build-osx-packages] [--build-all]" >&2
+    echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
+    echo "       [--build-all]" >&2
     echo " " >&2
     echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
@@ -23,6 +24,7 @@ function DieUsage {
     echo "[--build-linux-update-tgzs]: build the Linux updater .tgzs" >&2
     echo "[--build-linux-deb]: build the Linux installer .deb " >&2
     echo "[--build-windows-exe]: build the Windows installer .exe " >&2
+    echo "[--build-windows-msi]: build the Windows installer .msi " >&2
     echo "[--build-osx-packages]: build the OSX installer/updater packages" >&2
     echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
@@ -60,6 +62,7 @@ BUILD_LINUX_INSTALL_TGZ=false
 BUILD_LINUX_UPDATE_TGZS=false
 BUILD_LINUX_INSTALL_DEB=false
 BUILD_WINDOWS_EXE=false
+BUILD_WINDOWS_MSI=false
 BUILD_OSX_PACKAGES=false
 while [ "${1:-}" != "" ]; do
     case "$1" in
@@ -67,12 +70,14 @@ while [ "${1:-}" != "" ]; do
         "--build-linux-update-tgzs") BUILD_LINUX_UPDATE_TGZS=true ;;
         "--build-linux-deb") BUILD_LINUX_INSTALL_DEB=true ;;
         "--build-windows-exe") BUILD_WINDOWS_EXE=true ;;
+        "--build-windows-msi") BUILD_WINDOWS_MSI=true ;;
         "--build-osx-packages") BUILD_OSX_PACKAGES=true ;;
         "--build-all")
             BUILD_LINUX_INSTALL_TGZ=true
             BUILD_LINUX_UPDATE_TGZS=true
             BUILD_LINUX_INSTALL_DEB=true
             BUILD_WINDOWS_EXE=true
+            BUILD_WINDOWS_MSI=true
             BUILD_OSX_PACKAGES=true
             ;;
         *)
@@ -157,8 +162,8 @@ function make_linux_update_tgz() {
 function make_windows_installers() {
     echo ">> make windows installer"
     mkdir -p ${PACKAGE_DIR}
-    local OUT_FILE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
-    local OUT_FILE_VERSIONFREE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
+    local OUT_EXE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
+    local OUT_MSI="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.msi"
     local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
 
     # This function is used to sign exe files and dll's
@@ -202,46 +207,63 @@ function make_windows_installers() {
     }
 
     # Create a temporary directory to work in
-    local NSIS_BUILD_DIR_NAME="windows-nsis"
-    local NSIS_TEMP_DIR="$PACKAGE_BUILD_DIR/$NSIS_BUILD_DIR_NAME"
-    rm -rf $NSIS_TEMP_DIR
-    mkdir -p $NSIS_TEMP_DIR
+    local WINDOWS_BUILD_DIR_NAME="windows-expanded"
+    local WINDOWS_TEMP_DIR="$PACKAGE_BUILD_DIR/$WINDOWS_BUILD_DIR_NAME"
+    rm -rf $WINDOWS_TEMP_DIR
+    mkdir -p $WINDOWS_TEMP_DIR
 
     # Create a subfolder in that directory with the version number
     # Note: we prepend v_ to the version number to make it easy for the NSIS installer
     # to enumerate and delete all previous versions directories
-    NSIS_TEMP_DIR_WITH_VERSION="${NSIS_TEMP_DIR}/v_${RELEASE_VERSION}"
-    mkdir "${NSIS_TEMP_DIR_WITH_VERSION}"
+    WINDOWS_TEMP_DIR_WITH_VERSION="${WINDOWS_TEMP_DIR}/v_${RELEASE_VERSION}"
+    mkdir "${WINDOWS_TEMP_DIR_WITH_VERSION}"
 
     # Copy the aerofs release files in that directory
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${NSIS_TEMP_DIR_WITH_VERSION}/"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs.win"/* "${NSIS_TEMP_DIR_WITH_VERSION}/"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${WINDOWS_TEMP_DIR_WITH_VERSION}/"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs.win"/* "${WINDOWS_TEMP_DIR_WITH_VERSION}/"
 
     # Move the things that need to stay at the top-level folder
     # Also rename aerofs.exe to the appropriate name
-    mv "${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "${NSIS_TEMP_DIR}/$EXECUTABLE"
-    mv "${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "${NSIS_TEMP_DIR}/"
-    echo -n "${RELEASE_VERSION}" > "${NSIS_TEMP_DIR}/version"
-    mkdir "${NSIS_TEMP_DIR}/icons"
-    mv "${NSIS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "${NSIS_TEMP_DIR}/icons"
+    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "${WINDOWS_TEMP_DIR}/$EXECUTABLE"
+    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "${WINDOWS_TEMP_DIR}/"
+    echo -n "${RELEASE_VERSION}" > "${WINDOWS_TEMP_DIR}/version"
+    mkdir "${WINDOWS_TEMP_DIR}/icons"
+    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "${WINDOWS_TEMP_DIR}/icons"
 
-    chmod -R a+rx "${NSIS_TEMP_DIR}"
+    chmod -R a+rx "${WINDOWS_TEMP_DIR}"
 
     if $SIGNED ; then
-        sign_exe "${NSIS_TEMP_DIR}/$EXECUTABLE"
-        sign_exe "${NSIS_TEMP_DIR}/aerofsd.exe"
+        sign_exe "${WINDOWS_TEMP_DIR}/$EXECUTABLE"
+        sign_exe "${WINDOWS_TEMP_DIR}/aerofsd.exe"
     fi
 
-    makensis -V1 -DAEROFS_IN_FOLDER="${NSIS_TEMP_DIR}" \
-            -DAEROFS_OUT_FILE="$OUT_FILE" \
-            -DAEROFS_VERSION="$RELEASE_VERSION" \
-            -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
-            -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
-            -DAEROFS_EXECUTABLE="$EXECUTABLE" \
-            "${LOCAL_NSIS_DIR}/setup.nsi"
+    if [ "${BUILD_WINDOWS_EXE}" == "true" ] ; then
+        makensis -V1 -DAEROFS_IN_FOLDER="${WINDOWS_TEMP_DIR}" \
+                -DAEROFS_OUT_FILE="$OUT_EXE" \
+                -DAEROFS_VERSION="$RELEASE_VERSION" \
+                -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
+                -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+                -DAEROFS_EXECUTABLE="$EXECUTABLE" \
+                "${LOCAL_WINDOWS_DIR}/setup.nsi"
 
-    if $SIGNED ; then
-        sign_exe "$OUT_FILE"
+        if $SIGNED ; then
+            sign_exe "$OUT_EXE"
+        fi
+    fi
+
+    if [ "${BUILD_WINDOWS_MSI}" == "true" ] ; then
+        # If you think the following line looks bizzare and makes no sense then
+        # you are a reasonable person and much sensible than past-Alex.
+        #
+        # tl;dr: it's weird for historical reasons
+        #
+        # See comments in build.py for more info.
+        find "${WINDOWS_TEMP_DIR}" | "${LOCAL_MSI_DIR}/build.py" \
+            --directory "${WINDOWS_TEMP_DIR}" \
+            --base-msi "${LOCAL_MSI_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.msi" \
+            --output-msi "${OUT_MSI}" \
+            --set-version "${RELEASE_VERSION}" \
+            --workspace "${WINDOWS_TEMP_DIR}/workspace" | bash
     fi
 }
 
@@ -366,7 +388,7 @@ compute_product_names
 if [ "$BUILD_LINUX_INSTALL_DEB" == "true" ] ; then make_linux_installer_deb & fi
 if [ "$BUILD_LINUX_INSTALL_TGZ" == "true" ] ; then make_linux_installer_tgz & fi
 if [ "$BUILD_LINUX_UPDATE_TGZS" == "true" ] ; then make_linux_update_tgz i386 & make_linux_update_tgz amd64 & fi
-if [ "$BUILD_WINDOWS_EXE" == "true" ] ; then make_windows_installers & fi
+if [ "$BUILD_WINDOWS_EXE" == "true" ] || [ "$BUILD_WINDOWS_MSI" == "true" ] ; then make_windows_installers & fi
 if [ "$BUILD_OSX_PACKAGES" == "true" ] ; then make_osx_packages & fi
 
 # Check that all the background tasks completed successfully
