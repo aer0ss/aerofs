@@ -6,21 +6,30 @@ import com.aerofs.controller.IViewNotifier.Type;
 import com.aerofs.gui.*;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
+import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUINotificationListener;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.update.Updater.Status;
 import com.aerofs.ui.update.Updater.UpdaterNotification;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
+import java.util.concurrent.Callable;
+
 import static com.aerofs.gui.GUIUtil.*;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.util.concurrent.Futures.addCallback;
+import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 public class DlgAbout extends AeroFSDialog
 {
@@ -56,17 +65,14 @@ public class DlgAbout extends AeroFSDialog
         Composite compLinks = new Composite(compContent, SWT.NONE);
 
         Link linkWebsite = new Link(compLinks, SWT.NONE);
-        // N.B. HACK ALERT(AT): the extra white spaces at the start and end is necessary to make this the widest
-        //   widget possible on the screen when rendered. We use this to control layout and to ensure the total
-        //   width doesn't change when lblUpdateStatus's content changes.
-        linkWebsite.setText("    Visit the " + L.brand() + " <a>web site</a> or view the " + L.brand() +
-                " <a>release notes</a>.    ");
+        linkWebsite.setText("Visit the " + L.brand() + " <a>web site</a> or view the " + L.brand() +
+                " <a>release notes</a>.");
 
         Composite compUpdate = new Composite(compContent, SWT.NONE);
         _btnUpdate = createButton(newPackedButtonContainer(compUpdate), SWT.PUSH);
         Composite compStatus = new Composite(compUpdate, SWT.NONE);
         _compSpinUpdate = new CompSpin(compStatus, SWT.NONE);
-        _lblUpdateStatus = createLabel(compStatus, SWT.NONE);
+        _lblUpdateStatus = createLabel(compStatus, SWT.WRAP);
 
         Composite compCopyright = new Composite(shell, SWT.NONE);
 
@@ -164,6 +170,12 @@ public class DlgAbout extends AeroFSDialog
         _btnUpdate.setSize(_btnUpdate.computeSize(SWT.DEFAULT, SWT.DEFAULT));
     }
 
+    private void setUpdateStatusText(String text) {
+        _lblUpdateStatus.setText(text);
+        getShell().layout(new Control[]{_lblUpdateStatus});
+        getShell().pack();
+    }
+
     private final IUINotificationListener _updateListener = notification -> {
         UpdaterNotification n = (UpdaterNotification)notification;
         setUpdateStatus(n.status, n.progress);
@@ -173,38 +185,29 @@ public class DlgAbout extends AeroFSDialog
     {
         if (getShell().isDisposed()) return;
 
-        String status = "";
-
-        boolean visible;
         switch (us) {
         case NONE:
-            visible = false;
-            status = "";
+            setUpdateStatusText("");
             _compSpinUpdate.stop();
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
-                public void widgetSelected(SelectionEvent e)
-                {
+                public void widgetSelected(SelectionEvent e) {
                     UIGlobals.updater().checkForUpdate(true);
                 }
             }, true, false);
             break;
         case ONGOING:
-            visible = true;
-            String btnStatus = "";
             if (progress > 0) {
-                status = S.LBL_UPDATE_ONGOING + " " + progress + "%";
-                btnStatus = S.BTN_APPLY_UPDATE;
+                setUpdateStatusText(S.LBL_UPDATE_ONGOING + " " + progress + "%");
+                setUpdateButton(S.BTN_APPLY_UPDATE, null, false, false);
             } else {
-                status = S.LBL_UPDATE_CHECKING;
-                btnStatus = S.BTN_CHECK_UPDATE;
+                setUpdateStatusText(S.LBL_UPDATE_CHECKING);
+                setUpdateButton(S.BTN_CHECK_UPDATE, null, false, false);
             }
             _compSpinUpdate.start();
-            setUpdateButton(btnStatus, null, false, false);
             break;
         case LATEST:
-            visible = true;
-            status = S.LBL_UPDATE_LATEST;
+            setUpdateStatusText(S.LBL_UPDATE_LATEST);
             _compSpinUpdate.stop(Images.get(Images.ICON_TICK));
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
@@ -215,8 +218,7 @@ public class DlgAbout extends AeroFSDialog
             }, true, false);
             break;
         case APPLY:
-            visible = true;
-            status = S.LBL_UPDATE_APPLY;
+            setUpdateStatusText(S.LBL_UPDATE_APPLY);
             _compSpinUpdate.stop();
             setUpdateButton(S.BTN_APPLY_UPDATE, new SelectionAdapter() {
                 @Override
@@ -227,8 +229,7 @@ public class DlgAbout extends AeroFSDialog
             }, true, true);
             break;
         case ERROR:
-            visible = true;
-            status = S.LBL_UPDATE_ERROR;
+            setUpdateStatusText(S.LBL_UPDATE_ERROR);
             _compSpinUpdate.error();
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
@@ -238,14 +239,41 @@ public class DlgAbout extends AeroFSDialog
                 }
             }, true, false);
             break;
+        case DISABLED:
+            RowData layoutData = new RowData();
+            layoutData.exclude = true;
+            // N.B. hide _btnUpdate's parent because _btnUpdate is a child of a packed container with negative margin.
+            _btnUpdate.getParent().setLayoutData(layoutData);
+            _btnUpdate.getParent().setVisible(false);
+
+            setUpdateStatus(Status.ONGOING, 0);
+
+            ListeningExecutorService executor = listeningDecorator(newSingleThreadExecutor());
+            // returns true iff the client is up-to-date
+            Callable<Boolean> task = () -> Versions.compare(Cfg.ver(), UIGlobals.updater().getServerVersion())
+                    == Versions.CompareResult.NO_CHANGE;
+            FutureCallback<Boolean> callback = new FutureCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    if (result) {
+                        setUpdateStatus(Status.LATEST, 0);
+                    } else {
+                        setUpdateStatusText(S.LBL_UPDATE_OUT_OF_DATE);
+                        _compSpinUpdate.warning();
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    setUpdateStatus(Status.ERROR, 0);
+                }
+            };
+
+            addCallback(executor.submit(task), callback, new GUIExecutor(getShell()));
+
+            break;
         default:
             assert false;
-            return;
-        }
-
-        if (visible) {
-            _lblUpdateStatus.setText(status);
-            getShell().layout(new Control[] { _lblUpdateStatus });
         }
     }
 }

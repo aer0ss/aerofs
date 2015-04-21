@@ -56,6 +56,7 @@ import java.util.Properties;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 /**
  * Note: methods in this class might be called before Cfg is initialized (i.e. before setup is
@@ -64,13 +65,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Updater
 {
-    public static enum Status
+    public enum Status
     {
         NONE,
         ONGOING,
         APPLY,
         LATEST,
-        ERROR
+        ERROR,
+        DISABLED
     }
 
     public static class UpdaterNotification
@@ -111,6 +113,16 @@ public abstract class Updater
 
     public static Updater getInstance_()
     {
+        if (isBlank(INSTALLER_URL)) {
+            l.info("Update is disabled.");
+
+            // return a disabled updater if either URL is invalid
+            Updater disabled = new DisabledUpdater();
+            // N.B. do not use setUpdateStatus here because notifier is not ready yet.
+            disabled._status = Status.DISABLED;
+            return disabled;
+        }
+
         if (OSUtil.isOSX()) {
             return new OSXUpdater();
         } else if (OSUtil.isWindows()) {

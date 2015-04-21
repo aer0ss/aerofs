@@ -17,6 +17,7 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
+import com.aerofs.ui.update.Updater;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -450,6 +451,10 @@ public class CLI implements IUI {
     @Override
     public void preSetupUpdateCheck_() throws Exception
     {
-        new CLIPreSetupUpdateCheck().run();
+        // N.B. if the updater is disabled, the pre-setup update check is skipped for GUI as well
+        //   the logic here to duplicated due to its dependency on updater.
+        if (UIGlobals.updater().getUpdateStatus() != Updater.Status.DISABLED) {
+            new CLIPreSetupUpdateCheck().run();
+        }
     }
 }
