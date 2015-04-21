@@ -64,7 +64,7 @@ HOST=share.syncfs.com
 (set +e
     (set -x; docker run --rm --name "${CONTAINER_NAME}" \
         --add-host "${HOST}:${IP}" \
-        -v "${THIS_DIR}/../../packaging/bakery/development/test.license":/test.license \
+        -v "${THIS_DIR}/../../tools/test.license":/test.license \
         -v "${SCREEN_SHOTS}":/screenshots \
         ${EXTRA_DOCKER_ARGS} \
         "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS})

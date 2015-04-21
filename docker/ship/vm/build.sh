@@ -321,7 +321,7 @@ convert_to_ova() {
     VBoxManage export ${UUID} --manifest --output "${OVA}"
     VBoxManage modifyvm ${UUID} --name ${VM}
 
-    "${THIS_DIR}/../../../packaging/bakery/private-deployment/remove_vbox_section_from_ova.py" "${OVA}"
+    "${THIS_DIR}/remove_vbox_section_from_ova.py" "${OVA}"
 }
 
 # Return the value of the given key specified in ship.yml

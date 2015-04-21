@@ -10,7 +10,7 @@ whichever you prefer.
 
 Prerequisites:
     - understand common docker and crane commands such as 'start', 'kill', 'rm'
-    - run upgrade-tools.sh and restart bash before using dk-* commands.
+    - run upgrade-tools.sh before using dk-* commands.
 
 Commands:
     dk-createvm  set up a VM for doing docker-related things and then run dk-env

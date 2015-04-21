@@ -72,14 +72,14 @@ The bridged IP's can be found by running `./list_bridged_ips.sh`
 
 ### OSX Actors
 
-There is a mac mini with the hostname `ci` on the newci network. There are no OSX VM's.
+There is a mac mini with the hostname `ci` on the CI network. There are no OSX VM's.
 
 
 ## Systest-Setup and the Actor Pool
 
 Syncdet tests require a YAML-formatted config file containing configuration values, actor addresses, teamserver details, and AeroFS credentials.
 
-`tools/newci/systest-setup.py` is a script which performs setup steps (user creation and administration, clearing of the S3 bucket, etc.) and generates this syncdet YAML file.
+`tools/ci/systest-setup.py` is a script which performs setup steps (user creation and administration, clearing of the S3 bucket, etc.) and generates this syncdet YAML file.
 
 The main input of the script is an actor profile, which lists qualities of the actors necessary for a test. For instance, a test requiring two isolated actors, one running Linux and one running Windows, would specify a profile like the following:
 
@@ -89,7 +89,7 @@ The main input of the script is an actor profile, which lists qualities of the a
       - os: linux
         isolated: true
 
-The script will then contact the actor pool service (see `tools/newci/actor-pool`) running on NewCI. The service will return the addresses of actors that are available to run tests and that meet the criteria specified in the profile. When the tests are completed, `tools/newci/systest-cleanup.py` is invoked on the generated syncdet config to return the actors to the pool.
+The script will then contact the actor pool service (see `tools/ci/actor-pool`) running on NewCI. The service will return the addresses of actors that are available to run tests and that meet the criteria specified in the profile. When the tests are completed, `tools/ci/systest-cleanup.py` is invoked on the generated syncdet config to return the actors to the pool.
 
 ## Teamcity Build Configurations
 
@@ -104,4 +104,4 @@ The only current resident of this subproject is a step that kills and revives th
 
 #### How to add a new suite of System Tests
 
-Every system test has the same seven steps, inherited from the "System Tests" template. They differ only in the values of four "Build Parameters". The easiest way to create a new System Test is to duplicate an existing test and modify these five parameters (most notably the "Setup Conf File", which is the input to `newci-systest-setup.py`, and "Syncdet Scenario", which lists the syncdet tests that should be run).
+Every system test has the same seven steps, inherited from the "System Tests" template. They differ only in the values of four "Build Parameters". The easiest way to create a new System Test is to duplicate an existing test and modify these five parameters (most notably the "Setup Conf File", which is the input to `ci-systest-setup.py`, and "Syncdet Scenario", which lists the syncdet tests that should be run).
