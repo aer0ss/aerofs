@@ -75,5 +75,5 @@ wait ${PID}
 
 success 'Services up and running. You may create the first user with:'
 echo
-success '   $ open http://share.syncfs.com'
+success '   open http://share.syncfs.com'
 echo
