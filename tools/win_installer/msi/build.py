@@ -132,7 +132,7 @@ def generate_script(args):
         print 'cp {} {}/{}'.format(file['source'], args.workspace, file['id'])
 
     print 'pushd {} > /dev/null'.format(args.workspace)
-    print 'gcab -c cab1.cab {}'.format(string.join([file['id'] for file in files.values()], ' \\\n'))
+    print 'gcab -zc cab1.cab {}'.format(string.join([file['id'] for file in files.values()], ' \\\n'))
     print 'popd > /dev/null'
     print 'msibuild {} -a cab1.cab {}/cab1.cab'.format(wip_msi, args.workspace)
     print_query('update Media set LastSequence={} where DiskId=1;'.format(len(files)))
