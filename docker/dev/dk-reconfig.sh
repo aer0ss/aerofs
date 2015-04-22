@@ -6,19 +6,20 @@ GREEN='0;32'
 CYAN='0;36'
 YELLOW='1;33'
 RED='0;31'
-cecho() { echo -e "\033[$1m$2\033[0m"; }
-info() { cecho ${CYAN} "$1"; }
-success() { cecho ${GREEN} "$1"; }
-error() { cecho ${RED} "$1"; }
+cecho() {
+    col=$1 ; shift
+    echo -e "\033[${col}m${@}\033[0m"; }
+info() { cecho ${CYAN} "$@"; }
+success() { cecho ${GREEN} "$@"; }
+error() { cecho ${RED} "$@"; }
+Die() {
+    retval=$1 ; shift
+    error "$@";
+    exit ${retval}
+}
 
 # VPN is required to access devmail.aerofs.com during appliance setup
-(set +e
-    curl newci.arrowfs.org >/dev/null 2>&1
-    [[ $? = 0 ]] || (
-        error "ERROR: please connect to VPN"
-        exit 22
-    )
-)
+curl newci.arrowfs.org >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN"
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
@@ -37,8 +38,7 @@ while true; do
     BODY="$(curl -s --connect-timeout 1 ${URL} || true)"
     [[ "${BODY}" ]] && break
     if [ $(($(date +"%s")-START)) -gt 300 ]; then
-        echo "ERROR: Timeout when waiting for ${URL} readiness"
-        exit 33
+        Die 33 "ERROR: Timeout when waiting for ${URL} readiness"
     fi
     sleep 1
 done
@@ -65,8 +65,8 @@ while true; do
         # The script is still running. Wait
         sleep 1
     else
-        # The script has prematurally stopped
-        exit 22
+        # The script has prematurely stopped
+        Die 22 "Something unexpected happened."
     fi
 done
 
