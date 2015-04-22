@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.phy;
 
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
 
@@ -41,7 +40,7 @@ public class TransUtil
                 } catch (IOException e) {
                     String str = "db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
                             f.getAbsolutePath() + ": " + Util.e(e);
-                    SystemUtil.fatal(str);
+                    throw new Error(str);
                 }
             }
         });

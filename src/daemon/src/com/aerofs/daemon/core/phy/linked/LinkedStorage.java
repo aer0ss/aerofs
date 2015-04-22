@@ -29,7 +29,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -382,7 +381,13 @@ public class LinkedStorage implements IPhysicalStorage
         final LinkedPrefix p = (LinkedPrefix) prefix;
 
         if (_osutil.getOSFamily() == OSFamily.WINDOWS) {
-            applyPreservingStreamsAndACLs_(p, f, wasPresent, t);
+            if (wasPresent) {
+                applyPreservingStreamsAndACLs_(p, f, t);
+            } else {
+                move_(p, f, t);
+                // copy DACL from parent folder to mimic inheritance
+                copyACL(_factFile.create(f.getAbsPath_()).getParent(), f.getAbsPath_());
+            }
         } else {
             if (wasPresent) moveToRev_(f, t);
             move_(p, f, t);
@@ -403,36 +408,26 @@ public class LinkedStorage implements IPhysicalStorage
 
     private static void copyACL(String from, String to) throws IOException
     {
-        Files.getFileAttributeView(Paths.get(to), AclFileAttributeView.class)
-                .setAcl(Files.getFileAttributeView(Paths.get(from), AclFileAttributeView.class).getAcl());
-    }
-
-    private void onReplaceFailed(boolean wasPresent, InjectableFile f, Exception e)
-    {
-        l.warn("replace failed", BaseLogUtil.suppress(e));
-        if (!wasPresent) {
-            if (!f.deleteIgnoreError() && f.exists()) {
-                l.warn("failed to delete dummy file {}", f);
-            }
+        try {
+            Files.getFileAttributeView(Paths.get(to), AclFileAttributeView.class)
+                    .setAcl(Files.getFileAttributeView(Paths.get(from), AclFileAttributeView.class).getAcl());
+        } catch (Throwable t) {
+            // 1. ACL preservation is nice to have but not as important as file sync
+            // 2. the new Path API is a piece of shit and doesn't allow explicit use of the magic
+            //    prefix to bypass win32 limitations
+            // 3. the old API offers no way of manipulating ACLs
+            // 4. patching the JDK is non-trivial
+            // 5. writing native code for ACL preservation would be even harder
+            // 6. most people who care about windows ACL preservation probably aren't using any
+            //    filenames that require a magic prefix anyway...
+            // => try and ignore errors
+            l.info("failed to preserve ACL {}", to, t);
         }
     }
 
-    private void applyPreservingStreamsAndACLs_(final LinkedPrefix p, final LinkedFile f,
-            boolean wasPresent, Trans t)
+    private void applyPreservingStreamsAndACLs_(final LinkedPrefix p, final LinkedFile f, Trans t)
             throws SQLException, IOException
     {
-        // We use ReplaceFile to ensure preservation of DACL but that only works if the file is
-        // already present. To make sure DACL are correctly inherited when the file is first
-        // downloaded, we first create an empty file in the target location, use ReplaceFile
-        // and then delete the dummy file from revision history
-        if (!wasPresent) {
-            _rh.try_(f, t, () -> {
-                // NB: do NOT replace with method reference as f._f may be changed
-                f._f.createNewFile();
-            });
-        }
-
-        // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
         final String revPath = _revProvider.newRevPath(f._path.virtual, f._f.getAbsolutePath(),
                 f._sokid.kidx());
         InjectableFile rf = _factFile.create(revPath);
@@ -471,6 +466,7 @@ public class LinkedStorage implements IPhysicalStorage
                 .newChild(".aerofs.dl." + UniqueID.generate().toStringFormal());
         src.moveInSameFileSystem(tmp);
 
+        // behold the magic incantation that will preserve ACLs, stream and other Windows stuff
         try {
             _dr.replaceFile(f.getAbsPath_(), tmp.getAbsolutePath(), revPath);
         } catch (ReplaceFileException e) {
@@ -480,10 +476,6 @@ public class LinkedStorage implements IPhysicalStorage
                     .sendAsync();
             if (e.replacedMovedToBackup) {
                 l.info("replace failed. move fallback", BaseLogUtil.suppress(e));
-                if (!wasPresent) {
-                    // delete dummy file
-                    _factFile.create(revPath).deleteIgnoreError();
-                }
                 // copy ACLs manually
                 copyACL(f.getAbsPath_(), tmp.getAbsolutePath());
                 tmp.moveInSameFileSystem(src);
@@ -492,43 +484,34 @@ public class LinkedStorage implements IPhysicalStorage
                 return;
             }
             tmp.moveInSameFileSystem(src);
-            onReplaceFailed(wasPresent, dst, e);
+            l.warn("replace failed", BaseLogUtil.suppress(e));
             throw e;
         } catch (IOException|RuntimeException e) {
             tmp.moveInSameFileSystem(src);
-            onReplaceFailed(wasPresent, dst, e);
+            l.warn("replace failed", BaseLogUtil.suppress(e));
             throw e;
         }
 
         final boolean deleteRev = !_tlUseHistory.get(t);
-        if (wasPresent) {
-            t.addListener_(new AbstractTransListener() {
-                @Override
-                public void committed_()
-                {
-                    if (deleteRev) rf.deleteIgnoreError();
-                }
-
-                @Override
-                public void aborted_()
-                {
-                    try {
-                        dst.moveInSameFileSystem(src);
-                        _factFile.create(revPath).moveInSameFileSystem(dst);
-                    } catch (IOException e) {
-                        l.error("fs rollback failed {}", dst, e);
-                        // FIXME: reset CA to prevent a spurious deletion?
-                        SystemUtil.fatal("fs rollback failed " + dst);
-                    }
-                }
-            });
-        } else {
-            TransUtil.onRollback_(dst, t, () -> dst.moveInSameFileSystem(src));
-            // delete dummy file from rev history immediately
-            if (!rf.deleteIgnoreError() && rf.exists()) {
-                l.warn("failed to delete dummy rev file {}", dst);
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                if (deleteRev) rf.deleteIgnoreError();
             }
-        }
+
+            @Override
+            public void aborted_()
+            {
+                try {
+                    dst.moveInSameFileSystem(src);
+                    _factFile.create(revPath).moveInSameFileSystem(dst);
+                } catch (IOException e) {
+                    l.error("fs rollback failed {}", dst, e);
+                    throw new Error("fs rollback failed " + dst);
+                }
+            }
+        });
     }
 
     /**

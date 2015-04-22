@@ -21,7 +21,6 @@ import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
@@ -147,7 +146,7 @@ class MightCreateOperations
             scheduleTagFileFixIfNeeded(targetSOID, pc);
             return true;
         default:
-            throw SystemUtil.fatal("unhandled op:" + ops);
+            throw new IllegalArgumentException("unhandled op:" + ops);
         }
     }
 
