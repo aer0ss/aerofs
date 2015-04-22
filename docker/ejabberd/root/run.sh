@@ -5,7 +5,7 @@ init_db() {
     local DB_NAME=ejabberd
     /container-scripts/create-database ${DB_NAME}
 
-    echo "Create databae user and schema if not exist..."
+    echo "Create database user and schema if not exist..."
     TABLES="$(mysql -h mysql.service ${DB_NAME} <<< 'show tables')"
     if [ "${TABLES}" = '' ]; then
         # ejabberd doesn't like empty password so we can't use the default root user.

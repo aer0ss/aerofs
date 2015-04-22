@@ -3,7 +3,6 @@ package com.aerofs.polaris.notification;
 import com.aerofs.baseline.Threads;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.api.types.Timestamps;
 import com.aerofs.polaris.dao.NotifiedTimestamps;
@@ -16,14 +15,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.TransactionIsolationLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.sql.Time;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +38,7 @@ public final class OrderedNotifier implements ManagedNotifier {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderedNotifier.class);
     private static final Long IN_PROGRESS = -1L;
 
-    private final Map<UniqueID, Long> pendingNotifications = Maps.newConcurrentMap();
+    private final Map<UniqueID, Long> notificationsMade = Maps.newConcurrentMap();
     private final DBI dbi;
     private final UpdatePublisher publisher;
     private final ExecutorService notifyExecutor;
@@ -126,13 +123,13 @@ public final class OrderedNotifier implements ManagedNotifier {
     private boolean needToSendNotification(UniqueID store, Long timestamp) {
         boolean completed = false;
         while (!completed) {
-            Long value = pendingNotifications.get(store);
+            Long value = notificationsMade.get(store);
             if (value == null) {
-                completed = (pendingNotifications.putIfAbsent(store, IN_PROGRESS) == null);
+                completed = (notificationsMade.putIfAbsent(store, IN_PROGRESS) == null);
             } else if (value.equals(IN_PROGRESS) || value >= timestamp) {
                 return false;
             } else {
-                completed = pendingNotifications.replace(store, value, IN_PROGRESS);
+                completed = notificationsMade.replace(store, value, IN_PROGRESS);
             }
         }
         return true;
@@ -170,7 +167,7 @@ public final class OrderedNotifier implements ManagedNotifier {
     }
 
     private void finishProgress(NotifyState state) {
-        boolean successful = pendingNotifications.remove(state.store, IN_PROGRESS);
+        boolean successful = notificationsMade.replace(state.store, IN_PROGRESS, state.updateTimestamp);
         if (!successful) {
             throw new IllegalStateException("attempted to finish progress on a store that was not sending a notification");
         }
