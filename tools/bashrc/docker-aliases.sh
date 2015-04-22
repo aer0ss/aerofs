@@ -22,6 +22,13 @@ alias dk-restart="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh ki
 alias dk-start="${DEV_DIR}/dk-crane.sh run -dall"
 
 # Autocomplete
+command -v autoload &>/dev/null
+if [ $? -eq 0 ] ; then
+    autoload bashcompinit
+    bashcompinit
+    alias shopt=':'
+fi
+
 if [ $(uname -s) = "Darwin" ] && [ -n "$(which brew)" ] && [ -f $(brew --prefix)/etc/bash_completion ]; then
  . $(brew --prefix)/etc/bash_completion
 fi
