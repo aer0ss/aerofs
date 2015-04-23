@@ -201,6 +201,7 @@ public class ClientConfigurationLoader
             properties = getRemoteHttpConfig(siteConfig);
         } catch (Exception e) {
             LOGGER.warn("Failed to load remote http config; proceed with local http config.");
+            LOGGER.warn("Cause: {}", e.getMessage());
             return getLocalHttpConfig();
         }
 
@@ -211,6 +212,7 @@ public class ClientConfigurationLoader
                     siteConfig.getProperty(PROPERTY_CONFIG_SERVICE_URL));
         } catch (IOException e) {
             LOGGER.warn("Failed to save remote http config to local; ignored.");
+            LOGGER.warn("Cause: {}", e.getMessage());
         }
 
         return properties;
