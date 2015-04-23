@@ -122,6 +122,9 @@ typeahead.directive('aeroTypeahead', ['$http', '$log',
             $scope.$watch('selectedEntity.name', function(newValue, oldValue){
                 if (oldValue != newValue && newValue && $scope.looking) {
                     resetStatus();
+                    $scope.selectedEntity = {
+                        name: newValue
+                    };
                     // only use cache if we're using async data
                     if ($scope.asyncData && matchCache && matchCache[newValue]) {
                         // we've looked for this value before

@@ -65,23 +65,24 @@ shadowfaxControllers.controller('SharedFoldersController',
               var isOldIE = $('html').is('.ie6, .ie7, .ie8');
               $scope.getUsersAndGroupsURL = getUsersAndGroupsURL;
 
+              $scope.getGroupMembers = function(group) {
+                  $http.get(getGroupMembersURL, {
+                      params: {
+                          id: group.id
+                      }
+                  }).success(function(response){
+                      group.members = response.members || [];
+                  }).error(function(response, status){
+                      $log.error(response);
+                  });
+              };
+
               // make groups know their own members
               // inside of member management modal
-              var getGroupMembers = function(entity) {
-                $http.get(getGroupMembersURL, {
-                    params: {
-                        id: entity.id
-                    }
-                }).success(function(response){
-                    entity.members = response.members || [];
-                }).error(function(response, status){
-                    $log.error(response);
-                });
-              };
               for (var i = 0; i < $scope.people.length; i++) {
                 var entity = $scope.people[i];
                 if (entity.is_group) {
-                    getGroupMembers(entity);
+                    $scope.getGroupMembers(entity);
                 }
               }
 
@@ -126,51 +127,42 @@ shadowfaxControllers.controller('SharedFoldersController',
                         $scope.error = message +
                             " It appears you are not authorized to administer this folder. " +
                             "Please try reloading the page or logging back in.";
+                    } else if (response && response.message) {
+                        $scope.error = response.message;
                     } else {
                         $scope.error = message + " Please try again.";
                     }
                 };
               };
 
-              var _make_member_request = function(identifier, permissions, group_name) {
-                $log.info("Adding member " + identifier);
-                $scope.error = false;
+              var _make_member_request = function(identifier, entity, permissions, is_group) {
                 $http.post(addMemberUrl,
                     {
                         subject_id: identifier,
                         permissions: permissions,
-                        is_group: !!group_name,
+                        is_group: is_group,
                         store_id: $scope.folder.sid,
                         folder_name: $scope.folder.name,
                         suppress_sharing_rules_warnings: false
                     }
                 ).success(function(response) {
-                    $scope.invitees = '';
-                    var entity = $scope.newMember();
+                    var newMember = $scope.newMember();
                     if (permissions.indexOf('MANAGE') != -1 && permissions.indexOf('WRITE') != -1) {
-                        entity.is_owner = true;
+                        newMember.is_owner = true;
                     } else if (permissions.indexOf('WRITE') != -1) {
-                        entity.can_edit = true;
+                        newMember.can_edit = true;
                     }
-                    if (group_name) {
-                        entity.id = identifier;
-                        entity.members = [];
-                        $http.get(getGroupMembersURL, {
-                            params: {
-                              id: entity.id
-                            }
-                        }).success(function(response){
-                           entity.members = response.members;
-                        }).error(function(response, status){
-                            $log.error(status);
-                            $log.error(response);
-                        });
-                        entity.name = group_name;
-                        entity.is_group = true;
+                    newMember.is_group = is_group;
+                    if (is_group) {
+                        newMember.id = identifier;
+                        newMember.name = entity.name;
+                        $scope.getGroupMembers(newMember);
                     } else {
-                        entity.email = identifier;
+                        newMember.email = identifier;
+                        newMember.first_name = entity.first_name;
+                        newMember.last_name = entity.last_name;
                     }
-                    $scope.people.push(entity);
+                    $scope.people.push(newMember);
                 }).error(showModalErrorMessage("Sorry, the invitation failed."));
               };
 
@@ -178,51 +170,49 @@ shadowfaxControllers.controller('SharedFoldersController',
                 $modalInstance.close();
               };
 
-              $scope.inviteMembers = function (inviteeString, inviteeRole) {
-                startModalSpinner();
-                var splitList = $.trim(inviteeString).split(/\s*[,;()]\s*/);
-                var emailList = splitList.filter(function(item){
-                    return item.split("").indexOf('@') != -1;
-                });
-
-                // Look up non email address to see if there's one and only one
-                // group with that name and they're not already invited
-                // If so, invite it to the folder!
-                var nonEmailList = splitList.filter(
-                    function(groupName){
-                        if (groupName.indexOf('@') != -1) {
-                            // TODO (RD) currently no guarantee on what characters a group name has
-                            return false;
-                        }
-                        for (var j = 0; j < $scope.people.length; j++) {
-                            if ($scope.people[j].name === groupName) {
-                                // TODO: error message
-                                // telling people the group's already invited
-                                return false;
-                            }
-                        }
-                        return true;
-                    });
-
-                var permissions = _get_json_permissions(inviteeRole);
-
-                for (var i = 0; i < nonEmailList.length; i++) {
-                    // TODO (RD) should already have groupID, don't need to make separate request for it
-                    $http.get(getGroupsURL, {
-                        params: {
-                            substring: nonEmailList[i]
-                        }
-                    }).then(function(res) {
-                        if (res.data.groups.length === 1) {
-                            var group = res.data.groups[0];
-                            $log.info("Invite group " + group.name + " to folder.");
-                            _make_member_request(group.id, permissions, group.name);
-                        }
-                    });
+              $scope.inviteMembers = function (invitee, inviteeRole) {
+                if (!invitee) {
+                    return;
                 }
 
-                for (var i = 0; i < emailList.length; i++) {
-                    _make_member_request(emailList[i], permissions);
+                $scope.error = false;
+                $log.info("inviting " + invitee);
+                startModalSpinner();
+                var permissions = _get_json_permissions(inviteeRole);
+
+                // is_group is only set if we're receiving data from autocomplete
+                if (invitee.is_group === true) {
+                    for (var i = 0; i < $scope.people.length; i++) {
+                        if ($scope.people[i].is_group && $scope.people[i].id == invitee.id) {
+                            $log.info("cannot invite group " + invitee.name + " they're already in this folder");
+                            $scope.error = "The group " + invitee.name + " is already in this folder."
+                            stopModalSpinner();
+                            return;
+                        }
+                    }
+                    $log.info("inviting group " + invitee.id + " to folder");
+                    _make_member_request(invitee.id, invitee, permissions, true);
+                } else if (invitee.is_group === false) {
+                    for (var i = 0; i < $scope.people.length; i++) {
+                        if ((! $scope.people[i].is_group) && $scope.people[i].email == invitee.email) {
+                            $log.info("cannot invite " + invitee.name + " they're already in this folder");
+                            $scope.error = invitee.name + " is already in this folder."
+                            stopModalSpinner();
+                            return;
+                        }
+                    }
+                    $log.info("inviting user " + invitee.email + " to folder");
+                    _make_member_request(invitee.email, invitee, permissions, false);
+                } else {
+                    // no data available from autocomplete, will have to parse a string of emails
+                    var splitList = $.trim(invitee.name).split(/\s*[,;()\s]\s*/);
+                    var emailList = splitList.filter(function(item){
+                        return item.search('@') != -1;
+                    });
+                    for (var i = 0; i < emailList.length; i++) {
+                        $log.info("inviting user " + invitee.email + " to folder");
+                        _make_member_request(emailList[i], {'email' : emailList[i]}, permissions, false);
+                    }
                 }
                 stopModalSpinner();
               };

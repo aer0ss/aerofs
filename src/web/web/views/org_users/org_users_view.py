@@ -131,11 +131,17 @@ def json_search_org_users(request):
 )
 def json_list_org_users_and_groups(request):
     user_data = json_search_org_users(request)['results'] or []
+    user_data = [add_is_group_value(elem, False) for elem in user_data]
     group_data = json_list_org_groups(request)['groups'] or []
+    group_data = [add_is_group_value(elem, True) for elem in group_data]
     data = group_data + user_data
     return {
         'results': data
     }
+
+def add_is_group_value(x, value):
+    x['is_group'] = value
+    return x
 
 @view_config(
     route_name = 'json.invite_user',

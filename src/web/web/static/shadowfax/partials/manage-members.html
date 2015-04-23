@@ -25,7 +25,7 @@
                             <span class="help" ng-show="entity.email != me"><a ng-href="mailto:{{entity.email}}" title="Email this user">{{entity.email}}</a></span>
                         </span>
                         <span ng-show="entity.is_pending" class="help">
-                            {{entity.email}} <span class="help">(pending)</span>
+                            {{entity|myName}} <span class="help">(pending)</span>
                         </span>
                     </span>
                     <span ng-if='entity.is_group'>
@@ -78,7 +78,7 @@
     <div class="row">
         <form id="modal-invite-form" role="form" method="post" 
             ng-if="is_privileged" 
-            ng-submit="inviteMembers(invitees.name, inviteeRole); invitees = '';">
+            ng-submit="inviteMembers(invitees, inviteeRole); invitees = '';">
             <div class="col-xs-12">
                 <strong>Invite new members:</strong></div>
             <div id="invite-user-inputs" class="col-sm-6 col-xs-12">
@@ -87,8 +87,8 @@
                     label=""
                     ng-model="invitees"
                     async-data="{{getUsersAndGroupsURL}}"
-                    placeholder="Email address or group name" 
-                    title="Invite users by email address or groups by name"
+                    placeholder="Name or email address"
+                    title="Invite users and groups by name or email"
                     ></div>
             </div>
             <div class="col-sm-2 col-xs-6">
