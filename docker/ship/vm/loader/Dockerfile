@@ -15,19 +15,12 @@ RUN \
     apt-get install -y lxc-docker-1.5.0 &&\
     rm -rf /var/lib/apt/lists/*
 
-# Build crane
-ENV GOPATH /go
-ENV CRANE_URL github.com/michaelsauter/crane
-ENV CRANE_VERSION v1.1.1
-RUN apt-get update && apt-get install -y git golang &&\
-    go get -d $CRANE_URL &&\
-    cd $GOPATH/src/$CRANE_URL &&\
-    git checkout $CRANE_VERSION &&\
-    cd / &&\
-    go build -o /usr/local/bin/crane $CRANE_URL &&\
-    # Clean up
-    rm -r $GOPATH &&\
-    apt-get purge -y git golang &&\
+RUN \
+    apt-get update &&\
+    apt-get install -y wget &&\
+    wget https://github.com/michaelsauter/crane/releases/download/v1.1.1/crane_linux_amd64 -O /usr/local/bin/crane &&\
+    chmod 0755 /usr/local/bin/crane &&\
+    apt-get purge -y wget &&\
     apt-get autoremove -y &&\
     rm -rf /var/lib/apt/lists/*
 
