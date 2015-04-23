@@ -9,9 +9,11 @@ The 'rundebug' script offers an easy way to start the gui or daemon with a remot
 
  - `portbase + 10` : GUI (default 5010)
 
+To access the script, go in `tools` first.
+
 When you start the debug-enabled program, rundebug will print the port number in use.
 
-    $ rundebug -G
+    $ ./rundebug -G
     Started GUI with RTROOT /Users/jon/repos/aerofs/approot/jon
     Output redirected to /Users/jon/repos/aerofs/approot/jon/gui.out
     DEBUGGER: running at port 5010.
@@ -66,5 +68,22 @@ The IDEA debugger is pretty great. To create a remote-debugging configuration in
 ![screenshot of remote-debug config](http://i.imgur.com/42PmozE.png)
 
 To use it, choose 'Local SP debug' in the configuration chooser and hit the little bug icon. Set some breakpoints and go to town!
+
+Troubleshooting
+--
+
+1. To test the GUI you should specify the RTROOT:
+
+        ./rundebug -G -r ~/rtroot/
+
+2. If the debugger doesn't run and
+
+        $ cat ~/rtroot/{USER}/gui.out
+        Error occurred during initialization of VM
+        Could not find agent library jdwp on the library path, with error: dlopen(libjdwp.dylib, 1): image not found
+
+You should probably do this:
+
+    cp /Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib/libjdwp.dylib ~/repos/aerofs/approot/
 
 [ note to self; the GUI_debug and daemon_debug configurations should be checked in; must be in an .iml doc, right? ]
