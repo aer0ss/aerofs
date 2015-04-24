@@ -30,7 +30,7 @@ if [ $? -eq 0 ] ; then
     alias shopt=':'
 fi
 
-if [ $(uname -s) = "Darwin" ] && [ -n "$(which brew)" ] && [ -f $(brew --prefix)/etc/bash_completion ]; then
+if [ $(uname -s) = "Darwin" ] && [ $SHELL != "/bin/zsh" ] && [ -n "$(which brew)" ] && [ -f $(brew --prefix)/etc/bash_completion ]; then
  . $(brew --prefix)/etc/bash_completion
 fi
 
