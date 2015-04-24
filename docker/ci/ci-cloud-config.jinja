@@ -24,6 +24,15 @@ coreos:
         [Service]
         ExecStart=/usr/bin/ip route del default
 
+    - name: modify-appliance.service
+      command: start
+      content: |
+        [Unit]
+        Description=CI appliance touch-ups
+        Before=ship.service
+        [Service]
+        ExecStart=/modify-appliance.sh
+
     # signup-decoder is a Web service listening at <hostname>:5775 to return signup codes stored in mysql.
     # It's used by CI to sign up users automatically. It's a container because containers are the only thing CoreOS supports.
     - name: signup-decoder.service
@@ -87,6 +96,12 @@ write_files:
             return jsonify(signup_code=out.strip())
 
       app.run('0.0.0.0', 21337)
+
+  - path: /modify-appliance.sh
+    encoding: b64
+    permissions: 0700
+    content: |
+      {{ modify_appliance }}
 
 ssh_authorized_keys:
     - {{ ssh_pub }}

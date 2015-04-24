@@ -21,12 +21,14 @@ create_cloud_config_drive() {
     local TMP="$(mktemp -dt ci-user-data-XXX)"
     local USER_DATA="${TMP}/openstack/latest/user_data"
     local SSH_PUB="$(cat "${THIS_DIR}/ci-ssh.pub")"
+    local MODIFY_APPLIANCE="$(base64 "${THIS_DIR}/modify-appliance.sh")"
     mkdir -p "$(dirname "${USER_DATA}")"
 
     sed -e "s!{{ ip_and_prefix }}!${IP_AND_PREFIX}!" \
         -e "s!{{ ip }}!${IP}!" \
         -e "s!{{ gateway }}!${GATEWAY}!" \
         -e "s!{{ ssh_pub }}!${SSH_PUB}!" \
+        -e "s!{{ modify_appliance }}!${MODIFY_APPLIANCE}!" \
         "${THIS_DIR}/ci-cloud-config.jinja" \
         > "${USER_DATA}"
 
