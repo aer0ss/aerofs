@@ -21,10 +21,10 @@ dependencies {
     compile name: 'smack'
     compile name: 'smackx'
     compile 'org.javaswift:joss:0.9.8'
-    compile 'com.amazonaws:aws-java-sdk-s3:1.9.+'
-    compile 'io.netty:netty-codec-http:4.1.+'
-    compile 'io.netty:netty-handler:4.1+'
-    compile 'io.netty:netty-transport:4.1.+'
+    compile 'com.amazonaws:aws-java-sdk-s3:1.9.32'
+    compile 'io.netty:netty-codec-http:4.1.0.Beta4'
+    compile 'io.netty:netty-handler:4.1.0.Beta4'
+    compile 'io.netty:netty-transport:4.1.0.Beta4'
     compile project(':src/lib')
     compile project(path: ':src/verkehr', configuration: 'wireClient')
     compile project(path: ':src/zephyr', configuration: 'client')

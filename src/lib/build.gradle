@@ -43,8 +43,8 @@ configurations {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.+'
-    compile 'ch.qos.logback:logback-classic:1.1.+'
+    compile 'ch.qos.logback:logback-core:1.1.3'
+    compile 'ch.qos.logback:logback-classic:1.1.3'
     compile 'commons-lang:commons-lang:2.6'
     compile 'com.aerofs:sqlite-jdbc:3.8.7'
     compile 'com.aerofs:jnotify:0.96'

@@ -27,11 +27,11 @@ sourceSets {
 dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1'
     compile 'commons-codec:commons-codec:1.6'
-    compile 'org.mortbay.jetty:jetty-util:6.1.+'
+    compile 'org.mortbay.jetty:jetty-util:6.1.26'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
-    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
-    testCompile 'org.mortbay.jetty:jetty:6.1.+'
+    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testCompile 'org.mortbay.jetty:jetty:6.1.26'
     testCompile project(path: ':src/lib', configuration: 'testutil')
     testCompile project(path: ':src/libservlet', configuration: 'testutil')
     runtime project(':src/spdb')

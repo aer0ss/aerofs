@@ -23,8 +23,6 @@ sourceSets {
 }
 
 dependencies {
-    compile 'org.apache.tomcat:tomcat-jdbc:7.0.+'
-    compile 'org.flywaydb:flyway-core:3.2.+'
     compile project(':src/libservlet')
     compile project(':src/oauth-verify')
     compile project(':src/rest-api')

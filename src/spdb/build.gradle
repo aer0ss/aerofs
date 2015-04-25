@@ -5,8 +5,8 @@
 archivesBaseName = 'aerofs-spdb'
 
 dependencies {
-    compile 'org.flywaydb:flyway-core:3.2.+'
-    compile 'org.apache.tomcat:tomcat-jdbc:7.0.+'
+    compile 'org.flywaydb:flyway-core:3.2.1'
+    compile 'org.apache.tomcat:tomcat-jdbc:7.0.61'
     // For properties
     compile project(':src/base')
     // For LibParam

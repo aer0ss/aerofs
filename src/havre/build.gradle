@@ -18,11 +18,11 @@ sourceSets {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.+'
-    compile 'ch.qos.logback:logback-classic:1.1.+'
+    compile 'ch.qos.logback:logback-core:1.1.3'
+    compile 'ch.qos.logback:logback-classic:1.1.3'
     compile project(':src/tunnel')
     compile project(':src/oauth-verify')
-    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
+    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
     testCompile project(path: ':src/base', configuration: 'testutil')
 }
 

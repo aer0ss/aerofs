@@ -8,7 +8,7 @@ dependencies {
     compile 'com.aerofs.baseline:baseline-service:0.6.2'
     compile project(':src/lib')
     compile project(':src/aero-auth')
-    testCompile 'com.jayway.restassured:rest-assured:2.3.+'
+    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
     testCompile project(path:':src/lib', configuration:'testutil')
 }
 

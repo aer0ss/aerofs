@@ -45,12 +45,11 @@ configurations {
 }
 
 dependencies {
-    compile 'org.flywaydb:flyway-core:3.2.+'
-    compile 'com.lambdaworks:scrypt:1.4.+'
+    compile 'com.lambdaworks:scrypt:1.4.0'
     compile 'commons-codec:commons-codec:1.4'
     compile 'commons-net:commons-net:3.3'
-    compile 'commons-validator:commons-validator:1.4.+'
-    compile 'org.apache.tomcat:tomcat-dbcp:7.0.+'
+    compile 'commons-validator:commons-validator:1.4.1'
+    compile 'org.apache.tomcat:tomcat-dbcp:7.0.61'
     compile 'org.hibernate:hibernate-core:4.1.9.Final'
     compile 'org.hibernate:hibernate-validator:4.3.0.Final'
     compile project(':src/lib')
@@ -58,8 +57,8 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/rest-api')
     compile project(':src/aero-auth')
-    runtime 'mysql:mysql-connector-java:5.1.+'
-    testutilCompile 'com.jayway.restassured:rest-assured:2.3.+'
+    runtime 'mysql:mysql-connector-java:5.1.35'
+    testutilCompile 'com.jayway.restassured:rest-assured:2.3.4'
     testutilCompile project(path: ':src/lib', configuration: 'testutil')
 }
 
