@@ -3,14 +3,13 @@ ROOT = buildroot/opt/bunker
 
 FILES = $(shell find -L entry.py web -type f)
 VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
-PRODUCTION_INI = $(ROOT)/production.ini
 BACKUP_SH = buildroot/backup.sh
 RESTORE_SH = buildroot/restore.sh
 REQUIREMENTS_FILE = buildroot/requirements-exact.txt
 MIGRATION_SH = $(ROOT)/migration.sh
 EXTERNAL_PROP_DOCKER_DEFAULT=buildroot/external.properties.docker.default
 
-image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(PRODUCTION_INI) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH) $(EXTERNAL_PROP_DOCKER_DEFAULT)
+image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH) $(EXTERNAL_PROP_DOCKER_DEFAULT)
 	docker build -t $(IMAGE_NAME) .
 
 .PHONY: image
@@ -96,9 +95,6 @@ $(ROOT)/web/views/maintenance/maintenance_view.py: web/views/maintenance/mainten
 
 $(ROOT)/web/views/maintenance/__init__.py: web/views/maintenance/__init__.py maintenance_init.docker.patch
 	$(call patch,$@,$<,maintenance_init)
-
-$(PRODUCTION_INI): ../../puppetmaster/modules/bunker/files/production.ini production.docker.patch
-	$(call patch,$@,$<,production)
 
 $(BACKUP_SH): ../../packaging/db-backup/usr/bin/aerofs-db-backup backup.sh.docker.patch
 	$(call patch,$@,$<,backup.sh)

@@ -1,9 +1,0 @@
-<%= ("bind " + @redis_bindaddr) unless @redis_bindaddr == 'all' %>
-port <%= @redis_port %>
-pidfile <%= @redis_pidfile %>
-logfile <%= @redis_logfile %>
-loglevel <%= @redis_loglevel %>
-dir <%= @redis_database_dir %>
-
-appendonly yes
-appendfilename redis.aof

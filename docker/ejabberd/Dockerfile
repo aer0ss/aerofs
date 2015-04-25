@@ -16,4 +16,4 @@ CMD [ "/run.sh" ]
 
 EXPOSE 5222
 
-COPY root buildroot /
+COPY root /

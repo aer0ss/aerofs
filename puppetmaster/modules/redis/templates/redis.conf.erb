@@ -1,8 +1,0 @@
-description "Redis Server"
-author "Matt Pillar <mpillar@aerofs.com>"
-
-start on runlevel [2345]
-stop on runlevel [016]
-
-respawn
-exec /usr/bin/redis-server <%= @redis_conf_filename %>

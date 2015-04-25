@@ -1,0 +1,109 @@
+[app:main]
+use = call:web:main
+
+# Mode
+deployment.mode = private
+deployment.secret_file = /data/deployment_secret
+deployment.config_server_uri = http://config.service:5434
+deployment.oauth_server_uri = http://sparta.service:8700
+deployment.api_server_uri = http://havre.service:8083
+deployment.sp_server_uri = http://sp.service:8080
+
+# SP settings
+sp.version = 21
+
+# Pyramid settings
+pyramid.reload_templates = false
+pyramid.debug_authorization = false
+pyramid.debug_notfound = false
+pyramid.debug_routematch = false
+pyramid.default_locale_name = en
+mako.directories = web:templates
+# Where static assets are hosted
+static.prefix = static
+# Where installer packages are hosted (aka cache.client.aerofs.com)
+# Note that using https://cache... would cause the browser to complain cert errors
+installer.prefix = static/installers
+
+# Session factory settings
+# see http://beaker.readthedocs.org/en/latest/configuration.html#session-options
+# and http://beaker.readthedocs.org/en/latest/modules/session.html for more options
+session.type = cookie
+session.key = session
+session.secure = True
+# The cookie should only be accessible by the browser not by JavaScript.
+# This is to prevent the session token from being stolen via XSS attacks.
+session.httponly = True
+# 1 year. Session timeouts are handled by SP.
+session.timeout = 31536000
+# Cookies never expire, so we'll still have some user info no matter how long
+# they don't use our site
+session.cookie_expires = False
+session.validate_key = {{ validate_key }}
+session.encrypt_key = {{ encrypt_key }}
+
+oauth.shelob_client_secret = {{ shelob_client_secret }}
+oauth.settings_client_secret = {{ settings_client_secret }}
+
+[server:main]
+use = egg:waitress#main
+host = 0.0.0.0
+port = 6543
+
+[uwsgi]
+
+wsgi-file = /opt/web/production.wsgi
+socket = :8080
+master = true
+
+# Set these based on capacity of server, but because some of
+# our code is stateful (namely in-memory session storage) more
+# processes could cause problems
+processes = 1
+listen = 256
+
+chdir = /opt/web
+plugins = python
+single-interpreter = true
+
+# harakiri settings (kills requests taking longer than 30s
+# and rogue workers)
+harakiri = 30
+harakiri-verbose = true
+post-buffering = 32768
+reload-on-as = 256
+reload-on-rss = 128
+no-orphans = true
+
+[loggers]
+keys = root, web
+
+[handlers]
+keys = console, filelog
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = DEBUG
+handlers = console
+
+[logger_web]
+level = DEBUG
+handlers = filelog
+qualname = web
+
+[handler_filelog]
+class = FileHandler
+args = ('/var/log/web/web.log','a')
+level = DEBUG
+formatter = generic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s %(asctime)s [%(threadName)s] [%(name)s] %(message)s

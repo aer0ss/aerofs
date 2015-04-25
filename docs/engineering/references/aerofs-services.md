@@ -49,7 +49,7 @@ In practice, if something goes awry, you may need to kill `epmd` (the erlang por
 
 The XMPP server runs with a certificate signed by the 
 
-ejabberd requires that you authenticate users in some manner, but we don't care about authenticating users on jabber, so we have a script `/etc/ejabberd/auth_all` (source: `puppetmaster/modules/ejabberd/files/auth_all`) which 
+ejabberd requires that you authenticate users in some manner, but we don't care about authenticating users on jabber, so we have a script `/etc/ejabberd/auth_all` which 
 
 ### Channels
 

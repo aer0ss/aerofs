@@ -3,7 +3,6 @@ IMAGE_NAME = aerofs/servlets
 WEB_INF_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF
 LIB_DIR = $(WEB_INF_DIR)/lib
 CONF_PROP = $(WEB_INF_DIR)/classes/configuration.properties
-ZELDA_PROP = buildroot/etc/aerofs/zelda.properties
 FIXES = $(abspath \
 	../lib/src/com/aerofs/lib/LibParam.java \
 	../base/src/main/java/com/aerofs/base/BaseParam.java \
@@ -12,7 +11,7 @@ FIXES = $(abspath \
 	../lib/src/com/aerofs/lib/configuration/ConfigurationUtils.java \
 	src/com/aerofs/sp/server/BifrostClient.java)
 
-image: .fix-source .gradle .unfix-source $(ZELDA_PROP) $(CONF_PROP)
+image: .fix-source .gradle .unfix-source $(CONF_PROP)
 	docker build -t $(IMAGE_NAME) .
 
 DIRS =  sp \
@@ -37,10 +36,6 @@ all: image subdirs
 $(CONF_PROP):
 	mkdir -p $(@D)
 	echo "config.loader.is_private_deployment=true" > $@
-
-$(ZELDA_PROP): ../../puppetmaster/modules/public-zelda-creds/files/zelda.properties
-	mkdir -p $(@D)
-	cp $< $@
 
 .fix-source:
 	for i in $(FIXES) ; do patch $$i < $$(basename $$i).docker.patch; done

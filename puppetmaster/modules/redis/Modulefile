@@ -1,8 +1,0 @@
-name 'aerofs-redis'
-version '0.0.1'
-source 'UNKNOWN'
-author 'aerofs'
-license 'Apache License, Version 2.0'
-summary 'Module for the command server'
-description 'Set up a redis server'
-project_page 'UNKNOWN'

@@ -51,7 +51,7 @@ routes = [
     'autocomplete',
     'json_upload_additional_users',
 
-    # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
+    # Routes referred to by nginx.
     'maintenance_mode',
     'license_expired'
 ]

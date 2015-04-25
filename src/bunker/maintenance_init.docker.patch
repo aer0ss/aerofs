@@ -17,7 +17,7 @@
      'timekeeping',
      'json_set_mobile_device_management',
  
--    # Routes referred to by nginx. See puppetmaster/modules/unified/files/nginx/web
+-    # Routes referred to by nginx.
      'maintenance_mode',
 -    'license_expired'
 +    'license_expired',

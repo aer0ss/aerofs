@@ -26,10 +26,7 @@ import "cmd.proto";
 //      SP_PROTOCOL_VERSION in BaseParam.java
 //      SP_PROTO_VERSION in src/python-lib/aerofs_sp/param.py
 //      sp.version in
-//          src/web/development/modes/local.ini
-//          src/web/development/modes/private.ini
-//          puppetmaster/modules/web/files/production.ini
-//          puppetmaster/modules/unified/files/production.ini.template
+//          src/web/root/opt/web/production.ini.template
 // TODO: consolidate this mess (hopefully RESTfulness will simplify versioning)
 
 service SPService {

@@ -1,6 +1,0 @@
-#!/bin/bash
-if [ "$1" == "eth0" ] ; then
-    cat /etc/network/selected-network-type
-else
-    echo "dhcp"
-fi

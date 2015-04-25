@@ -1,9 +1,0 @@
-name 'aerofs-servlet'
-version '0.0.1'
-source 'UNKNOWN'
-author 'Matt Pillar <matt@aerofs.com>'
-license 'Apache License, Version 2.0'
-summary 'servlet configuration'
-description 'Configure servlets for sp, sv, syncstat et al'
-project_page 'UNKNOWN'
-dependency "aerofs/tomcat6"
