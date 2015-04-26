@@ -18,14 +18,17 @@ LINE="$(docker images | grep ${SPECIMEN})"
 REGISTRY="$(echo "${LINE}" | awk '{print $1}' | sed -e "s,${SPECIMEN}$,,")"
 TAG="$(echo "${LINE}" | awk '{print $2}')"
 
-# Enable disabled services in nginx
+# Enable disabled services in Nginx
 NGINX="${REGISTRY}aerofs/nginx:${TAG}"
 echo "Modifying ${NGINX} ..."
 [[ "$(docker run "${NGINX}" ls '/etc/nginx/sites-disabled')" ]] && {
-    docker run "${NGINX}" mv '/etc/nginx/sites-disabled/*' /etc/nginx/sites
-    CONTAINER=$(docker ps -lq)
-    docker commit ${CONTAINER} "${NGINX}"
-    docker rm -vf ${CONTAINER}
+    TMP="$(mktemp -d -t XXXXXX)"
+    cat > "${TMP}/Dockerfile" <<END
+FROM ${NGINX}
+RUN  mv /etc/nginx/sites-disabled/* /etc/nginx/sites
+END
+    docker build -t ${NGINX} "${TMP}"
+    rm -rf "${TMP}"
 }
 
 exit 0
