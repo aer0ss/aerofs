@@ -21,7 +21,7 @@ create_cloud_config_drive() {
     local TMP="$(mktemp -dt ci-user-data-XXX)"
     local USER_DATA="${TMP}/openstack/latest/user_data"
     local SSH_PUB="$(cat "${THIS_DIR}/ci-ssh.pub")"
-    local MODIFY_APPLIANCE="$(base64 "${THIS_DIR}/modify-appliance.sh")"
+    local MODIFY_APPLIANCE="$(base64 -w0 "${THIS_DIR}/modify-appliance.sh")"
     mkdir -p "$(dirname "${USER_DATA}")"
 
     sed -e "s!{{ ip_and_prefix }}!${IP_AND_PREFIX}!" \
