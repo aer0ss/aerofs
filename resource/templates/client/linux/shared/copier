@@ -125,6 +125,12 @@ if app_root_needs_update ; then
     copy_program_to_user_home
 fi
 
+# Unity 7.3, the default desktop manager for Ubuntu 15.04, ships with
+# jayatanaag and sets JAVA_TOOL_OPTIONS by default. This causes our JVM to
+# crash when processing environment variables because we've stripped out
+# java.lang.instrument.*.
+unset JAVA_TOOL_OPTIONS
+
 # Launch program from user app root.  We reuse the executable name used to
 # invoke this script, since it encodes which UI the user is expecting.
 exec $USER_APP_ROOT/$EXECUTABLE "$@"
