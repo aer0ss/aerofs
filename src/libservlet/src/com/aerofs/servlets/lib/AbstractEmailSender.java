@@ -196,7 +196,7 @@ public abstract class AbstractEmailSender
     {
         MimeMessage msg = new MimeMessage(sess);
 
-        msg.setFrom(new InternetAddress(from, fromName));
+        msg.setFrom(new InternetAddress(from, fromName, CHARSET));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
         msg.setSubject(subject, CHARSET);
 
