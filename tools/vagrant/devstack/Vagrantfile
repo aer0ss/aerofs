@@ -1,0 +1,15 @@
+Vagrant.configure("2") do |config|
+    config.vm.define :trusty64 do |box|
+        box.vm.network "public_network"
+        box.vm.box = "ubuntu/trusty64"
+        box.vm.hostname = "DevStack"
+        box.vm.provider :virtualbox do |vb|
+            vb.gui = false
+            vb.customize ["modifyvm", :id, "--name", "trusty64"]
+            vb.customize ["modifyvm", :id, "--memory", "4096"]
+        end
+
+        box.vm.provision "shell",
+            inline: "/vagrant/provision.sh"
+    end
+end
