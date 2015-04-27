@@ -104,7 +104,7 @@ public class ChangeFetcher
         String content = r.content().toString(BaseUtil.CHARSET_UTF);
         if (!r.status().equals(HttpResponseStatus.OK)) {
             l.info("polaris error {}\n{}", r.status(), content);
-            if (r.status().codeClass().equals(HttpStatusClass.SERVER_ERROR)) {
+            if (HttpStatusClass.SERVER_ERROR.contains(r.status().code())) {
                 throw new ExRetryLater(r.status().reasonPhrase());
             }
             throw new ExProtocolError(r.status().reasonPhrase());
