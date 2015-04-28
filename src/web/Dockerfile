@@ -12,11 +12,13 @@ CMD [ "/run.sh" ]
 
 COPY requirements-exact.txt /
 
+ENV BUILD_PKGS gcc python-dev
+
 RUN \
-    apt-get update && apt-get install -y gcc &&\
+    apt-get update && apt-get install -y $BUILD_PKGS &&\
     pip install --requirement /requirements-exact.txt &&\
     rm /requirements-exact.txt &&\
-    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/* &&\
+    apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/* &&\
     #
     # PREDOCKER forward logs to docker log collector
     #

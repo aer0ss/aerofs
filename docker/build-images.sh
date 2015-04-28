@@ -8,7 +8,6 @@ set -e
 DIRS="
     base/base
     base/ubuntu14.04
-    base/ubuntu15.04
     base/jre8
     base/jre8-and-mysql-client
     base/python2.7

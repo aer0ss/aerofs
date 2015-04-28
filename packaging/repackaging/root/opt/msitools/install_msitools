@@ -103,7 +103,7 @@ function cleanup() {
     local APT_CACHE="/var/lib/apt/lists"
 
     echo ">> Cleaning up..."
-    apt-get purge --auto-remove -y ${BUILD_DEPENDENCIES}
+    apt-get purge -y ${BUILD_DEPENDENCIES}
 
     rm -rf "${GCAB_DIR}" "${MSITOOLS_DIR}" "${APT_CACHE}"/*
 }

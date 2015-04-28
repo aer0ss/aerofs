@@ -9,7 +9,7 @@ CMD [ "/run.sh" ]
 ENV BUILD_PKGS git cmake gcc g++
 
 RUN \
-    apt-get update && apt-get install -y p7zip-full zip fakeroot $BUILD_PKGS &&\
+    apt-get update && apt-get install -y p7zip-full zlib1g-dev libbz2-dev python-dev zip fakeroot $BUILD_PKGS &&\
     #
     # Build libdmg-hfsplus
     #

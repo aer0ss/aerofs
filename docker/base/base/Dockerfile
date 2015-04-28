@@ -1,5 +1,5 @@
-# sid is needed for java8
-FROM debian:sid
+# Ubuntu 15 is needed for Java 8
+FROM ubuntu:15.04
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 

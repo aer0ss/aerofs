@@ -6,6 +6,7 @@ MAINTAINER Weihan Wang "weihan@aerofs.com"
 
 # see https://bugs.debian.org/775775
 # and https://github.com/docker-library/java/issues/19#issuecomment-70546872
+# Note that these issues may apply only to Debian and not Ubuntu. TODO: remove it?
 ENV CA_CERTIFICATES_JAVA_VERSION 20140324
 
 RUN apt-get update && apt-get install -y \
@@ -14,4 +15,4 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # see CA_CERTIFICATES_JAVA_VERSION notes above
-RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
+RUN /var/lib/dpkg/info/ca-certificates.postinst configure

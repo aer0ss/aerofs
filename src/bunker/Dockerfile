@@ -15,10 +15,12 @@ RUN apt-get update && apt-get install -y mysql-client docker.io libmysqlclient-d
 
 COPY buildroot/requirements-exact.txt /
 
+ENV BUILD_PKGS gcc python-dev
+
 RUN \
-    apt-get update && apt-get install -y gcc &&\
+    apt-get update && apt-get install -y $BUILD_PKGS &&\
     pip install -r /requirements-exact.txt &&\
-    apt-get purge -y gcc && rm -rf /var/lib/apt/lists/*
+    apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/*
 
 # Add source files last
 COPY root buildroot /
