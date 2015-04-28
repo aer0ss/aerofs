@@ -10,6 +10,9 @@ def load(repo_file, tag_file, target_file):
     tag = get_tag()
     with open(tag_file) as f:
         tag_from_file = f.read().strip()
+        # Use no tag if the provided file is empty
+        if not tag_from_file:
+            tag = ''
         if tag != tag_from_file:
             raise Exception("ERROR: Tag file content '{}' differs from the Loader's tag '{}'."
                             " Please check sanity of the sail script.".format(tag_from_file, tag))
@@ -21,13 +24,7 @@ def load(repo_file, tag_file, target_file):
 
     modify_yaml(repo, tag)
     call_crane('run', target)
-    start(repo, target, repo_file, tag_file, target_file, tag, False)
-
-
-def simulate_api(repo, target):
-    tag = get_tag()
-    modify_yaml(repo, tag)
-    start(repo, target, '/dev/null', '/dev/null', '/dev/null', tag, True)
+    start(repo, target, repo_file, tag_file, target_file, tag)
 
 
 def modify_yaml(repo, tag):
@@ -68,15 +65,25 @@ def remove_loader_container(containers, my_image):
 
 
 def add_repo_and_tag_to_images(containers, repo, tag):
-    """
-    :param repo empty to refer to Docker's default repo
-    """
-    repo = '{}/'.format(repo) if repo else ''
+    prefix = image_prefix(repo)
+    suffix = image_suffix(tag)
     for key in containers.keys():
         c = containers.pop(key)
-        c['image'] = '{}{}:{}'.format(repo, c['image'], tag)
+        c['image'] = '{}{}{}'.format(prefix, c['image'], suffix)
         # Add the container back with the new container name
         containers[add_tag_to_container(key, tag)] = c
+
+
+def image_prefix(repo):
+    return '{}/'.format(repo) if repo else ''
+
+
+def image_suffix(tag):
+    return ':{}'.format(tag) if tag else ''
+
+
+def container_suffix(tag):
+    return '-{}'.format(tag) if tag else ''
 
 
 def modify_links(containers, tagged_loader_container, my_container, tag):
@@ -84,7 +91,7 @@ def modify_links(containers, tagged_loader_container, my_container, tag):
     Add tag to all container links and replace links to the Loader container with my container name
     """
     tag_pattern = compile(':')
-    tag_replace = '-{}:'.format(tag)
+    tag_replace = '{}:'.format(container_suffix(tag))
     loader_pattern = compile('^{}:'.format(tagged_loader_container))
 
     for c in containers.itervalues():
@@ -122,7 +129,7 @@ def add_tag_to_container(c, tag):
     """
     See also: patterns defined in modify_links()
     """
-    return '{}-{}'.format(c, tag)
+    return '{}{}'.format(c, container_suffix(tag))
 
 
 def get_images():

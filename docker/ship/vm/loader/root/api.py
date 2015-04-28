@@ -17,11 +17,10 @@ _repo_file = None
 _tag_file = None
 _target_file = None
 _tag = None
-_simulate = None
 
 
-def start(current_repo, current_target, repo_file, tag_file, target_file, tag, simulate):
-    global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag, _simulate
+def start(current_repo, current_target, repo_file, tag_file, target_file, tag):
+    global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag
     # Save data in RAM rather than reading files on demand as their content may change _after_ we launch.
     _current_repo = current_repo
     _current_target = current_target
@@ -29,7 +28,6 @@ def start(current_repo, current_target, repo_file, tag_file, target_file, tag, s
     _tag_file = tag_file
     _target_file = target_file
     _tag = tag
-    _simulate = simulate
 
     print "Starting API service..."
     app.run('0.0.0.0', 80)
@@ -55,14 +53,9 @@ def post_boot(target=CURRENT):
     """
     print 'Restarting app to /{}...'.format(target)
 
-    if _simulate:
-        print
-        print "WARNING: simulation mode. I dare not restart the appliance. Please do so manually."
-        print
-    else:
-        call_crane('kill', _current_target)
-        print 'Killing myself. Expecting external system to restart me...'
-        shutdown_server()
+    call_crane('kill', _current_target)
+    print 'Killing myself. Expecting external system to restart me...'
+    shutdown_server()
 
     # For safety, update files _after_ everything shuts down.
     if target != CURRENT:

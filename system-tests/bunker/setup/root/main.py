@@ -1,8 +1,3 @@
-#
-# In addition to the command line arguments, the program requires the AeroFS license present at LICENSE_FILE. It also
-# Write a non-empty string to REBOOT_FLAG_FILE when it expects the appliance to reboot to the default container group.
-#
-
 from os.path import abspath
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -11,8 +6,6 @@ import yaml
 from sys import argv, stderr
 from webdriver_util import init
 from aerofs_webdriver_util import upload_license, get_signup_code
-
-REBOOT_FLAG_FILE = '/reboot-flag'
 
 
 def select_new_appliance(e, wait):
@@ -97,9 +90,6 @@ def apply_config(e, wait):
     # Click "Apply"
     e.get('.btn-primary').click()
     print "The next step may take a while but should be less than five minutes:"
-
-    with open(REBOOT_FLAG_FILE, 'w') as f:
-        f.write('1')
 
     # Wait for Apply Click "Create First User"
     wait.until_display('#success-modal', timeout=10 * 60)

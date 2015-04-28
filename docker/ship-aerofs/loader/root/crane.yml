@@ -6,11 +6,6 @@ containers:
 
   loader:
     image: aerofs/loader
-    run:
-      detach: true
-      cmd: simulate-api registry.aerofs.com default
-      volume:
-        - /var/run/docker.sock:/var/run/docker.sock
 
   mysql:
     image: aerofs/mysql

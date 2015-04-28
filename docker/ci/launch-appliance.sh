@@ -66,24 +66,6 @@ launch_vm() {
     VBoxManage startvm ${VM} --type headless
 }
 
-wait_for_url() {
-    local PORT=$1
-    local URL="http://${IP}:${PORT}"
-    (set +x
-        echo "Waiting for ${URL} readiness..."
-        local START=$(date +"%s")
-        while true; do
-            BODY="$(curl -s --connect-timeout 1 ${URL} || true)"
-            [[ "${BODY}" ]] && break
-            if [ $(($(date +"%s")-START)) -gt 300 ]; then
-                echo "ERROR: Timeout when waiting for ${URL} readiness"
-                exit 22
-            fi
-            sleep 1
-        done
-    )
-}
-
 main() {
     # VirtualBox requires .iso file extension
     local CLOUD_DRIVE_ISO=$(mktemp -t ci-cloud-drive-XXX.iso)
@@ -118,7 +100,7 @@ main() {
     echo
 
     # Not until the Web UIs is ready we can declare a success launch.
-    wait_for_url 80
+    "${THIS_DIR}/../../tools/wait-for-url.sh" ${IP}
 
     echo
     echo ">>> About to wait for Signup Decoder service. It's being built from scratch and may take a while."
@@ -127,7 +109,8 @@ main() {
     echo "    vm$ systemctl status -l signup-decoder"
     echo "    vm$ journalctl -fu signup-decoder"
     echo
-    wait_for_url 21337
+
+    "${THIS_DIR}/../../tools/wait-for-url.sh" ${IP}:21337
 }
 
 main
