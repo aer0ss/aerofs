@@ -170,12 +170,6 @@ public class DlgAbout extends AeroFSDialog
         _btnUpdate.setSize(_btnUpdate.computeSize(SWT.DEFAULT, SWT.DEFAULT));
     }
 
-    private void setUpdateStatusText(String text) {
-        _lblUpdateStatus.setText(text);
-        getShell().layout(new Control[]{_lblUpdateStatus});
-        getShell().pack();
-    }
-
     private final IUINotificationListener _updateListener = notification -> {
         UpdaterNotification n = (UpdaterNotification)notification;
         setUpdateStatus(n.status, n.progress);
@@ -187,7 +181,7 @@ public class DlgAbout extends AeroFSDialog
 
         switch (us) {
         case NONE:
-            setUpdateStatusText("");
+            _lblUpdateStatus.setText("");
             _compSpinUpdate.stop();
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
@@ -198,16 +192,16 @@ public class DlgAbout extends AeroFSDialog
             break;
         case ONGOING:
             if (progress > 0) {
-                setUpdateStatusText(S.LBL_UPDATE_ONGOING + " " + progress + "%");
+                _lblUpdateStatus.setText(S.LBL_UPDATE_ONGOING + " " + progress + "%");
                 setUpdateButton(S.BTN_APPLY_UPDATE, null, false, false);
             } else {
-                setUpdateStatusText(S.LBL_UPDATE_CHECKING);
+                _lblUpdateStatus.setText(S.LBL_UPDATE_CHECKING);
                 setUpdateButton(S.BTN_CHECK_UPDATE, null, false, false);
             }
             _compSpinUpdate.start();
             break;
         case LATEST:
-            setUpdateStatusText(S.LBL_UPDATE_LATEST);
+            _lblUpdateStatus.setText(S.LBL_UPDATE_LATEST);
             _compSpinUpdate.stop(Images.get(Images.ICON_TICK));
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
@@ -218,7 +212,7 @@ public class DlgAbout extends AeroFSDialog
             }, true, false);
             break;
         case APPLY:
-            setUpdateStatusText(S.LBL_UPDATE_APPLY);
+            _lblUpdateStatus.setText(S.LBL_UPDATE_APPLY);
             _compSpinUpdate.stop();
             setUpdateButton(S.BTN_APPLY_UPDATE, new SelectionAdapter() {
                 @Override
@@ -229,7 +223,7 @@ public class DlgAbout extends AeroFSDialog
             }, true, true);
             break;
         case ERROR:
-            setUpdateStatusText(S.LBL_UPDATE_ERROR);
+            _lblUpdateStatus.setText(S.LBL_UPDATE_ERROR);
             _compSpinUpdate.error();
             setUpdateButton(S.BTN_CHECK_UPDATE, new SelectionAdapter() {
                 @Override
@@ -258,7 +252,7 @@ public class DlgAbout extends AeroFSDialog
                     if (result) {
                         setUpdateStatus(Status.LATEST, 0);
                     } else {
-                        setUpdateStatusText(S.LBL_UPDATE_OUT_OF_DATE);
+                        _lblUpdateStatus.setText(S.LBL_UPDATE_OUT_OF_DATE);
                         _compSpinUpdate.warning();
                     }
                 }
@@ -275,5 +269,8 @@ public class DlgAbout extends AeroFSDialog
         default:
             assert false;
         }
+
+        getShell().layout(new Control[] { _lblUpdateStatus, _btnUpdate });
+        getShell().pack();
     }
 }
