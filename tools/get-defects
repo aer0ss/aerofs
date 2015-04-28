@@ -31,7 +31,7 @@ main()
             unzip -o "$file" -d "$destdir"
             rm $file
 
-            echo "Retracing logs for $DEFECT"
+            echo "Extracting logs for $DEFECT"
 
             if [ ! -z "$(ls $destdir/name*map 2>/dev/null)" ]
             then
