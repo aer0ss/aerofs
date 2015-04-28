@@ -9,7 +9,7 @@ The 'rundebug' script offers an easy way to start the gui or daemon with a remot
 
  - `portbase + 10` : GUI (default 5010)
 
-To access the script, go in `tools` first.
+To access the script, go in `approot` first.
 
 When you start the debug-enabled program, rundebug will print the port number in use.
 

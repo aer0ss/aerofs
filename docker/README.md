@@ -31,6 +31,16 @@ You can use this to read the logs of a given container:
     # For example
     docker logs loader
 
+## Debugging a crashed container
+
+Let's imagine this could possibly happen. Let's imagine the `nginx` container just crashed,
+and `docker logs nginx` doesn't give you satisfying elements. Here is what you can do:
+
+    docker commit nginx <new_image_of_crashed_nginx>
+    docker run --rm --it <new_image_of_crashed_nginx> bash
+
+Replace `<new_image_of_crashed_nginx>` by any valid name, like `nginx_crashed`.
+
 ## Dependency graph
 
 Show the container dependency graph, with Bifrost's link dependency highlighted:
