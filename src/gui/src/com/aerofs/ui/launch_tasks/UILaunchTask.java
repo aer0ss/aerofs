@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.base.C;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.sched.IScheduler;
@@ -27,15 +28,10 @@ abstract class UILaunchTask extends AbstractEBSelfHandling
     @Override
     public void handle_()
     {
-        new ExponentialRetry(_sched).retry(getClass().getSimpleName(), new Callable<Void>()
-        {
-            @Override
-            public Void call() throws Exception
-            {
-                run_();
-                return null;
-            }
-        });
+        // N.B. the only UILaunchTask we run now is ULTRecertify and this is what I think the optimal
+        //   timing for recertify should be.
+        new ExponentialRetry(_sched).retry(getClass().getSimpleName(), 10 * C.SEC, 10 * C.MIN,
+                () -> { run_(); return null; });
     }
 
     protected abstract void run_() throws Exception;
