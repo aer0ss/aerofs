@@ -1,4 +1,3 @@
-
 .PHONY: all debs upload clean test packagelist
 
 # Default the bin to staging unless the user specifies otherwise. Set this in the environment.
@@ -7,37 +6,19 @@ TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 # List of known packages that can be built in alphabetical order.
 PACKAGES= \
-	auditor \
-	bifrost \
-	bootstrap \
-	bunker \
-	ca-server \
-	ca-tools \
-	charlie \
-	cmd-tools \
-	command \
-	config \
-	db-backup \
-	dryad \
-	havre \
-	identity \
-	jeq-tools \
-	lizard \
-	log-collection \
-	middleman \
-	pagerduty \
-	polaris \
-	probe \
-	repackaging \
-	rocklog \
-	sanity \
-	servlet-tools \
-	sp \
-	sparta \
-	verification \
-	verkehr \
-	web \
-	zephyr \
+	ca-tools
+	charlie
+	cmd-tools
+	config
+	db-backup
+	dryad
+	jeq-tools
+	lizard
+	middleman
+	pagerduty
+	repackaging
+	rocklog
+	sanity
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
@@ -78,4 +59,3 @@ clean:
 	@rm -rf build debs versions *.deb *.ver *.txt
 
 .PHONY: all ${PACKAGES} debs packagelist upload upload-versions clean
-
