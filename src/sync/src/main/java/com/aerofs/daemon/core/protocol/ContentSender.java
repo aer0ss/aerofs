@@ -22,7 +22,6 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetContentRequest;
@@ -37,8 +36,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -52,11 +51,11 @@ public class ContentSender
     protected final TokenManager _tokenManager;
     private final CoreScheduler _sched;
 
-    private final Map<SOKID, OngoingTransfer> _ongoing = new ConcurrentHashMap<>();
+    private final Set<OngoingTransfer> _ongoing = new HashSet<>();
 
     @Inject
-    public ContentSender(UploadState ulstate, CoreScheduler sched,
-                         TransportRoutingLayer trl, Metrics m, TokenManager tokenManager)
+    public ContentSender(UploadState ulstate, CoreScheduler sched, TransportRoutingLayer trl,
+                         Metrics m, TokenManager tokenManager)
     {
         _sched = sched;
         _ulstate = ulstate;
@@ -163,7 +162,7 @@ public class ContentSender
         checkState(prefixLen >= 0);
 
         OngoingTransfer ul = new OngoingTransfer(_sched, _ulstate, ep, c.sokid.soid(), c.length);
-        checkState(_ongoing.put(c.sokid, ul) == null);
+        checkState(_ongoing.add(ul));
         try {
             TCB tcb = tk.pseudoPause_("snd-" + c.sokid);
             try {
@@ -175,7 +174,7 @@ public class ContentSender
             _ulstate.ended_(new SOCID(c.sokid.soid(), CID.CONTENT), ep, true);
             throw e;
         } finally {
-            _ongoing.remove(c.sokid);
+            _ongoing.remove(ul);
         }
     }
 
