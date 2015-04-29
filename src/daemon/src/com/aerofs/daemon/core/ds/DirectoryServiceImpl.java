@@ -466,8 +466,11 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
             }
         }
 
+        _cacheOA.invalidate_(soid);
         // must not keep children with stale expelled flags in the cache
-        _cacheOA.invalidateAll_();
+        if (oa.isDir() && oa.isExpelled() != nowExpelled && hasChildren_(soid)) {
+            _cacheOA.invalidateAll_();
+        }
     }
 
     @Override
@@ -571,6 +574,19 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
         _cacheDS.invalidateAll_();
         _cacheOA.invalidate_(soid);
+
+        if (oa.isDir()) {
+            try (IDBIterator<OID> it = _mdb.listChildren_(soid)) {
+                while (it.next_()) {
+                    OID c = it.get_();
+                    l.info("reparent {} to trash", c);
+                    _cacheOA.invalidate_(new SOID(soid.sidx(), c));
+                    _mdb.setOAParentAndName_(soid.sidx(), c, OID.TRASH, c.toStringFormal(), t);
+                }
+            } catch (ExAlreadyExist e) {
+                throw new IllegalStateException(e);
+            }
+        }
 
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectObliterated_(oa, t);

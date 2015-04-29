@@ -8,7 +8,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.store.PolarisStore;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -24,6 +23,7 @@ import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.api.LogicalObject;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.api.UpdatedObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
@@ -37,6 +37,7 @@ import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.store.PolarisStore;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.db.IDBIterator;
@@ -197,6 +198,9 @@ public class MetaChangeSubmitter implements Submitter
         change.child = c.oid.toStringFormal();
 
         OID oldParent = proxy.getParent_(c.oid);
+        // FIXME: null parent caused by sharing?
+
+        l.info("op: {} {} {} {} {}", sidx, c.oid, oldParent, c.newParent, c.newName);
 
         // FIXME: conversion pitfall: deletion of auto-joined store
         if (oldParent == null) {
@@ -232,7 +236,7 @@ public class MetaChangeSubmitter implements Submitter
         switch (type) {
         case FILE: return ObjectType.FILE;
         case DIR: return ObjectType.FOLDER;
-        case ANCHOR: return ObjectType.MOUNT_POINT;
+        case ANCHOR: return ObjectType.STORE;
         default:
             throw new AssertionError();
         }
@@ -326,6 +330,10 @@ public class MetaChangeSubmitter implements Submitter
             return true;
         }
 
+        // TODO: on PARENT_CONFLICT
+        //  -> wait until fetch complete
+        //  -> if still present, use a new OID
+
         // TODO: temporarily pause submission?
         // TODO: schedule immediate meta fetch?
         // TODO: restart submission when changes are received
@@ -346,6 +354,8 @@ public class MetaChangeSubmitter implements Submitter
             Trans t)
             throws SQLException, ExFormatError
     {
+        if (rc.transformType == Type.SHARE) return false;
+
         MetaChange lc = submittedMetaChange_(sidx);
         if (lc == null) return false;
         LocalChange.Type lct = matches_(lc, rc, lnk);

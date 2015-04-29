@@ -17,6 +17,7 @@ public class RemoteChange
         RENAME_CHILD,
         DELETE_CHILD,
         UPDATE_CONTENT,
+        SHARE,
     }
 
     public long logicalTimestamp;
@@ -45,6 +46,7 @@ public class RemoteChange
         rc.child = child;
         rc.childName = name;
         rc.childObjectType = type;
+        rc.originator = DID.generate();
         return rc;
     }
 
@@ -54,6 +56,7 @@ public class RemoteChange
         rc.oid = parent;
         rc.transformType = Type.REMOVE_CHILD;
         rc.child = child;
+        rc.originator = DID.generate();
         return rc;
     }
 
@@ -64,10 +67,17 @@ public class RemoteChange
         rc.transformType = Type.RENAME_CHILD;
         rc.child = child;
         rc.childName = name;
+        rc.originator = DID.generate();
         return rc;
     }
 
     public static RemoteChange updateContent(UniqueID object, ContentHash hash, long size, long mtime)
+    {
+        return updateContent(object, DID.generate(), hash, size, mtime);
+    }
+
+    public static RemoteChange updateContent(UniqueID object, UniqueID originator, ContentHash hash,
+                                             long size, long mtime)
     {
         RemoteChange rc = new RemoteChange();
         rc.oid = object;
@@ -75,6 +85,14 @@ public class RemoteChange
         rc.contentHash = hash;
         rc.contentSize = size;
         rc.contentMtime = mtime;
+        rc.originator = originator;
+        return rc;
+    }
+
+    public static RemoteChange share(UniqueID object) {
+        RemoteChange rc = new RemoteChange();
+        rc.oid = object;
+        rc.transformType = Type.SHARE;
         rc.originator = DID.generate();
         return rc;
     }

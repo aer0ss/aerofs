@@ -6,8 +6,7 @@ package com.aerofs.daemon.core.polaris.api;
 
 public enum ObjectType
 {
-    ROOT,
+    STORE,
     FILE,
     FOLDER,
-    MOUNT_POINT
 }

@@ -73,7 +73,7 @@ public class TestImmigrantCreator extends AbstractTest
         setupMockDS(0);
         SOID soidToRootParent = new SOID(soidFromRoot.sidx(),
                 new OID(UniqueID.generate()));
-        imc.createImmigrantRecursively_(ResolvedPath.root(SID.generate()),
+        imc.createLegacyImmigrantRecursively_(ResolvedPath.root(SID.generate()),
                 soidFromRoot, soidToRootParent,
                 toRootName, op, t);
     }
@@ -199,7 +199,7 @@ public class TestImmigrantCreator extends AbstractTest
     {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
         l.info("{} {}", soidFromRoot, ds.getOANullable_(soidFromRoot));
-        imc.createImmigrantRecursively_(ds.resolve_(soidFromRoot).parent(),
+        imc.createLegacyImmigrantRecursively_(ds.resolve_(soidFromRoot).parent(),
                 soidFromRoot, soidToRootParent, toRootName, op, t);
     }
 }

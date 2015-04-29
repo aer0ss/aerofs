@@ -46,15 +46,10 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
             PreparedStatement ps = _pswGet.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
-                try {
+            try (ResultSet rs = ps.executeQuery()) {
                     return rs.next() ? Path.fromStringFormal(rs.getString(1)) : null;
-                } catch (ExFormatError e) {
-                    throw new SQLException(e);
-                }
-            } finally {
-                rs.close();
+            } catch (ExFormatError e) {
+                throw new SQLException(e);
             }
         } catch (SQLException e) {
             _pswGet.close();
@@ -135,11 +130,8 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
 
     public boolean hasMoreEntries_(SIndex sidx) throws SQLException
     {
-        IDBIterator<StagedFolder> it = listEntriesByStore_(sidx);
-        try {
+        try (IDBIterator<StagedFolder> it = listEntriesByStore_(sidx)) {
             return it.next_();
-        } finally {
-            it.close_();
         }
     }
 

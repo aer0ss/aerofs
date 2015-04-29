@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
+import com.aerofs.daemon.core.polaris.submit.Submitter;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -32,6 +33,11 @@ public class PolarisStore extends ReadOnlyPolarisStore
         super(f, sidx, cfs, cf);
         _mcss = f._factMCSS.create(sidx);
         _ccss = f._factCCSS.create(sidx);
+    }
+
+    public SubmissionScheduler<MetaChangeSubmitter> metaSubmitter()
+    {
+        return _mcss;
     }
 
     public SubmissionScheduler<ContentChangeSubmitter> contentSubmitter()

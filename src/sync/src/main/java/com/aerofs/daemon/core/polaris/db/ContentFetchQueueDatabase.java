@@ -50,7 +50,7 @@ public class ContentFetchQueueDatabase extends AbstractDatabase
         if (!usePolaris) return;
         try (Statement s = c().createStatement()) {
             s.executeUpdate("create table " + tableName(sidx) + "("
-                    + C_CONTENT_QUEUE_IDX + " integer primary key,"
+                    + C_CONTENT_QUEUE_IDX + " integer primary key autoincrement,"
                     + C_CONTENT_QUEUE_OID + _dbcw.uniqueIdType() + " unique"
                     + ")");
         }

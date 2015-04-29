@@ -12,7 +12,7 @@
 :include ../core/revision/test_revision_group.scn
 :include ../core/misc/test_misc_group.scn
 :include ../core/anti_entropy/test_anti_entropy_group.scn
-:include ../core/unsyncable/test_unsyncable_phoenix_group.scn
+:include ../core/unsyncable/test_unsyncable_group.scn
 :include ../api/test_api_n_clients_group.scn
 
 :scn,nofail all
@@ -21,11 +21,12 @@
         anti_entropy_group()
         linker_group()
         deletion_group()
-        #expulsion_group()
+        expulsion_group()
         multiroot_group()
+        # TODO: enable when the last 2 tests pass w/ polaris
         #meta_conflict_group()
-        #sharing_group()
-        #acl_group()
+        sharing_group()
+        acl_group()
         aliasing_group()
         relocate_group()
         revision_group()

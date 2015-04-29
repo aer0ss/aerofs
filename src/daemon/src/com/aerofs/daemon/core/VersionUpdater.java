@@ -9,10 +9,10 @@ import javax.annotation.Nonnull;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -33,7 +33,7 @@ public class VersionUpdater
     private static final Logger l = Loggers.getLogger(VersionUpdater.class);
 
     private final NativeVersionControl _nvc;
-    private final ChangeEpochDatabase _cedb;
+    private final CfgUsePolaris _usePolaris;
     private final MetaChangesDatabase _mcdb;
     private final ContentChangesDatabase _ccdb;
     private final DirectoryService _ds;
@@ -47,11 +47,11 @@ public class VersionUpdater
     private final List<IListener> _listeners = Lists.newArrayList();
 
     @Inject
-    public VersionUpdater(NativeVersionControl nvc, ChangeEpochDatabase cedb,
+    public VersionUpdater(NativeVersionControl nvc, CfgUsePolaris usePolaris,
             MetaChangesDatabase mcdb, ContentChangesDatabase ccdb, DirectoryService ds)
     {
         _nvc = nvc;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
         _mcdb = mcdb;
         _ccdb = ccdb;
         _ds = ds;
@@ -87,11 +87,15 @@ public class VersionUpdater
         checkNotNull(t);
         l.debug("update {}", k);
 
-        if (_cedb.getChangeEpoch_(k.sidx()) != null) {
+        if (_usePolaris.get()) {
             checkArgument(!alias);
             checkArgument(k.kidx().isMaster());
             if (k.cid().isMeta()) {
                 OA oa = _ds.getOA_(k.soid());
+                // FIXME(phoenix): special handling for deletion:
+                // - remove all changes if the object is not known remotely
+                // - [care must be taken to account for in-flight changes]
+                // - ?
                 _mcdb.insertChange_(k.sidx(), k.oid(), oa.parent(), oa.name(), t);
             } else {
                 checkArgument(k.cid().isContent());

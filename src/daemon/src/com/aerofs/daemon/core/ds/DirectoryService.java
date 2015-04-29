@@ -30,6 +30,8 @@ import com.aerofs.lib.id.SOKID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, IStoreDeletionOperator
@@ -304,8 +306,23 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
         switch (oa.type()) {
         case DIR:
             if (ret != null) {
-                for (OID oid : getChildren_(soid)) {
-                    walk_(new SOID(soid.sidx(), oid), ret, w);
+                List<SOID> dirs = null;
+                try (IDBIterator<OID> it = listChildren_(soid)) {
+                    while (it.next_()) {
+                        OA c = getOANullableNoFilter_(new SOID(soid.sidx(), it.get_()));
+                        if (c == null) throw new ExNotFound("" + soid);
+                        if (c.isFile()) {
+                            walk_(c.soid(), ret, w);
+                        } else {
+                            if (dirs == null) dirs = new ArrayList<>();
+                            dirs.add(c.soid());
+                        }
+                    }
+                }
+                if (dirs != null) {
+                    for (SOID c : dirs) {
+                        walk_(c, ret, w);
+                    }
                 }
             }
             break;

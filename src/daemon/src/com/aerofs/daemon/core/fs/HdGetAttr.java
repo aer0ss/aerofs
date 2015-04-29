@@ -6,13 +6,13 @@ import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -35,19 +35,19 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
 {
     private final DirectoryService _ds;
 
-    private final ChangeEpochDatabase _cedb;
+    private final CfgUsePolaris _usePolaris;
     private final NativeVersionControl _nvc;
     private final UserAndDeviceNames _udn;
     private final RemoteContentDatabase _rcdb;
 
     @Inject
-    public HdGetAttr(DirectoryService ds, ChangeEpochDatabase cedb, NativeVersionControl nvc,
+    public HdGetAttr(DirectoryService ds, CfgUsePolaris usePolaris, NativeVersionControl nvc,
             RemoteContentDatabase rcdb, UserAndDeviceNames udn)
     {
         _ds = ds;
         _nvc = nvc;
         _udn = udn;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
         _rcdb = rcdb;
     }
 
@@ -136,7 +136,7 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         Map<KIndex, List<PBPeer>> editors = Maps.newHashMap();
 
         // TODO(phoenix)
-        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+        if (_usePolaris.get()) {
             checkState(branches.size() == 2);
             // when a conflict branch is present it MUST be the last downloaded version
             // therefore it is still present in the remote content db, from which the

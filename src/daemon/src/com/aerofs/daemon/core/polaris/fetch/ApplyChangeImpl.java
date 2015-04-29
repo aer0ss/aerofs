@@ -1,24 +1,34 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.migration.ImmigrantCreator;
+import com.aerofs.daemon.core.migration.RemoteTreeCache;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteChild;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -28,7 +38,12 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
+import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
+import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ApplyChangeImpl implements ApplyChange.Impl
@@ -45,12 +60,19 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final MetaChangesDatabase _mcdb;
     private final ContentChangesDatabase _ccdb;
     private final MetaChangeSubmitter _submitter;
+    private final StoreCreator _sc;
+    private final StoreDeleter _sd;
+    private final IMapSID2SIndex  _sid2sidx;
+    private final ImmigrantCreator _imc;
+    private final ExpulsionDatabase _exdb;
 
     @Inject
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
                            MapAlias2Target a2t, ObjectSurgeon os, RemoteLinkDatabase rpdb,
                            MetaBufferDatabase mbdb, MetaChangesDatabase mcdb,
-                           ContentChangesDatabase ccdb, MetaChangeSubmitter submitter)
+                           ContentChangesDatabase ccdb, MetaChangeSubmitter submitter,
+                           StoreCreator sc, IMapSID2SIndex sid2sidx, ImmigrantCreator imc,
+                           ExpulsionDatabase exdb, StoreDeleter sd)
     {
         _ds = ds;
         _ps = ps;
@@ -62,6 +84,11 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _mcdb = mcdb;
         _ccdb = ccdb;
         _submitter = submitter;
+        _sc = sc;
+        _sd = sd;
+        _sid2sidx = sid2sidx;
+        _imc = imc;
+        _exdb = exdb;
     }
 
     @Override
@@ -77,16 +104,11 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 return OA.Type.FILE;
             case FOLDER:
                 return OA.Type.DIR;
-            case MOUNT_POINT:
+            case STORE:
                 return OA.Type.ANCHOR;
             default:
                 throw new ExProtocolError();
         }
-    }
-
-    @Override
-    public boolean exists_(SOID soid) throws SQLException {
-        return _ds.getOANullable_(soid) == null && !_mbdb.isBuffered_(soid);
     }
 
     @Override
@@ -134,6 +156,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     private void applyInsert_(SIndex sidx, OID oidChild, OID oidParent, String name, OA.Type type,
                               Trans t) throws Exception {
+        // TODO: migration?
         OA oa = _ds.getOANullable_(new SOID(sidx, oidChild));
         if (oa != null) {
             checkState(oa.type() == type, "%s<%s>/<%s>", sidx, oidParent, oidChild);
@@ -142,8 +165,16 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
         _ds.createOA_(type, sidx, oidChild, oidParent, name, t);
         oa = _ds.getOA_(new SOID(sidx, oidChild));
-        if (!oa.isExpelled() && oa.isDirOrAnchor()) {
-            _ps.newFolder_(_ds.resolve_(new SOID(sidx, oidChild))).create_(PhysicalOp.APPLY, t);
+        if (!oa.isExpelled()) {
+            IPhysicalFolder pf = _ps.newFolder_(_ds.resolve_(oa));
+            if (oa.isDirOrAnchor()) {
+                pf.create_(APPLY, t);
+            }
+            if (oa.isAnchor()) {
+                SID sid = SID.anchorOID2storeSID(oa.soid().oid());
+                _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
+                pf.promoteToAnchor_(sid, APPLY, t);
+            }
         }
     }
 
@@ -198,6 +229,228 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     void applyDelete_(OA oaChild, Trans t) throws Exception {
         OA oaTrash = _ds.getOA_(new SOID(oaChild.soid().sidx(), OID.TRASH));
         applyMove_(oaTrash, oaChild, oaChild.soid().oid().toStringFormal(), t);
+    }
+
+    @Override
+    public void share_(SOID soid, Trans t) throws Exception
+    {
+        SID sid = SID.folderOID2convertedStoreSID(soid.oid());
+        OID anchor = SID.storeSID2anchorOID(sid);
+        SOID soidAnchor = new SOID(soid.sidx(), anchor);
+
+        OA oa = _ds.getOA_(soid);
+        ResolvedPath p = _ds.resolve_(oa);
+
+        if (!oa.parent().isTrash()) {
+            // move folder out of the way
+            // NB: must not put under trash just yet or expulsion status would be wrong
+            // NB: use forbidden character in prefix to avoid conflict
+            _ds.setOAParentAndName_(oa, _ds.getOA_(new SOID(soid.sidx(), oa.parent())),
+                    "/" + soid.oid().toStringFormal(), t);
+
+            // create anchor
+            _ds.createOA_(ANCHOR, soid.sidx(), anchor, oa.parent(), oa.name(), t);
+        } else {
+            // create anchor directly in trash...
+            _ds.createOA_(ANCHOR, soid.sidx(), anchor, oa.parent(), anchor.toStringFormal(), t);
+        }
+
+        // preserve explicit expulsion state
+        if (oa.isSelfExpelled()) {
+            _ds.setExpelled_(soidAnchor, true, t);
+            _exdb.insertExpelledObject_(soidAnchor, t);
+            _exdb.deleteExpelledObject_(soid, t);
+        }
+
+        // NB: ideally we wouldn't do that when the anchor is expelled but it's simpler to create
+        // the store, do the regular migration and then delete it than it would be to handle an
+        // expelled destination in every parts of the migration...
+        _sc.addParentStoreReference_(sid, soid.sidx(), oa.name(), t);
+
+        SIndex sidxTo = _sid2sidx.get_(sid);
+        SOID soidToRoot = new SOID(sidxTo, OID.ROOT);
+
+        if (oa.isExpelled()) {
+            // HACK: mark root dir as expelled to prevent ImmigrantCreator from trying to update
+            // physical objects
+            _ds.setExpelled_(soidToRoot, true, t);
+        } else {
+            _ps.newFolder_(p).updateSOID_(soidAnchor, t);
+            IPhysicalFolder pf = _ps.newFolder_(p.substituteLastSOID(soidAnchor));
+            pf.create_(MAP, t);
+            pf.promoteToAnchor_(sid, MAP, t);
+        }
+
+        // meta changes for the original folder should be moved to anchor
+        _mcdb.updateChanges_(soid.sidx(), soid.oid(), anchor, t);
+
+        /**
+         * here be dragons
+         *
+         * assumption:
+         * SHARE op is received once the migration is completed server-side, i.e. as if the local
+         * snapshot of the remote tree (RemoteLinkDatabase) had been atomically migrated
+         *
+         * 1. recursively walk local migrated subtree
+         *      - is object is remote migrated subtree
+         *          yes: preserve OID, version, and all meta changes
+         *          no:
+         *              - is object know remotely?
+         *                  yes: assign new OID in target store, delete in source store
+         *                  no: preserve OID, consolidate meta changes to a single insert
+         * 2. recursively walk remote migrated subtree
+         *      - replicate in target store
+         *      - check if object is in local migrated tree (i.e. target store)
+         *          yes: nothing to do
+         *          no:  assign new OID in source store, delete in target store
+         * 3. go through local meta changes to source store in order, filtering out those that do
+         *    not affect objects in migrated subtree
+         *      - check if new parent is in migrated subtree
+         *          yes: move change to target store
+         *          no:  drop change FIXME: this is not 100% safe
+         *
+         *
+         * issues:
+         *   - complex and somewhat brittle
+         *   - full subtree walk in a single transaction
+         *      -> slow, blocking processing of other core events
+         *      -> risk of crash wo/ incremental progress
+         */
+        // migrate children
+        // TODO: deferred/incremental
+        RemoteTreeCache cache = new RemoteTreeCache(soid.sidx(), soid.oid(), _rpdb);
+
+        for (OID c :_ds.getChildren_(soid)) {
+            SOID soidChild = new SOID(soid.sidx(), c);
+            OA oaChild = _ds.getOA_(soidChild);
+            _imc.createImmigrantRecursively_(p, soidChild, soidToRoot, oaChild.name(), MAP, cache, t);
+        }
+
+        copyRemoteTree_(soid.sidx(), soid.oid(), OID.ROOT, sidxTo, t);
+        moveMetaChanges_(soid.sidx(), soid.oid(), sidxTo, cache, t);
+
+        // remove store if the anchor is expelled
+        if (oa.isExpelled()) {
+            _sd.removeParentStoreReference_(sidxTo, soid.sidx(), p, MAP, t);
+        }
+
+        // complete deletion of original folder
+        if (!oa.parent().isTrash()) {
+            OA trash = _ds.getOA_(new SOID(soid.sidx(), OID.TRASH));
+            _ds.setOAParentAndName_(oa, trash, soid.oid().toStringFormal(), t);
+            _expulsion.objectMoved_(p, soid, PhysicalOp.NOP, t);
+        }
+    }
+
+    private void copyRemoteTree_(SIndex sidxFrom, OID root, OID parent, SIndex sidxTo, Trans t)
+            throws SQLException, IOException, ExProtocolError {
+        List<OID> folders = new ArrayList<>();
+        try (IDBIterator<RemoteChild> it = _rpdb.listChildren_(sidxFrom, root)) {
+            while (it.next_()) {
+                RemoteChild rc = it.get_();
+                _rpdb.insertParent_(sidxTo, rc.oid, parent, rc.name, -1, t);
+                OA oa = _ds.getOANullable_(new SOID(sidxTo, rc.oid));
+                if (oa == null) {
+                    oa = handleLocallyMigrated_(sidxFrom, sidxTo, rc.oid, parent, rc.name, t);
+                }
+                if (oa.isDir()) {
+                    folders.add(rc.oid);
+                }
+            }
+        }
+
+        // IMPORTANT: recurse outside of iterator
+        for (OID oid : folders) copyRemoteTree_(sidxFrom, oid, oid, sidxTo, t);
+    }
+
+    private OA handleLocallyMigrated_(SIndex sidxFrom, SIndex sidxTo, OID oid, OID parent, String name, Trans t)
+            throws SQLException, IOException, ExProtocolError {
+        OA oa = _ds.getOANullable_(new SOID(sidxFrom, oid));
+        l.info("{}->{}{} {} locally moved out of shared subtree: {}",
+                sidxFrom, sidxTo, oid, parent, oa);
+        if (oa == null) throw new ExProtocolError();
+
+        if (_ds.isDeleted_(oa)) {
+            // NB: discard the object and reparent any children to the TRASH folder
+            _os.deleteOA_(oa.soid(), t);
+            // make sure meta changes with this object as parent are treated as deletions
+            if (oa.isDir()) _a2t.add_(oa.soid(), new SOID(sidxFrom, OID.TRASH), t);
+        } else {
+            int n = 0;
+            while (true) {
+                OID alias = OID.generate();
+                try {
+                    // alias object in source store to a random OID
+                    alias_(sidxFrom, alias, oa, t);
+                } catch (ExAlreadyExist e) {
+                    l.info("unlucky OID choice", e);
+                    if (++n < 5) continue;
+                    throw new ExProtocolError();
+                }
+                _mcdb.insertChange_(sidxFrom, alias, oa.parent(), oa.name(), t);
+                if (oa.isFile() && oa.caMasterNullable() != null) {
+                    _ccdb.insertChange_(sidxFrom, alias, t);
+                }
+                break;
+            }
+        }
+        // scrub all references to OID in source store
+        // TODO(phoenix): is there more to scrub?
+
+        // insert object under trash in shared folder
+        // NB: keep under remote parent if already deleted
+        OA oaParent = _ds.getOANullable_(new SOID(sidxTo, parent));
+        OID newParent;
+        String newName;
+        if (oaParent != null && oaParent.isExpelled() && _ds.isDeleted_(oaParent)) {
+            // remote parent is already deleted (presumably because it was moved out)
+            // -> avoid redundant local changes
+            newParent = parent;
+            newName = name;
+        } else {
+            newParent = OID.TRASH;
+            newName = oid.toStringFormal();
+            _mcdb.insertChange_(sidxTo, oid, OID.TRASH, oid.toStringFormal(), t);
+        }
+        try {
+            _ds.createOA_(oa.type(), sidxTo, oid, newParent, newName, t);
+        } catch (ExNotFound|ExAlreadyExist e) {
+            throw new IllegalStateException(e);
+        }
+        _imc.preserveVersions_(sidxFrom, oid, oa.type(), sidxTo, t);
+        return oa;
+    }
+
+    private void moveMetaChanges_(SIndex sidxFrom, OID root, SIndex sidxTo, RemoteTreeCache c,
+                                  Trans t) throws SQLException {
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidxFrom, -1)) {
+            while (it.next_()) {
+                MetaChange mc = it.get_();
+                if (!c.isInSharedTree(mc.oid)) {
+                    // FIXME(phoenix): what if the newParent is an object inside shared tree
+                    continue;
+                }
+                OA oa = _ds.getOANullable_(new SOID(sidxTo, mc.oid));
+                checkState(oa != null);
+                _mcdb.deleteChange_(sidxFrom, mc.idx, t);
+                // changes under root folder should be moved under ROOT object
+                if (root.equals(mc.newParent)) {
+                    mc.newParent = OID.ROOT;
+                } else if (!c.isInSharedTree(mc.newParent)) {
+                    // FIXME(phoenix): dropping moves out of the shared tree *may* introduce conflicts
+                    // replace intermediate outbound moves by non-conflicting inside moves
+                    //mc.newParent = ?;
+                    //mc.newName = ?;
+                    l.warn("dropping intermediate out-of-subtree move {} {} {} {} {}",
+                            sidxTo, mc.idx, mc.oid, mc.newParent, mc.newName);
+                    continue;
+                }
+
+                l.debug("preserving move {} {} {} {}",
+                        sidxTo, mc.oid, mc.newParent, mc.newName);
+                _mcdb.insertChange_(sidxTo, mc.oid, mc.newParent, mc.newName, t);
+            }
+        }
     }
 
     public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t)
@@ -295,7 +548,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         return targetName;
     }
 
-    private void alias_(SIndex sidx, OID oid, OA oaConflict, Trans t) throws Exception {
+    private void alias_(SIndex sidx, OID oid, OA oaConflict, Trans t)
+            throws SQLException, IOException, ExAlreadyExist {
         l.info("alias {} {} {}", sidx, oid, oaConflict.soid().oid());
 
         ResolvedPath pConflict = _ds.resolve_(oaConflict);
@@ -310,12 +564,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _a2t.add_(oaConflict.soid(), new SOID(sidx, oid), t);
 
         if (oaConflict.type() == OA.Type.FILE) {
-            // expect no conflict branch since alias are always local-only
-            checkState(oaConflict.cas().size() <= 1);
-            if (oaConflict.caMasterNullable() != null) {
-                _ps.newFile_(pConflict, KIndex.MASTER).updateSOID_(new SOID(sidx, oid), t);
+            for (KIndex kidx : oaConflict.cas().keySet()) {
+                _ps.newFile_(pConflict, kidx).updateSOID_(new SOID(sidx, oid), t);
+
+                // TODO: delete *all* prefixes
+                _ps.newPrefix_(new SOKID(oaConflict.soid(), kidx), null).delete_();
             }
-            _ps.newPrefix_(new SOKID(oaConflict.soid(), KIndex.MASTER), null).delete_();
             if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t)) {
                 _ccdb.insertChange_(sidx, oid, t);
             }

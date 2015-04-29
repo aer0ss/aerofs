@@ -16,13 +16,13 @@ import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -84,24 +84,24 @@ class AsyncDownload extends Download
 
     public static class RemoteChangeChecker
     {
+        private final CfgUsePolaris _usePolaris;
         private final NativeVersionControl _nvc;
-        private final ChangeEpochDatabase _cedb;
         private final CentralVersionDatabase _cvdb;
         private final RemoteContentDatabase _rcdb;
 
         @Inject
-        public RemoteChangeChecker(ChangeEpochDatabase cedb, RemoteContentDatabase rcdb,
+        public RemoteChangeChecker(CfgUsePolaris usePolaris, RemoteContentDatabase rcdb,
                 CentralVersionDatabase cvdb, NativeVersionControl nvc)
         {
+            _usePolaris = usePolaris;
             _nvc = nvc;
-            _cedb = cedb;
             _cvdb = cvdb;
             _rcdb = rcdb;
         }
 
         boolean hasRemoteChanges_(SOCID socid) throws SQLException
         {
-            if (_cedb.getChangeEpoch_(socid.sidx()) != null) {
+            if (_usePolaris.get()) {
                 Long v = _cvdb.getVersion_(socid.sidx(), socid.oid());
                 return _rcdb.hasRemoteChanges_(socid.sidx(), socid.oid(), v != null ? v : 0);
             } else {
@@ -118,9 +118,9 @@ class AsyncDownload extends Download
         public Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 GetComponentRequest gcc, GetComponentResponse gcr, To.Factory factTo,
                 DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid, RemoteChangeChecker changes,
-                ChangeEpochDatabase cedb, GetContentRequest pgcc, GetContentResponse pgcr)
+                CfgUsePolaris usePolaris, GetContentRequest pgcc, GetContentResponse pgcr)
         {
-            super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid, cedb, pgcc, pgcr);
+            super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid, usePolaris, pgcc, pgcr);
             _changes = changes;
         }
 

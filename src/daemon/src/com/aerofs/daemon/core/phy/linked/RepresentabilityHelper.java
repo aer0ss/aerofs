@@ -247,16 +247,19 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             // aliasing
             l.debug("update oid {} {}", oldSOID, newSOID.oid());
             _nrodb.updateOID_(oldSOID, newSOID.oid(), t);
-            _nrodb.updateConflicts_(oldSOID, newSOID.oid(), t);
+            _nrodb.updateConflicts_(oldSOID.sidx(), oldSOID.oid(), newSOID.oid(), t);
         } else if (oldSOID.oid().equals(newSOID.oid())) {
             // migration
             l.debug("update sidx {} {}", oldSOID, newSOID.sidx());
             _nrodb.updateSIndex_(oldSOID, newSOID.sidx(), t);
         } else {
-            // anchor demotion (migration)
+            // migration
             l.debug("update soid {} {}", oldSOID, newSOID);
             _nrodb.updateOID_(oldSOID, newSOID.oid(), t);
-            _nrodb.updateConflicts_(oldSOID, newSOID.oid(), t);
+            // NB: update conflicts in both stores as there is no way to know
+            // in which order siblings will be traversed during a migration
+            _nrodb.updateConflicts_(oldSOID.sidx(), oldSOID.oid(), newSOID.oid(), t);
+            _nrodb.updateConflicts_(newSOID.sidx(), oldSOID.oid(), newSOID.oid(), t);
             _nrodb.updateSIndex_(new SOID(oldSOID.sidx(), newSOID.oid()), newSOID.sidx(), t);
         }
     }
@@ -418,8 +421,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     {
         checkNotNull(path.virtual);
         SID sid = path.virtual.sid();
-        IDBIterator<SOID> it = _nrodb.getConflicts_(soid);
-        try {
+        try (IDBIterator<SOID> it = _nrodb.getConflicts_(soid)) {
             while (it.next_()) {
                 SOID winner = it.get_();
                 OA oa = _ds.getOA_(winner);
@@ -445,11 +447,9 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
                 _tlNotify.get(t).add(path.virtual.sid());
 
                 // if more conflicting objects are left, update conflict column in NRO table
-                if (it.next_()) _nrodb.updateConflicts_(soid, winner.oid(), t);
+                if (it.next_()) _nrodb.updateConflicts_(soid.sidx(), soid.oid(), winner.oid(), t);
                 break;
             }
-        } finally {
-            it.close_();
         }
     }
 

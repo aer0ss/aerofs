@@ -38,7 +38,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -64,10 +63,6 @@ import static org.mockito.Mockito.*;
 
 public class TestBlockStorage extends AbstractBlockTest
 {
-    static {
-        LogUtil.enableConsoleLogging();
-        LogUtil.setLevel(LogUtil.Level.DEBUG);
-    }
     @Mock Trans t;
     @Mock Token tk;
     @Mock TokenManager tc;

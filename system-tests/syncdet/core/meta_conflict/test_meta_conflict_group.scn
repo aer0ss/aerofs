@@ -11,7 +11,9 @@
     #core.meta_conflict.should_move_folder_under_name_conflicted_parent
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_wz-zw
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_xz-zy
+    # FIXME: phoenix doesn't like this yet
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yd-dx
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zx
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_yz-zy
+    # FIXME: phoenix doesn't like this yet
     core.meta_conflict.meta_meta.should_resolve_xy-xy_to_zd-dz

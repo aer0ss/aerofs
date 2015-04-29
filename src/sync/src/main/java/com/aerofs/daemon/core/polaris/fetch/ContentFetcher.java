@@ -97,6 +97,10 @@ public class ContentFetcher
         _it = _f._factCFI.create_(_sidx);
     }
 
+    public void stop_() {
+        _devices.clear();
+    }
+
     public void online_(DID did)
     {
         _devices.add(did);
@@ -133,6 +137,10 @@ public class ContentFetcher
         _tlSched.get(t);
     }
 
+    public void schedule_(Trans t) throws SQLException {
+        _tlSched.get(t);
+    }
+
     private void start_()
     {
         if (_it.started_() || _scheduled) return;
@@ -158,6 +166,10 @@ public class ContentFetcher
 
     private void fetch_() throws SQLException
     {
+        if (_devices.isEmpty()) {
+            l.debug("{} nodev {}", _sidx);
+            return;
+        }
         boolean retry;
         try (Trans t = _f._tm.begin_()) {
             retry = fetchLoop_(t);

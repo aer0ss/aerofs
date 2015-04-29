@@ -5,212 +5,29 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.expel.Expulsion;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.InMemoryDS;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
-import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.*;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
-import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.lib.db.AliasDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.lib.injectable.InjectableDriver;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.testlib.AbstractBaseTest;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
-import java.util.Map;
 
 import static com.aerofs.daemon.core.polaris.InMemoryDS.*;
 import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
 
-public class TestApplyChange extends AbstractBaseTest
+public class TestApplyChange extends AbstractTestApplyChange
 {
-    static {
-        // Change to DEBUG if you're writing a test, but keep at NONE otherwise.
-        LogUtil.setLevel(Level.DEBUG);
-        LogUtil.enableConsoleLogging();
-    }
-
-    final CfgUsePolaris usePolaris = new CfgUsePolaris() {
-        @Override public boolean get() { return true; }
-    };
-    final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW(mock(InjectableDriver.class));
-
-    final UserID user = UserID.fromInternal("foo@bar.baz");
-    final SID rootSID = SID.rootSID(user);
-
-    final IPhysicalStorage ps = mock(IPhysicalStorage.class);
-
-    final InMemoryDS mds = new InMemoryDS(dbcw, usePolaris, ps, user);
-
-    final RemoteLinkDatabase rldb = new RemoteLinkDatabase(dbcw, mds.sdo);
-    final MetaBufferDatabase mbdb = new MetaBufferDatabase(dbcw, mds.sdo);
-    final CentralVersionDatabase cvdb = new CentralVersionDatabase(dbcw, mds.sdo);
-    final AliasDatabase adb = new AliasDatabase(dbcw);
-    final ContentChangesDatabase ccdb = new ContentChangesDatabase(dbcw, mds.sco, mds.sdo);
-    final RemoteContentDatabase rcdb = new RemoteContentDatabase(dbcw, mds.sco, mds.sdo);
-
-    final MapAlias2Target a2t = new MapAlias2Target(adb);
-    final MetaChangesDatabase mcdb = mock(MetaChangesDatabase.class);
-    final MetaChangeSubmitter submitter = mock(MetaChangeSubmitter.class);
-
-    final Expulsion expulsion = mock(Expulsion.class);
-    final Trans t = mock(Trans.class);
-
-    final DirectoryServiceImpl ds = spy(mds.ds);
-    IPhysicalFolder pf = mock(IPhysicalFolder.class);
-
-    ApplyChange ac;
-
-    SIndex sidx;
-
-    @Before
-    public void setUp() throws Exception
-    {
-        when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(pf);
-
-        dbcw.init_();
-        try (Statement s = dbcw.getConnection().createStatement()) {
-            new PolarisSchema().create_(s, dbcw);
-        }
-
-        mds.stores.init_();
-        try {
-            mds.sc.createRootStore_(rootSID, "", mock(Trans.class));
-        } catch (Exception e) { throw new AssertionError(e); }
-        sidx = mds.sm.get_(rootSID);
-
-        ApplyChangeImpl impl = new ApplyChangeImpl(ds, ps, expulsion, a2t, ds, rldb, mbdb, mcdb, ccdb, submitter);
-
-        MapSIndex2Store sidx2s = mock(MapSIndex2Store.class);
-        Store s = mock(Store.class);
-        ContentFetcher cf = mock(ContentFetcher.class);
-        when(s.iface(ContentFetcher.class)).thenReturn(cf);
-        when(sidx2s.get_(sidx)).thenReturn(s);
-
-        ac = new ApplyChange(impl, cvdb, rldb, rcdb, sidx2s);
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-        dbcw.fini_();
-    }
-
-    static class PolarisState
-    {
-        Map<UniqueID, Long> versions = Maps.newHashMap();
-        List<RemoteChange> changes = Lists.newArrayList();
-
-        void add(RemoteChange rc)
-        {
-            long v = versions.getOrDefault(rc.oid, 0L) + 1;
-            versions.put(rc.oid, v);
-            rc.newVersion = v;
-            rc.logicalTimestamp = changes.size() + 1;
-            changes.add(rc);
-        }
-
-        void add(RemoteChange... rcl)
-        {
-            for (RemoteChange rc : rcl) add(rc);
-        }
-    }
-
-    private final PolarisState state = new PolarisState();
-
-    private void apply(int from, int to) throws Exception
-    {
-        long maxLTS = state.changes.size();
-        for (RemoteChange rc : state.changes.subList(from, to)) {
-            ac.apply_(sidx, rc, maxLTS, t);
-        }
-    }
-
-    private void apply(RemoteChange... changes) throws Exception
-    {
-        int min = state.changes.size();
-        state.add(changes);
-        apply(min, state.changes.size());
-    }
-
-    static Matcher<OA> isAt(OID parent, String name, OA.Type type)
-    {
-        return new BaseMatcher<OA>()
-        {
-            @Override
-            public boolean matches(Object o)
-            {
-                return o != null && o instanceof OA
-                        && parent.equals(((OA)o).parent())
-                        && name.equals(((OA)o).name())
-                        && type == ((OA)o).type();
-            }
-
-            @Override
-            public void describeTo(Description description)
-            {
-                description.appendText("at(").appendValue(parent).appendValue(name).appendText(")");
-            }
-        };
-    }
-
-    private void assertOAEquals(OID oid, OID parent, String name, OA.Type type) throws SQLException
-    {
-        assertThat(ds.getOANullable_(new SOID(sidx, oid)), isAt(parent, name, type));
-    }
-
-    private void assertIsBuffered(boolean yes, OID... oids) throws SQLException
-    {
-        for (OID o : oids) assertEquals(o.toString(), yes, mbdb.isBuffered_(new SOID(sidx, o)));
-    }
-
-    private void assertNotPresent(OID... oids) throws SQLException
-    {
-        for (OID o : oids) assertNull(ds.getOANullable_(new SOID(sidx, o)));
+    private void addMetaChange(SIndex sidx) throws SQLException {
+        mcdb.insertChange_(sidx, OID.generate(), OID.generate(), "dummy", t);
     }
     
-    private void assertHasRemoteLink(OID oid, OID parent, String name, long logicalTimestamp)
-            throws SQLException
-    {
-        assertEquals(new RemoteLink(parent,name, logicalTimestamp), rldb.getParent_(sidx, oid));
-    }
-
     @Test
     public void shouldInsertImmediately() throws Exception
     {
@@ -229,7 +46,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldBufferInsert() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID oid = OID.generate();
         apply(
@@ -270,7 +87,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldBufferHierarchy() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID gp = OID.generate(), p = OID.generate(), a = OID.generate(), b = OID.generate();
 
@@ -294,7 +111,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldCreateBufferedHierarchy() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID gp = OID.generate(), p = OID.generate(), a = OID.generate(), b = OID.generate();
 
@@ -322,7 +139,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldHandleMoveOfBufferedObject() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID p = OID.generate(), c = OID.generate();
 
@@ -344,7 +161,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldHandleRenameOfBufferedObject() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID p = OID.generate(), c = OID.generate();
 
@@ -367,7 +184,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldHandleDeleteOfBufferedObject() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID p = OID.generate(), c = OID.generate();
 
@@ -391,7 +208,7 @@ public class TestApplyChange extends AbstractBaseTest
         OID oid = OID.generate();
         ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
         rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
-        state.versions.put(OID.ROOT, 1L);
+        state.get(sidx).put(OID.ROOT, 1L);
 
         apply(
                 rename(OID.ROOT, "bar", oid)
@@ -410,7 +227,7 @@ public class TestApplyChange extends AbstractBaseTest
         OID oid = OID.generate();
         rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
         mbdb.insert_(sidx, oid, OA.Type.DIR, 42, t);
-        state.versions.put(OID.ROOT, 1L);
+        state.get(sidx).put(OID.ROOT, 1L);
 
         apply(
                 rename(OID.ROOT, "bar", oid)
@@ -454,7 +271,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldNotApplyBufferedChange() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID oid = OID.generate();
 
@@ -473,7 +290,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldApplyBufferedChange() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID oid = OID.generate();
 
@@ -496,7 +313,7 @@ public class TestApplyChange extends AbstractBaseTest
         OID oid = OID.generate();
         rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
         ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
-        state.versions.put(OID.ROOT, 1L);
+        state.get(sidx).put(OID.ROOT, 1L);
 
         apply(
                 remove(OID.ROOT, oid)
@@ -519,7 +336,7 @@ public class TestApplyChange extends AbstractBaseTest
     public void shouldCompactDeleteWhenBuffering() throws Exception
     {
         // force buffering
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID oid = OID.generate();
 
@@ -540,7 +357,7 @@ public class TestApplyChange extends AbstractBaseTest
     public void shouldInsertBufferedObjectUnderTrash() throws Exception
     {
         // force buffering
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
 
         OID oid = OID.generate();
 
@@ -566,7 +383,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldAlias() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
         OID alias = OID.generate();
         ds.createOA_(OA.Type.DIR, sidx, alias, OID.ROOT, "foo", t);
 
@@ -579,13 +396,34 @@ public class TestApplyChange extends AbstractBaseTest
 
         assertNotPresent(alias);
         mds.expect(rootSID,
-                folder("foo"));
+                folder("foo", oid));
+    }
+
+    @Test
+    public void shouldAliasFile() throws Exception
+    {
+        addMetaChange(sidx);
+        OID alias = OID.generate();
+        ds.createOA_(OA.Type.FILE, sidx, alias, OID.ROOT, "foo", t);
+
+        OID oid = OID.generate();
+        ContentHash h = new ContentHash(BaseSecUtil.hash());
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FILE),
+                updateContent(oid, h, 0L, 42L)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        assertNotPresent(alias);
+        mds.expect(rootSID,
+                file("foo", oid));
     }
 
     @Test
     public void shouldAliasHierarchy() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
         mds.create(rootSID,
                 folder("foo",
                         folder("bar",
@@ -630,7 +468,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldRenameLocalObject() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
         OID local = OID.generate();
         ds.createOA_(OA.Type.FILE, sidx, local, OID.ROOT, "foo", t);
 
@@ -690,7 +528,7 @@ public class TestApplyChange extends AbstractBaseTest
         );
 
         // local change: tmp
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
         ds.createOA_(OA.Type.DIR, sidx, OID.generate(), OID.ROOT, "tmp", t);
 
         apply(
@@ -716,7 +554,7 @@ public class TestApplyChange extends AbstractBaseTest
     @Test
     public void shouldAvoidFalseConflict() throws Exception
     {
-        when(mcdb.hasChanges_(sidx)).thenReturn(true);
+        addMetaChange(sidx);
         mds.create(rootSID,
                 folder("Pictures",
                         file("4.jpg"),
@@ -751,7 +589,7 @@ public class TestApplyChange extends AbstractBaseTest
     {
         OID oid = OID.generate();
         ContentHash h = new ContentHash(BaseSecUtil.hash());
-        mds.create(rootSID, file("foo", oid, content(3L, h)));
+        mds.create(rootSID, file("foo", oid, content(3L, 42, h)));
         rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
         ccdb.insertChange_(sidx, oid, t);
 
@@ -772,7 +610,7 @@ public class TestApplyChange extends AbstractBaseTest
     {
         OID oid = OID.generate();
         ContentHash h = new ContentHash(BaseSecUtil.hash());
-        mds.create(rootSID, file("foo", oid, content(3L, h)));
+        mds.create(rootSID, file("foo", oid, content(3L, 42, h)));
         rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
         ccdb.insertChange_(sidx, oid, t);
 

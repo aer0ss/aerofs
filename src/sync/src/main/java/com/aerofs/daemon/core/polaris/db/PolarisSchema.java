@@ -96,6 +96,9 @@ public class PolarisSchema implements ISchema {
                 + C_REMOTE_LINK_VERSION + dbcw.longType() + "not null,"
                 + "primary key("+ C_REMOTE_LINK_SIDX + "," + C_REMOTE_LINK_OID + "))");
 
+        s.executeUpdate("create index " + T_REMOTE_LINK + "0 on " + T_REMOTE_LINK
+                + "(" + C_REMOTE_LINK_SIDX + "," + C_REMOTE_LINK_PARENT + ")");
+
         s.executeUpdate("create table " + T_META_BUFFER + "("
                 + C_META_BUFFER_SIDX + " integer not null,"
                 + C_META_BUFFER_OID + dbcw.uniqueIdType() + "not null,"

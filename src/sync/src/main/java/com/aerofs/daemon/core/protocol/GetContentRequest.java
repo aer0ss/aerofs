@@ -121,7 +121,9 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
             processRequest_(msg);
         } catch (Exception e) {
             l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()),
-                    BaseLogUtil.suppress(e, ExNoComponentWithSpecifiedVersion.class));
+                    BaseLogUtil.suppress(e,
+                            ExUpdateInProgress.class,
+                            ExNoComponentWithSpecifiedVersion.class));
             _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
         }
     }

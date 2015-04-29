@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris.fetch;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
@@ -16,6 +17,7 @@ import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -50,8 +52,6 @@ public class ApplyChange
                                                        Trans t)
                 throws Exception;
 
-        boolean exists_(SOID parent) throws SQLException;
-
         /**
          * @return true if matching content was already present locally
          */
@@ -66,6 +66,8 @@ public class ApplyChange
         void move_(SOID parent, OID oidChild, String name,
                    long mergeBoundary, Trans t) throws Exception;
 
+        void share_(SOID soid, Trans t) throws Exception;
+
         void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t) throws Exception;
     }
 
@@ -74,30 +76,34 @@ public class ApplyChange
     private final RemoteLinkDatabase _rpdb;
     private final RemoteContentDatabase _rcdb;
     private final MapSIndex2Store _sidx2s;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public ApplyChange(Impl impl,  CentralVersionDatabase cvdb, RemoteLinkDatabase rpdb,
-            RemoteContentDatabase rcdb, MapSIndex2Store sidx2s)
+            RemoteContentDatabase rcdb, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
     {
         _impl = impl;
         _cvdb = cvdb;
         _rpdb = rpdb;
         _rcdb = rcdb;
         _sidx2s = sidx2s;
+        _sidx2sid = sidx2sid;
     }
 
     public void apply_(SIndex sidx, RemoteChange c, long mergeBoundary, Trans t) throws Exception
     {
         SOID parent = new SOID(sidx, new OID(c.oid));
-        if (_impl.exists_(parent)) {
-            l.error("dafuq {} {}", sidx, parent);
-            throw new ExProtocolError();
+        if (!parent.oid().isRoot() && _rpdb.getParent_(sidx, parent.oid()) == null) {
+            l.warn("transform on missing or deleted object {}", parent);
+            return;
         }
 
         if (c.transformType == RemoteChange.Type.UPDATE_CONTENT) {
             applyContentChange_(parent, c ,t);
             return;
         }
+
+        // FIXME: discard changes to migrated objects?
 
         // the value of version indicate that we have applied *ALL* changes up to that point
         // so any incoming changes that predate this value can be safely ignored
@@ -111,7 +117,7 @@ public class ApplyChange
                 sidx, c.logicalTimestamp, c.oid, c.newVersion, c.transformType, c.child, c.childName);
 
         OID child = c.child;
-        RemoteLink lnk = _rpdb.getParent_(sidx, child);
+        RemoteLink lnk = c.child != null ? _rpdb.getParent_(sidx, child) : null;
 
         // A link is a (parent, child) pair
         // "remote" links reflect local knowledge of the linearized state of Polaris
@@ -156,6 +162,9 @@ public class ApplyChange
         case REMOVE_CHILD:
             removeChild(parent, c, lnk, t);
             break;
+        case SHARE:
+            share(parent, c.logicalTimestamp, t);
+            break;
         default:
             l.error("unsupported change type {}", c.transformType);
             throw new ExProtocolError();
@@ -182,6 +191,7 @@ public class ApplyChange
             _cvdb.setVersion_(sidx, soid.oid(), c.newVersion, t);
             _rcdb.deleteUpToVersion_(sidx, soid.oid(), c.newVersion, t);
         } else {
+            // FIXME: delay schedule if meta buffered
             _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);
         }
 
@@ -223,7 +233,13 @@ public class ApplyChange
             long mergeBoundary, Trans t)
             throws Exception
     {
+        RemoteLink lnk = _rpdb.getParent_(parent.sidx(), oidChild);
+        if (lnk == null) throw new ExProtocolError();
+
         _rpdb.updateParent_(parent.sidx(), oidChild, parent.oid(), name, logicalTimestamp, t);
+
+        // no-op: preserve local changes
+        if (lnk.parent.equals(parent.oid()) && lnk.name.equals(name)) return;
 
         _impl.move_(parent, oidChild, name, mergeBoundary, t);
     }
@@ -250,5 +266,28 @@ public class ApplyChange
         _rpdb.insertParent_(sidx, oidChild, parent.oid(), c.childName, c.logicalTimestamp, t);
 
         _impl.insert_(parent, oidChild, c.childName, c.childObjectType, mergeBoundary, t);
+    }
+
+    private void share(SOID parent, long lts, Trans t) throws Exception
+    {
+        RemoteLink lnk = _rpdb.getParent_(parent.sidx(), parent.oid());
+        if (lnk == null) throw new ExProtocolError("cannot share non-existent folder");
+
+        SID sid = _sidx2sid.get_(parent.sidx());
+        if (!sid.isUserRoot()) throw new ExProtocolError("nested sharing not supported");
+
+        // apply all buffered changes in the source store before performing migration
+        applyBufferedChanges_(parent.sidx(), Long.MAX_VALUE, t);
+
+        _rpdb.removeParent_(parent.sidx(), parent.oid(), t);
+        _rpdb.insertParent_(parent.sidx(), SID.folderOID2convertedAnchorOID(parent.oid()),
+                lnk.parent, lnk.name, lts, t);
+
+        try {
+            _impl.share_(parent, t);
+        } catch (Exception e) {
+            l.warn("share failed", e);
+            throw e;
+        }
     }
 }

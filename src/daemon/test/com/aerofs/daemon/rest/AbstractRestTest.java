@@ -419,7 +419,7 @@ public class AbstractRestTest extends AbstractTest
                                 t);
                         return soid;
                     } else {
-                        return ic.createImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
+                        return ic.createLegacyImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
                                 soidToParent, toName, op, t);
                     }
                 });
@@ -745,7 +745,7 @@ public class AbstractRestTest extends AbstractTest
             }
             return null;
         }).when(ds).setOAParentAndName_(any(OA.class), any(OA.class), anyString(), eq(t));
-        when(ic.createImmigrantRecursively_(any(ResolvedPath.class), eq(objectSoid), eq(parentSoid),
+        when(ic.createLegacyImmigrantRecursively_(any(ResolvedPath.class), eq(objectSoid), eq(parentSoid),
                 eq(newName), eq(PhysicalOp.APPLY), eq(t)))
                 .thenAnswer(invocation -> {
                     Object[] args = invocation.getArguments();

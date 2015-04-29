@@ -101,7 +101,7 @@ public class ObjectCreator
             boolean detectImmigration, boolean updateVersion, Trans t)
             throws Exception
     {
-        boolean expelled = createOA_(type, soid, oidParent, name, op, updateVersion, t);
+        boolean expelled = createOA_(type, soid, oidParent, name, updateVersion, t);
 
         boolean immigrated = !detectImmigration || expelled ? false :
             _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
@@ -116,7 +116,7 @@ public class ObjectCreator
             String name, PhysicalOp op, boolean updateVersion, Trans t)
             throws Exception
     {
-        boolean expelled = createOA_(type, soidTo, oidToParent, name, op, updateVersion, t);
+        boolean expelled = createOA_(type, soidTo, oidToParent, name, updateVersion, t);
 
         boolean immigrated = !expelled && type == Type.FILE;
         if (immigrated) _imd.immigrateFile_(_ds.getOA_(soidFrom), _ds.getOA_(soidTo), op, t);
@@ -124,21 +124,14 @@ public class ObjectCreator
         adjustPhysicalObject_(soidTo, expelled, immigrated, op, t);
     }
 
-    private boolean createOA_(Type type, final SOID soid, OID oidParent, String name, PhysicalOp op,
-            boolean updateVersion, Trans t)
+    public boolean createOA_(Type type, final SOID soid, OID oidParent, String name,
+                             boolean updateVersion, Trans t)
             throws ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         // determine expelled flags
         OA oaParent = _ds.getOAThrows_(new SOID(soid.sidx(), oidParent));
         boolean expelled;
-        if (oaParent.isExpelled()) {
-            // we can't map an expelled object since an expelled logical object doesn't have a
-            // corresponding physical object.
-            assert op != PhysicalOp.MAP;
-            expelled = true;
-        } else {
-            expelled = false;
-        }
+        expelled = oaParent.isExpelled();
 
         _ds.createOA_(type, soid.sidx(), soid.oid(), oidParent, name, t);
 

@@ -128,7 +128,7 @@ public class TestNRODatabase extends AbstractTest
         assertFalse(it.next_());
 
         nrodb.setRepresentable_(o1, t);
-        nrodb.updateConflicts_(o0, o1.oid(), t);
+        nrodb.updateConflicts_(o0.sidx(), o0.oid(), o1.oid(), t);
 
         it = nrodb.getConflicts_(o0);
         assertFalse(it.next_());

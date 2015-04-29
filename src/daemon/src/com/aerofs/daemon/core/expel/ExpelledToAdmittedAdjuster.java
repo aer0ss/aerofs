@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.store.*;
@@ -18,6 +17,7 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -38,7 +38,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final ICollectorSequenceDatabase _csdb;
     private final NativeVersionControl _nvc;
     private final MapSIndex2Store _sidx2s;
-    private final ChangeEpochDatabase _cedb;
+    private final CfgUsePolaris _usePolaris;
     private final RemoteContentDatabase _rcdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
@@ -47,7 +47,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
-            ChangeEpochDatabase cedb, RemoteContentDatabase rcdb)
+            CfgUsePolaris usePolaris, RemoteContentDatabase rcdb)
     {
         _sc = sc;
         _imd = imd;
@@ -57,7 +57,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _nvc = nvc;
         _csdb = csdb;
         _sidx2s = sidx2s;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
         _rcdb = rcdb;
     }
 
@@ -157,7 +157,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     {
         checkArgument(_ds.getOA_(soid).isFile());
 
-        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+        if (_usePolaris.get()) {
             if (_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) {
                 // TODO(phoenix): BF adjustment (when BF brought back)
                 _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);

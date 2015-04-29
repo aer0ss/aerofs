@@ -122,6 +122,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
             }
             // fallthrough
         case MAP:
+            // FIXME: what if the object is moved between to NRO locations?
             _s.onDeletion_(this, op, t);
             _fidm.physicalObjectMoved_(lf._fidm, t);
             break;
@@ -200,9 +201,13 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
             return;
         }
 
-        final InjectableFile to = _f.getParentFile().newChild(newName);
-        if (to.exists()) throw new IOException("destination already exists");
-        TransUtil.moveWithRollback_(_f, to, t);
+        InjectableFile to = _f.getParentFile().newChild(newName);
+        if (_f.exists()) {
+            if (to.exists()) throw new IOException("destination exists: " + newName);
+            TransUtil.moveWithRollback_(_f, to, t);
+        } else if (!to.exists()) {
+            throw new IOException("source missing: " + _f.getName());
+        }
     }
 
     @Override

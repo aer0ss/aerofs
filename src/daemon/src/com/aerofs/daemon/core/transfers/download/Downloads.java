@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.TC;
@@ -18,6 +17,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.CID;
@@ -46,7 +46,7 @@ public class Downloads implements IContentDownloads
 
     private CoreScheduler _sched;
 
-    private ChangeEpochDatabase _cedb;
+    private CfgUsePolaris _usePolaris;
 
     private final Map<SOCID, AsyncDownload> _ongoing = Maps.newTreeMap();
 
@@ -59,12 +59,12 @@ public class Downloads implements IContentDownloads
 
     @Inject
     public void inject_(CoreScheduler sched, TokenManager tokenManager,
-            AsyncDownload.Factory factDL, ChangeEpochDatabase cedb)
+            AsyncDownload.Factory factDL, CfgUsePolaris usePolaris)
     {
         _sched = sched;
         _factDL = factDL;
         _tokenManager = tokenManager;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
     }
 
 
@@ -124,7 +124,7 @@ public class Downloads implements IContentDownloads
         assert !dids.isEmpty() : socid + " " + cxt;
 
         try {
-            if (socid.cid().isMeta() && _cedb.getChangeEpoch_(socid.sidx()) != null) {
+            if (socid.cid().isMeta() && _usePolaris.get()) {
                 throw new ExBadArgs("no p2p meta transfer when polaris enabled");
             }
         } catch (Exception e) {

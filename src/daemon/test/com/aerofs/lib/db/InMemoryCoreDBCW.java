@@ -5,6 +5,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.testlib.InMemorySQLiteDBCW;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static org.mockito.Mockito.mock;
 
@@ -40,6 +41,8 @@ public class InMemoryCoreDBCW extends InMemorySQLiteDBCW
     public void init_() throws SQLException
     {
         super.init_();
-        new CoreSchema(_dr).create_(getConnection().createStatement(), this);
+        try (Statement s = getConnection().createStatement()) {
+            new CoreSchema(_dr).create_(s, this);
+        }
     }
 }

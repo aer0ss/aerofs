@@ -37,7 +37,7 @@ public class LogicalObjectsPrinter
         String str = oa.soid() + (oa.isExpelled() ? " X " : " - ") + path;
         SOID soidParent;    // not null to recurse down to children
         if (oa.isFile()) {
-            l.info(str);
+            l.info(str + " " + oa.cas());
             soidParent = null;
         } else if (oa.isDir()) {
             // don't print the trailing slash for the root directory

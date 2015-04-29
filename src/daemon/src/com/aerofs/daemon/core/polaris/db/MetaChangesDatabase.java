@@ -17,6 +17,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.ParameterizedStatement;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
@@ -93,6 +94,16 @@ public class MetaChangesDatabase extends AbstractDatabase
         });
     }
 
+    private final ParameterizedStatement<SIndex> _pswUpdateChanges = new ParameterizedStatement<>(
+            sidx ->  DBUtil.updateWhere(tableName(sidx), C_META_CHANGE_OID + "=?", C_META_CHANGE_OID));
+    public int updateChanges_(SIndex sidx, OID oid, OID anchor, Trans t) throws SQLException {
+        return exec(_pswUpdateChanges.get(sidx), ps -> {
+            ps.setBytes(1, anchor.getBytes());
+            ps.setBytes(2, oid.getBytes());
+            return ps.executeUpdate();
+        });
+    }
+
     public static class MetaChange
     {
         public final SIndex sidx;
@@ -101,13 +112,23 @@ public class MetaChangesDatabase extends AbstractDatabase
         public OID newParent;
         public final String newName;
 
-        public MetaChange(SIndex sidx, long idx, OID oid, byte[] newParent, String newName)
+        public MetaChange(SIndex sidx, long idx, OID oid, OID newParent, String newName)
         {
             this.sidx = sidx;
             this.idx = idx;
             this.oid = oid;
-            this.newParent = newParent != null ? new OID(newParent) : null;
+            this.newParent = newParent;
             this.newName = newName;
+        }
+
+        public MetaChange(SIndex sidx, long idx, OID oid, byte[] newParent, String newName)
+        {
+            this(sidx, idx, oid, newParent != null ? new OID(newParent) : null, newName);
+        }
+
+        @Override
+        public String toString() {
+            return "{" + Joiner.on(",").join(sidx, idx, oid, newParent, newName) + "}";
         }
     }
 
@@ -156,6 +177,26 @@ public class MetaChangesDatabase extends AbstractDatabase
         return exec(_pswDeleteObjectChanges.get(sidx), ps -> {
             ps.setBytes(1, oid.getBytes());
             return ps.executeUpdate() == 1;
+        });
+    }
+
+    private final ParameterizedStatement<SIndex> _pswGetObjectChanges = new ParameterizedStatement<>(
+            sidx -> DBUtil.selectWhere(tableName(sidx),
+                    C_META_CHANGE_OID + "=?",
+                    C_META_CHANGE_IDX,
+                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME)
+                    + " order by " + C_META_CHANGE_IDX);
+    public IDBIterator<MetaChange> getChanges_(SIndex sidx, OID oid) throws SQLException
+    {
+        return exec(_pswGetObjectChanges.get(sidx), ps -> {
+            ps.setBytes(1, oid.getBytes());
+            return new AbstractDBIterator<MetaChange>(ps.executeQuery()) {
+                @Override
+                public MetaChange get_() throws SQLException
+                {
+                    return new MetaChange(sidx, _rs.getLong(1), oid, _rs.getBytes(2), _rs.getString(3));
+                }
+            };
         });
     }
 }

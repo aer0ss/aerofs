@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.db;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -75,6 +76,7 @@ public class NRODatabase extends AbstractDatabase
             DBUtil.insert(T_NRO,  C_NRO_SIDX, C_NRO_OID, C_NRO_CONFLICT_OID));
     public void setNonRepresentable_(SOID soid, @Nullable SOID conflict, Trans t) throws SQLException
     {
+        Loggers.getLogger(NRODatabase.class).info("set nro {} {}", soid, conflict);
         try {
             if (conflict != null) {
                checkState(soid.sidx().equals(conflict.sidx()));
@@ -95,6 +97,7 @@ public class NRODatabase extends AbstractDatabase
             DBUtil.deleteWhereEquals(T_NRO, C_NRO_SIDX, C_NRO_OID));
     public void setRepresentable_(SOID soid, Trans t) throws SQLException
     {
+        Loggers.getLogger(NRODatabase.class).info("clear nro {}", soid);
         try {
             PreparedStatement ps = _pswUnset.get(c());
             ps.setInt(1, soid.sidx().getInt());
@@ -132,13 +135,14 @@ public class NRODatabase extends AbstractDatabase
             "update " + T_NRO
                     + " set " + C_NRO_CONFLICT_OID + "=?"
                     + " where " + C_NRO_SIDX + "=? and " + C_NRO_CONFLICT_OID + "=?");
-    public void updateConflicts_(SOID soid, OID winner, Trans t) throws SQLException
+    public void updateConflicts_(SIndex sidx, OID oid, OID winner, Trans t) throws SQLException
     {
+        Loggers.getLogger(NRODatabase.class).info("update conflicts {}{} {}", sidx, oid, winner);
         try {
             PreparedStatement ps = _pswUpdateConflicts.get(c());
             ps.setBytes(1, winner.getBytes());
-            ps.setInt(2, soid.sidx().getInt());
-            ps.setBytes(3, soid.oid().getBytes());
+            ps.setInt(2, sidx.getInt());
+            ps.setBytes(3, oid.getBytes());
 
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -154,6 +158,7 @@ public class NRODatabase extends AbstractDatabase
                     + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?");
     public void updateSIndex_(SOID oldSOID, SIndex sidx, Trans t) throws SQLException
     {
+        Loggers.getLogger(NRODatabase.class).info("update sidx {} {}", oldSOID, sidx);
         try {
             PreparedStatement ps = _pswUpdateSIndex.get(c());
             ps.setInt(1, sidx.getInt());
@@ -173,6 +178,7 @@ public class NRODatabase extends AbstractDatabase
                     + " where " + C_NRO_SIDX + "=? and " + C_NRO_OID + "=?");
     public void updateOID_(SOID oldSOID, OID newOID, Trans t) throws SQLException
     {
+        Loggers.getLogger(NRODatabase.class).info("update oid {} {}", oldSOID, newOID);
         try {
             PreparedStatement ps = _pswUpdateOID.get(c());
             ps.setBytes(1, newOID.getBytes());

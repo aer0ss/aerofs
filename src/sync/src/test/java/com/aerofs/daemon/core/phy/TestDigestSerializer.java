@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.phy;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 
@@ -14,11 +13,6 @@ import static org.junit.Assert.fail;
 
 public class TestDigestSerializer extends AbstractTest
 {
-    static {
-        LogUtil.enableConsoleLogging();
-        LogUtil.setLevel(LogUtil.Level.DEBUG);
-    }
-
     private void assertDigestPreserved(MessageDigest md0, byte[] next)
     {
         byte[] s = DigestSerializer.serialize(md0);

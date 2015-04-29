@@ -5,60 +5,28 @@
 package com.aerofs.daemon.core.polaris;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.phy.DigestSerializer;
-import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
-import com.aerofs.daemon.core.AntiEntropy;
-import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.collector.Collector;
-import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.expel.LogicalStagingArea;
-import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserPathResolver;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
-import com.aerofs.daemon.core.net.device.Devices;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
-import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
-import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
-import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
-import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
-import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
-import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
-import com.aerofs.daemon.core.status.PauseSync;
-import com.aerofs.daemon.lib.db.AliasDatabase;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
-import com.aerofs.daemon.lib.db.MetaDatabase;
-import com.aerofs.daemon.lib.db.SIDDatabase;
-import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Maps;
+import com.google.inject.Injector;
 
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * "Real" DirectoryService and associated store wiring operating on an in-memory DB
@@ -72,75 +40,14 @@ public class InMemoryDS
     public final SIDMap sm;
     public final Stores stores;
     public final StoreCreator sc;
-    public final DirectoryServiceImpl ds = new DirectoryServiceImpl();
-    public final StoreCreationOperators sco = new StoreCreationOperators();
-    public final StoreDeletionOperators sdo = new StoreDeletionOperators();
+    public final DirectoryServiceImpl ds;
 
-    public InMemoryDS(IDBCW dbcw, CfgUsePolaris usePolaris, IPhysicalStorage ps, UserID user)
+    public InMemoryDS(Injector inj)
     {
-        sm = new SIDMap(new SIDDatabase(dbcw));
-        MetaDatabase mdb = new MetaDatabase(dbcw, sco);
-        StoreDatabase sdb = new StoreDatabase(dbcw);
-        MetaChangesDatabase mcdb = new MetaChangesDatabase(dbcw, sco, sdo);
-        ChangeEpochDatabase cedb = new ChangeEpochDatabase(dbcw);
-        TransManager tm = mock(TransManager.class);
-        StoreHierarchy sh;
-
-        AbstractPathResolver.Factory resolver;
-
-        if (user.isTeamServerID()) {
-            sh = new StoreHierarchy(sdb);
-            resolver = new MultiuserPathResolver.Factory(sm, sm);
-        } else {
-            sh = new SingleuserStoreHierarchy(sdb);
-            resolver = new SingleuserPathResolver.Factory((SingleuserStoreHierarchy)sh, sm, sm);
-        }
-
-        sc = new StoreCreator(sm, sh, sco, ps, mock(LogicalStagingArea.class), usePolaris);
-
-        SenderFilters.Factory factSF = mock(SenderFilters.Factory.class);
-        try {
-            when(factSF.create_(any(SIndex.class))).thenReturn(mock(SenderFilters.class));
-        } catch (SQLException e) { throw new AssertionError(); }
-        Collector.Factory factCollector = mock(Collector.Factory.class);
-        try {
-            when(factCollector.create_(any(SIndex.class))).thenReturn(mock(Collector.class));
-        } catch (SQLException e) { throw new AssertionError(); }
-
-        Store.Factory factStore = usePolaris.get()
-                ? polarisStoreFactory()
-                : new LegacyStore.Factory(factSF, factCollector, mock(AntiEntropy.class),
-                        mock(NewUpdatesSender.class), mock(Devices.class),
-                        mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
-
-        stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo, mock(EffectiveUserList.class));
-
-        ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
-    }
-
-    @SuppressWarnings("unchecked")
-    Store.Factory polarisStoreFactory()
-    {
-        ChangeFetchScheduler.Factory factCFS = mock(ChangeFetchScheduler.Factory.class);
-        when(factCFS.create(any(SIndex.class))).thenReturn(mock(ChangeFetchScheduler.class));
-        SubmissionScheduler.Factory<MetaChangeSubmitter> factMCSS
-                = mock(SubmissionScheduler.Factory.class);
-        when(factMCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
-        SubmissionScheduler.Factory<ContentChangeSubmitter> factCCSS
-                = mock(SubmissionScheduler.Factory.class);
-        when(factCCSS.create(any(SIndex.class))).thenReturn(mock(SubmissionScheduler.class));
-        ContentFetcher.Factory factCF = mock(ContentFetcher.Factory.class);
-        when(factCF.create_(any(SIndex.class))).thenReturn(mock(ContentFetcher.class));
-
-        PolarisStore.Factory f = new PolarisStore.Factory();
-        set(f, "_devices", mock(Devices.class));
-        set(f, "_cnsub", mock(ChangeNotificationSubscriber.class));
-        set(f, "_factCFS", factCFS);
-        set(f, "_factMCSS", factMCSS);
-        set(f, "_factCCSS", factCCSS);
-        set(f, "_factCF", factCF);
-        set(f, "_pauseSync", mock(PauseSync.class));
-        return f;
+        sm = inj.getInstance(SIDMap.class);
+        sc = inj.getInstance(StoreCreator.class);
+        stores = inj.getInstance(Stores.class);
+        ds = inj.getInstance(DirectoryServiceImpl.class);
     }
 
     public static void set(Object o, String k, Object v)
@@ -180,7 +87,7 @@ public class InMemoryDS
                     : pParent.soid();
             OID child = ds.ds.getChild_(parent.sidx(), parent.oid(), name);
             if (child == null) {
-                fail("not found: " + pParent.append(name));
+                fail("not found: " + parent + "/" + oid + " " + pParent.append(name));
             }
             OA oa = ds.ds.getOA_(new SOID(parent.sidx(), child));
             assertEquals(type, oa.type());
@@ -218,12 +125,15 @@ public class InMemoryDS
     }
 
     public static void expectChildren(InMemoryDS ds, ResolvedPath pParent, Obj[] children)
-            throws Exception
-    {
+            throws Exception {
         SOID soid = pParent.isEmpty()
                 ? new SOID(ds.sm.get_(pParent.sid()), OID.ROOT)
                 : pParent.soid();
+        expectChildren(ds, soid, pParent, children);
+    }
 
+    public static void expectChildren(InMemoryDS ds, SOID soid, ResolvedPath pParent, Obj[] children)
+            throws Exception {
         Map<String, OA> extra = Maps.newHashMap();
         for (OID c : ds.ds.getChildren_(soid)) {
             if (c.isTrash()) continue;
@@ -273,14 +183,14 @@ public class InMemoryDS
         {
             ResolvedPath p = super.expect(ds, pParent);
             Map<KIndex, CA> acas = ds.ds.getOA_(p.soid()).cas();
-            // TODO: content
             KIndex kidx = KIndex.MASTER;
             for (Content ca : cas) {
                 CA aca = acas.get(kidx);
-                assertNotNull("Expected ca missing", aca);
+                assertNotNull("Expected ca missing: " + p.soid() + kidx, aca);
                 assertEquals(ca.length, aca.length());
                 assertEquals(ca.mtime, aca.mtime());
                 assertEquals(ca.hash, ds.ds.getCAHash_(new SOKID(p.soid(), kidx)));
+                kidx = kidx.increment();
             }
             assertEquals("Unexpected cas present", cas.length, acas.size());
             return p;
@@ -303,9 +213,14 @@ public class InMemoryDS
 
     private static class Anchor extends Obj
     {
-        protected Anchor(@Nullable SID sid, String name)
+        private SID sid;
+        protected Obj[] children;
+
+        protected Anchor(@Nullable SID sid, String name, Obj... children)
         {
             super(sid != null ? SID.storeSID2anchorOID(sid) : null, name, Type.ANCHOR);
+            this.sid = sid;
+            this.children = children;
         }
 
         @Override
@@ -313,8 +228,22 @@ public class InMemoryDS
                 throws Exception
         {
             SOID soid = super.create(ds, parent, t);
-            ds.sc.addParentStoreReference_(SID.anchorOID2storeSID(soid.oid()), parent.sidx(), name, t);
+            ds.sc.addParentStoreReference_(sid, parent.sidx(), name, t);
+            SIndex sidx = ds.sm.get_(sid);
+            for (Obj o : children) o.create(ds, new SOID(sidx, OID.ROOT), t);
             return soid;
+        }
+
+        @Override
+        public ResolvedPath expect(InMemoryDS ds, ResolvedPath pParent) throws Exception {
+            ResolvedPath p = super.expect(ds, pParent);
+            SIndex sidx = ds.sm.getNullable_(sid);
+            if (sidx != null) {
+                expectChildren(ds, p.substituteLastSOID(new SOID(sidx, OID.ROOT)), children);
+            } else {
+                assertEquals(0, children.length);
+            }
+            return p;
         }
     }
 
@@ -377,18 +306,18 @@ public class InMemoryDS
         return new File(oid, name, c);
     }
 
-    public static Content content(byte[] b)
+    public static Content content(byte[] b, long mtime)
     {
-        return content(b.length, new ContentHash(BaseSecUtil.hash(b)));
+        return content(b.length, mtime, new ContentHash(BaseSecUtil.hash(b)));
     }
 
-    public static Content content(long length, ContentHash h)
+    public static Content content(long length, long mtime, ContentHash h)
     {
-        return new Content(length, 0L, h);
+        return new Content(length, mtime, h);
     }
 
-    public static Obj anchor(String name)
+    public static Obj anchor(String name, OID oid, Obj... children)
     {
-        return new Anchor(SID.folderOID2convertedStoreSID(OID.generate()), name);
+        return new Anchor(SID.folderOID2convertedStoreSID(oid), name, children);
     }
 }

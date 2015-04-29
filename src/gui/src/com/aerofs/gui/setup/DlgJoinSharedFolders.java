@@ -78,14 +78,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
             {
                 _pendingFolders = reply; // FIXME (AG): I'm pretty sure this is wrong
                 if (_pendingFolders.getInvitationCount() > 0) {
-                    UI.get().asyncExec(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            openDialog();
-                        }
-                    });
+                    UI.get().asyncExec(DlgJoinSharedFolders.this::openDialog);
                 } else if (!silent) {
                     UI.get().show(MessageType.INFO, "No invitations to accept");
                 }
@@ -216,14 +209,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
 
                     // Join the folders in a separate thread
                     final List<PBFolderInvitation> invitations = invs;
-                    ThreadUtil.startDaemonThread("gui-sf", new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            work(invitations);
-                        }
-                    });
+                    ThreadUtil.startDaemonThread("gui-sf", () -> work(invitations));
 
                     closeDialog();
                 }

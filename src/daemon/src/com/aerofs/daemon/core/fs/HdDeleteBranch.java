@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -15,6 +14,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Version;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -30,11 +30,11 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
     private final TransManager _tm;
     private final VersionUpdater _vu;
     private final BranchDeleter _bd;
-    private final ChangeEpochDatabase _cedb;
+    private final CfgUsePolaris _usePolaris;
 
     @Inject
     public HdDeleteBranch(VersionUpdater vu, TransManager tm, NativeVersionControl nvc,
-            ChangeEpochDatabase cedb, DirectoryService ds, IPhysicalStorage ps, BranchDeleter bd)
+            CfgUsePolaris usePolaris, DirectoryService ds, IPhysicalStorage ps, BranchDeleter bd)
     {
         _vu = vu;
         _tm = tm;
@@ -42,7 +42,7 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
         _ds = ds;
         _ps = ps;
         _bd = bd;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
         // to updating content on other devices
         SOID soid = _ds.resolveFollowAnchorThrows_(ev._path);
 
-        if (_cedb.getChangeEpoch_(soid.sidx()) != null) {
+        if (_usePolaris.get()) {
             OA oa = _ds.getOAThrows_(soid);
             CA ca = oa.caThrows(ev._kidx);
             l.info("delete branch {} {} {}", ev._kidx, ca.length(), ca.mtime());

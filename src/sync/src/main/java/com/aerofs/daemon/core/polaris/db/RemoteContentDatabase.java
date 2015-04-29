@@ -13,7 +13,9 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.ParameterizedStatement;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
@@ -109,7 +111,41 @@ public class RemoteContentDatabase extends AbstractDatabase
         });
     }
 
+    public static class RemoteContent {
+        public final long version;
+        public final long length;
+        public final DID originator;
+        public final ContentHash hash;
 
+        public RemoteContent(long version, DID originator, ContentHash hash, long length) {
+            this.version = version;
+            this.length = length;
+            this.originator = originator;
+            this.hash = hash;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + Joiner.on(",").join(version, originator, hash, length) + "}";
+        }
+    }
+
+    private final ParameterizedStatement<SIndex> _pswList = new ParameterizedStatement<>(
+            sidx -> DBUtil.selectWhere(tableName(sidx), C_REMOTE_CONTENT_OID +"=?",
+                    C_REMOTE_CONTENT_VERSION, C_REMOTE_CONTENT_DID, C_REMOTE_CONTENT_HASH,
+                    C_REMOTE_CONTENT_LENGTH) + "order by " + C_REMOTE_CONTENT_VERSION);
+    public IDBIterator<RemoteContent> list_(SIndex sidx, OID oid) throws SQLException {
+        return exec(_pswList.get(sidx), ps -> {
+            ps.setBytes(1, oid.getBytes());
+            return new AbstractDBIterator<RemoteContent>(ps.executeQuery()) {
+                @Override
+                public RemoteContent get_() throws SQLException {
+                    return new RemoteContent(_rs.getLong(1), new DID(_rs.getBytes(2)),
+                            new ContentHash(_rs.getBytes(3)), _rs.getLong(4));
+                }
+            };
+        });
+    }
 
     private final ParameterizedStatement<SIndex> _pswDelete = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx),

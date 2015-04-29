@@ -14,10 +14,10 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.*;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -32,11 +32,11 @@ public class LegacyContentReceiver extends ContentReceiver implements IDirectory
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
     private final BranchDeleter _bd;
-    private final ChangeEpochDatabase _cedb;
+    private final CfgUsePolaris _usePolaris;
 
     @Inject
     public LegacyContentReceiver(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
-                                 IPhysicalStorage ps, DownloadState dlState, ChangeEpochDatabase cedb,
+                                 IPhysicalStorage ps, DownloadState dlState, CfgUsePolaris usePolaris,
                                  IncomingStreams iss, BranchDeleter bd, TransManager tm,
                                  CoreScheduler sched)
     {
@@ -44,7 +44,7 @@ public class LegacyContentReceiver extends ContentReceiver implements IDirectory
         _ds = ds;
         _nvc = nvc;
         _bd = bd;
-        _cedb = cedb;
+        _usePolaris = usePolaris;
         _ds.addListener_(this);
     }
 
@@ -68,7 +68,7 @@ public class LegacyContentReceiver extends ContentReceiver implements IDirectory
         l.error("known conflict branch has no associated file: {}", k);
 
         try (Trans t = _tm.begin_()) {
-            if (_cedb.getChangeEpoch_(k.sidx()) != null) {
+            if (_usePolaris.get()) {
                 // TODO(phoenix): version adjustment?
                 //   rewind -> reset central version to base version of MASTER ca
                 //   merge  -> update base version of MASTER CA

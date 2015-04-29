@@ -17,6 +17,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.ParameterizedStatement;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 import java.sql.ResultSet;
@@ -114,6 +115,11 @@ public class ContentChangesDatabase extends AbstractDatabase
             this.sidx = sidx;
             this.idx = idx;
             this.oid = oid;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + Joiner.on(",").join(idx, oid) + "}";
         }
     }
 

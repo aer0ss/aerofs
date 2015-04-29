@@ -131,8 +131,7 @@ public class CoreModule extends AbstractModule
             // to keep maximum flexibility, avoid rolling out schema changes for now
             multibind(binder(), ISchema.class, PolarisSchema.class);
 
-            // pacific coexistence
-            bind(Store.Factory.class).to(TransitionalStoreFactory.class);
+            bind(Store.Factory.class).to(PolarisStore.Factory.class);
 
             // client/SA behavioral differences
             bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);

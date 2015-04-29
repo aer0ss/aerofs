@@ -3,9 +3,14 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.SubjectPermissionsList;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.*;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.api.LocalChange.Type;
+import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
@@ -29,24 +34,33 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.*;
 
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
@@ -74,13 +88,19 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final SPBlockingClient.Factory _factSP;
     private final UnlinkedRootDatabase _urdb;
     private final CfgAbsRoots _absRoots;
+    private final CfgUsePolaris _polaris;
+    private final PolarisClient _client;
+    private final RemoteLinkDatabase _rldb;
+
+    private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
 
     @Inject
     public HdShareFolder(TokenManager tokenManager, TransManager tm, ObjectCreator oc,
             IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
             ObjectDeleter od, IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
-            CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb)
+            CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb, CfgUsePolaris polaris,
+            RemoteLinkDatabase rldb, PolarisClient client)
     {
         _ss = ss;
         _tokenManager = tokenManager;
@@ -97,6 +117,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _factSP = factSP;
         _absRoots = cfgAbsRoots;
         _urdb = urdb;
+        _polaris = polaris;
+        _rldb = rldb;
+        _client = client;
     }
 
     @Override
@@ -167,10 +190,50 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // of the stores' owner, multiple local failures can be handled properly,
         // while remote failures will prevent the system from being in a half-state
         //
+        if (!alreadyShared && _polaris.get()) {
+            try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "share")) {
+                LocalChange c = new LocalChange();
+                c.type = Type.SHARE;
+                SettableFuture<UniqueID> f = SettableFuture.create();
+
+                OID oid = SID.convertedStoreSID2folderOID(sid);
+
+                Future<RemoteLink> w = _rldb.wait_(oa.soid().sidx(), oid);
+
+                // synchronous request to polaris
+                UniqueID jobId = tk.inPseudoPause_(() -> {
+                    // wait for the original folder to be present on polaris, w/ timeout
+                    // NB: get() blocks and must be called wo/ holding the core lock
+                    try {
+                        w.get(10, TimeUnit.SECONDS);
+                    } catch (TimeoutException e) {
+                        w.cancel(false);
+                        throw new ExTimeout();
+                    }
+
+                    _client.post("/objects/" + oid.toStringFormal(), c,
+                            new AsyncTaskCallback() {
+                                @Override
+                                public void onSuccess_(boolean hasMore) {}
+
+                                @Override
+                                public void onFailure_(Throwable t) {
+                                    f.setException(t);
+                                }
+                            }, r -> handle_(f, r), _sameThread);
+
+                    return f.get();
+                });
+            } catch (ExecutionException e) {
+                Throwables.propagateIfPossible(e.getCause(), Exception.class);
+                throw e;
+            }
+        }
+
         callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
 
-        if (!alreadyShared) {
+        if (!alreadyShared && !_polaris.get()) {
             // resolve the path again to account for aliasing of the parent
             // TODO: gracefully handle concurrent sharing of an ancestor/descendant
             OA noa = throwIfUnshareable_(ev._path);
@@ -183,6 +246,24 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _aclsync.syncToLocal_();
 
         l.info("shared: {} -> {}", ev._path, sid.toStringFormal());
+    }
+
+    private static Boolean handle_(SettableFuture<UniqueID> f, HttpResponse r) throws Exception
+    {
+        String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
+        if (!r.getStatus().equals(HttpResponseStatus.OK)) {
+            l.info("polaris error {}\n{}", r.getStatus(), content);
+            if (r.getStatus().getCode() >= 500) {
+                throw new ExRetryLater(r.getStatus().getReasonPhrase());
+            }
+            throw new ExProtocolError(r.getStatus().getReasonPhrase());
+        }
+
+        // TODO(phoenix): extract job id and propagate to UI for spinner
+
+        f.set(null);
+
+        return false;
     }
 
     /**
@@ -294,7 +375,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         for (OID oidChild : _ds.getChildren_(soid)) {
             SOID soidChild = new SOID(soid.sidx(), oidChild);
             OA oaChild = _ds.getOA_(soidChild);
-            _imc.createImmigrantRecursively_(from, soidChild, soidToRoot, oaChild.name(), MAP, t);
+            _imc.createLegacyImmigrantRecursively_(from, soidChild, soidToRoot, oaChild.name(), MAP, t);
         }
 
         // Step 4: delete the root folder

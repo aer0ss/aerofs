@@ -24,7 +24,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 /**
  * Database backend for {@link SharedFolderAutoUpdater}
  */
-class SharedFolderUpdateQueueDatabase extends AbstractDatabase
+public class SharedFolderUpdateQueueDatabase extends AbstractDatabase
 {
     @Inject
     public SharedFolderUpdateQueueDatabase(IDBCW dbcw)

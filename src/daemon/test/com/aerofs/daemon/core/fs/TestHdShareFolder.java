@@ -7,6 +7,8 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -38,6 +40,7 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgStorageType;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -88,6 +91,9 @@ public class TestHdShareFolder extends AbstractTest
     @Mock CfgAbsRoots cfgAbsRoots;
     @Mock CfgStorageType cfgStorageType;
     @Mock UnlinkedRootDatabase urdb;
+    @Mock CfgUsePolaris usePolaris;
+    @Mock PolarisClient polaris;
+    @Mock RemoteLinkDatabase rldb;
 
     @InjectMocks HdShareFolder hd;
 
@@ -249,4 +255,6 @@ public class TestHdShareFolder extends AbstractTest
                 anyIterableOf(PBSubjectPermissions.class), anyString(), eq(false),
                 any(Boolean.class));
     }
+
+    // TODO: polaris tests
 }

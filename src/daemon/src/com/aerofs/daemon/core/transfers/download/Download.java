@@ -8,7 +8,7 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.ex.*;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge;
@@ -20,10 +20,6 @@ import com.aerofs.daemon.core.transfers.download.dependence.NameConflictDependen
 import com.aerofs.daemon.core.transfers.download.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.ex.ExNoAvailDevice;
-import com.aerofs.daemon.core.ex.ExUpdateInProgress;
-import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.*;
@@ -32,6 +28,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -169,13 +166,13 @@ class Download
 
     protected static class Factory
     {
+        protected final CfgUsePolaris _usePolaris;
         protected final To.Factory _factTo;
         protected final DirectoryService _ds;
         protected final Downloads _dls;
         protected final DownloadState _dlstate;
         protected final GetComponentRequest _gcc;
         protected final GetComponentResponse _gcr;
-        protected final ChangeEpochDatabase _cedb;
         protected final GetContentRequest  _pgcc;
         protected final GetContentResponse _pgcr;
         protected final DownloadDeadlockResolver _ddr;
@@ -185,14 +182,14 @@ class Download
         protected Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 To.Factory factTo, GetComponentRequest gcc, GetComponentResponse gcr,
                 DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid,
-                ChangeEpochDatabase cedb, GetContentRequest pgcc, GetContentResponse pgcr)
+                CfgUsePolaris usePolaris, GetContentRequest pgcc, GetContentResponse pgcr)
         {
             _ds = ds;
             _dls = dls;
             _dlstate = dlstate;
             _gcc = gcc;
             _gcr = gcr;
-            _cedb = cedb;
+            _usePolaris = usePolaris;
             _pgcc = pgcc;
             _pgcr = pgcr;
             _ddr = ddr;
@@ -301,7 +298,7 @@ class Download
             throws SQLException, ExAborted, ExNoAvailDevice, ExRemoteCallFailed
     {
         try {
-            return _f._cedb.getChangeEpoch_(_socid.sidx()) != null
+            return _f._usePolaris.get()
                     ? _f._pgcc.remoteRequestContent_(_socid.soid(), did, _tk)
                     : _f._gcc.remoteRequestComponent_(_socid, did, _tk);
         } catch (SQLException | ExAborted | ExNoAvailDevice e) {
@@ -317,7 +314,10 @@ class Download
         try {
             boolean failed = true;
             try {
-                if (_f._cedb.getChangeEpoch_(_socid.sidx()) != null) {
+                if (_f._sidx2sid.getNullable_(_socid.sidx()) == null) {
+                    throw new ExExpelled("store " + _socid.sidx() + " not longer present");
+                }
+                if (_f._usePolaris.get()) {
                     checkState(_socid.cid().isContent());
                     _f._pgcr.processResponse_(_socid.soid(), msg, cxt.token());
                 } else {

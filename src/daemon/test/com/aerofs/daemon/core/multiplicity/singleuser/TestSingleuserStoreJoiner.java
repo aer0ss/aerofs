@@ -5,7 +5,8 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -24,6 +25,7 @@ import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.cfg.CfgRootSID;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.ritual_notification.RitualNotificationServer;
@@ -59,6 +61,9 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock IMapSID2SIndex sid2sidx;
     @Mock UnlinkedRootDatabase urdb;
     @Mock RitualNotifier _ritualNotifier;
+    @Mock CfgUsePolaris usePolaris;
+    @Mock PolarisClient polaris;
+    @Mock RemoteLinkDatabase rldb;
 
     @InjectMocks SingleuserStoreJoiner ssj;
 
@@ -174,4 +179,6 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         verify(urdb).removeUnlinkedRoot(sid, t);
         verify(sd).deleteRootStore_(sidx, PhysicalOp.APPLY, t);
     }
+
+    // TODO: polaris tests
 }

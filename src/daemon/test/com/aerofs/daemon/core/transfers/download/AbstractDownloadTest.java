@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.protocol.GetContentRequest;
 import com.aerofs.daemon.core.protocol.GetContentResponse;
 import com.aerofs.ids.DID;
@@ -25,6 +24,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.testlib.AbstractTest;
@@ -55,7 +55,6 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock Downloads dls;
     @Mock GetComponentRequest gcc;
     @Mock GetComponentResponse gcr;
-    @Mock ChangeEpochDatabase cedb;
     @Mock GetContentRequest pgcc;
     @Mock GetContentResponse pgcr;
     @Mock RemoteChangeChecker changes;
@@ -93,12 +92,11 @@ public class AbstractDownloadTest extends AbstractTest
         AppRoot.set("dummy");
 
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
-        when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
         when(cfgLocalDID.get()).thenReturn(new DID(UniqueID.generate()));
 
         factTo = new To.Factory(mock(Devices.class), cfgLocalDID);
         factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes,
-                cedb, pgcc, pgcr);
+                mock(CfgUsePolaris.class), pgcc, pgcr);
     }
 
 

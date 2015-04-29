@@ -10,7 +10,8 @@ public class LocalChange
         INSERT_CHILD,
         MOVE_CHILD,
         REMOVE_CHILD,
-        UPDATE_CONTENT
+        UPDATE_CONTENT,
+        SHARE
     }
 
     public Type type;

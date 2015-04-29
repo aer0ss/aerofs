@@ -199,8 +199,12 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         if (!_path.isRepresentable()) {
             String newName = LinkedPath.makeAuxFileName(soid);
             InjectableFile to = _f.getParentFile().newChild(newName);
-            if (to.exists()) throw new IOException("destination already exists");
-            TransUtil.moveWithRollback_(_f, to, t);
+            if (_f.exists()) {
+                if (to.exists()) throw new IOException("destination exists: " + newName);
+                TransUtil.moveWithRollback_(_f, to, t);
+            } else if (!to.exists()) {
+                if (to.exists()) throw new IOException("source missing: " + _f.getName());
+            }
         }
     }
 

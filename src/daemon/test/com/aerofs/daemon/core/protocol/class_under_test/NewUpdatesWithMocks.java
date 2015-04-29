@@ -14,9 +14,6 @@ import com.aerofs.lib.id.SIndex;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import java.sql.SQLException;
-
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -33,10 +30,9 @@ public class NewUpdatesWithMocks extends AbstractClassUnderTestWithMocks
     public @InjectMocks NewUpdates _nu;
     public @InjectMocks NewUpdatesSender _nus;
 
-    public NewUpdatesWithMocks()
-    {
+    public NewUpdatesWithMocks() {
         try {
             when(_cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
-        } catch (SQLException e) { fail(); }
+        } catch (Exception e) { throw new IllegalStateException(e); }
     }
 }

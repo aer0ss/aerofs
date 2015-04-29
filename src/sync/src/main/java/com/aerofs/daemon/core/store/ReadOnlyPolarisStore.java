@@ -99,6 +99,7 @@ public class ReadOnlyPolarisStore extends Store
 
         // stop fetching updates from polaris
         _cfs.stop_();
+        _cf.stop_();
 
         _f._cnsub.unsubscribe_(this);
 

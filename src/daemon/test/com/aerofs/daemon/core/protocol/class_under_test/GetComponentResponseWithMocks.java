@@ -20,12 +20,10 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOKID;
 
 import java.sql.SQLException;
@@ -56,7 +54,6 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public final BranchDeleter _bd = mock(BranchDeleter.class);
     public final Hasher _hasher = mock(Hasher.class);
     public final ComputeHash _computeHash = mock(ComputeHash.class);
-    public final ChangeEpochDatabase _cedb = mock(ChangeEpochDatabase.class);
     public final CentralVersionDatabase _cvdb = mock(CentralVersionDatabase.class);
     public final ContentChangesDatabase _ccdb = mock(ContentChangesDatabase.class);
     public final RemoteContentDatabase _rcdb = mock(RemoteContentDatabase.class);
@@ -75,9 +72,6 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public GetComponentResponseWithMocks()
     {
         _mu.inject_(_tm, _ds, _nvc, _mdiff, _al, _a2t, _lacl, _emd, _oc, _om, _vu);
-        try {
-            when(_cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
-        } catch (SQLException e) { fail(); }
         try {
             when(_ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(mock(IPhysicalPrefix.class));
         } catch (SQLException e) { fail(); }
