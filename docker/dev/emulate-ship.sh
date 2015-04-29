@@ -9,7 +9,9 @@ abspath() {
     (cd "$1" && pwd)
 }
 
-LOG="$(abspath ${THIS_DIR}/../../out.ship)/emulate.log"
+DIR="${THIS_DIR}/../../out.ship"
+mkdir -p "${DIR}"
+LOG="$(abspath "${DIR}")/emulate.log"
 
 CYAN='0;36'
 cecho() {
