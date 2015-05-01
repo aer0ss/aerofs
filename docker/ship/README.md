@@ -104,9 +104,11 @@ the bash command-line prompt.
 will be named "foo.ova", "foo.qcow2", and so on.
 - `vm-disk-size`, `vm-ram-size`: sizes are in MB. 
 
-Lastly, call "vm/build.sh" to generate VM images to folder "out":
+Lastly, call "vm/build.sh" to generate outputs to folder "out":
 
-    $ <path_to_ship>/vm/build.sh ship.yml out
+    $ <path_to_ship>/vm/build.sh cloudinit,preloaded ship.yml out
+    
+At the time being only `cloudinit` and `preloaded` are supported as output formats.
 
 ### Step 3. Deliver the system
 
@@ -216,17 +218,19 @@ To integrate with this Web access, the application shall:
 
 ### Testing and CI
 
-You may test the Loader's API in your development environment:
+You may test the system in your development environment:
 
-    $ docker run coolapp/loader simulate-api registry.coolapp.com default
+    $ <path_to_ship>/emulate.sh ship.yml default
 
-This allows other containers to call the Loader container's API. The API acts as if it runs with the given registry and target name. `POST /boot` in simulation mode does not restart application containers or itself.
+It launches all the containers in the default container group using the local docker
+command. This method always uses the default registry and the `latest` tag, and ignores
+all the `repo` and `tag` parameters passed into the Loader API.
 
-You may also test the console service and your banner in development environment:
+You may also test the console service and appliance banner in development environment:
 
     $ docker run -it coolapp/loader simulate-getty
 
-This will simulate the console screen on your terminal. Because the simulation has no
+It simulates the console screen on your terminal. Because the simulation has no
 privileges to modify the host OS, menu options that require root
 privilege will not succeed. Press [^C] and enter "Y" to exit simulation.
 

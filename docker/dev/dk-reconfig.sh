@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
 GREEN='0;32'

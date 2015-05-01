@@ -1,10 +1,9 @@
-FROM debian:sid
+FROM ubuntu:15.04
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-# Install docker. Deian's stock docker.io package is quite out of date.
-# Pin it to version 1.5.0 otherwise some customers' base CoreOS images might
-# not have the Docker daemon with an API recent enough to support us.
+# Pin docker to 1.5.0 otherwise some base CoreOS images might not have the docker
+# daemon with an API recent enough to support us.
 # The following steps are adapted from https://get.docker.com.
 RUN \
     apt-get update &&\
@@ -21,8 +20,7 @@ RUN \
     apt-get install -y wget curl &&\
     wget https://github.com/michaelsauter/crane/releases/download/v1.1.1/crane_linux_amd64 -O /usr/local/bin/crane &&\
     chmod 0755 /usr/local/bin/crane &&\
-    apt-get purge -y wget &&\
-    apt-get autoremove -y &&\
+    apt-get purge --auto-remove -y wget &&\
     rm -rf /var/lib/apt/lists/*
 
 # Install python and its packages. Partially adapted from
