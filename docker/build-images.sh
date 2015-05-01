@@ -50,7 +50,7 @@ DIRS="
 THIS_DIR="$(dirname $0)"
 
 echo "Building client packages..."
-"${THIS_DIR}/../invoke" proto build_client package_clients $@
+# "${THIS_DIR}/../invoke" proto build_client package_clients $@
 
 for i in ${DIRS}; do
     echo "========================================"

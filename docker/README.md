@@ -1,7 +1,7 @@
 This folder contains Docker specific files, tools, and build scripts. For more 
 information, please see [this design doc](../docs/design/docker.html).
 
-# Get started
+# Get started with development environtment
 
 1. Install build tools. You may run this script again at any time to upgrade the tools.
 
@@ -20,6 +20,20 @@ it's in progress.
 4. Learn more about the dk command family using:
 
         $ dk-help
+
+# Build appliance VM image
+
+        $ docker/ship-aerofs/build-vm.sh
+        
+This builds the preloaded VM (See Ship Enterprise docs). The path to the generated
+file is printed at the end of the process.
+
+# Build appliance cloud-config file
+
+        $ docker/ship-aerofs/build-vm.sh
+        
+This builds the cloud-config file (See Ship Enterprise docs). The path to the generated
+file is printed at the end of the process.
 
 # Tips and tricks
 
