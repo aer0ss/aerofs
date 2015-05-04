@@ -7,29 +7,19 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.os.OSUtil;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageLoader;
-import org.eclipse.swt.graphics.PaletteData;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Transform;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.IN_SYNC;
 import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.OUT_OF_SYNC;
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.round;
-import static java.lang.Math.sin;
+import static java.lang.Math.*;
 
 // learn about resource management: http://help.eclipse.org/ganymede/index.jsp?topic=/org.eclipse.platform.doc.isv/reference/api/index.html
 
@@ -325,19 +315,46 @@ public class Images {
         try {
             /**
              * The following block of code is equivalent to:
-             *   return org.eclipse.swt.internal.cocoa.NSScreen.mainScreen().backingScaleFactor
-             *           == 2.0
+             *
+             * NSArray screens = NSScreen.screens();
+             * long count = screens.count();
+             *
+             * for (long index = 0; index < count; index++) {
+             *     id id = screens.objectAtIndex(index);
+             *     NSScreen screen = new NSScreen(id);
+             *
+             *     if (screen.backingScaleFactor() == 2.0) {
+             *         return true;
+             *     }
+             * }
+             *
              * only with reflection.
              */
+            Class<?> nsArray = Class.forName("org.eclipse.swt.internal.cocoa.NSArray");
+            Method objectAtIndex = nsArray.getMethod("objectAtIndex");
             Class<?> nsScreen = Class.forName("org.eclipse.swt.internal.cocoa.NSScreen");
-            Object mainScreen = nsScreen.getMethod("mainScreen").invoke(null);
-            Object backingScaleFactor = nsScreen.getMethod("backingScaleFactor")
-                    .invoke(mainScreen);
-            return (Double) backingScaleFactor == 2.0;
+            Constructor<?> newNSScreen = nsScreen.getConstructor(Class.forName("org.eclipse.swt.internal.cocoa.id"));
+            Method backingScaleFactor = nsScreen.getMethod("backingScaleFactor");
+
+            Object screens = nsScreen.getMethod("screens").invoke(null);
+            long count = (Long)nsArray.getMethod("count").invoke(screens);
+
+            for (long index = 0; index < count; index++) {
+                Object id = objectAtIndex.invoke(screens, index);
+                Object screen = newNSScreen.newInstance(id);
+
+                if ((Double)backingScaleFactor.invoke(screen) == 2.0) {
+                    return true;
+                }
+            }
+
+            return false;
         } catch (Exception e) {
             Loggers.getLogger(Images.class)
-                    .error("failed to check whether the main display is HDPI or not.");
-            return Boolean.TRUE;
+                    .error("failed to check whether the main display is HDPI or not.", e);
+            // defaults to true because it's more likely that failure is caused by newer hardware, presumably hdpi,
+            // than detection failures on old hardware.
+            return true;
         }
     });
 
