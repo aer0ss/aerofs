@@ -65,7 +65,7 @@ class InternalLicenseRequestForm(Form):
     allow_mdm = BooleanField("Allow MDM?")
     allow_device_restriction = BooleanField("Allow Device Restriction?")
     manual_invoice = TextField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
-
+    stripe_subscription_id = TextField("Stripe Subscription ID?", validators=[Optional()])
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
 
@@ -77,7 +77,7 @@ class InternalLicenseStateForm(Form):
         ('IGNORED', 'IGNORED')
     ])
     invoice_id = TextField("Manual Invoice ID", validators=[Optional()])
-    stripe_id = TextField("Stripe Charge ID", validators=[Optional()])
+    stripe_subscription_id = TextField("Stripe Subscription ID", validators=[Optional()])
 
 class PasswordResetForm(Form):
     email = TextField('Email', validators = [Email()])

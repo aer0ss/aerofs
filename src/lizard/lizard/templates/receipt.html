@@ -27,17 +27,17 @@
                                             <em>Receipt #: {{ charge.receipt_number }}</em>
                                         </p>
                                         <p>
-                                            Card: {{ charge.card.brand }} (*{{ charge.card.last4 }})
+                                            Card: {{ charge.source.brand }} (*{{ charge.source.last4 }})
                                         </p>
                                         <p>
-                                            Exp (MM/YY): {{ charge.card.exp_month }} / {{ charge.card.exp_year }}
+                                            Exp (MM/YY): {{ charge.source.exp_month }} / {{ charge.source.exp_year }}
                                         </p>
                                     </div>
 
                                 </div>
                                 <div class="row">
                                     <div class="text-center">
-                                        <h1>Receipt</h1>
+                                        <h1>Receipt ({{ charge.status }})</h1>
                                     </div>
                                     <table class="table table-striped">
                                         <thead>
@@ -47,11 +47,18 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-
+                                            {% for item in line_items %}
                                             <tr>
-                                                <td class="col-md-10">{{ charge.description }} </td>
-                                                <td><p>{{ (charge.amount / 100) | format_currency }}</p></td>
+                                                <td class="col-md-10">
+                                                    {% if item.type == "subscription" %}
+                                                        {{ item.quantity }} x {{ item.plan.name }}
+                                                    {% else %}
+                                                        {{ item.description }} 
+                                                    {% endif %}
+                                                </td>
+                                                <td><p>{{ (item.amount / 100) | format_currency }}</p></td>
                                             </tr>
+                                            {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>

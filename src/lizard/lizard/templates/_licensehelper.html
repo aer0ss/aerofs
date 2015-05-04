@@ -46,7 +46,6 @@
             <th>Free/Paid?</th>
             <th>Issue Date</th>
             <th>Expiry Date</th>
-            <th>CC Receipt</th>
             <th>Manual Invoice</th>
             <th>Auditing</th>
             <th>Identity</th>
@@ -63,22 +62,6 @@
             <td>{% if license.is_trial %}Free{% else %}Paid license{% endif %}</td>
             <td>{{ license.create_date.strftime('%x') }}</td>
             <td>{{ license.expiry_date.strftime('%x') }}</td>
-            <td>
-            {% if license.stripe_charge_id %}
-
-                <a href="https://dashboard.stripe.com/payments/{{ license.stripe_charge_id }}" target="_blank">
-                    {% if charges %}
-                        {% for charge in charges %}
-                                {% if charge.id == license.stripe_charge_id %}
-                                    {{ charge.receipt_number }}
-                                {% endif %}
-                        {% endfor %}
-                    {% else %}
-                    Receipt
-                    {% endif %}
-                </a>
-            {% endif %}
-            </td>
             <td>{% if license.invoice_id %} {{ license.invoice_id }} {% endif %}</td>
             <td>{% if license.allow_audit %}&#x2714{% endif %}</td>
             <td>{% if license.allow_identity %}&#x2714{% endif %}</td>

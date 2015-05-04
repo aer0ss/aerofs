@@ -8,8 +8,8 @@ SEGMENTIO_API_KEY="d66ddysfvg"
 SEGMENTIO_SECRET_KEY="j85f4itjg9bxc6ogyh49"
 
 # These stripe keys are for testing only
-STRIPE_SECRET_KEY="sk_test_lqV5voHmrJZLom3iybJFSVqK"
-STRIPE_PUBLISHABLE_KEY="pk_test_nlFBUMTVShdEAASKB0nZm6xf"
+STRIPE_SECRET_KEY="sk_test_vEjpSRt2LE4jgfxB709l8NCG"
+STRIPE_PUBLISHABLE_KEY="pk_test_LL4hvnijboGKs7CJLA6CUh15"
 # local dev: use sqlite db
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))

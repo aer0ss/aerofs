@@ -38,6 +38,16 @@ def customer_actions(org_id):
     form = forms.InternalLicenseRequestForm()
     if form.validate_on_submit():
         # TODO: sanity check all the values!
+        if customer.stripe_customer_id:
+            try:
+                stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
+                subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
+            except stripe.error.InvalidRequestError, e:
+                body = e.json_body
+                err = body['error']
+                flash (err['message'], "error")
+                return redirect(url_for('.customer_actions',org_id=org_id))
+
         l = models.License()
         l.state = models.License.states.PENDING
         l.customer_id = org_id
@@ -49,6 +59,7 @@ def customer_actions(org_id):
         l.allow_identity = form.allow_identity.data
         l.allow_mdm = form.allow_mdm.data
         l.allow_device_restriction = form.allow_device_restriction.data
+        l.stripe_subscription_id = form.stripe_subscription_id.data
         l.invoice_id = form.manual_invoice.data
         db.session.add(l)
         db.session.commit()
@@ -67,10 +78,21 @@ def customer_actions(org_id):
 @blueprint.route("/licenses/<int:license_id>", methods=["GET", "POST"])
 def license_actions(license_id):
     license = models.License.query.get_or_404(license_id)
-    form = forms.InternalLicenseStateForm(invoice_id=license.invoice_id, stripe_id=license.stripe_charge_id)
+    form = forms.InternalLicenseStateForm(invoice_id=license.invoice_id, stripe_subscription_id=license.stripe_subscription_id)
 
     if form.validate_on_submit():
+        if license.customer.stripe_customer_id:
+            try:
+                stripe_customer = stripe.Customer.retrieve(license.customer.stripe_customer_id)
+                subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
+            except stripe.error.InvalidRequestError, e:
+                body = e.json_body
+                err = body['error']
+                flash (err['message'], "error")
+                return redirect(url_for('.license_actions',license_id=license_id))
         license.state = getattr(models.License.states, form.state.data)
+        license.stripe_subscription_id = form.stripe_subscription_id.data
+        license.invoice_id = form.invoice_id.data
         db.session.add(license)
         db.session.commit()
         flash(u"Set license {} to state {}".format(license.id, form.state.data), "success")

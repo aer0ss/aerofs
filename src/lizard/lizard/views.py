@@ -1,5 +1,6 @@
 import base64
 import datetime
+import time
 import os
 import json
 import urllib
@@ -13,9 +14,19 @@ import markupsafe
 
 from lizard import analytics_client, db, login_manager, csrf, stripe, filters
 from . import appliance, notifications, forms, models
-import pricing
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
+
+subscriptions = {
+    'aerofs_monthly': {
+        'description': u'AeroFS Annual Subscription (billed monthly)',
+        'price': int(15)
+    },
+    'aerofs_annual': {
+        'description': u'AeroFS Annual Subscription (billed yearly)',
+        'price': int(180)
+    }
+}
 
 @login_manager.user_loader
 def load_user(userid):
@@ -327,10 +338,102 @@ def accept_organization_invite():
             invite=invite,
             customer=customer)
 
+@blueprint.route("/pay", methods=["POST"])
+@login.login_required
+def pay():
+    user = login.current_user
+    customer = user.customer
+    newest_license = customer.newest_license()
+    billing_frequency = request.form['billing_frequency']
+    requested_license_count = request.form['requested_license_count']
+    license_request = models.License()
+    license_request.customer = customer
+    license_request.state = models.License.LicenseState.PENDING
+    license_request.seats = requested_license_count
+    license_request.is_trial = False
+    license_request.allow_audit = True
+    license_request.allow_identity = True
+    license_request.allow_mdm = True
+    license_request.allow_device_restriction = True
+    # charge the customer
+    msg=None
+    try:
+        #create/retrieve stripe customer
+        if not customer.stripe_customer_id:
+            stripe_customer = stripe.Customer.create(
+                    email=user.email,
+                    card=request.form['stripeToken']
+                    )
+
+            customer.stripe_customer_id = stripe_customer.id
+            db.session.add(customer)
+        # create/update subscription
+        stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
+        if newest_license.is_trial: # new subscription
+            license_request.set_days_until_expiry(365)
+
+            stripe_subscription = stripe_customer.subscriptions.create(
+                plan=billing_frequency,
+                quantity=license_request.seats)
+            license_request.stripe_subscription_id = stripe_subscription.id
+        else: # pro-rate
+            license_request.expiry_date = newest_license.expiry_date
+            license_request.stripe_subscription_id = newest_license.stripe_subscription_id
+            stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
+            stripe_subscription.prorate = "true"
+            stripe_subscription.quantity = license_request.seats
+            stripe_subscription.save()
+            #immediattely charge the customer (otherwise the customer will get charged at the end of the billing period)
+            try:
+                invoice = stripe.Invoice.create(customer=stripe_customer.id)
+                invoice = invoice.pay()
+            except (stripe.error.CardError, stripe.error.StripeError) as e:
+                # try and roll back the subscription if the invoice payment failed
+                # (why stripe throws an error as opposed to a null invoice here is beyond me)
+                if customer.stripe_customer_id and not newest_license.is_trial:
+                    stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
+                    stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
+                    stripe_subscription.prorate = "false"
+                    stripe_subscription.quantity = newest_license.seats
+                    stripe_subscription.save()
+                raise
+    except stripe.error.CardError as e:
+        # Since it's a decline, stripe.error.CardError will be caught
+        body = e.json_body
+        err  = body['error']
+        msg = err['message']
+    except stripe.error.StripeError as e:
+        msg = u"An unknown error has occured and your card has not been charged. Please try again later."
+        current_app.logger.warn(e)
+    except Exception as e:
+        msg = u"An internal server error has occured and your card has not been charged. If you continue seeing this error, please contact us at support@aerofs.com."
+        current_app.logger.warn(e)
+    else:
+        # Charged succesfully, create license request.
+        db.session.add(license_request)
+        customer.renewal_seats = license_request.seats
+        db.session.add(customer)
+        # Commit.
+        db.session.commit()
+        if newest_license.is_trial:
+            flash(u"Successfully bought {} seats.".format(license_request.seats), 'success')
+        else:
+            flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
+    finally:
+        if msg: #there's an error
+            flash(msg, "error")
+            return redirect(url_for('.buy'))
+
+    session.pop('requested_license_count', None)
+    return redirect(url_for('.dashboard'))
+
 @blueprint.route("/buy", methods=["GET","POST"])
 @login.login_required
 def buy():
     user = login.current_user
+    billing_frequency = request.args.get("billing_frequency", "aerofs_monthly")
+    if billing_frequency not in subscriptions:
+            billing_frequency = "aerofs_monthly"
 
     if 'requested_license_count' in session:
         requested_license_count= session['requested_license_count']
@@ -338,122 +441,135 @@ def buy():
         flash(u"Please select a license count and try again.", "error")
         return redirect(url_for('.dashboard'))
 
-    newest_license = user.customer.newest_license()
+    customer = user.customer
+    newest_license = customer.newest_license()
+    order_summary = {}
 
-    license_request = models.License()
-    license_request.customer = user.customer
+    if newest_license.is_trial: #new subscription
 
-    if newest_license.is_trial:
-        license_request.set_days_until_expiry(365)
-        charge_amount = requested_license_count * pricing.COST_PER_SEAT
+        charge_amount = requested_license_count * subscriptions.get(billing_frequency).get("price")
         description = "Purchase "  + str(requested_license_count) +" seats"
 
+        charges = [{
+                    "amount": charge_amount * 100,
+                    "description": description
+                }]
+
+        total = charge_amount * 100
+        order_summary["charges"] = charges
+        order_summary["total"] = total
     else: #pro-rate
         if requested_license_count <= newest_license.seats:
             flash (u"Something went wrong. Your requested license count is lower than your existing license count.", "error")
             return redirect(url_for('.dashboard'))
 
-        license_request.expiry_date = newest_license.expiry_date
-        charge_amount = (requested_license_count - newest_license.seats)* pricing.COST_PER_SEAT * \
-                        ((license_request.expiry_date.date() - datetime.date.today()).days )/365
+        if not customer.stripe_customer_id or not newest_license.stripe_subscription_id:
+            flash (u"It looks like your account is not set up for credit card billing. Please contact billing@aerofs.com to upgrade.", "error")
+            return redirect(url_for('.dashboard'))
 
-        description = "Upgrade from {prev_seats} to {new_seats} seats, pro-rated for {day_delta} days (renewing on {renewal_date})".format(
-            prev_seats=newest_license.seats,
-            new_seats=requested_license_count,
-            day_delta=(license_request.expiry_date.date()-datetime.date.today()).days,
-            renewal_date=license_request.expiry_date.strftime('%b %d, %Y')
-            )
+        # retrieve existing subscription and display prorated charge
+        stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
+        stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
+        upcoming_invoice = stripe.Invoice.upcoming(
+            customer=customer.stripe_customer_id,
+            subscription=stripe_subscription.id,
+            subscription_quantity=requested_license_count,
+            subscription_prorate="true",
+            subscription_proration_date=int(time.time())
+        )
 
-    if request.method == 'POST':
-        # charge the customer
-        msg=None
-        try:
-            customer = user.customer
-            if not customer.stripe_customer_id:
+        charges = []
+        amount_due = 0
+        for invoice_item in upcoming_invoice.lines.data:
+            # by default, stripe assumes the upcoming invoice
+            # will be billed at the next billing cycle. I prefer to bill them
+            # immeddiately so that we don't generate a license key if they can't pay
+            # but because of stripes assumption, in the "upcoming invoice" function they
+            # return the next susbscription payment too. We want to only show invoice items,
+            # not subscription billings as well.
 
-                stripe_customer = stripe.Customer.create(
-                        email=user.email,
-                        card=request.form['stripeToken']
-                        )
+            if invoice_item.type == "invoiceitem":
+                charge = {
+                    "amount": invoice_item.amount,
+                    "description": invoice_item.description
+                }
+                charges.append(charge)
+                amount_due = amount_due + invoice_item.amount
+        order_summary["charges"] = charges
+        order_summary["total"] = amount_due
 
-                customer.stripe_customer_id = stripe_customer.id
-                db.session.add(customer)
-            else:
-                cu = stripe.Customer.retrieve(customer.stripe_customer_id)
-                cu.card=request.form['stripeToken']
-                cu.save()
-
-            charge = stripe.Charge.create(
-                customer=customer.stripe_customer_id,
-                amount=charge_amount*100, # in cents
-                currency='usd',
-                description=description
-            )
-
-        except stripe.error.CardError as e:
-            # Since it's a decline, stripe.error.CardError will be caught
-            body = e.json_body
-            err  = body['error']
-            msg = err['message']
-        except stripe.error.StripeError as e:
-            msg = u"An unknown error has occured and your card has not been charged. Please try again later."
-            current_app.logger.warn(e)
-        except Exception as e:
-            msg = u"An internal server error has occured and your card has not been charged. If you continue seeing this error, please contact us at support@aerofs.com."
-            current_app.logger.warn(e)
-        finally:
-            if msg:
-                flash(msg, "error")
-                return redirect(url_for('.buy'))
-
-        # Charged succesfully, create license request.
-        license_request.stripe_charge_id=charge.id
-        license_request.state = models.License.LicenseState.PENDING
-        license_request.seats = requested_license_count
-        license_request.is_trial = False
-        license_request.allow_audit = True
-        license_request.allow_identity = True
-        license_request.allow_mdm = True
-        license_request.allow_device_restriction = True
-        db.session.add(license_request)
-
-        customer.renewal_seats = license_request.seats
-
-        db.session.add(customer)
-        # Commit.
-        db.session.commit()
-
-        if newest_license.is_trial:
-            flash(u"Successfully bought {} seats.".format(license_request.seats), 'success')
-        else:
-            flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
-
-        session.pop('requested_license_count', None)
-        return redirect(url_for('.dashboard'))
+        # sanity check to make sure the order didn't end up being 0
+        if amount_due == 0:
+            flash (u"Failed to generate a new invoice. Please try again later, and contact support@aerofs.com if the error persists", "error")
+            return redirect(url_for('.dashboard'))
 
     return render_template("buy.html",
         current_license=newest_license,
         requested_license_count = requested_license_count,
-        charge_amount = charge_amount,
-        description=description,
-        email=user.email
+        order_summary = order_summary,
+        email=user.email,
+        subscriptions=subscriptions,
+        billing_frequency=billing_frequency,
+        stripe_customer_id=customer.stripe_customer_id
         )
 
-@blueprint.route("/payment_history", methods=["GET"])
+@blueprint.route("/billing", methods=["GET", "POST"])
 @login.login_required
-def payment_history():
+def billing():
     user = login.current_user
 
-    if user.customer.stripe_customer_id:
-        charges = stripe.Charge.all(customer=user.customer.stripe_customer_id)
+    charges = []
+    card = None
+    msg = None
+    try:
+        if request.method == 'POST' and request.form['stripeToken']:
+            token = request.form['stripeToken']
+            if user.customer.stripe_customer_id: # if customer exists, create a new default card
+                stripe_customer = stripe.Customer.retrieve(user.customer.stripe_customer_id)
 
-        return render_template("payment_history.html",
-            charges=charges.data
+                card = stripe_customer.sources.create(source=token)
+                stripe_customer.default_source = card.id
+                stripe_customer.save()
+            else: #create customer
+                stripe_customer = stripe.Customer.create(
+                    description=user.email,
+                    email=user.email,
+                    source=token)
+                customer = user.customer
+                customer.stripe_customer_id = stripe_customer.id
+                db.session.add(customer)
+                db.session.commit()
+            flash(u"Successfully updated your credit card", "success")
+            return redirect(url_for(".billing"))
+
+        # retrieve default card to display 
+        if user.customer.stripe_customer_id:
+            charges = stripe.Charge.all(customer=user.customer.stripe_customer_id).data
+            stripe_customer = stripe.Customer.retrieve(user.customer.stripe_customer_id)
+            default_card = stripe_customer.default_source
+            if default_card:
+                card = stripe_customer.sources.retrieve(default_card)
+    except stripe.error.CardError as e:
+        # Since it's a decline, stripe.error.CardError will be caught
+        body = e.json_body
+        err  = body['error']
+        msg = err['message']
+    except stripe.error.StripeError as e:
+        msg = u"An unknown error has occured and your card has not been changed. Please try again later."
+        current_app.logger.warn(e)
+    except Exception as e:
+        msg = u"An internal server error has occured and your card has not been changed. If you continue seeing this error, please contact us at support@aerofs.com."
+        current_app.logger.warn(e)
+    finally:
+        if msg:
+            flash(msg, "error")
+            return redirect(url_for('.billing'))
+
+    return render_template("billing.html",
+        charges=charges,
+        card=card,
+        stripe_pk=current_app.config['STRIPE_PUBLISHABLE_KEY']
         )
-    else:
-        return render_template("payment_history.html",
-            charges=None
-            )
 
 @blueprint.route("/receipt/<string:id>", methods=["GET"])
 @login.login_required
@@ -461,12 +577,14 @@ def receipt(id):
     user = login.current_user
 
     charge = stripe.Charge.retrieve(id)
-    if charge.card.customer != user.customer.stripe_customer_id:
+    if charge.customer != user.customer.stripe_customer_id:
             flash(u"This receipt does not exist.", "error")
-            return redirect(url_for(".payment_history"))
+            return redirect(url_for(".billing"))
 
+    line_items = stripe.Invoice.retrieve(charge.invoice).lines.all().data
     return render_template("receipt.html",
-        charge=charge
+        charge=charge,
+        line_items=line_items
     )
 
 @blueprint.route("/dashboard", methods=["GET", "POST"])
@@ -598,7 +716,6 @@ def complete_password_reset():
     try:
         signed_reset_token = base64.urlsafe_b64decode(reset_blob.encode("latin1"))
     except Exception as e:
-        print e
         flash(u"Not a valid password reset token.", "error")
         return redirect(url_for(".start_password_reset"))
 

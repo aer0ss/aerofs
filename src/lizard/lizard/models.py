@@ -253,11 +253,10 @@ class License(db.Model, TimeStampedMixin):
     allow_mdm = db.Column(db.Boolean, default=False, nullable=False)
     allow_device_restriction = db.Column(db.Boolean, default=False, nullable=False)
 
-    # Each license should generally have either a stripe id or an invoice ID
+    # Each license should generally have either a stripe subscription id or an invoice ID
     # Exceptions are for trial licenses, and well, when we're feeling nice...
-    # Stripe Charge ID
-    stripe_charge_id = db.Column(db.String(256), nullable=True)
-
+    # Stripe Subscription ID
+    stripe_subscription_id = db.Column(db.String(256), nullable=True)
     # Invoice ID
     invoice_id = db.Column(db.String(256), nullable=True)
 

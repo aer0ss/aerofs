@@ -17,6 +17,12 @@
         {% endfor %}
     </ul>
 
+    {% if customer.stripe_customer_id %}
+        <h3>Credit Card Info</h3>
+        <a href="https://dashboard.stripe.com/customers/{{ customer.stripe_customer_id }}" target="_blank">View
+        </a>
+    {% endif %}
+
     <h3>Licenses</h3>
     {{ render_license_table(customer.licenses.all(), charges) }}
 
@@ -26,6 +32,7 @@
         {{ render_field(form.seats) }}
         {{ render_field(form.expiry_date) }}
         {{ render_field(form.manual_invoice) }}
+        {{ render_field(form.stripe_subscription_id) }}
         {{ render_field(form.is_trial) }}
         {{ render_field(form.allow_audit) }}
         {{ render_field(form.allow_identity) }}
