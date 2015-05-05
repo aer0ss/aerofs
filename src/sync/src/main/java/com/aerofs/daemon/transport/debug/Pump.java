@@ -303,11 +303,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
         @Override
         public void handleThrows_() {
-            try {
-                transport.q().enqueueThrows(new EOUnicastMessage(remote, CHUNK), TC.currentThreadPrio());
-            } catch (Exception e) {
-                SystemUtil.fatal(e);
-            }
+            transport.q().enqueueBlocking(new EOUnicastMessage(remote, CHUNK), TC.currentThreadPrio());
             sendThroughputCounter.observe(CHUNK.length);
         }
     }
