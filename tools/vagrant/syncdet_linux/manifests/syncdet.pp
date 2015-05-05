@@ -14,7 +14,6 @@ class syncdet-packages {
         "python-pip",
         "python-setuptools",
         "python-software-properties", # For add-apt-repository.
-        "default-jre-headless",
         "avahi-daemon",
         "ntp",
         "sqlite3",
@@ -31,7 +30,7 @@ class syncdet-packages {
         provider => "pip",
     }
     package {"protobuf":
-        ensure => installed,
+        ensure => "2.6.1",
         provider => "pip"
     }
     package {"requests":
