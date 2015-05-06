@@ -16,20 +16,15 @@ import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import org.jivesoftware.smack.PacketListener;
+import com.google.common.collect.*;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.aerofs.base.id.JabberID.muc2sid;
@@ -50,10 +45,6 @@ import static com.aerofs.lib.log.LogUtil.suppress;
  *  presence update contains only the changes to the device-to-SID map.
  *
  * An XMPP packet listener keeps the private did-to-sid map up to date.
- *
- * FIXME: When the XMPP connection goes offline, we do not clear the did-to-sid map.
- * I'm assuming we will _not_ get presence packets for those situations.
- * Worry: what if the did2sid map is out of date?
  *
  * Oh, one more responsibility:  This class also feeds the multicast listener machinery.
  */
@@ -89,18 +80,13 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     @Override
     public void xmppServerConnected(final XMPPConnection connection) throws XMPPException
     {
-        connection.addPacketListener(new PacketListener()
-        {
-            @Override
-            public void processPacket(final Packet packet)
-            {
-                if (packet instanceof Presence) {
-                    try {
-                        processPresence((Presence)packet);
-                    } catch (Exception e) {
-                        l.warn("{} fail process presence over {}", packet.getFrom(), transportId,
-                                suppress(e, ExInvalidID.class));
-                    }
+        connection.addPacketListener(packet -> {
+            if (packet instanceof Presence) {
+                try {
+                    processPresence((Presence)packet);
+                } catch (Exception e) {
+                    l.warn("{} fail process presence over {}", packet.getFrom(), transportId,
+                            suppress(e, ExInvalidID.class));
                 }
             }
         }, new PacketTypeFilter(Presence.class));
@@ -112,6 +98,11 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     public void xmppServerDisconnected()
     {
         multicastListener.onMulticastUnavailable();
+        synchronized (this) {
+            for (Entry<DID, SID> e : ImmutableList.copyOf(multicastReachableDevices.entries())) {
+                updateStores(false, e.getKey(), e.getValue());
+            }
+        }
     }
 
     /**

@@ -12,11 +12,7 @@ import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +38,7 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
     private static Logger l = LoggerFactory.getLogger(ChannelMonitor.class);
 
     // FIXME: "Sets.newConcurrentHashSet" is in a later Guava release...
-    private final Set<DID> knownOnMulticast = Sets.newSetFromMap(new ConcurrentHashMap<DID, Boolean>());
+    private final Set<DID> knownOnMulticast = Sets.newSetFromMap(new ConcurrentHashMap<>());
     private final ChannelDirectory directory;
     private final Timer connectTimer;
 
@@ -93,15 +89,9 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
 
     private void scheduleConnect(final int iters, final DID did)
     {
-        connectTimer.newTimeout(new TimerTask()
-        {
-            @Override
-            public void run(Timeout timeout)
-                    throws Exception
-            {
-                connectNewChannel(iters, did);
-            }
-        }, (iters == 0 ? Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : Daemon.CHANNEL_RECONNECT_MAX_DELAY), TimeUnit.MILLISECONDS);
+        connectTimer.newTimeout(timeout ->  connectNewChannel(iters, did),
+                (iters == 0 ? Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : Daemon.CHANNEL_RECONNECT_MAX_DELAY),
+                TimeUnit.MILLISECONDS);
     }
 
     private void connectNewChannel(final int iters, final DID did)
@@ -110,17 +100,12 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
         if (knownOnMulticast.contains(did)) {
 
             directory.chooseActiveChannel(did).addListener(
-                    new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture channelFuture)
-                                throws Exception
-                        {
-                            if (channelFuture.isSuccess()) {
-                                l.info("{} cm:online", did);
-                            } else {
-                                l.info("{} cm:reconn", did);
-                                scheduleConnect(iters + 1, did);
-                            }
+                    channelFuture -> {
+                        if (channelFuture.isSuccess()) {
+                            l.info("{} cm:online", did);
+                        } else {
+                            l.info("{} cm:reconn", did);
+                            scheduleConnect(iters + 1, did);
                         }
                     }
             );
