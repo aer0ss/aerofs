@@ -15,7 +15,7 @@ RUN \
 COPY root buildroot /
 
 # Expose ports
-EXPOSE 8085
+EXPOSE 8085 8700
 
 # Define default command
 CMD [ "/run.sh" ]

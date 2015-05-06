@@ -1,12 +1,8 @@
-FROM aerofs/base
+FROM aerofs/base.jre8-and-mysql-client
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-RUN apt-get update && apt-get install -y \
-        mysql-client \
-        openjdk-8-jre-headless \
-        tomcat6 \
-    &&\
+RUN apt-get update && apt-get install -y tomcat6 &&\
     rm -rf /var/lib/apt/lists/* &&\
     ln -s /etc/tomcat6 /usr/share/tomcat6/conf
 

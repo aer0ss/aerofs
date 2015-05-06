@@ -5,7 +5,9 @@ MAINTAINER Weihan Wang "weihan@aerofs.com"
 RUN \
     apt-get update && apt-get install -y python2.7 &&\
     ln -s /usr/bin/python2.7 /usr/bin/python &&\
-    curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python &&\
+    # avoid piping, it could swallow curl failure
+    curl -SL 'https://bootstrap.pypa.io/get-pip.py' -o /tmp/get-pip.py &&\
+    python /tmp/get-pip.py && rm -f /tmp/get-pip.py &&\
     #
     # Clean up
     #

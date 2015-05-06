@@ -27,7 +27,8 @@ RUN \
 # Install python and its packages. Partially adapted from
 # https://github.com/docker-library/python/blob/master/2.7/Dockerfile
 RUN apt-get update && apt-get install -y python curl &&\
-    curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python &&\
+    curl -SL 'https://bootstrap.pypa.io/get-pip.py' -o /tmp/get-pip.py &&\
+    python /tmp/get-pip.py && rm -f /tmp/get-pip.py &&\
     pip install Flask pyyaml requests &&\
     # Clean up
     find /usr/local \
