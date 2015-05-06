@@ -286,6 +286,7 @@ containers:
         - data
       detach: true
       link:
+        - postfix:postfix.service
         - redis:redis.service
         - mysql:mysql.service
         - config:config.service
