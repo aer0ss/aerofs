@@ -6,19 +6,12 @@ TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 # List of known packages that can be built in alphabetical order.
 PACKAGES= \
-	ca-tools
-	charlie
-	cmd-tools
-	config
-	db-backup
-	dryad
-	jeq-tools
-	lizard
-	middleman
-	pagerduty
-	repackaging
+	cmd-tools \
+	dryad \
+	lizard \
+	middleman \
+	pagerduty \
 	rocklog
-	sanity
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 

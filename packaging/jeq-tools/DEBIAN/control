@@ -1,7 +1,0 @@
-Package: aerofs-jeq-tools
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS Jedis Epoch Queue server tools package.
-Architecture: all
-Depends: python-pip

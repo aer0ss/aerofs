@@ -1,2 +1,0 @@
-#!/bin/bash -e
-java -jar $(dirname $0)/../opt/jeq-tools/jeq-enqueue-erase.jar $@

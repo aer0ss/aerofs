@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-# constants
+# Constants
 readonly ERRBADARGS=2
 readonly APT_SERVER=apt.aerofs.com
+readonly SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 
 # Copy the debs over and add them to the apt repository. Make sure the deb
 # dropbox is clean before we perform the update (and clean up when we're done).
@@ -51,9 +52,9 @@ function upload_payload() {
         rm -f ~/$DEBS_FOLDER/*"
 }
 
-# notify the team via email that debs have been uploaded
+# Notify the team via slack that debs have been uploaded.
 function notify_team() {
-    echo -e "AeroFS $TARGET_REPOSITORY packages have been updated by $(whoami)@$(hostname)\n" > mail.txt
+    echo -e "Build notification: $TARGET_REPOSITORY packages have been updated by $(whoami)@$(hostname)\n" > mail.txt
     echo -e "New Versions:\n" >> mail.txt
 
     for ver in $(ls debs/*.ver)
@@ -62,8 +63,14 @@ function notify_team() {
         echo "$NAME: $(cat $ver)" >> mail.txt
     done
 
-    echo "Done. Sending mail notification."
-    cat mail.txt | mail -s "[$TARGET_REPOSITORY] AeroFS Debian Package Build Notification" build-notifications@aerofs.com
+    echo "Done. Sending slack notification."
+    cat mail.txt |
+        $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
+            -r "$room" \
+            -c good \
+            -u $SLACK_WEBHOOK \
+            -f "Build" > /dev/null
+
     rm -f mail.txt
 }
 
