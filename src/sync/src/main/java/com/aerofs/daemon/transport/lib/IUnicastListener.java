@@ -12,7 +12,7 @@ import com.aerofs.ids.DID;
  *
  * FIXME: Two different use cases here that feel disjoint:
  *      unicast ready / unavailable
- *      device oneline / offline
+ *      device online / offline
  * Pull into two interfaces?
  */
 public interface IUnicastListener

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.xmpp.presence;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.xmpp.XMPPMetadataService;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.ids.SID;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.aerofs.base.id.JabberID.muc2sid;
 import static com.aerofs.base.id.JabberID.user2did;
 import static com.aerofs.lib.event.Prio.LO;
@@ -62,6 +64,8 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
+    private XMPPMetadataService xmppMetadataService;
+
     /**
      * Constructor
      */
@@ -80,6 +84,8 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     @Override
     public void xmppServerConnected(final XMPPConnection connection) throws XMPPException
     {
+        // Grab the connection: we will need it when we receive a presence packet to retrieve the other user's vCard
+        xmppMetadataService = new XMPPMetadataService(connection);
         connection.addPacketListener(packet -> {
             if (packet instanceof Presence) {
                 try {
@@ -136,6 +142,10 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
+
+        checkState(xmppMetadataService != null);
+        String metadata = xmppMetadataService.get(presence.getFrom());
+        l.warn("Found metadata: {}", metadata);
 
         return (did.equals(localdid)) ? false : updateStores(presence.isAvailable(), did, sid);
     }

@@ -9,6 +9,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
+import com.aerofs.daemon.transport.IPresenceLocator;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -45,9 +46,11 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
@@ -59,7 +62,7 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from TCPStores and make this final
-public class TCP implements ITransport, IAddressResolver
+public class TCP implements ITransport, IAddressResolver, IPresenceLocator
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
@@ -69,7 +72,8 @@ public class TCP implements ITransport, IAddressResolver
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
     private final String id;
-    private final int pref;
+    private final DID localdid;
+    private final int rank;
     private final ARP arp;
     private final TransportStats transportStats;
     private final TCPStores stores;
@@ -79,13 +83,14 @@ public class TCP implements ITransport, IAddressResolver
     private final StreamManager streamManager;
     private final PresenceService presenceService = new PresenceService();
     private final ChannelMonitor monitor;
+    private final LinkStateService linkStateService;
 
     public TCP(
             UserID localUser,
             DID localdid,
             long streamTimeout,
             String id,
-            int pref,
+            int rank,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             LinkStateService linkStateService,
             boolean listenToMulticastOnLoopback,
@@ -105,10 +110,11 @@ public class TCP implements ITransport, IAddressResolver
         this.scheduler = new Scheduler(this.transportEventQueue, id + "-sch");
 
         this.id = id;
-        this.pref = pref;
+        this.rank = rank;
         this.transportStats = new TransportStats();
         this.outgoingEventSink = outgoingEventSink;
         this.streamManager = new StreamManager(streamTimeout);
+        this.localdid = localdid;
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
 
@@ -158,6 +164,7 @@ public class TCP implements ITransport, IAddressResolver
             unicast.onLinkStateChanged(previous, current, added, removed);
             multicast.onLinkStateChanged(previous, current, added, removed);
         }, sameThreadExecutor());
+        this.linkStateService = linkStateService;
 
         // presence hookups
         unicast.setUnicastListener(presenceService);
@@ -294,7 +301,7 @@ public class TCP implements ITransport, IAddressResolver
     @Override
     public int rank()
     {
-        return pref;
+        return rank;
     }
 
     @Override
@@ -334,6 +341,27 @@ public class TCP implements ITransport, IAddressResolver
     int getListeningPort()
     {
         return ((InetSocketAddress)unicast.getListeningAddress()).getPort();
+    }
+
+    /**
+     * Collect and return the list of presence locations
+     *
+     * @return list of PresenceLocations for this transport
+     */
+    @Override
+    public ArrayList<IPresenceLocation> getPresenceLocations()
+    {
+        ArrayList<IPresenceLocation> locations = new ArrayList<>();
+
+        // We have the listening port
+        int listeningPort = getListeningPort();
+
+        // We need the list of IPs from the linkStateService
+        for (InetAddress addr: linkStateService.getCurrentIPs()) {
+            locations.add(new TCPPresenceLocation(localdid, addr, listeningPort));
+        }
+
+        return locations;
     }
 
     @Override

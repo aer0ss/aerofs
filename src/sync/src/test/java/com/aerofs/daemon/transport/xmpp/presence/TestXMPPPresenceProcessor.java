@@ -334,4 +334,15 @@ public final class TestXMPPPresenceProcessor
         assertThat(squashedPresence.size(), equalTo(1));
         assertThat(squashedPresence.get(DID_0), containsInAnyOrder(SID_1));
     }
+
+    /**
+     * The client should send a non-empty metadata inside the vCard
+     * @throws Exception
+     */
+    @Test
+    public void shouldSendMetadata() throws Exception
+    {
+        beInTheMoment(DID_0, SID_0);
+        // How to test that the vCard has been attached / is accessible?
+    }
 }

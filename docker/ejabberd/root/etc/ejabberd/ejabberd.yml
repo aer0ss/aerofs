@@ -26,10 +26,12 @@ listen:
     access: c2s
 loglevel: 4
 max_fsm_queue: 1000
-modules: 
+modules:
+  mod_sic: [] # XEP-0279 Server IP Check (allows client to ask the server for their own IP address)
+  mod_vcard: [] # XEP-0054 vCard support (for sending presence locations as metadata)
   mod_ping: []
   mod_disco: []
-  mod_muc: 
+  mod_muc:
     host: "c.@HOST@"
     access: muc
     access_create: muc

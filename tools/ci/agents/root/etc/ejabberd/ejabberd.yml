@@ -34,8 +34,10 @@ listen:
     starttls: true
 loglevel: 4
 max_fsm_queue: 10
-modules: 
-  mod_muc: 
+modules:
+  mod_sic: []
+  mod_vcard: []
+  mod_muc:
     host: "c.arrowfs.org"
     access: muc
     access_create: muc

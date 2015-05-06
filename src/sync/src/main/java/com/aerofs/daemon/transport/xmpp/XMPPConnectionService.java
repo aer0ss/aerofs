@@ -8,6 +8,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.xmpp.presence.XMPPvCard;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.Listeners;
@@ -15,11 +16,11 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
+import com.amazonaws.util.json.JSONArray;
 import com.google.common.collect.ImmutableSet;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
@@ -27,8 +28,8 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -37,6 +38,9 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -108,6 +112,8 @@ public final class XMPPConnectionService implements ILinkStateListener
     private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
     private final ConcurrentMap<String, TimerTask> outstandingPings = newConcurrentMap();
     private final Listeners<IXMPPConnectionServiceListener> _listeners = Listeners.create();
+    private final LinkStateService linkStateService;
+    private final ExecutorService executor;
 
     public XMPPConnectionService(
             String transportId,
@@ -134,6 +140,10 @@ public final class XMPPConnectionService implements ILinkStateListener
         this.initialConnectRetryInterval = initialConnectRetryInterval;
         this.maxConnectRetryInterval = maxConnectRetryInterval;
         this.timer = new Timer(transportId + "-pt", true);
+        this.linkStateService = linkStateService;
+
+        ThreadFactory vCardThreadFactory = r -> new Thread(r, "x-vcard");
+        this.executor = Executors.newSingleThreadExecutor(vCardThreadFactory);
 
         linkStateService.addListener(this, sameThreadExecutor()); // our implementation of onLinkStateChanged is thread-safe
     }
@@ -260,6 +270,11 @@ public final class XMPPConnectionService implements ILinkStateListener
             connect(false);
         } else if (wasUp && linkUp && connected && !removed.isEmpty() && outstandingPings.isEmpty()) {
             schedulePing(connectionToCheck, 1);
+        }
+
+        if (linkUp && connected) {
+            // If we are connected, attach the vCard
+            addVCard(connection);
         }
     }
 
@@ -464,6 +479,9 @@ public final class XMPPConnectionService implements ILinkStateListener
             }
 
             newConnection = createNewConnectionAndLogin();
+            // Add the vCard (non-blocking)
+            addVCard(newConnection);
+
             addPingListener(newConnection);
 
             // FIXME: we need to verify that the connection is actually valid prior to adding a listener
@@ -507,26 +525,46 @@ public final class XMPPConnectionService implements ILinkStateListener
         return newConnection;
     }
 
+    /**
+     * Build and associate the vCard to the current connection.
+     * This method is non-blocking.
+     *
+     * @param connection the XMPPConnection to associate the vCard to
+     */
+    private void addVCard(final XMPPConnection connection)
+    {
+        // We don't want this call to be blocking, so we run it on another thread
+        this.executor.execute(() -> {
+            XMPPvCard card = new XMPPvCard();
+            // Format the array
+            JSONArray jsonArray = new JSONArray();
+            for (InetAddress addr : linkStateService.getCurrentIPs()) {
+                jsonArray.put(addr.getHostAddress());
+            }
+            card.setMetadata(jsonArray.toString());
+            try {
+                card.save(connection);
+            } catch (XMPPException e) {
+                l.error("Error when attaching the vCard to the XMPPConnection: {}", e.getMessage());
+            }
+        });
+    }
+
     private void addPingListener(XMPPConnection newConnection)
     {
-        newConnection.addPacketListener(new PacketListener()
-        {
-            @Override
-            public void processPacket(@Nullable Packet packet)
-            {
-                if (packet == null || packet.getFrom() == null) {
-                    return;
-                }
+        newConnection.addPacketListener(packet -> {
+            if (packet == null || packet.getFrom() == null) {
+                return;
+            }
 
-                if (packet.getFrom().equals(JabberID.did2BareJid(localdid, xmppServerDomain))) {
-                    String packetId = packet.getPacketID();
-                    l.trace("recv self-directed response with packet id:{}", packetId);
+            if (packet.getFrom().equals(JabberID.did2BareJid(localdid, xmppServerDomain))) {
+                String packetId = packet.getPacketID();
+                l.trace("recv self-directed response with packet id:{}", packetId);
 
-                    if (packetId != null && !packetId.isEmpty()) {
-                        TimerTask pingTask = outstandingPings.remove(packetId);
-                        if (pingTask != null) {
-                            pingTask.cancel();
-                        }
+                if (packetId != null && !packetId.isEmpty()) {
+                    TimerTask pingTask = outstandingPings.remove(packetId);
+                    if (pingTask != null) {
+                        pingTask.cancel();
                     }
                 }
             }
