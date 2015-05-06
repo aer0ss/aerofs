@@ -6,7 +6,9 @@ EXPOSE 80
 
 CMD [ "/run.sh" ]
 
-RUN apt-get update && apt-get install -y ntpdate && rm -rf /var/lib/apt/lists/*
+RUN echo 'Acquire::http::Proxy "http://10.0.2.2:3142";' > /etc/apt/apt.conf.d/80httpproxy &&\
+    apt-get update && apt-get install -y ntpdate && rm -rf /var/lib/apt/lists/* &&\
+    rm /etc/apt/apt.conf.d/80httpproxy
 
 RUN pip install Flask
 

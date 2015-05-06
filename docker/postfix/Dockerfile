@@ -2,12 +2,14 @@ FROM aerofs/base
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-RUN apt-get update &&\
+RUN echo 'Acquire::http::Proxy "http://10.0.2.2:3142";' > /etc/apt/apt.conf.d/80httpproxy &&\
+    apt-get update &&\
     # Preconfigure postfix and suppress its interactive dialogs during apt-get.
     echo "postfix postfix/mailname string localhost" | debconf-set-selections &&\
     echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y postfix &&\
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* &&\
+    rm /etc/apt/apt.conf.d/80httpproxy
 
 # Trust the world and relay all their emails
 RUN sed -i -e 's`mynetworks =.*`mynetworks = 0.0.0.0/0`' /etc/postfix/main.cf
