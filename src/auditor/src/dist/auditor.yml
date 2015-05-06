@@ -7,7 +7,7 @@ service:
   port: 9300
 
 logging:
-  level: DEBUG
+  level: INFO
 
   console:
     enabled: false
