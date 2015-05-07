@@ -1,11 +1,9 @@
-FROM aerofs/base.python2.7
+FROM python:2.7
 
 MAINTAINER Weihan Wang "weihan@aerofs.com"
 
-RUN echo 'Acquire::http::Proxy "http://10.0.2.2:3142";' > /etc/apt/apt.conf.d/80httpproxy &&\
-    apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/* &&\
-    pip install Jinja2 pyyaml &&\
-    rm /etc/apt/apt.conf.d/80httpproxy
+RUN pip install Jinja2 pyyaml
+RUN apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/*
 
 ENV COREOS_TAR_BALL http://stable.release.core-os.net/amd64-usr/current/coreos_production_image.bin.bz2
 

@@ -10,16 +10,17 @@ WORKDIR /opt/bunker
 
 CMD [ "/run.sh" ]
 
+# mysql-client for backup scripts, docker for collecting docker logs
+RUN apt-get update && apt-get install -y mysql-client docker.io libmysqlclient-dev && rm -rf /var/lib/apt/lists/*
+
 COPY buildroot/requirements-exact.txt /
+
 ENV BUILD_PKGS gcc python-dev
 
-# mysql-client for backup scripts, docker for collecting docker logs
-RUN echo 'Acquire::http::Proxy "http://10.0.2.2:3142";' > /etc/apt/apt.conf.d/80httpproxy &&\
-    apt-get update && apt-get install -y mysql-client docker.io libmysqlclient-dev $BUILD_PKGS &&\
+RUN \
+    apt-get update && apt-get install -y $BUILD_PKGS &&\
     pip install -r /requirements-exact.txt &&\
-    apt-get purge -y $BUILD_PKGS &&\
-    rm -rf /var/lib/apt/lists/* &&\
-    rm /etc/apt/apt.conf.d/80httpproxy
+    apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/*
 
 # Add source files last
 COPY root buildroot /

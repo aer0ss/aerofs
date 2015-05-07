@@ -45,7 +45,7 @@ set_domain_name() {
     local DOMAIN=${ARR[$(expr ${LEN} - 2)]}.${ARR[$(expr ${LEN} - 1)]}
     echo "Domain name '${DOMAIN}'"
 
-    sed -i 's/hosts: *\[\]/hosts: ["'${DOMAIN}'"]/' /etc/ejabberd/ejabberd.yml
+    sed -i '/^{hosts, *\["/ c\{hosts, ["'${DOMAIN}'"]}.' /etc/ejabberd/ejabberd.cfg
 }
 
 ADDRESS=$(/container-scripts/get-config-property base.xmpp.address)
