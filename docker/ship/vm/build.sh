@@ -77,7 +77,7 @@ setup_preload_registry() {
     # A potential bug of docker registry https://github.com/docker/docker-registry/issues/892 may cause the container
     # sometimes fail to start. So we keep restarting it until success.
     while true; do
-        docker start ${REPO_CONTAINER}
+        (set +e; docker start ${REPO_CONTAINER})
         sleep 3
         local RUNNING=$(docker inspect -f '{{ .State.Running }}' ${REPO_CONTAINER})
         [[ "${RUNNING}" = 'true' ]] && break

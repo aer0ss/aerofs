@@ -35,7 +35,8 @@ while true; do
         }
     done
 
-    [[ "$(docker ps -a | grep ${CONTAINER})" ]] || {
+    # Create the loader container as needed
+    [[ "$(docker ps -a | rev | awk '{print $1}' | rev | grep ${CONTAINER})" ]] || {
         echo "Creating container ${CONTAINER}..."
         # Emulation doesn't allow changing of repo or tag
         docker create --name ${CONTAINER} \

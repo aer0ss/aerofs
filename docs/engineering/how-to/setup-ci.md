@@ -1,4 +1,4 @@
-See also [How to restart CI](restart_ci.html).
+See also [CI overview](../references/ci.html) and [How to restart CI](restart_ci.html).
 
 # Introduction
 
@@ -204,7 +204,7 @@ cd /usr/local/TeamCity
 Create java keystore (use password "changeit")
 
 ```
-/usr/lib/jvm/java-6-openjdk-amd64/bin/keytool -genkey -alias tomcat -keyalg RSA
+keytool -genkey -alias tomcat -keyalg RSA
 ```
 
 Modify `conf/server.xml`:
