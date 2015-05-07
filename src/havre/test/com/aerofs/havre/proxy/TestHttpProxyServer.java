@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.jayway.restassured.RestAssured.expect;
@@ -214,14 +213,12 @@ public class TestHttpProxyServer extends AbstractBaseTest
             }
         }
 
-        private final AtomicInteger _ops;
         private final Address _addr = new Address();
         private final ChannelConfig _config = new DefaultChannelConfig();
 
-        public TestChannel(ChannelPipeline pipeline, AtomicInteger ops)
+        public TestChannel(ChannelPipeline pipeline)
         {
             super(null, null, pipeline, new Sink());
-            _ops = ops;
         }
 
         @Override
@@ -243,9 +240,9 @@ public class TestHttpProxyServer extends AbstractBaseTest
         }
 
         @Override
-        public int getInterestOps()
+        public void setInternalInterestOps(int ops)
         {
-            return _ops.get();
+            super.setInternalInterestOps(ops);
         }
 
         @Override
@@ -261,9 +258,10 @@ public class TestHttpProxyServer extends AbstractBaseTest
         }
     }
 
-    private static Channel makeChannel(ChannelPipeline p, AtomicInteger ops, Consumer<Channel> init)
+    private static Channel makeChannel(ChannelPipeline p, int ops, Consumer<Channel> init)
     {
-        Channel c = new TestChannel(p, ops);
+        TestChannel c = new TestChannel(p);
+        c.setInternalInterestOps(ops);
         Channels.fireChannelOpen(c);
         c.getPipeline().execute(
                 () -> Channels.fireChannelConnected(c, c.getRemoteAddress()));
@@ -278,11 +276,10 @@ public class TestHttpProxyServer extends AbstractBaseTest
 
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
 
-        AtomicInteger ops = new AtomicInteger(Channel.OP_READ);
         when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
                 any(ChannelPipeline.class)))
-                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], ops, c -> {
-                }));
+                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], Channel.OP_READ,
+                        c -> {}));
 
         expect()
                 .statusCode(504)
@@ -298,20 +295,19 @@ public class TestHttpProxyServer extends AbstractBaseTest
         when(auth.authenticate(any(HttpRequest.class))).thenReturn(user);
 
         DID did = DID.generate();
-        AtomicInteger ops = new AtomicInteger(0);
         ChannelBuffer response = ChannelBuffers.wrappedBuffer((
                 "HTTP/1.1 204 No Content\r\n\r\n"
         ).getBytes(StandardCharsets.UTF_8));
 
         when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
                 any(ChannelPipeline.class)))
-                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], ops, c -> {
+                .thenAnswer(i -> makeChannel((ChannelPipeline) i.getArguments()[4], 0, c -> {
                     when(connector.device(c)).thenReturn(did);
                     when(connector.alternateDevices(c)).thenReturn(Collections.emptyList());
 
                     // wait 20 times the read timeout before producing response
                     timer.newTimeout(timeout -> {
-                        ops.set(Channel.OP_READ);
+                        ((TestChannel)c).setInternalInterestOps(Channel.OP_READ);
                         Channels.fireMessageReceived(c, response);
                     }, 20 * HttpRequestProxyHandler.READ_TIMEOUT, HttpRequestProxyHandler.TIMEOUT_UNIT);
                 }));
