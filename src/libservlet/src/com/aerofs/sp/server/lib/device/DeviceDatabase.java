@@ -136,7 +136,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
         try (PreparedStatement ps = queryDevice(did, C_DEVICE_TS);
              ResultSet rs = ps.executeQuery()) {
             throwIfEmptyResultSet(rs, did);
-            return rs.getTimestamp(1).getNanos();
+            return rs.getTimestamp(1).getTime();
         }
     }
 
