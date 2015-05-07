@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-This script reads a syncdet yaml file and attempts to return the actors listed to the newci pool.
+This script reads a syncdet yaml file and attempts to return the actors listed to the ci pool.
 """
 
 import yaml
@@ -8,7 +8,7 @@ import requests
 import sys
 import json
 
-POOL_URL = "http://newci.arrowfs.org:8040"
+POOL_URL = "http://ci.arrowfs.org:8040"
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 

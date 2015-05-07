@@ -6,7 +6,7 @@ import sys
 import json
 import requests
 
-POOL_URL = "http://newci.arrowfs.org:8040"
+POOL_URL = "http://ci.arrowfs.org:8040"
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 OS_CHARS = 'wWlLoO'

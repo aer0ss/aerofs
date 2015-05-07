@@ -28,7 +28,7 @@ bridged interfaces and the last 2 won't.
 
 The first time you run the command, it will download a vagrant box, which we store on the CI computer in the office's local network. The box is fairly large (a few GB), so get yourself a cup of coffee.
 
-If you are not in the office's physical LAN, you can still download the box by editing the Vagrant file to replace the hostname in `box_url` to `newci.arrowfs.org` (in which case, get yourself two cups of coffee and a red-bull).
+If you are not in the office's physical LAN, you can still download the box by editing the Vagrant file to replace the hostname in `box_url` to `ci.arrowfs.org` (in which case, get yourself two cups of coffee and a red-bull).
 
 Vagrant will create the VMs in the `~/.vagrant.d` directory. If you want to store them in 
 another place, you may simply symlink `~/.vagrant.d` to any other place you want to use.

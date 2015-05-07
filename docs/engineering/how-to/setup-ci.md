@@ -201,7 +201,15 @@ sudo chown -R aerofsbuild:aerofsbuild /usr/local/TeamCity
 cd /usr/local/TeamCity
 ```
 
-Create java keystore (use password "changeit")
+Create java keystore with a cert `server.crt` and a key `server.key` in two steps (use password "changeit"):
+
+    $ openssl pkcs12 -export -in server.crt -inkey server.key -out server.p12 -name tomcat -CAfile server.crt -caname root
+
+Make sure you enter a password - otherwise you'll get a null reference exception when you try to import it.
+
+    $ keytool -importkeystore -deststorepass changeit -destkeypass changeit -destkeystore ~/.keystore -srckeystore server.p12 -srcstoretype PKCS12 -srcstorepass <password-you-used-in-previous-step> -alias tomcat
+
+Alternatively, create a self-signed cert -- not recommended:
 
 ```
 keytool -genkey -alias tomcat -keyalg RSA

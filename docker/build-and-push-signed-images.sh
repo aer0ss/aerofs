@@ -2,7 +2,7 @@
 set -ex
 
 (set +e
-    curl newci.arrowfs.org >/dev/null 2>&1
+    curl ci.arrowfs.org >/dev/null 2>&1
     [[ $? = 0 ]] || (
         echo "ERROR: please connect to VPN"
         exit 22

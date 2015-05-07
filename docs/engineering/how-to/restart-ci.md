@@ -14,7 +14,7 @@ TEAMCITY_SERVER_MEM_OPTS="-Xmx4g -XX:MaxPermSize=270m" /usr/local/TeamCity/bin/r
 
 ## Start actors
 
-Log in to https://newci.arrowfs.org:8543 or https://newci.local:8543 and run the "Actor Setup" target under "Regenerate Actors".
+Log in to https://ci.arrowfs.org:8543 and run the "Actor Setup" target under "Regenerate Actors".
 
 ## Starting Vagrant agents (skip this if you've done the "Start actors" step above.)
 

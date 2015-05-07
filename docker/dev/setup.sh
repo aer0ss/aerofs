@@ -19,7 +19,7 @@ Die() {
 }
 
 # VPN is required to access devmail.aerofs.com during appliance setup
-curl newci.arrowfs.org >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN"
+curl ci.arrowfs.org >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN"
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 

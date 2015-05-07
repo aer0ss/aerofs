@@ -55,7 +55,7 @@ ARCHIVE_DIR = '~/archive'
 
 # CI Server Connection Settings
 CODE_URL = "http://share.syncfs.com:21337/get_code"
-POOL_URL = "http://newci.arrowfs.org:8040"
+POOL_URL = "http://ci.arrowfs.org:8040"
 CI_SP_URL = "https://share.syncfs.com:4433/sp"
 CI_SP_VERSION = '21' # update this if we ever bump SP version before burning it
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}

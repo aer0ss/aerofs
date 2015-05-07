@@ -45,13 +45,13 @@ If possible, **flush and/or shutdown the gerrit VM before rebooting the host** t
     
 7. On the right-most display, open a new Safari window and go to:
 
-    `https://newci.arrowfs.org:8543/`
+    `https://ci.arrowfs.org:8543/`
 
     Log in using an arbitrary user account on CI.
 
 ## Troubleshooting
 
-- What if the laptop can't access `newci.arrowfs.org`?
+- What if the laptop can't access `ci.arrowfs.org`?
 
     It's likely that the VPN is not working. Try restarting Tunnelblick or the laptop.
 

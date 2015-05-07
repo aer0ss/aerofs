@@ -15,7 +15,7 @@ from unique_from_each import unique_from_each
 app = Flask(__name__)
 dblock = threading.RLock()
 l = logging.getLogger(__name__)
-NEWCI_API_BASE_ADDR = 'https://192.168.128.197:8543/httpAuth/app/rest'
+CI_API_BASE_ADDR = 'https://192.168.128.197:8543/httpAuth/app/rest'
 
 
 def garbage_collect_actors():
@@ -27,7 +27,7 @@ def garbage_collect_actors():
         s.headers.update({'Accept': 'application/json'})
         for result in results:
             build_id = result[0]
-            r = s.get(NEWCI_API_BASE_ADDR+'/builds/{}'.format(build_id), verify=False)
+            r = s.get(CI_API_BASE_ADDR+'/builds/{}'.format(build_id), verify=False)
             if not r.json().get('running', False):
                 l.info('gc: freeing the actors with build id: {}'.format(build_id))
                 db_execute('UPDATE actor SET free=1 WHERE build_id=%s', [build_id])
