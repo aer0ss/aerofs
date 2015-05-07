@@ -38,7 +38,7 @@ def customer_actions(org_id):
     form = forms.InternalLicenseRequestForm()
     if form.validate_on_submit():
         # TODO: sanity check all the values!
-        if customer.stripe_customer_id:
+        if customer.stripe_customer_id and form.stripe_subscription_id.data:
             try:
                 stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
                 subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
@@ -81,7 +81,7 @@ def license_actions(license_id):
     form = forms.InternalLicenseStateForm(invoice_id=license.invoice_id, stripe_subscription_id=license.stripe_subscription_id)
 
     if form.validate_on_submit():
-        if license.customer.stripe_customer_id:
+        if license.customer.stripe_customer_id and form.stripe_subscription_id.data:
             try:
                 stripe_customer = stripe.Customer.retrieve(license.customer.stripe_customer_id)
                 subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
