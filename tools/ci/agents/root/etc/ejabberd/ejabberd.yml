@@ -22,7 +22,7 @@ acl:
     user_regexp: 
       - "testuser-.*@arrowfs.org"
 auth_method: external
-extauth_program: "/usr/local/bin/ejabberd_auth_all"
+extauth_program: "/etc/ejabberd/auth_all"
 language: "en"
 listen: 
   - 
@@ -30,7 +30,7 @@ listen:
     module: ejabberd_c2s
     max_stanza_size: 65536
     access: c2s
-    certfile: "/usr/local/etc/ejabberd/ejabberd.pem"
+    certfile: "/etc/ejabberd/ejabberd.pem"
     starttls: true
 loglevel: 4
 max_fsm_queue: 10

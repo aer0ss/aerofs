@@ -202,8 +202,8 @@ Set a good root password for MySQL, then create the test user for MySQL:
 
 `brew install ejabberd`. Copy the ejabberd config, key/cert and authorization scripts as listed below.
 
-    cp $HOME/repos/aerofs/tools/ejabberd/ejabberd.* /usr/local/etc/ejabberd/
-    cp $HOME/repos/aerofs/tools/ejabberd/ejabberd_auth_all /usr/local/bin/
+    sudo mkdir /etc/ejabberd
+    sudo cp $HOME/repos/aerofs/tools/ci/agents/root/etc/ejabberd/* /etc/ejabberd
 
 Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
 

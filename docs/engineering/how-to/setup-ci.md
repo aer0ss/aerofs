@@ -277,102 +277,11 @@ sudo service actor-pool start
 ```
 
 
-### Set up local build agent
+### Set up build agents
 
-As of October 7, 2013, these (in addition to those at the top of this document) are sufficient:
-
-```
-sudo apt-get install mono-devel unzip zip build-essential devscripts debhelper ejabberd hfsprogs sshpass htop dstat libgpgme11-dev
-```
-
-And pip:
-
-```
-sudo pip install pyyaml protobuf requests virtualenv boto
-```
-
-Some packages are needed that are not available through apt. After agent-vagrant has been cloned at `~/repos/agent-vagrant`, run the following:
-
-Install gradle:
-
-```
-cd /usr/local
-sudo unzip ~/repos/agent-vagrant/packages/gradle-1.6-bin.zip
-sudo ln -s /usr/local/gradle-1.6/bin/gradle /usr/local/bin/gradle
-```
-
-Install protobuf:
-
-```
-cd /usr/local
-sudo tar xjvf ~/repos/agent-vagrant/packages/protobuf-2.5.0.tar.bz2
-cd protobuf-2.5.0
-sudo ~/repos/agent-vagrant/packages/make-protobuf-2.5.0.sh 
-```
-
-Install redis-server:
-
-```
-cd /usr/local
-sudo tar xzvf ~/repos/agent-vagrant/packages/redis-2.6.14.tar.gz
-cd redis-2.6.14
-sudo make
-sudo make install
-cd utils
-sudo ./install_server.sh
-```
-
-Set up MySQL database for JUnit tests:
-
-```
-mysql -uroot -ptemp123 < ~/repos/agent-vagrant/files/mysql-setup-junit.sql
-```
-
-Set up ejabberd for JUnit tests:
-
-```
-sudo cp ~/repos/agent-vagrant/files/ejabberd.cfg /etc/ejabberd/
-sudo cp ~/repos/agent-vagrant/files/ejabberd.pem /etc/ejabberd/
-sudo chown root:ejabberd /etc/ejabberd/ejabberd.pem
-sudo cp ~/repos/agent-vagrant/files/ejabberd_auth_all /usr/local/bin/
-sudo service ejabberd restart
-```
-
-Edit `/usr/local/TeamCity/buildAgent/conf/buildAgent.properties`:
-
-Modify this line:
-
-	serverURL=https://localhost/
-	
-Add these lines:
-	
-	teamcity.git.use.native.ssh=true
-	env.LC_ALL=en_US.UTF-8
-	env.LANG=en_US.UTF-8
-	env.LANGUAGE=en_US.UTF-8
-
-Get the teamcity cert:
-
-```
-sudo apt-get install gnutls-bin
-gnutls-cli --insecure --print-cert --port 8543 localhost > ~/teamcity.cert
-```
-
-Modify `~/teamcity.cert` to remove everything except
-
-```
-----BEGIN CERTIFICATE-----
-...
-…
-…
------END CERTIFICATE-----
-```
-
-Add the cert to the java keystore:
-
-```
-sudo keytool -importcert -file ~/teamcity.cert -keystore /usr/lib/jvm/java-1.6.0-openjdk-amd64/jre/lib/security/cacerts -storepass "changeit" -noprompt
-```
+Use Dockerized agents when possible. See `tools/ci/agents/README.md`. Eventually
+we will eliminate the need for physical agents. For the time being, to set up a physical
+agents, first follow steps in `tools/ci/agents/Dockerfile`, and then:
 
 Allow the agent passwordless sudo for some commands (this is needed to make the dmg on linux). Run `sudo visudo` and add these lines:
 
