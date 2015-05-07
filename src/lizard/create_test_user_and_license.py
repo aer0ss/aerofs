@@ -11,7 +11,7 @@ def make_new_org(org_name):
     o = models.Customer()
     o.name = org_name
     o.active = True
-    o.renewal_seats = 25 # default
+    o.renewal_seats = 30# default
     db.session.add(o)
     return o
 
