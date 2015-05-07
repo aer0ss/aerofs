@@ -8,6 +8,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.restless.Version;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
@@ -64,6 +65,7 @@ import javax.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
@@ -103,6 +105,7 @@ public class UsersResource extends AbstractSpartaResource
         return _audit.event(topic, event)
                 .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
     }
+
     private @Nullable User validateAuth(IAuthToken token, Scope scope, User user)
             throws SQLException, ExNotFound
     {
@@ -128,6 +131,27 @@ public class UsersResource extends AbstractSpartaResource
         return Response.ok()
                 .entity(new com.aerofs.rest.api.User(user.id().getString(), n._first, n._last,
                         listShares(user, token), listInvitations(user, token)))
+                .build();
+    }
+
+    @Since("1.3")
+    @GET
+    @Path("/{email}/devices")
+    public Response listDevices(@Auth IAuthToken token, @PathParam("email") User user)
+            throws ExNotFound, ExInvalidID, SQLException
+    {
+        validateAuth(token, Scope.READ_USER, user);
+
+        return Response.ok()
+                .entity(user.getDevices().stream().map(d -> {
+                    try {
+                        return new com.aerofs.rest.api.Device(d.id().toStringFormal(),
+                                d.getOwner().id().getString(), d.getName(), d.getOSFamily(),
+                                new Date(d.getInstallDate()));
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }).filter(d -> d != null).toArray())
                 .build();
     }
 
@@ -362,8 +386,8 @@ public class UsersResource extends AbstractSpartaResource
             com.aerofs.rest.api.User attrs) throws Exception
     {
         requirePermission(Scope.WRITE_USER, auth);
-        checkArgument(attrs.firstName != null, "Request body missing required first_name");
-        checkArgument(attrs.lastName != null, "Request body missing required last_name");
+        checkArgument(attrs.firstName != null, "Request body missing required field: first_name");
+        checkArgument(attrs.lastName != null, "Request body missing required field: last_name");
 
         User caller = _factUser.create(auth.user());
         throwIfNotSelfOrTSOf(caller, target);

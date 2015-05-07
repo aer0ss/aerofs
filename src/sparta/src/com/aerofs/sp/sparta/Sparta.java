@@ -33,7 +33,6 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;

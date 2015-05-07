@@ -130,6 +130,11 @@ public class Device
         return _f._db.getOSName(_id);
     }
 
+    public long getInstallDate() throws SQLException, ExNotFound
+    {
+        return _f._db.getInstallDate(_id);
+    }
+
     public ImmutableList<Certificate> certificates()
             throws SQLException, ExNotFound, ExInvalidID
     {

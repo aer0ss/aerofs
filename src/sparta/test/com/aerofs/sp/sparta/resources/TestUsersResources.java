@@ -5,6 +5,7 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
@@ -21,10 +22,7 @@ import javax.ws.rs.core.Response.Status;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.path.json.JsonPath.from;
-import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +37,7 @@ public class TestUsersResources extends AbstractResourceTest
     private final String RESOURCE = RESOURCE_BASE + "/{email}";
     private final String QUOTA_RESOURCE = "/v1.2/users/{email}/quota";
     private final String TWO_FACTOR_RESOURCE = "/v1.3/users/{email}/two_factor";
+    private final String DEVICE_RESOURCE = "/v1.3/users/{email}/devices";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -112,6 +111,58 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("type", equalTo("NOT_FOUND"))
         .when().log().everything()
                 .get(RESOURCE, user.getString());
+    }
+
+    @Test
+    public void shouldListOwnDevices() throws Exception
+    {
+        DID did = DID.generate();
+        mkDevice(did, user, "My Shiny Device", "Windows", "windows 3.1");
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("$", hasSize(1))
+                .body("[0].id", equalTo(did.toStringFormal()))
+                .body("[0].owner", equalTo(user.getString()))
+                .body("[0].name", equalTo("My Shiny Device"))
+                .body("[0].os_family", equalTo("Windows"))
+                .body("[0].install_date", isValidDate())
+        .when().log().everything()
+                .get(DEVICE_RESOURCE, user.getString());
+    }
+
+    @Test
+    public void shouldListDevicesWhenAdminOf() throws Exception
+    {
+        DID did = DID.generate();
+        mkDevice(did, user, "My Shiny Device", "Windows", "windows 3.1");
+
+        givenAdminAccess()
+        .expect()
+                .statusCode(200)
+                .body("$", hasSize(1))
+                .body("[0].id", equalTo(did.toStringFormal()))
+                .body("[0].owner", equalTo(user.getString()))
+                .body("[0].name", equalTo("My Shiny Device"))
+                .body("[0].os_family", equalTo("Windows"))
+                .body("[0].install_date", isValidDate())
+        .when().log().everything()
+                .get(DEVICE_RESOURCE, user.getString());
+    }
+
+    @Test
+    public void shouldReturn404WhenListDevicesByOther() throws Exception
+    {
+        DID did = DID.generate();
+        mkDevice(did, user, "My Shiny Device", "Windows", "windows 3.1");
+
+        givenOtherAccess()
+        .expect()
+                .statusCode(404)
+                .body("type", equalTo("NOT_FOUND"))
+        .when()
+                .get(DEVICE_RESOURCE, user.getString());
     }
 
     @Test

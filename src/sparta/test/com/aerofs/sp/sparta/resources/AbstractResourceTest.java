@@ -5,16 +5,13 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
@@ -30,6 +27,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -39,7 +37,6 @@ import com.aerofs.testlib.AbstractBaseTest;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -52,6 +49,9 @@ import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -63,13 +63,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
-import java.security.MessageDigest;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 
 import static com.aerofs.bifrost.server.BifrostTest.createAccessToken;
 import static com.aerofs.bifrost.server.BifrostTest.createClient;
@@ -114,7 +115,37 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected SQLThreadLocalTransaction sqlTrans;
     protected User.Factory factUser;
     protected SharedFolder.Factory factSF;
+    protected Device.Factory factDevice;
     private int nextUserID = 1;
+
+    private static final ThreadLocal<DateFormat> _dateFormat = new ThreadLocal<DateFormat>() {
+        @Override
+        public DateFormat initialValue() {
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            f.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return f;
+        }
+    };
+
+    static Matcher<String> isValidDate()
+    {
+        return new BaseMatcher<String>() {
+            @Override
+            public boolean matches(Object item) {
+                try {
+                    Date d = _dateFormat.get().parse((String)item);
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("valid date");
+            }
+        };
+    }
 
     @BeforeClass
     public static void commonSetup() throws Exception
@@ -211,14 +242,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 bind(CommandDispatcher.class).toInstance(commandDispatcher);
                 bind(PasswordManagement.class).toInstance(passwordManagement);
                 bind(AuditClient.class).toInstance(
-                        new AuditClient().setAuditorClient(new IAuditorClient()
-                        {
-                            @Override
-                            public void submit(String content)
-                            {
-                                l.info("audit: {}", content);
-                            }
-                        }));
+                        new AuditClient().setAuditorClient(content -> l.info("audit: {}", content)));
             }
         });
     }
@@ -229,24 +253,17 @@ public class AbstractResourceTest extends AbstractBaseTest
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
 
         when(verkehrClient.publish(anyString(), any(byte[].class)))
-                .thenAnswer(new Answer<ListenableFuture<Void>>() {
-                    @Override
-                    public ListenableFuture<Void> answer(InvocationOnMock invocation)
-                            throws Throwable {
-                        SettableFuture<Void> f = SettableFuture.create();
-                        f.set(null);
-                        return f;
-                    }
+                .thenAnswer(invocation -> {
+                    SettableFuture<Void> f = SettableFuture.create();
+                    f.set(null);
+                    return f;
                 });
 
         when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
-                new Answer<ListenableFuture<Void>>() {
-                    @Override
-                    public ListenableFuture<Void> answer(InvocationOnMock invocation) {
-                        SettableFuture<Void> f = SettableFuture.create();
-                        f.set(null);
-                        return f;
-                    }
+                invocation -> {
+                    SettableFuture<Void> f = SettableFuture.create();
+                    f.set(null);
+                    return f;
                 }
         );
         when(commandDispatcher.getVerkehrClient()).thenReturn(verkehrClient);
@@ -255,6 +272,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans = inj.getInstance(SQLThreadLocalTransaction.class);
         factUser = inj.getInstance(User.Factory.class);
         factSF = inj.getInstance(SharedFolder.Factory.class);
+        factDevice = inj.getInstance(Device.Factory.class);
 
         sqlTrans.begin();
         User u = factUser.create(user);
@@ -304,6 +322,14 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.begin();
         factUser.create(UserID.fromInternal(userid))
                 .save(new byte[0], new FullName(first, last));
+        sqlTrans.commit();
+    }
+
+    protected void mkDevice(DID did, UserID owner, String name, String osFamily, String osName)
+            throws Exception
+    {
+        sqlTrans.begin();
+        factDevice.create(did).save(factUser.create(owner), osFamily, osName, name);
         sqlTrans.commit();
     }
 
