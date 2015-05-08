@@ -15,7 +15,6 @@ DIRS="
 
     ../src/auditor 
     ../src/bunker 
-    ../src/ca-server 
     ../packaging/config 
     ../packaging/charlie 
     data-container 
@@ -43,6 +42,7 @@ DIRS="
     ../src/web 
     ../src/zephyr 
     
+    ../golang/src/aerofs.com/ca-server
     ../golang/src/aerofs.com/ts-probe
 
     ship/vm/loader 
