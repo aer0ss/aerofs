@@ -4,7 +4,7 @@ import requests
 import subprocess
 import sys
 
-BASE_CI_URL = "https://192.168.128.197:8543"
+BASE_CI_URL = "https://192.168.128.197"
 
 current_sha = subprocess.check_output("git log --pretty='%H' -n 1", shell=True).strip()
 

@@ -45,7 +45,7 @@ If possible, **flush and/or shutdown the gerrit VM before rebooting the host** t
     
 7. On the right-most display, open a new Safari window and go to:
 
-    `https://ci.arrowfs.org:8543/`
+    `https://ci.arrowfs.org/`
 
     Log in using an arbitrary user account on CI.
 

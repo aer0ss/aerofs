@@ -109,6 +109,7 @@ To set up the NAT, run as root:
 
 ```
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8543
 iptables-save > /etc/network/iptables.rules
 ```
 
@@ -230,7 +231,7 @@ Uncomment the `<Connector port="8543" />` block. Add two parameters "keystoreFil
 
 Start the server by running `bin/teamcity-server.sh start`
 
-Fire up a web browser and visit `https://<box-ip>:8543`. Use web interface to set up teamcity. 
+Fire up a web browser and visit `https://<box-ip>`. Use web interface to set up teamcity. 
 
 ### Set up VCS Roots
 
@@ -341,7 +342,7 @@ Edit `/usr/local/TeamCity/buildAgent/conf/buildAgent.properties`:
 
 Modify this line:
 
-	serverURL=https://localhost:8543/
+	serverURL=https://localhost/
 	
 Add these lines:
 	

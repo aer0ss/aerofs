@@ -46,14 +46,8 @@ We use the following networks for the following purposes:
   - 172.16.5.12/32 - libjingle CI client 1
   - 172.16.5.30/32 - libjingle CI client 2
 
-## 172.16.6.0/24 - sandbox for dev use
-  - 172.16.6.13 - test-alleng
 
-## 172.19.10.0/24 - [VPN](vpn) endpoints ([see all current clients](http://172.19.10.1:8000))
-  - 172.19.10.1 - bastion (VPN master)
-  - 172.19.10.10 - ci.aerofs.com
-  - 172.19.10.106 - zephyr.aerofs.com
-  - 172.19.10.54  - x.aerofs.com
+## 172.19.10.0/24 - VPN endpoints
 
 ## Misc (non-VPC)
   - 54.236.64.76 webhooks

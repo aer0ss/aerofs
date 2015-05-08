@@ -14,14 +14,16 @@ TEAMCITY_SERVER_MEM_OPTS="-Xmx4g -XX:MaxPermSize=270m" /usr/local/TeamCity/bin/r
 
 ## Start actors
 
-Log in to https://ci.arrowfs.org:8543 and run the "Actor Setup" target under "Regenerate Actors".
+Log in to https://ci.arrowfs.org and run the "Actor Setup" target under "Regenerate Actors".
 
-## Starting Vagrant agents (skip this if you've done the "Start actors" step above.)
+## Prevent console from blanking and run build catalyst
 
-To start Windows agents - there are Three of them - :
+Log in to a terminal console as user `aerofsbuild/temp123`. The `setterm -blank 0` line
+in .bash_profile will block the terminal from going blank, useful to debug kernal paniks.
 
-cd repos/win7-syncdet-vagrant
-WCLIENT_COUNT=3 BRIDGE_IFACE=br0 vagrant up
+After logging in, run `~/catalyze-docker-preload.sh` as a temporary workaround for the slow
+Ship Enterprise preloading process. The code of the script is is at
+[here](https://gist.github.com/weihanwang/152b2607cadd906ad593).
 
 ## Clearing out the actors database
 
