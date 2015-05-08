@@ -75,7 +75,7 @@ class InternalLicenseStateForm(Form):
         ('PENDING', 'PENDING'),
         ('ON_HOLD', 'ON HOLD'),
         ('IGNORED', 'IGNORED')
-    ])
+    ], validators=[Optional()])
     invoice_id = TextField("Manual Invoice ID", validators=[Optional()])
     stripe_subscription_id = TextField("Stripe Subscription ID", validators=[Optional()])
 

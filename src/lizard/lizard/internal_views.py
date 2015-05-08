@@ -90,12 +90,13 @@ def license_actions(license_id):
                 err = body['error']
                 flash (err['message'], "error")
                 return redirect(url_for('.license_actions',license_id=license_id))
-        license.state = getattr(models.License.states, form.state.data)
+        if form.state.data != "None": #Flask is being weird and won't let me compare to regular "is not None"
+            license.state = getattr(models.License.states, form.state.data)
         license.stripe_subscription_id = form.stripe_subscription_id.data
         license.invoice_id = form.invoice_id.data
         db.session.add(license)
         db.session.commit()
-        flash(u"Set license {} to state {}".format(license.id, form.state.data), "success")
+        flash(u"Updated license {}".format(license.id), "success")
         return redirect(url_for(".queues"))
     form.state.data = models.License.states.states[license.state]
     return render_template("license_actions.html", form=form, license=license)
