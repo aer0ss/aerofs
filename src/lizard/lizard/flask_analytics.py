@@ -16,19 +16,12 @@ class AnalyticsClient(object):
             self.app = None
 
     def init_app(self, app):
-        app.config.setdefault("SEGMENTIO_SECRET_KEY", None)
-        app.config.setdefault("SEGMENTIO_API_KEY", None)
-        app.config.setdefault("SEGMENTIO_LOG", True)
-        app.config.setdefault("SEGMENTIO_LOG_LEVEL", logging.DEBUG)
-        app.config.setdefault("SEGMENTIO_ASYNC", False)
-        app.config.setdefault("SEGMENTIO_FLUSH_AT", 1)
-        app.config.setdefault("SEGMENTIO_ENABLE", not app.config["TESTING"])
-        self.client = _Client(secret=app.config["SEGMENTIO_SECRET_KEY"],
-                              flush_at=app.config["SEGMENTIO_FLUSH_AT"],
-                              log=app.config["SEGMENTIO_LOG"],
-                              log_level=app.config["SEGMENTIO_LOG_LEVEL"],
-                              async=app.config["SEGMENTIO_ASYNC"],
-                              send=app.config["SEGMENTIO_ENABLE"],
+        app.config.setdefault("SEGMENTIO_WRITE_KEY", None)
+        app.config.setdefault("SEGMENTIO_DEBUG", True)
+        app.config.setdefault("SEGMENTIO_SEND", True)
+        self.client = _Client(write_key=app.config["SEGMENTIO_WRITE_KEY"],
+                              debug=app.config["SEGMENTIO_DEBUG"],
+                              send=app.config["SEGMENTIO_SEND"]
                               )
         self.app = app
 

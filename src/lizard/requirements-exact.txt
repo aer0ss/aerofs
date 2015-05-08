@@ -10,7 +10,7 @@ SQLAlchemy==0.9.6
 Tempita==0.5.2
 WTForms==2.0.1
 Werkzeug==0.9.6
-analytics-python==0.4.4
+analytics-python==1.0.3
 decorator==3.4.0
 itsdangerous==0.24
 oursql==0.9.3.1

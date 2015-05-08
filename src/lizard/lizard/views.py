@@ -54,7 +54,11 @@ def login_page():
             # TODO: handle inactive users more clearly?  not sure what UX to expose in that case.
             if login_success:
                 #flash(u"Login completed for {}:{}".format(form.email.data, form.password.data), 'success')
-                pass
+
+                analytics_client.track(admin.customer_id, "Logged In", {
+                    'email': markupsafe.escape(admin.email)
+                });
+
             else:
                 flash(u"Login failed for {}: probably marked inactive?".format(admin.email), 'error')
             next_url = request.args.get('next') or url_for(".index")
@@ -204,7 +208,7 @@ def signup_completion_page():
         db.session.commit()
 
         # Submit analytics tracking thing.
-        analytics_client.identify(admin.email,
+        analytics_client.identify(admin.customer_id,
                 {
                     'email': markupsafe.escape(admin.email),
                     'firstName': markupsafe.escape(admin.first_name),
@@ -214,7 +218,9 @@ def signup_completion_page():
                     'phone': markupsafe.escape(admin.phone_number),
                     'Enterprise': 'true',
                 })
-        analytics_client.track(markupsafe.escape(admin.email), "Signed Up For Private Cloud");
+        analytics_client.track(admin.customer_id, "Signed Up For Private Cloud", {
+            'email': markupsafe.escape(admin.email)
+            });
 
         # Log user in.
         login_success = login.login_user(admin, remember=True)
@@ -419,6 +425,12 @@ def pay():
             flash(u"Successfully bought {} seats.".format(license_request.seats), 'success')
         else:
             flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
+
+        analytics_client.track(user.customer_id, 'Bought seats', {
+            'email': markupsafe.escape(user.email),
+            'quantity': license_request.seats,
+            'billing_frequency': billing_frequency
+        })
     finally:
         if msg: #there's an error
             flash(msg, "error")
@@ -503,6 +515,11 @@ def buy():
             flash (u"Failed to generate a new invoice. Please try again later, and contact support@aerofs.com if the error persists", "error")
             return redirect(url_for('.dashboard'))
 
+    analytics_client.track(user.customer_id, 'Visited Buy Page', {
+        'email': markupsafe.escape(user.email),
+        'order_summary': order_summary,
+        'billing_frequency': billing_frequency
+    })
     return render_template("buy.html",
         current_license=newest_license,
         requested_license_count = requested_license_count,
@@ -594,6 +611,9 @@ def dashboard():
     customer = user.customer
     newest_license = customer.newest_license()
 
+    analytics_client.track(user.customer_id, 'Visited Dashboard', {
+        'email': markupsafe.escape(user.email),
+    })
     if newest_license is None:
         flash('Sorry, we found a problem with your license request. Please contact us at support@aerofs.com', "error")
         return redirect(url_for(".login_page"))
@@ -654,14 +674,23 @@ def administrators():
 @login.login_required
 def download_ova():
     version = appliance.latest_appliance_version()
-    # TODO: log that this user has started downloading the OVA.
+
+    analytics_client.track(login.current_user.customer_id, 'Downloading OVA', {
+        'email': markupsafe.escape(login.current_user.email),
+        'version': version
+    })
+
     return redirect(appliance.ova_url(version))
 
 @blueprint.route("/download_qcow", methods=["GET"])
 @login.login_required
 def download_qcow():
     version = appliance.latest_appliance_version()
-    # TODO: log that this user has started downloading the QCow2.
+
+    analytics_client.track(login.current_user.customer_id, 'Downloading QCOW', {
+        'email': markupsafe.escape(login.current_user.email),
+        'version': version
+    })
     return redirect(appliance.qcow_url(version))
 
 @blueprint.route("/appliance_version", methods=["GET"])
@@ -683,6 +712,10 @@ def download_latest_license():
             mimetype='application/octet-stream',
             headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
             )
+
+    analytics_client.track(login.current_user.customer_id, 'Downloading License File', {
+        'email': markupsafe.escape(login.current_user.email),
+    })
     return r
 
 @blueprint.route("/start_password_reset", methods=["GET", "POST"])
@@ -751,6 +784,10 @@ def complete_password_reset():
 def contact_us():
     user = login.current_user
     form = forms.ContactForm()
+
+    analytics_client.track(login.current_user.customer_id, 'Visiting Contact Us Page', {
+        'email': markupsafe.escape(login.current_user.email),
+    })
     if form.validate_on_submit():
         notifications.send_private_cloud_question_email(user.email, form.message.data)
         flash(u"Message sent successfully.  We'll be in touch.", 'success')

@@ -4,8 +4,8 @@
 # if you add any required keys.
 DEBUG=True
 # These segmentio api and secret keys are for testing only.
-SEGMENTIO_API_KEY="d66ddysfvg"
-SEGMENTIO_SECRET_KEY="j85f4itjg9bxc6ogyh49"
+SEGMENTIO_WRITE_KEY="DXiiCHhPnCb0IhkSy0BcGSe1UQBCAbNS"
+SEGMENTIO_DEBUG=True
 
 # These stripe keys are for testing only
 STRIPE_SECRET_KEY="sk_test_vEjpSRt2LE4jgfxB709l8NCG"
