@@ -35,10 +35,10 @@ DIRS="
     ../src/spsv 
     ../src/spsv/resources/identity 
     ../src/spsv/resources/log-collection 
-    ../src/spsv/resources/probe 
     ../src/spsv/resources/sp 
     ../src/spsv/resources/verification 
     
+    ../src/probe
     ../src/verkehr 
     ../src/web 
     ../src/zephyr 

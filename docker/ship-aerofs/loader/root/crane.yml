@@ -274,9 +274,8 @@ containers:
       volumes-from:
         - data
       link:
-        - mysql:mysql.service
         - config:config.service
-        - verkehr:verkehr.service
+        - sparta:sparta.service
 
   logcollection:
     image: aerofs/logcollection
