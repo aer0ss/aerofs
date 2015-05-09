@@ -24,15 +24,14 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -242,21 +241,21 @@ public class ContentReceiver
                 OngoingTransfer dl = new OngoingTransfer(_sched, _dlState, rs.ep(), k.soid(), totalFileLength);
                 _ongoing.add(dl);
                 try {
-                    long remaining;
-                    TCB tcb = isStreaming ? tk.pseudoPause_("write"): null;
                     try {
-                        remaining = writePrefix(rs.is(), prefixStream,
-                                totalFileLength - prefixLength, dl);
-                    } finally {
-                        if  (tcb != null) tcb.pseudoResumed_();
+                        TCB tcb = isStreaming ? tk.pseudoPause_("write") : null;
+                        try {
+                            writePrefix(rs.is(), prefixStream, totalFileLength - prefixLength, dl);
+                        } finally {
+                            if (tcb != null) tcb.pseudoResumed_();
+                        }
+                    } catch (ExAborted e) {
+                        prefixStream.close();
+                        prefix.delete_();
+                        throw e;
                     }
-
-                    if (remaining != 0) {
-                        throw new ExAborted("incomplete transfer");
-                    }
-                } catch (ExAborted e) {
-                    prefixStream.close();
-                    prefix.delete_();
+                    _dlState.ended_(new SOCID(k.soid(), CID.CONTENT), rs.ep(), false);
+                } catch (Exception e) {
+                    _dlState.ended_(new SOCID(k.soid(), CID.CONTENT), rs.ep(), true);
                     throw e;
                 } finally {
                     _ongoing.remove(dl);
@@ -269,7 +268,7 @@ public class ContentReceiver
         return prefixStream.digest();
     }
 
-    private long writePrefix(InputStream is, PrefixOutputStream prefixStream, long remaining,
+    private void writePrefix(InputStream is, PrefixOutputStream prefixStream, long remaining,
                              OngoingTransfer ongoing)
             throws IOException, ExAborted {
         ElapsedTimer timer = new ElapsedTimer();
@@ -277,7 +276,7 @@ public class ContentReceiver
         byte[] buf = new byte[4096];
         while (remaining > 0) {
             int n = is.read(buf, 0, (int) Math.min(buf.length, remaining));
-            if (n == -1) break;
+            if (n == -1) throw new EOFException();
             remaining -= n;
             prefixStream.write(buf, 0, n);
             l.trace("written {}>{}", n, remaining);
@@ -290,8 +289,6 @@ public class ContentReceiver
                 timer.restart();
             }
         }
-
-        return remaining;
     }
 
     public ContentHash download_(IPhysicalPrefix prefix, ResponseStream rs, SOKID k, Version vRemote,
