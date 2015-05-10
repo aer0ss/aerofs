@@ -6,6 +6,8 @@ set -e
 # Sort non-base image names alphabetically to help users observe build progress
 
 DIRS="
+    golang-builder
+
     base/base
     base/ubuntu14.04
     base/jre8
