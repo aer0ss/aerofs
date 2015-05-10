@@ -5,17 +5,16 @@ RUN apt-get update &&\
         bzr \
         ca-certificates \
         curl \
-        docker.io \
         git \
         golang \
         mercurial \
         &&\
     mkdir /gopath
 
-ADD build.sh /build.sh
-RUN chmod +x /build.sh
+ADD builder.sh /builder.sh
+RUN chmod +x /builder.sh
 
 ENV GOPATH /gopath
 ENV PATH $PATH:$GOPATH/bin
 
-ENTRYPOINT ["/build.sh"]
+ENTRYPOINT ["/builder.sh"]
