@@ -1,0 +1,15 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    config.vm.define :UbuntuNatLocalProd do |box|
+        box.vm.box = "ubuntu/trusty64"
+        box.vm.hostname = "UbuntuLocalProd"
+        box.vm.provider :virtualbox do |vb|
+            vb.gui = false
+            vb.customize ["modifyvm", :id, "--name", "UbuntuNatLocalProd"]
+            vb.customize ["modifyvm", :id, "--memory", "4096"]
+        end
+    end
+    config.vm.synced_folder "~/Repos", "/mnt/repos"
+end
