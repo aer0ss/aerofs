@@ -109,7 +109,8 @@ To set up the NAT, run as root:
 
 ```
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8543
+iptables -t nat -A PREROUTING -i eth0 -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 8543
+iptables -t nat -A PREROUTING -i tun0 -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 8543
 iptables-save > /etc/network/iptables.rules
 ```
 

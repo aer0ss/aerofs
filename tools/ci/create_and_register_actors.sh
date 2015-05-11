@@ -36,4 +36,4 @@ fi
 popd
 
 # OSX actors
-echo ci | "$ACTOR_POOL_DIR"/register.py --os o --vm n --isolated n
+echo osx-1 | "$ACTOR_POOL_DIR"/register.py --os o --vm n --isolated n
