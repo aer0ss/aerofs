@@ -28,3 +28,14 @@ Ship Enterprise preloading process. The code of the script is is at
 ## Clearing out the actors database
 
 Ummm...I forget
+
+## Running the HAL bot
+
+HAL is among us on Slack and reacts to CI failures. He is currently run on the CI box and
+has its own documentation on [the Github repository](https://github.com/aerofs/aero.hal#aerohal).
+
+HAL is unfortunately not yet restart-resistant, so you will need to do the following:
+
+    docker run -it --rm -p 8978:8978 --dns=172.16.0.83 --name hal hal
+
+You may need to `docker rm hal` if Docker complains about it.

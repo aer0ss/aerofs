@@ -310,3 +310,11 @@ sudo chown -R aerofsbuild:aerofsbuild /etc/syncdet/
 ### Set up Vagrant/Virtualbox
 
 Download the vagrant .deb from [http://downloads.vagrantup.com/tags/v1.2.3](http://downloads.vagrantup.com/tags/v1.2.3) and get it onto the box. Then run `sudo dpkg -i <vagrant>.deb`
+
+## Optional: Set up HAL
+
+You can install [HAL](https://github.com/aerofs/aero.hal#deployment-on-ci) to notify users in Slack
+when they break tests.
+
+You can also set up an "external speaker" by running HAL on a different host, see
+[the related documentation](https://github.com/aerofs/aero.hal/blob/master/README.md#speech-synthesis).
