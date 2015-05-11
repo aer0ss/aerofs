@@ -4,11 +4,12 @@ The new agent doesn't support SyncDET tests yet. TeamCity only runs unittests on
 
 # Set up a new agent
 
-`scp` this directory to an empty VM and run:
+The agent requires two or more CPUs otherwise some unittests may fail. `scp` this directory
+to an empty VM or physical computer and run on it:
 
     $ <this-folder>/start-teamcity-agent-container.sh
 
-on the VM. In a few minutes after the script finishes, TeamCity should show a new agent named "cloud-1".
+In a few minutes after the script finishes, TeamCity should show a new agent named "cloud-1".
 
 For troubleshooting, see `teamcity-agent` container's docker logs.
 
