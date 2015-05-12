@@ -29,6 +29,8 @@ import json
 import getpass
 from boto.s3.connection import S3Connection
 from time import sleep
+from swiftclient.client import Connection as SwiftConnection
+from swiftclient.exceptions import ClientException as SwiftClientException
 from ConfigParser import ConfigParser
 
 file_root = os.path.dirname(__file__)
@@ -60,10 +62,25 @@ CI_SP_URL = "https://share.syncfs.com:4433/sp"
 CI_SP_VERSION = '21' # update this if we ever bump SP version before burning it
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
-S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
-              's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
-              's3_secret_key': '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',
-              'remote_storage_encryption_password': 'password'}
+# Allowed Teamserver storage types
+TEAMSERVER_STORAGETYPES = ['LINKED', 'LOCAL', 'S3', 'SWIFT']
+# Configuration values to update for the given storge type
+STORAGE_BACKENDS_DETAILS = {
+    'S3': {
+        's3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
+        's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
+        's3_secret_key': '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',
+        'remote_storage_encryption_password': 'password'
+    },
+    'SWIFT': {
+        'swift_url': 'http://172.16.2.106:8080/auth/v1.0',
+        'swift_auth_mode': 'basic',
+        'swift_username': 'test:tester',
+        'swift_password': 'testing',
+        'swift_container': 'test_container',
+        'remote_storage_encryption_password': 'password'
+    }
+}
 
 ADMIN_USERID = 'admin@syncfs.com'
 ADMIN_PASS = 'temp123'
@@ -178,17 +195,18 @@ def generate_yaml(args, username, actor_data):
 
     for actor in actor_data:
         details = {}
-        # if actor.get('is_on_aws'):
-        #     details.update(AWS_DETAILS)
+
         teamserver = actor.get('teamserver')
+
+        # Adding specific backend-related details
         if teamserver is not None:
-            if isinstance(teamserver, str) and teamserver.upper() in ['LINKED', 'LOCAL', 'S3']:
+            if isinstance(teamserver, str) and teamserver.upper() in TEAMSERVER_STORAGETYPES:
                 details['team_server'] = True
                 details['storage_type'] = teamserver.upper()
-                if teamserver.upper() == 'S3':
-                    details.update(S3_DETAILS)
+                if teamserver.upper() in STORAGE_BACKENDS_DETAILS:
+                    details.update(STORAGE_BACKENDS_DETAILS[teamserver.upper()])
             else:
-                raise ValueError('"teamserver" must be LINKED, LOCAL, or S3')
+                raise ValueError('"teamserver" must be in %s' % ', '.join(TEAMSERVER_STORAGETYPES))
 
         # actor params
         d = {}
@@ -212,6 +230,21 @@ def clear_s3_bucket(access_key, secret_key, bucket_id):
     s3conn = S3Connection(access_key, secret_key)
     bucket = s3conn.get_bucket(bucket_id)
     bucket.delete_keys(bucket.list())
+
+
+def clear_swift_container(config):
+    """ Remove the container used by this config """
+    try:
+        sw_c = SwiftConnection(
+            authurl=config['swift_url'],
+            user=config['swift_username'],
+            key=config['swift_password'],
+        )
+
+        sw_c.delete_container(config['swift_container'])
+    except SwiftClientException:
+        # This could happen if the container was not created
+        print("Unable to remove Swift container {}.".format(config['swift_container']))
 
 
 def get_actor_data(conf):
@@ -266,9 +299,15 @@ def main():
 
     # Clear S3 bucket if necessary
     if any(a.get('teamserver', '').upper() == 'S3' for a in actor_data):
-        clear_s3_bucket(S3_DETAILS['s3_access_key'],
-                        S3_DETAILS['s3_secret_key'],
-                        S3_DETAILS['s3_bucket_id'])
+        clear_s3_bucket(STORAGE_BACKENDS_DETAILS['S3']['s3_access_key'],
+                        STORAGE_BACKENDS_DETAILS['S3']['s3_secret_key'],
+                        STORAGE_BACKENDS_DETAILS['S3']['s3_bucket_id'])
+
+    # Clear Swift container if necessary
+    for a in actor_data:
+        if a.get('teamserver', '').upper() == 'SWIFT':
+            # We want to clear all the containers used
+            clear_swift_container(STORAGE_BACKENDS_DETAILS['SWIFT'])
 
     # Generate YAML file
     generate_yaml(args, username, actor_data)

@@ -63,7 +63,7 @@ sudo apt-get install mysql-server
 Install python packages:
 
 ```
-sudo pip install requests flask
+sudo pip install requests flask python-swiftclient
 ```
 
 Install docker following the instructions [here](https://docs.docker.com/installation/), and set-uid for the docker executable so scripts do need "sudo docker" all the time. (To be consistent with development environment):

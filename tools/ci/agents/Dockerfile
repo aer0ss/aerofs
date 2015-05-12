@@ -59,7 +59,8 @@ RUN pip install \
     pyyaml \
     protobuf \
     requests \
-    virtualenv
+    virtualenv \
+    python-swiftclient
 
 # Install protobuf
 RUN wget https://github.com/google/protobuf/releases/download/v2.6.0/protobuf-2.6.0.tar.bz2 &&\
