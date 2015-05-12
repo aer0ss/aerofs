@@ -213,10 +213,9 @@ This VM is required to run your private AeroFS clients that are isolated from th
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
+     ~/repos/aerofs/docker/dev/upgrade-tools.sh
      echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.bash_profile
      source ~/repos/aerofs/tools/bashrc/include.sh
-     # Now the real things
-     ~/repos/aerofs/docker/dev/upgrade-tools.sh
      # Display the documentation
      dk-help
      dk-createvm && docker-machine upgrade && dk-create
