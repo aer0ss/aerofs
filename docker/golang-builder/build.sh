@@ -1,18 +1,13 @@
 #!/bin/bash
 #
-# Usage: build.sh image service [source [mapping]]
+# Usage: build.sh image service
 #
 #   image  : name of the docker image to be produced
 #   service: fully qualified name of the go package to build
-#   source : source folder
-#            default: $PWD/src
-#   mapping: where to mount the above folder in $GOPATH/src
-#            default: <service>
-#            useful if the source folder contains multiple top-level packages
 
 IMAGE=$1
 SERVICE=$2
-SOURCE_MAPPING=${3:-$(pwd)/src}:/gopath/src/${4:-$SERVICE}
+SOURCE_MAPPING=$(git rev-parse --show-toplevel)/golang/src/aerofs.com:/gopath/src/aerofs.com
 SOCKET_MAPPING=/var/run/docker.sock:/var/run/docker.sock
 DOCKER_MAPPING=$(which docker):/usr/local/bin/docker
 

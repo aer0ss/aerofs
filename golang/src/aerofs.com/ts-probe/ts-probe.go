@@ -7,16 +7,10 @@ import (
     "net/http"
     "io/ioutil"
     "encoding/json"
+    "aerofs.com/service"
 )
 
-func readDeploymentSecret() string {
-    b, err := ioutil.ReadFile("/data/deployment_secret")
-    if err != nil { panic(err) }
-    // TODO: check for valid hex string?
-    return string(b)
-}
-
-var SECRET string = readDeploymentSecret()
+var SECRET string = service.ReadDeploymentSecret()
 var AUTH_HEADER string = "Aero-Service-Shared-Secret probe " + SECRET
 
 type Device struct {
@@ -89,6 +83,8 @@ func probeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+    service.ServiceBarrier()
+
     http.HandleFunc("/", probeHandler)
     fmt.Println("Probe serving at 8080")
     err := http.ListenAndServe(":8080", nil)

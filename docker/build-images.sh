@@ -39,11 +39,12 @@ DIRS="
     ../src/spsv/resources/sp 
     ../src/spsv/resources/verification 
     
-    ../src/probe
     ../src/verkehr 
     ../src/web 
     ../src/zephyr 
     
+    ../golang/src/aerofs.com/ts-probe
+
     ship/vm/loader 
     ship-aerofs/loader
 "
