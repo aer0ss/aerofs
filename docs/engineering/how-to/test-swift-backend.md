@@ -21,7 +21,7 @@ You will need the following syncdet *actors* configuration:
               swift_username: test:tester
               swift_password: testing
               swift_url: http://192.168.8.80:8080/auth/v1.0
-              swift_container: container_aerofs
+              swift_container: aerofs
               remote_storage_encryption_password: somethingunique
         - address: 192.168.50.11
 
@@ -53,7 +53,7 @@ After that, install the client to access/test/manage the node.
     # List the containers on the node (should be empty)
     swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing list
     # Add a container
-    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K post container_aerofs
+    swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing post aerofs
     # Check
     swift -A http://192.168.8.80:8080/auth/v1.0 -U test:tester -K testing list
 
