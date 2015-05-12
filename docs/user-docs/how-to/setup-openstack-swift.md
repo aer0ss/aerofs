@@ -5,8 +5,8 @@
 The AeroFS
 [Team Server](https://support.aerofs.com/hc/en-us/articles/201439424-Team-Server),
 which serves as a central storage node within AeroFS systems, natively supports
-the S3 protocol. While OpenStack Swift integration is planned and scheduled on
-our roadmap, it is currently not supported natively.
+the S3 protocol. OpenStack Swift integration is **now supported and this documentation is left
+for historical reasons only**.
 
 To configure your Team Server to work with Swift, execute the following
 step-by-step procedure to install the swift3 plugin for your Swift instance.
