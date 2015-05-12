@@ -23,6 +23,12 @@ class SwiftMagicChunk extends AbstractMagicChunk
         try {
             checkMagicChunk();
         } catch(CommandException e) {
+            if (e.getError() == null) {
+                // This seems to be possible, for example when we get a SocketTimeoutException
+                l.warn("Received a CommandException with no error. Message: " + e.getMessage());
+                throw new IOException(e);
+            }
+
             l.warn(e.getError().toString());
             if (e.getError().equals(CommandExceptionError.ENTITY_DOES_NOT_EXIST)) {
                 ExitCode.SWIFT_BAD_CREDENTIALS.exit();

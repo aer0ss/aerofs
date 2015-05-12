@@ -124,9 +124,9 @@ public class CLISetup
             getPassword(cli);
             getDeviceName(cli);
             getStorageType(cli);
-            if (_model._storageType == StorageType.S3) {
+            if (_model._backendConfig._storageType == StorageType.S3) {
                 getS3Config(cli, _model._backendConfig);
-            } else if (_model._storageType == StorageType.SWIFT) {
+            } else if (_model._backendConfig._storageType == StorageType.SWIFT) {
                 getSwiftConfig(cli, _model._backendConfig);
             } else {
                 getRootAnchor(cli);
@@ -134,11 +134,11 @@ public class CLISetup
             getAPIAccess(cli);
         }
 
-        if (_model._storageType.isRemote()) {
+        if (_model._backendConfig._storageType.isRemote()) {
             _model._isLocal = false;
         } else {
             _model._isLocal = true;
-            _model._localOptions._useBlockStorage = _model._storageType == StorageType.LOCAL;
+            _model._localOptions._useBlockStorage = _model._backendConfig._storageType == StorageType.LOCAL;
         }
     }
 
@@ -152,7 +152,7 @@ public class CLISetup
             getAPIAccess(cli);
         }
 
-        if (_model._storageType == null) _model._storageType = StorageType.LINKED;
+        if (_model._backendConfig._storageType == null) _model._backendConfig._storageType = StorageType.LINKED;
 
         _model._isLocal = true;
         _model._localOptions._useBlockStorage = false;
@@ -186,13 +186,13 @@ public class CLISetup
         cli.show(MessageType.INFO, bd.toString());
         String s = cli.askText("Storage option", String.valueOf(StorageType.LINKED.ordinal()));
         try {
-            _model._storageType = StorageType.fromOrdinal(Integer.valueOf(s));
+            _model._backendConfig._storageType = StorageType.fromOrdinal(Integer.valueOf(s));
         } catch (NumberFormatException e) {
             cli.show(MessageType.WARN, "Invalid option, using default");
-            _model._storageType = StorageType.LINKED;
+            _model._backendConfig._storageType = StorageType.LINKED;
         } catch (IndexOutOfBoundsException e) {
             cli.show(MessageType.WARN, "Invalid option, using default");
-            _model._storageType = StorageType.LINKED;
+            _model._backendConfig._storageType = StorageType.LINKED;
         }
     }
 
