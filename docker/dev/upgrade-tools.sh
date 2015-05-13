@@ -27,7 +27,7 @@ if [ $(uname -s) = "Darwin" ] ; then
     mv crane /usr/local/bin/crane
 
     # Install docker-machine
-    wget https://github.com/docker/machine/releases/download/v0.1.0-rc4/docker-machine_darwin-amd64 \
+    wget https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 \
         -O /usr/local/bin/docker-machine
     chmod +x /usr/local/bin/docker-machine
 fi
@@ -57,7 +57,7 @@ if [ $(uname -s) = "Linux" ] ; then
         bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/master/download.sh)" && sudo mv crane /usr/local/bin/crane
     fi
     if [ -z "$(which docker-machine)" ] ; then
-        wget https://github.com/docker/machine/releases/download/v0.1.0/docker-machine_linux-amd64 \
+        wget https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_linux-amd64 \
         -O docker-machine && sudo mv docker-machine /usr/local/bin/docker-machine
         sudo chmod +x /usr/local/bin/docker-machine
 
