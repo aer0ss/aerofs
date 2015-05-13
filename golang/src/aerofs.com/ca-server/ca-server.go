@@ -15,6 +15,7 @@ import (
 	"github.com/aerofs/httprouter"
 	"net/http"
 	"strings"
+	"time"
 )
 
 import mrand "math/rand"
@@ -63,6 +64,7 @@ func acquireSerial(db *sql.DB) (int64, error) {
 		if err == nil {
 			return serial, nil
 		}
+		fmt.Println("serial", serial, "could not be acquired", err)
 	}
 	return -1, errors.New("could not find a free serial number")
 }
@@ -175,6 +177,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	mrand.Seed(time.Now().UTC().UnixNano())
 
 	fmt.Println("initializing db")
 	db := mysql.CreateConnection(mysql.UrlFromConfig(c), "aerofs_ca")

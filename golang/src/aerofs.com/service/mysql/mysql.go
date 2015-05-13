@@ -23,16 +23,21 @@ func UrlFromConfig(c map[string]string) string {
 	return auth + "@tcp(" + url + ")/"
 }
 
-func CreateConnection(url, database string) *sql.DB {
+func CreateDatabaseIfNeeded(url, database string) {
 	db, err := sql.Open("mysql", url)
 	if err != nil {
 		panic(err)
 	}
+	defer db.Close()
 	_, err = db.Exec("CREATE DATABASE IF NOT EXISTS " + database)
 	if err != nil {
 		panic(err)
 	}
-	_, err = db.Exec("use " + database)
+}
+
+func CreateConnection(url, database string) *sql.DB {
+	CreateDatabaseIfNeeded(url, database)
+	db, err := sql.Open("mysql", url+database)
 	if err != nil {
 		panic(err)
 	}
