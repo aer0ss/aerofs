@@ -95,26 +95,31 @@ func ServiceAuth(h httprouter.Handle, secret string) httprouter.Handle {
 	}
 }
 
+func WriteError(w http.ResponseWriter, msg string, status int) {
+	fmt.Println("error:", msg)
+	http.Error(w, msg, status)
+}
+
 func csrHandler(db *sql.DB, signer *cert.CertSigner, w http.ResponseWriter, r *http.Request) {
 	csr, err := cert.DecodeCSR(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		WriteError(w, err.Error(), 400)
 		return
 	}
 	fmt.Println("csr for ", csr.Subject)
 	serial, err := acquireSerial(db)
 	if err != nil {
-		http.Error(w, "failed to acquire serial number ["+err.Error()+"]", 500)
+		WriteError(w, "failed to acquire serial number ["+err.Error()+"]", 500)
 		return
 	}
 	der, err := signer.SignCSR(csr, serial)
 	if err != nil {
-		http.Error(w, "failed to sign CSR ["+err.Error()+"]", 500)
+		WriteError(w, "failed to sign CSR ["+err.Error()+"]", 500)
 		return
 	}
 	err = setCertificate(db, serial, der)
 	if err != nil {
-		http.Error(w, "failed to sign CSR ["+err.Error()+"]", 500)
+		WriteError(w, "failed to sign CSR ["+err.Error()+"]", 500)
 		return
 	}
 	cert.WritePEM(der, w)
@@ -150,7 +155,7 @@ func (h *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pw := &ProxyResponseWriter{w: w}
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			fmt.Println("panic handling", r.Method, r.RequestURI, ">>", err)
 		} else {
 			fmt.Println(">", pw.StatusCode)
 		}
