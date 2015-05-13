@@ -13,7 +13,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Arrays;
 
-public final class Child {
+public class Child {
 
     @NotNull
     public final UniqueID oid;

@@ -9,6 +9,7 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
+import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -66,9 +67,6 @@ public final class TreeCommand implements Command {
                         dumpObjects(dao, store);
                     }
                 }
-
-                // iterate over objects in the trash (for all stores)
-                dumpObjects(dao, OID.TRASH);
             }
 
             private void dumpObjects(DAO dao, UniqueID store) {
@@ -78,13 +76,17 @@ public final class TreeCommand implements Command {
 
             private ObjectNode traverse(DAO dao, UniqueID parent, ObjectNode parentNode) {
                 Map<UniqueID, ObjectNode> folders = Maps.newHashMap();
-                try (ResultIterator<Child> iterator = dao.children.getChildren(parent)) {
+                try (ResultIterator<DeletableChild> iterator = dao.children.getChildren(parent)) {
                     while (iterator.hasNext()) {
-                        Child child = iterator.next();
+                        DeletableChild child = iterator.next();
                         LOGGER.debug("{} -> {}", parent, child);
 
                         ObjectNode node = mapper.createObjectNode();
                         node.put("type", child.objectType.name());
+
+                        if (child.deleted) {
+                            node.put("deleted", true);
+                        }
 
                         if (child.objectType == ObjectType.FILE) {
                             Content content = dao.objectProperties.getLatest(child.oid);

@@ -16,6 +16,7 @@ import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.Migrations;
 import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.notification.Notifier;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
@@ -171,7 +172,7 @@ public class TestStoreMigrator {
     @Test
     public void shouldLockFolders() throws Exception
     {
-        doReturn(new StoreMigrator.IncrementalMigrationResult(false, null, null)).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any());
+        doReturn(Lists.newArrayList()).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any());
 
         SID rootStore = SID.rootSID(USERID);
         OID sharedFolder = newFolder(rootStore, "shared_folder");

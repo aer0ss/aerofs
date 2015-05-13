@@ -13,9 +13,9 @@ public final class ParentConflictException extends PolarisException {
 
     private final UniqueID child;
     private final UniqueID requestedParent;
-    private final LogicalObject conflictingParent;
+    private final UniqueID conflictingParent;
 
-    public ParentConflictException(UniqueID child, UniqueID requestedParent, LogicalObject conflictingParent) {
+    public ParentConflictException(UniqueID child, UniqueID requestedParent, UniqueID conflictingParent) {
         super(PolarisError.PARENT_CONFLICT);
         this.child = child;
         this.requestedParent = requestedParent;
@@ -24,13 +24,13 @@ public final class ParentConflictException extends PolarisException {
 
     @Override
     public String getSimpleMessage() {
-        return String.format("%s is already a child of %s", child, conflictingParent.oid);
+        return String.format("%s is already a child of %s", child, conflictingParent);
     }
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
         errorFields.put("child", child);
         errorFields.put("requested_parent", requestedParent);
-        errorFields.put("conflicting_parent", conflictingParent.oid);
+        errorFields.put("conflicting_parent", conflictingParent);
     }
 }

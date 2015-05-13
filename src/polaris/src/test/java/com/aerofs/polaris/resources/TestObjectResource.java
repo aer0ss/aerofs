@@ -191,8 +191,7 @@ public final class TestObjectResource {
     public void shouldAllowUpdateToADeletedObject() throws Exception {
         // construct store -> filename
         SID store = SID.generate();
-        OID file = new OID(PolarisUtilities.hexDecode("F57205C5C8C0427EBEB571ED41294CC7"));
-        PolarisHelpers.newFileUsingOID(AUTHENTICATED, store, file, "filename");
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "filename");
         byte[] hash = PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF");
 
         // create a fake hash for the initial file
@@ -221,8 +220,22 @@ public final class TestObjectResource {
                 .and()
                 .assertThat().statusCode(SC_OK);
 
-        checkTreeState(OID.TRASH, "tree/shouldAllowUpdateToADeletedObject_0000.json");
+        checkTreeState(store, "tree/shouldAllowUpdateToADeletedObject.json");
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class)); // <--- FIXME (AG): oh dear...this is bad, no?
+    }
+
+    @Test
+    public void deletedObjectsShouldNotCauseNameConflicts() throws Exception {
+        SID store = SID.generate();
+        OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+
+        // should cause name conflict
+        PolarisHelpers.newObject(AUTHENTICATED, store, OID.generate(), "file", ObjectType.FILE).assertThat().statusCode(SC_CONFLICT);
+
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deleted_file);
+
+        // no more name conflict
+        PolarisHelpers.newFile(AUTHENTICATED, store, "file");
     }
 
     @Test
@@ -230,8 +243,7 @@ public final class TestObjectResource {
         // construct store -> folder_1 -> folder_1_1 -> file
         //           store -> folder_2
         SID store = SID.generate();
-        OID folder1 = new OID(PolarisUtilities.hexDecode("F57205C5C8C0427EBEB571ED41294CC7"));
-        PolarisHelpers.newFolderUsingOID(AUTHENTICATED, store, folder1, "folder_1");
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_1");
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder_1_1");
         OID file = PolarisHelpers.newFile(AUTHENTICATED, folder11, "file");
         PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_2");
@@ -257,8 +269,8 @@ public final class TestObjectResource {
                 .and()
                 .assertThat().statusCode(SC_OK);
 
+        System.out.println(getActualTree(store));
         checkTreeState(store, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent.json");
-        checkTreeState(OID.TRASH, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent_0000.json");
         verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(store), any(Long.class));
     }
 
@@ -349,7 +361,8 @@ public final class TestObjectResource {
         PolarisHelpers.newFile(AUTHENTICATED, folder, "nested_file");
         PolarisHelpers.newFile(AUTHENTICATED, rootStore, "file");
         PolarisHelpers.newFile(AUTHENTICATED, sharedFolder, "shared_file");
-        PolarisHelpers.newFolder(AUTHENTICATED, sharedFolder, "shared_folder");
+        PolarisHelpers.removeObject(AUTHENTICATED, sharedFolder, PolarisHelpers.newFile(AUTHENTICATED, sharedFolder, "deleted_file"));
+        PolarisHelpers.newFolder(AUTHENTICATED, sharedFolder, "shared_folder_2");
 
         reset(polaris.getNotifier());
 

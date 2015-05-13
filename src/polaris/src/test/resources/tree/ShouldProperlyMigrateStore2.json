@@ -2,10 +2,14 @@
   "shared_file": {
     "type": "FILE"
   },
-  "shared_folder": {
+  "shared_folder_2": {
     "type": "FOLDER"
   },
   "new_file": {
     "type": "FILE"
+  },
+  "deleted_file": {
+    "type": "FILE",
+    "deleted": true
   }
 }

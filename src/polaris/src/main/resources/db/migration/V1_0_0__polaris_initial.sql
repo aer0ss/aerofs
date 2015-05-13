@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `children` (
   `parent_oid` BINARY(16)      NOT NULL,
   `child_oid`  BINARY(16)      NOT NULL,
   `child_name` VARBINARY(1020) NOT NULL,
+  `deleted`    TINYINT         DEFAULT 0,
   PRIMARY KEY (`child_oid`, `parent_oid`)
 ) ENGINE = InnoDB;
 

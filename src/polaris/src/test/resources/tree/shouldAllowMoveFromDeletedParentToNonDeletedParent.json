@@ -7,5 +7,9 @@
   },
   "folder_1_1": {
     "type": "FOLDER"
+  },
+  "folder_1": {
+    "type": "FOLDER",
+    "deleted": true
   }
 }

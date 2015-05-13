@@ -78,7 +78,9 @@ public class StoreMigrator implements Managed {
         return job.status;
     }
 
-    // returns the Job ID associated with this migration
+    /*
+     * @return the Job ID associated with this migration
+     */
     public UniqueID migrateStore(SID storeSID, DID originator)
     {
         dbi.inTransaction((conn, status) -> {
@@ -141,9 +143,9 @@ public class StoreMigrator implements Managed {
             DAO dao = new DAO(conn);
             LogicalObject oldFolder = getObject(dao, SID.convertedStoreSID2folderOID(store));
             versionMap.put(oldFolder.oid, oldFolder.version);
-            try (ResultIterator<Child> oldChildren = dao.children.getChildren(oldFolder.oid)) {
+            try (ResultIterator<DeletableChild> oldChildren = dao.children.getChildren(oldFolder.oid)) {
                 while (oldChildren.hasNext()) {
-                    Child child = oldChildren.next();
+                    DeletableChild child = oldChildren.next();
                     dao.objects.setLocked(child.oid, true);
                     migrationQueue.add(new ChildMigrationState(oldFolder, child));
                 }
@@ -151,9 +153,9 @@ public class StoreMigrator implements Managed {
 
             LogicalObject storeRoot = getObject(dao, store);
             versionMap.put(storeRoot.oid, storeRoot.version);
-            try (ResultIterator<Child> rootChildren = dao.children.getChildren(store)) {
+            try (ResultIterator<DeletableChild> rootChildren = dao.children.getChildren(store)) {
                 while (rootChildren.hasNext()) {
-                    Child child = rootChildren.next();
+                    DeletableChild child = rootChildren.next();
                     dao.objects.setLocked(child.oid, true);
                     migrationQueue.add(new ChildMigrationState(storeRoot, child));
                 }
@@ -162,12 +164,12 @@ public class StoreMigrator implements Managed {
         });
 
         while (!migrationQueue.isEmpty()) {
-            IncrementalMigrationResult result = dbi.inTransaction((conn, status) -> {
+            List<Update> result = dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
                 return migrateBatchOfObjects(dao, originator, store, migrationQueue);
             });
-            if (result.performedWork) {
-                updates = Arrays.asList(result.migratingFromUpdate, result.migratingToUpdate);
+            if (!result.isEmpty()) {
+                updates = result;
             }
         }
 
@@ -175,11 +177,12 @@ public class StoreMigrator implements Managed {
     }
 
     // package-private for testing purposes
-    IncrementalMigrationResult migrateBatchOfObjects(DAO dao, DID originator, SID newStore, Queue<ChildMigrationState> searchQueue)
+    List<Update> migrateBatchOfObjects(DAO dao, DID originator, SID newStore, Queue<ChildMigrationState> searchQueue)
     {
         Preconditions.checkArgument(!searchQueue.isEmpty(), "tried to migrate an empty queue of objects");
         LOGGER.debug("performing batch migration of objects to {}", newStore);
 
+        List<Update> updates = Lists.newArrayList();
         int operationsDone = 0;
         long migratingToTimestamp = -1, migratingFromTimestamp = -1;
         UniqueID oldStore = null;
@@ -190,38 +193,43 @@ public class StoreMigrator implements Managed {
             LogicalObject migratingObject = getObject(dao, migrating.child.oid);
 
             if (!migratingObject.store.equals(newStore)) {
-                long newParentVersion;
-                long oldParentVersion;
                 UniqueID newParent;
+                long newParentVersion;
+                oldStore = migratingObject.store;
                 LOGGER.debug("migrating object {} to {}", migratingObject.oid, newStore);
 
                 if (migrating.parent.oid.equals(convertedFolderOID)) {
-                    // need to change the parents table for direct children of the store anchor
-                    newParent = newStore;
-                    dao.children.add(newStore, migratingObject.oid, migrating.child.name);
+                    // need to move the object from the old folder to the new store root
+                    dao.children.add(newStore, migratingObject.oid, migrating.child.name, migrating.child.deleted);
                     dao.children.remove(migrating.parent.oid, migratingObject.oid);
+                    newParent = newStore;
                 } else {
                     newParent = migrating.parent.oid;
                 }
-
-                oldStore = migratingObject.store;
-                newParentVersion = versionMap.get(newParent) + 1;
-                oldParentVersion = versionMap.get(migrating.parent.oid) + 1;
-                dao.objects.changeStore(newStore, migrating.child.oid);
-                dao.objects.update(newStore, newParent, newParentVersion);
+                newParentVersion = versionMap.get(newParent);
 
                 Atomic atomic = new Atomic(2);
-                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
-                migratingFromTimestamp = dao.transforms.add(originator, oldStore, migrating.parent.oid, TransformType.REMOVE_CHILD, oldParentVersion, migratingObject.oid, null, System.currentTimeMillis(), atomic);
-                versionMap.replace(newStore, newParentVersion);
-                versionMap.replace(migrating.parent.oid, oldParentVersion);
+                if (!migrating.child.deleted) {
+                    long oldParentVersion = versionMap.get(migrating.parent.oid);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
+                    migratingFromTimestamp = dao.transforms.add(originator, oldStore, migrating.parent.oid, TransformType.REMOVE_CHILD, ++oldParentVersion, migratingObject.oid, null, System.currentTimeMillis(), atomic);
+                    versionMap.replace(migrating.parent.oid, oldParentVersion);
+                    dao.objects.update(oldStore, migrating.parent.oid, oldParentVersion);
+                } else {
+                    dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, migratingObject.oid, null, System.currentTimeMillis(), atomic);
+                }
+
+                dao.objects.changeStore(newStore, migrating.child.oid);
+                dao.objects.update(newStore, newParent, newParentVersion);
+                versionMap.replace(newParent, newParentVersion);
             }
 
             if (migratingObject.objectType == ObjectType.FOLDER) {
                 versionMap.put(migratingObject.oid, migratingObject.version);
-                try (ResultIterator<Child> children = dao.children.getChildren(migrating.child.oid)) {
+                try (ResultIterator<DeletableChild> children = dao.children.getChildren(migrating.child.oid)) {
                     while (children.hasNext()) {
-                        Child child = children.next();
+                        DeletableChild child = children.next();
                         dao.objects.setLocked(child.oid, true);
                         searchQueue.add(new ChildMigrationState(migratingObject, child));
                     }
@@ -232,14 +240,18 @@ public class StoreMigrator implements Managed {
             operationsDone++;
         }
 
+        // meaning that we did migrate some objects in this batch
         if (oldStore != null) {
-            // meaning that we did migrate some objects in this batch
-            dao.logicalTimestamps.updateLatest(newStore, migratingToTimestamp);
-            dao.logicalTimestamps.updateLatest(oldStore, migratingFromTimestamp);
-            return new IncrementalMigrationResult(true, new Update(oldStore, migratingFromTimestamp), new Update(newStore, migratingToTimestamp));
-        } else {
-            return new IncrementalMigrationResult(false, null, null);
+            if (migratingToTimestamp != -1) {
+                dao.logicalTimestamps.updateLatest(newStore, migratingToTimestamp);
+                updates.add(new Update(newStore, migratingToTimestamp));
+            }
+            if (migratingFromTimestamp != -1) {
+                dao.logicalTimestamps.updateLatest(oldStore, migratingFromTimestamp);
+                updates.add(new Update(oldStore, migratingFromTimestamp));
+            }
         }
+        return updates;
     }
 
     private LogicalObject getObject(DAO dao, UniqueID oid) {
@@ -253,26 +265,12 @@ public class StoreMigrator implements Managed {
     private static class ChildMigrationState
     {
         final LogicalObject parent;
-        final Child child;
+        final DeletableChild child;
 
-        public ChildMigrationState(LogicalObject parent, Child child)
+        public ChildMigrationState(LogicalObject parent, DeletableChild child)
         {
             this.parent = parent;
             this.child = child;
-        }
-    }
-
-    static class IncrementalMigrationResult
-    {
-        final boolean performedWork;
-        @Nullable final Update migratingFromUpdate;
-        @Nullable final Update migratingToUpdate;
-
-        public IncrementalMigrationResult(boolean performedWork, @Nullable Update from, @Nullable Update to)
-        {
-            this.performedWork = performedWork;
-            this.migratingFromUpdate = from;
-            this.migratingToUpdate = to;
         }
     }
 
