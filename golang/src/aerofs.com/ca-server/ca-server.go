@@ -108,6 +108,7 @@ func csrHandler(db *sql.DB, signer *cert.CertSigner, w http.ResponseWriter, r *h
 		writeError(w, err.Error(), 400)
 		return
 	}
+	fmt.Println("csr request for ", csr.Subject)
 	serial, err := acquireSerial(db)
 	if err != nil {
 		writeError(w, "failed to acquire serial number ["+err.Error()+"]", 500)

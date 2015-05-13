@@ -23,7 +23,7 @@ func ReadDeploymentSecret() string {
 }
 
 func waitPort(service, port string) {
-	fmt.Println("waiting for " + service + ":" + port)
+	fmt.Println("waiting for ", service, ":", port)
 	for {
 		_, err := net.Dial("tcp", service+":"+port)
 		if err == nil {

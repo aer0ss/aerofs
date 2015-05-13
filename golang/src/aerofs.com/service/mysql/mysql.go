@@ -111,12 +111,14 @@ func migrate(db *sql.DB) {
 			if applied[i] != name {
 				panic(fmt.Errorf("mismatched migrations %i %s %s", i, applied[i], f))
 			}
+			fmt.Println("migration already applied: ", name)
 			continue
 		}
 		d, err := ioutil.ReadFile("migration/" + name)
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println("apply migration: ", name)
 		err = applyMigration(db, name, d)
 		if err != nil {
 			panic(err)
