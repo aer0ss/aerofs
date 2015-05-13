@@ -95,44 +95,70 @@ func ServiceAuth(h httprouter.Handle, secret string) httprouter.Handle {
 	}
 }
 
-func writeError(w http.ResponseWriter, msg string, status int) {
-	fmt.Println(" > " + string(status) + " : " + msg)
-	http.Error(w, msg, status)
-}
-
 func csrHandler(db *sql.DB, signer *cert.CertSigner, w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method + " " + r.RequestURI)
-
 	csr, err := cert.DecodeCSR(r.Body)
 	if err != nil {
-		writeError(w, err.Error(), 400)
+		http.Error(w, err.Error(), 400)
 		return
 	}
-	fmt.Println("csr request for ", csr.Subject)
+	fmt.Println("csr for ", csr.Subject)
 	serial, err := acquireSerial(db)
 	if err != nil {
-		writeError(w, "failed to acquire serial number ["+err.Error()+"]", 500)
+		http.Error(w, "failed to acquire serial number ["+err.Error()+"]", 500)
 		return
 	}
 	der, err := signer.SignCSR(csr, serial)
 	if err != nil {
-		writeError(w, "failed to sign CSR ["+err.Error()+"]", 500)
+		http.Error(w, "failed to sign CSR ["+err.Error()+"]", 500)
 		return
 	}
 	err = setCertificate(db, serial, der)
 	if err != nil {
-		writeError(w, "failed to sign CSR ["+err.Error()+"]", 500)
+		http.Error(w, "failed to sign CSR ["+err.Error()+"]", 500)
 		return
 	}
-	fmt.Println(" > signed")
-	w.WriteHeader(200)
 	cert.WritePEM(der, w)
 }
 
 func cacertHandler(signer *cert.CertSigner, w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method + " " + r.RequestURI)
-	w.WriteHeader(http.StatusOK)
 	cert.WritePEM(signer.CertDER, w)
+}
+
+type ProxyResponseWriter struct {
+	w          http.ResponseWriter
+	StatusCode int
+}
+
+func (w *ProxyResponseWriter) Header() http.Header { return w.w.Header() }
+func (w *ProxyResponseWriter) Write(d []byte) (int, error) {
+	if w.StatusCode == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.w.Write(d)
+}
+func (w *ProxyResponseWriter) WriteHeader(status int) {
+	w.StatusCode = status
+	w.w.WriteHeader(status)
+}
+
+type LoggingHandler struct {
+	h http.Handler
+}
+
+func (h *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method, r.RequestURI)
+	pw := &ProxyResponseWriter{w: w}
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(">", pw.StatusCode)
+		}
+		if pw.StatusCode == 0 {
+			pw.WriteHeader(500)
+		}
+	}()
+	h.h.ServeHTTP(pw, r)
 }
 
 func main() {
@@ -159,7 +185,7 @@ func main() {
 	secret := service.ReadDeploymentSecret()
 
 	router := httprouter.New()
-	router.GET("/prod", ServiceAuth(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	router.POST("/prod", ServiceAuth(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		csrHandler(db, signer, w, r)
 	}, secret))
 	router.GET("/prod/cacert.pem", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -167,7 +193,7 @@ func main() {
 	})
 
 	fmt.Println("ca-server serving at 9002")
-	err = http.ListenAndServe(":9002", router)
+	err = http.ListenAndServe(":9002", &LoggingHandler{h: router})
 	if err != nil {
 		panic("failed: " + err.Error())
 	}
