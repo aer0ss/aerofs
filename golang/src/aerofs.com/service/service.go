@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -19,7 +20,7 @@ func ReadDeploymentSecret() string {
 		panic(err)
 	}
 	// TODO: check for valid hex string?
-	return string(b)
+	return string(bytes.TrimSpace(b))
 }
 
 func waitPort(service, port string) {
@@ -70,24 +71,34 @@ func authHeader(name string) string {
 	return "Aero-Service-Shared-Secret " + name + " " + ReadDeploymentSecret()
 }
 
-func (c *HttpConfigClient) request(method, route string) (*http.Response, error) {
-	req, err := http.NewRequest(method, CONFIG_SERVICE_URL+route, nil)
+func (c *HttpConfigClient) NewRequest(method, route string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, CONFIG_SERVICE_URL+route, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Authorization", c.Auth)
+	return req, nil
+}
+
+func (c *HttpConfigClient) Do(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("unexpected status code: %s", resp.Status)
+		t, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("unexpected status code: %s\n%s", resp.Status, t)
 	}
 	return resp, nil
 }
 
 func (c *HttpConfigClient) Get() (map[string]string, error) {
-	resp, err := c.request("GET", "/server")
+	req, err := c.NewRequest("GET", "/server", nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +132,17 @@ func ParseProperties(d []byte) map[string]string {
 }
 
 func (c *HttpConfigClient) Set(k, v string) error {
-	_, err := c.request("POST", "/set?"+"key="+url.QueryEscape(k)+
-		"&value="+url.QueryEscape(strings.Replace(v, "\n", "\\n", -1)))
+	f := url.Values{}
+	f.Add("key", k)
+	f.Add("value", strings.Replace(v, "\n", "\\n", -1))
+	req, err := c.NewRequest("POST", "/set", strings.NewReader(f.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := c.Do(req)
+	if err == nil {
+		resp.Body.Close()
+	}
 	return err
 }

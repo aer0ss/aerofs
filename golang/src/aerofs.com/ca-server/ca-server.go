@@ -88,7 +88,7 @@ func ServiceAuth(h httprouter.Handle, secret string) httprouter.Handle {
 		l := strings.Fields(r.Header.Get("Authorization"))
 		if len(l) == 3 &&
 			l[0] == "Aero-Service-Shared-Secret" &&
-			subtle.ConstantTimeCompare([]byte(secret), []byte(l[2])) == 0 {
+			subtle.ConstantTimeCompare([]byte(secret), []byte(l[2])) == 1 {
 			h(w, r, ps)
 		} else {
 			w.Header().Set("WWW-Authenticate", "Aero-Service-Shared-Secret realm=AeroFS")
@@ -189,7 +189,10 @@ func main() {
 	fmt.Println("updating config")
 	buf := &bytes.Buffer{}
 	cert.WritePEM(signer.CertDER, buf)
-	config.Set("base_ca_cert", string(buf.Bytes()))
+	err = config.Set("base_ca_cert", string(buf.Bytes()))
+	if err != nil {
+		panic(err)
+	}
 
 	secret := service.ReadDeploymentSecret()
 
