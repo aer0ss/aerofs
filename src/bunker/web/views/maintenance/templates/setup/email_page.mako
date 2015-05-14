@@ -309,7 +309,10 @@
 
         function sendVerificationCodeAndShowCodeInputModal() {
             if (!verifyPresence("verification-to-email",
-                        "Please specify an email address.")) return;
+                        "Please specify an email address.")){
+                            hideAllModals();
+                            return;
+                        }
 
             var $btn = $('#send-verification-code-button');
             setEnabled($btn, false);
@@ -319,6 +322,7 @@
             doPost("${request.route_path('json_verify_smtp')}", data,
                     showVerifyCodeInputModal, function() {
                         setEnabled($btn, true);
+                        hideAllModals();
                     });
         }
 

@@ -122,11 +122,8 @@ def json_signup(request):
         }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:
-            msg = "The account already exists.<br>" \
-                  "Please try again with the password you used to create the account.<br>" \
-                  "If you forget the password," \
-                  " <a target='_blank' href='" + request.route_path('request_password_reset') + \
-                  " '>click here</a> to reset it."
+            msg = "The account already exists. Please try again with the password you used to create the account. " \
+                  "If you forgot your password, please try resetting it."
         elif e.get_type() == common.PBException.LICENSE_LIMIT:
             support_email = request.registry.settings.get('base.www.support_email_address')
             # TODO (WW) format the support email address as a mailto: link
