@@ -244,7 +244,7 @@ def clear_swift_container(config):
         sw_c.delete_container(config['swift_container'])
     except SwiftClientException:
         # This could happen if the container was not created
-        print("Unable to remove Swift container {}.".format(config['swift_container']))
+        pass
 
 
 def get_actor_data(conf):
