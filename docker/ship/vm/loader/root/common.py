@@ -50,3 +50,8 @@ def my_image_name():
 
 def my_container_name():
     return subprocess.check_output(['docker', 'inspect', '-f', '{{ .Name }}', my_container_id()]).strip()
+
+
+def get_tag():
+    with open(TAG_PATH) as f:
+        return f.read().strip()

@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 
-if [ $# != 2 ]; then
-    echo "Usage: $0 <path-to-ship.yml> <boot-target>"
+if [ $# != 3 ]; then
+    echo "Usage: $0 <path-to-ship.yml> <data-folder> <boot-target>"
+    echo "       For boot2docker users, <data-folder> needs to be under $HOME otherwise boot2docker cannot mount it."
     exit 11
 fi
 SHIP_YML="$1"
-TARGET="$2"
+DATA_FOLDER="$2"
+TARGET="$3"
 
 echo "=============== PID $$, $(date) ==============="
 
@@ -16,11 +18,13 @@ yml() {
 }
 
 LOADER_IMAGE=$(yml 'loader')
-# The folder needs to be under HOME otherwise boot2docker cannot bing mount it.
-DIR="${HOME}/.ship/$(sed -e 's!/.*!!' <<< "${LOADER_IMAGE}")"
-TARGET_FILE="${DIR}/target"
+DIR="${DATA_FOLDER}/$(sed -e 's!/.*!!' <<< "${LOADER_IMAGE}")"
 
 mkdir -p "${DIR}"
+# Get absolute path
+DIR=$(cd "${DIR}" && pwd)
+TARGET_FILE="${DIR}/target"
+
 echo "${TARGET}" > "${TARGET_FILE}"
 
 while true; do

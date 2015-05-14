@@ -1,6 +1,12 @@
 #!/bin/bash
 set -eu
 
+if [ $# = 1 ] && [ $1 = cleanup-apt ]; then
+    CLEANUP_APT=1
+else
+    CLEANUP_APT=0
+fi
+
 # the only difference between build and runtime dependencies is build
 # dependencies are removed after install.
 readonly BUILD_DEPENDENCIES="libtool build-essential intltool gcc-4.8 \
@@ -100,12 +106,14 @@ function build_and_install() {
 }
 
 function cleanup() {
-    local APT_CACHE="/var/lib/apt/lists"
-
     echo ">> Cleaning up..."
-    apt-get purge -y ${BUILD_DEPENDENCIES}
 
-    rm -rf "${GCAB_DIR}" "${MSITOOLS_DIR}" "${APT_CACHE}"/*
+    rm -rf "${GCAB_DIR}" "${MSITOOLS_DIR}" 
+
+    if [ ${CLEANUP_APT} = 1 ]; then
+        apt-get purge -y ${BUILD_DEPENDENCIES}
+        rm -rf /var/lib/apt/lists/*
+    fi
 }
 
 function main() {

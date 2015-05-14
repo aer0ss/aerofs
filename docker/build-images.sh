@@ -15,6 +15,7 @@ DIRS="
 
     ../src/auditor 
     ../src/bunker 
+    ../golang/src/aerofs.com/ca-server
     ../packaging/config 
     ../packaging/charlie 
     data-container 
@@ -31,18 +32,13 @@ DIRS="
     redis 
     ../packaging/repackaging 
     ../packaging/sanity 
-    ../src/sparta 
-    
-    ../src/spsv 
-    
-    ../src/verkehr 
-    ../src/web 
-    ../src/zephyr 
-    
-    ../golang/src/aerofs.com/ca-server
+    ../src/sparta
+    ../src/spsv
     ../golang/src/aerofs.com/ts-probe
+    ../src/verkehr
+    ../src/web
+    ../src/zephyr
 
-    ship/vm/loader 
     ship-aerofs/loader
 "
 

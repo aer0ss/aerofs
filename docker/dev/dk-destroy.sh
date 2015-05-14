@@ -2,5 +2,11 @@
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-"${THIS_DIR}/dk-crane.sh" rm -vf -dall maintenance
-"${THIS_DIR}/dk-crane.sh" rm -vf -dall
+# Rebuild Loader to incorporate any changes on crane.yml
+make -C "${THIS_DIR}/../ship-aerofs/loader"
+
+SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh")"
+
+"${THIS_DIR}/../ship/emulate-rm.sh" "${SHIP_YML}"
+
+rm -f "${SHIP_YML}"

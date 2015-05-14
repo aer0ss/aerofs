@@ -27,9 +27,9 @@ RUN \
     apt-get purge --auto-remove -y $BUILD_PKGS &&\
     rm -rf /var/lib/apt/lists/*
 
-COPY root/opt/msitools/install_msitools /opt/msitools/install_msitools
+COPY buildroot/opt/msitools/install-msitools.sh /opt/msitools/install-msitools.sh
 
-RUN /opt/msitools/install_msitools
+RUN /opt/msitools/install-msitools.sh cleanup-apt
 
 COPY root/opt/repackaging/api/requirements.txt /
 

@@ -4,9 +4,10 @@ from sys import argv, stderr
 from os import walk
 from os.path import isfile
 import subprocess
-import api
-from common import TAG_PATH, MODIFIED_YML_PATH
+from common import TAG_PATH, CRANE_YML_PATH, MODIFIED_YML_PATH
+from crane_yml import modify_yaml
 import loader
+import yaml
 
 
 def install_getty(dest):
@@ -33,6 +34,13 @@ def main():
         for i in loader.get_images():
             print i
 
+    elif argv[1] == 'containers':
+        with open(CRANE_YML_PATH) as f:
+            y = yaml.load(f)
+
+        for key in y['containers']:
+            print key
+
     elif argv[1] == 'tag':
         print loader.get_tag()
 
@@ -56,7 +64,7 @@ def main():
         if len(argv) != 4:
             print >>stderr, "Usage: {} {} <repo> <tag>".format(argv[0], argv[1])
             exit(11)
-        loader.modify_yaml(argv[2], argv[3])
+        modify_yaml(argv[2], argv[3])
         with open(MODIFIED_YML_PATH) as f:
             print f.read()
 

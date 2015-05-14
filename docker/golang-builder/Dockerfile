@@ -19,7 +19,6 @@ RUN apt-get install -y apt-transport-https ca-certificates &&\
     apt-get update &&\
     apt-get install -y lxc-docker-1.5.0
 
-
 COPY root /
 
 ENV GOPATH /gopath

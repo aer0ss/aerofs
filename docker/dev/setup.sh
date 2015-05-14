@@ -18,13 +18,22 @@ Die() {
     exit ${retval}
 }
 
+DEVMAIL=devmail.aerofs.com
+echo "Testing connection to ${DEVMAIL} ..."
 # VPN is required to access devmail during appliance setup
-nc -z -w 2 devmail.aerofs.com 25 >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN for devmail.aerofs.com access"
+nc -z ${DEVMAIL} 25 || Die 22 "ERROR: please connect to VPN for ${DEVMAIL} access"
+
+# Find the appliance's IP
+if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
+    # Use the docker daemon's IP
+    IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
+else
+    # Assuming the script runs in the CI agent container, and the appliance containers run on the same host.
+    # The appliance IP is then the host IP which is the agent container's default route.
+    IP=$(ip route show 0.0.0.0/0 | awk '{print $3}')
+fi
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
-
-IP=$(docker-machine ip docker-dev)
-
 "${THIS_DIR}/../../tools/wait-for-url.sh" ${IP}
 
 info "Configuring AeroFS..."

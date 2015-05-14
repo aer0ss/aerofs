@@ -1,13 +1,14 @@
 #!/bin/bash
-set -ex
 
-(set +e
-    curl ci.arrowfs.org >/dev/null 2>&1
-    [[ $? = 0 ]] || (
-        echo "ERROR: please connect to VPN"
-        exit 22
-    )
-)
+echo "Testing connection to repos.arrowfs.org ..."
+# Need VPN for gradle to download depenencies
+curl -s repos.arrowfs.org/nexus/content/groups/allrepos >/dev/null
+[[ $? = 0 ]] || {
+    echo "ERROR: please connect to VPN for repos.arrowfs.org access"
+    exit 22
+}
+
+set -e
 
 THIS_DIR="$(dirname $0)"
 

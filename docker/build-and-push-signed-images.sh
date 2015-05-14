@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "Testing connection to repos.arrowfs.org ..."
 # Need VPN for gradle to download depenencies
 curl -s repos.arrowfs.org/nexus/content/groups/allrepos >/dev/null
 [[ $? = 0 ]] || {
