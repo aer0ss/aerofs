@@ -21,6 +21,7 @@ DIRS="
     enforcer 
     ejabberd 
     ../src/havre 
+    logrotator
     maintenance-nginx 
     mysql 
     nginx 

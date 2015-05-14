@@ -10,7 +10,7 @@ while true; do
         TARGET="$(curl -sS loader.service/v1/boot | grep '"target":' | awk '{$print $2}' | sed -e 's/"//')"
         if [ "${TARGET}" != maintenance ]; then
             echo "Current target is '${TARGET}'. Rebooting to maintenance..."
-            curl -XPOST loader.service/v1/boot/current/current/maintenance
+            curl -XPOST loader.service/v1/boot/maintenance
         else
             echo "Current target is maintenance. No rebooting required."
         fi

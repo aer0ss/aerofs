@@ -88,6 +88,7 @@ containers:
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
+        - /var/lib/docker/containers:/var/lib/docker/containers
       volumes-from:
         - data
       link:
@@ -330,6 +331,17 @@ containers:
         - web:web.service
         - zephyr:zephyr.service
 
+  logrotator:
+    image: aerofs/logrotator
+    run:
+      detach: true
+      volume:
+        # To rotate docker logs
+        - /var/lib/docker/containers:/var/lib/docker/containers
+      link:
+        # To restart containers after rotating logs
+        - loader:loader.service
+
   maintenance-nginx:
     image: aerofs/maintenance-nginx
     run:
@@ -355,6 +367,7 @@ containers:
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
+        - /var/lib/docker/containers:/var/lib/docker/containers
       volumes-from:
         - data
       link:
@@ -372,6 +385,7 @@ groups:
     - nginx
     - enforcer
     - ejabberd
+    - logrotator
 
   # Bunker relies on this group's name to detect if the system is in maintenance mode.
   maintenance:

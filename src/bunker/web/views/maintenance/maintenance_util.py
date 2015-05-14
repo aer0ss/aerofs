@@ -78,7 +78,7 @@ def format_time(form_value, offset):
     adding 'offset' number of hours - usually to convert to UTC
     """
     local_time = datetime.datetime.strptime(form_value, "%I:%M %p").time()
-    new_hours = local_time.replace(hour = ((local_time.hour + offset) % 24))
+    new_hours = local_time.replace(hour=((local_time.hour + offset) % 24))
     return new_hours.strftime("%H:%M")
 
 
