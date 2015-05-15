@@ -9,7 +9,7 @@ fi
 
 VM=$1
 
-if [ -z "$(docker-machine ls | grep \"${VM}\")" ]
+if [ -z "$(docker-machine ls | grep ${VM})" ]
 then
     docker-machine create -d virtualbox --virtualbox-disk-size 50000 --virtualbox-memory 3072 ${VM}
 

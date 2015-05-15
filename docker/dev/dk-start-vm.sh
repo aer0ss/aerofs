@@ -11,9 +11,9 @@ VM=$1
 
 docker_machine_ls="$(docker-machine ls)"
 
-if [ -n "$(echo $docker_machine_ls | grep \"${VM}\")" ]
+if [ -n "$(echo $docker_machine_ls | grep ${VM})" ]
 then
-    if [ -n "$(echo $docker_machine_ls | grep \"${VM}.*Stopped\")" ]
+    if [ -n "$(echo $docker_machine_ls | grep ${VM}.*Stopped)" ]
     then
         echo "VM ${VM} was not running, starting it..."
         docker-machine start ${VM}
