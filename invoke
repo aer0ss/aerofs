@@ -526,6 +526,10 @@ def test_python(args):
         subprocess.check_call(args, cwd=project_dir)
     print colored("Python tests passed", Colors.GREEN)
 
+def test_go(args):
+    subprocess.check_call([os.path.join(GIT_ROOT, "golang", "tester", "run.sh"), "aerofs.com"])
+    print colored("Go tests passed", Colors.GREEN)
+
 def test_js(args):
     # Generate minified CSS/JS for JS tests
     # Clean first to ensure output folder creation
@@ -676,6 +680,7 @@ commands = {
     "proto": proto,
     "setupenv": setupenv,
     "syncdet": syncdet,
+    "test_go": test_go,
     "test_js": test_js,
     "test_python": test_python,
     "test_system": test_system,

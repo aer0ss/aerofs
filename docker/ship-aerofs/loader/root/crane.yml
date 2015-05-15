@@ -215,6 +215,7 @@ containers:
         - config:config.service
         - mysql:mysql.service
         - redis:redis.service
+        - auditor:auditor.service
         - verkehr:verkehr.service
         - postfix:postfix.service
 

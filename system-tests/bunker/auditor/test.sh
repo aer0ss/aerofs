@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-[[ $# = 1 ]] || ( echo "Usage: $0 <ip>"; exit 11 )
+[[ $# -ge 1 ]] || ( echo "Usage: $0 <ip> [<userid> [<passwd>]]"; exit 11 )
 
 THIS_DIR="$(dirname $0)"
 source "${THIS_DIR}/../../webdriver-lib/utils.sh"
@@ -25,8 +25,13 @@ fi
 
 DOWNSTREAM_PORT=$(docker port ${CONTAINER} | tr ':' ' ' | rev | awk '{print $1}' | rev)
 
+APPLIANCE_IP="$1"
+DEFAULT_USERID="admin@syncfs.com"
+USERID="${2:-$DEFAULT_USERID}"
+shift
+
 # Run the tests
-${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} "$1" -- ${DOWNSTREAM_IP} ${DOWNSTREAM_PORT}
+${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} "${APPLIANCE_IP}" -- ${DOWNSTREAM_IP} ${DOWNSTREAM_PORT} "$@"
 
 info "Validating Audit stream data..."
 OUTPUT="$(docker logs ${CONTAINER})"
@@ -34,7 +39,7 @@ OUTPUT="$(docker logs ${CONTAINER})"
 KEY1='"event":"user.signin"'
 KEY2='"event":"device.mobile.code"'
 KEY3='"event":"device.certify"'
-KEY4='"user":"admin@syncfs.com"'
+KEY4="\"user\":\"${USERID}\""
 
 (
     [[ "$(grep "${KEY1}" <<< "${OUTPUT}")" ]] &&

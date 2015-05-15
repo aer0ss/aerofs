@@ -3,18 +3,16 @@ package main
 import (
 	"aerofs.com/ca-server/cert"
 	"aerofs.com/service"
+	"aerofs.com/service/auth"
 	"aerofs.com/service/mysql"
 	"bytes"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/subtle"
 	"crypto/x509"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/aerofs/httprouter"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -30,12 +28,8 @@ func loadCaCert(db *sql.DB) *cert.CertSigner {
 		switch {
 		case err == sql.ErrNoRows:
 			fmt.Println("creating new key/cert")
-			key, err = rsa.GenerateKey(rand.Reader, 2048)
-			if err != nil {
-				return err
-			}
-			der, err = cert.NewCaCert(key)
-			if err != nil {
+			cn := "AeroFS-" + cert.NewUUID()
+			if key, der, err = cert.GenerateCaCert(cn, 2048); err != nil {
 				return err
 			}
 			_, err = tx.Exec("insert into server_configuration(ca_key, ca_cert) values(?, ?)",
@@ -83,20 +77,6 @@ func setCertificate(db *sql.DB, serial int64, cert []byte) error {
 	})
 }
 
-func ServiceAuth(h httprouter.Handle, secret string) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		l := strings.Fields(r.Header.Get("Authorization"))
-		if len(l) == 3 &&
-			l[0] == "Aero-Service-Shared-Secret" &&
-			subtle.ConstantTimeCompare([]byte(secret), []byte(l[2])) == 1 {
-			h(w, r, ps)
-		} else {
-			w.Header().Set("WWW-Authenticate", "Aero-Service-Shared-Secret realm=AeroFS")
-			http.Error(w, "Missing or invalid authorization", http.StatusUnauthorized)
-		}
-	}
-}
-
 func WriteError(w http.ResponseWriter, msg string, status int) {
 	fmt.Println("error:", msg)
 	http.Error(w, msg, status)
@@ -131,43 +111,6 @@ func cacertHandler(signer *cert.CertSigner, w http.ResponseWriter, r *http.Reque
 	cert.WritePEM(signer.CertDER, w)
 }
 
-type ProxyResponseWriter struct {
-	w          http.ResponseWriter
-	StatusCode int
-}
-
-func (w *ProxyResponseWriter) Header() http.Header { return w.w.Header() }
-func (w *ProxyResponseWriter) Write(d []byte) (int, error) {
-	if w.StatusCode == 0 {
-		w.WriteHeader(http.StatusOK)
-	}
-	return w.w.Write(d)
-}
-func (w *ProxyResponseWriter) WriteHeader(status int) {
-	w.StatusCode = status
-	w.w.WriteHeader(status)
-}
-
-type LoggingHandler struct {
-	h http.Handler
-}
-
-func (h *LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method, r.RequestURI)
-	pw := &ProxyResponseWriter{w: w}
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("panic handling", r.Method, r.RequestURI, ">>", err)
-		} else {
-			fmt.Println(">", pw.StatusCode)
-		}
-		if pw.StatusCode == 0 {
-			pw.WriteHeader(500)
-		}
-	}()
-	h.h.ServeHTTP(pw, r)
-}
-
 func main() {
 	fmt.Println("waiting for deps")
 	service.ServiceBarrier()
@@ -197,15 +140,15 @@ func main() {
 	secret := service.ReadDeploymentSecret()
 
 	router := httprouter.New()
-	router.POST("/prod", ServiceAuth(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	router.POST("/prod", auth.Auth(func(w http.ResponseWriter, r *http.Request, _ auth.Context) {
 		csrHandler(db, signer, w, r)
-	}, secret))
+	}, auth.NewServiceSharedSecretExtractor(secret)))
 	router.GET("/prod/cacert.pem", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		cacertHandler(signer, w, r)
 	})
 
 	fmt.Println("ca-server serving at 9002")
-	err = http.ListenAndServe(":9002", &LoggingHandler{h: router})
+	err = http.ListenAndServe(":9002", service.Log(router))
 	if err != nil {
 		panic("failed: " + err.Error())
 	}

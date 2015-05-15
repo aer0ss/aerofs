@@ -28,13 +28,29 @@ func genKeyId(pub interface{}) ([]byte, error) {
 	return h[:], nil
 }
 
-func NewCaCert(key *rsa.PrivateKey) ([]byte, error) {
-	keyId, err := genKeyId(key.Public())
+func GenerateCaCert(cn string, bits int) (*rsa.PrivateKey, []byte, error) {
+	key, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	der, err := NewCaCert(key, cn)
+	if err != nil {
+		return nil, nil, err
+	}
+	return key, der, nil
+}
+
+func NewUUID() string {
 	uuid := make([]byte, 16)
-	_, err = rand.Read(uuid)
+	_, err := rand.Read(uuid)
+	if err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(uuid)
+}
+
+func NewCaCert(key *rsa.PrivateKey, cn string) ([]byte, error) {
+	keyId, err := genKeyId(key.Public())
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +61,7 @@ func NewCaCert(key *rsa.PrivateKey) ([]byte, error) {
 			Province:     []string{"California"},
 			Locality:     []string{"San Francisco"},
 			Organization: []string{"aerofs.com"},
-			CommonName:   "AeroFS-" + hex.EncodeToString(uuid),
+			CommonName:   cn,
 		},
 		NotBefore:             time.Now().AddDate(0, 0, -1),
 		NotAfter:              time.Now().AddDate(10, 0, 0),
@@ -55,6 +71,9 @@ func NewCaCert(key *rsa.PrivateKey) ([]byte, error) {
 		SubjectKeyId:       keyId,
 		AuthorityKeyId:     keyId,
 		SignatureAlgorithm: x509.SHA256WithRSA,
+	}
+	if ip := net.ParseIP(cn); ip != nil {
+		template.IPAddresses = append(template.IPAddresses, ip)
 	}
 	return x509.CreateCertificate(rand.Reader, template, template, key.Public(), key)
 }
@@ -104,8 +123,7 @@ func (signer *CertSigner) SignCSR(csr *x509.CertificateRequest, serial int64) ([
 			if !at.Type.Equal([]int{2, 5, 4, 3}) {
 				continue
 			}
-			ip := net.ParseIP(at.Value.(string))
-			if ip != nil {
+			if ip := net.ParseIP(at.Value.(string)); ip != nil {
 				template.IPAddresses = append(template.IPAddresses, ip)
 			}
 		}

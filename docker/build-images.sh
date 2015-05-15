@@ -11,7 +11,7 @@ DIRS="
     base/jre8-and-mysql-client
     base/python2.7
 
-    ../src/auditor 
+    ../golang/src/aerofs.com/auditor 
     ../src/bunker 
     ../golang/src/aerofs.com/ca-server
     ../packaging/config 
