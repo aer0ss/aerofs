@@ -19,7 +19,7 @@ Die() {
 }
 
 # VPN is required to access devmail during appliance setup
-nc -z -G 2 devmail.aerofs.com 25 >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN for devmail.aerofs.com access"
+nc -z -w 2 devmail.aerofs.com 25 >/dev/null 2>&1 || Die 22 "ERROR: please connect to VPN for devmail.aerofs.com access"
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
