@@ -79,6 +79,14 @@ mkdir ~/.ssh
 tar -xvf ~/ci-ssh-folder.tar -C ~/.ssh
 ```
 
+To provision / update the public SSH keys of the team, you need to run the `common` playbook of the [Ansible
+provisioning repository](https://github.com/aerofs/ansible-provisioning):
+
+    cd ~/repos
+    git clone git@github.com:aerofs/ansible-provisioning.git provisioning && cd provisioning
+    ansible-playbook common.yml
+    # You may need to pip install ansible to execute the last step
+
 ## Set up VPN Access
 
 The canonical instructions for this live at [here](../references/vpn.html). Assuming these don't change, a summary is here:
