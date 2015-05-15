@@ -29,6 +29,6 @@ then
         echo "VM ${VM} already started."
     fi
 else
-    echo "VM ${VM} does not exist. Please run dk-create."
+    echo "VM ${VM} does not exist. Please run dk-create-vm."
     exit 1
 fi
