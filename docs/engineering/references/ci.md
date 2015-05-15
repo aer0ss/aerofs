@@ -8,7 +8,7 @@ We run a continuous integration test system with TeamCity. A full suite of tests
 
 ## TeamCity
 
-The web interface is available at [https://ci.arrowfs.org](https:ci.arrowfs.org) (accessible on the VPN) or [https://192.168.128.197](https://192.168.128.197) on the LAN.
+The web interface is available at [https://ci.arrowfs.org](https://ci.arrowfs.org) (accessible on the VPN) or [https://192.168.128.197](https://192.168.128.197) on the LAN.
 
 Every employee has his/her own login to TeamCity. Jon Pile set this up, and he should probably be bothered if new accounts need to be created.
 
