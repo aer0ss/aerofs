@@ -218,7 +218,7 @@ You'll need to be on the VPN to complete this step, since it'll pull some packag
      source ~/repos/aerofs/tools/bashrc/include.sh
      # Display the documentation
      dk-help
-     dk-createvm && docker-machine upgrade && dk-create
+     dk-create-vm && docker-machine upgrade && dk-create
 
 The last step may take a while (expect at least 45 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing.
 Especially, see `docker/README.md`.

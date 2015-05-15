@@ -72,4 +72,4 @@ sudo dpkg -i make_3.81.deb && rm make_3.81.deb"
     fi
 fi
 
-yellow_print "Docker tools updated.  Run 'dk-createvm' now if you haven't created a docker-machine VM, or just 'dk-env' to use the rest of the dk-* toolchain."
+yellow_print "Docker tools updated.  Run 'dk-create-vm' now if you haven't created a docker-machine VM, or just 'dk-env' to use the rest of the dk-* toolchain."
