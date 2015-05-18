@@ -186,7 +186,13 @@ def login_second_factor_get(request):
 )
 def login_second_factor_post(request):
     _ = request.translate
-    code = int(request.POST.get(URL_PARAM_CODE), 10)
+
+    try:
+        code = int(request.POST.get(URL_PARAM_CODE))
+    except ValueError:
+        flash_error(request, _("Please enter an integer"))
+        return HTTPFound(request.url)
+
     sp = get_rpc_stub(request)
     # Verify second factor correctness.
     # If correct, redirect to next
