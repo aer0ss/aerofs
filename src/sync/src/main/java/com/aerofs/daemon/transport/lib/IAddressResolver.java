@@ -5,7 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 
 import java.net.SocketAddress;
 

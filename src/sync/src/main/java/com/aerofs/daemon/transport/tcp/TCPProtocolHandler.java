@@ -24,10 +24,10 @@ import java.net.InetSocketAddress;
  */
 final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
 {
-    private final Stores stores;
+    private final TCPStores stores;
     private final Unicast unicast;
 
-    TCPProtocolHandler(Stores stores, Unicast unicast)
+    TCPProtocolHandler(TCPStores stores, Unicast unicast)
     {
         this.stores = stores;
         this.unicast = unicast;

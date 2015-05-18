@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.lib.bf.BFSID;
@@ -67,7 +67,7 @@ public final class TestStores extends AbstractTest
     private final TCP tcp = mock(TCP.class);
     private ARP arp;
     private PresenceService presenceService;
-    private Stores stores;
+    private TCPStores stores;
 
     private class PresenceInfo
     {
@@ -104,7 +104,7 @@ public final class TestStores extends AbstractTest
         when(tcp.getListeningPort()).thenReturn(8888);
         arp = new ARP(mock(IMulticastListener.class));
         presenceService = new PresenceService();
-        stores = new Stores(LOCAL_PEER, tcp, arp, multicast, presenceService);
+        stores = new TCPStores(LOCAL_PEER, tcp, arp, multicast, presenceService);
     }
 
     private void deviceOnline(DID did, InetSocketAddress addr)

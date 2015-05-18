@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -16,7 +16,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
@@ -58,7 +58,7 @@ import static com.aerofs.proto.Transport.PBStream.Type.BEGIN_STREAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-// FIXME (AG): remove direct call from Stores and make this final
+// FIXME (AG): remove direct call from TCPStores and make this final
 public class TCP implements ITransport, IAddressResolver
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
@@ -72,7 +72,7 @@ public class TCP implements ITransport, IAddressResolver
     private final int pref;
     private final ARP arp;
     private final TransportStats transportStats;
-    private final Stores stores;
+    private final TCPStores stores;
     private final Unicast unicast;
     private final Multicast multicast;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
@@ -117,7 +117,7 @@ public class TCP implements ITransport, IAddressResolver
         monitor = new ChannelMonitor(unicast.getDirectory(), timer);
         this.arp = new ARP(monitor);
 
-        this.stores = new Stores(localdid, this, arp, multicast, presenceService);
+        this.stores = new TCPStores(localdid, this, arp, multicast, presenceService);
         multicast.setStores(stores);
 
         ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);

@@ -4,7 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;

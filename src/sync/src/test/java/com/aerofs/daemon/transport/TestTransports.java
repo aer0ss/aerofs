@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;

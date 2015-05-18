@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newConcurrentMap;
 
-// FIXME (AG): Remove call from Stores and make final
+// FIXME (AG): Remove call from TCPStores and make final
 class Multicast implements IMaxcast, ILinkStateListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
@@ -59,7 +59,7 @@ class Multicast implements IMaxcast, ILinkStateListener
     private final int multicastTTL;
     private final long multicastReconnectInterval;
 
-    private Stores stores; // the only reason this isn't final is because of a circular dependency between the two
+    private TCPStores stores; // the only reason this isn't final is because of a circular dependency between the two
     private IMulticastListener multicastListener;
 
     Multicast(DID localdid, TCP tcp, boolean listenToMulticastOnLoopback, MaxcastFilterReceiver maxcastFilterReceiver)
@@ -77,7 +77,7 @@ class Multicast implements IMaxcast, ILinkStateListener
         multicastReconnectInterval = DaemonParam.TCP.RETRY_INTERVAL;
     }
 
-    public void setStores(Stores stores)
+    public void setStores(TCPStores stores)
     {
         this.stores = stores;
     }

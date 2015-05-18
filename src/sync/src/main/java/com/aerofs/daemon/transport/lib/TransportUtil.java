@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import com.aerofs.daemon.transport.ExIOFailed;
-import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.daemon.transport.lib.exceptions.ExIOFailed;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;

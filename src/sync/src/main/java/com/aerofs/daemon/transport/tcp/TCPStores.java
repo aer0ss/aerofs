@@ -34,14 +34,14 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * FIXME (AG): We equate interest with availability here (i.e. interested in store means we have it)
  */
-class Stores implements IStores, IDevicePresenceListener
+class TCPStores implements IStores, IDevicePresenceListener
 {
     private static final int FILTER_SEQ_INVALID = -1;
     private final PresenceService _presenceService;
 
     private static class PerDeviceStoreMembership
     {
-        final int _filterSeqnum; // can be Stores.FILTER_SEQ_INVALID
+        final int _filterSeqnum; // can be TCPStores.FILTER_SEQ_INVALID
         final BFSID _filter;
         final ImmutableSet<SID> _onlineSids;
 
@@ -53,7 +53,7 @@ class Stores implements IStores, IDevicePresenceListener
         }
     }
 
-    private static final Logger l = Loggers.getLogger(Stores.class);
+    private static final Logger l = Loggers.getLogger(TCPStores.class);
 
     //
     // IMPORTANT: access to _all_ fields must be protected by synchronized (this)
@@ -73,7 +73,7 @@ class Stores implements IStores, IDevicePresenceListener
     // Well, the reason why is: we need to know if a given device is actually Available; if we hear
     // a rumor from ARP we don't go tell core about it just for kicks. We wait until the device is
     // actually reachable.
-    Stores(DID did, TCP tcp, ARP arp, Multicast multicast, PresenceService presenceService)
+    TCPStores(DID did, TCP tcp, ARP arp, Multicast multicast, PresenceService presenceService)
     {
         _did = did;
         _tcp = tcp;

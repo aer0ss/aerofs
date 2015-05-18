@@ -2,6 +2,8 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.daemon.lib.ITransferStat;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;

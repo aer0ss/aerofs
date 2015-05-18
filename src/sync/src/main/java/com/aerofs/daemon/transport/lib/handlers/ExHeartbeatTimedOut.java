@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.daemon.transport.ExTransport;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
 
 /**
  * Thrown when the Zephyr heartbeat mechanism times out.

@@ -6,8 +6,8 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

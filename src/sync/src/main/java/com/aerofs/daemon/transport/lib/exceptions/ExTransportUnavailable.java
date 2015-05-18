@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport;
+package com.aerofs.daemon.transport.lib.exceptions;
 
 public final class ExTransportUnavailable extends ExTransport
 {

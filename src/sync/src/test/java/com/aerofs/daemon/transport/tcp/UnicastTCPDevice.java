@@ -78,7 +78,7 @@ public final class UnicastTCPDevice
         ITransport transport = mock(ITransport.class);
         when(transport.id()).thenReturn(transportId);
 
-        Stores stores = mock(Stores.class);
+        TCPStores stores = mock(TCPStores.class);
         addressResolver = mock(IAddressResolver.class);
         unicastListener = spy(new SemaphoreTriggeringListener());
 

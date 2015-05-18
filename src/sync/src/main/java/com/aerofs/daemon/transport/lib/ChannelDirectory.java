@@ -6,8 +6,8 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.proto.Diagnostics.ChannelState;
 import com.google.common.base.Preconditions;

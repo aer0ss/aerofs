@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.testlib.LoggerSetup;
 import org.junit.Test;
 

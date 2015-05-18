@@ -5,9 +5,9 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.transport.ExDeviceUnavailable;
-import com.aerofs.daemon.transport.ExTransport;
-import com.aerofs.daemon.transport.ExTransportUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.ImmutableSet;

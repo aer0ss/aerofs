@@ -6,6 +6,8 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.C;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
+import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.ids.DID;
 
 import java.io.IOException;
@@ -89,7 +91,7 @@ public final class TransportOutputStream extends OutputStream
             if (outgoing == null) {
                 try {
                     outgoing = transport.newOutgoingStream(did);
-                } catch (ExDeviceUnavailable|ExTransportUnavailable e) {
+                } catch (ExDeviceUnavailable |ExTransportUnavailable e) {
                     throw new AssertionError(e);
                 }
             }
