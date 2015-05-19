@@ -146,7 +146,7 @@ public class V2_0_1__import_bifrost_db implements JdbcMigration
             try (ResultSet rs = psSelect.executeQuery()) {
                 ResultSetMetaData md = rs.getMetaData();
                 while (rs.next()) {
-                    String insertQuery = "INSERT INTO " + table + "(" + commaSeparatedColumns + ")" +
+                    String insertQuery = "REPLACE INTO " + table + "(" + commaSeparatedColumns + ")" +
                             " VALUES (" + commaSeparatedQmarks + ")";
                     try (PreparedStatement psInsert = destConn.prepareStatement(insertQuery)) {
                         // SQL parameter and ResultSet indices start at 1.
