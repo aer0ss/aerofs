@@ -26,15 +26,15 @@
             ('Double-click the icon', 'Double click the {} icon in your Applications folder to launch the program!'.format(program))
         ]
     }
-    deb_url = request.static_path('web:installer/' + deb)
-    tgz_url = request.static_path('web:installer/' + tgz)
+    deb_path = request.static_path('web:installer/' + deb)
+    tgz_path = request.static_path('web:installer/' + tgz)
     linux_data = {
         'id': 'linux',
         'name': 'Linux',
-        'url': deb_url,
-        'header_note': 'Non-Ubuntu users can also download the <a href="{}"> tgz archive</a>.'.format(tgz_url),
+        'url': deb_path,
+        'header_note': 'Non-Ubuntu users can also download the <a href="{}"> tgz archive</a>.'.format(tgz_path),
         'steps': [
-            ('Download ' + program, '<strong>Command-line users</strong>: please copy & paste this URL: <code>{}</code> or this URL for the tgz archive: <code>{}</code>'.format(deb_url, tgz_url)),
+            ('Download ' + program, '<strong>Command-line users</strong>: please copy & paste this URL: <code><span class="host-url"></span>{}</code> or this URL for the tgz archive: <code><span class="host-url"></span>{}</code>'.format(deb_path, tgz_path)),
             ('Install ' + program, 'Use your favorite package manager to install the deb package, or simply uncompress the tgz archive.'),
             ('Run ' + program, 'Click Applications > Internet > {0} and run! Or use <code>$ {1}</code> to start {0} daemon process, and <code>$ {2}</code> to access its functions interactively.'.format(program, cli, sh))
         ]
@@ -85,3 +85,11 @@
         </div>
     </div>
 </%def>
+
+<%block name="scripts">
+    <script>
+        $(document).ready(function() {
+            $('.host-url').text(window.location.protocol + "//" + window.location.hostname);
+        });
+    </script>
+</%block>
