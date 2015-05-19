@@ -84,6 +84,9 @@ public class V2_0_1__import_bifrost_db implements JdbcMigration
             "AuthorizationRequest_requestedScopes",
             "accesstoken",
             "AccessToken_scopes",
+
+            // one day Hibernate shall burn and our hearts will overflow with sheer joy
+            "hibernate_sequence"
     };
 
     private static void migrateDbContent(Connection sourceConn, Connection destConn)
