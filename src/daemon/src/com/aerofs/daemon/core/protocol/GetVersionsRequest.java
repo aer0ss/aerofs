@@ -7,6 +7,10 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.*;
 import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -75,6 +79,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
     private final IMapSIndex2SID _sidx2sid;
     private final IPulledDeviceDatabase _pulleddb;
     private final MapSIndex2Contributors _sidx2contrib;
+    private final TokenManager _tokenManager;
     private final LocalACL _lacl;
     private final CfgLocalUser _cfgLocalUser;
 
@@ -82,7 +87,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
     public GetVersionsRequest(Metrics m,
             TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb,
-            IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
+            IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, TokenManager tokenManager,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
     {
         _m = m;
@@ -93,6 +98,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
         _pulleddb = pddb;
+        _tokenManager = tokenManager;
         _sidx2contrib = sidx2contrib;
         _lacl = lacl;
         _cfgLocalUser = cfgLocalUser;
@@ -339,6 +345,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         private final int _rpcid;
         private final String _msgType;
         private ByteArrayOutputStream _os;
+        private Token _tk;
 
         private OutgoingStream _stream;     // null for atomic messages
         private boolean _streamOkay;        // invalid for atomic messages
@@ -361,13 +368,20 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
             ByteArrayOutputStream os2 = write_(_os, block);
 
             if (os2 != _os) {
-                if (_stream == null) {
-                    _stream = _ep.tp().newOutgoingStream(_ep.did());
+                if (_tk == null) {
+                    _tk = _tokenManager.acquireThrows_(Cat.SERVER, "gv:" + _ep);
                 }
-
                 if (iter != null) iter.close_();
-                _stream.write(_os.toByteArray());
-                _os = os2;
+                TCB tcb = _tk.pseudoPause_("gv:" + _ep);
+                try {
+                    if (_stream == null) {
+                        _stream = _ep.tp().newOutgoingStream(_ep.did());
+                    }
+                    _stream.write(_os.toByteArray());
+                    _os = os2;
+                } finally {
+                    tcb.pseudoResumed_();
+                }
             }
         }
 
@@ -389,11 +403,15 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
          */
         void cleanup_()
         {
+            if (_tk != null) {
+                _tk.reclaim_();
+            }
             if (_stream != null) {
                 if (_streamOkay) {
                     l.trace("{} finish sending blocks over {}", _ep.did(), _ep.tp());
                 } else {
-                    l.warn("{} abort sending blocks over {} err:{}", _ep.did(), _ep.tp(), _cause != null ? _cause : "unknown");
+                    l.warn("{} abort sending blocks over {} err:{}", _ep.did(), _ep.tp(),
+                            _cause != null ? _cause : "unknown");
                     _stream.abort(InvalidationReason.INTERNAL_ERROR);
                 }
                 _stream.close();
