@@ -64,6 +64,7 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         // Perform database migration (with implicit initialization)
         Flyway flyway = new Flyway();
         flyway.setDataSource(ds);
+        flyway.setValidateOnMigrate(false);
         flyway.setBaselineOnMigrate(true);
         flyway.setSchemas("aerofs_sp");
         flyway.migrate();

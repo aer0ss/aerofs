@@ -29,6 +29,7 @@ public class V2_0_1__import_bifrost_db implements JdbcMigration
             Flyway bifrostFlyway = new Flyway();
             bifrostFlyway.setDataSource(ds);
             bifrostFlyway.setBaselineOnMigrate(true);
+            bifrostFlyway.setValidateOnMigrate(false);
             bifrostFlyway.setSchemas("bifrost");
             bifrostFlyway.setLocations("legacybifrostdb/migration");
             bifrostFlyway.migrate();

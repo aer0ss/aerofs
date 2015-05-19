@@ -305,6 +305,7 @@ public class SPServlet extends AeroServlet
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);
+        flyway.setValidateOnMigrate(false);
         flyway.setBaselineOnMigrate(true);
         flyway.setSchemas("aerofs_sp");
         flyway.migrate();
