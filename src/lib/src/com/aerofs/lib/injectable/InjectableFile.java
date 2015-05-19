@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -20,6 +19,7 @@ import java.nio.file.Files;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.IReadableFile;
 import com.aerofs.lib.ProgressIndicators;
@@ -237,6 +237,28 @@ public class InjectableFile implements IReadableFile
 
     public void moveInSameFileSystem(InjectableFile to) throws IOException
     {
+        // This is really fucking gross but sometimes Windows is just being
+        // terribly terribly annoying and rename fail for no apparent reason,
+        // presumably because some other application (antivirus for instance)
+        // is watching file changes and temporarily holding a file lock at
+        // just the wrong time.
+        // Retrying the operation a few times should hopefully mask that
+        // stupid behavior and prevent the mistaken creation of CNROs
+        if (_factory._osutil.getOSFamily() == OSFamily.WINDOWS) {
+            for (int i = 0; i < 4; ++i) {
+                try {
+                    FileUtil.moveInSameFileSystem(winSafe(), to.winSafe());
+                    return;
+                } catch (IOException e) {
+                    // don't retry if there's a good reason for the move to fail
+                    if (!exists() || to.exists()) throw e;
+                }
+                Loggers.getLogger(InjectableFile.class).info("retry rename {} {}", this, to);
+                try {
+                    Thread.sleep(5L);
+                } catch (InterruptedException e) {}
+            }
+        }
         FileUtil.moveInSameFileSystem(winSafe(), to.winSafe());
     }
 
