@@ -13,4 +13,7 @@ sed -e "s/MYSQL_PASSWORD/$MYSQL_PASSWD/g" \
     -e "s/MYSQL_URL/$MYSQL_URL/g" \
     polaris.yml.tmplt > polaris.yml
 java -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/polaris -Xmx1536m \
+    -Dio.netty.allocator.numHeapArenas=0 -Dio.netty.allocator.numDirectArenas=0  \
+    -Dio.netty.allocator.tinyCacheSize=0 -Dio.netty.allocator.smallCacheSize=0   \
+    -Dio.netty.allocator.normalCacheSize=0 -Dio.netty.allocator.maxOrder=7       \
     -jar aerofs-polaris.jar polaris.yml
