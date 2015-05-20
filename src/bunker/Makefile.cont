@@ -93,9 +93,6 @@ $(ROOT)/web/views/maintenance/templates/setup/apply_page.mako: web/views/mainten
 $(ROOT)/web/views/maintenance/maintenance_view.py: web/views/maintenance/maintenance_view.py maintenance_view.docker.patch
 	$(call patch,$@,$<,maintenance_view)
 
-$(ROOT)/web/views/maintenance/__init__.py: web/views/maintenance/__init__.py maintenance_init.docker.patch
-	$(call patch,$@,$<,maintenance_init)
-
 $(BACKUP_SH): ../../packaging/db-backup/usr/bin/aerofs-db-backup backup.sh.docker.patch
 	$(call patch,$@,$<,backup.sh)
 

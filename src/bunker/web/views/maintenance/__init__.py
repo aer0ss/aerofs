@@ -14,6 +14,14 @@ routes = [
     'json_upload_backup',
     'json_setup_finalize',
 
+    'json-get-boot',
+    'json-repackaging',
+    'json-set-configuration-initialized',
+    'json-backup',
+    'json-restore',
+    'json-archive-container-logs',
+    'json-status',
+
     # Bootstrap
     'json_enqueue_bootstrap_task',
     'json_get_bootstrap_task_status',
@@ -51,12 +59,14 @@ routes = [
     'autocomplete',
     'json_upload_additional_users',
 
-    # Routes referred to by nginx.
     'maintenance_mode',
-    'license_expired'
+    'license_expired',
+    'redirect'
 ]
 
 
 def includeme(config):
     add_routes(config, routes)
     config.add_route('maintenance_home', '/')
+
+    config.add_route('json-boot', 'json-boot/{target}')
