@@ -268,7 +268,7 @@ public final class Zephyr implements ITransport
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS, true));
+                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
 
         try {
             xmppServerStatus.setReachable(xmppConnectionService.isReachable());
@@ -283,7 +283,7 @@ public final class Zephyr implements ITransport
 
         ServerStatus.Builder zephyrServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(zephyrAddress, true));
+                .setServerAddress(fromInetSockAddress(zephyrAddress));
 
         try {
             zephyrServerStatus.setReachable(zephyrConnectionService.isReachable());

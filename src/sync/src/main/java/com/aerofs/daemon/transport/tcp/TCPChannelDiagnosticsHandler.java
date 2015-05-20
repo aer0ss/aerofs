@@ -46,7 +46,7 @@ final class TCPChannelDiagnosticsHandler extends SimpleChannelHandler implements
 
         InetSocketAddress address = (InetSocketAddress) channel.getRemoteAddress();
         if (address != null) {
-            channelBuilder.setRemoteAddress(TransportUtil.fromInetSockAddress(address, false));
+            channelBuilder.setRemoteAddress(TransportUtil.fromInetSockAddress(address));
         } else {
             // FIXME (AG): according to the netty codebase this can happen sometimes on Windows when the socket is closed. I'm suspicious.
             newMetric(TransportDefects.DEFECT_NAME_NULL_REMOTE_ADDRESS)

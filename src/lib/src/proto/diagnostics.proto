@@ -137,8 +137,7 @@ message ServerStatus {
 
 message PBInetSocketAddress {
     optional string host = 1;
-    optional string resolved_host = 2;
-    optional uint32 port = 3;
+    optional uint32 port = 2;
 }
 
 //-----------------------------------------------------------------------------

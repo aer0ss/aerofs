@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
 import java.net.Socket;
@@ -83,44 +82,16 @@ public abstract class TransportUtil
         return a.getAddress() + ":" + a.getPort();
     }
 
-    public static PBInetSocketAddress fromInetSockAddress(InetSocketAddress a, boolean resolveName)
+    public static PBInetSocketAddress fromInetSockAddress(InetSocketAddress a)
     {
         checkNotNull(a);
 
         PBInetSocketAddress.Builder builder = PBInetSocketAddress
                 .newBuilder()
-                .setHost(a.getHostName())
+                .setHost(a.getHostString())
                 .setPort(a.getPort());
 
-        if (resolveName) {
-            String resolved = getResolvedAddress(a);
-            if (resolved != null) builder.setResolvedHost(resolved);
-        }
-
         return builder.build();
-    }
-
-    /**
-     * Attempts to return a resolved address, and if not, null
-     */
-    public static @Nullable String getResolvedAddress(InetSocketAddress a)
-    {
-        checkNotNull(a);
-
-        InetAddress resolved = null;
-
-        if (a.isUnresolved()) {
-            String host = a.getHostName();
-            try {
-                resolved = InetAddress.getByName(host);
-            } catch (UnknownHostException e) {
-                l.warn("fail name resolution host:{}", host);
-            }
-        } else {
-            resolved = a.getAddress();
-        }
-
-        return (resolved == null ? null : resolved.getHostAddress());
     }
 
     public static Socket newConnectedSocket(InetSocketAddress serverAddress, int ioTimeout)

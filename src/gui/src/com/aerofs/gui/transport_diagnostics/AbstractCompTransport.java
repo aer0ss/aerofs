@@ -72,18 +72,12 @@ public abstract class AbstractCompTransport extends Composite
         layout();
     }
 
-    protected static String formatAddress(PBInetSocketAddress address, boolean includeResolvedHost)
+    protected static String formatAddress(PBInetSocketAddress address)
     {
         Preconditions.checkArgument(address.hasHost() && address.hasPort());
 
         StringBuilder output = new StringBuilder()
                 .append(address.getHost());
-
-        if (includeResolvedHost) {
-            output.append('/')
-                    .append(address.hasResolvedHost() ? address.getResolvedHost()
-                            : "cannot be resolved");
-        }
 
         output.append(':').append(address.getPort());
 
@@ -97,7 +91,7 @@ public abstract class AbstractCompTransport extends Composite
         // only show server status details in private deployment
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             return new StringBuilder()
-                    .append(formatAddress(status.getServerAddress(), true))
+                    .append(formatAddress(status.getServerAddress()))
                     .append(" (")
                     .append(status.getReachable() ? "connected" : "disconnected")
                     .append(")")

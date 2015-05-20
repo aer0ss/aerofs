@@ -368,7 +368,7 @@ public class TCP implements ITransport, IAddressResolver
             TCPDevice.Builder deviceBuilder = TCPDevice
                     .newBuilder()
                     .setDid(BaseUtil.toPB(did))
-                    .setDeviceAddress(TransportUtil.fromInetSockAddress(arp1.remoteAddress, false));
+                    .setDeviceAddress(TransportUtil.fromInetSockAddress(arp1.remoteAddress));
 
             for (Message message : unicast.getChannelDiagnostics(did)) {
                 deviceBuilder.addChannel((TCPChannel) message);

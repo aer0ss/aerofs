@@ -118,7 +118,7 @@ public class CompTCP extends AbstractCompTransport
             TCPDiagnostics d = (TCPDiagnostics) data;
 
             _lblStatus.setText(L.product() + " is listening on IP Address "
-                    + formatAddress(d.getListeningAddress(), false));
+                    + formatAddress(d.getListeningAddress()));
             _tblDevices.setData(d.getReachableDevicesList());
         }
     }
