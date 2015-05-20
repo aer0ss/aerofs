@@ -10,7 +10,7 @@ image: .gradle $(DST_DIR)/polaris.yml.tmplt
 	../../tools/lazy-copy.sh ../../out.gradle/polaris/dist $(DST_DIR)
 
 $(DST_DIR)/polaris.yml.tmplt: src/dist/polaris.yml.tmplt
-	sed -e 's|url: http://localhost:9079|url: http://verkehr.service:9079|' \
+	sed -e 's|url: http://localhost:25234|url: http://verkehr.service:25234|' \
 		-e 's|url: http://localhost:8085|url: http://sparta.service:8085|' \
 		-e 's/localhost/0.0.0.0/' $< > $@
 

@@ -1,6 +1,8 @@
 admin:
   host: localhost
   port: 9299
+  numNetworkThreads: 2
+  numRequestProcessingThreads: 2
 
 service:
   host: localhost

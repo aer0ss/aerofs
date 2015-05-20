@@ -1,10 +1,14 @@
 admin:
   host: localhost
   port: 8087
+  numNetworkThreads: 2
+  numRequestProcessingThreads: 2
 
 service:
   host: localhost
   port: 8086
+  numNetworkThreads: 2
+  numRequestProcessingThreads: 5
 
 database:
   username: MYSQL_USER
