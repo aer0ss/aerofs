@@ -142,7 +142,8 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             handle_(msg);
         } catch (Exception e) {
-            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e));
+            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e,
+                    ExDeviceOffline.class, ExBadCredential.class));
             _iss.end_(key);
         }
     }
