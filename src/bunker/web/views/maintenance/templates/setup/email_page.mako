@@ -171,7 +171,7 @@
                     <input id="verification-code" name="verification-code" type="text">
                 </form>
                 <br>
-                <p>Need help troubleshooting? Consult our <a href="https://support.aerofs.com/hc/en-us/articles/204356114" target="_blank">help center documentation</a>.</p>
+                <p>Need help troubleshooting? Consult our <a href="https://support.aerofs.com/hc/en-us/articles/204862440" target="_blank">help center documentation</a>.</p>
             </div>
             <div class="modal-footer">
                 <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
