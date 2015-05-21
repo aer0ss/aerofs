@@ -5,6 +5,7 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
@@ -20,6 +21,7 @@ import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
 import com.aerofs.rest.auth.OAuthToken;
 import com.aerofs.oauth.Scope;
+import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
@@ -66,6 +68,7 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -104,13 +107,13 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final String ADMIN = "admin";
     private static final String OTHER = "other";
 
-    @Mock VerkehrClient verkehrClient;
+    private static final VerkehrClient verkehrClient = mock(VerkehrClient.class);
+    private static final CommandDispatcher commandDispatcher = mock(CommandDispatcher.class);
+    protected static final PasswordManagement passwordManagement = mock(PasswordManagement.class);
     @Mock ACLNotificationPublisher aclNotificationPublisher;
     @Mock AuditClient auditClient;
-    @Mock CommandDispatcher commandDispatcher;
-    @Mock PasswordManagement passwordManagement;
 
-    private final SPDatabaseParams dbParams = new SPDatabaseParams();
+    private static final SPDatabaseParams dbParams = new SPDatabaseParams();
 
     protected SQLThreadLocalTransaction sqlTrans;
     protected User.Factory factUser;
@@ -159,10 +162,31 @@ public class AbstractResourceTest extends AbstractBaseTest
 
         when(sessionFactory.openSession()).thenReturn(session);
 
+        when(verkehrClient.publish(anyString(), any(byte[].class)))
+                .thenAnswer(invocation -> {
+                    SettableFuture<Void> f = SettableFuture.create();
+                    f.set(null);
+                    return f;
+                });
+
+        when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
+                invocation -> {
+                    SettableFuture<Void> f = SettableFuture.create();
+                    f.set(null);
+                    return f;
+                }
+        );
+
+        when(commandDispatcher.getVerkehrClient()).thenReturn(verkehrClient);
+
+        ElapsedTimer t = new ElapsedTimer();
+
         // start OAuth service
         bifrost = new Bifrost(bifrostInjector(), deploymentSecret);
         bifrost.start();
         l.info("OAuth service at {}", bifrost.getListeningPort());
+
+        System.out.println("started bifrost in " + t.elapsed());
 
         String bifrostUrl =
                 "http://localhost:" + bifrost.getListeningPort() + "/tokeninfo";
@@ -177,6 +201,9 @@ public class AbstractResourceTest extends AbstractBaseTest
         RestAssured.config = RestAssuredConfig.config()
                 .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
                         .gsonObjectMapperFactory(new GOMF()));
+
+        LocalTestDatabaseConfigurator.resetDB(new BifrostDatabaseParams());
+        LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
     }
 
     private static class GOMF implements GsonObjectMapperFactory {
@@ -229,7 +256,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         return inj;
     }
 
-    private Injector spartaInjector() throws Exception
+    private static Injector spartaInjector() throws Exception
     {
         return Guice.createInjector(
                 Sparta.spartaModule(new HashedWheelTimer(), new NioClientSocketChannelFactory()),
@@ -250,24 +277,6 @@ public class AbstractResourceTest extends AbstractBaseTest
     @Before
     public void setUp() throws Exception
     {
-        LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
-
-        when(verkehrClient.publish(anyString(), any(byte[].class)))
-                .thenAnswer(invocation -> {
-                    SettableFuture<Void> f = SettableFuture.create();
-                    f.set(null);
-                    return f;
-                });
-
-        when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
-                invocation -> {
-                    SettableFuture<Void> f = SettableFuture.create();
-                    f.set(null);
-                    return f;
-                }
-        );
-        when(commandDispatcher.getVerkehrClient()).thenReturn(verkehrClient);
-
         inj = spartaInjector();
         sqlTrans = inj.getInstance(SQLThreadLocalTransaction.class);
         factUser = inj.getInstance(User.Factory.class);
@@ -275,6 +284,11 @@ public class AbstractResourceTest extends AbstractBaseTest
         factDevice = inj.getInstance(Device.Factory.class);
 
         sqlTrans.begin();
+        try (Statement s = sqlTrans.getConnection().createStatement()) {
+            for (String table : SPDatabaseParams.TABLES) {
+                s.execute("delete from sp_" + table);
+            }
+        }
         User u = factUser.create(user);
         u.save(new byte[0], new FullName("User", "Foo"));
         User o = factUser.create(other);

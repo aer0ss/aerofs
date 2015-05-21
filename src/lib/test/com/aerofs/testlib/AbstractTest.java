@@ -7,6 +7,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.mockito.Mock;
 
 public abstract class AbstractTest extends AbstractBaseTest
@@ -28,8 +29,8 @@ public abstract class AbstractTest extends AbstractBaseTest
         MockDefects.init(_defectFactory, _defect);
     }
 
-    @Before
-    public void setupApproot()
+    @BeforeClass
+    public static void setupApproot()
     {
         // N.B. this is needed to run unit tests in IntelliJ. Otherwise, we may trip an assertion
         //   when initializing Cfg because AppRoot is not set.

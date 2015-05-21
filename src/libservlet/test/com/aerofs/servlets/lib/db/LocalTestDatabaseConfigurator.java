@@ -21,7 +21,7 @@ public class LocalTestDatabaseConfigurator
      */
     private static int runBashCommand(String command)
             throws IOException, InterruptedException
-   {
+    {
         Runtime runtime = Runtime.getRuntime();
 
         Process p = runtime.exec(new String[]{"/bin/bash", "-c", command});
@@ -30,49 +30,43 @@ public class LocalTestDatabaseConfigurator
         return p.exitValue();
     }
 
+    public static void resetDB(DatabaseParameters params)
+            throws IOException, InterruptedException
+    {
+        String reset = String.format(
+                "%s/mysql -u%s -h%s -p%s -e \"delete from mysql.proc where db='%s' and " +
+                        "type='PROCEDURE'; drop schema if exists %s; create database if not exists %s\"",
+                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(), params.getMySQLPass(),
+                params.getMySQLDatabaseName(), params.getMySQLDatabaseName(), params.getMySQLDatabaseName());
+
+        l.info("setting up database schema");
+
+        if (runBashCommand(reset) != 0) {
+            throw new RuntimeException("failed to reset db (cmd: " + reset + ")");
+        }
+    }
+
     /**
      * Sets up a local MySQL database based on the given JUnitDatabaseParameters instance.
      *
      * TODO: in-memory db would be nice...
      */
     public static void initializeLocalDatabase(DatabaseParameters params)
-            throws SQLException, ClassNotFoundException, InterruptedException, IOException
-    {
-        String dropProcedures = String.format(
-                 "%s/mysql -u%s -h%s -p%s -e \"delete from mysql.proc where db='%s' and " +
-                         "type='PROCEDURE'\"",
-                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
-                params.getMySQLPass(), params.getMySQLDatabaseName());
-
-        String dropDatabase = String.format("%s/mysql -u%s -h%s -p%s -e 'drop schema if exists %s'",
-                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
-                params.getMySQLPass(), params.getMySQLDatabaseName());
-
-        String createDatabase = String.format(
-                "%s/mysql -u%s -h%s -p%s -e 'create database if not exists %s'",
-                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
-                params.getMySQLPass(), params.getMySQLDatabaseName());
-
-        l.info("setting up database schema");
-
-        if (runBashCommand(dropProcedures) != 0) {
-            throw new RuntimeException("failed to drop pr (cmd: " + dropProcedures + ")");
-        }
-
-        if (runBashCommand(dropDatabase) != 0) {
-            throw new RuntimeException("failed to drop db (cmd: " + dropDatabase + ")");
-        }
-
-        if (runBashCommand(createDatabase) != 0) {
-            throw new RuntimeException("failed to make db (cmd: " + createDatabase  + ")");
-        }
-
+            throws SQLException, ClassNotFoundException, InterruptedException, IOException {
         Flyway flyway = new Flyway();
         flyway.setDataSource("jdbc:mysql://" + params.getMySQLHost() + "/" + params.getMySQLDatabaseName(),
                 params.getMySQLUser(), params.getMySQLPass());
         flyway.setBaselineOnMigrate(true);
+        flyway.setValidateOnMigrate(false);
         flyway.setLocations("filesystem:" + params.getMySQLSchemaPath());
         flyway.setSchemas(params.getMySQLDatabaseName());
+
+        try {
+            flyway.migrate();
+            return;
+        } catch (Throwable e) {}
+
+        resetDB(params);
         flyway.migrate();
     }
 }

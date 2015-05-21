@@ -14,10 +14,7 @@ import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class AbstractBaseTest
 {
@@ -71,8 +68,6 @@ public class AbstractBaseTest
             guess *= 2;
             if (guess <= 0) guess = Integer.MAX_VALUE;
         }
-        List<Thread> list = new ArrayList<>(count);
-        for (int i = 0; i < count; ++i) list.add(threads[i]);
-        return list;
+        return Arrays.asList(threads);
     }
 }

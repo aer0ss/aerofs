@@ -4,8 +4,7 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.AppRoot;
-import com.aerofs.servlets.lib.db.ExDbInternal;
+import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
@@ -14,9 +13,11 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.mockito.Spy;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * This test class sets up SP database schema before running each test, and clean up
@@ -24,7 +25,7 @@ import java.sql.SQLException;
  */
 public class AbstractTestWithDatabase extends AbstractTest
 {
-    private final SPDatabaseParams dbParams = new SPDatabaseParams();
+    private static final SPDatabaseParams dbParams = new SPDatabaseParams();
 
     // @Spy is needed for subclasses to @InjectMocks
     @Spy protected final SQLThreadLocalTransaction sqlTrans =
@@ -35,20 +36,26 @@ public class AbstractTestWithDatabase extends AbstractTest
     @Spy protected JedisThreadLocalTransaction jedisTrans =
             new JedisThreadLocalTransaction(jedisProvider);
 
-    @Before
-    public void setupAbstractTestWithDatabaseSchema()
+    @BeforeClass
+    public static void commonSetup()
             throws Exception
     {
-        // This is to workaround Labeling class initialization issues in various derived classes.
-        AppRoot.set("/not-exist");
-
+        LocalTestDatabaseConfigurator.resetDB(new BifrostDatabaseParams());
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
     }
 
     @Before
-    public void setupAbstractTestWithDatabaseJedis()
-            throws ExDbInternal
+    public void dbSetup()
+            throws Exception
     {
+        sqlTrans.begin();
+        try (Statement s = sqlTrans.getConnection().createStatement()) {
+            for (String table : SPDatabaseParams.TABLES) {
+                s.execute("delete from sp_" + table);
+            }
+        }
+        sqlTrans.commit();
+
         jedisProvider.init_("localhost", 6379, null);
 
         jedisTrans.begin();

@@ -44,12 +44,6 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
         {
             return "transaction_test";
         }
-
-        @Override
-        public String getMySQLSchemaName()
-        {
-            return "transaction_test.sql";
-        }
     }
 
    private final DatabaseParameters _dbParams = new TransactionTestDatabaseParams();

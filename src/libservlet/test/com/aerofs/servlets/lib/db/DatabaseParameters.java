@@ -86,5 +86,4 @@ public abstract class DatabaseParameters
 
     public abstract String getMySQLDatabaseName();
     public abstract String getMySQLSchemaPath();
-    public abstract String getMySQLSchemaName();
 }
