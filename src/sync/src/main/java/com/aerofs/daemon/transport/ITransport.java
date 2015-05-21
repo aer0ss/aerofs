@@ -11,9 +11,9 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 
 // FIXME (AG): this API is deprecated and will broken up.
 /**
- * Implemented by classes that provide a message transport mechanism.
+ * Implemented by classes that provide a message transport mechanism and a presence locator.
  */
-public interface ITransport extends ITransferStat
+public interface ITransport extends ITransferStat, IPresenceLocator
 {
     /**
      * Initialize internal state for the transport.

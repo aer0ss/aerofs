@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -116,20 +117,28 @@ public final class TransportResource extends ExternalResource
         SSLEngineFactory clientSSLEngineFactory = newClientSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
         SSLEngineFactory serverSSLEngineFactory = newServerSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
 
+
+        XMPPConnectionService xmppConnectionService = new XMPPConnectionService(
+                DID.generate(),
+                InetSocketAddress.createUnresolved("localhost", 5222),
+                "arrowfs.org",
+                "u",
+                scrypted,
+                2 * C.SEC,
+                2,
+                1 * C.SEC,
+                5 * C.SEC,
+                linkStateService
+        );
+
         // [sigh] It's stupid to have to create this every time. I think it should be injected in
         // too bad JUnit doesn't allow nested @Rule definitions
         TransportFactory transportFactory = new TransportFactory(
                 userID,
                 did,
-                scrypted,
                 30 * C.SEC,
                 true,
-                InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
-                2 * C.SEC,
-                2,
-                1 * C.SEC,
-                5 * C.SEC,
                 10 * C.SEC,
                 90 * C.SEC,
                 3,
@@ -144,7 +153,8 @@ public final class TransportResource extends ExternalResource
                 serverSocketChannelFactory,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
-                roundTripTimes
+                roundTripTimes,
+                xmppConnectionService
         );
 
         transport = transportFactory.newTransport(transportType, transportId, 1);

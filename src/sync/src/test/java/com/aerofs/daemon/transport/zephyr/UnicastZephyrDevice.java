@@ -77,7 +77,7 @@ public final class UnicastZephyrDevice
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org",
                 ThreadLocalRandom.current().nextInt(10)));
 
-        xmppConnectionService = new XMPPConnectionService("z", did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, linkStateService);
+        xmppConnectionService = new XMPPConnectionService(did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", new byte[]{0}, 1000, 2, 1000, 5000, linkStateService);
 
         StreamManager streamManager = new StreamManager(30 * C.SEC);
         TransportStats transportStats = new TransportStats();

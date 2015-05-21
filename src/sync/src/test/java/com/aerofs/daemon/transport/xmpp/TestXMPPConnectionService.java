@@ -107,7 +107,6 @@ public final class TestXMPPConnectionService
     public void setup()
     {
         xmppConnectionService = new XMPPConnectionService(
-                "test",
                 DID.generate(),
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
@@ -300,7 +299,6 @@ public final class TestXMPPConnectionService
         int linkStateChangePingInterval = 8000;
 
         xmppConnectionService = new XMPPConnectionService(
-                "test",
                 DID.generate(),
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",

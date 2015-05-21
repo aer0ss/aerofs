@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.IPresenceLocator;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
@@ -31,6 +32,7 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.aerofs.proto.Transport;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -41,6 +43,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
@@ -59,6 +62,7 @@ public final class Zephyr implements ITransport
 
     private final String id;
     private final int rank; // FIXME (AG): why does the transport need to know its own preference
+    private final DID localdid;
 
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
@@ -79,7 +83,6 @@ public final class Zephyr implements ITransport
     public Zephyr(
             UserID localid,
             DID localdid,
-            byte[] scrypted,
             long streamTimeout,
             String id,
             int rank,
@@ -90,18 +93,14 @@ public final class Zephyr implements ITransport
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             Timer timer,
-            InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
-            long xmppServerConnectionLinkStateChangePingInterval,
-            int numPingsBeforeDisconnectingXmppServerConnection,
-            long xmppServerConnectionInitialReconnectInterval,
-            long xmppServerConnectionMaxReconnectInterval,
             long heartbeatInterval,
             int maxFailedHeartbeats,
             long zephyrHandshakeTimeout,
             InetSocketAddress zephyrAddress,
             Proxy proxy,
-            IRoundTripTimes roundTripTimes)
+            IRoundTripTimes roundTripTimes,
+            XMPPConnectionService xmppConnectionService)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 
@@ -116,19 +115,9 @@ public final class Zephyr implements ITransport
 
         this.id = id;
         this.rank = rank;
+        this.localdid = localdid;
 
-        this.xmppConnectionService = new XMPPConnectionService(
-                id,
-                localdid,
-                xmppServerAddress,
-                xmppServerDomain,
-                id,
-                scrypted,
-                xmppServerConnectionLinkStateChangePingInterval,
-                numPingsBeforeDisconnectingXmppServerConnection,
-                xmppServerConnectionInitialReconnectInterval,
-                xmppServerConnectionMaxReconnectInterval,
-                linkStateService);
+        this.xmppConnectionService = xmppConnectionService;
 
         this.XMPPMulticast = new XMPPMulticast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
                 xmppConnectionService, this, outgoingEventSink);
@@ -246,6 +235,18 @@ public final class Zephyr implements ITransport
         // will be reflected when sending the payload data below
         Channel channel = (Channel)zephyrConnectionService.send(did, TransportProtocolUtil.newControl(h), null);
         return streamManager.newOutgoingStream(sk, channel);
+    }
+
+    /**
+     * Return the Zephyr locations
+     *
+     * @return The list of presence locations
+     */
+    @Override
+    public Collection<IPresenceLocation> getPresenceLocations() {
+        // We have the Zephyr IP and port
+        // And we only have one location (one Zephyr server)
+        return ImmutableList.of(new ZephyrPresenceLocation(localdid, zephyrAddress));
     }
 
     @Override

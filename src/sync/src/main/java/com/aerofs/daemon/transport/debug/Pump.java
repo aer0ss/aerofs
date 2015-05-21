@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -177,18 +178,25 @@ public final class Pump implements IProgram, IUnicastInputLayer
         ClientSocketChannelFactory clientChannelFactory = getClientChannelFactory();
         ServerSocketChannelFactory serverChannelFactory = getServerChannelFactory();
         IRoundTripTimes roundTripTimes = new RoundTripTimes();
-        return new TransportFactory(
-                localid.get(),
+        XMPPConnectionService xmppConnectionService = new XMPPConnectionService(
                 localdid.get(),
-                scrypted.get(),
-                Cfg.timeout(),
-                false,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
+                TransportFactory.TransportType.ZEPHYR.toString(),
+                scrypted.get(),
                 5 * C.SEC,
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,
                 LibParam.EXP_RETRY_MAX_DEFAULT,
+                linkStateService
+        );
+
+        return new TransportFactory(
+                localid.get(),
+                localdid.get(),
+                Cfg.timeout(),
+                false,
+                BaseParam.XMPP.getServerDomain(),
                 DaemonParam.DEFAULT_CONNECT_TIMEOUT,
                 DaemonParam.HEARTBEAT_INTERVAL,
                 DaemonParam.MAX_FAILED_HEARTBEATS,
@@ -203,7 +211,8 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 serverChannelFactory,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
-                roundTripTimes);
+                roundTripTimes,
+                xmppConnectionService);
     }
 
     @Override

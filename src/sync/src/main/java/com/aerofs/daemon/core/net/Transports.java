@@ -17,6 +17,7 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
@@ -76,18 +77,26 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             IRoundTripTimes roundTripTimes)
             throws ExUnsupportedTransport
     {
-        TransportFactory transportFactory = new TransportFactory(
-                localid.get(),
+
+        XMPPConnectionService xmpp = new XMPPConnectionService(
                 localdid.get(),
-                scrypted.get(),
-                Cfg.timeout(),
-                false,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
+                TransportFactory.TransportType.ZEPHYR.toString(),
+                scrypted.get(),
                 5 * C.SEC,
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,
                 LibParam.EXP_RETRY_MAX_DEFAULT,
+                linkStateService
+        );
+
+        TransportFactory transportFactory = new TransportFactory(
+                localid.get(),
+                localdid.get(),
+                Cfg.timeout(),
+                false,
+                BaseParam.XMPP.getServerDomain(),
                 DaemonParam.DEFAULT_CONNECT_TIMEOUT,
                 DaemonParam.HEARTBEAT_INTERVAL,
                 DaemonParam.MAX_FAILED_HEARTBEATS,
@@ -102,16 +111,20 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 serverSocketChannelFactory,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
-                roundTripTimes);
+                roundTripTimes,
+                xmpp);
 
-        ImmutableList.Builder<ITransport> bd = ImmutableList.builder();
+        ImmutableList.Builder<ITransport> transportBuilder = ImmutableList.builder();
         if (enabledTransports.isTcpEnabled()) {
-            bd.add(transportFactory.newTransport(LANTCP));
+            transportBuilder.add(transportFactory.newTransport(LANTCP));
         }
         if (enabledTransports.isZephyrEnabled()) {
-            bd.add(transportFactory.newTransport(ZEPHYR));
+            transportBuilder.add(transportFactory.newTransport(ZEPHYR));
         }
-        availableTransports = bd.build();
+        availableTransports = transportBuilder.build();
+        // The XMPPConnectionService needs to know the list of locators (=transports)
+        // that can be used to gather presence locations for the local DID
+        xmpp.addLocators(availableTransports);
     }
 
     public Collection<ITransport> getAll()

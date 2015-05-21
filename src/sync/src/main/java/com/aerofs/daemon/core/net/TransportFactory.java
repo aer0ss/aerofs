@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -61,15 +62,9 @@ public final class TransportFactory
 
     private final UserID userID;
     private final DID did;
-    private final byte[] scrypted;
     private final long streamTimeout;
     private final boolean listenToMulticastOnLoopback;
-    private final InetSocketAddress xmppServerAddress;
     private final String xmppServerDomain;
-    private final long xmppServerConnectionLinkStateChangePingInterval;
-    private final int numPingsBeforeDisconnectingXmppServerConnection;
-    private final long xmppServerConnectionInitialReconnectInterval;
-    private final long xmppServerConnectionMaxReconnectInterval;
     private final long channelConnectTimeout;
     private final long heartbeatInterval;
     private final int maxFailedHeartbeats;
@@ -85,19 +80,14 @@ public final class TransportFactory
     private final SSLEngineFactory serverSslEngineFactory;
     private final SSLEngineFactory clientSslEngineFactory;
     private final IRoundTripTimes roundTripTimes;
+    private final XMPPConnectionService xmppConnectionService;
 
     public TransportFactory(
             UserID userID,
             DID did,
-            byte[] scrypted,
             long streamTimeout,
             boolean listenToMulticastOnLoopback,
-            InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
-            long xmppServerConnectionLinkStateChangePingInterval,
-            int numPingsBeforeDisconnectingXmppServerConnection,
-            long xmppServerConnectionInitialReconnectInterval,
-            long xmppServerConnectionMaxReconnectInterval,
             long channelConnectTimeout,
             long hearbeatInterval,
             int maxFailedHeartbeats,
@@ -112,19 +102,14 @@ public final class TransportFactory
             ServerSocketChannelFactory serverSocketChannelFactory,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
-            IRoundTripTimes roundTripTimes)
+            IRoundTripTimes roundTripTimes,
+            XMPPConnectionService xmppConnectionService)
     {
         this.userID = userID;
         this.did = did;
-        this.scrypted = scrypted;
         this.streamTimeout = streamTimeout;
         this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
-        this.xmppServerAddress = xmppServerAddress;
         this.xmppServerDomain = xmppServerDomain;
-        this.xmppServerConnectionLinkStateChangePingInterval = xmppServerConnectionLinkStateChangePingInterval;
-        this.numPingsBeforeDisconnectingXmppServerConnection = numPingsBeforeDisconnectingXmppServerConnection;
-        this.xmppServerConnectionInitialReconnectInterval = xmppServerConnectionInitialReconnectInterval;
-        this.xmppServerConnectionMaxReconnectInterval = xmppServerConnectionMaxReconnectInterval;
         this.channelConnectTimeout = channelConnectTimeout;
         this.heartbeatInterval = hearbeatInterval;
         this.maxFailedHeartbeats = maxFailedHeartbeats;
@@ -140,6 +125,7 @@ public final class TransportFactory
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.roundTripTimes = roundTripTimes;
+        this.xmppConnectionService = xmppConnectionService;
     }
 
     public ITransport newTransport(TransportType transportType, String transportId, int transportRank)
@@ -161,7 +147,7 @@ public final class TransportFactory
         return newTransport(transportType, transportType.getId(), transportType.getRank());
     }
 
-    private ITransport newLanTcp(String transportId, int transportRank)
+    private TCP newLanTcp(String transportId, int transportRank)
     {
         return new TCP(
                 userID,
@@ -189,7 +175,6 @@ public final class TransportFactory
         return new Zephyr(
                 userID,
                 did,
-                scrypted,
                 streamTimeout,
                 transportId,
                 transportRank,
@@ -200,17 +185,13 @@ public final class TransportFactory
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
                 timer,
-                xmppServerAddress,
                 xmppServerDomain,
-                xmppServerConnectionLinkStateChangePingInterval,
-                numPingsBeforeDisconnectingXmppServerConnection,
-                xmppServerConnectionInitialReconnectInterval,
-                xmppServerConnectionMaxReconnectInterval,
                 heartbeatInterval,
                 maxFailedHeartbeats,
                 zephyrHandshakeTimeout,
                 zephyrServerAddress,
                 proxy,
-                roundTripTimes);
+                roundTripTimes,
+                xmppConnectionService);
     }
 }

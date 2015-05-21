@@ -62,7 +62,7 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from TCPStores and make this final
-public class TCP implements ITransport, IAddressResolver, IPresenceLocator
+public class TCP implements ITransport, IAddressResolver
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 

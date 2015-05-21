@@ -2,6 +2,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.ids.DID;
+import com.google.gson.JsonObject;
 
 
 /**
@@ -24,8 +25,33 @@ public interface IPresenceLocation
     TransportType transportType();
 
     /**
-     * Serialize the location to a String (JSON formatted)
+     * Serialize the location to a String
      * @return the serialized location
      */
     String exportLocation();
+
+    /**
+     * Returns the version of the data formatting
+     * When data used to describe the location is updated, the version should increase.
+     *
+     * 3 digits versions, beginning at 100.
+     *  minor updates preserving backward compatibility (adding a field) increase unites (101, 102...)
+     *  major updates non backward-compatible should increase hundreds (102 -> 200)
+     *
+     * @return the version
+     */
+    int version();
+
+    /**
+     * Returns a Json Object containing the location, the transport, and the format version
+     * @return the Json Object representing the location
+     */
+    default JsonObject toJson()
+    {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("version", version());
+        obj.addProperty("transport", transportType().toString());
+        obj.addProperty("location", exportLocation());
+        return obj;
+    }
 }

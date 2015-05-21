@@ -1,4 +1,5 @@
 import logging
+import json
 
 from sleekxmpp import ClientXMPP
 from sleekxmpp.exceptions import IqError, IqTimeout
@@ -102,7 +103,9 @@ class EchoBot(ClientXMPP):
                 for item in items['disco_items']['items']:
                     logging.info('  - %s' % str(item))
                     vcard = self['xep_0054'].get_vcard(item[0], cached=False)
-                    logging.info('    > %s' % vcard['vcard_temp']['DESC'])
+                    raw_desc = vcard['vcard_temp']['DESC']
+                    if raw_desc:
+                        logging.info('    > %s' % json.loads(raw_desc))
                     logging.debug(vcard)
 
         finally:

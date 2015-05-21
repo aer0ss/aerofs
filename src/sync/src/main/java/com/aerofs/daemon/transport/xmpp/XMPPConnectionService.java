@@ -8,7 +8,8 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.polaris.GsonUtil;
+import com.aerofs.daemon.transport.IPresenceLocator;
+import com.aerofs.daemon.transport.lib.IPresenceLocation;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPvCard;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
@@ -18,6 +19,7 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonArray;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
@@ -29,13 +31,10 @@ import org.jivesoftware.smack.packet.Packet;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -114,9 +113,9 @@ public final class XMPPConnectionService implements ILinkStateListener
     private final Listeners<IXMPPConnectionServiceListener> _listeners = Listeners.create();
     private final LinkStateService linkStateService;
     private final ExecutorService executor;
+    private final List<IPresenceLocator> presenceLocators;
 
     public XMPPConnectionService(
-            String transportId,
             DID localdid,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
@@ -139,13 +138,24 @@ public final class XMPPConnectionService implements ILinkStateListener
         this.maxPingsBeforeDisconnection = maxPingsBeforeDisconnection;
         this.initialConnectRetryInterval = initialConnectRetryInterval;
         this.maxConnectRetryInterval = maxConnectRetryInterval;
-        this.timer = new Timer(transportId + "-pt", true);
+        this.timer = new Timer("x-pt", true);
         this.linkStateService = linkStateService;
+        this.presenceLocators = new ArrayList<>();
 
         ThreadFactory vCardThreadFactory = r -> new Thread(r, "x-vcard");
         this.executor = Executors.newSingleThreadExecutor(vCardThreadFactory);
 
         linkStateService.addListener(this, sameThreadExecutor()); // our implementation of onLinkStateChanged is thread-safe
+    }
+
+    /**
+     * Add a list of PresenceLocators that can be used to gather presence locations
+     * for the local DID.
+     *
+     * @param locators The list of Locators
+     */
+    public void addLocators(List<? extends IPresenceLocator> locators) {
+        presenceLocators.addAll(locators);
     }
 
     public void start()
@@ -536,9 +546,20 @@ public final class XMPPConnectionService implements ILinkStateListener
     {
         // We don't want this call to be blocking, so we run it on another thread
         this.executor.execute(() -> {
+            // Initialize a new vCard
             XMPPvCard card = new XMPPvCard();
-            card.setMetadata(GsonUtil.GSON.toJson(linkStateService.getCurrentIPs().stream()
-                    .map(InetAddress::getHostAddress).toArray()));
+
+            // Build a JSON Array
+            JsonArray jsonArray = new JsonArray();
+            for (IPresenceLocator locator: presenceLocators) {
+                for (IPresenceLocation location: locator.getPresenceLocations()) {
+                    jsonArray.add(location.toJson());
+                }
+            }
+
+            // Save the metadata
+            card.setMetadata(jsonArray.toString());
+
             try {
                 card.save(connection);
             } catch (Throwable e) {
