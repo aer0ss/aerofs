@@ -54,6 +54,7 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
     public void setup()
             throws Exception
     {
+        LocalTestDatabaseConfigurator.resetDB(_dbParams);
         LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
     }
 
