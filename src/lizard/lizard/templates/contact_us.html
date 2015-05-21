@@ -9,7 +9,8 @@
 
 <form role="form" class="form-horizontal" action="" method="post">
     {{ form.hidden_tag() }}
-    {{ render_field(form.message, rows=8, autofocus=true, type="textarea", class="form-control") }}
+    {{ render_field(form.subject, rows=1, autofocus=true, type="textarea", class="form-control") }}
+    {{ render_field(form.message, rows=8, autofocus=false, type="textarea", class="form-control") }}
     {{ submit_button("Send", horizontal=true) }}
 </form>
 {% endblock %}

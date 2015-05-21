@@ -132,8 +132,7 @@ def send_password_reset_email(email_address, link):
     msg = _password_reset_email_for(email_address, link)
     _send_email(email_address, msg)
 
-def send_private_cloud_question_email(requester, message):
-    subject = "[Private Cloud Question] - {}".format(requester)
+def send_private_cloud_question_email(requester, subject, message):
     text_body = message
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject

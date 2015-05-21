@@ -86,7 +86,8 @@ class ReleaseForm(Form):
     release_version = TextField('Version', validators = [InputRequired()])
 
 class ContactForm(Form):
-    message = TextAreaField("Your Message", validators=[InputRequired()])
+    subject = TextAreaField("Subject", validators=[InputRequired()])
+    message = TextAreaField("Message", validators=[InputRequired()])
 
 class AllAccountsSearchForm(Form):
     search_terms = TextField('Search Terms')

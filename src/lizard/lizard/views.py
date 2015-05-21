@@ -789,7 +789,7 @@ def contact_us():
         'email': markupsafe.escape(login.current_user.email),
     })
     if form.validate_on_submit():
-        notifications.send_private_cloud_question_email(user.email, form.message.data)
-        flash(u"Message sent successfully.  We'll be in touch.", 'success')
+        notifications.send_private_cloud_question_email(user.email, form.subject.data, form.message.data)
+        flash(u"Message sent successfully. An AeroFS representative will be in touch shortly.", 'success')
         return redirect(url_for(".dashboard"))
     return render_template("contact_us.html", form=form)
