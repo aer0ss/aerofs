@@ -1,7 +1,6 @@
 from pyramid.view import view_config
 import re
-from web import is_private_deployment
-from web.version import get_private_version, get_public_version
+from web.version import get_private_version
 
 _URL_PARAM_OS = 'os'
 
@@ -22,6 +21,18 @@ def download(request):
 )
 def download_team_server(request):
     return _download(request, True)
+
+
+@view_config(
+    route_name='download_sccm',
+    renderer='download_sccm.mako',
+    permission='admin',
+)
+def download_sccm(request):
+    path = 'AeroFSInstall-{}.msi'.format(get_private_version(request.registry.settings))
+    return {
+        'url':  request.static_url('web:installer/{}'.format(path))
+    }
 
 
 def _download(request, is_team_server):
@@ -76,12 +87,7 @@ def downloading_team_server(request):
 
 def _downloading(request, program, exe, dmg, deb, tgz, cli, sh):
     os = request.params.get('os')
-
-    if is_private_deployment(request.registry.settings):
-        version = get_private_version(request.registry.settings)
-    else:
-        version = get_public_version(request.registry.settings)
-
+    version = get_private_version(request.registry.settings)
     return {
         'os': os if os else _get_browser_os(request),
         'program': program,

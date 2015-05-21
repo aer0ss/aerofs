@@ -5,6 +5,7 @@ config.loader.configuration_service_url=https://{{ base_host }}:4433/config/clie
 config.loader.base_ca_certificate={{ base_ca_cert }}
 
 base.www.url=https://{{ base_host }}
+base.installers.url=https://{{ base_host }}/static/installers
 base.sp.url=https://{{ base_host }}:4433/sp/
 base.verkehr.host={{ base_host }}
 base.verkehr.port.pb=29438

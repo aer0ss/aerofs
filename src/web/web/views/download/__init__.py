@@ -5,3 +5,5 @@ def includeme(config):
 
     config.add_route('downloading', 'downloading')
     config.add_route('downloading_team_server', 'downloading_team_server')
+
+    config.add_route('download_sccm', 'download_sccm')

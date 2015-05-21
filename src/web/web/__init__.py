@@ -14,9 +14,8 @@ def main(global_config, **settings):
     This function returns a Pyramid WSGI application.
     """
 
-    if settings['deployment.mode'] == 'private':
-        configuration = Configuration(settings['deployment.config_server_uri'], service_name='web')
-        settings.update(configuration.server_properties())
+    configuration = Configuration(settings['deployment.config_server_uri'], service_name='web')
+    settings.update(configuration.server_properties())
 
     # Import template directories from views
     # TODO (WW) don't do this. Use renderer="<module>:templates/foo.mako" instead
@@ -45,7 +44,7 @@ def main(global_config, **settings):
 
     # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
-    config.add_static_view(settings['installer.prefix'], 'installer')
+    config.add_static_view(settings['base.installers.url'], 'installer')
 
     # Use different home page for private and public deployment
     if is_private_deployment(settings):

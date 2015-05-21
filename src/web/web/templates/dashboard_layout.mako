@@ -186,7 +186,7 @@
             ${render_admin_org_links()}
         </ul>
         %if is_private_deployment(request.registry.settings):
-            <li class="nav-header">My Appliance</li>
+            <li class="nav-header">My Deployment</li>
             <ul>
                 <li><a href='javascript:gotoMaintenance()' id="mng-link">Manage</a></li>
                 <script>
@@ -196,6 +196,7 @@
                         window.location.assign("http://" + window.location.hostname + ":8484");
                     }
                 </script>
+                <li><a href="${request.route_path('download_sccm')}">Enterprise Deployment</a></li>
             </ul>
         %endif
     </ul>

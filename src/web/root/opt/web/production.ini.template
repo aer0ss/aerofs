@@ -21,9 +21,6 @@ pyramid.default_locale_name = en
 mako.directories = web:templates
 # Where static assets are hosted
 static.prefix = static
-# Where installer packages are hosted (aka cache.client.aerofs.com)
-# Note that using https://cache... would cause the browser to complain cert errors
-installer.prefix = static/installers
 
 # Session factory settings
 # see http://beaker.readthedocs.org/en/latest/configuration.html#session-options

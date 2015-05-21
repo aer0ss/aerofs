@@ -9,7 +9,7 @@
     win_data = {
         'id': 'win',
         'name': 'Windows',
-        'url': request.static_path('web:installer/' + exe),
+        'url': request.static_url('web:installer/' + exe),
         'steps': [
             ('Run the installer', 'Click on the .exe file that just downloaded.'),
             ('Click Yes', 'Click Yes to accept the User Account Control settings dialog.'),
@@ -19,22 +19,22 @@
     osx_data = {
         'id': 'osx',
         'name': 'Mac OS X',
-        'url': request.static_path('web:installer/' + dmg),
+        'url': request.static_url('web:installer/' + dmg),
         'steps': [
             ('Run the installer', 'Click on the .dmg file that just downloaded.'),
             ('Drag the icon', 'Drag the {} icon into your Applications folder to copy it to your computer.'.format(program)),
             ('Double-click the icon', 'Double click the {} icon in your Applications folder to launch the program!'.format(program))
         ]
     }
-    deb_path = request.static_path('web:installer/' + deb)
-    tgz_path = request.static_path('web:installer/' + tgz)
+    deb_url = request.static_url('web:installer/' + deb)
+    tgz_url = request.static_url('web:installer/' + tgz)
     linux_data = {
         'id': 'linux',
         'name': 'Linux',
-        'url': deb_path,
-        'header_note': 'Non-Ubuntu users can also download the <a href="{}"> tgz archive</a>.'.format(tgz_path),
+        'url': deb_url,
+        'header_note': 'Non-Ubuntu users can also download the <a href="{}"> tgz archive</a>.'.format(tgz_url),
         'steps': [
-            ('Download ' + program, '<strong>Command-line users</strong>: please copy & paste this URL: <code><span class="host-url"></span>{}</code> or this URL for the tgz archive: <code><span class="host-url"></span>{}</code>'.format(deb_path, tgz_path)),
+            ('Download ' + program, '<strong>Command-line users</strong>: please copy & paste this URL: <code>{}</code> or this URL for the tgz archive: <code>{}</code>'.format(deb_url, tgz_url)),
             ('Install ' + program, 'Use your favorite package manager to install the deb package, or simply uncompress the tgz archive.'),
             ('Run ' + program, 'Click Applications > Internet > {0} and run! Or use <code>$ {1}</code> to start {0} daemon process, and <code>$ {2}</code> to access its functions interactively.'.format(program, cli, sh))
         ]
@@ -85,11 +85,3 @@
         </div>
     </div>
 </%def>
-
-<%block name="scripts">
-    <script>
-        $(document).ready(function() {
-            $('.host-url').text(window.location.protocol + "//" + window.location.hostname);
-        });
-    </script>
-</%block>
