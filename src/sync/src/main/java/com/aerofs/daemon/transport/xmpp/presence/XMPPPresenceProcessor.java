@@ -5,7 +5,6 @@
 package com.aerofs.daemon.transport.xmpp.presence;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.xmpp.XMPPMetadataService;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.ids.SID;
@@ -24,11 +23,11 @@ import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.Presence;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.aerofs.base.id.JabberID.muc2sid;
 import static com.aerofs.base.id.JabberID.user2did;
 import static com.aerofs.lib.event.Prio.LO;
@@ -64,8 +63,6 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
-    private XMPPMetadataService xmppMetadataService;
-
     /**
      * Constructor
      */
@@ -84,12 +81,10 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     @Override
     public void xmppServerConnected(final XMPPConnection connection) throws XMPPException
     {
-        // Grab the connection: we will need it when we receive a presence packet to retrieve the other user's vCard
-        xmppMetadataService = new XMPPMetadataService(connection);
         connection.addPacketListener(packet -> {
             if (packet instanceof Presence) {
                 try {
-                    processPresence((Presence)packet);
+                    processPresence((Presence)packet, connection);
                 } catch (Exception e) {
                     l.warn("{} fail process presence over {}", packet.getFrom(), transportId,
                             suppress(e, ExInvalidID.class));
@@ -125,12 +120,13 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     boolean processPresenceForUnitTests(Presence presence)
             throws ExInvalidID
     {
-        return processPresence(presence);
+        return processPresence(presence, null);
     }
 
     // return 'true' if processed, 'false' otherwise
     // the return aids in unit tests
-    private boolean processPresence(Presence presence) throws ExInvalidID
+    private boolean processPresence(Presence presence, @Nullable XMPPConnection connection)
+            throws ExInvalidID
     {
         if (l.isTraceEnabled()) l.trace("receive presence p:{}", presence.toXML());
 
@@ -143,11 +139,34 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
 
-        checkState(xmppMetadataService != null);
-        String metadata = xmppMetadataService.get(presence.getFrom());
-        l.warn("Found metadata: {}", metadata);
+        String metadata = fetchVCard(connection, presence.getFrom());
+        if (!metadata.isEmpty()) {
+            l.info("Found metadata for {}: {}", did, metadata);
+        }
 
         return (did.equals(localdid)) ? false : updateStores(presence.isAvailable(), did, sid);
+    }
+
+
+    /**
+     * Retrieve a vCard metadata for a given JID
+     *
+     * @param jid the JID of the user we want the metadata
+     * @return The Metadata String, or an empty string if an error occurred
+     */
+    private static String fetchVCard(@Nullable XMPPConnection connection, String jid)
+    {
+        // should only be null for tests
+        if (connection == null) return "";
+        try {
+            XMPPvCard card = new XMPPvCard();
+            // Read the given vCard
+            card.load(connection, jid);
+            return card.readMetadata();
+        } catch (Throwable e) {
+            l.warn("Unable to retrieve the vCard for JID {}", jid, e);
+            return "";
+        }
     }
 
     private boolean updateStores(boolean available, DID did, SID sid)

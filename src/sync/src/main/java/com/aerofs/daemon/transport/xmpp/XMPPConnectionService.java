@@ -8,6 +8,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPvCard;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
-import com.amazonaws.util.json.JSONArray;
 import com.google.common.collect.ImmutableSet;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
@@ -268,13 +268,14 @@ public final class XMPPConnectionService implements ILinkStateListener
                 safeDisconnect(connectionToCheck);
             }
             connect(false);
-        } else if (wasUp && linkUp && connected && !removed.isEmpty() && outstandingPings.isEmpty()) {
-            schedulePing(connectionToCheck, 1);
-        }
-
-        if (linkUp && connected) {
-            // If we are connected, attach the vCard
-            addVCard(connection);
+        } else if (wasUp && linkUp && connected) {
+            if (!removed.isEmpty() && outstandingPings.isEmpty()) {
+                schedulePing(connectionToCheck, 1);
+            }
+            // if the connection was already valid but interfaces have changed, update vcard
+            if (!added.isEmpty() || !removed.isEmpty()) {
+                addVCard(connectionToCheck);
+            }
         }
     }
 
@@ -536,16 +537,12 @@ public final class XMPPConnectionService implements ILinkStateListener
         // We don't want this call to be blocking, so we run it on another thread
         this.executor.execute(() -> {
             XMPPvCard card = new XMPPvCard();
-            // Format the array
-            JSONArray jsonArray = new JSONArray();
-            for (InetAddress addr : linkStateService.getCurrentIPs()) {
-                jsonArray.put(addr.getHostAddress());
-            }
-            card.setMetadata(jsonArray.toString());
+            card.setMetadata(GsonUtil.GSON.toJson(linkStateService.getCurrentIPs().stream()
+                    .map(InetAddress::getHostAddress).toArray()));
             try {
                 card.save(connection);
-            } catch (XMPPException e) {
-                l.error("Error when attaching the vCard to the XMPPConnection: {}", e.getMessage());
+            } catch (Throwable e) {
+                l.warn("Error attaching vCard", e);
             }
         });
     }
