@@ -82,7 +82,6 @@
 
 <%def name="require_reinstall()">
     require users to reinstall AeroFS desktop apps and relink mobile apps.
-    <a href="https://support.aerofs.com/entries/22711364" target="_blank">Read more</a>.
 </%def>
 
 <%def name="scripts()">
