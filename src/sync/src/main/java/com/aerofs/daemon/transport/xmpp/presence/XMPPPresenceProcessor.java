@@ -139,8 +139,8 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
 
-        String metadata = fetchVCard(connection, presence.getFrom());
-        if (!metadata.isEmpty()) {
+        @Nullable String metadata = fetchVCard(connection, presence.getFrom());
+        if (metadata != null && !metadata.isEmpty()) {
             l.info("Found metadata for {}: {}", did, metadata);
         }
 
@@ -154,10 +154,10 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
      * @param jid the JID of the user we want the metadata
      * @return The Metadata String, or an empty string if an error occurred
      */
-    private static String fetchVCard(@Nullable XMPPConnection connection, String jid)
+    private static @Nullable String fetchVCard(@Nullable XMPPConnection connection, String jid)
     {
         // should only be null for tests
-        if (connection == null) return "";
+        if (connection == null) return null;
         try {
             XMPPvCard card = new XMPPvCard();
             // Read the given vCard
@@ -165,7 +165,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             return card.readMetadata();
         } catch (Throwable e) {
             l.warn("Unable to retrieve the vCard for JID {}", jid, e);
-            return "";
+            return null;
         }
     }
 

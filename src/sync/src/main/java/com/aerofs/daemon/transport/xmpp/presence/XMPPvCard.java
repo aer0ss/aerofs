@@ -2,6 +2,8 @@ package com.aerofs.daemon.transport.xmpp.presence;
 
 import org.jivesoftware.smackx.packet.VCard;
 
+import javax.annotation.Nullable;
+
 /**
  * We are storing metadata for each device (=XMPP user) on his vCard.
  * This uses the XEP0054: http://xmpp.org/extensions/xep-0054.html
@@ -25,7 +27,7 @@ public class XMPPvCard extends VCard
      * Retrieve the payload that may have been stored inside the vCard
      * @return the payload
      */
-    public String readMetadata()
+    public @Nullable String readMetadata()
     {
         return this.getField(FIELD_NAME);
     }
