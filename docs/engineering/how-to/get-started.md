@@ -83,7 +83,7 @@ It'll prompt you before it does anything, but the defaults are sane.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
+    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
@@ -109,6 +109,7 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `apt-cacher-ng` is used to speed up local prod VM builds.
   * `ruby` and `kramdown` are used by tools/markdown_watch.sh to compile .md files into .html
   * `makensis` is used to build Windows installers
+  * `gpg` is used for license files and needed to run python unit tests.
   * `gpgme` is a library wrapping gpg, which we use for license file generation/verification
   * `jekyll` is used to build the API docs, which are part of the web package
   * `pyyaml` is used for SyncDET to parse yaml files.
