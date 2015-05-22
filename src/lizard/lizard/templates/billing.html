@@ -46,30 +46,6 @@
 
 {% block content %}
 <div class="row">
-    <h2>Payment History</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Receipt #</th>
-                <th>Amount ($)</th>
-                <th>Date</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-          {% for charge in charges %}
-          <tr>
-              <td><a href="{{ url_for('.receipt', id=charge.id) }}" target="_blank">{{ charge.receipt_number }}</a></td>
-              <td><p>{{ (charge.amount / 100)  | format_currency }}</p></td>
-              <td>{{ charge.created | timestamp_to_date | date }} </td>
-              <td>{{ charge.status }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="row">
   <h2>Credit Card Information</h2>
   <div class="col-sm-5">
     <div class="row">
