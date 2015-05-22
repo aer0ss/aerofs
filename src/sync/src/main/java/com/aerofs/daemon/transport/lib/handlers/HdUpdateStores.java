@@ -1,14 +1,15 @@
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOUpdateStores;
+import com.aerofs.daemon.transport.lib.IStores;
 import com.aerofs.lib.event.Prio;
 
-class HdUpdateStores implements IEventHandler<EOUpdateStores> {
+public class HdUpdateStores implements IEventHandler<EOUpdateStores> {
 
     private final IStores stores;
 
-    HdUpdateStores(IStores stores)
+    public HdUpdateStores(IStores stores)
     {
         this.stores = stores;
     }

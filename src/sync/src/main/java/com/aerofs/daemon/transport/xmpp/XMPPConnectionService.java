@@ -490,15 +490,15 @@ public final class XMPPConnectionService implements ILinkStateListener
             // showed it's not reliable. See also newXMPPConnection()
             addXMPPConnectionDisconnectionListener(newConnection);
 
-            // for legacy reasons (basically I don't have time to refactor the code) Multicast
-            // accesses connection directly. Since Multicast runs on a different thread the moment we
-            // assign a new value to connection it _may_ be accessed by Multicast (i.e. even before
+            // for legacy reasons (basically I don't have time to refactor the code) XMPPMulticast
+            // accesses connection directly. Since XMPPMulticast runs on a different thread the moment we
+            // assign a new value to connection it _may_ be accessed by XMPPMulticast (i.e. even before
             // a listener is added
 
             connection = newConnection; // this is the point at which changes are visible
 
             // I would prefer to only set connection _after_ calling listener.connected, but apparently
-            // Multicast.java uses connection() internally...
+            // XMPPMulticast.java uses connection() internally...
             for (IXMPPConnectionServiceListener listener : _listeners) {
                 listener.xmppServerConnected(newConnection);
             }

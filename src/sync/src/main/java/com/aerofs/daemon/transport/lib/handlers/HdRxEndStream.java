@@ -1,7 +1,9 @@
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
+import com.aerofs.daemon.transport.lib.StreamKey;
+import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 

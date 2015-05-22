@@ -15,6 +15,10 @@ import java.util.Map;
 import static com.aerofs.daemon.transport.lib.TransportUtil.prettyPrint;
 import static com.google.common.collect.Maps.newConcurrentMap;
 
+/**
+ * This class stores a list of DID-IP associations, similar to the ARP table
+ * storing MAC-IP associations
+ */
 // TODO: A new IP will override any previously-known IP, which sucks; bad data displaces good. Make this a multimap.
 final class ARP
 {

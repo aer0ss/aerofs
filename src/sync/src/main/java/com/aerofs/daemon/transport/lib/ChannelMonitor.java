@@ -73,7 +73,7 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
 
     /**
      * When a channel goes down and takes a device offline, we opportunistically try to reconnect.
-     * This goes on as long as the Multicast system says the device is still around.
+     * This goes on as long as the XMPPMulticast system says the device is still around.
      */
     @Override
     public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)

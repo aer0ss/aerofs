@@ -152,7 +152,7 @@ public class TCP implements ITransport, IAddressResolver, IPresenceLocator
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // For TCP only, the link state listeners have a strange (and bad) interdependency.
-        // The Multicast class controls whether we are sending/receiving tcp ping/pong traffic, and
+        // The XMPPMulticast class controls whether we are sending/receiving tcp ping/pong traffic, and
         // winds up talking to ARP.
         // The Unicast infrastructure does bad things if it is asked to deal with a peer before the
         // link state (suspended/resumed) flag has been updated internally.

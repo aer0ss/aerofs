@@ -10,6 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
+import com.aerofs.daemon.transport.xmpp.multicast.XMPPMulticast;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
-import com.aerofs.daemon.transport.xmpp.multicast.Multicast;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPPresenceProcessor;
 import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -65,7 +65,7 @@ public final class Zephyr implements ITransport
     private final Scheduler scheduler;
 
     private final StreamManager streamManager;
-    private final Multicast multicast;
+    private final XMPPMulticast XMPPMulticast;
     private final XMPPConnectionService xmppConnectionService;
 
     private final InetSocketAddress zephyrAddress;
@@ -130,7 +130,7 @@ public final class Zephyr implements ITransport
                 xmppServerConnectionMaxReconnectInterval,
                 linkStateService);
 
-        this.multicast = new Multicast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
+        this.XMPPMulticast = new XMPPMulticast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
                 xmppConnectionService, this, outgoingEventSink);
         PresenceService presenceService = new PresenceService();
 
@@ -167,16 +167,16 @@ public final class Zephyr implements ITransport
         presenceService.addListener(monitor);
 
         // WARNING: it is very important that XMPPPresenceProcessor listen to XMPPConnectionService
-        // _before_ Multicast. The reason is that Multicast will join the chat rooms and this will trigger
-        // sending the presence information. So if we add Multicast as a listener first, the presence
+        // _before_ XMPPMulticast. The reason is that XMPPMulticast will join the chat rooms and this will trigger
+        // sending the presence information. So if we add XMPPMulticast as a listener first, the presence
         // information will already be sent by the time the presence manager registers to get them.
         xmppConnectionService.addListener(xmppPresenceProcessor);
-        xmppConnectionService.addListener(multicast);
+        xmppConnectionService.addListener(XMPPMulticast);
 
         l.debug("{}: enabling multicast", id());
 
         multicastEnabled = true;
-        setupMulticastHandler(dispatcher, multicast);
+        setupMulticastHandler(dispatcher, XMPPMulticast);
     }
 
     @Override
@@ -189,7 +189,7 @@ public final class Zephyr implements ITransport
     public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(dispatcher, multicast, streamManager, zephyrConnectionService);
+        setupCommonHandlersAndListeners(dispatcher, XMPPMulticast, streamManager, zephyrConnectionService);
         zephyrConnectionService.init();
     }
 

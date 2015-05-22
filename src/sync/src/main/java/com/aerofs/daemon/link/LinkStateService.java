@@ -137,7 +137,7 @@ public class LinkStateService
         // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
         // simply removes the interface's IPV4 address. This caused a situation where
         // we would remove IFprev(IPV4, IPV6) and then _readd_ IFnew(IPV6).
-        // This caused Multicast::send to attempt to send packets through this
+        // This caused XMPPMulticast::send to attempt to send packets through this
         // interface even though it wasn't 'active'.
         boolean active = false;
         if (isUp && !isLoopback && !isVirtual) {

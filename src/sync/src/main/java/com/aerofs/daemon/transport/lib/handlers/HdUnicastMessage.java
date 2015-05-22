@@ -1,8 +1,10 @@
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
+import com.aerofs.daemon.transport.lib.IUnicast;
+import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.log.LogUtil;

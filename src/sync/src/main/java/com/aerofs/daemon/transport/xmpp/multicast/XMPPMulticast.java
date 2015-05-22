@@ -49,9 +49,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 // FIXME: This class has potential for bad state mismatches with XMPPConnectionService (and it's
 // own callers who may do things like updateStores() before we are finished handling a connect
 // notifier). Refactor this so its lifetime is scoped to a particular xmpp connection?
-public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListener
+public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionServiceListener
 {
-    private static final Logger l = Loggers.getLogger(Multicast.class);
+    private static final Logger l = Loggers.getLogger(XMPPMulticast.class);
 
     private final Defect defect = newFrequentDefect("transport.multicast");
     private final Map<SID, MultiUserChat> mucs = Maps.newTreeMap();
@@ -64,7 +64,7 @@ public final class Multicast implements IMaxcast, IStores, IXMPPConnectionServic
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
-    public Multicast(
+    public XMPPMulticast(
             DID localDid,
             String xmppTransportId,
             String xmppServerDomain,

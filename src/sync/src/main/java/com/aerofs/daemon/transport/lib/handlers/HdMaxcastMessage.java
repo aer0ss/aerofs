@@ -1,8 +1,9 @@
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
+import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
 import org.jivesoftware.smack.XMPPException;
