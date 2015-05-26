@@ -127,12 +127,6 @@ def get_template_kv_pairs():
         d[k] = v
     return d
 
-def remove_license_expired_flag_file():
-    # This flag file is used by nginx to redirect web access to a 'license has
-    # expired' page.
-    f = '/var/aerofs/license-expired-flag'
-    if os.path.exists(f): os.remove(f)
-
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
@@ -177,6 +171,19 @@ def check_license_sha1():
     internal error occurred.
     """
     return Response("Correct sha1sum for current license.\n", status=200)
+
+@app.route("/is_license_valid", methods=["GET"])
+@returns_plaintext
+def is_license_valid():
+    """
+    Returns content body "1" if the license is currently valid. "0" otherwise.
+    """
+    try:
+        if license_file.verify_and_load(open(LICENSE_FILE_PATH)).is_currently_valid():
+            return '1'
+    except:
+        pass
+    return '0'
 
 # No authentication required; this path does its own checks.
 @app.route("/set_license_file", methods=["POST"])
@@ -226,9 +233,6 @@ def set_license_file():
         with open(LICENSE_FILE_PATH) as f:
             old_license_file_bytes = f.read()
         if license_file_bytes == old_license_file_bytes:
-            # This call seems superfluous, but it's safe to make the call on all 200 returns
-            # to avoid potential race conditions.
-            remove_license_expired_flag_file()
             return "Provided license file matches the currently-active license file.\n"
         old_license_file = BytesIO(old_license_file_bytes)
         old_license_info = license_file.verify_and_load(old_license_file)
@@ -261,7 +265,6 @@ def set_license_file():
     os.rename(new_license_tempfile_path, LICENSE_FILE_PATH)
 
     # return 200 OK
-    remove_license_expired_flag_file()
     app.logger.info("Set new license file for %s (id %s), valid until %s",
             new_license_info["license_company"],
             new_license_info["customer_id"],

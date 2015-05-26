@@ -23,7 +23,7 @@ def log_request(resp):
     return resp
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-server = wsgiserver.CherryPyWSGIServer(('127.0.0.1', 5434), d)
+server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 5434), d)
 server.shutdown_timeout = .1
 
 if __name__ == '__main__':

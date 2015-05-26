@@ -1,7 +1,0 @@
-@@ -1,5 +1,5 @@
--configuration_initialized=false
- ldap_server_port=389
- ldap_server_security=tls
- authenticator=local_credential
- url_sharing_enabled=true
-+base_host=share.domain.name

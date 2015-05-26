@@ -1,7 +1,0 @@
-Package: aerofs-config
-Section: admin
-Priority: required
-Depends: vim, python, python-dev, python-pip, python-virtualenv, libgpgme11, libgpgme11-dev, gcc
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS config server package.
-Architecture: all

@@ -1,46 +1,17 @@
 IMAGE_NAME = aerofs/config
 ROOT = buildroot
 
-# PREDOCKER
-DEFAULT_PROPS_FILE = $(ROOT)/external.properties.default
-
-FILES = $(shell find -L opt etc -type f)
-# /opt/config/properties/ will be bind mounted with the data container
-FILES := $(filter-out opt/config/properties/%, $(FILES))
-
+FILES = $(shell find -L opt -type f)
 LICENSING_LIB_DIR = ../../src/licensing
 
-image: $(FILES:%=$(ROOT)/%) $(DEFAULT_PROPS_FILE)
+image: $(FILES:%=$(ROOT)/%)
 	$(MAKE) -C $(LICENSING_LIB_DIR)
 	../../tools/lazy-copy.sh $(LICENSING_LIB_DIR)/build $(ROOT)/sdist
 	docker build -t $(IMAGE_NAME) .
 
+# TODO (WW) move everything to the 'root' folder
 $(ROOT)/%: %
 	mkdir -p $(@D)
 	cp $< $@
-
-$(ROOT)/opt/config/templates/common.tmplt: opt/config/templates/common.tmplt common.tmplt.docker.patch
-	mkdir -p $(@D)
-	cp $< $@
-	patch $@ < $(@F).docker.patch
-
-$(ROOT)/opt/config/templates/server.tmplt: opt/config/templates/server.tmplt server.tmplt.docker.patch
-	mkdir -p $(@D)
-	cp $< $@
-	patch $@ < $(@F).docker.patch
-
-$(ROOT)/opt/config/main.py: opt/config/main.py main.docker.patch
-	mkdir -p $(@D)
-	cp $< $@
-	patch $@ < main.docker.patch
-
-$(ROOT)/opt/config/entry.py: opt/config/entry.py
-	mkdir -p $(@D)
-	sed -e 's/127\.0\.0\.1/0.0.0.0/' $< > $@
-
-$(DEFAULT_PROPS_FILE): opt/config/properties/external.properties external.properties.docker.patch
-	mkdir -p $(@D)
-	cp $< $@
-	patch $@ < external.properties.docker.patch
 
 .PHONY: image

@@ -1,6 +1,5 @@
 {% include "common.tmplt" %}
 
-base.configuration.initialized={{ configuration_initialized }}
 base.ca.url=http://localhost:1029/prod
 
 redis.host={{ redis_host }}
@@ -66,7 +65,7 @@ openid.idp.user.email={{ openid_idp_user_email }}
 openid.idp.user.name.first={{ openid_idp_user_name_first }}
 openid.idp.user.name.last={{ openid_idp_user_name_last }}
 
-base.audit.service.host={{ base_host }}
+base.audit.service.host=auditor.service
 base.audit.service.port=9300
 base.audit.service.path=/event
 base.audit.downstream_host={{ audit_downstream_host }}
@@ -112,3 +111,7 @@ base.collect_logs.url=http://{{ base_host }}:8484/collect_logs
 sp.max.membership.sharedfolder=50
 sp.max.membership.group=50
 
+base.bifrost.internal.host=sparta.service
+
+{# See bifrost/root/run.sh #}
+hack_bifrost_service_ip={{ hack_bifrost_service_ip }}
