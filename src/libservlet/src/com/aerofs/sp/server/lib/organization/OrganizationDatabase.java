@@ -428,22 +428,24 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
+        // Return results in case sensitive manner.
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF +
+                 " on " + C_AC_STORE_ID + " = " + C_SF_ID,
                 C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID), C_AC_STORE_ID)
-                + " limit ? offset ?")) {
+                + " order by BINARY " + C_SF_ORIGINAL_NAME + " limit ? offset ?")) {
 
             ps.setString(1, orgId.toTeamServerUserID().getString());
             ps.setInt(2, maxResults);
             ps.setInt(3, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
-                Set<SID> set = Sets.newHashSet();
+                List<SID> list = Lists.newArrayList();
                 while (rs.next()) {
                     SID sid = new SID(rs.getBytes(1));
                     checkState(!sid.isUserRoot());
-                    Util.verify(set.add(sid));
+                    Util.verify(list.add(sid));
                 }
-                return set;
+                return list;
             }
         }
     }
