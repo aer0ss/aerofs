@@ -527,7 +527,7 @@ def test_js(args):
     print colored("JS tests passed.", Colors.GREEN)
 
 def prepare_syncdet(args):
-    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER"]
+    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER", "STORAGE_AGENT"]
     platforms = ["win", "osx", "linux"]
     Info = namedtuple('Info', ['prefix', 'extension', 'platform', 'product'])
     infos = [
@@ -537,6 +537,7 @@ def prepare_syncdet(args):
             Info(platform="osx", prefix="aerofsts-osx", extension="zip", product="TEAM_SERVER"),
             Info(platform="linux", prefix="aerofs-installer", extension="tgz", product="CLIENT"),
             Info(platform="linux", prefix="aerofsts-installer", extension="tgz", product="TEAM_SERVER"),
+            Info(platform="linux", prefix="aerofs-storage-agent-installer", extension="tgz", product="STORAGE_AGENT"),
             ]
     infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
     source_dir = PACKAGE_DIR
@@ -566,8 +567,12 @@ def setupenv(args):
 
 # A stopgap solution for now to allow invoke to be the global entry point.
 # In the long future, we should build the client code with gradle too.
+@required_args('product')
 def build_client(args):
-    subprocess.check_call([ "gradle", "src/desktop:dist"], cwd=GIT_ROOT)
+    compile_dir = "desktop"
+    if args.product.upper() == "STORAGE_AGENT":
+        compile_dir = "storage-agent"
+    subprocess.check_call([ "gradle", "src/{}:dist".format(compile_dir)], cwd=GIT_ROOT)
     print colored("Client built.", Colors.GREEN)
 
 def compute_next_version(args):
@@ -587,7 +592,7 @@ def write_version(args):
 def package_clients(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
     version = args.release_version or compute_next_version(args)
-    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
+    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER", "STORAGE_AGENT" ]
     # clean packaging dir
     if os.path.exists(PACKAGE_DIR):
         for package in os.listdir(PACKAGE_DIR):
@@ -624,6 +629,7 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_common",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_sp",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_ritual",
+            os.path.join(GIT_ROOT, "resource", "templates", "client", "linux", "storage-agent") + "/./setup_storage_agent.py"
             ]
     print "Calling:"
     print " ".join(quote_arg(str(c)) for c in cmdline)
@@ -715,7 +721,7 @@ def main():
     # Set up parser
     parser = argparse.ArgumentParser(prog="invoke")
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
-    parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
+    parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER', 'STORAGE_AGENT'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
     parser.add_argument("--unsigned", action='store_const', dest='signed', const=False)
