@@ -21,7 +21,7 @@ function DieUsage() {
     set +x
     echo "usage: $0 [build product] [release version]" >&2
     echo " " >&2
-    echo "[build product]: CLIENT|TEAM_SERVER" >&2
+    echo "[build product]: CLIENT|TEAM_SERVER|STORAGE_AGENT" >&2
     echo "[release version]: major.minor.build" >&2
     echo " " >&2
     echo "example: $0 0.4.99" >&2
@@ -68,7 +68,14 @@ function copy_resources_to_local_release_directories() {
     # piggy-back on gradle dist output to build aerofs.jar and fetch deps
     # TODO: avoid doing that twice (client and TS)
     pushd ${local_BIN}
-    for jar in ${BUILD_OUTPUT_DIR}/desktop/dist/*.jar ; do
+
+    if is_storage_agent ; then
+        JAR_SOURCE_DIR="storage-agent"
+    else
+        JAR_SOURCE_DIR="desktop"
+    fi
+
+    for jar in ${BUILD_OUTPUT_DIR}/${JAR_SOURCE_DIR}/dist/*.jar ; do
         if [[ ${jar##*/} == aerofs-*.jar ]] ; then
             # extract fragmented gradle-built jars for merging into a single jar
             echo "Extracting $jar"
@@ -122,9 +129,11 @@ function copy_resources_to_local_release_directories() {
     pushd ${AEROFS_RELEASE_LINUX_SHARED_DIR} > /dev/null
         ln -s launcher "${AEROFS_PRODUCT_UNIX}"
         # Create symlinks for each of the products
-        for SUFFIX in cli gui sh ; do
-            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-$SUFFIX"
-        done
+        if ! is_storage_agent ; then
+            for SUFFIX in cli gui sh ; do
+                ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-$SUFFIX"
+            done
+       fi
     popd > /dev/null
 
     #------------------------------------------------------
@@ -159,6 +168,10 @@ function copy_resources_to_local_release_directories() {
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/copier" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/launcher"
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/product.desktop" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
+
+    if is_storage_agent ; then
+        cp -a "${CLIENT_LINUX_TEMPLATES_DIR}/storage-agent" "${AEROFS_RELEASE_LINUX_DIR}/"
+    fi
 }
 
 
@@ -174,7 +187,12 @@ function create_java_jar() {
     local local_TEMP_MANIFEST="$(mktemp -t manifest_XXXXXX.tmp)"
     trap "rm -f $local_TEMP_MANIFEST || true" EXIT
 
-    echo "Main-Class: com.aerofs.Main" > "$local_TEMP_MANIFEST"
+    if is_storage_agent ; then
+        main_class="StorageAgentMain"
+    else
+        main_class="Main"
+    fi
+    echo "Main-Class: com.aerofs.${main_class}" > "$local_TEMP_MANIFEST"
     echo "Class-Path: " >> "$local_TEMP_MANIFEST"
 
     for i in "$AEROFS_RELEASE_DIR"/lib/*.jar; do

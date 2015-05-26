@@ -13,7 +13,7 @@ function DieUsage {
     echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
     echo "       [--build-all]" >&2
     echo " " >&2
-    echo "<build_product>: CLIENT|TEAM_SERVER" >&2
+    echo "<build_product>: CLIENT|TEAM_SERVER|STORAGE_AGENT" >&2
     echo "<version>: formatted <major>.<minor>.<build>" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
     echo "[--build-linux-tgz]: build the Linux installer .tgz" >&2
@@ -34,7 +34,7 @@ function DieUsage {
 # #SADFACE positional args
 ##
 case ${1:-} in
-    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$1;;
+    CLIENT|TEAM_SERVER|STORAGE_AGENT) BUILD_PRODUCT=$1;;
     *) DieUsage;;
 esac
 RELEASE_VERSION=${2:-}
@@ -44,27 +44,32 @@ case ${3:-} in
 esac
 shift 3
 
-
 ##
 # Parse long-opts
 ##
 RELEASE_FLAGS=""
-BUILD_FLAGS=""
-while [ "${1:-}" != "" ]; do
-    case "$1" in
-        "--build-linux-tgz" | "--build-linux-update-tgzs" | "--build-linux-deb" | "--build-windows-exe" | "--build-windows-msi" | "--build-osx-packages")
-            BUILD_FLAGS="${BUILD_FLAGS} $1"
-            ;;
-        "--build-all")
-            BUILD_FLAGS="$1"
-            ;;
-        *)
-            echo "Unknown argument: $1" >&2
-            DieUsage
-            ;;
-    esac
-    shift
-done
+# If product is storage agent then build only tgz package.
+if [ $BUILD_PRODUCT = "STORAGE_AGENT" ]
+then
+    BUILD_FLAGS="--build-linux-tgz"
+else
+    BUILD_FLAGS=""
+    while [ "${1:-}" != "" ]; do
+        case "$1" in
+            "--build-linux-tgz" | "--build-linux-update-tgzs" | "--build-linux-deb" | "--build-windows-exe" | "--build-windows-msi" | "--build-osx-packages")
+                BUILD_FLAGS="${BUILD_FLAGS} $1"
+                ;;
+            "--build-all")
+                BUILD_FLAGS="$1"
+                ;;
+            *)
+                echo "Unknown argument: $1" >&2
+                DieUsage
+                ;;
+        esac
+        shift
+    done
+fi
 
 include common $BUILD_PRODUCT
 check_version_format $RELEASE_VERSION

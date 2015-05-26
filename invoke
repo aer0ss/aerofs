@@ -527,7 +527,7 @@ def test_js(args):
     print colored("JS tests passed.", Colors.GREEN)
 
 def prepare_syncdet(args):
-    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER"]
+    products = [ args.product ] if args.product else ["CLIENT"]
     platforms = ["win", "osx", "linux"]
     Info = namedtuple('Info', ['prefix', 'extension', 'platform', 'product'])
     infos = [
@@ -537,6 +537,7 @@ def prepare_syncdet(args):
             Info(platform="osx", prefix="aerofsts-osx", extension="zip", product="TEAM_SERVER"),
             Info(platform="linux", prefix="aerofs-installer", extension="tgz", product="CLIENT"),
             Info(platform="linux", prefix="aerofsts-installer", extension="tgz", product="TEAM_SERVER"),
+            Info(platform="linux", prefix="aerofs-storage-agent-installer", extension="tgz", product="STORAGE_AGENT"),
             ]
     infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
     source_dir = PACKAGE_DIR
@@ -570,6 +571,11 @@ def build_client(args):
     subprocess.check_call([ "gradle", "src/desktop:dist"], cwd=GIT_ROOT)
     print colored("Client built.", Colors.GREEN)
 
+def build_sa(args):
+    subprocess.check_call([ "gradle", "src/storage-agent:dist"], cwd=GIT_ROOT)
+    print colored("Client built.", Colors.GREEN)
+
+
 def compute_next_version(args):
     cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version' ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
@@ -583,11 +589,9 @@ def write_version(args):
         f.write("Version={}".format(version))
         f.flush()
 
-@required_args('signed')
-def package_clients(args):
+def _package(args, products):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
     version = args.release_version or compute_next_version(args)
-    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER" ]
     # clean packaging dir
     if os.path.exists(PACKAGE_DIR):
         for package in os.listdir(PACKAGE_DIR):
@@ -600,6 +604,18 @@ def package_clients(args):
                 signed_arg,
                 "--build-all"]
         subprocess.check_call(cmdline, cwd=GIT_ROOT)
+
+@required_args('signed')
+def package_clients(args):
+    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER"]
+    assert "STORAGE_AGENT" not in products, "Looks like you are trying to package the storage agent. Please use package_sa."
+    _package(args, products)
+
+@required_args('signed')
+def package_sa(args):
+    products = [ args.product ] if args.product else [ "STORAGE_AGENT" ]
+    assert "STORAGE_AGENT" in products and len(products) == 1, "Looks like you are trying to package desktop-client/TS. Please use package_clients."
+    _package(args, products)
 
 def _syncdet(args, case=None, scenario=None, extra_args=None):
     # extract args
@@ -624,6 +640,7 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_common",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_sp",
             os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_ritual",
+            os.path.join(GIT_ROOT, "resource", "templates", "client", "linux", "storage-agent") + "/./setup_storage_agent.py"
             ]
     print "Calling:"
     print " ".join(quote_arg(str(c)) for c in cmdline)
@@ -658,6 +675,7 @@ def test_system_archive(args):
 # task, and generally ignore dependency management.
 commands = {
     "build_client": build_client,
+    "build_sa": build_sa,
     "build_protoc_plugins": build_protoc_plugins,
     "build_docker_images": build_docker_images,
     "build_vm": build_vm,
@@ -669,6 +687,7 @@ commands = {
     "markdown": markdown,
     "markdown_watch": markdown_watch,
     "package_clients": package_clients,
+    "package_sa": package_sa,
     "prepare_syncdet": prepare_syncdet,
     "proto": proto,
     "setupenv": setupenv,
@@ -715,7 +734,7 @@ def main():
     # Set up parser
     parser = argparse.ArgumentParser(prog="invoke")
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
-    parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
+    parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER', 'STORAGE_AGENT'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)
     parser.add_argument("--unsigned", action='store_const', dest='signed', const=False)
