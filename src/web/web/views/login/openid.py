@@ -45,7 +45,7 @@ def _begin_sp_auth(request):
     component, in login_openid_complete.
     """
     settings = request.registry.settings
-    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
+    con = SyncConnectionService(settings['deployment.sp_server_uri'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
     nonces = sp.open_id_begin_transaction()

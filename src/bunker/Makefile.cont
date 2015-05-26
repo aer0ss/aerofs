@@ -10,6 +10,7 @@ image: $(FILES:%=$(ROOT)/%) $(VERSION_FILE) $(EXTERNAL_PROP_DOCKER_DEFAULT)
 
 .PHONY: image
 
+# TODO (WW) move everything from 'web' to 'root' folder
 $(ROOT)/%: %
 	mkdir -p $(@D)
 	cp $< $@ 

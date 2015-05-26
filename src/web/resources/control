@@ -1,7 +1,0 @@
-Package: aerofs-web
-Section: admin
-Priority: optional
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS pyramid website package
-Architecture: all
-Depends: nginx, python, python-dev, python-virtualenv, python-setuptools, python-pip, postfix, gcc, uwsgi, uwsgi-plugin-python, libssl1.0.0

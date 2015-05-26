@@ -47,31 +47,6 @@ use = egg:waitress#main
 host = 0.0.0.0
 port = 6543
 
-[uwsgi]
-
-wsgi-file = /opt/web/production.wsgi
-socket = :8080
-master = true
-
-# Set these based on capacity of server, but because some of
-# our code is stateful (namely in-memory session storage) more
-# processes could cause problems
-processes = 1
-listen = 256
-
-chdir = /opt/web
-plugins = python
-single-interpreter = true
-
-# harakiri settings (kills requests taking longer than 30s
-# and rogue workers)
-harakiri = 30
-harakiri-verbose = true
-post-buffering = 32768
-reload-on-as = 256
-reload-on-rss = 128
-no-orphans = true
-
 [loggers]
 keys = root, web
 

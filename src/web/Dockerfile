@@ -10,7 +10,7 @@ WORKDIR /opt/web
 
 CMD [ "/run.sh" ]
 
-COPY requirements-exact.txt /
+COPY root/requirements-exact.txt /
 
 ENV BUILD_PKGS gcc python-dev
 

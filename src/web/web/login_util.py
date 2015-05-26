@@ -84,7 +84,7 @@ def log_in_user(request, login_func, stay_signed_in=False, **kw_args):
 
     # ignore any session data that may be saved
     settings = request.registry.settings
-    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
+    con = SyncConnectionService(settings['deployment.sp_server_uri'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
     # Log in using the login_func provided
