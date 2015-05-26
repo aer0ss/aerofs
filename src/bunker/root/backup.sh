@@ -19,7 +19,7 @@ else
     cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
 
     echo ">>> Backing up mysql database..."
-    mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
+    mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
 
     echo ">>> Backing up CA files..."
     mkdir -p aerofs-db-backup/ca-files

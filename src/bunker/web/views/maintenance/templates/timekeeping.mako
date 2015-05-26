@@ -9,7 +9,7 @@
 
     <p>The AeroFS Appliance requires accurate timekeeping for two-factor
     authentication.</p>
-    <p>By default, it will pull time from the Ubuntu NTP pool.  If you leave
+    <p>By default, it will pull time from the CoreOS NTP pool. If you leave
     this field blank, it will continue to do so.  If you need to use an
     internal time server, enter the hostname of that server below.</p>
 

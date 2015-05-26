@@ -1,15 +1,11 @@
 IMAGE_NAME = aerofs/bunker
 ROOT = buildroot/opt/bunker
 
-FILES = $(shell find -L entry.py web -type f)
+FILES = $(shell find -L web -type f)
 VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
-BACKUP_SH = buildroot/backup.sh
-RESTORE_SH = buildroot/restore.sh
-REQUIREMENTS_FILE = buildroot/requirements-exact.txt
-MIGRATION_SH = $(ROOT)/migration.sh
 EXTERNAL_PROP_DOCKER_DEFAULT=buildroot/external.properties.docker.default
 
-image: $(FILES:%=$(ROOT)/%) $(REQUIREMENTS_FILE) $(VERSION_FILE) $(BACKUP_SH) $(RESTORE_SH) $(MIGRATION_SH) $(EXTERNAL_PROP_DOCKER_DEFAULT)
+image: $(FILES:%=$(ROOT)/%) $(VERSION_FILE) $(EXTERNAL_PROP_DOCKER_DEFAULT)
 	docker build -t $(IMAGE_NAME) .
 
 .PHONY: image
@@ -21,91 +17,6 @@ $(ROOT)/%: %
 $(EXTERNAL_PROP_DOCKER_DEFAULT): ../../packaging/config/root/external.properties.docker.default
 	mkdir -p $(@D)
 	cp $< $@
-
-patch = \
-	mkdir -p $(dir $(1)) &&\
-	cp $(2) $(1) &&\
-	patch $(1) < $(3).docker.patch
-
-# PREDOCKER
-$(REQUIREMENTS_FILE): requirements-exact.txt
-	mkdir -p $(@D)
-	cp $< $@
-	echo psutil >> $@
-
-$(ROOT)/migration.sh: migration.sh migration.sh.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/templates/auditing.mako: web/views/maintenance/templates/auditing.mako auditing.mako.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/templates/device_restriction.mako: web/views/maintenance/templates/device_restriction.mako device_restriction.mako.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/templates/identity.mako: web/views/maintenance/templates/identity.mako identity.mako.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/templates/monitoring.mako: web/views/maintenance/templates/monitoring.mako monitoring.mako.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/status_view.py: web/views/maintenance/status_view.py status_view.py.docker.patch
-	$(call patch,$@,$<,$(@F))
-
-$(ROOT)/web/views/maintenance/timekeeping_view.py: web/views/maintenance/timekeeping_view.py timekeeping_view.docker.patch
-	$(call patch,$@,$<,timekeeping_view)
-
-$(ROOT)/web/views/maintenance/templates/timekeeping.mako: web/views/maintenance/templates/timekeeping.mako timekeeping_mako.docker.patch
-	$(call patch,$@,$<,timekeeping_mako)
-
-$(ROOT)/web/views/maintenance/templates/maintenance_layout.mako: web/views/maintenance/templates/maintenance_layout.mako maintenance_layout.docker.patch
-	$(call patch,$@,$<,maintenance_layout)
-
-$(ROOT)/web/views/maintenance/templates/logs_common.mako: web/views/maintenance/templates/logs_common.mako logs_common.docker.patch
-	$(call patch,$@,$<,logs_common)
-
-$(ROOT)/web/views/maintenance/setup_view.py: web/views/maintenance/setup_view.py setup_view.docker.patch
-	$(call patch,$@,$<,setup_view)
-
-$(ROOT)/web/views/maintenance/templates/setup/create_or_restore_page.mako: web/views/maintenance/templates/setup/create_or_restore_page.mako create_or_restore_page.docker.patch
-	$(call patch,$@,$<,create_or_restore_page)
-
-$(ROOT)/web/views/maintenance/backup_view.py: web/views/maintenance/backup_view.py backup_view.docker.patch
-	$(call patch,$@,$<,backup_view)
-
-$(ROOT)/web/views/maintenance/templates/backup.mako: web/views/maintenance/templates/backup.mako backup.mako.docker.patch
-	$(call patch,$@,$<,backup.mako)
-
-$(ROOT)/web/views/maintenance/templates/backup_common.mako: web/views/maintenance/templates/backup_common.mako backup_common.docker.patch
-	$(call patch,$@,$<,backup_common)
-
-$(ROOT)/web/views/maintenance/templates/upgrade.mako: web/views/maintenance/templates/upgrade.mako upgrade.docker.patch
-	$(call patch,$@,$<,upgrade)
-
-$(ROOT)/web/views/maintenance/templates/toggle_maintenance_mode.mako: web/views/maintenance/templates/toggle_maintenance_mode.mako toggle_maintenance_mode.docker.patch
-	$(call patch,$@,$<,toggle_maintenance_mode)
-
-$(ROOT)/web/views/maintenance/maintenance_util.py: web/views/maintenance/maintenance_util.py maintenance_util.docker.patch
-	$(call patch,$@,$<,maintenance_util)
-
-$(ROOT)/web/views/maintenance/templates/setup/apply_page.mako: web/views/maintenance/templates/setup/apply_page.mako apply_page.docker.patch
-	$(call patch,$@,$<,apply_page)
-
-$(ROOT)/web/views/maintenance/maintenance_view.py: web/views/maintenance/maintenance_view.py maintenance_view.docker.patch
-	$(call patch,$@,$<,maintenance_view)
-
-$(BACKUP_SH): ../../packaging/db-backup/usr/bin/aerofs-db-backup backup.sh.docker.patch
-	$(call patch,$@,$<,backup.sh)
-
-$(RESTORE_SH): ../../packaging/db-backup/usr/bin/aerofs-db-restore restore.sh.docker.patch
-	$(call patch,$@,$<,restore.sh)
-
-$(ROOT)/web/views/maintenance/templates/setup/email_page.mako: web/views/maintenance/templates/setup/email_page.mako
-	mkdir -p $(@D)
-	sed -e 's/public_host_name != "localhost"/public_host_name != "postfix.service"/' $< > $@
-
-$(ROOT)/web/__init__.py: web/__init__.py
-	mkdir -p $(@D)
-	sed -e 's./opt/bunker/state./data/bunker.' $< > $@
 
 $(VERSION_FILE): ../../out.gradle/packages/current.ver
 	mkdir -p $(@D)

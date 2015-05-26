@@ -14,10 +14,10 @@ function malformed_db_backup()
 function drop_and_restore_db()
 {
     echo ">>>   Drop $1..."
-    echo "drop database if exists \`$1\`; " | mysql
+    echo "drop database if exists \`$1\`; " | mysql -h mysql.service
     echo ">>>   Restoring $1..."
-    mysql <<< "create database $1"
-    mysql -D $1 -o $1 < aerofs-db-backup/mysql.dump
+    mysql -h mysql.service <<< "create database $1"
+    mysql -h mysql.service -D $1 -o $1 < aerofs-db-backup/mysql.dump
 }
 
 if [ $# -ne 1 ]
@@ -86,13 +86,11 @@ fi
 if [ -f aerofs-db-backup/external-db-flag ]
 then
     mkdir -p /var/aerofs
-    cp -a aerofs-db-backup/external-db-flag /var/aerofs/external-db-flag
+    cp -a aerofs-db-backup/external-db-flag /data/bunker/external-db-flag
 else
     echo ">>> Restoring redis database..."
-    service redis-aof stop 1>/dev/null 2>/dev/null
     rm -f /data/redis/redis.*
     cp -a aerofs-db-backup/redis.aof /data/redis
-    service redis-aof start 1>/dev/null 2>/dev/null
 
     # NOTE: This is not a general solution. Required because mysql.dump only deletes
     # and restores tables that existed when the dump-file was created. This will cause
@@ -110,7 +108,7 @@ else
         drop_and_restore_db aerofs_ca
     else
         echo ">>> Migrating CA files..."
-        /opt/ca-server/migration.sh
+        /opt/bunker/migration.sh
     fi
 
     # As a compromise between CI and packaging complexity, we ship polaris
@@ -119,7 +117,7 @@ else
     # To preserve maximum schema flexibility we explictly drop the polaris
     # db from backups.
     # TODO: remove this when polaris schema is stable
-    echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql
+    echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql -h mysql.service
 
 fi
 
@@ -134,7 +132,18 @@ if [ -d aerofs-db-backup/v2topics ] ; then
 fi
 
 echo ">>> Restoring configuration properties..."
-cp -a aerofs-db-backup/external.properties /opt/config/properties
+PROPS=/opt/config/properties/external.properties
+
+# The string replacement is to support restoring from legacy appliances
+sed -e "s/email_host=localhost/email_host=postfix.service/" aerofs-db-backup/external.properties > ${PROPS}
+
+# Add default properties specific to the dockerize appliance if they aren't present
+for i in $(cat /external.properties.docker.default); do
+    KEY=$(echo "$i" | sed -e "s/=.*//")
+    if [ -z "$(grep "^${KEY}=" ${PROPS})" ]; then
+        echo "${i}" >> ${PROPS}
+    fi
+done
 
 popd 1>/dev/null 2>/dev/null
 

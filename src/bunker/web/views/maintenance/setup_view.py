@@ -214,7 +214,7 @@ def _parse_email_request(request):
         enable_tls = 'email-sender-public-enable-tls' in request.params
         smtp_cert = request.params['email-sender-public-cert']
     else:
-        host = 'localhost'
+        host = 'postfix.service'
         port = '25'
         username = ''
         password = ''

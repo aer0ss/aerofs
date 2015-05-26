@@ -81,7 +81,7 @@
         }
 
         function uploadAndRestoreFromBackup() {
-            console.log("restore from backup");
+            console.log("upload backup file");
             var $progress = $('#${progress_modal.id()}');
             $progress.modal('show');
 
@@ -101,17 +101,37 @@
         }
 
         function restoreFromBackup() {
-            var $progress = $('#${progress_modal.id()}');
-            runBootstrapTask('db-restore', function() {
-                $.post('${request.route_path('json_setup_set_restored_from_backup')}')
+            console.log("start restore");
+            $.post("${request.route_path('json-restore')}")
+                .done(waitForRestore)
+                .fail(failed);
+        }
+
+        function waitForRestore() {
+            console.log("wait for restore done");
+            var interval = window.setInterval(function() {
+                $.get("${request.route_path('json-restore')}")
+                .done(function(resp) {
+                    if (resp['running']) {
+                        console.log('restore is running. wait');
+                    } else if (resp['succeeded']) {
+                        console.log('restore done');
+                        window.clearInterval(interval);
+                        setRestoredFlag();
+                    } else {
+                        console.log('restore failed');
+                        window.clearInterval(interval);
+                        $('#${progress_modal.id()}').modal('hide');
+                        showErrorMessage("Restore failed.");
+                    }
+                }).fail(failed);
+            }, 1000);
+        }
+
+        function setRestoredFlag() {
+            $.post('${request.route_path('json_setup_set_restored_from_backup')}')
                 .done(restoreFromBackupDone)
-                .fail(function(xhr) {
-                    showAndTrackErrorMessageFromResponse(xhr);
-                    $progress.modal('hide');
-                });
-            }, function() {
-                $progress.modal('hide');
-            });
+                .fail(failed);
         }
 
         function restoreFromBackupDone() {
@@ -124,6 +144,11 @@
                 $('form').submit();
                 return false;
             });
+        }
+
+        function failed(xhr) {
+            showAndTrackErrorMessageFromResponse(xhr);
+            $('#${progress_modal.id()}').modal('hide');
         }
     </script>
 </%def>

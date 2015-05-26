@@ -7,7 +7,7 @@
 <%
     public_host_name = current_config['email.sender.public_host']
     # Use the local namespace so the method scripts() can access it
-    local.is_remote_host = public_host_name != "" and public_host_name != "localhost"
+    local.is_remote_host = public_host_name != "" and public_host_name != "postfix.service"
 
     # TODO (WW) generate the string in the Python view after splitting
     # _setup_common() page specific views.

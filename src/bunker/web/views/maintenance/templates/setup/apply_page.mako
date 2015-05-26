@@ -1,5 +1,5 @@
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="bootstrap" file="../bootstrap.mako"/>
+<%namespace name="loader" file="../loader.mako"/>
 <%namespace name="common" file="setup_common.mako"/>
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
@@ -68,7 +68,7 @@ ${common.render_previous_button()}
     <%progress_modal:scripts/>
     ## spinner support is required by progress_modal
     <%spinner:scripts/>
-    <%bootstrap:scripts/>
+    <%loader:scripts/>
 
     <script>
         $(document).ready(function() {
@@ -114,26 +114,117 @@ ${common.render_previous_button()}
             ## Show the progress modal
             $('#${progress_modal.id()}').modal('show');
 
-            runBootstrapTask('apply-config', finalize, function() {
-                ## An error message is already shown by runBootstrapTask()
-                hideAllModals();
-                trackError();
-            });
+            reboot('default', waitForServicesReady, onFailure);
         }
 
-        function finalize() {
-            console.log("finalizing...");
-            $.post("${request.route_path('json_setup_finalize')}")
+        function waitForServicesReady() {
+            console.log('wait for all services to be ready');
+            var count = 0;
+            var poll = function() {
+                $.get("${request.route_path('json-status')}")
+                .done(function (resp) {
+                    count++;
+                    for (var i = 0; i < resp['statuses'].length; i++) {
+                        var status = resp['statuses'][i];
+                        var service = status['service'];
+                        ## Ignores Team Server errors as these are not relevant
+                        if (service == 'team-servers') continue;
+
+                        if (!status['is_healthy']) {
+                            console.log('service ' + service + ' is unhealthy.');
+                            ## Wait for ~10 seconds
+                            if (count > 10) {
+                                console.log('waitForHealthyServices() timed out');
+                                hideAllModals();
+                                showErrorMessage('Service ' + service + ' failed to start.');
+                                trackError();
+                            } else {
+                                console.log('wait');
+                                window.setTimeout(poll, 1000);
+                            }
+                            return;
+                        }
+                    }
+
+                    ## All services are ready
+                    waitForPreviousRepackaging();
+
+                }).fail(onFailure);
+            };
+
+            poll();
+        }
+
+        ## I know we just booted up but someone else might kicked off repackaging right before us.
+        function waitForPreviousRepackaging() {
+            console.log('wait for previous repackaging to finish');
+            ## Wait for previouew repackaging done
+            var interval = window.setInterval(function() {
+                $.post("${request.route_path('json-repackaging')}")
+                    .done(function (resp) {
+                        if (resp['running']) {
+                            console.log('previous packaging is running. wait');
+                        } else {
+                            window.clearInterval(interval);
+                            repackage();
+                        }
+                    }).fail(function(xhr, textStatus, errorThrown) {
+                        ## Ignore failures as Repackaging might not have started
+                        console.log("ignore GET repackaging failure: " + xhr.status + " " +textStatus + " " +
+                            errorThrown);
+                    });
+            }, 1000);
+        }
+
+        function repackage() {
+            console.log('kick off repackaging');
+            $.post("${request.route_path('json-repackaging')}")
+            .done(waitForRepackaging)
+            .fail(onFailure);
+        }
+
+        function waitForRepackaging() {
+            console.log('wait for repackaging to finish');
+            var interval = window.setInterval(function() {
+                $.get("${request.route_path('json-repackaging')}")
+                .done(function(resp) {
+                    if (resp['running']) {
+                        console.log('packaging is running. wait');
+                    } else if (resp['succeeded']) {
+                        window.clearInterval(interval);
+                        conclude();
+                    } else {
+                        window.clearInterval(interval);
+                        console.log('repackaging has not succeeded');
+                        hideAllModals();
+                        showErrorMessage("Repackaging of AeroFS clients couldn't complete.");
+                        trackError();
+                    }
+                }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    onFailure(xhr);
+                });
+            }, 1000);
+        }
+
+        function conclude() {
+            console.log('create conf-initialized flag');
+            $.post("${request.route_path('json-set-configuration-initialized')}")
             .done(function() {
-                console.log('succeeded');
+                ## TODO: wait for web to fully launch before prompting the user to navigate
+                ## to there.
                 hideAllModals();
                 $('#success-modal').modal('show');
                 trackSuccessAndDisableDataCollection();
-            }).fail(function(xhr) {
-                console.log('failed');
-                hideAllModals();
-                showAndTrackErrorMessageFromResponse(xhr);
-            });
+
+            }).fail(onFailure);
+        }
+
+
+        function onFailure(xhr) {
+            console.log('failed');
+            hideAllModals();
+            showAndTrackErrorMessageFromResponse(xhr);
         }
 
         function trackSuccessAndDisableDataCollection() {

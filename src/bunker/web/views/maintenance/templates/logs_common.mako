@@ -34,7 +34,12 @@
 
         function archiveAndDownloadLogs() {
             $('#${progress_modal.id()}').modal('show');
-            runBootstrapTask('archive-logs', downloadLogs, hideProgressModal);
+            $.post('${request.route_path("json-archive-container-logs")}')
+                .done(downloadLogs)
+                .fail(function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    hideProgressModal();
+                });
         }
 
         ## Direct the browser to download the file

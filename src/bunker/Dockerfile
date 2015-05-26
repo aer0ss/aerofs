@@ -13,7 +13,7 @@ CMD [ "/run.sh" ]
 # mysql-client for backup scripts, docker for collecting docker logs
 RUN apt-get update && apt-get install -y mysql-client docker.io libmysqlclient-dev && rm -rf /var/lib/apt/lists/*
 
-COPY buildroot/requirements-exact.txt /
+COPY root/requirements-exact.txt /
 
 ENV BUILD_PKGS gcc python-dev
 

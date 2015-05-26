@@ -1,7 +1,0 @@
-Package: aerofs-bunker
-Section: admin
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS Maintenance Panel
-Architecture: all
-Depends: python, python-dev, python-virtualenv, python-setuptools, python-pip, postfix, gcc, libssl1.0.0

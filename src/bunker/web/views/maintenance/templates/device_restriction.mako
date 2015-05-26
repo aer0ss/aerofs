@@ -2,7 +2,7 @@
 <%! page_title = "Device Restriction" %>
 
 <%namespace name="csrf" file="csrf.mako"/>
-<%namespace name="bootstrap" file="bootstrap.mako"/>
+<%namespace name="loader" file="loader.mako"/>
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
 
@@ -183,7 +183,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
 </%progress_modal:html>
 
 <%block name="scripts">
-    <%bootstrap:scripts/>
+    <%loader:scripts/>
     <%spinner:scripts/>
     <%progress_modal:scripts/>
     <script>
@@ -220,11 +220,12 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
 
         function restartDeviceServices() {
             var $progress = $('#${progress_modal.id()}');
-            runBootstrapTask('restart-services-for-device-authorization', function() {
+            reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');
-            }, function() {
+            }, function(xhr) {
                 $progress.modal('hide');
+                showErrorMessageFromResponse(xhr);
             });
         }
 
@@ -245,11 +246,12 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
 
         function restartMDMServices() {
             var $progress = $('#${progress_modal.id()}');
-            runBootstrapTask('restart-services-for-mdm', function() {
+            reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');
-            }, function() {
+            }, function(xhr) {
                 $progress.modal('hide');
+                showErrorMessageFromResponse(xhr);
             });
         }
 

@@ -1,7 +1,0 @@
-Package: aerofs-db-backup
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS database backup and restore package.
-Architecture: all
-Depends: aerofs-redis-server, mysql-server, bsdtar, tar
