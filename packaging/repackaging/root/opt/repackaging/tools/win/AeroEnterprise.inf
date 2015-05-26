@@ -1,0 +1,16 @@
+;
+; INF file to install site-config.properties in the REPLACEME directory
+;
+
+; Required, without this the inf is not executable
+[Version]
+Signature=$Chicago$
+
+; steps to take for the automatic (Install) action:
+[DefaultInstall]
+CopyFiles = @site-config.properties
+
+; where to copy site-config.properties
+; 16410 is Windows dirid magic number meaning %AppData%
+[DestinationDirs]
+DefaultDestDir=16410,REPLACEME

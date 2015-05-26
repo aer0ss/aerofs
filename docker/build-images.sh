@@ -34,7 +34,7 @@ DIRS="
     ../src/sparta 
     
     ../src/spsv 
-    ../src/spsv/resources/identity 
+    ../src/spsv/resources/openid
     ../src/spsv/resources/log-collection 
     ../src/spsv/resources/sp 
     ../src/spsv/resources/verification 

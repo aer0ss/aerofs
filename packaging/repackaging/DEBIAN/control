@@ -1,7 +1,0 @@
-Package: aerofs-repackaging
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS installers package.
-Architecture: all
-Depends: p7zip-full, libdmg-hfsplus, zip, aerofs-msitools

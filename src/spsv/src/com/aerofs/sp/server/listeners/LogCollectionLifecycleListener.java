@@ -37,7 +37,7 @@ public class LogCollectionLifecycleListener extends ConfigurationLifecycleListen
         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
         String secret = AeroService.loadDeploymentSecret();
         return VerkehrClient.create(
-                Verkehr.HOST,
+                "verkehr.service",
                 Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),

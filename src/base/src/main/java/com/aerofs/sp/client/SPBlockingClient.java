@@ -13,7 +13,11 @@ import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * This is a synchronous interface
@@ -29,6 +33,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
         // only used for mutual auth
         private final UserID _user;
         private final DID _did;
+        private final String _url;
 
         private final IURLConnectionConfigurator MUTUAL_AUTH;
         private final IURLConnectionConfigurator ONE_WAY_AUTH;
@@ -38,9 +43,9 @@ public class SPBlockingClient extends SPServiceBlockingStub
          *
          * The created clients will only be able to perform unauthenticated calls.
          */
-        public Factory(ICertificateProvider cacert)
+        public Factory(String url, ICertificateProvider cacert)
         {
-            this(UserID.DUMMY, cacert);
+            this(url, UserID.DUMMY, cacert);
         }
 
         /**
@@ -49,8 +54,9 @@ public class SPBlockingClient extends SPServiceBlockingStub
          * The created clients will only be able to perform one-way auth and should NOT use
          * {@link #signInRemote}
          */
-        public Factory(UserID user, ICertificateProvider cacert)
+        public Factory(String url, UserID user, ICertificateProvider cacert)
         {
+            _url = url;
             _user = user;
             _did = new DID(DID.ZERO);
             MUTUAL_AUTH = null;
@@ -62,8 +68,9 @@ public class SPBlockingClient extends SPServiceBlockingStub
          *
          * The created clients will use mutual auth by default
          */
-        public Factory(UserID user, DID did, IPrivateKeyProvider key, ICertificateProvider cacert)
+        public Factory(String url, UserID user, DID did, IPrivateKeyProvider key, ICertificateProvider cacert)
         {
+            _url = url;
             _user = user;
             _did = did;
             MUTUAL_AUTH = SslURLConnectionConfigurator.mutualAuth(Platform.Desktop, key, cacert);
@@ -72,9 +79,13 @@ public class SPBlockingClient extends SPServiceBlockingStub
 
         public SPBlockingClient create()
         {
-            return new SPBlockingClient(
-                    new SPClientHandler(SP.URL, MUTUAL_AUTH != null ? MUTUAL_AUTH : ONE_WAY_AUTH),
-                    this);
+            try {
+                return new SPBlockingClient(
+                        new SPClientHandler(new URL(_url), MUTUAL_AUTH != null ? MUTUAL_AUTH : ONE_WAY_AUTH),
+                        this);
+            } catch (final MalformedURLException e) {
+                throw Throwables.propagate(e);
+            }
         }
     }
 

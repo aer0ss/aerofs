@@ -223,7 +223,7 @@ public class Sparta extends Service
             {
                 NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2);
                 return VerkehrClient.create(
-                        Verkehr.HOST,
+                        "verkehr.service",
                         Verkehr.REST_PORT,
                         MILLISECONDS.convert(30, SECONDS),
                         MILLISECONDS.convert(60, SECONDS),
@@ -237,7 +237,7 @@ public class Sparta extends Service
             public AuditClient providesAudit()
             {
                 AuditClient client = new AuditClient();
-                client.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret("sparta", secret));
+                client.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret("auditor.service", "sparta", secret));
                 return client;
             }
         };

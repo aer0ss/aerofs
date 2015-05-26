@@ -1,15 +1,8 @@
 IMAGE_NAME = aerofs/repackaging
 ROOT = buildroot
 
-# PREDOCKER
-FILES = $(shell find -L opt -type f)
-
-image: $(FILES:%=$(ROOT)/%) .copy-packages
+image: .copy-packages
 	docker build -t $(IMAGE_NAME) .
-
-$(ROOT)/%: %
-	mkdir -p $(@D)
-	cp $< $@
 
 # Copy client packages
 SRC_PKGS_DIR = ../../out.gradle/packages

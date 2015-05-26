@@ -18,7 +18,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT;
@@ -206,8 +205,15 @@ public class LibParam extends BaseParam
     public static class CA
     {
         // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
-        public static final URL URL =
-                getUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
+        public static final URL URL = getURL("http://ca.service:9002/prod");
+
+        private static URL getURL(String url) {
+            try {
+                return new URL(url);
+            } catch (java.net.MalformedURLException e) {
+                throw com.google.common.base.Throwables.propagate(e);
+            }
+        }
     }
 
     public static class RootAnchor
@@ -514,12 +520,6 @@ public class LibParam extends BaseParam
 
     public static class Bifrost
     {
-        /**
-         * Hostname for internal access to Bifrost.
-         */
-        public static final String              INTERNAL_BIFROST_HOST =
-                getStringProperty(              "base.bifrost.internal.host", "localhost");
-
         /**
          * Port number for internal access to Bifrost.
          */

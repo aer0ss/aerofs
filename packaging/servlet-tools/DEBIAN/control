@@ -1,6 +1,0 @@
-Package: aerofs-servlet-tools
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS servlet tools package.
-Architecture: all

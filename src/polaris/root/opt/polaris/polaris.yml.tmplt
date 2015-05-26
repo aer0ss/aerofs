@@ -1,0 +1,41 @@
+admin:
+  host: 0.0.0.0
+  port: 8087
+  numNetworkThreads: 2
+  numRequestProcessingThreads: 2
+
+service:
+  host: 0.0.0.0
+  port: 8086
+  numNetworkThreads: 2
+  numRequestProcessingThreads: 5
+
+database:
+  username: MYSQL_USER
+# make sure this matches the value in /src/bootstrap/resources/scripts/write-yaml-file.sh
+# dummy value is in quotes so that if we use no password, represented as the empty string, the yaml will still be parsed properly
+  password: "MYSQL_PASSWORD"
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://MYSQL_URL/polaris
+
+verkehr:
+  url: http://verkehr.service:25234
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
+sparta:
+  url: http://sparta.service:8085
+  connectTimeout: 30000
+  responseTimeout: 45000
+  maxConnections: 10
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: true
+
+  file:
+    enabled: true
+    logfile: /var/log/polaris/polaris.log

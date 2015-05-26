@@ -39,12 +39,12 @@ public class AuditorFactory
     /**
      * Create an unauthenticated client - can only be used by trusted server-side processes (SP).
      */
-    public static IAuditorClient createAuthenticatedWithSharedSecret(String serviceName, String deploymentSecret)
+    public static IAuditorClient createAuthenticatedWithSharedSecret(String host, String serviceName, String deploymentSecret)
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT && Audit.AUDIT_ENABLED) {
             try {
                 URL url = new URL(
-                        "http", Audit.SERVICE_HOST, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH);
+                        "http", host, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH);
                 l.info("Unauthenticated connection to private audit endpoint {}", url);
 
                 return new AuditHttpClient(url) {

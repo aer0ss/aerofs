@@ -316,7 +316,7 @@ public class SPServlet extends AeroServlet
         Executor nioExecutor = Executors.newCachedThreadPool();
         NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
         return VerkehrClient.create(
-                BaseParam.Verkehr.HOST,
+                "verkehr.service",
                 BaseParam.Verkehr.REST_PORT,
                 MILLISECONDS.convert(30, SECONDS),
                 MILLISECONDS.convert(60, SECONDS),
@@ -329,7 +329,8 @@ public class SPServlet extends AeroServlet
     private static AuditClient createAuditClient(String deploymentSecret)
     {
         AuditClient auditClient = new AuditClient();
-        auditClient.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret("sp", deploymentSecret));
+        auditClient.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret(
+                "auditor.service", "sp", deploymentSecret));
         return auditClient;
     }
 

@@ -1,7 +1,0 @@
-Package: aerofs-charlie
-Section: admin
-Priority: required
-Depends: python, python-dev, python-pip, python-virtualenv, build-essential, pypy
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS device checkin service
-Architecture: all

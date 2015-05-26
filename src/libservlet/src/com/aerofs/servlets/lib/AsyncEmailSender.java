@@ -66,7 +66,7 @@ public class AsyncEmailSender extends AbstractEmailSender
         // We wish there was no default value here, so we could fail loudly if no production
         // config is found; however this breaks the development environment.
         String host = getStringProperty("email.sender.public_host",
-                                        p.getProperty("host", "localhost"));
+                                        p.getProperty("host", "postfix.service"));
         String port = getStringProperty("email.sender.public_port",
                                         p.getProperty("port", "25"));
         String username = getStringProperty("email.sender.public_username",

@@ -40,7 +40,7 @@ public class BaseParam
                 "config.loader.base_ca_certificate", null);
 
         // TODO (MP) need create ServerParam.java (or something) and move this there.
-        public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
+        public static final String FILE = "/opt/sparta/cacert.pem";
     }
 
     public static class XMPP
@@ -130,8 +130,7 @@ public class BaseParam
         // See comment in sp.proto
         public static final int SP_PROTOCOL_VERSION = 21;
 
-        public static final URL URL = getUrlProperty("base.sp.url",
-                "https://sp.aerofs.com/sp/");
+        public static final String URL = getStringProperty("base.sp.url", "https://sp.aerofs.com/sp/");
     }
 
     public static class Verkehr

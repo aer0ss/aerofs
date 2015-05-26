@@ -1,7 +1,0 @@
-Package: aerofs-sp
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS sp servlet package.
-Architecture: all
-Depends: java8-jdk, tomcat6

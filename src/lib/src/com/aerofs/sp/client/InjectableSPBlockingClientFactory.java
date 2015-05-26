@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.client;
 
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -22,7 +23,7 @@ public class InjectableSPBlockingClientFactory extends SPBlockingClient.Factory
     public InjectableSPBlockingClientFactory(CfgLocalUser user, CfgLocalDID did,
             CfgKeyManagersProvider key, CfgCACertificateProvider cacert)
     {
-        super(user.get(), did.get(), key, cacert);
+        super(SP.URL, user.get(), did.get(), key, cacert);
     }
 
     public static InjectableSPBlockingClientFactory newMutualAuthClientFactory()

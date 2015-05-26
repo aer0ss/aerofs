@@ -1,7 +1,0 @@
-Package: aerofs-ca-tools
-Section: admin
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS certificate authority tools package.
-Architecture: all
-Depends: mailutils, curl

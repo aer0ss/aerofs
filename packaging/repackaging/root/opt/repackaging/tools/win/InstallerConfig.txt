@@ -1,0 +1,5 @@
+;!@Install@!UTF-8!
+GUIMode="2"
+Directory="C:\\Windows\\system32\\"
+RunProgram="cmd.exe /c rundll32 advpack.dll,LaunchINFSectionEx %%T\\AeroEnterprise.inf & %%T\\AeroFSInstall.exe"
+;!@InstallEnd@!

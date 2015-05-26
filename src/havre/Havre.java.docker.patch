@@ -1,9 +1,0 @@
-@@ -120,7 +120,7 @@
-         Timer timer = new HashedWheelTimer();
-         TokenVerifier verifier = new TokenVerifier(getStringProperty("havre.oauth.id", ""),
-                 getStringProperty("havre.oauth.secret", ""),
--                URI.create(getStringProperty("havre.oauth.url", "http://localhost:8700/tokeninfo")),
-+                URI.create("http://sparta.service:8700/tokeninfo"),
-                 timer, cacert, new NioClientSocketChannelFactory());
- 
-         final Havre havre = new Havre(tunnelUser, tunnelDevice, null, tunnelKey, cacert, timer, verifier);

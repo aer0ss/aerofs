@@ -12,7 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
-import static com.aerofs.lib.LibParam.Bifrost.INTERNAL_BIFROST_HOST;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.LibParam.Bifrost.INTERNAL_BIFROST_PORT;
 import static com.aerofs.sp.server.lib.SPParam.ZELDA_ID;
 import static com.aerofs.sp.server.lib.SPParam.ZELDA_SECRET;
@@ -36,7 +36,7 @@ public class BifrostClient
                         "&code_type=device_authorization&client_id=" + ZELDA_ID +
                         "&client_secret=" + ZELDA_SECRET + "&expires_in=" + expires;
 
-        URL bifrostBaseUrl = new URL("http", INTERNAL_BIFROST_HOST, INTERNAL_BIFROST_PORT, "");
+        URL bifrostBaseUrl = new URL("http", getStringProperty("hack_bifrost_service_ip", ""), INTERNAL_BIFROST_PORT, "");
         URL bifrostTokensUrl = new URL(bifrostBaseUrl, "/token");
 
         HttpURLConnection conn = (HttpURLConnection)bifrostTokensUrl.openConnection();
@@ -53,7 +53,7 @@ public class BifrostClient
     public void deleteToken(String oldToken)
             throws IOException
     {
-        URL bifrostBaseUrl = new URL("http", INTERNAL_BIFROST_HOST, INTERNAL_BIFROST_PORT, "");
+        URL bifrostBaseUrl = new URL("http", getStringProperty("hack_bifrost_service_ip", ""), INTERNAL_BIFROST_PORT, "");
         URL bifrostTokensUrl = new URL(bifrostBaseUrl, "/token/" + oldToken);
 
         HttpURLConnection conn = (HttpURLConnection)bifrostTokensUrl.openConnection();

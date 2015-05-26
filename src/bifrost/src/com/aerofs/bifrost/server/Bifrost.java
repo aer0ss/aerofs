@@ -74,7 +74,7 @@ public class Bifrost extends Service
     {
         return new AbstractModule() {
             private final SPBlockingClient.Factory factSP =
-                    new SPBlockingClient.Factory(new FileBasedCertificateProvider(Cacert.FILE));
+                    new SPBlockingClient.Factory("http://sp.service:8080", new FileBasedCertificateProvider(Cacert.FILE));
 
             @Override
             protected void configure()
