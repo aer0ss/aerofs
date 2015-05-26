@@ -3,6 +3,3 @@ ldap_server_security=tls
 authenticator=local_credential
 url_sharing_enabled=true
 base_host=share.domain.name
-mysql_user=root
-mysql_url=mysql.service:3306
-redis_host=redis.service
