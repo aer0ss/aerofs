@@ -243,6 +243,23 @@ public abstract class PolarisHelpers {
                 .extract().as(JobStatus.Response.class).status;
     }
 
+    public static JobStatus waitForJobCompletion(RequestSpecification authenticated, UniqueID job, int tries)
+            throws Exception
+    {
+        JobStatus status = JobStatus.RUNNING;
+        int count = 0;
+        while(status.equals(JobStatus.RUNNING) && count < tries) {
+            status = PolarisHelpers.getJobStatus(authenticated, job);
+            Thread.sleep(100);
+            count++;
+        }
+
+        if (status.equals(JobStatus.RUNNING) && count == tries) {
+            throw new Exception(String.format("job did not complete within %d tries", tries));
+        }
+        return status;
+    }
+
     private PolarisHelpers() {
         // to prevent instantiation by subclasses
     }

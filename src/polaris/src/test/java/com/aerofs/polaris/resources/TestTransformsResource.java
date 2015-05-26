@@ -146,11 +146,13 @@ public final class TestTransformsResource {
     }
 
     @Test
-    public void shouldReturnCorrectTransformsWhenNonemptyFolderIsMigrated() {
+    public void shouldReturnCorrectTransformsWhenNonemptyFolderIsMigrated()
+            throws Exception
+    {
         SID rootStore = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
         OID file = PolarisHelpers.newFile(verified, folder, "file");
-        PolarisHelpers.shareFolder(verified, folder);
+        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
         assertThat(applied.transforms, hasSize(4));

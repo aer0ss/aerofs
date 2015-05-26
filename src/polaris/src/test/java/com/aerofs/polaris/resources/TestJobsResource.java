@@ -75,21 +75,14 @@ public class TestJobsResource {
     }
 
     @Test
-    public void migrationJobsShouldReportCompletion() throws InterruptedException {
+    public void migrationJobsShouldReportCompletion() throws Exception {
         SID store = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, store, "folder_1");
         UniqueID jobID = PolarisHelpers.shareFolder(verified, folder).jobID;
 
-        JobStatus status = JobStatus.RUNNING;
-        int count = 0;
+        JobStatus status = PolarisHelpers.waitForJobCompletion(verified, jobID, 5);
 
-        while(status.equals(JobStatus.RUNNING) && count < 5) {
-            status = PolarisHelpers.getJobStatus(verified, jobID);
-            Thread.sleep(100);
-            count++;
-        }
-
-        assertThat("job failed to complete", status, Matchers.equalTo(JobStatus.COMPLETED));
+        assertThat("job failed to complete successfully", status, Matchers.equalTo(JobStatus.COMPLETED));
     }
 
     @Test
