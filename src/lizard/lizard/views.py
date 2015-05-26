@@ -426,6 +426,8 @@ def pay():
         else:
             flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
 
+        notifications.send_sales_notification(user.email, license_request.seats)
+
         analytics_client.track(user.customer_id, 'Bought seats', {
             'email': markupsafe.escape(user.email),
             'quantity': license_request.seats,

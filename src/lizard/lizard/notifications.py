@@ -142,6 +142,16 @@ def send_private_cloud_question_email(requester, subject, message):
     msg.attach(part1)
     _send_email(SALES_ADDR, msg)
 
+def send_sales_notification(email_address, seats):
+    msg = MIMEMultipart("alternative")
+    text = u"{} upgraded to {} seats".format(email_address, seats)
+    msg["Subject"] = text
+    msg["From"] = SALES_ADDR
+    msg["To"] = SALES_ADDR
+    part1 = MIMEText(text.encode("utf-8"), "plain", "utf-8")
+    msg.attach(part1)
+    _send_email(SALES_ADDR, msg)
+
 def send_internal_appliance_release_notification(appliance_version):
     text = "Release notification: PC {} is now available to the public.".format(appliance_version)
     for room in ["#eng", "#success"]:
