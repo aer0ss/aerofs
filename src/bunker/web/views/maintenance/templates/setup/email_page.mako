@@ -12,7 +12,7 @@
     # TODO (WW) generate the string in the Python view after splitting
     # _setup_common() page specific views.
     import random
-    local.verification_code = str(random.randint(100000, 999999))
+    local.verification_code = str(random.randint(1000, 9999))
 %>
 
 <h4>Email server:</h4>
@@ -279,23 +279,11 @@
             var current_password = "${current_config['email.sender.public_password']}";
             var current_enable_tls = ${str(str2bool(current_config['email.sender.public_enable_tls'])).lower()};
             var current_certificate = "${current_config['email.sender.public_cert']}";
-            var remoteOptsChanged = remote && (
-                    host != current_host ||
-                    port != current_port ||
-                    username != current_username ||
-                    password != current_password ||
-                    enable_tls != current_enable_tls ||
-                    certificate != current_certificate);
-
-            ## Only enable smtp verification modal if something has changed.
-            var restored = ${str(restored_from_backup).lower()};
-            var initial = ${str(not is_configuration_initialized).lower()};
-            var toggled = remote != ${str(local.is_remote_host).lower()};
 
             ## This is used by CI to skip verification during automated testing
             var skipEmailVerification = $.url().param('skip_email_verification');
 
-            if (!skipEmailVerification && (restored || initial || toggled || remoteOptsChanged)) {
+            if (!skipEmailVerification) {
                 ## As we are showing modals, do not disable nav buttons
                 showVerifyEmailInputModal();
 
