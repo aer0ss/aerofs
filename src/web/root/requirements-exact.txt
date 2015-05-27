@@ -17,7 +17,7 @@ python-dateutil==2.2
 pytz==2014.4
 qrcode==5.0.1
 repoze.lru==0.6
-requests==2.3.0
+requests==2.7.0
 six==1.7.3
 stripe==1.18.0
 translationstring==1.1
