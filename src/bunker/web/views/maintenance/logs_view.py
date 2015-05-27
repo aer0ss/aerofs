@@ -42,8 +42,11 @@ def download_logs(request):
     log files is done.
     """
 
-    return get_file_download_response(LOG_ARCHIVE_PATH, 'application/zip',
-                               'aerofs-appliance-logs_', '.zip')
+    return get_file_download_response(
+            file_system_path=LOG_ARCHIVE_PATH,
+            mime_type='application/zip',
+            name_prefix='aerofs-appliance-logs_{}_'.format(get_private_version(request.registry.settings)),
+            name_suffix='.zip')
 
 
 def get_file_download_response(file_system_path, mime_type, name_prefix,
