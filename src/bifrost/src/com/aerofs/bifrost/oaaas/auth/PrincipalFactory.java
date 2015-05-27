@@ -2,13 +2,13 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.oauth;
+package com.aerofs.bifrost.oaaas.auth;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.ids.UserID;
-import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
-import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker.AuthorizedClient;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.Scope;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -16,23 +16,23 @@ import java.util.Collection;
 public class PrincipalFactory
 {
     @Inject
-    private SPBlockingClient.Factory spFactory;
+    private NonceChecker nonceChecker;
 
     public AuthenticatedPrincipal authenticate(
             String nonce, String devName, Collection<String> requestedScopes) throws Exception
     {
-        AuthorizeAPIClientReply auth = spFactory.create().authorizeAPIClient(nonce, devName);
+        AuthorizedClient auth = nonceChecker.authorizeAPIClient(nonce, devName);
 
         // is this a request for admin privilege; if so, throw if the caller is not allowed
         boolean isAdmin = isAdminRequest(requestedScopes);
-        if (isAdmin && (!auth.getIsOrgAdmin())) {
+        if (isAdmin && !auth.isOrgAdmin) {
             throw new ExNoPerm("User does not have admin privilege");
         }
 
-        OrganizationID orgID = OrganizationID.fromHexString(auth.getOrgId());
+        OrganizationID orgID = auth.orgId;
         return new AuthenticatedPrincipal(
-                auth.getUserId(),
-                isAdmin ? orgID.toTeamServerUserID() : UserID.fromExternal(auth.getUserId()),
+                auth.userId.getString(),
+                isAdmin ? orgID.toTeamServerUserID() : auth.userId,
                 orgID);
     }
 

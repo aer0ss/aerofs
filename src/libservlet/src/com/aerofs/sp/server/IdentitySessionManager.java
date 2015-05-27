@@ -9,31 +9,11 @@ import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.sp.server.lib.user.User;
-import com.dyuproject.openid.Association;
-import com.dyuproject.openid.Constants;
-import com.dyuproject.openid.DiffieHellmanAssociation;
-import com.dyuproject.openid.OpenIdContext;
-import com.dyuproject.openid.OpenIdUser;
-import com.dyuproject.openid.OpenIdUserManager;
-import com.dyuproject.util.http.HttpConnector.Response;
-import com.dyuproject.util.http.UrlEncodedParameterMap;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * A facade for setting, querying, and invalidating authentication sessions.
@@ -59,11 +39,10 @@ import java.util.concurrent.ConcurrentMap;
 */
 public class IdentitySessionManager
 {
-    public IdentitySessionManager()
+    @Inject
+    public IdentitySessionManager(PooledJedisConnectionProvider provider)
     {
-        _jedisConProvider = new PooledJedisConnectionProvider();
-        // TODO: configure this better: should be a transient redis instance
-        _jedisConProvider.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
+        _jedisConProvider = provider;
     }
 
     String createSession(int lifetimeSecs)
@@ -216,124 +195,13 @@ public class IdentitySessionManager
      * @throws ExExternalAuthFailure the given authorization nonce is not valid for
      * authorizing devices.
      */
-    UserID getAuthorizedDevice(String deviceAuthNonce)
+    public UserID getAuthorizedDevice(String deviceAuthNonce)
             throws ExExternalAuthFailure, ExInvalidID
     {
         String userid = getAndDelete(toDeviceAuthKey(deviceAuthNonce));
         assert userid != null : "Impossible backing-store state";
 
         return UserID.fromExternal(userid);
-    }
-
-    /**
-     * Store and retrieve OpenIdUser objects, keyed by update tokens.
-     *
-     * Note that the User object holds the association data for the OpenID provider, so
-     * we do keep the instance around for the auth response flow.
-     *
-     * NOTE: This code expects the OPENID_DELEGATE_NONCE *attribute* in the HttpServletRequest.
-     *
-     * TODO: OpenIdUser is serializable, so we could actually store the User object in a db...
-     */
-    static class UserManager implements OpenIdUserManager
-    {
-        @Override
-        public void init(Properties properties) { }
-
-        @Override
-        public OpenIdUser getUser(HttpServletRequest request) throws IOException
-        {
-            String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
-            return (token == null) ? null : _users.get(token);
-        }
-
-        /** return false if the token is missing or the key was already present */
-        @Override
-        public boolean saveUser(OpenIdUser user,
-                HttpServletRequest request, HttpServletResponse response) throws IOException
-        {
-            String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
-            return (token != null) && (_users.putIfAbsent(token, user) == null);
-        }
-
-        /** return false if the token is missing or the key was not present */
-        @Override
-        public boolean invalidate(HttpServletRequest request, HttpServletResponse response)
-                throws IOException
-        {
-            String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
-            return (token != null) && (_users.remove(token) != null);
-        }
-
-        private ConcurrentMap<String, OpenIdUser> _users = new ConcurrentHashMap<String, OpenIdUser>();
-    }
-
-    // This class is used in place of DiffieHellman for OpenId servers that are too...
-    // primitive? Dumb? to use the required association model.
-    // On "associate" we simply say "yes" and hack up the user association; without this,
-    // the dyu library will fail saying that the user is not associated.
-    // On "verify" we create a dumb-mode identification request to the server.
-    static class DumbAssociation implements Association
-    {
-        @Override
-        public boolean associate(OpenIdUser user, OpenIdContext context) throws Exception
-        {
-            // Ugly. We can't do the equivalent of setAssocHandle() any other way than the following
-            Map<String, Object> hashMap = new HashMap<String, Object>();
-            hashMap.put("a", user.getClaimedId());
-            hashMap.put("c", Constants.Assoc.ASSOC_HANDLE);
-            hashMap.put("d", new HashMap<Object, Object>());
-            hashMap.put("e", user.getOpenIdServer());
-
-            user.fromJSON(hashMap);
-
-            return true;
-        }
-
-        @Override
-        public boolean verifyAuth(OpenIdUser user, Map<String, String> authRedirect, OpenIdContext context)
-                throws Exception
-        {
-            if(!Constants.Mode.ID_RES.equals(authRedirect.get(Constants.OPENID_MODE))) {
-                l.info("Response from server was not id_res: {}", authRedirect.get(Constants.OPENID_MODE));
-                return false;
-            }
-
-            l.debug("OpenId using stateless auth-verify mode");
-
-            // Build our new request by starting with everything from the authRedirect map
-            UrlEncodedParameterMap map = new UrlEncodedParameterMap(user.getOpenIdServer());
-
-            // Theoretically all auth-response params are to be passed to check_authentication;
-            // in practice the OP might choke on non-openid params.
-            map.putAll(authRedirect);
-            map.put(Constants.OPENID_MODE, "check_authentication");
-            map.remove("sp.nonce");
-
-            Response response = context.getHttpConnector().doGET(
-                    user.getOpenIdServer(), (Map<?, ?>)null, map);
-            BufferedReader br = null;
-            Map<String, Object> results = new HashMap<String, Object>();
-            try
-            {
-                br = new BufferedReader(new InputStreamReader(
-                        response.getInputStream(), Constants.DEFAULT_ENCODING), 1024);
-                DiffieHellmanAssociation.parseInputByLineSeparator(br, ':', results);
-            }
-            finally
-            {
-                if(br!=null)
-                    br.close();
-            }
-
-            if (results.containsKey("is_valid")) {
-                String isValid = results.get("is_valid").toString();
-                if (isValid.toLowerCase().equals("true")) {
-                    return true;
-                }
-            }
-            return false;
-        }
     }
 
     private static String toDeviceAuthKey(final String val) { return PREFIX_DEVICEAUTH + val; }

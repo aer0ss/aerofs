@@ -12,7 +12,7 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
-import com.aerofs.oauth.PrincipalFactory;
+import com.aerofs.bifrost.oaaas.auth.PrincipalFactory;
 import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;

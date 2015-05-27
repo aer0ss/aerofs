@@ -4,8 +4,6 @@
 
 package com.aerofs.bifrost.server;
 
-import com.aerofs.base.BaseParam.Cacert;
-import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientRepositoryImpl;
@@ -31,7 +29,6 @@ import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.db.sql.IDataSourceProvider;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -68,20 +65,6 @@ public class Bifrost extends Service
     protected Set<Class<?>> singletons()
     {
         return ImmutableSet.of(TransactionalWrapper.class);
-    }
-
-    public static Module spModule()
-    {
-        return new AbstractModule() {
-            private final SPBlockingClient.Factory factSP =
-                    new SPBlockingClient.Factory("http://sp.service:8080", new FileBasedCertificateProvider(Cacert.FILE));
-
-            @Override
-            protected void configure()
-            {
-                bind(SPBlockingClient.Factory.class).toInstance(factSP);
-            }
-        };
     }
 
     public static Module databaseModule(IDataSourceProvider dsProvider)

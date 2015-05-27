@@ -217,8 +217,6 @@ containers:
         - redis:redis.service
         - verkehr:verkehr.service
         - postfix:postfix.service
-        # Still need to check session nonces, which currently only SP knows how to do
-        - sp:sp.service
 
   auditor:
     image: aerofs/auditor
@@ -255,6 +253,7 @@ containers:
         - verkehr:verkehr.service
         - auditor:auditor.service
         - config:config.service
+        - sparta:sparta.service
 
   verification:
     image: aerofs/verification

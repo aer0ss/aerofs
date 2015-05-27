@@ -220,7 +220,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Mock SharedFolderNotificationEmailer sharedFolderNotificationEmailer;
 
     @Mock Analytics analytics;
-    @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
+    @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager(jedisProvider);
     @Spy protected SharingRulesFactory sharingRules = new SharingRulesFactory(authenticator,
             factUser, sharedFolderNotificationEmailer);
 

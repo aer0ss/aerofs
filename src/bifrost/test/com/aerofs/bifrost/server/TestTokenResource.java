@@ -7,12 +7,12 @@ package com.aerofs.bifrost.server;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker.AuthorizedClient;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
@@ -48,14 +48,10 @@ public class TestTokenResource extends BifrostTest
     @Before
     public void setUpSPResponses() throws Exception
     {
-        when(_spClient.authorizeAPIClient(eq(GOOD_NONCE), anyString())).thenReturn(
-                AuthorizeAPIClientReply.newBuilder()
-                        .setUserId(USERNAME)
-                        .setOrgId("2")
-                        .setIsOrgAdmin(true)
-                        .build());
+        when(_nonceChecker.authorizeAPIClient(eq(GOOD_NONCE), anyString())).thenReturn(
+                new AuthorizedClient(UserID.fromInternal(USERNAME), OrganizationID.PRIVATE_ORGANIZATION, true));
 
-        when(_spClient.authorizeAPIClient(eq(BAD_NONCE), anyString()))
+        when(_nonceChecker.authorizeAPIClient(eq(BAD_NONCE), anyString()))
                 .thenThrow(new ExBadCredential());
     }
 

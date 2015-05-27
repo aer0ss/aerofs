@@ -39,7 +39,7 @@ import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
-import com.aerofs.oauth.PrincipalFactory;
+import com.aerofs.bifrost.oaaas.auth.PrincipalFactory;
 import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
 import com.google.common.base.Objects;
@@ -209,7 +209,7 @@ public class TokenResource
                 return sendErrorResponse(ValidationResponse.UNSUPPORTED_GRANT_TYPE);
             }
         } catch (ValidationResponseException e) {
-            l.warn("validation error in create token request", e.v);
+            l.warn("validation error in create token request: {}", e.v);
             return sendErrorResponse(e.v);
         }
         if (!request.getClient().isExactMatch(credentials)) {

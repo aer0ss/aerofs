@@ -1,37 +1,23 @@
 package com.aerofs.sp.server.listeners;
 
-import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.AuditorFactory;
-import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.ids.UserID;
-import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.rest.VerkehrClient;
-import com.google.common.util.concurrent.MoreExecutors;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
-import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SPLifecycleListener extends ConfigurationLifecycleListener
         implements ServletContextListener, HttpSessionListener
@@ -48,12 +34,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
     // Session extender.
     private final SPSessionExtender _sessionExtender = new SPSessionExtender(_tomcatSessionTracker);
 
-    private static final String ZELDA_PROPERTIES_FILE = "/etc/aerofs/zelda.properties";
-
-    public SPLifecycleListener()
-    {
-        super(ZELDA_PROPERTIES_FILE);
-    }
+    public SPLifecycleListener() {}
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
@@ -94,14 +75,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
 
         // If a sign in has occurred for this specific session, update the user session tracker
         // as well.
-        UserID userID = SPSession.getUserIDNullable(new IHttpSessionProvider()
-        {
-            @Override
-            public HttpSession get()
-            {
-                return event.getSession();
-            }
-        });
+        UserID userID = SPSession.getUserIDNullable(event::getSession);
 
         if (userID != null) {
             _userSessionTracker.signOut(userID, event.getSession().getId());

@@ -14,6 +14,7 @@ import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.bifrost.oaaas.auth.*;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
@@ -144,8 +145,15 @@ public class Sparta extends Service
         Injector bifrostInj = Guice.createInjector(Stage.PRODUCTION,
                 Bifrost.databaseModule(sqlConnProvider),
                 Bifrost.bifrostModule(),
-                Bifrost.spModule()
-                );
+                databaseModule(sqlConnProvider),
+                clientsModule(cacert, secret),
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                        bind(NonceChecker.class).to(InProcessNonceChecker.class);
+                    }
+                }
+        );
 
         new Bifrost(bifrostInj, secret)
                 .start();
@@ -212,6 +220,7 @@ public class Sparta extends Service
                 PooledJedisConnectionProvider jedisConn = new PooledJedisConnectionProvider();
                 jedisConn.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 
+                bind(PooledJedisConnectionProvider.class).toInstance(jedisConn);
                 bind(new TypeLiteral<IDatabaseConnectionProvider<JedisPooledConnection>>() {})
                         .toInstance(jedisConn);
                 bind(new TypeLiteral<IThreadLocalTransaction<JedisException>>() {})

@@ -8,8 +8,8 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
-import com.aerofs.sp.server.IdentitySessionManager.UserManager;
+import com.aerofs.lib.LibParam.REDIS;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.dyuproject.openid.Association;
 import com.dyuproject.openid.DefaultDiscovery;
 import com.dyuproject.openid.DiffieHellmanAssociation;
@@ -178,6 +178,10 @@ public class IdentityServlet extends HttpServlet
         public IdentityProvider(RelyingParty relyingParty)
         {
             _reliar = relyingParty;
+
+            PooledJedisConnectionProvider jedis = new PooledJedisConnectionProvider();
+            jedis.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
+            _identitySessionManager = new IdentitySessionManager(jedis);
         }
 
         void authRequest(String token, HttpServletRequest req, HttpServletResponse resp)
@@ -331,7 +335,7 @@ public class IdentityServlet extends HttpServlet
         }
 
         private final RelyingParty _reliar;
-        private final IdentitySessionManager _identitySessionManager = new IdentitySessionManager();
+        private final IdentitySessionManager _identitySessionManager;
         private final AuthParser _authParser = new AuthParser(OpenId.IDP_USER_PATTERN);
     }
 

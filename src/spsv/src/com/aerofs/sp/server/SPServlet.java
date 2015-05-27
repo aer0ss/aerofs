@@ -261,7 +261,7 @@ public class SPServlet extends AeroServlet
                 _twoFactorEmailer,
                 _commandQueue,
                 _analytics,
-                new IdentitySessionManager(),
+                new IdentitySessionManager(_jedisConProvider),
                 _authenticator,
                 _sfRules,
                 _sfnEmailer,

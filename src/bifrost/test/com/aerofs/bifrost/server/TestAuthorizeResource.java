@@ -1,9 +1,11 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.ex.ExExternalAuthFailure;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker.AuthorizedClient;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
+import com.aerofs.ids.UserID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.jayway.restassured.response.Response;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,14 +38,10 @@ public class TestAuthorizeResource extends BifrostTest
     @Before
     public void setUpTestAuthorizeResource() throws Exception
     {
-        when(_spClient.authorizeAPIClient(eq(ADMIN_NONCE), anyString())).thenReturn(
-                AuthorizeAPIClientReply.newBuilder()
-                        .setUserId("test1@b.c")
-                        .setOrgId("2")
-                        .setIsOrgAdmin(true)
-                        .build());
+        when(_nonceChecker.authorizeAPIClient(eq(ADMIN_NONCE), anyString())).thenReturn(
+                new AuthorizedClient(UserID.fromExternal("test1@b.c"), OrganizationID.PRIVATE_ORGANIZATION, true));
 
-        when(_spClient.authorizeAPIClient(eq(BAD_NONCE), anyString())).thenThrow(
+        when(_nonceChecker.authorizeAPIClient(eq(BAD_NONCE), anyString())).thenThrow(
                 new ExExternalAuthFailure());
     }
 

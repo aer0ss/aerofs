@@ -5,6 +5,7 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.base.id.OrganizationID;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker;
 import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
@@ -16,9 +17,7 @@ import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -67,8 +66,7 @@ public abstract class BifrostTest extends AbstractTest
     protected final static String CLIENTS_URL = "/clients";
 
     @Mock SessionFactory _sessionFactory;
-    @Mock SPBlockingClient _spClient;
-    @Mock SPBlockingClient.Factory _spClientFactory;
+    @Mock NonceChecker _nonceChecker;
     @Mock Session _session;
     Bifrost _service;
     protected int _port;
@@ -231,9 +229,7 @@ public abstract class BifrostTest extends AbstractTest
             @Override
             protected void configure()
             {
-                bind(SPBlockingClient.class).toInstance(_spClient);
-                bind(SPBlockingClient.Factory.class).toInstance(_spClientFactory);
-                when(_spClientFactory.create()).thenReturn(_spClient);
+                bind(NonceChecker.class).toInstance(_nonceChecker);
             }
         };
     }

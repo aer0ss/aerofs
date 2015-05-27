@@ -10,7 +10,8 @@ import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
+import com.aerofs.lib.LibParam.REDIS;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.testlib.AbstractTest;
 import com.dyuproject.openid.Constants;
 import com.dyuproject.openid.Constants.Mode;
@@ -135,7 +136,10 @@ public class TestIdentityServlet extends AbstractTest
         PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         Identity.AUTHENTICATOR = Authenticator.OPENID;
 
-        _identitySessionManager = new IdentitySessionManager();
+        PooledJedisConnectionProvider jedis = new PooledJedisConnectionProvider();
+        jedis.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
+
+        _identitySessionManager = new IdentitySessionManager(jedis);
         _server = setUpServer();
         _port = (_server.getConnectors()[0]).getLocalPort();
         _delegate = null;
