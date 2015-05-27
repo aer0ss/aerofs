@@ -23,19 +23,16 @@ public class CmdDefect extends AbstractShellCommand<ShProgram>
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
     {
-        StringBuilder sb = new StringBuilder("(via shell): ");
-        if (cl.getArgs().length == 0) {
+        if (cl.getArgs().length != 2) {
             throw new ExBadArgs("please provide a brief description of the problem");
         }
 
-        for (String arg : cl.getArgs()) {
-            sb.append(arg);
-            sb.append(" ");
-        }
+        String subject = cl.getArgList().get(0).toString();
+        String message = cl.getArgList().get(1).toString();
 
         _defectFactory.newPriorityDefect()
-                .setMessage(sb.toString())
-                .setSendFilenames(true)
+                .setSubject(subject)
+                .setMessage(message)
                 .sendSyncIgnoreErrors();
     }
 
@@ -55,6 +52,6 @@ public class CmdDefect extends AbstractShellCommand<ShProgram>
     @Override
     public String getOptsSyntax()
     {
-        return "DESCRIPTION";
+        return "SUBJECT MESSAGE";
     }
 }

@@ -121,15 +121,21 @@ public class AutoDefect extends Defect
         super.sendSync();
 
         if (_priority == Priority.Auto && _recentExceptions.isRecent(_exception)) {
-            l.info("repeating last defect: {}: {}", _message, _exception.toString());
+            l.info("Repeating last defect: {}: {}", _message, _exception.toString());
             return;
         } else {
-            l.info("sending defect: {}: {}", _message, _exception.toString());
+            l.info("Sending defect: {}: {}: {}", _subject, _message, _exception.toString());
         }
 
         if (_cfg.inited()) {
-            File[] files = getFiles(_absRTRoot, _uploadLogs, _uploadDB, _uploadHeapDumps,
-                    _uploadFilenames, _uploadAllFiles);
+            File[] files = getFiles(
+                    _absRTRoot,
+                    _uploadLogs,
+                    _uploadDB,
+                    _uploadHeapDumps,
+                    _uploadFilenames,
+                    _uploadAllFiles);
+
             if (ArrayUtils.isNotEmpty(files)) {
                 String resourceURL = createDefectLogsResource(_defectID, _userID, _deviceID);
                 _dryad.uploadFiles(resourceURL, files);
@@ -142,8 +148,9 @@ public class AutoDefect extends Defect
             deleteOldHeapDumps();
         }
 
-        // FIXME (AG): really? I'm pretty sure we won't be able to do any of this no?
-        if (_exception instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
+        if (_exception instanceof OutOfMemoryError) {
+            ExitCode.OUT_OF_MEMORY.exit();
+        }
     }
 
     @Override

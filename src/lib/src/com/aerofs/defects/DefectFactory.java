@@ -44,13 +44,13 @@ public class DefectFactory
         _properties = properties;
     }
 
-    // also used by other types of defects in the same package
+    // Also used by other types of defects in the same package.
     protected AutoDefect newAutoDefect(String name)
     {
         return newAutoDefect(name, _dryad);
     }
 
-    // used by command defects
+    // Used by command defects.
     protected AutoDefect newAutoDefect(String name, DryadClient dryad)
     {
         return new AutoDefect(name, _cfg, _rockLog, dryad, _executor, _recentExceptions,
@@ -116,7 +116,7 @@ public class DefectFactory
                 .setFilesToUpload(AutoDefect.UPLOAD_DB);
     }
 
-    // achievement unlocked: FactoryFactory
+    // Achievement unlocked: FactoryFactory.
     public static DefectFactory newFactory(String programName, String rtroot)
             throws IOException, GeneralSecurityException
     {

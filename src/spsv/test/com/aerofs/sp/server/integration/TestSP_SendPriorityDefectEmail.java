@@ -87,77 +87,16 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
     public void shouldQueueSendEmailRequestWithDefault()
             throws Exception
     {
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "Plops", "My plops don't work!",
                 "100.0.0", BaseUtil.toPB(DID.ZERO));
 
         verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                 eq("AeroFS"),
                 eq("support@aerofs.com"),
                 eq("replyto@example.com"),
-                eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
+                eq("Plops"),
                 anyString(),
                 anyString());
-    }
-
-    @Test
-    public void shouldSendEmailWithVersions()
-            throws Exception
-    {
-        String[][] testCases = {
-                { "0.8.65", "0.8.65" },
-                { "100.0.0", "100.0.0" },
-                { "", "unknown" },
-                { null, "unknown" }
-        };
-
-        for (String[] testCase : testCases) {
-            String version = testCase[0];
-            String expected = "Version: " + testCase[1];
-
-            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
-                    version, null);
-
-            verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    contains(expected));
-            reset(asyncEmailSender);
-        }
-    }
-
-    @Test
-    public void shouldSendEmailWithDeviceID()
-            throws Exception
-    {
-        Object[][] testCases = {
-                // NOTE: 0x30 is the UTF-8 for the character 0
-                { ByteString.copyFromUtf8("0000000000000000"), "30303030303030303030303030303030" },
-                { ByteString.copyFromUtf8("did1 in disguise"), "6469643120696e206469736775697365" },
-                { null, "unknown" },
-                { ByteString.copyFromUtf8(""), "unknown" },
-                { ByteString.copyFromUtf8("rogue did"), "unknown" },
-                { ByteString.copyFromUtf8("a really really really long did"), "unknown" },
-        };
-
-        for (Object[] testCase : testCases) {
-            ByteString input = (ByteString) testCase[0];
-            String expected = "Device ID: " + testCase[1];
-
-            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com",
-                    "Plops are for closers!", "100.0.0", input);
-
-            verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    anyString(),
-                    contains(expected));
-            reset(asyncEmailSender);
-        }
     }
 
     @Test
@@ -167,14 +106,14 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         setupOnSiteProperties();
 
         try {
-            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+            service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "Plops", "My plops don't work!",
                     null, null);
 
             verify(asyncEmailSender, times(1)).sendPublicEmailFromSupport(
                     eq("AeroFS"),
                     eq("support@myplops.com"),
                     eq("replyto@example.com"),
-                    eq("AeroFS Problem #0000deadbeef00000000deadbeef0000"),
+                    eq("Plops"),
                     // also check that the log collection link contains session user's UserID
                     contains(urlEncode(_sessionUser.id().getString())),
                     contains(urlEncode(_sessionUser.id().getString())));
@@ -191,7 +130,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         //   it must be thrown from sendDryadEmail.
         session.deauthorize();
 
-        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "My plops don't work!",
+        service.sendPriorityDefectEmail(DEFECT_ID, "replyto@example.com", "Plops", "My plops don't work!",
                 null, null);
     }
 
@@ -199,7 +138,7 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
     public void shouldThrowOnInvalidContactEmailAddress()
             throws Exception
     {
-        service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "My plops will go on",
+        service.sendPriorityDefectEmail(DEFECT_ID, "call me plops", "Plops", "My plops will go on",
                 null, null);
     }
 }

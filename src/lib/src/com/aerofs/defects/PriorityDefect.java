@@ -32,23 +32,30 @@ public abstract class PriorityDefect
 {
     private static final Logger l = Loggers.getLogger(PriorityDefect.class);
 
+    protected String    _subject;
     protected String    _message;
     protected Throwable _exception;
-    protected boolean   _expected;
     protected String    _contactEmail;
     protected boolean   _sampleCPU;
-    protected boolean _sendFilenames;
 
     private final InjectableCfg _cfg;
     private final InjectableSPBlockingClientFactory _spFactory;
     private final Executor _executor;
 
-    protected PriorityDefect(InjectableCfg cfg, InjectableSPBlockingClientFactory spFactory,
+    protected PriorityDefect(
+            InjectableCfg cfg,
+            InjectableSPBlockingClientFactory spFactory,
             Executor executor)
     {
         _cfg = cfg;
         _spFactory = spFactory;
         _executor = executor;
+    }
+
+    public PriorityDefect setSubject(String subject)
+    {
+        _subject = subject;
+        return this;
     }
 
     public PriorityDefect setMessage(String message)
@@ -64,21 +71,9 @@ public abstract class PriorityDefect
         return this;
     }
 
-    public PriorityDefect setExpected(boolean expected)
-    {
-        _expected = expected;
-        return this;
-    }
-
     public PriorityDefect setContactEmail(String contactEmail)
     {
         _contactEmail = contactEmail;
-        return this;
-    }
-
-    public PriorityDefect setSendFilenames(boolean sendFilenames)
-    {
-        _sendFilenames = sendFilenames;
         return this;
     }
 
@@ -87,7 +82,7 @@ public abstract class PriorityDefect
         _executor.execute(this::sendSyncIgnoreErrors);
     }
 
-    // overridden in UIPriorityDefect to send out notifications
+    // Overridden in UIPriorityDefect to send out notifications.
     public void sendSyncIgnoreErrors()
     {
         try {
@@ -117,22 +112,19 @@ public abstract class PriorityDefect
         Defect defect = getFactory().newAutoDefect("defect.priority")
                 .setDefectID(defectID)
                 .setPriority(Priority.User)
-                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS |
-                        (_sendFilenames ? AutoDefect.UPLOAD_FILENAMES : AutoDefect.UPLOAD_NONE))
+                .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS | AutoDefect.UPLOAD_FILENAMES)
+                .setSubject(_subject)
                 .setMessage(_message)
                 .setException(_exception)
-                .addData("daemon_status", getDaemonStatus())
-                // for reason unknown, the ElasticSearch's indexer is expecting the field
-                // "expected" to be a long. Hence we use the "is_expected" for the field's key.
-                .addData("is_expected", _expected);
+                .addData("daemon_status", getDaemonStatus());
 
-        // dump the defect content into the log
+        // Dump the defect content into the log.
         dumpDefectData(defect);
         defect.sendSync();
 
         _spFactory.create()
                 .signInRemote()
-                .sendPriorityDefectEmail(defectID, _contactEmail, _message, _cfg.ver(),
+                .sendPriorityDefectEmail(defectID, _contactEmail, _subject, _message, _cfg.ver(),
                         BaseUtil.toPB(_cfg.did()));
     }
 

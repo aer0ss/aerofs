@@ -95,7 +95,8 @@ _FORM_PARAM_EMAIL = 'email'
 _FORM_PARAM_HOST = 'host'
 _FORM_PARAM_PORT = 'port'
 _FORM_PARAM_CERT = 'cert'
-_FORM_PARAM_DESC = 'desc'
+_FORM_PARAM_SUBJECT = 'subject'
+_FORM_PARAM_MESSAGE = 'message'
 
 _OPTION_AEROFS = 'aerofs'
 _OPTION_ON_SITE = 'on-site'
@@ -123,7 +124,8 @@ def collect_logs(request):
         'port':         conf[_DRYAD_PORT_PROP]
         if conf[_DRYAD_PORT_PROP] != '' else '443',
         'cert':         unformat_pem(conf[_DRYAD_CERT_PROP]),
-        'desc':         request.params.get(_FORM_PARAM_DESC, ''),
+        'subject':      request.params.get(_FORM_PARAM_SUBJECT, ''),
+        'message':      request.params.get(_FORM_PARAM_MESSAGE, ''),
     }
 
 
@@ -164,12 +166,13 @@ def json_collect_logs(request):
         'host':     request.params[_FORM_PARAM_HOST],
         'port':     request.params[_FORM_PARAM_PORT],
         'cert':     request.params[_FORM_PARAM_CERT],
-        'desc':     request.params[_FORM_PARAM_DESC],
+        'subject':  request.params[_FORM_PARAM_SUBJECT],
+        'message':  request.params[_FORM_PARAM_MESSAGE],
     }
 
     r = requests.post(url, data=payload)
 
-    # only persist settings if the post was successful
+    # Only persist settings if the post was successful.
     if r.status_code == 200:
         conf = get_conf_client(request)
         conf.set_external_property(_DRYAD_OPTION_EXTERNAL_PROP,
@@ -225,8 +228,10 @@ def _validate_collect_logs_options(params):
         else:
             _validate_certificate(params[_FORM_PARAM_CERT])
 
-    if _FORM_PARAM_DESC not in params:
-        error('Please provide a description of the problem.')
+    if _FORM_PARAM_SUBJECT not in params:
+        error('Please provide a subject.')
+    if _FORM_PARAM_MESSAGE not in params:
+        error('Please provide a message that describes the problem.')
 
 
 def _validate_certificate(certificate):

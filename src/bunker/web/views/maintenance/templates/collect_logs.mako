@@ -136,7 +136,7 @@
     <div class="form-group">
         <label for="option">Send the logs to:*</label>
         <select id="option" name="option" class="form-control" required>
-            <option value="" disabled>
+            <option value="">
                 --Select the destination--</option>
             <option id="option-on-site" value="on-site"
                     %if option == 'on-site':
@@ -202,10 +202,16 @@
     </div>
 
     <div class="form-group">
-        <label for="desc">Description:*</label>
-        <textarea id="desc" name="desc" class="form-control"
-                  placeholder="Please describe the problem"
-                  required>${desc}</textarea>
+        <label for="subject">Subject:*</label>
+        <input id="subject" name="subject" class="form-control" type="text"
+                placeholder="Subject"
+                value="${subject}"
+                required/>
+
+        <label for="message">Description:*</label>
+        <textarea id="message" name="message" class="form-control"
+                  placeholder="Message (please describe the problem)"
+                  required>${message}</textarea>
     </div>
 
     <hr/>
@@ -383,8 +389,9 @@
         function validateForm() {
             throwIfMissing('#option', 'Please select a destination to upload ' +
                     'the client logs to.');
-            throwIfMissing('#desc', 'Please provide a description of the ' +
-                    'problem.');
+            throwIfMissing('#subject', 'Please provide a subject');
+            throwIfMissing('#message', 'Please provide a message that describes ' +
+                    'the problem.');
 
             var selectedOption = getSelectedOption();
             switch (selectedOption) {

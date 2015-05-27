@@ -5,7 +5,6 @@
 package com.aerofs.defects;
 
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;

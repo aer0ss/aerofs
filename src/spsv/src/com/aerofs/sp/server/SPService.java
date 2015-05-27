@@ -2087,12 +2087,11 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> sendPriorityDefectEmail(String defectID,
-            String contactEmail, String description, @Nullable String version,
-            @Nullable ByteString deviceID)
+            String contactEmail, String subject, String message, String version,
+            ByteString deviceID)
             throws Exception
     {
         _sqlTrans.begin();
-        // authenticate the user
         UserID userID = _session
                 .getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY)
                 .id();
@@ -2103,39 +2102,29 @@ public class SPService implements ISPService
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = contactEmail;
-        String subject = format("%s Problem #%s", L.brand(), defectID);
-        String header = format("%s has reported an issue while using %s.", contactEmail, L.brand());
+        String header = format("%s Support", L.brand());
         String body;
 
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // private cloud e-mail content
-            String link = format("%s?defect_id=%s&email=%s&users=%s&desc=%s#client",
-                    WWW.COLLECT_LOGS_URL, urlEncode(defectID), urlEncode(contactEmail),
-                    urlEncode(userID.getString()), urlEncode(description));
-            body = format("\n%s\n\nFollow this link to collect logs from this user:\n\n%s\n\n",
-                    description, link);
-        } else {
-            String strDeviceID;
-            try {
-                strDeviceID = DID.fromExternal(deviceID.toByteArray()).toStringFormal();
-            } catch (Exception e) {
-                strDeviceID = "unknown";
-            }
-
-            // hybrid cloud e-mail content
-            body = format("\nDefect ID: %s\n" +
-                            "Contact Email: %s\n" +
-                            "Device ID: %s\n" +
-                            "Version: %s\n\n" +
-                            "%s",
-                    defectID, contactEmail, strDeviceID,
-                    defaultIfEmpty(version, "unknown"), description);
-        }
+        String link = format("%s?defect_id=%s&email=%s&users=%s&subject=%s&message=%s#client",
+                WWW.COLLECT_LOGS_URL,
+                urlEncode(defectID),
+                urlEncode(contactEmail),
+                urlEncode(userID.getString()),
+                urlEncode(subject),
+                urlEncode(message));
+        body = format("A user has reported a problem using %s.\n\nUser: %s\nSubject: %s\nMessage: %s\n\n" +
+                      "Use the following link to collect logs from this user and optionally submit them to %s Support:\n\n%s\n\n",
+                L.brand(), contactEmail, subject, message, L.brand(), link);
 
         Email email = new Email();
         email.addSection(header, body);
-        _emailSender.sendPublicEmailFromSupport(fromName, to, replyTo, subject,
-                email.getTextEmail(), email.getHTMLEmail());
+        _emailSender.sendPublicEmailFromSupport(
+                fromName,
+                to,
+                replyTo,
+                format("[%s Support] %s", L.brand(), subject),
+                email.getTextEmail(),
+                email.getHTMLEmail());
 
         return createVoidReply();
     }

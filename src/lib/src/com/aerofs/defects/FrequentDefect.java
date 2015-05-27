@@ -15,7 +15,6 @@ import java.util.concurrent.Executor;
 
 import static com.aerofs.defects.DefectUtils.newDefectID;
 
-// TODO: a better way to handle this
 public class FrequentDefect extends AutoDefect
 {
     private static final Logger l = Loggers.getLogger(FrequentDefect.class);

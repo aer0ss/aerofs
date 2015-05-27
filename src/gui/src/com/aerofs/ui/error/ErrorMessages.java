@@ -118,27 +118,8 @@ public class ErrorMessages
     private static void showInGUI(Shell shell, Throwable exception, String defaultMessage,
             @Nullable String message)
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // In enterprise deployment, there's no "report a problem" dialog, so we just show the
-            // error message
-            if (message == null) message = defaultMessage + " Please try again later.";
-            GUI.get().show(shell, MessageType.ERROR, message);
-
-        } else {
-            final boolean isExpectedError = (message != null);
-            final String reportButtonLabel = isExpectedError ? "Ask for Help..." : "Report...";
-
-            if (message == null) {
-                // Suffix "please try again later..." for unspecified error types
-                message = defaultMessage + " Please try again later. If the problem persists, " +
-                        "please report it to the " + L.brand() + " team.";
-            }
-
-            if (GUI.get().askWithDefaultOnNoButton(shell, MessageType.ERROR, message,
-                    reportButtonLabel, IDialogConstants.OK_LABEL)) {
-                new DlgDefect(shell, exception, isExpectedError).open();
-            }
-        }
+        if (message == null) message = defaultMessage + " Please try again later.";
+        GUI.get().show(shell, MessageType.ERROR, message);
     }
 
     private static void showInCLI(String defaultMessage, String message)

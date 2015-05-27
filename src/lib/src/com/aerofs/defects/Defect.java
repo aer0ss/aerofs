@@ -47,6 +47,7 @@ public class Defect
 
     protected String    _defectID;
     protected String    _name;
+    protected String    _subject;
     protected String    _message;
     protected Throwable _exception;
     protected String    _time;
@@ -71,17 +72,25 @@ public class Defect
         _rockLog = rockLog;
         _executor = executor;
 
-        // Set the timestamp field as early as possible
+        // Set the timestamp field as early as possible.
         _time = getTimeStamp();
         _defectID = newDefectID();
         _name = name;
+        _subject = "";
         _message = "";
-        // need the stacktrace at this point assuming it's not overwritten later
+
+        // Need the stacktrace at this point assuming it's not overwritten later.
         _exception = new Exception();
         _priority = Priority.Auto;
 
         _userID = getCfgUser(_cfg);
         _deviceID = getCfgDID(_cfg);
+    }
+
+    public Defect setSubject(String subject)
+    {
+        _subject = firstNonNull(subject, "");
+        return this;
     }
 
     public Defect setMessage(String message)
@@ -92,7 +101,7 @@ public class Defect
 
     public Defect setException(@Nullable Throwable exception)
     {
-        // do not update if exception is null
+        // Do not update if exception is null.
         _exception = firstNonNull(exception, _exception);
         return this;
     }
@@ -106,7 +115,7 @@ public class Defect
     public void sendSync()
             throws Exception
     {
-        l.debug("build defect");
+        l.debug("Build defect.");
 
         // If we have any LinkageError (NoClassDefFoundError or UnsatisfiedLinkError) or
         // MissingResourceException, this probably indicates that our stripped-down version of
@@ -161,9 +170,9 @@ public class Defect
         data.put("name",                _name);
         data.put("@message",            _message);
         data.put("exception",           encodeException(_exception));
+
         // Note: some of our json fields start with a '@' to follow the logstash format
-        // see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
-        // Kibana expects to find those fields (especially @timestamp)
+        // See: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
         data.put("@timestamp",          _time);
         data.put("priority",            _priority.toString());
 

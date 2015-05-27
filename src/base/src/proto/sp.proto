@@ -1616,10 +1616,10 @@ message DestroySharedFolderCall {
 message SendPriorityDefectEmailCall {
     required string defect_id = 1;
     required string contact_email = 2;
-    required string description = 3;
-    // this is optional because backwards-compatibility
-    optional string version = 4;
-    optional bytes device_id = 5;
+    required string subject = 3;
+    required string message = 4;
+    required string version = 5;
+    required bytes device_id = 6;
 }
 
 message SetupTwoFactorCall {

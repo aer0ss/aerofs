@@ -12,6 +12,7 @@ import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.REDIS;
+import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -67,7 +68,7 @@ public class CollectLogsServlet extends HttpServlet
         _sqlTrans = new SQLThreadLocalTransaction(_sqlConnProvider);
         _udb = new UserDatabase(_sqlTrans);
 
-        // N.B. this choice relies on the current method of provisionig AsyncEmailSender.
+        // N.B. this choice relies on the current method of provisioning AsyncEmailSender.
         // Specifically, we relies on AsyncEmailSender to pull configuration in the following order:
         // - pull from config server
         // - read from a local properties file (file not available for private deployments)
@@ -100,31 +101,37 @@ public class CollectLogsServlet extends HttpServlet
             String version          = req.getParameter("version");
             List<UserID> userIDs    = getUsersIDs(req.getParameterValues("users"));
             boolean toOnsite        = equal(req.getParameter("option"), OPTION_ONSITE);
-            String desc             = req.getParameter("desc");
+            String subject          = req.getParameter("subject");
+            String message          = req.getParameter("message");
             long customerID         = Long.parseLong(_license.customerID());
             String customerName     = _license.customerName();
 
             String commandMessage;
 
             if (toOnsite) {
+                l.info("Send logs to on-site collection facility.");
+
                 String hostname = req.getParameter("host");
                 int port = Integer.parseInt(req.getParameter("port"));
                 String cert = req.getParameter("cert");
-
                 commandMessage = createUploadLogsToOnSiteCommandMessage(defectID, getExpiryTime(),
                         hostname, port, cert);
                 enqueueCommandsForUsers(commandMessage, userIDs);
-                notifyOnSiteSupport(hostname, defectID, userIDs);
+                notifyOnSiteSupport(hostname, subject, defectID, userIDs);
             } else {
-                String email = req.getParameter("email");
+                l.info("Send logs to AeroFS support.");
 
+                String email = req.getParameter("email");
                 commandMessage = createUploadLogsToAeroFSCommandMessage(defectID, getExpiryTime());
                 enqueueCommandsForUsers(commandMessage, userIDs);
-                emailAeroFSSupport(customerID, customerName, email, defectID, version, userIDs,
-                        desc);
-                notifyOnSiteSupport(L.brand() + " Support", defectID, userIDs);
+                emailAeroSupport(customerID, customerName, email, defectID, version, userIDs,
+                        subject, message);
+                notifyOnSiteSupport(L.brand() + " Support", subject, defectID, userIDs);
             }
+
+            resp.setStatus(200);
         } catch (Exception e) {
+            l.error(Util.e(e));
             resp.setStatus(500);
         }
     }
@@ -186,21 +193,21 @@ public class CollectLogsServlet extends HttpServlet
         }
     }
 
-    // sends a confirmation e-mail to on-site support to acknowledge the command has been issued
-    private void notifyOnSiteSupport(String dest, String defectID, List<UserID> users)
+    // Sends a confirmation e-mail to on-site support to acknowledge the command has been issued.
+    private void notifyOnSiteSupport(String dest, String subject, String defectID, List<UserID> users)
             throws Exception
     {
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = WWW.SUPPORT_EMAIL_ADDRESS;
-        String subject = format("%s Problem #%s", L.brand(), defectID);
-        String header = format("An administrator has issued a command to collect logs from " +
-                        "%s users.", L.brand());
-        String body = format("%s client logs on the following users' computers will be uploaded " +
+        subject = format("[%s Support] %s", L.brand(), subject);
+        String header = format("%s Support", L.brand());
+        String body = format("An administrator has issued a command to collect logs from %s users. " +
+                        "%s client logs from the following users' computers will be uploaded " +
                         "to %s over the next seven days.\n\n" +
                         "Defect ID: %s\n" +
-                        "Users to collect logs from:\n%s\n",
-                L.brand(), dest, defectID, formatUsersList(users));
+                        "Users:\n%s\n",
+                L.brand(), L.brand(), dest, defectID, formatUsersList(users));
 
         Email email = new Email();
         email.addSection(header, body);
@@ -208,27 +215,34 @@ public class CollectLogsServlet extends HttpServlet
                 email.getTextEmail(), email.getHTMLEmail());
     }
 
-    // sends an e-mail to ZenDesk to create a support ticket
-    private void emailAeroFSSupport(long customerID, String customerName, String contactEmail,
-            String defectID, String version, List<UserID> users, String desc) throws Exception
+    private void emailAeroSupport(long customerID,
+                                  String customerName,
+                                  String contactEmail,
+                                  String defectID,
+                                  String version,
+                                  List<UserID> users,
+                                  String subject,
+                                  String message)
+            throws Exception
     {
         String fromName = SPParam.EMAIL_FROM_NAME;
-        // this e-mail is intended for AeroFS Support (not the on-site support), so we e-mail to
-        // support@aerofs.com.
+
         String to = "support@aerofs.com";
         String replyTo = contactEmail;
-        String subject = format("%s Problem #%s", L.brand(), defectID);
         String header = format("%s has reported an issue while using %s.", contactEmail, L.brand());
         String body = format(
                 "Defect ID: %s\n" +
                 "Version: %s\n" +
                 "Customer ID: %s\n" +
                 "Customer Name: %s\n" +
-                "Contact Email: %s\n" +
                 "Users:\n%s\n" +
-                "%s",
-                defectID, version, customerID, customerName, contactEmail, formatUsersList(users),
-                desc);
+                "Message:\n%s",
+                defectID,
+                version,
+                customerID,
+                customerName,
+                formatUsersList(users),
+                message);
 
         Email email = new Email();
         email.addSection(header, body);

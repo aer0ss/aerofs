@@ -6,13 +6,11 @@ import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.ui.UIGlobals;
+import com.swtdesigner.SWTResourceManager;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -24,7 +22,6 @@ import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -42,34 +39,21 @@ public class DlgDefect extends AeroFSJFaceDialog
     private static final Factory _defectFactory = new Factory(UIGlobals.ritualClientProvider());
 
     private Text _txtEmailAddress;
-    private Text _txtComment;
-    private Button _sendDiagnosticData;
+    private Text _txtSubject;
+    private Text _txtMessage;
 
     @Nullable private final Throwable _exception;
-    private final boolean _expectedException;
 
     public DlgDefect()
     {
-        this(null, null, false);
+        this(null, null);
     }
 
-    /**
-     *
-     * @param sheetStyleParent if non-null, the dialog attaches to this shell with the SHEET style.
-     * @param exception if non-null, the dialog shows the exception's stack as technical
-     * details, and the comment is optional.
-     * @param expectedException if {@code exception} is non-null, true means the exception is one of
-     * the expected exception types specified in ErrorMessage.show(). In this case, the string
-     * "(expected error)" will be attached to the support email. Support personnel can ignore
-     * emails with expected exceptions unless the user provides additional information.
-     */
-    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception,
-            boolean expectedException)
+    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception)
     {
         super(S.REPORT_A_PROBLEM, sheetStyleParent == null ? GUI.get().sh() : sheetStyleParent,
                 sheetStyleParent != null, true, true, true);
         _exception = exception;
-        _expectedException = expectedException;
     }
 
     /**
@@ -104,28 +88,39 @@ public class DlgDefect extends AeroFSJFaceDialog
             }
         });
 
-        _txtComment.setFocus();
+        _txtSubject.setFocus();
 
         return container;
     }
 
     private void createCommentFields(Composite container)
     {
-        Label lblWhatsUp = createLabel(container, SWT.NONE);
-        // \n: a nasty way of setting margins. it's ugly but it works.
-        String msg = "\nPlease describe the problem:\n" +
-                "\t- What are you trying to accomplish?\n" +
-                "\t- How do you expect AeroFS to behave?\n" +
-                "\t- What do you see AeroFS doing instead?";
-        lblWhatsUp.setText(msg);
+        Label lblTxtSubject = createLabel(container, SWT.NONE);
+        lblTxtSubject.setText("\nSubject:");
 
-        _txtComment = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
-        GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
-        gd_text.heightHint = 80;
-        gd_text.widthHint = 346;
-        _txtComment.setLayoutData(gd_text);
+        _txtSubject = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        GridData gdSubject = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+        gdSubject.heightHint = 20;
+        gdSubject.widthHint = 346;
+        _txtSubject.setLayoutData(gdSubject);
+        _txtSubject.addModifyListener(new ModifyListener()
+        {
+            @Override
+            public void modifyText(ModifyEvent modifyEvent)
+            {
+                updateControlStatus();
+            }
+        });
 
-        _txtComment.addModifyListener(new ModifyListener()
+        Label lblTxtMessage = createLabel(container, SWT.NONE);
+        lblTxtMessage.setText("\nMessage (please describe the problem):");
+
+        _txtMessage = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        GridData gdMessage = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+        gdMessage.heightHint = 80;
+        gdMessage.widthHint = 346;
+        _txtMessage.setLayoutData(gdMessage);
+        _txtMessage.addModifyListener(new ModifyListener()
         {
             @Override
             public void modifyText(ModifyEvent modifyEvent)
@@ -161,16 +156,6 @@ public class DlgDefect extends AeroFSJFaceDialog
         gl_composite.marginWidth = 0;
         composite.setLayout(gl_composite);
 
-        _sendDiagnosticData = GUIUtil.createButton(composite, SWT.CHECK);
-        _sendDiagnosticData.setSelection(true);
-        _sendDiagnosticData.setText("Send metadata (including file names)");
-
-        if (L.isMultiuser() || PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // no plaintext file names can be collected with multiuser installs
-            // whereas we always collect filenames for private deployment
-            _sendDiagnosticData.setVisible(false);
-        }
-
         Link link = new Link(composite, SWT.NONE);
         link.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
         link.setText("<a>What do we collect?</a>");
@@ -185,28 +170,22 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void createEmailFields(Composite container)
     {
-        Label lblWhatsUp = createLabel(container, SWT.NONE);
-        lblWhatsUp.setText(
-                "Thank you for contacting us! We will get back to you as early as we can.\n" +
-                "This email address will be used for correspondence regarding this issue:");
+        Label lblEmail = createLabel(container, SWT.NONE);
+        lblEmail.setText("This email address will be used for correspondence regarding this issue:");
 
         _txtEmailAddress = new Text(container, SWT.BORDER);
         _txtEmailAddress.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         _txtEmailAddress.setText(Cfg.db().get(Key.CONTACT_EMAIL));
-        _txtEmailAddress.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                updateControlStatus();
-            }
-        });
+        _txtEmailAddress.setEditable(false);
+        _txtEmailAddress.setBackground(SWTResourceManager.getColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
     }
 
     private void updateControlStatus()
     {
-        boolean ready = Util.isValidEmailAddress(_txtEmailAddress.getText())
-                && !_txtComment.getText().trim().isEmpty();
+        boolean ready =
+                !_txtSubject.getText().trim().isEmpty() &&
+                !_txtMessage.getText().trim().isEmpty();
+
         getButton(IDialogConstants.OK_ID).setEnabled(ready);
     }
 
@@ -220,16 +199,17 @@ public class DlgDefect extends AeroFSJFaceDialog
 
     private void sendDefect()
     {
-        String msg = _txtComment.getText();
+        // Strip extra spaces and newlines from the message.
+        String subject = _txtSubject.getText().replaceAll("\\s+", " ");
+        String message = _txtMessage.getText().replaceAll("\\s+", " ");
+
         String contactEmail = _txtEmailAddress.getText();
-        boolean sendFilenames = _sendDiagnosticData.getSelection();
 
         _defectFactory.newPriorityDefect()
-                .setMessage(msg)
+                .setSubject(subject)
+                .setMessage(message)
                 .setException(_exception)
-                .setExpected(_expectedException)
                 .setContactEmail(contactEmail)
-                .setSendFilenames(sendFilenames)
                 .sendAsync();
     }
 
