@@ -29,6 +29,8 @@
                 </div>
                 <span class="text-danger"
                     ng-show="newGroup.members.length >= maxMembers">This group is now full.</span>
+                <span class="text-danger"
+                      ng-show="userAlreadyInGroup">Member already exists in group.</span>
                 <div class="row">
                     <div class="col-xs-9">
                         <div id="group-members" 

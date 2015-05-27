@@ -44,6 +44,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
             scope.searchUsersURL = searchUsersURL;
             scope.nonUniqueName = false;
 
+
             scope.maxMembers = maxMembers;
 
             scope.addMember = function(){
@@ -53,8 +54,17 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                     if (scope.newGroup.newMember.email === undefined) {
                         scope.newGroup.newMember.email = scope.newGroup.newMember.name;
                     }
-                    scope.newGroup.members.push(scope.newGroup.newMember);
-                    scope.newGroup.newMember = '';
+
+                    scope.userAlreadyInGroup = scope.newGroup.members.some(function(member) {
+                        return member.email.toLowerCase() == scope.newGroup.newMember.email.toLowerCase()
+                    });
+
+                    if (!scope.userAlreadyInGroup) {
+                        scope.newGroup.members.push(scope.newGroup.newMember);
+                    }
+
+                    //clear the input field
+                    scope.newGroup.newMember = undefined;
                 } else {
                     $log.info("Attempted to submit empty group member.");
                 }
