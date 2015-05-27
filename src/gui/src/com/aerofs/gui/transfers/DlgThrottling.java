@@ -134,9 +134,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnDownLimit.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent selectionEvent) {
-                if (_btnDownLimit.getSelection()) {
-                    selectDownText();
-                }
+                setUnlimitedDownRate(!_btnDownLimit.getSelection());
             }
         });
 
@@ -224,9 +222,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnUpLimit.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent selectionEvent) {
-                if (_btnUpLimit.getSelection()) {
-                    selectUpText();
-                }
+                setUnlimitedUpRate(!_btnUpLimit.getSelection());
             }
         });
 
