@@ -6,7 +6,7 @@
 <%namespace name="common" file="logs_common.mako"/>
 
 <%
-    support_url = 'https://support.aerofs.com/hc/en-us/articles/202258960'
+    support_url = 'https://support.aerofs.com/hc/en-us/articles/204593134'
 %>
 
 <div class="page-block">
