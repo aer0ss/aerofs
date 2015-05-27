@@ -188,7 +188,7 @@
         %if is_private_deployment(request.registry.settings):
             <li class="nav-header">My Deployment</li>
             <ul>
-                <li><a href='javascript:gotoMaintenance()' id="mng-link">Manage</a></li>
+                <li><a href='javascript:gotoMaintenance()' id="mng-link">Manage Appliance</a></li>
                 <script>
                     ## Using this hack to refer to another service is not a best practice.
                     ## However it has the lowest cost given the current architecture.
