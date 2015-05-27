@@ -6,8 +6,6 @@ set -e
 # Sort non-base image names alphabetically to help users observe build progress
 
 DIRS="
-    golang-builder
-
     base/base
     base/jre8
     base/jre8-and-mysql-client
