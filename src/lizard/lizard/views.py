@@ -672,27 +672,28 @@ def administrators():
             form=forms.InviteForm(),
             )
 
-@blueprint.route("/download_ova", methods=["GET"])
-@login.login_required
+@blueprint.route("/aerofs-appliance.ova", methods=["GET"])
 def download_ova():
     version = appliance.latest_appliance_version()
 
-    analytics_client.track(login.current_user.customer_id, 'Downloading OVA', {
-        'email': markupsafe.escape(login.current_user.email),
-        'version': version
-    })
+    if login is not None:
+        analytics_client.track(login.current_user.customer_id, 'Downloading OVA', {
+            'email': markupsafe.escape(login.current_user.email),
+            'version': version
+        })
 
     return redirect(appliance.ova_url(version))
 
-@blueprint.route("/download_qcow", methods=["GET"])
-@login.login_required
+@blueprint.route("/aerofs-appliance.qcow2", methods=["GET"])
 def download_qcow():
     version = appliance.latest_appliance_version()
 
-    analytics_client.track(login.current_user.customer_id, 'Downloading QCOW', {
-        'email': markupsafe.escape(login.current_user.email),
-        'version': version
-    })
+    if login is not None:
+        analytics_client.track(login.current_user.customer_id, 'Downloading QCOW', {
+            'email': markupsafe.escape(login.current_user.email),
+            'version': version
+        })
+
     return redirect(appliance.qcow_url(version))
 
 @blueprint.route("/appliance_version", methods=["GET"])
