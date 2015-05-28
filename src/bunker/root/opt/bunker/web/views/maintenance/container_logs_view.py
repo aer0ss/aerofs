@@ -1,5 +1,7 @@
 import glob
-from os.path import dirname, exists, basename
+import json
+from tempfile import NamedTemporaryFile
+from os.path import dirname, exists, basename, splitext
 from pyramid.view import view_config
 from os import makedirs, unlink
 from subprocess import check_output
@@ -24,9 +26,15 @@ def archive_container_logs(request):
     with ZipFile(LOG_ARCHIVE_PATH, 'w') as z:
         logfiles = glob.glob('/var/lib/docker/containers/*/*.log*')
         for path in logfiles:
-            print 'Archiving log at {}...'.format(path)
-            container_id = basename(dirname(path))
-            container_name = check_output(['docker', 'inspect', '--format="{{ .Name }}"', container_id]).strip().replace("/", "")
-            z.write(path, basename(path).replace(container_id, container_name))
+            with open(path) as logfile, NamedTemporaryFile() as formatted_logs:
+                print 'Archiving log at {}...'.format(path)
+                container_id = basename(dirname(path))
+                container_name = check_output(['docker', 'inspect', '--format="{{ .Name }}"', container_id]).strip().replace("/", "")
+
+                for line in logfile.readlines():
+                    logObject = json.loads(line)
+                    formatted_logs.write("{}:{}".format(logObject["time"], logObject["log"]))
+
+                z.write(formatted_logs.name, "".join(tuple(container_name) + splitext(basename(path))[1:]))
 
     print 'Log archiving done.'
