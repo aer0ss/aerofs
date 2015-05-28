@@ -1,0 +1,10 @@
+:include ../api/test_api_storage_agent_group.scn
+:include ../core/block_storage/storage_agent/test_storage_agent_group.scn
+
+:scn,nofail all
+    :serial
+        api_storage_agent_group()
+        storage_agent_group()
+
+:serial
+    all()

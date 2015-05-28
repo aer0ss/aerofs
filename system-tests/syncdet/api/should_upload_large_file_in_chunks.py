@@ -1,14 +1,14 @@
 import json
 import os
 import time
-
 import requests
-from syncdet.case import local_actor, fail_test_case
 
+from aerofs_common import param
+from syncdet.case import local_actor, fail_test_case
 from core.block_storage import common
 from lib import ritual
-from lib.app.cfg import is_teamserver
-from lib.files import instance_unique_path
+from lib.app.cfg import is_teamserver, is_storageagent
+from syncdet.case import instance_unique_string
 
 
 def main():
@@ -16,14 +16,6 @@ def main():
     LOGIN_URL = "https://{}/login_for_tests.json".format(local_actor().aero_host)
     TOKEN_URL = "https://{}/json_new_token".format(local_actor().aero_host)
     CSRF_URL = "https://{}/csrf.json".format(local_actor().aero_host)
-
-    # create this test's unique folder and wait for the daemon to notice it
-    dirname = os.path.basename(instance_unique_path())
-    print 'creating', dirname
-    if is_teamserver():
-        common.ritual_mkdir_pbpath(common.ts_user_path(dirname))
-    else:
-        ritual.connect().create_object(instance_unique_path(), True)
 
     # get a token through the web for ease
     s = requests.Session()
@@ -41,7 +33,12 @@ def main():
     s.headers['Authorization'] = 'Bearer ' + token
     s.headers['Endpoint-Consistency'] = 'strict'
 
-    # get the id of this test's unique folder, which will be a child of the root anchor
+    dirname = instance_unique_string()
+    r = s.post(API_URL+'/folders',
+        headers={'Content-Type': 'application/json'},
+        data=json.dumps({'parent': "root", 'name': dirname}))
+    r.raise_for_status()
+
     folder_id = None
     while True:
         r = s.get(API_URL+"/children/")
@@ -95,10 +92,19 @@ def main():
     print 'downloading file metadata...'
     del s.headers['upload-id']
     del s.headers['Content-Type']
-    r = s.get(API_URL+'/files/'+file_id)
-    r.raise_for_status()
-    assert r.json()['size'] == 1024 * 1024 * 3
 
+    # Allow approx 5 secs to make sure:
+    # 1. SA/phoenix clients have notified polaris about update content operations.
+    # 2. Request to polaris to get size of fie completes.
+    start = time.time()
+    while int(time.time() - start) < 5:
+        r = s.get(API_URL+'/files/'+file_id)
+        r.raise_for_status()
+        if r.json().get('size', 0) == 1024 * 1024 * 3:
+            break
+        time.sleep(param.POLLING_INTERVAL)
+
+    assert r.json().get('size', 0) == 1024 * 1024 * 3
     # download the file contents and check that they are correct
     print 'downloading file contents...'
     r = s.get(API_URL+'/files/'+file_id+'/content')

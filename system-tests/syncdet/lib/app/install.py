@@ -13,7 +13,7 @@ from syncdet import case
 
 import aerofs_proc
 from aerofs_common.param import POLLING_INTERVAL
-from cfg import get_cfg, get_native_homedir, is_teamserver
+from cfg import get_cfg, get_native_homedir, is_teamserver, is_storageagent
 
 
 #####           #####
@@ -67,7 +67,7 @@ def get_client_unattended_setup_dict():
     }
 
 
-def get_teamserver_unattended_setup_dict():
+def get_ts_and_sa_unattended_setup_dict():
     details = getattr(case.local_actor(), 'details', {})
     d = {
         'userid': case.local_actor().aero_userid,
@@ -242,8 +242,11 @@ class BaseAeroFSInstaller(object):
         if not os.path.exists(self.get_installer_path()):
             self.download_installer()
         self.run_installer()
-        self.wait_for_pb_file()
-        aerofs_proc.wait_for_daemon()
+        if "storage" in self.get_ui_name():
+            aerofs_proc.wait_for_sa()
+        else:
+            self.wait_for_pb_file()
+            aerofs_proc.wait_for_daemon()
         print '{} up and running'.format(get_cfg().did().get_hex())
 
 
@@ -317,11 +320,17 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
         with tarfile.open(self.get_installer_path()) as tar:
             tar.extractall(path=os.path.dirname(self.get_untar_dir()))
 
+        if "storage" in self.get_ui_name():
+            setup_cmd = ["python {} -f {} -a {} -c {}".format(os.path.join("syncdet", "deploy", "setup_storage_agent.py"),\
+                self.get_setup_file_path(), case.local_actor().aero_host, self.get_rtroot())]
+            print setup_cmd
+            subprocess.check_call(setup_cmd, shell=True)
+            # This is overriding default location of the storage_agent.conf file.
         ensure_site_config_present(os.path.join(self.get_untar_dir(), 'shared'))
 
-        print 'starting cli...'
+        print 'launch aerofs...'
         untarred_cli_path = os.path.join(self.get_untar_dir(), self.get_ui_name())
-        case.background.start_process(untarred_cli_path)
+        case.background.start_process([untarred_cli_path], key=get_cfg().get_ui_name())
 
 
 class ClientLinuxInstaller(BaseLinuxInstaller):
@@ -345,7 +354,22 @@ class TeamServerLinuxInstaller(BaseLinuxInstaller):
         return os.path.join(os.path.expanduser('~'), 'AeroFS Team Server Storage')
 
     def get_unattended_setup_dict(self):
-        return get_teamserver_unattended_setup_dict()
+        return get_ts_and_sa_unattended_setup_dict()
+
+
+class StorageAgentLinuxInstaller(BaseLinuxInstaller):
+
+    def get_ui_name(self):
+        return self._cfg.get_ui_name()
+
+    def get_installer_name(self):
+        return 'aerofs-storage-agent-installer.tgz'
+
+    def get_default_root_anchor(self):
+        return os.path.join(os.path.expanduser('~'), 'AeroFS')
+
+    def get_unattended_setup_dict(self):
+        return get_ts_and_sa_unattended_setup_dict()
 
 
 #####                      #####
@@ -417,7 +441,7 @@ class TeamServerWinInstaller(BaseWinInstaller):
         return os.path.join(get_native_homedir(), 'My Documents', 'AeroFS Team Server Storage')
 
     def get_unattended_setup_dict(self):
-        return get_teamserver_unattended_setup_dict()
+        return get_ts_and_sa_unattended_setup_dict()
 
 
 #####                   #####
@@ -470,7 +494,7 @@ class TeamServerOSXInstaller(BaseOSXInstaller):
         return os.path.join(os.path.expanduser('~'), 'AeroFS Team Server')
 
     def get_unattended_setup_dict(self):
-        return get_teamserver_unattended_setup_dict()
+        return get_ts_and_sa_unattended_setup_dict()
 
 
 #####                  #####
@@ -479,7 +503,8 @@ class TeamServerOSXInstaller(BaseOSXInstaller):
 
 def get_installer():
     if 'linux' in sys.platform:
-        installer = TeamServerLinuxInstaller() if is_teamserver() else ClientLinuxInstaller()
+        installer = StorageAgentLinuxInstaller() if is_storageagent() else \
+                (TeamServerLinuxInstaller() if is_teamserver() else ClientLinuxInstaller())
     elif 'win32' in sys.platform:
         installer = TeamServerWinInstaller() if is_teamserver() else ClientWinInstaller()
     elif 'darwin' in sys.platform:

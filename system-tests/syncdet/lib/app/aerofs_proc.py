@@ -1,3 +1,4 @@
+import commands
 import os
 import subprocess
 import sys
@@ -12,6 +13,16 @@ from aerofs_ritual.cygpathtools import cygpath_to_winpath
 from lib import ritual
 from cfg import get_cfg, BaseLinuxCfg, BaseWin32Cfg, BaseOSXCfg
 
+
+def wait_for_sa():
+    # If ps aux returns results with aerofs.jar, this indicates that the storage agent is
+    # up and running
+    cmd = 'ps aux | grep -c {}'.format(os.path.join(get_cfg().get_approot(), "aerofs.jar"))
+    # <= 2 because: 1) python process to run cmd 2)actual cmd itself will contain "aerofs.jar"
+    # So storage_agent is only running if we have more than 2 processes with "aerofs.jar".
+    # TODO (AS): Fix when storage-agent has monitoring API.
+    while commands.getstatusoutput(cmd)[1] <= 2:
+        time.sleep(POLLING_INTERVAL)
 
 def wait_for_daemon():
     print 'waiting for daemon heartbeat...'
