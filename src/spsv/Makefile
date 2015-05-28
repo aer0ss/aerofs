@@ -1,6 +1,8 @@
 IMAGE_NAME = aerofs/servlets
 
-image:
+image: base subdirs
+
+base:
 	gradle --daemon dist
 	../../tools/lazy-copy.sh ../../out.gradle/spsv/dist buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF/lib
 	docker build -t $(IMAGE_NAME) .
@@ -17,6 +19,4 @@ dockerize-%:
 	@echo "========================================"
 	$(MAKE) -C resources/$* image
 
-all: image subdirs
-
-.PHONY: all image subdirs
+.PHONY: base image subdirs

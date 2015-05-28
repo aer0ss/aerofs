@@ -34,10 +34,6 @@ DIRS="
     ../src/sparta 
     
     ../src/spsv 
-    ../src/spsv/resources/openid
-    ../src/spsv/resources/log-collection 
-    ../src/spsv/resources/sp 
-    ../src/spsv/resources/verification 
     
     ../src/verkehr 
     ../src/web 
