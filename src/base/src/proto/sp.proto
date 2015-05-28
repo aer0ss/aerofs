@@ -1618,8 +1618,6 @@ message SendPriorityDefectEmailCall {
     required string contact_email = 2;
     required string subject = 3;
     required string message = 4;
-    required string version = 5;
-    required bytes device_id = 6;
 }
 
 message SetupTwoFactorCall {

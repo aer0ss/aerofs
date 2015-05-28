@@ -2086,9 +2086,11 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> sendPriorityDefectEmail(String defectID,
-            String contactEmail, String subject, String message, String version,
-            ByteString deviceID)
+    public ListenableFuture<Void> sendPriorityDefectEmail(
+            String defectID,
+            String contactEmail,
+            String subject,
+            String message)
             throws Exception
     {
         _sqlTrans.begin();

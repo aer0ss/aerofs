@@ -124,8 +124,7 @@ public abstract class PriorityDefect
 
         _spFactory.create()
                 .signInRemote()
-                .sendPriorityDefectEmail(defectID, _contactEmail, _subject, _message, _cfg.ver(),
-                        BaseUtil.toPB(_cfg.did()));
+                .sendPriorityDefectEmail(defectID, _contactEmail, _subject, _message);
     }
 
     private void saveContactEmail(@Nonnull String contactEmail)
