@@ -1,7 +1,6 @@
 {{ admin.first_name }} -
 
-Congratulations, in this email you are receiving access to your AeroFS Private
-Cloud. The implementation is a 4 step process and should take less than 10 minutes. You will need to open ports in your firewall (please reference the FAQ linked below for additional information).
+Congratulations, in this email you are receiving access to your AeroFS Private Cloud. The implementation is a 4 step process and should take less than 10 minutes. You will need to open ports in your firewall (please reference the FAQ linked below for additional information).
 
 Your license key and the appliance image are available for download from the Private Cloud Dashboard:
 
