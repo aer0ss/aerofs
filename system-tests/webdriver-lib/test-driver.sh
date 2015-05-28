@@ -43,13 +43,13 @@ RELATIVE_CALLER_DIR="$(sed -e "s@^${BASE_DIR}/@@" <<< "${CALLER_DIR}")"
 IMAGE_NAME="aerofs/test.$(tr '/' '-' <<< "${RELATIVE_CALLER_DIR}")"
 CONTAINER_NAME="aerofs-test.$(tr '/' '-' <<< "${RELATIVE_CALLER_DIR}")"
 
-info "Building image aerofs/base.webdriver..."
+info "Building image aerofs/base.webdriver ..."
 docker build -t aerofs/base.webdriver "${THIS_DIR}"
 
-info "Building image ${IMAGE_NAME}..."
+info "Building image ${IMAGE_NAME} ..."
 docker build -t "${IMAGE_NAME}" "${CALLER_DIR}"
 
-info "Running container ${CONTAINER_NAME}..."
+info "Running container ${CONTAINER_NAME} ..."
 # redirect stderr to suppress the big red error if the container is not running
 docker rm -fv "${CONTAINER_NAME}" 2> /dev/null || true
 
@@ -64,7 +64,6 @@ HOST=share.syncfs.com
 (set +e
     (set -x; docker run --rm --name "${CONTAINER_NAME}" \
         --add-host "${HOST}:${IP}" \
-        -v "${THIS_DIR}/../../tools/test.license":/test.license \
         -v "${SCREEN_SHOTS}":/screenshots \
         ${EXTRA_DOCKER_ARGS} \
         "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS})

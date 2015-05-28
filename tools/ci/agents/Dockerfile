@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y \
     libmysqlclient-dev \
     libgpgme11-dev \
     mono-devel \
+    netcat \
     nodejs \
     npm \
     openjdk-8-jdk \
@@ -58,7 +59,7 @@ RUN easy_install pip
 RUN pip install \
     boto \
     pyyaml \
-    protobuf \
+    protobuf==2.6.0 \
     requests \
     virtualenv \
     python-swiftclient
@@ -147,9 +148,6 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/jre
 
 # For TeamCity agent
 EXPOSE 9090
-
-# To expose volume to golang-builder container
-VOLUME /teamcity-agent/work
 
 # Needed by the 'invoke' script
 ENV USER root

@@ -44,6 +44,9 @@ coreos:
         ExecStart=/signup-decoder/run
         ExecStop=/usr/bin/docker rm -fv decoder
 
+#########
+## N.B. (WW) The entire write_files section will be obsolete very soon. Do not edit it.
+##
 write_files:
   - path: /signup-decoder/run
     permissions: 0755
@@ -96,6 +99,8 @@ write_files:
             return jsonify(signup_code=out.strip())
 
       app.run('0.0.0.0', 21337)
+
+
 
   - path: /modify-appliance.sh
     encoding: b64

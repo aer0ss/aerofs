@@ -28,9 +28,9 @@ if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
     # Use the docker daemon's IP
     IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
 else
-    # Assuming the script runs in the CI agent container, and the appliance containers run on the same host.
-    # The appliance IP is then the host IP which is the agent container's default route.
-    IP=$(ip route show 0.0.0.0/0 | awk '{print $3}')
+    # Assuming the script runs in the CI agent container, and the appliance containers run on the same host with
+    # --net=host. The appliance IP is then the agent container's own IP.
+    IP=$(ip route show 0.0.0.0/0 | awk '{print $9}')
 fi
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"

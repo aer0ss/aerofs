@@ -7,7 +7,7 @@ DEV_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")/../../docker/dev"
 VM=docker-dev
 
 alias dk-create-vm="${DEV_DIR}/dk-create-vm.sh ${VM} && dk-env"
-alias dk-create="dk-start-vm && ${DEV_DIR}/../build-images.sh --unsigned && ${DEV_DIR}/../ci/modify-appliance.sh && dk-reconfig"
+alias dk-create="dk-start-vm && ${DEV_DIR}/../build-images.sh --unsigned && dk-reconfig"
 alias dk-start-vm="${DEV_DIR}/dk-start-vm.sh ${VM} && dk-env"
 alias dk-start="dk-start-vm && ${DEV_DIR}/emulate-ship.sh default"
 alias dk-crane="${DEV_DIR}/dk-crane.sh"
@@ -18,7 +18,7 @@ alias dk-exec="docker exec -it"
 alias dk-halt="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance"
 alias dk-help="${DEV_DIR}/dk-help.sh"
 alias dk-ip="docker-machine ip ${VM}"
-alias dk-reconfig="dk-start-vm && dk-destroy && ${DEV_DIR}/emulate-ship.sh maintenance && ${DEV_DIR}/setup.sh"
+alias dk-reconfig="dk-start-vm && ${DEV_DIR}/dk-reconfig.sh"
 alias dk-reload="${DEV_DIR}/dk-reload.sh"
 alias dk-restart="dk-halt && dk-start"
 

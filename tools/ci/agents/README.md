@@ -4,14 +4,19 @@ The new agent doesn't support SyncDET tests yet. TeamCity only runs unittests on
 
 # Set up a new agent
 
-The agent requires two or more CPUs otherwise some unittests may fail. `scp` this directory
-to an empty VM or physical computer and run on it:
+- The agent requires two or more CPUs otherwise some unittests may fail.
 
-    $ <this-folder>/start-teamcity-agent-container.sh
+- Have the host's DNS nameserver point to vpn.arrowfs.org's IP. For CoreOS use the cloud-config.yml in this folder 
+and reboot the VM to have the DNS settings take effect. TODO (WW) cloud-config should auto restart systemd-resolved. 
 
-In a few minutes after the script finishes, TeamCity should show a new agent named "cloud-1".
+- `scp` this directory to an empty VM or physical computer and run on it:
 
-For troubleshooting, see `teamcity-agent` container's docker logs.
+    $ <this-folder>/start-teamcity-agent.sh agent-1
+
+  In a few minutes after the script exits, TeamCity should show a new agent named "agent-1".
+
+- If an agent is used to launch AeroFS appliance containers, specify the option `no-unittest-services` to the script
+otherwise unittest services including ejabberd and mysql would occupy the ports the appliance listens to.
 
 # Future work
 

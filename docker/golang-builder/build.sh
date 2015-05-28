@@ -5,8 +5,8 @@ set -e
     echo "Usage: $0 <image> <service> [<local-import> ...]"
     echo "      <image>   name of the docker image to be produced"
     echo "      <service> fully qualified name of the go package to build. e.g. 'aerofs.com/ca-server'"
-    echo "      <local-import> fully qualified name of the local go package that the service depends. "
-                            "e.g. 'aerofs.com/service'. The user must specify _all_ the local packages that the "
+    echo "      <local-import> fully qualified name of the local go package that the service depends. " \
+                            "e.g. 'aerofs.com/service'. The user must specify _all_ the local packages that the " \
                             "service imports otherwise building would fail."
     exit 11
 }

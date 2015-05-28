@@ -10,8 +10,6 @@ set -e
 }
 AGENT_NAME="$1"
 
-$(dirname $0)/start-test-services.sh
-
 TC_AGENT_HOME=/teamcity-agent
 
 if [ ! -d ${TC_AGENT_HOME} ]; then

@@ -1,14 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ $# != 3 ]; then
-    echo "Usage: $0 <path-to-ship.yml> <data-folder> <boot-target>"
-    echo "       For boot2docker users, <data-folder> needs to be under $HOME otherwise boot2docker cannot mount it."
+if [ $# != 2 ]; then
+    echo "Usage: $0 <path-to-ship.yml> <boot-target>"
     exit 11
 fi
 SHIP_YML="$1"
-DATA_FOLDER="$2"
-TARGET="$3"
+TARGET="$2"
 
 echo "=============== PID $$, $(date) ==============="
 
@@ -16,16 +14,6 @@ echo "=============== PID $$, $(date) ==============="
 yml() {
     grep "^$1:" "${SHIP_YML}" | sed -e "s/^$1: *//" | sed -e 's/ *$//'
 }
-
-LOADER_IMAGE=$(yml 'loader')
-DIR="${DATA_FOLDER}/$(sed -e 's!/.*!!' <<< "${LOADER_IMAGE}")"
-
-mkdir -p "${DIR}"
-# Get absolute path
-DIR=$(cd "${DIR}" && pwd)
-TARGET_FILE="${DIR}/target"
-
-echo "${TARGET}" > "${TARGET_FILE}"
 
 while true; do
     CONTAINER=loader
@@ -41,12 +29,14 @@ while true; do
 
     # Create the loader container as needed
     [[ "$(docker ps -a | rev | awk '{print $1}' | rev | grep ${CONTAINER})" ]] || {
-        echo "Creating container ${CONTAINER}..."
-        # Emulation doesn't allow changing of repo or tag
+        echo "Creating container ${CONTAINER} ..."
+        LOADER_IMAGE=$(yml 'loader')
+        # Emulation doesn't allow changing of repo or tag and hence /dev/null
         docker create --name ${CONTAINER} \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${TARGET_FILE}":/target \
-            "${LOADER_IMAGE}" load /dev/null /dev/null /target
+            --entrypoint bash \
+            "${LOADER_IMAGE}" \
+            -c "([[ -f /target ]] || echo ${TARGET} > /target) && python -u /main.py load /dev/null /dev/null /target"
     }
     echo "Starting container ${CONTAINER}..."
 

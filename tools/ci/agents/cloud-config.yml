@@ -1,0 +1,8 @@
+#cloud-config
+
+write_files:
+  - path: /etc/systemd/resolved.conf
+    content: |
+      [Resolve]
+      # Point to vpn.arrowfs.org
+      DNS=172.16.0.83
