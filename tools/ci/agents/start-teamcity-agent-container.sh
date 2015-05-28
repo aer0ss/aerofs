@@ -24,4 +24,4 @@ docker run -d -p 9090:9090 --name ${AGENT_NAME} \
     -v /var/run/docker.sock:/var/run/docker.sock \
     teamcity-agent /scripts/run-teamcity-agent.sh ${AGENT_NAME}
 
-echo 'Agent container has launched. `docker logs -f teamcity-agent` to see progress.'
+echo "Agent container has launched. 'docker logs -f ${AGENT_NAME}' to see progress."
