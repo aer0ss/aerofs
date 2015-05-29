@@ -66,7 +66,7 @@ if [ $(uname -s) = "Linux" ] ; then
         yellow_print "WARNING : Make 4.00 is the default version for new Ubuntu installations, but we only support Make 3.8.
       The easiest way to solve this problem is to download and install make-3.81:
 
-wget http://mirrors.kernel.org/ubuntu/pool/main/m/make-dfsg/make_3.81-8.2ubuntu3_amd64.deb -o make_3.81.deb
+wget http://mirrors.kernel.org/ubuntu/pool/main/m/make-dfsg/make_3.81-8.2ubuntu3_amd64.deb -O make_3.81.deb
 sudo dpkg -i make_3.81.deb && rm make_3.81.deb"
         exit 22
     fi
