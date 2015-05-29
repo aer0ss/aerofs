@@ -425,7 +425,7 @@ identifier.
 #### Design notes, TCP-WAN
 
 The existing TCP-LAN transport provides very fast transport between two peers - however,
-it depends on the TCP multicast mechanism, which is generally limited to a subnet.
+it depends on the IP multicast mechanism, which is generally limited to a subnet.
 
 The TCP-WAN transport will reuse the same Unicast transport code, and provide an explicit
 mapping from Device ID to IP/port address information. The Storage Agent will provide a

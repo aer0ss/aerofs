@@ -140,7 +140,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 if (!iface.supportsMulticast()) continue;
 
                 final MulticastSocket s = new MulticastSocket(multicastPort); // bind to *:TCP_MCAST_PORT
-                // N.B. Setting loopback mode to true _disables_ TCP multicast on local loopback
+                // N.B. Setting loopback mode to true _disables_ IP multicast on local loopback
                 // See http://docs.oracle.com/javase/6/docs/api/java/net/MulticastSocket.html#setLoopbackMode(boolean)
                 s.setLoopbackMode(!listenToMulticastOnLoopback);
                 s.joinGroup(new InetSocketAddress(multicastAddress, multicastPort), iface); // FIXME (AG): java api docs have this doing InetAddress.getByName
