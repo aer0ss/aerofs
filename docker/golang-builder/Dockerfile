@@ -19,12 +19,9 @@ RUN apt-get install -y apt-transport-https ca-certificates &&\
     apt-get update &&\
     apt-get install -y lxc-docker-1.5.0
 
-{{ copy_src }}
+COPY root /
 
 ENV GOPATH /gopath
+ENV PATH $PATH:$GOPATH/bin
 
-ENV PATH $PATH:/gopath/bin
-
-ENV CGO_ENABLED 0
-
-RUN go get -a -x -installsuffix cgo -ldflags '-s -w' {{ service }}
+ENTRYPOINT [ "/run.sh" ]
