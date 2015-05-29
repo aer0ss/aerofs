@@ -119,7 +119,7 @@ public final class TransportResource extends ExternalResource
 
 
         XMPPConnectionService xmppConnectionService = new XMPPConnectionService(
-                DID.generate(),
+                did,
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
                 "u",
