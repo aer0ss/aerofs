@@ -1,7 +1,7 @@
 from setuptools import setup
 
 requires = [
-    'protobuf',
+    'protobuf==2.6.0',
 ]
 
 packages = ["aerofs_common", "aerofs_common._gen",

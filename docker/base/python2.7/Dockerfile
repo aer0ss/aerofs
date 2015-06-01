@@ -18,7 +18,7 @@ RUN \
     rm -rf /var/lib/apt/lists/*
 
 # requests is needed by aerofs_common.configuration
-RUN pip install requests
+RUN pip install requests==2.7.0
 
 COPY buildroot /
 
