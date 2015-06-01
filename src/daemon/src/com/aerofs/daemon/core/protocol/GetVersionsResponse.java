@@ -42,10 +42,12 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.function.Supplier;
 
 public class GetVersionsResponse implements CoreProtocolReactor.Handler
 {
@@ -220,46 +222,64 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
 
             _didBlock = processResponseBlock_(_sidx, block, _didBlock, _vKwlgLocal, _vImmKwlgLocal, _from, t);
         }
+
+        boolean processBlocks_(Supplier<PBGetVersionsResponseBlock> s) throws Exception {
+            Trans t = _sidx == null ? null : _tm.begin_();
+            boolean last = false;
+            try {
+                PBGetVersionsResponseBlock block;
+                while (null != (block = s.get())) {
+                    if (block.hasStore()) {
+                        // commit changes for previous store
+                        if (_sidx != null) {
+                            if (t == null) t = _tm.begin_();
+                            finalizeStore_(t);
+                            t.commit_();
+                            t.end_();
+                            t = null;
+                            updateSenderFilter_();
+                        }
+
+                        if (newStore_(block.getStore())) t = _tm.begin_();
+                    }
+
+                    if (t != null) {
+                        process_(block, t);
+                    }
+                    last = block.getIsLastBlock();
+                    if (last) break;
+                }
+                if (last && _sidx != null) {
+                    if (t == null) t = _tm.begin_();
+                    finalizeStore_(t);
+                }
+                if (t != null) {
+                    t.commit_();
+                }
+            } finally {
+                if (t != null) {
+                    t.end_();
+                }
+            }
+            if (last) updateSenderFilter_();
+            return last;
+        }
     }
 
     private void processResponseFromDatagram_(UserID user, DID from, InputStream is) throws Exception
     {
-        Trans t = null;
-        ResponseContext cxt = new ResponseContext(user, from);
-
-        try {
-            while (true) {
-                PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
-                if (block.hasStore()) {
-                    // commit changes for previous store
-                    if (t != null) {
-                        cxt.finalizeStore_(t);
-                        t.commit_();
-                        t.end_();
-                        t = null;
-                        cxt.updateSenderFilter_();
+        boolean last = new ResponseContext(user, from)
+                .processBlocks_(() -> {
+                    try {
+                        return PBGetVersionsResponseBlock.parseDelimitedFrom(is);
+                    } catch (IOException e) {
+                        throw new AssertionError(e);
                     }
-
-                    if (cxt.newStore_(block.getStore())) t = _tm.begin_();
-                }
-
-                cxt.process_(block, t);
-
-                if (block.getIsLastBlock()) break;
-            }
-            if (t != null) {
-                cxt.finalizeStore_(t);
-                t.commit_();
-            }
-        } finally {
-            if (t != null) {
-                t.end_();
-                cxt.updateSenderFilter_();
-            }
-        }
+                });
+        if (!last) throw new ExProtocolError();
     }
 
-    private static final int MIN_BLOCKS_PER_TX = 100;
+    private static final int MIN_BLOCKS_PER_TX = 10;
 
     private void processResponseFromStream_(UserID user, DID from, InputStream is)
             throws Exception
@@ -272,28 +292,23 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             do {
                 TCB tcb = tk.pseudoPause_("gvr-recv");
                 try {
-                    last = readBlocks(is, cxt, qblocks);
+                    last = readBlocks(is, qblocks);
                 } finally {
                     tcb.pseudoResumed_();
                 }
 
-                processReceivedBlocks_(cxt, qblocks, last);
+                processReceivedBlocks_(cxt, qblocks);
             } while (!last);
         }
     }
 
-    private boolean readBlocks(InputStream is, ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks) throws Exception {
+    private boolean readBlocks(InputStream is, Queue<PBGetVersionsResponseBlock> qblocks)
+            throws Exception {
         boolean last = false;
         while (!last && qblocks.size() < MIN_BLOCKS_PER_TX) {
             PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
-            if (block.hasStore()) {
-                // commit changes for previous store
-                processReceivedBlocks_(cxt, qblocks, true);
-
-                cxt.newStore_(block.getStore());
-            }
-            last = block.getIsLastBlock();
             qblocks.add(block);
+            last = block.getIsLastBlock();
         }
         return last;
     }
@@ -301,32 +316,15 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
     /**
      * @param qblocks is a queue of blocks extracted from a chunk. The queue should not be empty
      */
-    private void processReceivedBlocks_(ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks, boolean storeBoundary)
+    private void processReceivedBlocks_(ResponseContext cxt, Queue<PBGetVersionsResponseBlock> qblocks)
             throws Exception
     {
-        assert storeBoundary || !qblocks.isEmpty();
+        if (qblocks.isEmpty()) return;
+        // when we block for chunk receiving, database may have changed
+        cxt.refreshKnowledge_();
 
-        if (!qblocks.isEmpty()) {
-            // when we block for chunk receiving, database may have changed
-            cxt.refreshKnowledge_();
-
-            try (Trans t = _tm.begin_()) {
-                PBGetVersionsResponseBlock block;
-
-                l.debug("blocks/tx={}", qblocks.size());
-                while (null != (block = qblocks.poll())) {
-                    if (block.getIsLastBlock() && !qblocks.isEmpty()) throw new ExProtocolError();
-                    cxt.process_(block, t);
-                }
-
-                if (storeBoundary) cxt.finalizeStore_(t);
-                t.commit_();
-            }
-        }
-
-        if (storeBoundary) cxt.updateSenderFilter_();
-
-        assert qblocks.isEmpty();
+        l.debug("blocks={}", qblocks.size());
+        cxt.processBlocks_(qblocks::poll);
     }
 
     /**
