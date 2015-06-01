@@ -139,12 +139,19 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
 
-        @Nullable String metadata = fetchVCard(connection, presence.getFrom());
-        if (metadata != null && !metadata.isEmpty()) {
-            l.info("Found metadata for {}: {}", did, metadata);
+        if (did.equals(localdid)) return false;
+
+        boolean updated = updateStores(presence.isAvailable(), did, sid);
+
+        // TODO: retrieve and process vCard asynchronously to avoid interference with zephyr
+        if (presence.isAvailable()) {
+            @Nullable String metadata = fetchVCard(connection, presence.getFrom());
+            if (metadata != null && !metadata.isEmpty()) {
+                l.info("Found metadata for {}: {}", did, metadata);
+            }
         }
 
-        return (did.equals(localdid)) ? false : updateStores(presence.isAvailable(), did, sid);
+        return updated;
     }
 
 
