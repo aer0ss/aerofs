@@ -4,14 +4,11 @@
 
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
@@ -51,7 +48,7 @@ final class TCPBootstrapFactory
     private final int maxFailedHeartbeats;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
-    private final IUnicastListener unicastListener;
+    private final IDeviceConnectionListener deviceConnectionListener;
     private final IncomingChannelHandler incomingChannelHandler;
     private final TransportProtocolHandler protocolHandler;
     private final TCPProtocolHandler tcpProtocolHandler;
@@ -69,7 +66,7 @@ final class TCPBootstrapFactory
             int maxFailedHeartbeats,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
-            IUnicastListener unicastListener,
+            IDeviceConnectionListener deviceConnectionListener,
             IIncomingChannelListener serverHandlerListener,
             TransportProtocolHandler protocolHandler,
             TCPProtocolHandler tcpProtocolHandler,
@@ -84,7 +81,7 @@ final class TCPBootstrapFactory
         this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
-        this.unicastListener = unicastListener;
+        this.deviceConnectionListener = deviceConnectionListener;
         this.protocolHandler = protocolHandler;
         this.tcpProtocolHandler = tcpProtocolHandler;
         this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
@@ -102,7 +99,7 @@ final class TCPBootstrapFactory
         ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
         bootstrap.setPipelineFactory(() -> {
             MessageHandler messageHandler = new MessageHandler();
-            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.CLIENT);
 
             return Channels.pipeline(
                     addressResolver,
@@ -132,7 +129,7 @@ final class TCPBootstrapFactory
         bootstrap.setParentHandler(new ShouldKeepAcceptedChannelHandler());
         bootstrap.setPipelineFactory(() -> {
             MessageHandler messageHandler = new MessageHandler();
-            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
+            CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.SERVER);
 
             return Channels.pipeline(
                     addressResolver,

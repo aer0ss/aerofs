@@ -47,7 +47,7 @@ public class ChannelDirectory
 {
     private static final Logger l = Loggers.getLogger(ChannelDirectory.class);
     private final ITransport tp;
-    private IUnicastListener unicastListener;
+    private IDeviceConnectionListener deviceConnectionListener;
     private IUnicastConnector channelCreator;
     // channels is a mapping, per-transport, of devices to channels. It cannot distinguish
     // or sort the Channel instances on any kind of cost. It's used to detect device up/down
@@ -120,12 +120,12 @@ public class ChannelDirectory
     }
 
     /**
-     * Set the unicast listener instance to be called on device unavailable. This is required to be
-     * called before use of the channel directory.
+     * Set the device presence listener instance to be called on device unavailable.
+     * This is required to be called before use of the channel directory.
      */
-    public void setUnicastListener(IUnicastListener unicastListener)
+    public void setDeviceConnectionListener(IDeviceConnectionListener deviceConnectionListener)
     {
-        this.unicastListener = unicastListener;
+        this.deviceConnectionListener = deviceConnectionListener;
     }
 
     /**
@@ -159,7 +159,7 @@ public class ChannelDirectory
         SortedSet<Channel> detached = channels.removeAll(did);
         l.info("{} detach", did);
         if (!detached.isEmpty()) {
-            unicastListener.onDeviceDisconnected(did);
+            deviceConnectionListener.onDeviceDisconnected(did);
         }
         return detached;
     }
@@ -210,7 +210,7 @@ public class ChannelDirectory
             }
         }
         // FIXME: see that comment just above. This is the line that could generate an EIPresence.
-        if (deviceDisconnected) { unicastListener.onDeviceDisconnected(remotePeer); }
+        if (deviceDisconnected) { deviceConnectionListener.onDeviceDisconnected(remotePeer); }
     }
 
     /**
@@ -227,7 +227,7 @@ public class ChannelDirectory
      */
     private void addChannelCloseFuture(final DID did, final ChannelCost cost, final Channel channel)
     {
-        Preconditions.checkNotNull(unicastListener);
+        Preconditions.checkNotNull(deviceConnectionListener);
 
         channel.getCloseFuture().addListener(new ChannelFutureListener()
         {

@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.daemon.transport.lib.IDeviceConnectionListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.ChannelData;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.google.common.collect.Lists;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
@@ -48,7 +48,7 @@ public final class TestCNameVerifiedHandler
 
     private static final InetSocketAddress REMOTE = InetSocketAddress.createUnresolved("remote", 9999);
 
-    private final IUnicastListener unicastListener = mock(IUnicastListener.class);
+    private final IDeviceConnectionListener deviceConnectionListener = mock(IDeviceConnectionListener.class);
     private final ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
     private final ChannelPipeline pipeline = mock(ChannelPipeline.class);
     private final Channel channel = mock(Channel.class);
@@ -90,7 +90,7 @@ public final class TestCNameVerifiedHandler
     public void shouldForwardChannelConnectedEventAndNotifyListenerIfPeerVerified()
             throws Exception
     {
-        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.CLIENT);
 
         // we're in the client pipeline, so we expect the remote DID to be set
         verifiedHandler.setExpectedRemoteDID(did);
@@ -104,12 +104,12 @@ public final class TestCNameVerifiedHandler
         ChannelStateEvent connectedEvent = new UpstreamChannelStateEvent(channel, ChannelState.CONNECTED, REMOTE);
         verifiedHandler.channelConnected(ctx, connectedEvent);
 
-        InOrder inOrder = inOrder(channel, unicastListener, ctx);
+        InOrder inOrder = inOrder(channel, deviceConnectionListener, ctx);
         inOrder.verify(channel).setAttachment(channelData);
-        inOrder.verify(unicastListener).onDeviceConnected(did);
+        inOrder.verify(deviceConnectionListener).onDeviceConnected(did);
         inOrder.verify(ctx).sendUpstream(any(ChannelEvent.class));
 
-        verify(unicastListener).onDeviceConnected(did);
+        verify(deviceConnectionListener).onDeviceConnected(did);
         verify(channel).setAttachment(channelData);
 
         assertThat(events, hasSize(2));
@@ -121,7 +121,7 @@ public final class TestCNameVerifiedHandler
     @Test(expected = IllegalStateException.class)
     public void shouldThrowIfExpectedDIDSetOnServerCNameVerifiedHandler()
     {
-        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.SERVER);
+        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.SERVER);
         verifiedHandler.setExpectedRemoteDID(did); // you cannot set expected remote DID if this handler is in the server pipeline
     }
 
@@ -129,7 +129,7 @@ public final class TestCNameVerifiedHandler
     public void shouldThrowInClientPipelineOnlyIfReceivedDIDEqualToExpectedDID()
             throws Exception
     {
-        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.CLIENT);
 
         // we're in the client pipeline, so we expect the remote DID to be set (this is a random DID)
         verifiedHandler.setExpectedRemoteDID(DID.generate());
@@ -144,7 +144,7 @@ public final class TestCNameVerifiedHandler
     public void shouldThrowIfChannelConnectedEventIsReceivedBeforePeerVerified()
             throws Exception
     {
-        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+        CNameVerifiedHandler verifiedHandler = new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.CLIENT);
 
         // we're in the client pipeline, so we expect the remote DID to be set
         verifiedHandler.setExpectedRemoteDID(did);

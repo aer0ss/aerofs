@@ -1,36 +1,16 @@
-/*
- * Copyright (c) Air Computing Inc., 2013.
- */
-
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
 
 /**
- * Implemented by classes that want to be notified of
- * events from a transport unicast subsystem.
+ * Implemented by classes that want to be notified when connection to devices are
+ *  established.
  *
- * FIXME: Two different use cases here that feel disjoint:
- *      unicast ready / unavailable
- *      device online / offline
- * Pull into two interfaces?
+ * NOTE: This focus on *connection* (=channel and sockets) and
+ *       not on *presence* (=potential availability)
  */
-public interface IUnicastListener
+public interface IDeviceConnectionListener
 {
-    /**
-     * Triggered when the unicast subsystem
-     * is ready to make one-to-one connections to
-     * a remote device.
-     */
-    void onUnicastReady();
-
-    /**
-     * Triggered when the unicast subsystem
-     * cannot make one-to-one connections to
-     * a remote device.
-     */
-    void onUnicastUnavailable();
-
     /**
      * Triggered when a connection is made to
      * a remote device, <strong>or</strong> when a

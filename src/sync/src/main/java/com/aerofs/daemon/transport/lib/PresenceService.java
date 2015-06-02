@@ -24,7 +24,7 @@ import static com.google.common.collect.Sets.newHashSet;
  * </ul>
  * <br/>
  */
-public class PresenceService implements IUnicastListener
+public class PresenceService implements IUnicastStateListener, IDeviceConnectionListener
 {
     private static final Logger l = Loggers.getLogger(PresenceService.class);
 

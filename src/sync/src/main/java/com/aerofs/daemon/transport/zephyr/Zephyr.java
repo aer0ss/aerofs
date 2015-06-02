@@ -138,6 +138,7 @@ public final class Zephyr implements ITransport
                 serverSSLEngineFactory,
                 this,
                 presenceService,
+                presenceService,
                 linkStateService,
                 signallingService,
                 transportProtocolHandler,

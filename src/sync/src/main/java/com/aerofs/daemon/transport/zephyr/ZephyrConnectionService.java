@@ -75,7 +75,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
 
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
-    private final IUnicastListener unicastListener;
+    private final IUnicastStateListener unicastListener;
     private final ChannelDirectory directory;
 
     private final InetSocketAddress zephyrAddress;
@@ -94,7 +94,8 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             ITransport transport,
-            IUnicastListener unicastListener,
+            IUnicastStateListener unicastListener,
+            IDeviceConnectionListener deviceConnectionListener,
             LinkStateService linkStateService,
             ISignallingService signallingService,
             TransportProtocolHandler transportProtocolHandler,
@@ -118,7 +119,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
                         channelTeardownHandler,
                         transportStats,
                         this,
-                        unicastListener,
+                        deviceConnectionListener,
                         timer,
                         proxy,
                         hearbeatInterval,
@@ -130,7 +131,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         this.signallingService = signallingService;
         this.unicastListener = unicastListener;
         this.directory = new ChannelDirectory(transport, this);
-        directory.setUnicastListener(unicastListener);
+        directory.setDeviceConnectionListener(deviceConnectionListener);
         this.roundTripTimes = roundTripTimes;
     }
 

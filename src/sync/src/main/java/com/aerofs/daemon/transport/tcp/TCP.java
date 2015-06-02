@@ -9,7 +9,6 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
-import com.aerofs.daemon.transport.IPresenceLocator;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -167,7 +166,8 @@ public class TCP implements ITransport, IAddressResolver
         this.linkStateService = linkStateService;
 
         // presence hookups
-        unicast.setUnicastListener(presenceService);
+        unicast.setUnicastStateListener(presenceService);
+        unicast.setDeviceConnectionListener(presenceService);
         multicast.setListener(monitor);
         presenceService.addListener(stores);
         presenceService.addListener(monitor);

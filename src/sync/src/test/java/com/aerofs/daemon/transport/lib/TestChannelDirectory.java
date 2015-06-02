@@ -40,7 +40,7 @@ public class TestChannelDirectory extends AbstractTest
     @Mock ChannelFuture future;
     @Captor ArgumentCaptor<ChannelFutureListener> listener;
 
-    @Mock IUnicastListener unicastListener;
+    @Mock IDeviceConnectionListener deviceConnectionListener;
     DID did;
 
     public TestChannelDirectory()
@@ -90,7 +90,7 @@ public class TestChannelDirectory extends AbstractTest
     {
         ChannelDirectory channelDirectory = new ChannelDirectory(tp, mock(IUnicastConnector.class));
         Channel[] channels = getMockChannels(2, ChannelState.CONNECTING);
-        channelDirectory.setUnicastListener(unicastListener);
+        channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
 
         assertEquals(0, channelDirectory.getSnapshot(did).size());
 
@@ -121,7 +121,7 @@ public class TestChannelDirectory extends AbstractTest
                 return mock(ChannelFuture.class);
             }
         });
-        channelDirectory.setUnicastListener(unicastListener);
+        channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
 
         assertTrue(channelDirectory.getSnapshot(did).isEmpty());
 
@@ -141,7 +141,7 @@ public class TestChannelDirectory extends AbstractTest
                 return mock(ChannelFuture.class);
             }
         });
-        channelDirectory.setUnicastListener(unicastListener);
+        channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
         assertTrue(channelDirectory.getSnapshot(did).isEmpty());
 
         Channel connectingChannel = getMockChannels(1, ChannelState.CONNECTING)[0];
@@ -165,7 +165,7 @@ public class TestChannelDirectory extends AbstractTest
             throws Exception
     {
         ChannelDirectory channelDirectory = new ChannelDirectory(tp, mock(IUnicastConnector.class));
-        channelDirectory.setUnicastListener(unicastListener);
+        channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
         channelDirectory.register(getMockChannels(1, ChannelState.CONNECTING)[0], did);
 
         verify(future).addListener(listener.capture());

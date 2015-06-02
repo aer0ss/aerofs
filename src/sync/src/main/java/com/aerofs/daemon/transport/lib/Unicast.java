@@ -41,7 +41,8 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
 
     private ServerBootstrap serverBootstrap;
     private ClientBootstrap clientBootstrap;
-    private IUnicastListener unicastListener;
+    private IUnicastStateListener unicastStateListener;
+    private IDeviceConnectionListener deviceConnectionListener;
     private ChannelDirectory directory;
 
     private Channel serverChannel;
@@ -69,11 +70,16 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
         return running && !paused;
     }
 
-    public void setUnicastListener(IUnicastListener unicastListener)
+    public void setUnicastStateListener(IUnicastStateListener unicastStateListener)
     {
-        this.unicastListener = unicastListener;
+        this.unicastStateListener = unicastStateListener;
+    }
+
+    public void setDeviceConnectionListener(IDeviceConnectionListener deviceConnectionListener)
+    {
+        this.deviceConnectionListener = deviceConnectionListener;
         // FIXME(jP): ugh, spreading state. How do we make this go away?
-        directory.setUnicastListener(unicastListener);
+        directory.setDeviceConnectionListener(deviceConnectionListener);
     }
 
     public void start(SocketAddress address)
@@ -87,7 +93,7 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
             running = true;
         }
 
-        unicastListener.onUnicastReady();
+        unicastStateListener.onUnicastReady();
     }
 
     public synchronized void stop()
@@ -139,7 +145,7 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
 
     private void pauseAccept()
     {
-        unicastListener.onUnicastUnavailable();
+        unicastStateListener.onUnicastUnavailable();
         enableChannelAccept(false);
         paused = true;
         l.info("pause unicast accept");
@@ -149,7 +155,7 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
     {
         paused = false;
         enableChannelAccept(true);
-        unicastListener.onUnicastReady();
+        unicastStateListener.onUnicastReady();
         l.info("resume unicast accept");
     }
 

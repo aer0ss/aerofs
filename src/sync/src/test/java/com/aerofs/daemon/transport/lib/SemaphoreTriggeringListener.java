@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.Semaphore;
 
 // keep non-final so that Mockito can spy on it
-public class SemaphoreTriggeringListener implements IUnicastListener
+public class SemaphoreTriggeringListener implements IUnicastStateListener, IDeviceConnectionListener
 {
     private static final Logger l = LoggerFactory.getLogger(SemaphoreTriggeringListener.class);
 

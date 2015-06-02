@@ -1,14 +1,11 @@
 package com.aerofs.daemon.transport.zephyr;
 
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil;
-import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
@@ -50,7 +47,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final ChannelTeardownHandler channelTeardownHandler;
     private final TransportStats transportStats;
     private final IZephyrSignallingService zephyrSignallingService;
-    private final IUnicastListener unicastListener;
+    private final IDeviceConnectionListener deviceConnectionListener;
     private final AddressResolverHandler resolver;
     private final Proxy proxy;
     private final long heartbeatInterval;
@@ -69,7 +66,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             ChannelTeardownHandler channelTeardownHandler,
             TransportStats transportStats,
             IZephyrSignallingService zephyrSignallingService,
-            IUnicastListener unicastListener,
+            IDeviceConnectionListener deviceConnectionListener,
             Timer timer,
             Proxy proxy,
             long heartbeatInterval,
@@ -87,7 +84,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.channelTeardownHandler = channelTeardownHandler;
         this.transportStats = transportStats;
         this.zephyrSignallingService = zephyrSignallingService;
-        this.unicastListener = unicastListener;
+        this.deviceConnectionListener = deviceConnectionListener;
         this.timer = timer;
         this.resolver = new AddressResolverHandler(null);
         this.proxy = proxy;
@@ -194,7 +191,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private CNameVerifiedHandler newCNameVerifiedHandler()
     {
-        return new CNameVerifiedHandler(unicastListener, HandlerMode.CLIENT);
+        return new CNameVerifiedHandler(deviceConnectionListener, HandlerMode.CLIENT);
     }
 
     private MessageHandler newMessageHandler()

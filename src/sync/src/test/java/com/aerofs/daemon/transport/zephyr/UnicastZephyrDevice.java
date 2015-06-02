@@ -101,6 +101,7 @@ public final class UnicastZephyrDevice
                 serverSSLEngineFactory,
                 transport,
                 unicastListener,
+                unicastListener,
                 linkStateService,
                 signallingService,
                 transportProtocolHandler,

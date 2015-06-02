@@ -4,12 +4,10 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.daemon.transport.lib.ChannelData;
-import com.aerofs.daemon.transport.lib.IUnicastListener;
-import com.aerofs.daemon.transport.lib.TransportUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -33,11 +31,11 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
     private final AtomicReference<Channel> channelReference = new AtomicReference<Channel>(null);
 
     private volatile DID expected;
-    private IUnicastListener unicastListener;
+    private IDeviceConnectionListener deviceConnectionListener;
 
-    public CNameVerifiedHandler(IUnicastListener unicastListener, HandlerMode mode)
+    public CNameVerifiedHandler(IDeviceConnectionListener deviceConnectionListener, HandlerMode mode)
     {
-        this.unicastListener = unicastListener;
+        this.deviceConnectionListener = deviceConnectionListener;
         this.mode = mode;
     }
 
@@ -95,7 +93,7 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
 
         ctx.getPipeline().remove(this);
 
-        unicastListener.onDeviceConnected(provider.getRemoteDID());
+        deviceConnectionListener.onDeviceConnected(provider.getRemoteDID());
 
         fireChannelConnected(ctx, (SocketAddress) e.getValue());
     }

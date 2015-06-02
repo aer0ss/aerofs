@@ -88,7 +88,8 @@ public final class UnicastTCPDevice
         StreamManager streamManager = new StreamManager(30 * C.SEC);
 
         unicast = new Unicast(addressResolver, transport);
-        unicast.setUnicastListener(unicastListener);
+        unicast.setUnicastStateListener(unicastListener);
+        unicast.setDeviceConnectionListener(unicastListener);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
