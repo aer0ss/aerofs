@@ -3,7 +3,7 @@ set -ex
 
 THIS_DIR="$(dirname "$0")"
 
-"${THIS_DIR}"//signup-decoder/stop.sh
+"${THIS_DIR}"/signup-decoder/stop.sh
 
 "${THIS_DIR}"/signup-decoder/start.sh
 

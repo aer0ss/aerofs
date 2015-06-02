@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker rm -vf signup-decoder
+docker rm -vf signup-decoder || true
