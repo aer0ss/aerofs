@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     hfsprogs \
     htop \
     inetutils-ping \
+    jq \
     libmysqlclient-dev \
     libgpgme11-dev \
     mono-devel \
