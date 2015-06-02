@@ -22,6 +22,7 @@ typeset -i PortBaseDefault=5000
 typeset -i PortBase=$PortBaseDefault
 typeset -i StartDaemon=0
 typeset -i StartGui=0
+typeset -i StartCli=0
 typeset -i UseDebugger=0
 typeset -i Verbose=0
 typeset -i VeryVerbose=0
@@ -42,6 +43,8 @@ Usage()
     echo "      -D          Debug daemon"
     echo "      -g          Start gui"
     echo "      -G          Debug gui"
+    echo "      -c          Start cli"
+    echo "      -C          Debug cli"
     echo ""
     echo "      -f          Force; kill any existing VMs before starting."
     echo "      -k          Kill existing processes by PID files"
@@ -66,7 +69,7 @@ Usage()
 DoArgs()
 {
 
-    while getopts "a:dDfgGj:kKlnp:r:u:vV" OPTION
+    while getopts "a:dDfgGcCj:kKlnp:r:u:vV" OPTION
     do
         case $OPTION in
         a)
@@ -88,6 +91,13 @@ DoArgs()
             ;;
         G)
             StartGui=1
+            UseDebugger=1
+            ;;
+        c)
+            StartCli=1
+            ;;
+        C)
+            StartCli=1
             UseDebugger=1
             ;;
         j)
@@ -160,7 +170,7 @@ DoArgs()
         DieUsage "You can see no approot here. Given approot $AppRoot does not exist."
     fi
 
-    if [ $DoStart -eq 1 -a $StartGui -eq 0 -a $StartDaemon -eq 0 ]
+    if [ $DoStart -eq 1 -a $StartGui -eq 0 -a $StartDaemon -eq 0 -a $StartCli -eq 0 ]
     then
         Die "Hey, nothing to start!  Use -d/-D/-g/-G to choose Daemon, GUI, or both."
     fi
@@ -335,6 +345,26 @@ StartClient()
         echo ""
         echo "Started GUI with RTROOT $RtRoot"
         echo "Output redirected to $RtRoot/gui.out"
+        [ $UseDebugger -eq 1 ] && echo "DEBUGGER: running at port $DebugPort."
+        echo ""
+    fi
+
+    if [ $StartCli -eq 1 ]
+    then
+        ComplainIfPidFile "$RtRoot/.cli.pid"
+
+        typeset args="$VMARGS $DebugArgs -Djava.library.path=$AppRoot -ea -cp $ClassPath \
+            com.aerofs.Main $RtRoot cli "
+        [ $Verbose -eq 1 ] && echo "DoExec: $JavaCmd $args"
+        if [ $DoNothing -eq 0 ]
+        then
+            $JavaCmd $args > $RtRoot/cli.out 2>&1 &
+            echo $! > $RtRoot/.cli.pid
+        fi
+
+        echo ""
+        echo "Started CLI with RTROOT $RtRoot"
+        echo "Output redirected to $RtRoot/cli.out"
         [ $UseDebugger -eq 1 ] && echo "DEBUGGER: running at port $DebugPort."
         echo ""
     fi
