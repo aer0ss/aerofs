@@ -25,6 +25,7 @@ ENV PATH $PATH:/gopath/bin
 
 ENV CGO_ENABLED 0
 
-{{ copy_src }}
+COPY builder/root /
+COPY src /gopath/src
 
-RUN go get -a -x -installsuffix cgo -ldflags '-s -w' {{ service }}
+ENTRYPOINT [ "/run.sh" ]
