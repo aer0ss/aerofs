@@ -172,19 +172,21 @@ server=172.16.0.83
 server=8.8.8.8
 server=8.8.4.4
 except-interface=eth0
-addn-hosts=/etc/hosts.d/unified.syncfs.host
+addn-hosts=/etc/hosts.d/share.syncfs.host
 dhcp-range=10.0.10.50,10.0.10.200,1h
 log-facility=/var/log/dnsmasq.log
 log-queries
 log-dhcp
 ```
 
-Create the additional hosts file for the private deployment box:
+Create the additional hosts file for the appliance under test:
 
 ```
 sudo mkdir -p /etc/hosts.d
-sudo touch unified.syncfs.host
+sudo echo 172.16.2.215 > share.syncfs.host
 ```
+
+172.16.2.215 is the IP of the agent where the appliance containers will run.
 
 Make sure dnsmasq is running with the new conf: 
 

@@ -27,11 +27,6 @@ def disable_ldap(w, e):
 
 def save_ldap_settings(w, e):
     e.get('#save-btn').click()
-
-    print
-    print ">>> If the test runs against dev environment, please `dk-restart` now before time runs out."
-    print
-
     w.until_display('#success-modal', timeout=5 * 60)
 
 

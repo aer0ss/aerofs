@@ -18,7 +18,7 @@ alias dk-exec="docker exec -it"
 alias dk-halt="${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance"
 alias dk-help="${DEV_DIR}/dk-help.sh"
 alias dk-ip="docker-machine ip ${VM}"
-alias dk-reconfig="dk-start-vm && ${DEV_DIR}/dk-reconfig.sh"
+alias dk-reconfig="dk-start-vm && ${DEV_DIR}/dk-reconfig.sh no-create-first-user"
 alias dk-reload="${DEV_DIR}/dk-reload.sh"
 alias dk-restart="dk-halt && dk-start"
 

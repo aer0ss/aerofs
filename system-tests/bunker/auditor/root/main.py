@@ -22,11 +22,6 @@ def disable_downstream(w, e):
 
 def save_downstream_settings(w, e):
     e.get('#save-btn').click()
-
-    print
-    print ">>> If the test runs against dev environment, please `dk-restart` now before time runs out."
-    print
-
     w.until_display('#flash-msg-success', timeout=5 * 60)
 
 
