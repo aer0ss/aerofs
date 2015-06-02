@@ -22,7 +22,7 @@ node "z.arrowfs.org" inherits default {
     # N.B. clean_defects will trigger at 90% at t=50m, so we shouldn't reach
     # 90% unless something goes wrong.
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
-    "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
+    "x df90 pagerduty@x.aerofs.com 22 /dev/vda",
     "dryad df90 pagerduty@dryad.aerofs.com 22 /dev/xvdf",
   ]:
     hour => "14",
