@@ -4,10 +4,9 @@ import javax.annotation.Nullable;
 
 public interface IViewNotifier
 {
-    static enum Type
+    enum Type
     {
         UPDATE,
-        SHOW_RETYPE_PASSWORD
     }
 
     /**

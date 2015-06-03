@@ -14,8 +14,6 @@ public class ToolsProgram implements IProgram
         map.put(t.getName(), t);
         t = new ToolCRC32();
         map.put(t.getName(), t);
-        t = new ToolKey();
-        map.put(t.getName(), t);
         t = new ToolCert();
         map.put(t.getName(), t);
         t = new ToolRootSID();

@@ -39,7 +39,6 @@ import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -168,7 +167,6 @@ public final class Pump implements IProgram, IUnicastInputLayer
     {
         CfgLocalUser localid = new CfgLocalUser();
         CfgLocalDID localdid = new CfgLocalDID();
-        CfgScrypted scrypted = new CfgScrypted();
         Timer timer = TimerUtil.getGlobalTimer();
         MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
@@ -183,7 +181,6 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
                 TransportFactory.TransportType.ZEPHYR.toString(),
-                scrypted.get(),
                 5 * C.SEC,
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,

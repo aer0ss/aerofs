@@ -290,8 +290,6 @@ public class Launcher
                 UIGlobals.dm())
             .start();
 
-        new BadCredentialNotifier();
-
         try {
             if (Cfg.useAutoUpdate()) {
                 UIGlobals.updater().start();

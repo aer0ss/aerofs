@@ -36,7 +36,6 @@ public class TestNotificationService
     @Mock DirectoryService ds;
     @Mock DownloadState dls;
     @Mock UploadState uls;
-    @Mock BadCredentialNotifier badCredentialNotifier;
     @Mock PathStatusNotifier pathStatusNotifier;
     @Mock ConflictNotifier conflictNotifier;
     @Mock DownloadNotifier downloadNotifier;
@@ -71,7 +70,7 @@ public class TestNotificationService
                 NativeSocketAuthenticatorFactory.create()));
 
         _service = new NotificationService(sched, rns, dls, downloadNotifier, uls, uploadNotifier,
-                badCredentialNotifier, conflictNotifier, pathStatusNotifier,
+                conflictNotifier, pathStatusNotifier,
                 onlineStatusNotifier,
                 Collections.<ISnapshotableNotificationEmitter>emptySet());
     }

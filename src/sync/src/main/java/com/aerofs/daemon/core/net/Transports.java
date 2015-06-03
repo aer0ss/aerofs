@@ -23,7 +23,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgScrypted;
+
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -64,7 +64,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     public Transports(
             CfgLocalUser localid,
             CfgLocalDID localdid,
-            CfgScrypted scrypted,
             CfgEnabledTransports enabledTransports,
             Timer timer,
             CoreQueue coreQueue,
@@ -83,7 +82,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),
                 TransportFactory.TransportType.ZEPHYR.toString(),
-                scrypted.get(),
                 5 * C.SEC,
                 3,
                 LibParam.EXP_RETRY_MIN_DEFAULT,

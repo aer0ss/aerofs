@@ -89,7 +89,7 @@ public class Setup
      * See setupNewUser's comments for more.
      */
     void setupSingleuser(
-            SPBlockingClient client, UserID userId, byte[] scrypted,
+            SPBlockingClient client, UserID userId,
             String rootAnchorPath, String deviceName,
             StorageType storageType, BackendConfig backendConfig, boolean apiAccess)
             throws Exception
@@ -104,7 +104,7 @@ public class Setup
 
             preSetup(rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig, scrypted,
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig,
                     client, apiAccess);
 
             UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
@@ -161,16 +161,16 @@ public class Setup
      * @param sp must have been signed in
      */
     private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, BackendConfig backendConfig, byte[] scrypted, SPBlockingClient sp,
+            StorageType storageType, BackendConfig backendConfig, SPBlockingClient sp,
             boolean apiAccess)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
 
-        DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
+        DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, deviceName, sp);
 
         initializeConfiguration(userID, userID.getString(), did, rootAnchorPath, storageType,
-                backendConfig, scrypted, sp, apiAccess);
+                backendConfig, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
 
@@ -185,13 +185,12 @@ public class Setup
 
         // Retrieve the Team Server user ID
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
-        byte[] tsScrypted = SecUtil.scrypt(LibParam.MULTIUSER_LOCAL_PASSWORD, tsUserId);
 
-        DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
+        DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId,
                 deviceName, sp);
 
         initializeConfiguration(tsUserId, userID.getString(), tsDID, rootAnchorPath, storageType,
-                backendConfig, tsScrypted, sp, apiAccess);
+                backendConfig, sp, apiAccess);
 
         setupCommon(rootAnchorPath);
     }
@@ -287,14 +286,13 @@ public class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, String contactEmail, DID did,
-            String rootAnchorPath, StorageType storageType, BackendConfig backendConfig, byte[] scrypted,
+            String rootAnchorPath, StorageType storageType, BackendConfig backendConfig,
             SPBlockingClient userSp, boolean apiAccess)
             throws Exception
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
         map.put(Key.USER_ID, userId.getString());
         map.put(Key.DEVICE_ID, did.toStringFormal());
-        map.put(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
         map.put(Key.ROOT, rootAnchorPath);
         map.put(Key.STORAGE_TYPE, storageType.name());
         map.put(Key.CONTACT_EMAIL, contactEmail);

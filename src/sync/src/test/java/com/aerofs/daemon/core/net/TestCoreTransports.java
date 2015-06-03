@@ -19,7 +19,6 @@ import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
-import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -49,7 +48,6 @@ public class TestCoreTransports extends AbstractTest
     private @Mock CfgAbsRTRoot _absRTRoot;
     private @Mock CfgLocalUser _localUser;
     private @Mock CfgLocalDID _localDID;
-    private @Mock CfgScrypted _scrypted;
     private @Mock CfgLolol _cfgLolol;
     private @Mock Timer _timer;
     private @Mock CoreQueue _coreQueue;
@@ -71,7 +69,6 @@ public class TestCoreTransports extends AbstractTest
     public void setup()
     {
         when(_localDID.get()).thenReturn(DID.generate());
-        when(_scrypted.get()).thenReturn(new byte[]{0x00, 0x01, 0x02, 0x03});
         when(_absRTRoot.get()).thenReturn(_temporaryFolder.getRoot().getAbsolutePath());
     }
 
@@ -89,7 +86,6 @@ public class TestCoreTransports extends AbstractTest
         Transports transports = new Transports(
                 _localUser,
                 _localDID,
-                _scrypted,
                 enabledTransports,
                 _timer,
                 _coreQueue,

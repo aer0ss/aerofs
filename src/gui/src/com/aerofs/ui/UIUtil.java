@@ -325,11 +325,6 @@ public class UIUtil
             new FileChangeNotification();
         }
 
-        // Start the service that displays Bad Password notifications
-        // This should not be run before setup is completed, otherwise it will
-        // trigger update password dialogs during setup.
-        new RetypePasswordDialogDisplayer();
-
         if (postLaunch != null) UI.get().asyncExec(postLaunch);
     }
 

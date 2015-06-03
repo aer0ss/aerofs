@@ -2,6 +2,7 @@ package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -20,12 +21,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.LeanByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -87,7 +87,6 @@ public class Cfg
     private static X509Certificate _cert;
     private static X509Certificate _cacert;
     private static PrivateKey _privKey;
-    private static LeanByteString _scrypted;
     private static boolean _inited;
     private static int _portbase;
     private static @Nullable StorageType _storageType;
@@ -153,7 +152,7 @@ public class Cfg
         try {
             if (readPasswd) readCreds();
             readCert();
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException|GeneralSecurityException e) {
             throw new ExNotSetup();
         }
 
@@ -542,26 +541,6 @@ public class Cfg
     }
 
     /**
-     * @return null if scrypt(p|u) is neither set, or if the bytes required
-     * to derive it is not found in device.conf; return scrypt(p|u) otherwise
-     */
-    public static byte[] scrypted()
-    {
-        return _scrypted.getInternalByteArray();
-    }
-
-    public static ByteString scryptedPB()
-    {
-        return _scrypted;
-    }
-
-    private static void resetSecurityTokens()
-    {
-        _privKey = null;
-        _scrypted = null;
-    }
-
-    /**
      * Sets the security tokens (i.e the bytes representing scrypt(p|u) and
      * private key)
      *
@@ -569,31 +548,58 @@ public class Cfg
      * @throws IOException if the key file doesn't exist
      * @throws com.aerofs.base.ex.ExBadCredential if we can't decrypt the private key
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static void setPrivKeyAndScryptedUsingScrypted(byte[] scrypted)
         throws IOException, ExBadCredential
     {
         // decrypt device_private_key using b64(scrypt(p|u))
         char[] pbePasswd = Base64.encodeBytes(scrypted).toCharArray();
-        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + LibParam.DEVICE_KEY);
+        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + LibParam.DEVICE_KEY_ENCRYPTED);
         _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
-
-        // do it after decryption has succeeded
-        _scrypted = new LeanByteString(scrypted);
     }
 
-    /*
-     * scrypted = scrypt( password | username )
-     * confdb[cred] = base64( AES_E[PBKDF2(PASSWD_PASSWD)]( scrypted | random ) )
-     */
-    private static void readCreds() throws ExBadCredential, IOException
-    {
-        String cred = _db.getNullable(Key.CRED);
-        if (cred != null) {
-            byte[] scrypted = SecUtil.encryptedBase642scrypted(cred);
-            setPrivKeyAndScryptedUsingScrypted(scrypted);
-        } else {
-            resetSecurityTokens();
+    private static void readCreds() throws ExBadCredential, IOException,
+            GeneralSecurityException {
+        String key = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
+        try {
+            _privKey = BaseSecUtil.newPrivateKeyFromFile(key);
+        } catch (IOException e) {
+            Loggers.getLogger(Cfg.class).info("convert private key");
+            // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
+            // is loaded before either of them are run  so we need to do an ad-hoc upgrade path
+            // when configuration is loaded.
+            // The updater kills the daemon and the UI must load the config before it can restart
+            // it so there shouldn't be room for any race conditions
+            // TODO: remove conversion code and deprecated deps once support deems it acceptable,
+            // presumably in about 1 year to give old customers ample time to upgrade so sometimes
+            // in July 2016
+            if (!convertPrivateKey()) throw e;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean convertPrivateKey()
+            throws ExBadCredential, IOException, GeneralSecurityException {
+        String newKey = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
+        String oldKey = absRTRoot() + File.separator + LibParam.DEVICE_KEY_ENCRYPTED;
+
+        String cred = _db.getNullable(Key.CRED);
+        if (cred == null || !(new File(oldKey).exists())) return false;
+
+        byte[] scrypted = BaseSecUtil.encryptedBase642scrypted(cred);
+        setPrivKeyAndScryptedUsingScrypted(scrypted);
+
+        BaseSecUtil.writePrivateKey(_privKey, newKey);
+
+        new File(oldKey).delete();
+
+        try {
+            _db.set(Key.CRED, null);
+        } catch (SQLException e) {
+            Loggers.getLogger(Cfg.class).warn("failed to reset scrypted cred");
+        }
+        return true;
     }
 
     /**
@@ -617,6 +623,7 @@ public class Cfg
         return _cacert;
     }
 
+    @SuppressWarnings("deprecation")
     @Nonnull public static Map<Key, String> dumpDb()
     {
         assert inited();

@@ -5,7 +5,6 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
-import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.IPresenceLocator;
@@ -16,7 +15,6 @@ import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.Listeners;
 import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
@@ -68,26 +66,6 @@ public final class XMPPConnectionService implements ILinkStateListener
         //XMPPConnection.DEBUG_ENABLED = true;
     }
 
-    // 64 bytes
-    private static final byte[] XMPP_PASSWORD_SALT = {
-        (byte)0xcc, (byte)0xd9, (byte)0x82, (byte)0x0d,
-        (byte)0xf2, (byte)0xf1, (byte)0x4a, (byte)0x56,
-        (byte)0x0a, (byte)0x70, (byte)0x28, (byte)0xbe,
-        (byte)0x91, (byte)0xd6, (byte)0xb8, (byte)0x51,
-        (byte)0x78, (byte)0x03, (byte)0xc4, (byte)0x8f,
-        (byte)0x30, (byte)0x8b, (byte)0xdd, (byte)0xbf,
-        (byte)0x2d, (byte)0x80, (byte)0x45, (byte)0x75,
-        (byte)0xff, (byte)0x2d, (byte)0x4f, (byte)0x55,
-        (byte)0x0c, (byte)0x2e, (byte)0x1b, (byte)0x2d,
-        (byte)0x80, (byte)0x77, (byte)0x73, (byte)0x95,
-        (byte)0x25, (byte)0x7c, (byte)0xf2, (byte)0x8e,
-        (byte)0xa5, (byte)0x49, (byte)0x5c, (byte)0xf2,
-        (byte)0xa6, (byte)0x4a, (byte)0x64, (byte)0x31,
-        (byte)0x3a, (byte)0xb3, (byte)0x04, (byte)0x48,
-        (byte)0xd7, (byte)0x89, (byte)0xeb, (byte)0xd6,
-        (byte)0x17, (byte)0x7e, (byte)0x56, (byte)0x81
-    };
-
     private static final Logger l = Loggers.getLogger(XMPPConnectionService.class);
 
     // FIXME (AG): the right thing is not to leak connection outside at all!
@@ -100,7 +78,6 @@ public final class XMPPConnectionService implements ILinkStateListener
     private final String xmppServerDomain;
     private final String resource;
     private String xmppJid;
-    private final String xmppPassword; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
     private final long linkStateChangePingInterval;
     private final int maxPingsBeforeDisconnection;
     private final long initialConnectRetryInterval;
@@ -111,7 +88,6 @@ public final class XMPPConnectionService implements ILinkStateListener
     private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
     private final ConcurrentMap<String, TimerTask> outstandingPings = newConcurrentMap();
     private final Listeners<IXMPPConnectionServiceListener> _listeners = Listeners.create();
-    private final LinkStateService linkStateService;
     private final ExecutorService executor;
     private final List<IPresenceLocator> presenceLocators;
 
@@ -120,7 +96,6 @@ public final class XMPPConnectionService implements ILinkStateListener
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
             String resource,
-            byte[] scrypted,
             long linkStateChangePingInterval,
             int maxPingsBeforeDisconnection,
             long initialConnectRetryInterval,
@@ -133,13 +108,11 @@ public final class XMPPConnectionService implements ILinkStateListener
         this.xmppServerDomain = xmppServerDomain;
         this.resource = resource;
         this.xmppJid = JabberID.did2FormAJid(localdid, xmppServerDomain, resource);
-        this.xmppPassword = Base64.encodeBytes(SecUtil.hash(scrypted, XMPP_PASSWORD_SALT));
         this.linkStateChangePingInterval = linkStateChangePingInterval;
         this.maxPingsBeforeDisconnection = maxPingsBeforeDisconnection;
         this.initialConnectRetryInterval = initialConnectRetryInterval;
         this.maxConnectRetryInterval = maxConnectRetryInterval;
         this.timer = new Timer("x-pt", true);
-        this.linkStateService = linkStateService;
         this.presenceLocators = new ArrayList<>();
 
         ThreadFactory vCardThreadFactory = r -> new Thread(r, "x-vcard");
@@ -222,16 +195,6 @@ public final class XMPPConnectionService implements ILinkStateListener
                 l.warn("fail close reachability socket with err:{}", e.getMessage());
             }
         }
-    }
-
-    /**
-     * Returns the credentials required to log into the XMPP server
-     *
-     * @return <pre>sha256(scrypt(p|u)|u)</pre>
-     */
-    public String getXmppPassword()
-    {
-        return xmppPassword;
     }
 
     @Override
@@ -530,7 +493,9 @@ public final class XMPPConnectionService implements ILinkStateListener
         newConnection.connect();
 
         l.trace("logging in as " + xmppJid); // done to show relationship
-        newConnection.login(xmppUser, getXmppPassword(), resource);
+        // NB: the server currently doesn't check passwords
+        // TODO: use client cert for auth as specified in XEP-0178
+        newConnection.login(xmppUser, "dummy", resource);
 
         l.trace("logged in");
         return newConnection;

@@ -37,7 +37,10 @@ public class CfgDatabase
     {
         USER_ID("user_id", null),
         DEVICE_ID("device_id", null),
+
+        @Deprecated
         CRED("cred", null),
+
         SIGNUP_DATE("signup_date", 0), // Timestamp of the user sign up date
 
         // Absolute path to Root Anchor. N.B. must not use canonical paths so users can use symbolic

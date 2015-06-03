@@ -10,7 +10,6 @@ message PBNotification {
 
     enum Type {
         TRANSFER = 0;                // transfer state changed
-        BAD_CREDENTIAL = 1;          // incorrect username/password
         PATH_STATUS = 2;             // change in the status of a path
         PATH_STATUS_OUT_OF_DATE = 3; // for whatever reason the path status is completely out of date
         CONFLICT_COUNT = 4;          // number of files with conflicts changed

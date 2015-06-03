@@ -6,7 +6,6 @@ package com.aerofs.controller;
 
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -96,11 +95,6 @@ public class SetupModel
     public String getDeviceName()           { return _devAlias; }
     public void setDeviceName(String name)  { _devAlias = name; }
 
-    public byte[] getScrypted() throws ExInvalidID
-                                            { return SecUtil.scrypt(
-                                                getPasswordValue().toCharArray(),
-                                                getUserID());
-                                            }
     public byte[] getPassword()             { return getPasswordValue().getBytes(); }
 
     public void setPassword(String pw)      { _password = pw; }

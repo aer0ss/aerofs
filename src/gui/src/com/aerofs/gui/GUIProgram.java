@@ -2,7 +2,6 @@ package com.aerofs.gui;
 
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
-import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -10,7 +9,6 @@ import com.aerofs.lib.InitErrors;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.swtdesigner.SWTResourceManager;
@@ -84,7 +82,6 @@ public class GUIProgram implements IProgram
         }
 
         UIGlobals.initialize_(true, launchArgs);
-        SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         GUI gui = new GUI();
         UI.set(gui);

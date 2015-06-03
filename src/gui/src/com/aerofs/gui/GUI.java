@@ -616,12 +616,6 @@ public class GUI implements IUI
         ExitCode.NORMAL_EXIT.exit();
     }
 
-    @Override
-    public void retypePassword()
-    {
-        new DlgRetypePassword(GUI.get().sh()).open();
-    }
-
     private int _openShells;
 
     private final HashSet<Shell> _open = new HashSet<Shell>(); // for debugging only

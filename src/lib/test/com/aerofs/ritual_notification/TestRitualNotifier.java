@@ -116,9 +116,9 @@ public class TestRitualNotifier extends AbstractTest
         });
 
         PBNotification.Builder bd = PBNotification.newBuilder();
-        bd.setType(Type.BAD_CREDENTIAL);
+        bd.setType(Type.SHARED_FOLDER_JOIN);
         _rns.getRitualNotifier().sendNotification(bd.build());
 
-        assertEquals(Type.BAD_CREDENTIAL, done.get().getType());
+        assertEquals(Type.SHARED_FOLDER_JOIN, done.get().getType());
     }
 }

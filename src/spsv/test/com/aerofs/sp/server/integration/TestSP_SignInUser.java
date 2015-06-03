@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.lib.SecUtil;
+import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
@@ -54,7 +54,7 @@ public class TestSP_SignInUser extends AbstractSPTest
         sqlTrans.commit();
 
         service.credentialSignIn(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
+                ByteString.copyFrom(LocalCredential.deriveKeyForUser(user.id(), CRED)));
     }
 
     // ---- ---- ---- ----
@@ -70,7 +70,7 @@ public class TestSP_SignInUser extends AbstractSPTest
         sqlTrans.commit();
 
         service.signInUser(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
+                ByteString.copyFrom(LocalCredential.deriveKeyForUser(user.id(), CRED)));
     }
 
     @Test(expected = ExBadCredential.class)
@@ -80,7 +80,7 @@ public class TestSP_SignInUser extends AbstractSPTest
         User user = newUser();
 
         service.signInUser(user.id().getString(),
-                ByteString.copyFrom(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())));
+                ByteString.copyFrom(LocalCredential.deriveKeyForUser(user.id(), CRED)));
     }
 
     @Test(expected = ExBadCredential.class)

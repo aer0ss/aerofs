@@ -38,14 +38,6 @@ public abstract class Notifications
                 .build();
     }
 
-    public static PBNotification newBadCredentialReceivedNotification()
-    {
-        return PBNotification
-                .newBuilder()
-                .setType(BAD_CREDENTIAL)
-                .build();
-    }
-
     public static PBNotification newSharedFolderPendingNotification()
     {
         return PBNotification

@@ -24,6 +24,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
+import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.*;
 import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.server.url_sharing.UrlSharingDatabase;
@@ -400,7 +401,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         String idString = user.id().getString();
-        user.save(SPParam.getShaedSP(SecUtil.scrypt(new String(CRED).toCharArray(), user.id())),
+        user.save(SPParam.getShaedSP(LocalCredential.deriveKeyForUser(user.id(), CRED)),
                 new FullName(idString, idString));
     }
 

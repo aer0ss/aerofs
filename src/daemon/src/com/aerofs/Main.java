@@ -254,9 +254,9 @@ public class Main
             rtRootFile.setReadable(false, false);   // chmod a-r
             rtRootFile.setWritable(false, false);   // chmod a-w
             rtRootFile.setExecutable(false, false); // chmod a-x
-            rtRootFile.setReadable(true, true);     // chmod o+r
-            rtRootFile.setWritable(true, true);     // chmod o+w
-            rtRootFile.setExecutable(true, true);   // chmod o+x
+            rtRootFile.setReadable(true, true);     // chmod u+r
+            rtRootFile.setWritable(true, true);     // chmod u+w
+            rtRootFile.setExecutable(true, true);   // chmod u+x
         }
     }
 }

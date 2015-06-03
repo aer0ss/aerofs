@@ -56,7 +56,8 @@ public class LibParam extends BaseParam
     public static final String VERSION                 = "version";
     public static final String DEFAULT_RTROOT          = "DEFAULT";
     public static final String DEVICE_CERT             = "cert";
-    public static final String DEVICE_KEY              = "key";
+    public static final String DEVICE_KEY_ENCRYPTED    = "key";
+    public static final String DEVICE_KEY              = "key.pem";
     public static final String CA_CERT                 = "cacert.pem";
     public static final String CORE_DATABASE           = "db";
     public static final String OBF_CORE_DATABASE       = "obf-db";

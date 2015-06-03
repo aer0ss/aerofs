@@ -17,7 +17,6 @@ public abstract class InstallActor
             setup.setupSingleuser(
                     model.getClient(),
                     model.getUserID(),
-                    model.getScrypted(),
                     model._localOptions._rootAnchorPath,
                     model.getDeviceName(),
                     StorageType.LINKED, null,

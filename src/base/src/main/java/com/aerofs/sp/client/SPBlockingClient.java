@@ -1,9 +1,6 @@
 package com.aerofs.sp.client;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.net.IURLConnectionConfigurator;
@@ -14,7 +11,6 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.common.base.Throwables;
-import org.slf4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,10 +20,6 @@ import java.net.URL;
  */
 public class SPBlockingClient extends SPServiceBlockingStub
 {
-    private static final Logger l = Loggers.getLogger(SPBlockingClient.class);
-
-    private static IBadCredentialListener _bcl;
-
     public static class Factory
     {
         // only used for mutual auth
@@ -89,11 +81,6 @@ public class SPBlockingClient extends SPServiceBlockingStub
         }
     }
 
-    public static void setBadCredentialListener(IBadCredentialListener bcl)
-    {
-        _bcl = bcl;
-    }
-
     private final Factory _f;
 
     private SPBlockingClient(SPServiceStubCallbacks callbacks, Factory f)
@@ -107,15 +94,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public SPBlockingClient signInRemote() throws Exception
     {
-        try {
-            super.signInDevice(_f._user.getString(), BaseUtil.toPB(_f._did));
-            return this;
-        } catch (ExBadCredential e) {
-            if (_bcl != null) {
-               l.debug("ExBadCredential Caught, informing UI.");
-               _bcl.exceptionReceived();
-            }
-            throw e;
-        }
+        super.signInDevice(_f._user.getString(), BaseUtil.toPB(_f._did));
+        return this;
     }
 }

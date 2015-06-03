@@ -1,22 +1,16 @@
 package com.aerofs.cli;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.ids.UserID;
-import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.UIParam;
 import com.aerofs.ui.UIUtil;
-import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.update.Updater;
 import org.slf4j.Logger;
 
@@ -427,25 +421,6 @@ public class CLI implements IUI {
     {
         UIGlobals.dm().stopIgnoreException();
         ExitCode.NORMAL_EXIT.exit();
-    }
-
-    @Override
-    public void retypePassword() throws ExNoConsole
-    {
-        while (true) {
-            String passwd = new String(askPasswd(S.PASSWORD_HAS_CHANGED));
-            try {
-                CredentialUtil.updateStoredPassword(UserID.fromExternal(Cfg.user().getString()),
-                        passwd.toCharArray());
-                break;
-            } catch (ExBadCredential ebc) {
-                ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
-                show(MessageType.WARN, S.BAD_CREDENTIAL_CAP);
-            } catch (Exception e) {
-                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " +
-                        ErrorMessages.e2msgDeprecated(e));
-            }
-        }
     }
 
     @Override

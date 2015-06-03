@@ -13,7 +13,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.ritual_notification.IRitualNotificationClientConnectedListener;
 import com.aerofs.ritual_notification.RitualNotificationServer;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -31,7 +30,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private final RitualNotificationServer _rns;
     private final DownloadState _dls;
     private final UploadState _uls;
-    private final BadCredentialNotifier _bcl;
     private final PathStatusNotifier _psn;
     private final ConflictNotifier _cl;
     private final DownloadNotifier _dn;
@@ -42,7 +40,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     @Inject
     public NotificationService(CoreScheduler sched, RitualNotificationServer rns,
             DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
-            BadCredentialNotifier bcl, ConflictNotifier cl,
+            ConflictNotifier cl,
             PathStatusNotifier psn, OnlineStatusNotifier osn,
             Set<ISnapshotableNotificationEmitter> snapshotables)
     {
@@ -50,7 +48,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         _rns = rns;
         _dls = dls;
         _uls = uls;
-        _bcl = bcl;
         _psn = psn;
         _cl = cl;
         _dn = dn;
@@ -62,11 +59,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     //
     // notifier_s_ setup
     //
-
-    private void setupBadCredentialNotifier_()
-    {
-        SPBlockingClient.setBadCredentialListener(_bcl);
-    }
 
     private boolean filterMeta_()
     {
@@ -115,7 +107,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     public void init_()
     {
         setupRitualNotificationListener_();
-        setupBadCredentialNotifier_();
         setupTransferNotifiers_();
         setupPathStatusNotifiers_();
         setupOnlineStatusNotifier();

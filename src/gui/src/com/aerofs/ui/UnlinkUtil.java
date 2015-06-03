@@ -46,8 +46,6 @@ public class UnlinkUtil
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_KEY));
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_CERT));
 
-        // Delete the password.
-        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
         // Delete the device id
         Cfg.db().set(Key.DEVICE_ID, Key.DEVICE_ID.defaultValue());
         // Create the setup file.

@@ -6,8 +6,6 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.Identity;
-import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
@@ -51,18 +49,8 @@ public abstract class SignInActor
         @Override
         public void signInUser(SetupModel model) throws Exception {
             SPBlockingClient sp = newOneWayAuthClientFactory().create();
-
-            // FIXME: Soon we will remove this if() statement. The client
-            // should not bother with scrypt'ing the credential and talking to
-            // (legacy) signInUser. credentialSignIn() accepts cleartext credential for
-            // LDAP and locally-authenticated users.
-            SignInUserReply reply;
-            if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
-                reply = sp.credentialSignIn(model.getUsername(), ByteString.copyFrom(model.getPassword()));
-            } else {
-                // legacy call:
-                reply = sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
-            }
+            SignInUserReply reply = sp.credentialSignIn(model.getUsername(),
+                    ByteString.copyFrom(model.getPassword()));
             // We need to prompt for the second factor if the user has enabled it,
             // or if they must based on org mandate
             model.setNeedSecondFactor(reply.getNeedSecondFactor()

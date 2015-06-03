@@ -149,7 +149,6 @@ import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedFolders;
@@ -222,7 +221,6 @@ import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static org.apache.commons.lang.StringUtils.defaultIfEmpty;
 
 public class SPService implements ISPService
 {
@@ -3099,13 +3097,19 @@ public class SPService implements ISPService
         _session.setBasicAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
         _sqlTrans.begin();
+        Organization org = user.getOrganization();
+        TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
         boolean enforceTwoFactor = user.shouldEnforceTwoFactor() &&
-                (user.getOrganization().getTwoFactorEnforcementLevel() != TwoFactorEnforcementLevel.DISALLOWED);
+                (level != TwoFactorEnforcementLevel.DISALLOWED);
+        boolean needSecondFactorSetup = (level == TwoFactorEnforcementLevel.MANDATORY) &&
+                !enforceTwoFactor;
         boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
                 .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
         _sqlTrans.commit();
-        return createReply(
-                SignInUserReply.newBuilder().setNeedSecondFactor(needSecondFactor).build());
+        return createReply(SignInUserReply.newBuilder()
+                .setNeedSecondFactor(needSecondFactor)
+                .setNeedSecondFactorSetup(needSecondFactorSetup)
+                .build());
     }
 
     /**

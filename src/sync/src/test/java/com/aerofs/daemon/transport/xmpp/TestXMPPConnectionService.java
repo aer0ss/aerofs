@@ -111,7 +111,6 @@ public final class TestXMPPConnectionService
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
                 "u",
-                new byte[]{0},
                 PING_INTERVAL_IN_MS,
                 MAX_PINGS_BEFORE_DISCONNECTION,
                 INITIAL_CONNECT_RETRY_INTERVAL_IN_MS,
@@ -303,7 +302,6 @@ public final class TestXMPPConnectionService
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
                 "u",
-                new byte[]{0},
                 linkStateChangePingInterval, // long ping interval
                 MAX_PINGS_BEFORE_DISCONNECTION,
                 INITIAL_CONNECT_RETRY_INTERVAL_IN_MS,

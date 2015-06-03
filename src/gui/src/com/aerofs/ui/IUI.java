@@ -115,10 +115,4 @@ public interface IUI {
      * Stop daemon (ignoring errors), dispose all UI components, and quit the current process
      */
     void shutdown();
-
-    /**
-     * @throws ExNoConsole if no console is found. the method show()s an error
-     * message before throwing.
-     */
-    void retypePassword() throws ExNoConsole;
 }

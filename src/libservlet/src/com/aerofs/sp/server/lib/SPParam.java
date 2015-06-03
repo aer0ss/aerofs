@@ -50,8 +50,6 @@ public class SPParam
         (byte)0x00, (byte)0xe1, (byte)0xef, (byte)0x20
     };
 
-    // FIXME: move this to spsv please; only non-sp user is syncstat, which I think is
-    // off in the weeds. See LocalCredential class.
     public static byte[] getShaedSP(byte[] scrypted)
     {
         return SecUtil.hash(scrypted, PASSWD_SALT);

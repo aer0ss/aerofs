@@ -2,12 +2,10 @@ package com.aerofs.cli;
 
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.Loggers;
-import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.defects.Defects;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
-import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Lists;
@@ -35,7 +33,6 @@ public class CLIProgram implements IProgram
         }
 
         UIGlobals.initialize_(false, new LaunchArgs(Lists.newArrayList(args)));
-        SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
 
         CLI cli = new CLI();
         UI.set(cli);

@@ -9,8 +9,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.sp.authentication.Authenticator;
+import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -147,7 +147,7 @@ public class TestSP_Password extends AbstractTest
         throws Exception
     {
         _passwordManagement.resetPassword("dummy token", "test123".getBytes());
-        byte[] scrypted = SecUtil.scrypt("test123".toCharArray(), user.id());
+        byte[] scrypted = LocalCredential.deriveKeyForUser(user.id(), "test123".getBytes());
         verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
     }
 
@@ -223,7 +223,7 @@ public class TestSP_Password extends AbstractTest
     public void shouldSetPassword() throws Exception
     {
         _passwordManagement.setPassword(user.id(), "test".getBytes());
-        byte[] scrypted = SecUtil.scrypt("test".toCharArray(), user.id());
+        byte[] scrypted = LocalCredential.deriveKeyForUser(user.id(), "test".getBytes());
         verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP(scrypted));
         verify(passwordResetEmailer).sendPasswordChangeNotification(eq(user.id()));
     }

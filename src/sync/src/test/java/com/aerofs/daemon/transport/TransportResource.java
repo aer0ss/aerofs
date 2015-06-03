@@ -123,7 +123,6 @@ public final class TransportResource extends ExternalResource
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",
                 "u",
-                scrypted,
                 2 * C.SEC,
                 2,
                 1 * C.SEC,

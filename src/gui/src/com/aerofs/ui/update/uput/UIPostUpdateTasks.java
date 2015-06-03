@@ -19,6 +19,7 @@ public class UIPostUpdateTasks
         _cfgDB = cfgDB;
 
         _tasks = new IUIPostUpdateTask[] {
+
             new UPUTSetDeviceOSFamilyAndName(),
             new UPUTSetContactEmail()
         };

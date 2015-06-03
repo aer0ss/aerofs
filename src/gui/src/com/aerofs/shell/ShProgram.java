@@ -144,7 +144,6 @@ public class ShProgram implements IProgram, ICallback
         _runner.addCommand_(new CmdResume());
         _runner.addCommand_(new CmdRelocate());
         _runner.addCommand_(new CmdSyncHistory());
-        _runner.addCommand_(new CmdPassword());
         _runner.addCommand_(new CmdActivities());
         _runner.addCommand_(new CmdShutdown());
         _runner.addCommand_(new CmdConflicts());

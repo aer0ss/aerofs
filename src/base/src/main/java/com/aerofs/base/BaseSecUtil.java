@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
@@ -23,6 +24,10 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -34,7 +39,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
@@ -77,13 +81,6 @@ public abstract class BaseSecUtil
         }
     }
 
-    private final static int MAX_PLAIN_TEXT_SIZE = 117;
-
-    public static byte[] newChallengeData() throws GeneralSecurityException
-    {
-        return newRandomBytes(MAX_PLAIN_TEXT_SIZE);
-    }
-
     public static int newRandomInt()
     {
         return s_rand.nextInt();
@@ -106,39 +103,13 @@ public abstract class BaseSecUtil
         return bs;
     }
 
-    public static PrivateKey decodePrivateKey(byte[] bs)
+    @Deprecated
+    private static PrivateKey decodePrivateKey(byte[] bs)
             throws GeneralSecurityException
     {
         KeyFactory factory = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec specPrivate = new PKCS8EncodedKeySpec(bs);
         return factory.generatePrivate(specPrivate);
-    }
-
-    // TODO simply use privKey.getEncoded()
-    public static byte[] encodePrivateKey(PrivateKey privKey)
-            throws GeneralSecurityException
-    {
-        KeyFactory factory = KeyFactory.getInstance("RSA");
-        PKCS8EncodedKeySpec specPrivate =
-                factory.getKeySpec(privKey,
-                        PKCS8EncodedKeySpec.class);
-        return specPrivate.getEncoded();
-    }
-
-    public static byte[] encryptChallenge(byte[] plainText, PublicKey publicKey)
-            throws GeneralSecurityException
-    {
-        return cryptRSA(plainText, publicKey, true);
-    }
-
-    public static byte[] decryptChallenge(byte[] challenge, PrivateKey privateKey)
-            throws ExBadCredential
-    {
-        try {
-            return cryptRSA(challenge, privateKey, false);
-        } catch (GeneralSecurityException e) {
-            throw new ExBadCredential(e);
-        }
     }
 
     public static String getCertificateCName(UserID userId, DID did)
@@ -154,6 +125,8 @@ public abstract class BaseSecUtil
         return generator.generateKeyPair();
     }
 
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static PrivateKey decryptPrivateKey(byte[] encryptedKey, char[] passwd)
             throws ExBadCredential
     {
@@ -164,20 +137,15 @@ public abstract class BaseSecUtil
         }
     }
 
-    public static byte[] encryptPrivateKey(PrivateKey privKey, char[] passwd)
-            throws GeneralSecurityException
-    {
-        return encryptPBEwithAES(encodePrivateKey(privKey), passwd, false);
-    }
-
     /**
-     * export the private key to PEM format
+     * export the private key to PEM-encoded PCKS#8 format
      */
     public static String exportPrivateKey(@Nonnull PrivateKey privKey)
+            throws GeneralSecurityException
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("-----BEGIN RSA PRIVATE KEY-----\n");
-        String str = Base64.encodeBytes(privKey.getEncoded());
+        sb.append("-----BEGIN PRIVATE KEY-----\n");
+        String str = Base64.encodeBytes(encodePrivateKey(privKey));
         while (!str.isEmpty()) {
             int len = Math.min(64, str.length());
             String prefix = str.substring(0, len);
@@ -185,8 +153,16 @@ public abstract class BaseSecUtil
             sb.append(prefix);
             sb.append('\n');
         }
-        sb.append("-----END RSA PRIVATE KEY-----\n");
+        sb.append("-----END PRIVATE KEY-----\n");
         return sb.toString();
+    }
+
+    private static byte[] encodePrivateKey(PrivateKey privKey)
+            throws GeneralSecurityException
+    {
+        KeyFactory factory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec specPrivate = factory.getKeySpec(privKey, PKCS8EncodedKeySpec.class);
+        return specPrivate.getEncoded();
     }
 
     private static final byte[] PBE_AES_SALT = {
@@ -201,18 +177,8 @@ public abstract class BaseSecUtil
     /**
      * N.B. don't use strong for the client side because Windows doesn't support it
      */
-    public static byte[] encryptPBEwithAES(byte[] data, char[] passwd,
-            boolean strong) throws GeneralSecurityException
-    {
-        Cipher cipher = getAESEncCipher(passwd, strong);
-        byte[] iv = cipher.getIV();
-        byte[] ciphertext = cipher.doFinal(data);
-        return BaseUtil.concatenate(iv, ciphertext);
-    }
-
-    /**
-     * N.B. don't use strong for the client side because Windows doesn't support it
-     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     private static byte[] decryptPBEwithAES(byte[] data, char[] passwd,
             boolean strong) throws GeneralSecurityException
     {
@@ -242,6 +208,8 @@ public abstract class BaseSecUtil
      * b64(pbe_daemonkey(scrypt(p|u)|random_bytes))
      * @return scrypt(p|u)
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static byte[] encryptedBase642scrypted(String base64) throws IOException
     {
         try {
@@ -255,25 +223,22 @@ public abstract class BaseSecUtil
         }
     }
 
-    /**
-     * Turns a byte[] with the scrypted credential-bytes into a String suitable
-     * for writing to device.conf
-     *
-     * @param scrypted requires a byte[] with scrypt(p|u)
-     * @return b64(pbe_daemonkey(scrypt(p|u)|random_byte)))
-     */
-    public static String scrypted2encryptedBase64(byte[] scrypted)
-    {
+    public static void writePrivateKey(PrivateKey privKey, String filename)
+            throws IOException, GeneralSecurityException {
+        File file = new File(filename);
+        try (OutputStream out = new FileOutputStream(file)) {
+            out.write(exportPrivateKey(privKey).getBytes(StandardCharsets.UTF_8));
+        }
         try {
-            byte[] rand = newRandomBytes(PASSWD_RANDOM_BYTES);
-            byte[] bytes = new byte[rand.length + scrypted.length];
-            System.arraycopy(scrypted, 0, bytes, 0, scrypted.length);
-            System.arraycopy(rand, 0, bytes, scrypted.length, rand.length);
-
-            byte[] encrypt = encryptPBEwithAES(bytes, PASSWD_PASSWD, false);
-            return Base64.encodeBytes(encrypt);
-        } catch (GeneralSecurityException e) {
-            throw new Error(e);
+            Files.setPosixFilePermissions(Paths.get(filename),
+                    ImmutableSet.of(PosixFilePermission.OWNER_READ));
+        } catch (UnsupportedOperationException e) {
+            // fallback to old permission API for non-Posix systems
+            // TODO: on windows we should try to use DACL to keep other users away
+            file.setReadable(false, false);   // chmod a-r
+            file.setWritable(false, false);   // chmod a-w
+            file.setExecutable(false, false); // chmod a-x
+            file.setReadable(true, true);     // chmod u+r
         }
     }
 
@@ -657,6 +622,7 @@ public abstract class BaseSecUtil
      * if decrypting
      * @throws GeneralSecurityException
      */
+    @Deprecated
     private static Cipher getAESCipher(char[] passwd, byte[] initvector,
             boolean encrypt, boolean strong)
             throws GeneralSecurityException
@@ -678,28 +644,13 @@ public abstract class BaseSecUtil
         return c;
     }
 
-    public static Cipher getAESEncCipher(final char[] passwd, boolean strong)
-            throws GeneralSecurityException
-    {
-        return getAESCipher(passwd, null, true, strong);
-    }
-
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Cipher getAESDecCipher(final char[] passwd, final byte[] iv,
             boolean strong)
             throws GeneralSecurityException
     {
         return getAESCipher(passwd, iv, false, strong);
-    }
-
-    // may throw exception if decryption/encryption key doesn't match
-    //
-    private static byte[] cryptRSA(byte[] data, Key key, boolean encrypt)
-            throws GeneralSecurityException
-    {
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key);
-
-        return cipher.doFinal(data);
     }
 
     public static MessageDigest newMessageDigest()
@@ -787,16 +738,6 @@ public abstract class BaseSecUtil
         }
     }
 
-    // throw ExCannotDecrypt if authentication failed`
-    public static void selfAuthenticate(X509Certificate cert, PrivateKey privateKey)
-            throws ExBadCredential, GeneralSecurityException
-    {
-        byte[] data = newChallengeData();
-        byte[] challenge = encryptChallenge(data, cert.getPublicKey());
-        byte[] response = decryptChallenge(challenge, privateKey);
-        if (!Arrays.equals(data, response)) throw new ExBadCredential();
-    }
-
     private static char[] ALPHABET = {
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
             'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p' };
@@ -823,7 +764,7 @@ public abstract class BaseSecUtil
         File f = new File(serverKeyFilename);
         try (InputStream in = new FileInputStream(f)) {
             byte[] fileContents = new byte[(int)f.length()];
-            in.read(fileContents);
+            ByteStreams.readFully(in, fileContents);
 
             String fileString = new String(fileContents);
             fileString = fileString.replace("-----BEGIN PRIVATE KEY-----", "");
