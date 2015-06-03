@@ -41,70 +41,28 @@ coreos:
         [Unit]
         Description=Signup Decoder
         [Service]
-        ExecStart=/signup-decoder/run
-        ExecStop=/usr/bin/docker rm -fv decoder
+        ExecStart=/signup-decoder/start.sh
 
-#########
-## N.B. (WW) The entire write_files section will be obsolete very soon. Do not edit it.
-##
 write_files:
-  - path: /signup-decoder/run
+  - path: /signup-decoder/start.sh
     permissions: 0755
+    encoding: b64
     content: |
-      #!/bin/bash
-      set -e
-      docker build -t signup-decoder /signup-decoder
-      docker run --name decoder -p 21337:21337 -v /var/run/docker.sock:/var/run/docker.sock signup-decoder
+      {{ decoder_start_sh }}
 
   - path: /signup-decoder/Dockerfile
+    encoding: b64
     content: |
-      FROM ubuntu:15.04
-      RUN apt-get update && apt-get install -y curl python docker.io &&\
-          curl -SL 'https://bootstrap.pypa.io/get-pip.py' | python &&\
-          pip install Flask
-      COPY decoder.py /
-      CMD [ "python", "-u", "/decoder.py" ]
+      {{ decoder_dockerfile }}
 
-  - path: /signup-decoder/decoder.py
+  - path: /signup-decoder/root/decoder.py
+    encoding: b64
     content: |
-      from flask import Flask, request, jsonify
-      from subprocess import check_output, Popen, PIPE
-      app = Flask(__name__)
-      IMAGE = 'aerofs/mysql'
-
-      @app.route("/get_code", methods=["GET"])
-      def get():
-          user = request.args.get('userid')
-          if not user: return "Must specify user id in the form of 'userid=email@address'", 400
-
-          # Find mysql container
-          container = None
-          for line in check_output(['docker', 'ps']).split('\n'):
-              if IMAGE in line:
-                  # last word is the container name
-                  container = line.strip().rsplit(' ', 1)[1]
-                  break
-          if not container:
-              return 'found no container running image {}'.format(IMAGE), 400
-
-          # Run SQL in mysql container to print the last signup code of the given user
-          script = 'mysql -N aerofs_sp <<< "select t_code from sp_signup_code where t_to=\'{}\' order by t_ts desc limit 1"'.format(user)
-          cmd = ['docker', 'exec', container, 'bash', '-c', script]
-          print cmd
-          p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-          out, err = p.communicate()
-          if err:
-            return err, 400
-          else:
-            return jsonify(signup_code=out.strip())
-
-      app.run('0.0.0.0', 21337)
-
-
+      {{ decoder_py }}
 
   - path: /modify-appliance.sh
-    encoding: b64
     permissions: 0700
+    encoding: b64
     content: |
       {{ modify_appliance }}
 

@@ -21,13 +21,21 @@ create_cloud_config_drive() {
     local TMP="$(mktemp -dt ci-user-data-XXX)"
     local USER_DATA="${TMP}/openstack/latest/user_data"
     local SSH_PUB="$(cat "${THIS_DIR}/ci-ssh.pub")"
+
+    local DECODER_PY="$(base64 -w0 "${THIS_DIR}/../dev/signup-decoder/root/decoder.py")"
+    local DECODER_START_SH="$(base64 -w0 "${THIS_DIR}/../dev/signup-decoder/start.sh")"
+    local DECODER_DOCKERFILE="$(base64 -w0 "${THIS_DIR}/../dev/signup-decoder/Dockerfile")"
     local MODIFY_APPLIANCE="$(base64 -w0 "${THIS_DIR}/modify-appliance.sh")"
+
     mkdir -p "$(dirname "${USER_DATA}")"
 
     sed -e "s!{{ ip_and_prefix }}!${IP_AND_PREFIX}!" \
         -e "s!{{ ip }}!${IP}!" \
         -e "s!{{ gateway }}!${GATEWAY}!" \
         -e "s!{{ ssh_pub }}!${SSH_PUB}!" \
+        -e "s!{{ decoder_py }}!${DECODER_PY}!" \
+        -e "s!{{ decoder_start_sh }}!${DECODER_START_SH}!" \
+        -e "s!{{ decoder_dockerfile }}!${DECODER_DOCKERFILE}!" \
         -e "s!{{ modify_appliance }}!${MODIFY_APPLIANCE}!" \
         "${THIS_DIR}/ci-cloud-config.jinja" \
         > "${USER_DATA}"
