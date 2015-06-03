@@ -1,33 +1,40 @@
 #!/bin/bash
 set -e -u
-
+#
 # Compute, and then print, the next release version to use.
-# If UNSIGNED is requested, a snapshot id will be generated:
-#   0.<date>.<time>
-#
-# If SIGNED is requested, the max value is found from S3, the
-# build number is incremented, and the result is used.
 #
 
-include common PRIVATE
+# TAGS are in the format of:
+# {
+#  "latest": "21ed100dc4415868097fe2319c006665e2c9d5f28bae1e76c0808cf82ae3f3b5",
+#  "1.0.9": "8ed0e1102c26aadb56352805256f411638b7b646a21a33df279a630863b14bc7",
+#  "1.0.12": "21ed100dc4415868097fe2319c006665e2c9d5f28bae1e76c0808cf82ae3f3b5",
+#  ...
+# }
 
-CUR_VER="$( current_release_version )"
-[[ $CUR_VER != "" ]] || exit $ERRBADVERSION
-CUR_VER_MAJOR_MINOR="$( echo $CUR_VER | sed -e 's/\.[0-9]*$//' )"
-CUR_VER_BUILD="$( echo $CUR_VER | sed -e 's/.*\.//' )"
-NEXT_VER_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
+TAGS="$(curl -sS https://registry.aerofs.com/v1/repositories/aerofs/loader/tags | jq .)"
+[[ -n "${TAGS}" ]] || {
+    echo "ERROR: couldn't get loader tag list"
+    exit 11
+}
 
-readonly CUR_VER
-readonly CUR_VER_MAJOR_MINOR
-readonly CUR_VER_BUILD
-readonly NEXT_VER_MAJOR_MINOR
+LATEST_ID=$(echo "${TAGS}" | jq -r .latest)
+CUR_VER_LINE="$(echo "${TAGS}" | grep "${LATEST_ID}" | grep -v latest)"
+CUR_VER=$(echo "{${CUR_VER_LINE}}" | tr ',' ' ' | jq -r keys[])
+[[ -n "${CUR_VER}" ]] || {
+    echo "ERROR: couldn't get current version. Please check aerofs/loader tags at registry.aerofs.com:"
+    echo "${TAGS}"
+    exit 22
+}
 
-BUILD_NUMBER=""
-if [ $CUR_VER_MAJOR_MINOR == $NEXT_VER_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
-    BUILD_NUMBER="$( expr $CUR_VER_BUILD \+ 1 )"
+CUR_MAJOR_MINOR="$( echo ${CUR_VER} | sed -e 's/\.[0-9]*$//' )"
+CUR_BUILD="$( echo ${CUR_VER} | sed -e 's/.*\.//' )"
+NEXT_MAJOR_MINOR="$(cat "$(dirname "${BASH_SOURCE[0]}")"/version)"
+
+if [ ${CUR_MAJOR_MINOR} == ${NEXT_MAJOR_MINOR} ]; then
+    NEXT_BUILD=$((CUR_BUILD + 1))
 else
-    BUILD_NUMBER=1 # reset build number to 1
+    NEXT_BUILD=1
 fi
 
-# Print the result so ant can use it:
-echo "$NEXT_VER_MAJOR_MINOR.$BUILD_NUMBER"
+echo ${NEXT_MAJOR_MINOR}.${NEXT_BUILD}

@@ -125,19 +125,7 @@ if ! is_valid_product "$PRODUCT" ; then
 fi
 readonly LOWERCASE_PRODUCT="$(echo $PRODUCT | tr '[A-Z]' '[a-z]')"
 readonly LABELING_FILE="$LABELING_RESOURCES_DIR/$LOWERCASE_PRODUCT/labeling.properties"
-
-###############################################################################
-#
-# Constants relating to the deploy mode (PUBLIC|PRIVATE|CI)
-#
-###############################################################################
-
-# check that a valid mode was specified
-readonly MODE="${1:-}"
-if [ ${MODE} != PRIVATE ]; then
-    echo "error: invalid build mode $MODE. Expected PRIVATE." >&2
-    exit $ERRBADMODE
-fi
+readonly MODE="PRIVATE"
 readonly LOWERCASE_MODE="private"
 
 ###############################################################################
@@ -200,21 +188,6 @@ function check_version_format() {
         echo "like 0.8.33 or something." >&2
         exit $ERRBADARGS
     fi
-}
-
-###############################################################################
-#
-# Gets the currently deployed version, like "0.4.98"
-#
-###############################################################################
-function current_release_version() {
-    local VERSION="$(curl --silent https://privatecloud.aerofs.com/appliance_version)"
-    if [[ ! $VERSION =~ $RELEASE_VERSION_REGEX ]] ; then
-        echo ""
-        exit $ERRBADVERSION
-    fi
-
-    echo "$VERSION"
 }
 
 # Gets the product names from the labeling file.
