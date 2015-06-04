@@ -11,7 +11,7 @@
             <label class="radio">
                 <input type='radio' id="cert-option-existing" name='cert.option'
                         value='existing' checked onchange="useInstalledCertSelected()">
-                %if is_configuration_initialized:
+                %if is_configuration_initialized or restored_from_backup:
                     Use previously installed certificate and key
                 %else:
                     Use pre-installed, self-signed certificate and key
