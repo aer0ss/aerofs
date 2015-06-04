@@ -23,7 +23,7 @@ then
         # This is not the case on Mac OS X.
         if [ "$(uname -s)" = "Linux" ]
         then
-            echo "sudo mkdir $HOME && sudo mount -t vboxsf $(whoami) $HOME" | docker-machine ssh ${VM}
+            echo "sudo mkdir -p $HOME && sudo mount -t vboxsf $(whoami) $HOME" | docker-machine ssh ${VM}
         fi
     else
         echo "VM ${VM} already started."
