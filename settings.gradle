@@ -6,7 +6,6 @@ rootProject.name = 'aerofs-gradle'
 
 include 'src/aero-auth',
         'src/aero-ids',
-        'src/auditor',
         'src/base',
         'src/bifrost',
         'src/command',
