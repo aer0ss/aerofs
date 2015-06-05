@@ -88,7 +88,7 @@ while [ "${1:-}" != "" ]; do
     shift
 done
 
-include common $BUILD_MODE $BUILD_PRODUCT
+include common $BUILD_PRODUCT
 
 readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
 

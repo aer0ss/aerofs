@@ -71,7 +71,7 @@ while [ "${1:-}" != "" ]; do
     shift
 done
 
-include common $BUILD_MODE $BUILD_PRODUCT
+include common $BUILD_PRODUCT
 
 check_version_format $RELEASE_VERSION
 
