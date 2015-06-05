@@ -266,16 +266,16 @@ def json_verify_smtp(request):
                                  username, password, enable_tls, smtp_cert)
 
     if r.status_code != 200:
-        log.error("send stmp verification email returns {}".format(r.status_code))
+        log.error("send smtp verification email returns {} ".format(r.status_code))
 
-        # TODO (MP) return human readable error for all 4xx cases. Log detail in 5xx cases.
-        if r.status_code == 400:
+        if r.status_code >= 400 and r.status_code < 500:
             # In this case we have a human readable error. Hopefully it will help them
             # debug their smtp issues. Return the error string.
             # We don't want to show stack dumps for internal failures (500 or any
             # other unexpected failure...)
             error("Unable to send email. The error is:\n" + r.text)
         else:
+            log.error("{} error detail: ".format(r.status_code) + r.text)
             error("Unable to send email. Please check your SMTP settings.")
 
     return {}
