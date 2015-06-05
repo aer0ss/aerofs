@@ -63,11 +63,10 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
     }
 
     private final ITransport transport;
-    private final IBlockingPrioritizedEventSink<IEvent> sink;
     private final StreamManager streamManager;
     private final ChannelMode channelMode;
 
-    public ChannelTeardownHandler(ITransport transport, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager streamManager, ChannelMode channelMode)
+    public ChannelTeardownHandler(ITransport transport, StreamManager streamManager, ChannelMode channelMode)
     {
         checkArgument(channelMode == ChannelMode.CLIENT
                    || channelMode == ChannelMode.SERVER
@@ -75,7 +74,6 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
                       "unrecognized channel mode:%s", channelMode);
 
         this.transport = transport;
-        this.sink = sink;
         this.streamManager = streamManager;
         this.channelMode = channelMode;
     }
@@ -94,7 +92,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
         DID did = getDID(channel);
         if (did != null) {
             l.debug("{} teardown {} streams for {}", did, transport.id(), TransportUtil.hexify(channel));
-            TransportProtocolUtil.sessionEnded(new Endpoint(transport, did), sink, streamManager, channelMode.closeOutbound, channelMode.closeInbound);
+            TransportProtocolUtil.sessionEnded(new Endpoint(transport, did), streamManager, channelMode.closeOutbound, channelMode.closeInbound);
         }
     }
 

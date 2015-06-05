@@ -39,40 +39,26 @@ public class EIChunk implements IEvent, IInputBuffer
     private final InputStream _is;
 
     /**
-     * Original length of the packet transferred over the wire (includes both
-     * the length of the transport framing header and the payload)
-     */
-    private final int _wirelen;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the packet that generated the event
      * @param streamId Stream id of the stream to which this chunk belongs
      * @param seq Sequence number identifying the chunk's index in the current stream
      * @param is <code>InputStream</code> from which the payload can be read
-     * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIChunk(Endpoint ep, UserID userID, StreamID streamId, int seq, InputStream is, int wirelen)
+    public EIChunk(Endpoint ep, UserID userID, StreamID streamId, int seq, InputStream is)
     {
         _ep = ep;
         _userID = userID;
         _streamId = streamId;
         _seq = seq;
         _is = is;
-        _wirelen = wirelen;
     }
 
     @Override
     public InputStream is()
     {
         return _is;
-    }
-
-    @Override
-    public int wireLength()
-    {
-        return _wirelen;
     }
 }

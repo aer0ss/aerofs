@@ -196,15 +196,6 @@ Set a good root password for MySQL, then create the test user for MySQL:
     FLUSH PRIVILEGES;
     EOF
 
-## Set up ejabberd for unit tests
-
-`brew install ejabberd`. Copy the ejabberd config, key/cert and authorization scripts as listed below.
-
-    sudo mkdir /etc/ejabberd
-    sudo cp $HOME/repos/aerofs/tools/ci/agents/root/etc/ejabberd/* /etc/ejabberd
-
-Then, start ejabberd using `/usr/local/sbin/ejabberdctl start`.
-
 ## Build and launch private AeroFS Service VM (aka local prod)
 
 This VM is required to run your private AeroFS clients that are isolated from the production and other developers' environments.

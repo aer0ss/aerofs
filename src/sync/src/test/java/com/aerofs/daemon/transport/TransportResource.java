@@ -11,7 +11,8 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.net.ServerSSLEngineFactory;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.transport.xmpp.XMPPParams;
+import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
+import com.aerofs.daemon.transport.ssmp.SSMPParams;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -48,11 +49,6 @@ import static org.mockito.Mockito.when;
 
 public class TransportResource extends ExternalResource
 {
-    static
-    {
-        System.loadLibrary("aerofsd");
-    }
-
     private static final Logger l = Loggers.getLogger(TransportResource.class);
 
     private final long seed = System.nanoTime();
@@ -66,6 +62,7 @@ public class TransportResource extends ExternalResource
     private final TransportType transportType;
     private final String transportId;
     private final MockCA mockCA;
+    private final InetSocketAddress ssmpAddress;
     private final InetSocketAddress zephyrAddress;
     private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
@@ -77,7 +74,7 @@ public class TransportResource extends ExternalResource
     private boolean readerSet;
 
     public TransportResource(TransportType transportType, MockCA mockCA,
-            InetSocketAddress zephyrAddress)
+            InetSocketAddress ssmpAddress, InetSocketAddress zephyrAddress)
     {
         l.info("seed:{}", seed);
 
@@ -86,6 +83,7 @@ public class TransportResource extends ExternalResource
         this.transportType = transportType;
         this.transportId = String.format("%s-%d", this.transportType.getId(), Math.abs(random.nextInt()));
         this.mockCA = mockCA;
+        this.ssmpAddress = ssmpAddress;
         this.zephyrAddress = zephyrAddress;
     }
 
@@ -126,16 +124,18 @@ public class TransportResource extends ExternalResource
         when(enabled.isZephyrEnabled()).thenReturn(transportType == TransportType.ZEPHYR);
         when(enabled.isTcpEnabled()).thenReturn(transportType == TransportType.LANTCP);
 
-        tps =  new Transports(localid, localdid, enabled, timeout, multicastLoopback,
-                new XMPPParams(
-                        InetSocketAddress.createUnresolved("localhost", 5222),
-                        "arrowfs.org"),
+        ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
+
+        tps = new Transports(localid, localdid, enabled, timeout, multicastLoopback,
                 new ZephyrParams(zephyrAddress),
                 timer, outgoingEventSink,
                 new MaxcastFilterReceiver(), linkStateService,
-                new ClientSSLEngineFactory(keyProvider, trustedCA),
+                clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 clientSocketChannelFactory, serverSocketChannelFactory,
+                new SSMPConnectionService(localdid, localid, timer, clientSocketChannelFactory,
+                        clientSslEngineFactory, outgoingEventSink, linkStateService,
+                        new SSMPParams(ssmpAddress)),
                 roundTripTimes);
 
         checkState(tps.getAll().size() == 1);

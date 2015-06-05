@@ -18,12 +18,4 @@ public interface IInputBuffer
      * be read
      */
     InputStream is();
-
-    /**
-     * Getter
-     *
-     * @return original length of the packet on the wire. This includes both
-     * the transport and payload length
-     */
-    int wireLength();
 }

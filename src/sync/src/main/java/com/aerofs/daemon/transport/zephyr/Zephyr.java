@@ -105,7 +105,7 @@ public final class Zephyr implements ITransport
         PresenceService presenceService = new PresenceService();
 
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
-        ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
+        ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, streamManager, TWOWAY);
         this.zephyrAddress = zephyrParams.serverAddress;
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid,

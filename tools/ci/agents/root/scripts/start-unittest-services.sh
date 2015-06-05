@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "Starting ejabberd ..."
-service ejabberd start
-
 echo "Starting redis ..."
 service redis-server start
 

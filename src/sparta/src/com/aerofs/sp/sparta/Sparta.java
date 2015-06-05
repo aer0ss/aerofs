@@ -7,7 +7,6 @@ package com.aerofs.sp.sparta;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.Cacert;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
@@ -122,7 +121,7 @@ public class Sparta extends Service
 
         ServerConfigurationLoader.initialize("sparta", extra);
 
-        ICertificateProvider cacert = new FileBasedCertificateProvider(Cacert.FILE);
+        ICertificateProvider cacert = new FileBasedCertificateProvider("/opt/sparta/cacert.pem");
 
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();

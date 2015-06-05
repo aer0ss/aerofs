@@ -16,7 +16,7 @@ and reboot the VM to have the DNS settings take effect. TODO (WW) cloud-config s
   In a few minutes after the script exits, TeamCity should show a new agent named "agent-1".
 
 - If an agent is used to launch AeroFS appliance containers, specify the option `no-unittest-services` to the script
-otherwise unittest services including ejabberd and mysql would occupy the ports the appliance listens to.
+otherwise unittest services including redis and mysql would occupy the ports the appliance listens to.
 
 # Future work
 

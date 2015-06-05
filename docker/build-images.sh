@@ -17,8 +17,8 @@ DIRS="
     ../packaging/charlie 
     data-container 
     enforcer 
-    ejabberd 
     ../src/havre 
+    ../golang/src/aerofs.com/lipwig
     logrotator
     maintenance-nginx 
     mysql 

@@ -109,8 +109,6 @@ public abstract class TransportProtocolUtil
      * @param is {@link InputStream} from which the payload should be
      * read <b>IMPORTANT:</b>the header has already been read from this
      * <code>InputStream</code>
-     * @param wirelen original length of the received packet, <i>including</i>
-     * the transport framing header
      * @param channel
      *@param sink {@link IBlockingPrioritizedEventSink} into which the payload should be
      * enqueued for further processing
@@ -120,12 +118,12 @@ public abstract class TransportProtocolUtil
      * @throws Exception if the payload cannot be processed
      */
     public static PBTPHeader processUnicastPayload(Endpoint ep, @Nullable UserID userID, PBTPHeader h,
-                                                   ChannelBuffer is, int wirelen, Channel channel, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+                                                   ChannelBuffer is, Channel channel, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {
             // Datagram
-            sink.enqueueThrows(new EIUnicastMessage(ep, userID, new ChannelBufferInputStream(is), wirelen), Prio.LO);
+            sink.enqueueThrows(new EIUnicastMessage(ep, userID, new ChannelBufferInputStream(is)), Prio.LO);
         } else {
             // Stream
             PBStream wireStream = h.getStream();
@@ -135,7 +133,7 @@ public abstract class TransportProtocolUtil
             int seq = wireStream.getSeqNum();
 
             try {
-                processStreamPayload(ep, userID, is, wirelen, channel, sink, sm, streamId, seq);
+                processStreamPayload(ep, userID, is, channel, sink, sm, streamId, seq);
             } catch (ExStreamInvalid e) {
                 l.warn("{} stream {} over {} invalid - send rx abort", ep.did(), streamId, ep.tp());
                 return newAbortIncomingStreamHeader(streamId, e.getReason());
@@ -146,7 +144,7 @@ public abstract class TransportProtocolUtil
     }
 
     private static void processStreamPayload(Endpoint ep, @Nullable UserID userID, ChannelBuffer is,
-            int wirelen, Channel channel, IBlockingPrioritizedEventSink<IEvent> sink,
+            Channel channel, IBlockingPrioritizedEventSink<IEvent> sink,
             StreamManager sm, StreamID streamId, int seq) throws ExStreamInvalid, ExNoResource {
         StreamKey sk = new StreamKey(ep.did(), streamId);
         IncomingStream strm = sm.getIncomingStream(sk);
@@ -156,7 +154,7 @@ public abstract class TransportProtocolUtil
             try {
                 l.trace("{} first stream chunk", channel);
                 strm.offer(is);
-                sink.enqueueThrows(new EIStreamBegun(ep, userID, streamId, strm, wirelen), Prio.LO);
+                sink.enqueueThrows(new EIStreamBegun(ep, userID, streamId, strm), Prio.LO);
             } catch (Exception e) {
                 l.warn("{} fail enqueue chunk for stream {} over {} cause:{}", ep.did(), streamId, ep.tp(), e);
                 sm.removeIncomingStream(sk, InvalidationReason.INTERNAL_ERROR);
@@ -285,8 +283,7 @@ public abstract class TransportProtocolUtil
             .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager));
     }
 
-    public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,
-            StreamManager sm, boolean outbound, boolean inbound)
+    public static void sessionEnded(Endpoint ep, StreamManager sm, boolean outbound, boolean inbound)
     {
         l.debug("{} closing streams ob:{} ib:{} for {}", ep.did(), outbound, inbound, ep.tp());
 

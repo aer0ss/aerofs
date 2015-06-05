@@ -8,8 +8,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# we don't create user accounts because all of our services use the mysql root account,
-# and ejabberd creates its own account separately
+# we don't create user accounts because all of our services use the mysql root account
 echo Creating MySQL database "$1" if not exists...
 cat <<EOF | mysql -h mysql.service
 CREATE DATABASE IF NOT EXISTS $1;

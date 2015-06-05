@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.daemon.transport.ISignallingService;
+import com.aerofs.daemon.transport.ISignallingServiceFactory;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -79,7 +79,7 @@ public final class TransportFactory
     private final SSLEngineFactory serverSslEngineFactory;
     private final SSLEngineFactory clientSslEngineFactory;
     private final IRoundTripTimes roundTripTimes;
-    private final ISignallingService signalling;
+    private final ISignallingServiceFactory signalling;
 
     public TransportFactory(
             UserID userID,
@@ -101,7 +101,7 @@ public final class TransportFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IRoundTripTimes roundTripTimes,
-            ISignallingService signalling)
+            ISignallingServiceFactory signalling)
     {
         this.userID = userID;
         this.did = did;
@@ -187,6 +187,6 @@ public final class TransportFactory
                 zephyrParams,
                 proxy,
                 roundTripTimes,
-                signalling);
+                signalling.newSignallingService(transportId));
     }
 }

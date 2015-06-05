@@ -6,6 +6,9 @@ package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.transport.ISignallingService;
+import com.aerofs.daemon.transport.ISignallingServiceListener;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
@@ -19,6 +22,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.zephyr.server.core.Dispatcher;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSet;
 import org.hamcrest.MatcherAssert;
 import org.jboss.netty.channel.Channel;
 import org.junit.*;
@@ -27,10 +31,14 @@ import org.mockito.InOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.NetworkInterface;
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.inOrder;
@@ -57,6 +65,8 @@ public final class TestZephyrUnicast
     private UnicastZephyrDevice localDevice;
     private UnicastZephyrDevice otherDevice;
 
+    private Map<DID, ISignallingServiceListener> signalling = new ConcurrentHashMap<>();
+
     // FIXME (AG): check renegotiation
 
     @Rule
@@ -80,16 +90,58 @@ public final class TestZephyrUnicast
         relayThread.join();
     }
 
+    class Signalling implements ISignallingService, ILinkStateListener {
+        private final DID did;
+        private boolean linkUp = true;
+        private ISignallingServiceListener client;
+
+        Signalling(DID d) {
+            did = d;
+        }
+
+        @Override
+        public void registerSignallingClient(ISignallingServiceListener client) {
+            signalling.put(did, client);
+            this.client = client;
+            client.signallingServiceConnected();
+        }
+
+        @Override
+        public void sendSignallingMessage(DID to, byte[] msg, ISignallingServiceListener client) {
+            signalling.get(to).processIncomingSignallingMessage(did, msg);
+        }
+
+        @Override
+        public void onLinkStateChanged(ImmutableSet<NetworkInterface> previous,
+                                       ImmutableSet<NetworkInterface> current,
+                                       ImmutableSet<NetworkInterface> added,
+                                       ImmutableSet<NetworkInterface> removed) {
+            boolean wasUp = linkUp;
+            linkUp = !current.isEmpty();
+            if (wasUp && !linkUp) {
+                if (client != null) client.signallingServiceDisconnected();
+            } else if (!wasUp && linkUp) {
+                if (client != null) client.signallingServiceConnected();
+            }
+        }
+    }
+
     @Before
     public void setup()
             throws Exception
     {
-        SecureRandom secureRandom = new SecureRandom();
-        MockCA mockCA = new MockCA("test-ca", new SecureRandom());
+        SecureRandom rng = new SecureRandom();
+        MockCA mockCA = new MockCA("test-ca", rng);
         IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
-        localDevice = new UnicastZephyrDevice(secureRandom, "localhost", zephyrPort, mockCA, new UnicastTransportListener(), roundTripTimes);
-        otherDevice = new UnicastZephyrDevice(secureRandom, "localhost", zephyrPort, mockCA, new UnicastTransportListener(), roundTripTimes);
+        DID d0 = DID.generate(), d1 = DID.generate();
+        Signalling sig0 = new Signalling(d0), sig1 = new Signalling(d1);
+        localDevice = new UnicastZephyrDevice(d0, rng, "localhost", zephyrPort, mockCA,
+                new UnicastTransportListener(), sig0, roundTripTimes);
+        localDevice.linkStateService.addListener(sig0, sameThreadExecutor());
+        otherDevice = new UnicastZephyrDevice(d1, rng, "localhost", zephyrPort, mockCA,
+                new UnicastTransportListener(), sig1, roundTripTimes);
+        otherDevice.linkStateService.addListener(sig1, sameThreadExecutor());
 
         localDevice.init();
         otherDevice.init();

@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.daemon.core.net.ServerSSLEngineFactory;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -13,12 +14,18 @@ import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.defects.MockDefects;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.ssmp.SSMPServer;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -48,6 +55,8 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 // FIXME (AG): send multiple streams simultaneously from both directions
 // FIXME (AG): send multiple streams and kill one
@@ -85,7 +94,9 @@ public final class TestTransports
     private final InetSocketAddress zephyrAddress;
 
     // servers
+    private SSMPServer ssmp;
     private ZephyrServer zephyr;
+    private final Timer timer = new HashedWheelTimer();
 
     // for the stream tests
     private TransportDigestStreamSender streamSender;
@@ -106,11 +117,29 @@ public final class TestTransports
 
         MockCA mockCA = new MockCA(String.format("testca-%d@arrowfs.org", Math.abs(secureRandom.nextInt())), secureRandom);
 
+        PrivateKeyProvider pk = new PrivateKeyProvider(secureRandom, "localhost", mockCA.getCaName(),
+                mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
+
+        CfgKeyManagersProvider key = mock(CfgKeyManagersProvider.class);
+        when(key.getCert()).thenReturn(pk.getCert());
+        when(key.getPrivateKey()).thenReturn(pk.getPrivateKey());
+
+        CfgCACertificateProvider cacert = mock(CfgCACertificateProvider.class);
+        when(cacert.getCert()).thenReturn(mockCA.getCACertificateProvider().getCert());
+
+        ssmp = new SSMPServer(new InetSocketAddress("localhost", 0), timer,
+                new NioServerSocketChannelFactory(),
+                new ServerSSLEngineFactory(key, cacert)::newSslHandler,
+                (id, scheme, cred) -> true);
+        ssmp.start();
+
+        InetSocketAddress ssmpAddress = new InetSocketAddress("localhost", ssmp.getListeningPort());
+
         this.transportType = transportType;
-        this.transport0 = new TransportResource(transportType, mockCA, zephyrAddress);
-        this.transport1 = new TransportResource(transportType, mockCA, zephyrAddress);
-        this.transport2 = new TransportResource(transportType, mockCA, zephyrAddress);
-        this.transport3 = new TransportResource(transportType, mockCA, zephyrAddress);
+        this.transport0 = new TransportResource(transportType, mockCA, ssmpAddress, zephyrAddress);
+        this.transport1 = new TransportResource(transportType, mockCA, ssmpAddress, zephyrAddress);
+        this.transport2 = new TransportResource(transportType, mockCA, ssmpAddress, zephyrAddress);
+        this.transport3 = new TransportResource(transportType, mockCA, ssmpAddress, zephyrAddress);
     }
 
     @BeforeClass
@@ -121,15 +150,17 @@ public final class TestTransports
 
     @Before
     public void setup()
-            throws Exception
-    {
-        // start up zephyr
-        zephyr = new ZephyrServer(zephyrAddress.getHostName(), (short) zephyrAddress.getPort(), new com.aerofs.zephyr.server.core.Dispatcher());
-        zephyr.init();
+            throws Exception {
 
-        Thread zephyrRunner = new Thread(zephyr::start);
-        zephyrRunner.setName("zephyr");
-        zephyrRunner.start();
+        if (transportType == TransportType.ZEPHYR) {
+            zephyr = new ZephyrServer(zephyrAddress.getHostName(), (short) zephyrAddress.getPort(),
+                    new com.aerofs.zephyr.server.core.Dispatcher());
+            zephyr.init();
+
+            Thread zephyrRunner = new Thread(zephyr::start);
+            zephyrRunner.setName("zephyr");
+            zephyrRunner.start();
+        }
 
         // start the individual client transports
         l.info("RUNNING END-TO-END TRANSPORT TEST FOR {} T0:{} D0:{}, T1:{} D1:{}, T2:{} D2:{}, T3:{} D3:{}",
@@ -149,6 +180,11 @@ public final class TestTransports
     {
         l.info("ENDING END-TO-END TRANSPORT TEST FOR {}", transportType);
 
+        timer.stop();
+
+        if (ssmp != null) {
+            ssmp.stop();
+        }
         if (zephyr != null) {
             zephyr.stop();
         }

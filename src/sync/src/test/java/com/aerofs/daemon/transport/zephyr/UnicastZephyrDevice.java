@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
+import com.aerofs.daemon.transport.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
@@ -14,11 +15,6 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.daemon.transport.ChannelFactories;
-import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.MockCA;
-import com.aerofs.daemon.transport.PrivateKeyProvider;
-import com.aerofs.daemon.transport.TransportReader;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.SemaphoreTriggeringListener;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -28,17 +24,12 @@ import com.aerofs.daemon.transport.lib.UnicastTransportListener;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
-import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IEvent;
 import org.jboss.netty.util.HashedWheelTimer;
-import org.jivesoftware.smack.XMPPConnection;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.SecureRandom;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.mockito.Mockito.mock;
@@ -47,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 public final class UnicastZephyrDevice
 {
-    public DID did = DID.generate();
+    public DID did;
     public LinkStateService linkStateService = new LinkStateService();
     public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
     public UserID userID;
@@ -55,17 +46,19 @@ public final class UnicastZephyrDevice
     public UnicastTransportListener transportListener;
     public TransportReader transportReader;
     public ZephyrConnectionService unicast;
-    public XMPPConnectionService xmppConnectionService;
 
     public UnicastZephyrDevice(
+            DID did,
             SecureRandom secureRandom,
             String zephyrHost,
             int zephyrPort,
             MockCA mockCA,
             UnicastTransportListener transportListener,
+            ISignallingService signallingService,
             IRoundTripTimes roundTripTimes)
             throws Exception
     {
+        this.did = did;
         this.transportListener = transportListener;
 
         String transportId = String.format("t-%d", ThreadLocalRandom.current().nextInt(10));
@@ -77,20 +70,15 @@ public final class UnicastZephyrDevice
         userID = UserID.fromExternal(String.format("user%d@arrowfs.org",
                 ThreadLocalRandom.current().nextInt(10)));
 
-        xmppConnectionService = new XMPPConnectionService(did, new InetSocketAddress("localhost", 5222), "arrowfs.org", "s", 1000, 2, 1000, 5000, linkStateService);
-
         StreamManager streamManager = new StreamManager(30 * C.SEC);
         TransportStats transportStats = new TransportStats();
-
-        SignallingService signallingService = new SignallingService("z", "arrowfs.org");
-        xmppConnectionService.addListener(signallingService);
 
         UnicastProxy workaround = new UnicastProxy();
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         SSLEngineFactory serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
-        ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, outgoingEventSink, streamManager, ChannelMode.SERVER);
+        ChannelTeardownHandler twowayChannelTeardownHandler = new ChannelTeardownHandler(transport, streamManager, ChannelMode.SERVER);
 
         transportReader = new TransportReader(String.format("%s-%s", transportId, userID.getString()), outgoingEventSink, transportListener);
         unicast = new ZephyrConnectionService(
@@ -126,30 +114,8 @@ public final class UnicastZephyrDevice
     public void start()
             throws Exception
     {
-        final Semaphore xmppServerConnectedSemaphore = new Semaphore(0);
-
-        xmppConnectionService.addListener(new IXMPPConnectionServiceListener()
-        {
-            @Override
-            public void xmppServerConnected(XMPPConnection conn)
-                    throws Exception
-            {
-                xmppServerConnectedSemaphore.release();
-            }
-
-            @Override
-            public void xmppServerDisconnected()
-            {
-                // noop
-            }
-        });
-
         // mark all the network links as up
         linkStateService.markLinksUp();
-
-        // start the XMPPConnectionService and block until it actually connects
-        xmppConnectionService.start();
-        xmppServerConnectedSemaphore.acquire();
 
         unicast.start();
         transportReader.start();
@@ -159,6 +125,5 @@ public final class UnicastZephyrDevice
     {
         transportReader.stop();
         unicast.stop();
-        xmppConnectionService.stop();
     }
 }

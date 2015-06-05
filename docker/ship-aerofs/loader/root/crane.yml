@@ -41,18 +41,17 @@ containers:
       link:
         - config:config.service
 
-  ejabberd:
-    image: aerofs/ejabberd
+  lipwig:
+    image: aerofs/lipwig
     run:
       detach: true
       publish:
-        - "5222:5222"
+        - "5222:8787"
       # For /data/deployment-secret
       volumes-from:
         - data
       link:
         - config:config.service
-        - mysql:mysql.service
         - ca-server:ca.service
 
   nginx:
@@ -319,7 +318,7 @@ containers:
         - loader:loader.service
         - ca-server:ca.service
         - charlie:charlie.service
-        - ejabberd:ejabberd.service
+        - lipwig:lipwig.service
         - havre:havre.service
         - openid:openid.service
         - mysql:mysql.service
@@ -388,7 +387,7 @@ groups:
     - bunker
     - nginx
     - enforcer
-    - ejabberd
+    - lipwig
     - logrotator
 
   # Bunker relies on this group's name to detect if the system is in maintenance mode.

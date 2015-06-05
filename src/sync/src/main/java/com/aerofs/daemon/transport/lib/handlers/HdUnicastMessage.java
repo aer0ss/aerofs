@@ -8,7 +8,6 @@ import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.log.LogUtil;
-import org.jivesoftware.smack.XMPPException;
 import org.slf4j.Logger;
 
 public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
@@ -29,7 +28,7 @@ public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
             byte[][] payload = TransportProtocolUtil.newDatagramPayload(ev.byteArray());
             unicast.send(ev._to, payload, ev.getWaiter());
         } catch (Exception e) {
-            l.warn("{} fail send uc", ev._to, LogUtil.suppress(e, ExDeviceOffline.class, XMPPException.class));
+            l.warn("{} fail send uc", ev._to, LogUtil.suppress(e, ExDeviceOffline.class));
 
             if (ev.getWaiter() != null) {
                 ev.getWaiter().error(e);

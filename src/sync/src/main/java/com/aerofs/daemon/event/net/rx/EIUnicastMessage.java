@@ -28,36 +28,22 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
     private final InputStream _is;
 
     /**
-     * Original length of the packet transferred over the wire (includes both
-     * the length of the transport framing header and the payload)
-     */
-    private final int _wirelen;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the packet that generated the event
      * @param is <code>InputStream</code> from which the payload can be read
-     * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIUnicastMessage(Endpoint ep, UserID userID, InputStream is, int wirelen)
+    public EIUnicastMessage(Endpoint ep, UserID userID, InputStream is)
     {
         _ep = ep;
         _userID = userID;
         _is = is;
-        _wirelen = wirelen;
     }
 
     @Override
     public InputStream is()
     {
         return _is;
-    }
-
-    @Override
-    public int wireLength()
-    {
-        return _wirelen;
     }
 }

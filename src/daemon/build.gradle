@@ -23,8 +23,6 @@ sourceSets {
 }
 
 dependencies {
-    compile name: 'smack'
-    compile name: 'smackx'
     compile 'org.apache.tika:tika-core:1.4'
     compile name: 'netty-native-socket'
     compile name: 'junixsocket-1.3'

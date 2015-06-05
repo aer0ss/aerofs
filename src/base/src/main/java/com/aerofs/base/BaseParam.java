@@ -4,9 +4,7 @@
 
 package com.aerofs.base;
 
-import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -44,27 +42,12 @@ public class BaseParam
         public static final X509Certificate CACERT = getCertificateProperty(
                 "config.loader.base_ca_certificate", null);
 
-        public static final String FILE = "/opt/sparta/cacert.pem";
     }
 
-    public static class XMPP
+    public static class SSMP
     {
-        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.xmpp.address",
-                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
-
-        public static String getServerDomain()
-        {
-            String hostname = SERVER_ADDRESS.getHostName();
-            String[] split = hostname.split("\\.");
-
-            if (split.length < 2) {
-                //similar code in function 'is_hostname_xmpp_compatible',
-                //make sure any changes to this code block are reflected accordingly in maintenance_util.py
-                throw Throwables.propagate(new ExBadArgs("bad xmpp address"));
-            }
-
-            return split[split.length-2] + "." + split[split.length-1];
-        }
+        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.ssmp.address",
+                InetSocketAddress.createUnresolved(Appliance.BASE_HOST, 5222));
     }
 
     public static class Charlie

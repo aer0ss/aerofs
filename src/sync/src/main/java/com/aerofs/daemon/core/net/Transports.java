@@ -17,9 +17,8 @@ import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.tcp.TCP;
-import com.aerofs.daemon.transport.xmpp.XMPPParams;
-import com.aerofs.daemon.transport.xmpp.Xmpp;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.lib.cfg.*;
@@ -54,14 +53,12 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
 
     private static final Logger l = Loggers.getLogger(Transports.class);
 
-    private final Xmpp xmpp;
+    private final SSMPConnectionService ssmp;
 
     private final ImmutableList<IMaxcast> maxcastProviders;
     private final ImmutableList<IPresenceSource> presenceSources;
 
     private final ImmutableList<ITransport> availableTransports;
-
-    private final CfgEnabledTransports enabled;
 
     private volatile boolean started = false;
 
@@ -74,7 +71,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             CfgEnabledTransports enabledTransports,
             CfgTimeout timeout,
             CfgMulticastLoopback multicastLoopback,
-            XMPPParams xmppParams,
             ZephyrParams zephyrParams,
             Timer timer,
             CoreQueue coreQueue,
@@ -84,11 +80,11 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             ServerSSLEngineFactory serverSslEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             ServerSocketChannelFactory serverSocketChannelFactory,
+            SSMPConnectionService ssmp,
             IRoundTripTimes roundTripTimes)
             throws ExUnsupportedTransport
     {
-        enabled = enabledTransports;
-        xmpp = new Xmpp(xmppParams, localdid, coreQueue, maxcastFilterReceiver, linkStateService);
+        this.ssmp = ssmp;
 
         TransportFactory transportFactory = new TransportFactory(
                 localid.get(),
@@ -110,8 +106,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 roundTripTimes,
-                // FIXME: ISignallingServiceFactory
-                xmpp.newSignallingService("z"));
+                ssmp);
 
         ImmutableList.Builder<IMaxcast> maxcastBuilder = ImmutableList.builder();
         ImmutableList.Builder<IPresenceSource> presenceBuilder = ImmutableList.builder();
@@ -123,19 +118,19 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             // FIXME: reaching down to get these fields is gross
             maxcastBuilder.add(tp.multicast);
             presenceBuilder.add(tp.stores);
-            xmpp.presenceLocationListeners.add(tp.monitor);
+            ssmp.addPresenceLocationListener(tp.monitor);
         }
         if (enabledTransports.isZephyrEnabled()) {
             Zephyr tp = (Zephyr)transportFactory.newTransport(ZEPHYR);
             transportBuilder.add(tp);
-            xmpp.multicastListeners.add(tp.monitor);
-            xmpp.presenceLocationListeners.add(tp.monitor);
-            xmpp.storeInterestListeners.add(tp.presence);
 
-            // TODO: not zephyr-only
-            maxcastBuilder.add(xmpp.multicast);
-            presenceBuilder.add(xmpp.multicast);
+            ssmp.addMulticastListener(tp.monitor);
+            ssmp.addPresenceLocationListener(tp.monitor);
+            ssmp.addStoreInterestListener(tp.presence);
         }
+
+        maxcastBuilder.add(ssmp);
+        presenceBuilder.add(ssmp);
 
         maxcastProviders = maxcastBuilder.build();
         presenceSources = presenceBuilder.build();
@@ -143,7 +138,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
 
         // The XMPPConnectionService needs to know the list of locators (=transports)
         // that can be used to gather presence locations for the local DID
-        xmpp.xmpp.addLocators(availableTransports);
+        // TODO: ssmp.addLocators(availableTransports);
     }
 
     public ImmutableList<IMaxcast> maxcastProviders() {
@@ -172,23 +167,17 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
     {
         l.info("start tps");
 
-        // TODO: not zephyr-only
-        if (enabled.isZephyrEnabled()) xmpp.xmpp.start();
+        ssmp.start();
 
-        for (ITransport tp : availableTransports) {
-            tp.start();
-        }
+        availableTransports.forEach(ITransport::start);
 
         started = true;
     }
 
     public void stop_() {
-        // TODO: not zephyr-only
-        if (enabled.isZephyrEnabled()) xmpp.xmpp.stop();
+        ssmp.stop();
 
-        for (ITransport tp : availableTransports) {
-            tp.stop();
-        }
+        availableTransports.forEach(ITransport::stop);
 
         started = false;
     }

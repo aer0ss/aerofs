@@ -126,8 +126,8 @@ public class TCP implements ITransport, IAddressResolver
         this.stores = new TCPStores(localdid, this, arp, multicast, presenceService);
         multicast.setStores(stores);
 
-        ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.SERVER);
-        ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, this.outgoingEventSink, streamManager, ChannelMode.CLIENT);
+        ChannelTeardownHandler serverChannelTeardownHandler = new ChannelTeardownHandler(this, streamManager, ChannelMode.SERVER);
+        ChannelTeardownHandler clientChannelTeardownHandler = new ChannelTeardownHandler(this, streamManager, ChannelMode.CLIENT);
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
 

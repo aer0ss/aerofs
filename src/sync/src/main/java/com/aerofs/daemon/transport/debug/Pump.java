@@ -19,7 +19,8 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.transport.xmpp.XMPPParams;
+import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
+import com.aerofs.daemon.transport.ssmp.SSMPParams;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
@@ -37,8 +38,10 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -153,19 +156,28 @@ public final class Pump implements IProgram, IUnicastInputLayer
             }
         };
 
+        Timer timer = TimerUtil.getGlobalTimer();
+        MaxcastFilterReceiver maxcastFilter = new MaxcastFilterReceiver();
+        ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
+
         return new Transports(localid, localdid, enabled, new CfgTimeout(),
-                new CfgMulticastLoopback(), new XMPPParams(),
-                new ZephyrParams(), TimerUtil.getGlobalTimer(), queue,
-                new MaxcastFilterReceiver(), linkStateService,
-                new ClientSSLEngineFactory(keyProvider, trustedCA),
+                new CfgMulticastLoopback(), new ZephyrParams(), timer, queue,
+                maxcastFilter, linkStateService,
+                clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 getClientChannelFactory(), getServerChannelFactory(),
+                new SSMPConnectionService(localdid, localid, timer, getClientChannelFactory(),
+                        clientSslEngineFactory, queue, linkStateService, new SSMPParams()),
                 new RoundTripTimes());
     }
 
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc) {
-        recvThroughputCounter.observe(r._wirelen);
+        try {
+            recvThroughputCounter.observe(r._is.available());
+        } catch (IOException e) {
+            l.warn("{}", e.getMessage());
+        }
         l.debug("recv incoming d:{}", pc.ep().did());
     }
 

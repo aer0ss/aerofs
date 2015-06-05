@@ -41,12 +41,9 @@ public class TestTCPStartup {
     {
         SecureRandom secureRandom = new SecureRandom();
 
-        // should never be used for TCP tests
-        InetSocketAddress zephyrAddress = InetSocketAddress.createUnresolved("localhost", 1);
-
         MockCA mockCA = new MockCA(String.format("testca-%d@arrowfs.org", Math.abs(secureRandom.nextInt())), secureRandom);
 
-        this.transport = new TCPTransportResource(TransportFactory.TransportType.LANTCP, mockCA, zephyrAddress);
+        this.transport = new TCPTransportResource(TransportFactory.TransportType.LANTCP, mockCA);
     }
 
     @BeforeClass
@@ -116,8 +113,9 @@ public class TestTCPStartup {
     // but these tests need to initialize the transport after modifying a configuration variable
     private class TCPTransportResource extends TransportResource {
         private boolean calledBefore, calledAfter;
-        public TCPTransportResource(TransportFactory.TransportType transportType, MockCA mockCA, InetSocketAddress zephyrAddress) {
-            super(transportType, mockCA, zephyrAddress);
+        public TCPTransportResource(TransportFactory.TransportType transportType, MockCA mockCA) {
+            super(transportType, mockCA, InetSocketAddress.createUnresolved("localhost", 1),
+                    InetSocketAddress.createUnresolved("localhost", 1));
         }
 
         synchronized void publicAfter() {

@@ -24,34 +24,20 @@ public class EIMaxcastMessage implements IEvent, IInputBuffer
     private final ByteArrayInputStream _is;
 
     /**
-     * Original length of the packet on the wire, including
-     * transport framing headers and the payload
-     */
-    private final int _wirelen;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the maxcast message
      * @param is InputStream from which the payload can be read
-     * @param wirelen Original length of the packet on the wire (including
      */
-    public EIMaxcastMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
+    public EIMaxcastMessage(Endpoint ep, ByteArrayInputStream is)
     {
         _ep = ep;
         _is = is;
-        _wirelen = wirelen;
     }
 
     @Override
     public InputStream is()
     {
         return _is;
-    }
-
-    @Override
-    public int wireLength()
-    {
-        return _wirelen;
     }
 }

@@ -24,9 +24,9 @@ public class EIStreamBegun extends EIChunk
      *
      * For parameter information, {@see EIChunk.EIChunk}
      */
-    public EIStreamBegun(Endpoint ep, UserID userID, StreamID strid, InputStream is, int wirelen)
+    public EIStreamBegun(Endpoint ep, UserID userID, StreamID strid, InputStream is)
     {
-        super(ep, userID, strid, 0, is, wirelen);
+        super(ep, userID, strid, 0, is);
     }
 }
 

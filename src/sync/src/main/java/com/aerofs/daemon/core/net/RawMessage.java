@@ -12,14 +12,9 @@ public class RawMessage
      */
     public final InputStream _is;
 
-    /**
-     * Wire-length of the serialized bytes
-     */
-    public final int _wirelen;
 
-    public RawMessage(InputStream is, int wirelen)
+    public RawMessage(InputStream is)
     {
         _is = is;
-        _wirelen = wirelen;
     }
 }

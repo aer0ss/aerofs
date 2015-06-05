@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     devscripts \
     dh-autoreconf \
     dstat \
-    ejabberd \
     git \
     gradle \
     hfsprogs \
@@ -33,7 +32,7 @@ RUN apt-get update && apt-get install -y \
     python \
     python-dev \
     python-setuptools \
-    qt5-default \
+    qt5-qmake \
     redis-server \
     mysql-server \
     sed \

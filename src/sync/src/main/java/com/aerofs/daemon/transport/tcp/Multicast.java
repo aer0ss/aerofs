@@ -240,7 +240,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                     checkArgument(h.hasMcastId());
                     // filter packets from core that were sent on other interface
                     if (!maxcastFilterReceiver.isRedundant(did, h.getMcastId())) {
-                        tcp.sink().enqueueThrows(new EIMaxcastMessage(new Endpoint(tcp, did), is, pkt.getLength()), Prio.LO);
+                        tcp.sink().enqueueThrows(new EIMaxcastMessage(new Endpoint(tcp, did), is), Prio.LO);
                     }
                 } else {
                     InetAddress rem = ((InetSocketAddress) pkt.getSocketAddress()).getAddress();

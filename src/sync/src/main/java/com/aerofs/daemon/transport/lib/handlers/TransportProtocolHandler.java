@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.BootstrapFactoryUtil.FrameParams;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -84,13 +83,11 @@ public final class TransportProtocolHandler extends SimpleChannelUpstreamHandler
     private @Nullable PBTPHeader processUnicastPayload(TransportMessage message, Endpoint endpoint, Channel channel)
             throws Exception
     {
-        int wireLength = message.getPayload().readableBytes() + FrameParams.HEADER_SIZE;
         return TransportProtocolUtil.processUnicastPayload(
                 endpoint,
                 message.getUserID(),
                 message.getHeader(),
                 message.getPayload(),
-                wireLength,
                 channel,
                 outgoingEventsink,
                 streamManager);
