@@ -2,7 +2,7 @@
 
 <%def name='html()'>
     %if is_maintenance_mode(request.registry.settings):
-        <div class="alert">
+        <div class="alert alert-danger">
             <strong>The system is in maintenance mode.</strong><br>Remember to
                 <a href="${request.route_path('toggle_maintenance_mode')}">
                 exit the mode</a> once maintenance is done.
