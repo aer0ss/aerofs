@@ -331,7 +331,7 @@ public class Images {
              * only with reflection.
              */
             Class<?> nsArray = Class.forName("org.eclipse.swt.internal.cocoa.NSArray");
-            Method objectAtIndex = nsArray.getMethod("objectAtIndex");
+            Method objectAtIndex = nsArray.getMethod("objectAtIndex", long.class);
             Class<?> nsScreen = Class.forName("org.eclipse.swt.internal.cocoa.NSScreen");
             Constructor<?> newNSScreen = nsScreen.getConstructor(Class.forName("org.eclipse.swt.internal.cocoa.id"));
             Method backingScaleFactor = nsScreen.getMethod("backingScaleFactor");
