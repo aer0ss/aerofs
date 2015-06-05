@@ -3,19 +3,20 @@
 # A tool for quickly invoking chains of various build, packaging, and test
 # tasks.
 #
-# Some quick examples:
+# Examples:
 #
-# * Regenerate all the protobuf stuff:
-#   ./invoke proto
-# * Populate an approot:
+# * Populate approot:
 #   ./invoke --product CLIENT setupenv
-# * Clean and build from scratch everything needed to bring up a local prod VM
-#   ./invoke --unsigned clean proto build_client package_clients build_servers
-# * All the tasks involved in producing release candidate appliance images:
-#   ./invoke --signed clean proto build_client package_clients build_servers
-# * Install AeroFS via syncdet on your default actors
+#
+# * Build and release Docker images:
+#   ./invoke --signed clean proto build_client package_clients build_docker_images push_docker_images tag_release
+#
+# * After the previous step, release the appliance VM using the same version as the Docker image release:
+#   ./invoke build_vm push_vm
+#
+# * Install AeroFS via SyncDET on your default actors
 #   ./invoke --syncdet-extra-args=--case-arg=--transport=default --syncdet-case=lib.cases.clean_install syncdet
-
+#
 # TODO: --dry-run - doesn't actually call the subprocess.check_call stuff, just says what would be done
 # TODO: --verbose - prints the commands that will be called as they go
 
@@ -454,9 +455,25 @@ def clean(args):
         shutil.rmtree(GRADLE_BUILD_DIR)
     subprocess.check_call(["make", "clean"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
 
-def build_servers(args):
-    subprocess.check_call(["gradle", "dist"], cwd=GIT_ROOT)
-    print colored("All servers built.", Colors.GREEN)
+def build_docker_images(args):
+    subprocess.check_call(["docker/build-images.sh"], cwd=GIT_ROOT)
+
+def push_docker_images(args):
+    subprocess.check_call(["docker/ship-aerofs/push-images.sh"], cwd=GIT_ROOT)
+
+def build_vm(args):
+    subprocess.check_call(["docker/ship-aerofs/build-vm.sh"], cwd=GIT_ROOT)
+
+def build_cloud_config(args):
+    subprocess.check_call(["docker/ship-aerofs/build-cloud-config.sh"], cwd=GIT_ROOT)
+
+def push_vm(args):
+    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm' ]
+    subprocess.check_call(cmdline, cwd=GIT_ROOT)
+
+def tag_release(args):
+    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release' ]
+    subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def _markdown(watch):
     executable = os.path.join(TOOLS_DIR, "markdown_watch.sh")
@@ -470,11 +487,6 @@ def markdown(args):
 
 def markdown_watch(args):
     _markdown(watch=True)
-
-@required_args('release_version')
-def approve_appliance(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'approve_appliance', args.release_version ]
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def ensure_virtualenv():
     proto()
@@ -643,7 +655,12 @@ def test_system_archive(args):
 commands = {
     "build_client": build_client,
     "build_protoc_plugins": build_protoc_plugins,
-    "build_servers": build_servers,
+    "build_docker_images": build_docker_images,
+    "build_vm": build_vm,
+    "build_cloud_config": build_cloud_config,
+    "push_docker_images": push_docker_images,
+    "push_vm": push_vm,
+    "tag_release": tag_release,
     "clean": clean,
     "markdown": markdown,
     "markdown_watch": markdown_watch,

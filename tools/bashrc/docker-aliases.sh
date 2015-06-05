@@ -7,7 +7,7 @@ DEV_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")/../../docker/dev"
 VM=docker-dev
 
 alias dk-create-vm="${DEV_DIR}/dk-create-vm.sh ${VM} && dk-env"
-alias dk-create="dk-start-vm && ${DEV_DIR}/../build-images.sh --unsigned && dk-reconfig"
+alias dk-create="dk-start-vm && ${DEV_DIR}/../../invoke --unsigned proto build_client package_clients build_docker_images && dk-reconfig"
 alias dk-start-vm="${DEV_DIR}/dk-start-vm.sh ${VM} && dk-env"
 alias dk-start="dk-start-vm && ${DEV_DIR}/emulate-ship.sh default"
 alias dk-crane="${DEV_DIR}/dk-crane.sh"

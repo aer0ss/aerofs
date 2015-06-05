@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+VERSION=$(docker run --rm aerofs/loader tag)
+
+TAG="docker-${VERSION}"
+git tag -a ${TAG} -m ${TAG}
+git push --tags

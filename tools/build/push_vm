@@ -6,15 +6,10 @@ set -e -u
 
 include common
 
-[ $# -ne 1 ] && {
-    echo "usage: $0 [version]" >&2
-    exit $ERRBADARGS
-}
-RELEASE_VERSION=${1:-}
-check_version_format $RELEASE_VERSION
+VERSION=$(docker run --rm aerofs/loader tag)
 
 upload_artifacts() {
-    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${RELEASE_VERSION}.ova"
+    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${VERSION}.ova"
     test -r "${FILE}" || {
         echo "${FILE} does not exist." >&2
         exit $ERRBADARGS
@@ -22,19 +17,12 @@ upload_artifacts() {
     s3cmd --acl-public --guess-mime-type put "${FILE}" s3://aerofs.privatecloud
 }
 
-tag_release() {
-    echo ">> tagging git release"
-    local TAG="docker-${RELEASE_VERSION}"
-    git tag -a ${TAG} -m ${TAG}
-    git push --tags
-}
-
-notify_successful_build() {
+notify_slack() {
     echo ">> notifying team of successful deployment via Slack"
 
     for room in "#eng" "#success"
     do
-        echo "Build notification: PC $RELEASE_VERSION pushed to S3 (by $(whoami)). This version is not yet available to the public." |
+        echo "Build notification: Appliance VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
             $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
                 -r "$room" \
                 -c good \
@@ -44,8 +32,6 @@ notify_successful_build() {
 }
 
 upload_artifacts
-tag_release
-notify_successful_build
+notify_slack
 
-echo ">> Tagged and bagged!"
 echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."

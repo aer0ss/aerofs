@@ -30,7 +30,7 @@ _invoke()
 
     # Keep these up to date with the options invoke supports.
     opts="--approot --product --release-version --signed --unsigned --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
-    commands="build_client build_protoc_plugins build_servers clean deploy_clients markdown markdown_watch package_clients prepare_syncdet proto setupenv test_js test_python test_system test_system_archive"
+    commands="build_client build_protoc_plugins build_docker_images build_vm build_cloud_config push_docker_images push_vm tag_release clean markdown markdown_watch package_clients prepare_syncdet proto setupenv test_js test_python test_system test_system_archive"
 
     # If the previous arg is one of these, give context specific completion options
     case "${prev}" in

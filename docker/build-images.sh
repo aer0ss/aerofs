@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
 #
-# Build all AeroFS images from ground up. See `invoke` for command-line options
+# Build all AeroFS images. Sort non-base image names alphabetically to help users observe build progress
 #
-# Sort non-base image names alphabetically to help users observe build progress
 
 DIRS="
     base/base
@@ -40,16 +39,11 @@ DIRS="
     ship-aerofs/loader
 "
 
-THIS_DIR="$(dirname $0)"
-
-echo "Building client packages..."
-"${THIS_DIR}/../invoke" proto build_client package_clients $@
-
 for i in ${DIRS}; do
     echo "========================================"
     echo "  Building Docker image ${i}"
     echo "========================================"
-    make -C "${THIS_DIR}/${i}" image
+    make -C "$(dirname "$0")/${i}" image
 done
 
 echo "Removing untagged images to save space..."
