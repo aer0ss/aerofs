@@ -8,7 +8,7 @@ set -e -u
 #
 # This file should be included with the following syntax:
 #
-# include common $MODE $PRODUCT
+# include common $PRODUCT
 #
 ###############################################################################
 
@@ -118,7 +118,7 @@ function is_valid_product() {
 }
 
 # check that a valid product was specified
-readonly PRODUCT="${2:-CLIENT}" # FIXME (AG): This should not be specified in here since deploy doesn't need this
+readonly PRODUCT="${1:-CLIENT}"
 if ! is_valid_product "$PRODUCT" ; then
     echo "error: invalid build product $PRODUCT. Expected CLIENT|TEAM_SERVER." >&2
     exit $ERRBADPRODUCT
@@ -255,83 +255,6 @@ function render_template() {
         -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" \
         -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" \
         "$1" > "$2"
-}
-
-# single-quoted - we want $HOME expanded serverside
-DEPLOY_LOCKFILE='$HOME/deploy.lock'
-
-# Creates a lockfile on the release server, to allow deploys to mutex each other.
-function lock_release_server() {
-    declare REASON="$1"
-    echo "establishing deploy lock..."
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        if [ -f $DEPLOY_LOCKFILE ] ; then
-            echo "A deploy appears to be in progress already:"
-            cat $DEPLOY_LOCKFILE
-            echo "If you're sure that deploy has indeed been terminated:"
-            echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
-            exit 1
-        fi
-        lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for reason $REASON" >> $DEPLOY_LOCKFILE
-ENDCMDS
-    echo "locked $RELEASE_SERVER for deploy"
-}
-
-# Deletes a lockfile from the release server, to allow another deploy to use it.
-function unlock_release_server() {
-    echo "releasing deploy lock..."
-    kssh $RELEASE_SERVER_LOGIN "rm -f $DEPLOY_LOCKFILE"
-    echo "done"
-}
-
-# Using the version files in $INSTALLERS_DOWNLOAD_DIR/release-versions/,
-# copy exactly the set of things that should exist on S3 into deploy-stage
-# and then use s3cmd to sync them to the bucket
-function publish_public_to_s3() {
-    declare DEPLOY_STAGE=$INSTALLERS_DOWNLOAD_DIR/deploy-stage/
-    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        rm -rf $DEPLOY_STAGE
-        mkdir -p $DEPLOY_STAGE
-        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
-            foldername=\$(cat \$version_file | cut -d = -f 2)
-            cp -av $INSTALLERS_DOWNLOAD_DIR/\$foldername/* $DEPLOY_STAGE/
-        done
-        # Copy versions in last, since the versioned client folders may have
-        # current.ver and canary.ver files inside
-        for version_file in $INSTALLERS_DOWNLOAD_DIR/release-versions/* ; do
-            cp \$version_file $DEPLOY_STAGE/
-        done
-        s3cmd --follow-symlinks --acl-public --delete-removed --cf-invalidate sync "$DEPLOY_STAGE"/* $1
-ENDCMDS
-}
-
-# Send message to #eng channel on Slack.
-function notify_successful_build {
-    echo ">> notifying team of successful deployment via Slack"
-
-    for room in "#eng" "#success"
-    do
-        echo "Build notification: PC $RELEASE_VERSION pushed to S3 (by $(whoami)). This version is not yet available to the public." |
-            $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
-                -r "$room" \
-                -c good \
-                -u $SLACK_WEBHOOK \
-                -f "Build" > /dev/null
-    done
-}
-
-# Tags this release in the codeline.
-#   $1 : public or private (lowercase mode flag)
-#
-function tag_release {
-    case ${1:-} in
-    public|private) prefix=$1 ;;
-    *)              echo "Illegal tag prefix; should be public or private." ; return 1 ;;
-    esac
-
-    echo ">> tagging git release"
-    git tag -a "${prefix}-$RELEASE_VERSION" -m "${prefix}-$RELEASE_VERSION"
-    git push --tags
 }
 
 fi # endif

@@ -10,20 +10,12 @@
 # * Populate an approot:
 #   ./invoke --product CLIENT setupenv
 # * Clean and build from scratch everything needed to bring up a local prod VM
-#   ./invoke --unsigned clean proto build_client package_clients build_servers package_servers
+#   ./invoke --unsigned clean proto build_client package_clients build_servers
 # * All the tasks involved in producing release candidate appliance images:
-#   ./invoke --signed --format=ova --format=qcow2 clean proto build_client package_clients build_servers package_servers bake
+#   ./invoke --signed clean proto build_client package_clients build_servers
 # * Install AeroFS via syncdet on your default actors
 #   ./invoke --syncdet-extra-args=--case-arg=--transport=default --syncdet-case=lib.cases.clean_install syncdet
-#
-# Confused about how use this tool effectively?  Ask Drew.
 
-# TODO: upload_servers (calls packaging/make)
-# TODO: puppet_deploy
-# TODO: puppet_kick_master
-# TODO: puppet_kick_agents
-# TODO: server_sanity_check
-# TODO: update_cloudfront
 # TODO: --dry-run - doesn't actually call the subprocess.check_call stuff, just says what would be done
 # TODO: --verbose - prints the commands that will be called as they go
 
@@ -247,7 +239,6 @@ def required_args(*required):
                     # Custom help messages for different missing switches
                     custom_messages = {
                         'signed': colored("Specify a signed build with --signed or an unsigned build with --unsigned", Colors.RED),
-                        'format': colored("You must specify at least one output format to bake - try '--format ova' or '--format qcow2'", Colors.RED),
                     }
                     if req in custom_messages:
                         raise ValueError(custom_messages[req])
@@ -467,14 +458,6 @@ def build_servers(args):
     subprocess.check_call(["gradle", "dist"], cwd=GIT_ROOT)
     print colored("All servers built.", Colors.GREEN)
 
-@required_args('bin')
-def package_servers(args):
-    PACKAGING_DIR=os.path.join(GIT_ROOT, "packaging")
-    env = dict(os.environ)
-    env["BIN"] = args.bin
-    subprocess.check_call(["make", "all"], cwd=PACKAGING_DIR, env=env)
-    print colored("All servers packaged.", Colors.GREEN)
-
 def _markdown(watch):
     executable = os.path.join(TOOLS_DIR, "markdown_watch.sh")
     args = [ executable ] + \
@@ -488,18 +471,9 @@ def markdown(args):
 def markdown_watch(args):
     _markdown(watch=True)
 
-@required_args('format')
-def bake(args):
-    BAKERY_EXECUTABLE = os.path.join(GIT_ROOT, "packaging", "bakery", "private-deployment", "bake")
-    bake_args = [ BAKERY_EXECUTABLE ] + args.format
-    subprocess.check_call(bake_args)
-
-@required_args('signed', 'release_version', 'appliance_dir')
+@required_args('release_version')
 def approve_appliance(args):
-    # TODO: check for valid format of release version?
-    if not args.signed:
-        raise ValueError(colored("Cannot approve an unsigned appliance!", Colors.RED))
-    cmdline = [ BOOTSTRAP_ENTRY, 'approve_appliance', 'TRUE', args.release_version, args.appliance_dir ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'approve_appliance', args.release_version ]
     subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def ensure_virtualenv():
@@ -667,7 +641,6 @@ def test_system_archive(args):
 # access to the command-line switches configured.  They should perform a single
 # task, and generally ignore dependency management.
 commands = {
-    "bake": bake,
     "build_client": build_client,
     "build_protoc_plugins": build_protoc_plugins,
     "build_servers": build_servers,
@@ -675,7 +648,6 @@ commands = {
     "markdown": markdown,
     "markdown_watch": markdown_watch,
     "package_clients": package_clients,
-    "package_servers": package_servers,
     "prepare_syncdet": prepare_syncdet,
     "proto": proto,
     "setupenv": setupenv,
@@ -689,12 +661,7 @@ commands = {
 
 def reconstitute_command_line(executable, args, incomplete_commands):
     cmdline = [executable]
-    cmdline.extend(["--appliance-dir", args.appliance_dir])
     cmdline.extend(["--approot", args.approot])
-    cmdline.extend(["--bin", args.bin])
-    if args.format:
-        for fmt in args.format:
-            cmdline.extend(["--format", fmt])
     if args.product:
         cmdline.extend(["--product", args.product])
     if args.release_version:
@@ -725,10 +692,7 @@ def reconstitute_command_line(executable, args, incomplete_commands):
 def main():
     # Set up parser
     parser = argparse.ArgumentParser(prog="invoke")
-    parser.add_argument("--appliance-dir", action='store', default=os.path.join(GIT_ROOT, 'packaging', 'bakery', 'private-deployment', 'images'))
     parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
-    parser.add_argument("--bin", action='store', default=os.environ["USER"].upper())
-    parser.add_argument("--format", action='append', choices=['ova', 'qcow2', 'raw', 'vdi'])
     parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER'])
     parser.add_argument("--release-version", action='store')
     parser.add_argument("--signed", action='store_const', dest='signed', const=True)

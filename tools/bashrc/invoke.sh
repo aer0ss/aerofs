@@ -29,31 +29,17 @@ _invoke()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Keep these up to date with the options invoke supports.
-    opts="--appliance-dir --approot --bin --format --product --release-version --signed --unsigned --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
-    commands="bake build_client build_protoc_plugins build_servers clean deploy_clients markdown markdown_watch package_clients package_servers prepare_syncdet proto setupenv test_js test_python test_system test_system_archive"
+    opts="--approot --product --release-version --signed --unsigned --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
+    commands="build_client build_protoc_plugins build_servers clean deploy_clients markdown markdown_watch package_clients prepare_syncdet proto setupenv test_js test_python test_system test_system_archive"
 
     # If the previous arg is one of these, give context specific completion options
     case "${prev}" in
-        --appliance-dir|--approot)
-            __invoke_filedir -d
-            return 0
-            ;;
         --syncdet-config|--syncdet-executable|--syncdet-scenario)
             __invoke_filedir
             return 0
             ;;
         --syncdet-case|--syncdet-case-timeout|--syncdet-extra-args|--syncdet-sync-timeout|--release-version)
             # No completion, don't suggest anything
-            return 0
-            ;;
-        --bin)
-            local bins="PUBLIC PRIVATE CI $(echo $USER | tr '[:lower:]' '[:upper:]')"
-            COMPREPLY=( $(compgen -W "${bins}" -- ${cur}) )
-            return 0
-            ;;
-        --format)
-            local formats="ova qcow2 raw vdi"
-            COMPREPLY=( $(compgen -W "${formats}" -- ${cur}) )
             return 0
             ;;
         --product)

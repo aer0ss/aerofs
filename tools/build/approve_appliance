@@ -1,59 +1,51 @@
 #!/bin/bash
 set -e -u
-
-# Upload the OVA and QCOW2 artifacts, and tag the commit used.
 #
-# This has no meaning for an UNSIGNED artifact.
+# Upload the OVA artifact and tag the commit used.
 #
 
-MODE=PRIVATE
-include common $MODE
+include common
 
-function DieUsage {
-    echo "usage: $0 [signed] [version] [appliance_path]" >&2
-    echo " " >&2
-    echo "[signed]:     SIGNED" >&2
-    echo "[version]:    Something like 0.1.2." >&2
-    echo "[path]:       Local path to find appliance files." >&2
-    echo " " >&2
-    echo "example: $0 SIGNED 0.8.33 ./packaging/bakery/private-deployment/images" >&2
+[ $# -ne 1 ] && {
+    echo "usage: $0 [version]" >&2
     exit $ERRBADARGS
 }
-
-function Die {
-    echo $@ >&2
-    exit $ERRBADARGS
-}
-
-[ $# -ne 3 ] && DieUsage
-case ${1:-} in
-    SIGNED) SIGN_MODE=${1:-} ;;
-    *) DieUsage ;;
-esac
-RELEASE_VERSION=${2:-}
-IMG_PATH=${3:-}
-BUCKET=aerofs.privatecloud
+RELEASE_VERSION=${1:-}
 check_version_format $RELEASE_VERSION
 
-function UploadArtifacts {
-    test -d "$IMG_PATH" || Die "Given image path $IMG_PATH does not exist."
-
-    declare FileList=
-    for suffix in ".ova" ".qcow2.gz"
-    do
-        declare LocalFile=${IMG_PATH}/aerofs-appliance-${RELEASE_VERSION}${suffix}
-        test -r "$LocalFile" || Die "Expected appliance file $LocalFile does not exist."
-
-        FileList="$FileList $LocalFile"
-    done
-
-    s3cmd --acl-public --guess-mime-type put $FileList s3://$BUCKET
+upload_artifacts() {
+    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${RELEASE_VERSION}.ova"
+    test -r "${FILE}" || {
+        echo "${FILE} does not exist." >&2
+        exit $ERRBADARGS
+    }
+    s3cmd --acl-public --guess-mime-type put "${FILE}" s3://aerofs.privatecloud
 }
 
-UploadArtifacts
-tag_release private
+tag_release() {
+    echo ">> tagging git release"
+    local TAG="docker-${RELEASE_VERSION}"
+    git tag -a ${TAG} -m ${TAG}
+    git push --tags
+}
+
+notify_successful_build() {
+    echo ">> notifying team of successful deployment via Slack"
+
+    for room in "#eng" "#success"
+    do
+        echo "Build notification: PC $RELEASE_VERSION pushed to S3 (by $(whoami)). This version is not yet available to the public." |
+            $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
+                -r "$room" \
+                -c good \
+                -u $SLACK_WEBHOOK \
+                -f "Build" > /dev/null
+    done
+}
+
+upload_artifacts
+tag_release
 notify_successful_build
 
 echo ">> Tagged and bagged!"
 echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."
-
