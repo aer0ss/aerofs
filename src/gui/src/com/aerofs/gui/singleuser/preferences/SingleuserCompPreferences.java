@@ -8,10 +8,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.preferences.PreferencesHelper;
-
-import static com.aerofs.gui.GUIUtil.createLabel;
-import static com.aerofs.gui.preferences.PreferencesHelper.*;
-
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import org.eclipse.swt.SWT;
@@ -20,11 +16,11 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
+import static com.aerofs.gui.GUIUtil.createLabel;
+import static com.aerofs.gui.preferences.PreferencesHelper.createSeparator;
+import static com.aerofs.gui.preferences.PreferencesHelper.setLayoutForAdvanced;
 
 public class SingleuserCompPreferences extends Composite
 {
@@ -114,7 +110,6 @@ public class SingleuserCompPreferences extends Composite
             helper.createAPIAccess(shell);
             createSeparator(shell, false);
             helper.createSelectiveSyncButton(shell);
-            helper.createLimitBandwidthButton(shell);
             helper.createCanaryControls(shell);
             helper.createUnlinkButton(shell);
         }

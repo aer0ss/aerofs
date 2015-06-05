@@ -48,7 +48,6 @@ public class MultiuserCompPreferences extends Composite
             helper.createAPIAccess(shell);
             helper.createCanaryControls(shell);
             createSeparator(shell, false);
-            helper.createLimitBandwidthButton(shell);
             helper.createUnlinkButton(shell);
         }
     }

@@ -7,21 +7,12 @@ package com.aerofs.gui.preferences;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.gui.AeroFSDialog;
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.*;
 import com.aerofs.gui.exclusion.DlgExclusion;
-import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.S;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -36,26 +27,11 @@ import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.update.Updater;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.FocusAdapter;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.ShellAdapter;
-import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -382,12 +358,6 @@ public class PreferencesHelper
     public void createAdvancedButton(Composite parent, AeroFSDialog dialog)
     {
         createButtonContainerWithSpacer(parent, "Advanced...", dialog, 1);
-    }
-
-    public void createLimitBandwidthButton(Composite parent)
-    {
-        createButtonContainerWithSpacer(parent, "Limit Bandwidth...",
-                new DlgThrottling(parent.getShell(), true), 3);
     }
 
     public void createSelectiveSyncButton(Composite parent)
