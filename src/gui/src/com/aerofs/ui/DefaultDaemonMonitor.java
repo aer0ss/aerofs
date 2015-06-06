@@ -404,9 +404,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         // Daemon will restart in new Cfg state
         if (exitCode == RELOCATE_ROOT_ANCHOR.getCode()) {
             return;
-        } else if (exitCode == SHUTDOWN_REQUESTED.getCode()) {
-            l.warn("daemon receives shutdown request. shutdown UI now.");
-            SHUTDOWN_REQUESTED.exit();
         } else if (exitCode == CORRUPTED_DB.getCode()) {
             l.error("core db corrupted");
             UI.get().show(MessageType.ERROR, L.product() + " detected a database corruption.\n" +
@@ -581,7 +578,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         try {
             UIGlobals.ritual().shutdown(5, TimeUnit.SECONDS);
         } catch (Exception e) {
-            l.warn("clean shutdown failed", e);
+            // N.B. shutdown will _always_ throw exception because ritual will exit the daemon process _before_
+            //   replying to the request.
         }
 
         kill();
