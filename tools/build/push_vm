@@ -8,8 +8,9 @@ include common
 
 VERSION=$(docker run --rm aerofs/loader tag)
 
-upload_artifacts() {
-    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${VERSION}.ova"
+upload_artifact() {
+    local EXT=$1
+    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${VERSION}.${EXT}"
     test -r "${FILE}" || {
         echo "${FILE} does not exist." >&2
         exit $ERRBADARGS
@@ -31,7 +32,8 @@ notify_slack() {
     done
 }
 
-upload_artifacts
+upload_artifact ova
+upload_artifact qcow2
 notify_slack
 
 echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."
