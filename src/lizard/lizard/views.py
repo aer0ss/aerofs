@@ -673,6 +673,10 @@ def administrators():
             form=forms.InviteForm(),
             )
 
+@blueprint.route("/version", methods=["GET"])
+def version():
+    return appliance.latest_appliance_version()
+
 @blueprint.route("/aerofs-appliance.ova", methods=["GET"])
 def download_ova():
     version = appliance.latest_appliance_version()
