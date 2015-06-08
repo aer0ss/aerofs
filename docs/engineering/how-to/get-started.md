@@ -211,7 +211,7 @@ This VM is required to run your private AeroFS clients that are isolated from th
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
-Setup environment the first time:
+Setup docker environment the first time:
 
      ~/repos/aerofs/docker/dev/upgrade-tools.sh
      echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.bash_profile
@@ -221,13 +221,7 @@ Setup environment the first time:
      dk-create-vm
      docker-machine upgrade
 
-
-You may want to setup apt-cacher-ng to speedup subsequent builds
-
-     ~/repos/aerofs/tools/cache/start.sh
-
-
-And finally, you can create a fresh VM
+And finally, you can build and configure a fresh appliance
 
      dk-create
 

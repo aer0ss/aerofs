@@ -19,7 +19,8 @@ ENV BUILD_PKGS gcc python-dev
 
 RUN \
     apt-get update && apt-get install -y $BUILD_PKGS &&\
-    pip install -r /requirements-exact.txt &&\
+    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        -r /requirements-exact.txt &&\
     apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/*
 
 # Add source files last

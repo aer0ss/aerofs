@@ -35,7 +35,9 @@ COPY root/opt/repackaging/api/requirements.txt /
 
 RUN \
     apt-get update && apt-get install -y gcc &&\
-    pip install -r /requirements.txt && rm /requirements.txt &&\
+    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        -r /requirements.txt &&\
+    rm /requirements.txt &&\
     apt-get purge -y gcc && rm -rf /var/lib/apt/lists/*
 
 # Add source files last

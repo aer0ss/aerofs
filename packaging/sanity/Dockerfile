@@ -7,7 +7,9 @@ RUN apt-get update && apt-get install -y netcat && rm -rf /var/lib/apt/lists/*
 
 ADD root/opt/sanity/requirements-exact.txt /
 
-RUN pip install --requirement /requirements-exact.txt && rm /requirements-exact.txt
+RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        --requirement /requirements-exact.txt &&\
+    rm /requirements-exact.txt
 
 EXPOSE 8000
 

@@ -1,0 +1,4 @@
+FROM scratch
+ADD bin/rawdns /rawdns
+EXPOSE 53
+ENTRYPOINT ["/rawdns"]

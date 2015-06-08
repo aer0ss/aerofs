@@ -7,6 +7,8 @@ then
     exit 1
 fi
 
+PWD="$( cd $(dirname $0) ; pwd -P )"
+
 VM=$1
 
 docker_machine_ls="$(docker-machine ls)"
@@ -28,6 +30,7 @@ then
     else
         echo "VM ${VM} already started."
     fi
+    $PWD/../../tools/cache/start.sh
 else
     echo "VM ${VM} does not exist. Please run dk-create-vm."
     exit 1

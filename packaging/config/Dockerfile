@@ -15,8 +15,11 @@ ENV BUILD_PKGS gcc python-dev
 
 RUN \
     apt-get update && apt-get install -y $BUILD_PKGS &&\
-    pip install --requirement /opt/config/requirements-exact.txt &&\
-    pip install /sdist/* && rm -rf /sdist &&\
+    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        --requirement /opt/config/requirements-exact.txt &&\
+    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        /sdist/* &&\
+    rm -rf /sdist &&\
     apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/* &&\
     #
     # PREDOCKER forward logs to docker log collector
