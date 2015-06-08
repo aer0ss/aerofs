@@ -120,6 +120,11 @@ public class TestChannelDirectory extends AbstractTest
             {
                 return mock(ChannelFuture.class);
             }
+
+            @Override
+            public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
+                return null;
+            }
         });
         channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
 
@@ -139,6 +144,11 @@ public class TestChannelDirectory extends AbstractTest
                     throws ExTransportUnavailable, ExDeviceUnavailable
             {
                 return mock(ChannelFuture.class);
+            }
+
+            @Override
+            public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
+                return null;
             }
         });
         channelDirectory.setDeviceConnectionListener(deviceConnectionListener);

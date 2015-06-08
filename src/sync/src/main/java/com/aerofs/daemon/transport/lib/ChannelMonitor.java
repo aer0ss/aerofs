@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.daemon.lib.IPresenceLocationReceiver;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransport;
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * When a device goes offline (unicast dropped), attempt to reconnect if the multicast state
  * indicates it _should_ be online.
  */
-public class ChannelMonitor implements IMulticastListener, IDevicePresenceListener
+public class ChannelMonitor implements IMulticastListener, IDevicePresenceListener, IPresenceLocationReceiver
 {
     private static Logger l = LoggerFactory.getLogger(ChannelMonitor.class);
 
@@ -112,5 +113,11 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
         } else {
             l.info("{} cm:offline, stopping allocator", did);
         }
+    }
+
+    @Override
+    public void onPresenceReceived(IPresenceLocation presenceLocation)
+    {
+        // TODO: check the connection and act as needed
     }
 }

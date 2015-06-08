@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.presence.TCPPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.link.ILinkStateListener;
@@ -12,6 +13,7 @@ import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.protobuf.Message;
@@ -281,6 +283,19 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
         }
 
         SocketAddress remoteAddress = addressResolver.resolve(did);
+
+        return newChannel(did, remoteAddress);
+    }
+
+    @Override
+    public ChannelFuture newChannel(IPresenceLocation location)
+    {
+        Preconditions.checkArgument(location instanceof TCPPresenceLocation);
+        return newChannel(location.did(), ((TCPPresenceLocation)location).socketAddress());
+    }
+
+    private ChannelFuture newChannel(DID did, SocketAddress remoteAddress)
+    {
         ChannelFuture channelFuture = clientBootstrap.connect(remoteAddress);
         Channel channel = channelFuture.getChannel();
 

@@ -153,7 +153,8 @@ public final class Zephyr implements ITransport
 
         // FIXME: creating the XMPPPresenceProcessor inside Zephyr seems weird
         // XMPPServiceConnection is created before the transports for example
-        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
+        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this,
+                outgoingEventSink, monitor, monitor);
         presenceService.addListener(xmppPresenceProcessor);
         presenceService.addListener(monitor);
 

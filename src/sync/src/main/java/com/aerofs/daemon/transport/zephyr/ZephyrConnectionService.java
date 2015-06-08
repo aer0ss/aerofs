@@ -239,6 +239,12 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         return connectFuture;
     }
 
+    @Override
+    public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
+        Preconditions.checkState(false, "Creating Zephyr channels from presence locations is not supported yet");
+        return null;
+    }
+
     private void disconnect(DID did, Exception cause)
     {
         l.info("{} disconnect cause:{}", did, cause.getMessage());

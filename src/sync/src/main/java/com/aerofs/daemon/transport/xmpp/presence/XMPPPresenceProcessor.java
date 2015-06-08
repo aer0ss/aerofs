@@ -5,6 +5,10 @@
 package com.aerofs.daemon.transport.xmpp.presence;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.lib.IPresenceLocationReceiver;
+import com.aerofs.daemon.transport.lib.IPresenceLocation;
+import com.aerofs.daemon.transport.presence.ExInvalidPresenceLocation;
+import com.aerofs.daemon.transport.presence.PresenceLocationFactory;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.ids.SID;
@@ -17,6 +21,7 @@ import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionSer
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.google.common.collect.*;
+import com.google.gson.*;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
@@ -25,6 +30,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -62,13 +68,14 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
     private final String transportId;
     private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
+    private final IPresenceLocationReceiver presenceLocationReceiver;
 
     /**
      * Constructor
      */
     public XMPPPresenceProcessor(DID localdid, String xmppServerDomain, ITransport transport,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
-            IMulticastListener multicastListener)
+            IMulticastListener multicastListener, IPresenceLocationReceiver presenceLocationReceiver)
     {
         this.localdid = localdid;
         this.xmppServerDomain = xmppServerDomain;
@@ -76,6 +83,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         this.transport = transport;
         this.outgoingEventSink = outgoingEventSink;
         this.multicastListener = multicastListener;
+        this.presenceLocationReceiver = presenceLocationReceiver;
     }
 
     @Override
@@ -148,10 +156,51 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             @Nullable String metadata = fetchVCard(connection, presence.getFrom());
             if (metadata != null && !metadata.isEmpty()) {
                 l.info("Found metadata for {}: {}", did, metadata);
+                // Parse it
+                Set<IPresenceLocation> presenceLocations = parseMetadata(did, metadata);
+                // Notify it
+                presenceLocations.forEach(presenceLocationReceiver::onPresenceReceived);
             }
         }
 
         return updated;
+    }
+
+    /**
+     * Parse the metadata and extract the valid presence locations.
+     *
+     * @param did the metadata belongs to this DID
+     * @param metadata the metadata, as a Json list of locations
+     * @return the set of found presence locations
+     */
+    private Set<IPresenceLocation> parseMetadata(DID did, String metadata)
+    {
+        JsonParser jsonParser = new JsonParser();
+        JsonArray jsonPresenceList = jsonParser.parse(metadata).getAsJsonArray();
+
+        HashSet<IPresenceLocation> presenceLocations = new HashSet<>();
+
+        if (jsonPresenceList == null) {
+            l.info("empty location list, dropping");
+            return presenceLocations;
+        }
+
+        for (JsonElement jsonPresenceLocation : jsonPresenceList) {
+            try {
+                IPresenceLocation location = PresenceLocationFactory.fromJson(did, (JsonObject) jsonPresenceLocation);
+                if (location.transportType().getId().equals(transport.id())) {
+                    // DESIGN constraint:
+                    // XMPPPresenceProcessor is instantiated twice, once for each transport (TCP, Zephyr).
+                    // Each instance will notify its transport-specific instance of IPresenceReceiver,
+                    //  so we don't want to notify locations that are not for the current transport.
+                    presenceLocations.add(location);
+                }
+            } catch (ExInvalidPresenceLocation e) {
+                l.info("dropped location {} for did {} ({})", jsonPresenceLocation.toString(), did, e.getMessage());
+            }
+        }
+
+        return presenceLocations;
     }
 
     /**

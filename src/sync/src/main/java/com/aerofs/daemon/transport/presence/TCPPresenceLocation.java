@@ -48,4 +48,24 @@ public class TCPPresenceLocation implements IPresenceLocation {
 
     @Override
     public int version() { return VERSION; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TCPPresenceLocation that = (TCPPresenceLocation) o;
+
+        if (_did != null ? !_did.equals(that.did()) : that.did() != null) return false;
+        if (VERSION != that.version()) return false;
+        return !(_socketAddress != null ? !_socketAddress.equals(that.socketAddress()) : that.socketAddress() != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _did != null ? _did.hashCode() : 0;
+        result = 31 * result + (_socketAddress != null ? _socketAddress.hashCode() : 0);
+        return result;
+    }
 }

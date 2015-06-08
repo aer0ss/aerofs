@@ -57,14 +57,24 @@ public class TestPresenceLocationFactory extends AbstractTest
         json.addProperty("transport", TransportType.LANTCP.toString());
         // Version is missing
 
-        Assert.assertNull(PresenceLocationFactory.fromJson(_did, json));
+        try {
+            PresenceLocationFactory.fromJson(_did, json);
+            Assert.fail();
+        } catch (ExInvalidPresenceLocation e) {
+            // This is the expected behaviour
+        }
 
         JsonObject json2 = new JsonObject();
         json.addProperty("version", TCPPresenceLocation.VERSION);
         json2.addProperty("transport", TransportType.LANTCP.toString());
         // Location is missing
 
-        Assert.assertNull(PresenceLocationFactory.fromJson(_did, json2));
+        try {
+            PresenceLocationFactory.fromJson(_did, json2);
+            Assert.fail();
+        } catch (ExInvalidPresenceLocation e) {
+            // This is the expected behaviour
+        }
     }
 
     /**
@@ -79,15 +89,26 @@ public class TestPresenceLocationFactory extends AbstractTest
         json.addProperty("transport", "UNICORN");
         // I just hope we will not create the UNICORN transport one day...
 
-        Assert.assertNull(PresenceLocationFactory.fromJson(_did, json));
-
+        try {
+            PresenceLocationFactory.fromJson(_did, json);
+            Assert.fail();
+        } catch (ExInvalidPresenceLocation e) {
+            // This is the expected behaviour
+            l.info(e.getMessage());
+        }
         JsonObject json2 = new JsonObject();
         json2.addProperty("version", TCPPresenceLocation.VERSION);
         json2.addProperty("location", "1.2.a3.4:12345");
         json2.addProperty("transport", TransportType.LANTCP.toString());
         // Invalid socket address
 
-        Assert.assertNull(PresenceLocationFactory.fromJson(_did, json2));
+        try {
+            PresenceLocationFactory.fromJson(_did, json2);
+            Assert.fail();
+        } catch (ExInvalidPresenceLocation e) {
+            // This is the expected behaviour
+            l.info(e.getMessage());
+        }
     }
 
     @Test
@@ -103,15 +124,13 @@ public class TestPresenceLocationFactory extends AbstractTest
         Assert.assertEquals(tcpPresenceLocation2.version(), tcpPresenceLocation.version());
     }
 
-    @Test
     /**
-     * For an incompatible version, the factory should return null
+     * For an incompatible version, the factory should throw an Exception
      */
+    @Test(expected = ExInvalidPresenceLocation.class)
     public void shouldRefuseIncompatible() throws Exception
     {
         // Incompatible version
-        TCPPresenceLocation tcpPresenceLocation = PresenceLocationFactory.getTCPPresenceLocation(_did, TCPPresenceLocation.VERSION + 100, "1.2.3.4:12345");
-
-        Assert.assertNull(tcpPresenceLocation);
+        PresenceLocationFactory.getTCPPresenceLocation(_did, TCPPresenceLocation.VERSION + 100, "1.2.3.4:12345");
     }
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.xmpp.presence;
 
+import com.aerofs.daemon.lib.IPresenceLocationReceiver;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
@@ -66,6 +67,7 @@ public final class TestXMPPPresenceProcessor
     private final XMPPConnection xmppConnection = mock(XMPPConnection.class);
     private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(10);
     private final IMulticastListener multicastListener = mock(IMulticastListener.class);
+    private final IPresenceLocationReceiver presenceLocationReceiver = mock(IPresenceLocationReceiver.class);
 
     private XMPPPresenceProcessor presenceProcessor;
 
@@ -73,7 +75,8 @@ public final class TestXMPPPresenceProcessor
     public void setup()
     {
         when(transport.id()).thenReturn(TRANSPORT_ID);
-        presenceProcessor = new XMPPPresenceProcessor(LOCAL_DID, XMPP_SERVER_DOMAIN, transport, outgoingEventSink, multicastListener);
+        presenceProcessor = new XMPPPresenceProcessor(LOCAL_DID, XMPP_SERVER_DOMAIN, transport,
+                outgoingEventSink, multicastListener, presenceLocationReceiver);
     }
 
     private String getFrom(SID sid, String transportId, DID remotedid)
