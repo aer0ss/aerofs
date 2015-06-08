@@ -83,14 +83,12 @@ It'll prompt you before it does anything, but the defaults are sane.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt apt-cacher-ng qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
+    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
     gem install kramdown jekyll
     
-    ln -s $(brew --prefix apt-cacher-ng)/homebrew.mxcl.apt-cacher-ng.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/homebrew.mxcl.apt-cacher-ng.plist
-
     pip install virtualenv protobuf requests pyyaml
 
     npm install -g less minifier uglify-js
@@ -106,7 +104,6 @@ This step takes a while. It's probably a good time to look around in our [mailin
   * `swig` is used for our native libraries
   * `s3cmd` (developer version required) is used for pushing assets and installers to S3 buckets and cloudfront.  Only the `--devel` version of `s3cmd` supports `--cf-invalidate`
   * `qt` provides `qmake` which generates Makefiles for many of our native libraries
-  * `apt-cacher-ng` is used to speed up local prod VM builds.
   * `ruby` and `kramdown` are used by tools/markdown_watch.sh to compile .md files into .html
   * `makensis` is used to build Windows installers
   * `gpg` is used for license files and needed to run python unit tests.
@@ -214,12 +211,25 @@ This VM is required to run your private AeroFS clients that are isolated from th
 
 You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
 
+Setup environment the first time:
+
      ~/repos/aerofs/docker/dev/upgrade-tools.sh
      echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.bash_profile
      source ~/repos/aerofs/tools/bashrc/include.sh
      # Display the documentation
      dk-help
-     dk-create-vm && docker-machine upgrade && dk-create
+     dk-create-vm
+     docker-machine upgrade
+
+
+You may want to setup apt-cacher-ng to speedup subsequent builds
+
+     ~/repos/aerofs/tools/cache/start.sh
+
+
+And finally, you can create a fresh VM
+
+     dk-create
 
 The last step may take a while (expect at least 45 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing.
 Especially, see `docker/README.md`.
@@ -303,8 +313,4 @@ Run a scenario that contains all basic test cases:
 Now, run all the tests!
 
     $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/all.scn # all tests
-
-For convenience, the `test_system` ant target runs clean_install before other tests:
-
-    $ ant test_system -Dcase=core.basic.should_move_file
 
