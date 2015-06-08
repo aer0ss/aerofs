@@ -12,7 +12,6 @@ import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -24,8 +23,6 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.update.Updater;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.FillLayout;
@@ -35,7 +32,6 @@ import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
@@ -65,18 +61,13 @@ public class PreferencesHelper
     {
         // Have to re-open the directory dialog in a separate stack, since doing it in the same
         // stack would cause strange SWT crashes on OSX :/
-        GUI.get().safeAsyncExec(_comp, new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                String root = getRootAnchorPathFromDirectoryDialog();
-                if (root == null) return; //User hit cancel
-                if (moveRootAnchor(root)) {
-                    txtRootAnchor.setText(Cfg.absDefaultRootAnchor());
-                } else {
-                    selectAndMoveRootAnchor(txtRootAnchor);
-                }
+        GUI.get().safeAsyncExec(_comp, () -> {
+            String root = getRootAnchorPathFromDirectoryDialog();
+            if (root == null) return; //User hit cancel
+            if (moveRootAnchor(root)) {
+                txtRootAnchor.setText(Cfg.absDefaultRootAnchor());
+            } else {
+                selectAndMoveRootAnchor(txtRootAnchor);
             }
         });
     }
@@ -226,23 +217,19 @@ public class PreferencesHelper
 
                 final GetUserPreferencesReply reply = r;
                 final Exception eFinal = e;
-                GUI.get().safeAsyncExec(_comp, new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        if (eFinal != null) {
-                            ErrorMessages.show(_shell, eFinal, "Sorry, " + L.product() +
-                                    " couldn't get the computer name.");
-                        } else if (reply != null) {
-                            _txtDeviceName.setText(reply.getDeviceName());
-                            _txtDeviceName.setEditable(true);
+                GUI.get().safeAsyncExec(_comp, () -> {
+                    if (eFinal != null) {
+                        ErrorMessages.show(_shell, eFinal, "Sorry, " + L.product() +
+                                " couldn't get the computer name.");
+                    } else if (reply != null) {
+                        _txtDeviceName.setText(reply.getDeviceName());
+                        _txtDeviceName.setEditable(true);
 
-                            _deviceName = _txtDeviceName.getText();
+                        _deviceName = _txtDeviceName.getText();
 
-                            _asyncInited = true;
-                        }
-                        _compSpin.stop();
+                        _asyncInited = true;
                     }
+                    _compSpin.stop();
                 });
             }
         };
@@ -263,41 +250,31 @@ public class PreferencesHelper
 
         _compSpin.start();
 
-        ThreadUtil.startDaemonThread("gui-pref", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Exception e;
-                try {
-                    newMutualAuthClientFactory()
-                            .create()
-                            .signInRemote()
-                            .setUserPreferences(Cfg.user().getString(), null, null,
-                                    BaseUtil.toPB(Cfg.did()), deviceNameToSend);
-                    e = null;
-                } catch (Exception e2) {
-                    e = e2;
-                }
-
-                final Exception eFinal = e;
-                GUI.get().safeAsyncExec(_comp, new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        _compSpin.stop();
-
-                        if (eFinal != null) {
-                            ErrorMessages.show(_shell, eFinal, "Sorry, " + L.product() +
-                                    " couldn't update the computer name.");
-                        } else {
-                            _deviceName = deviceName;
-                            if (selectAll != null) selectAll.selectAll();
-                        }
-                    }
-                });
+        ThreadUtil.startDaemonThread("gui-pref", () -> {
+            Exception e;
+            try {
+                newMutualAuthClientFactory()
+                        .create()
+                        .signInRemote()
+                        .setUserPreferences(Cfg.user().getString(), null, null,
+                                BaseUtil.toPB(Cfg.did()), deviceNameToSend);
+                e = null;
+            } catch (Exception e2) {
+                e = e2;
             }
+
+            final Exception eFinal = e;
+            GUI.get().safeAsyncExec(_comp, () -> {
+                _compSpin.stop();
+
+                if (eFinal != null) {
+                    ErrorMessages.show(_shell, eFinal, "Sorry, " + L.product() +
+                            " couldn't update the computer name.");
+                } else {
+                    _deviceName = deviceName;
+                    if (selectAll != null) selectAll.selectAll();
+                }
+            });
         });
     }
 
@@ -363,7 +340,7 @@ public class PreferencesHelper
     public void createSelectiveSyncButton(Composite parent)
     {
         createButtonContainerWithSpacer(parent, "Selective Sync...",
-                new DlgExclusion(parent.getShell()), 3);
+                new DlgExclusion(parent.getShell()), 2);
     }
 
     public void createUnlinkButton(Composite parent)
@@ -371,7 +348,7 @@ public class PreferencesHelper
         createSeparator(parent, true);
 
         createButtonContainerWithSpacer(parent, S.UNLINK_THIS_COMPUTER,
-                new DlgUnlinkDevice(parent.getShell(), true), 3);
+                new DlgUnlinkDevice(parent.getShell(), true), 2);
     }
 
     public void setCfg(CfgDatabase.Key key, Boolean value)
@@ -390,14 +367,7 @@ public class PreferencesHelper
 
     public void registerShellListeners()
     {
-        _shell.addListener(SWT.Show, new Listener()
-        {
-            @Override
-            public void handleEvent(Event arg0)
-            {
-                initAsync();
-            }
-        });
+        _shell.addListener(SWT.Show, e -> initAsync());
 
         // Save settings on close
         _shell.addShellListener(new ShellAdapter()
@@ -421,7 +391,7 @@ public class PreferencesHelper
 
     public static void setLayoutForAdvanced(Composite composite)
     {
-        GridLayout layout = new GridLayout(5, false);
+        GridLayout layout = new GridLayout(4, false);
         layout.marginWidth = 0;
         layout.marginHeight = GUIParam.MARGIN;
         layout.verticalSpacing = GUIParam.VERTICAL_SPACING;
@@ -439,7 +409,7 @@ public class PreferencesHelper
 
         final Button btnHistory = GUIUtil.createButton(parent, SWT.CHECK);
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
-        btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+        btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         btnHistory.setSelection(Cfg.db().getBoolean(Key.SYNC_HISTORY));
         // This button is a little complicated - we present a warning only if the
         // selection state goes from on to off. If the user clicks No, the selection state
@@ -477,7 +447,7 @@ public class PreferencesHelper
         final Button btnAPIAccess = GUIUtil.createButton(parent, SWT.CHECK);
 
         btnAPIAccess.setText("Enable API access");
-        btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+        btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         btnAPIAccess.setSelection(new CfgRestService().isEnabled());
         btnAPIAccess.addSelectionListener(new SelectionAdapter()
         {
@@ -520,118 +490,12 @@ public class PreferencesHelper
         createSpacer(parent);
     }
 
-    private static final int STABLE_INDEX = 0;
-    private static final int CANARY_INDEX = 1;
-    private static final String CANARY_MESSAGE = "Your " + L.product() + " may restart shortly to" +
-            " update to the Canary release.";
-    private static final String CANARY_CONFIRM = "Continue";
-
-    private static boolean isCanary()
-    {
-        return Updater.CANARY_FLAG_FILE.exists();
-    }
-
-    public void createCanaryControls(Composite parent)
-    {
-        // Don't show the Canary option for private deployment
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) return;
-
-        createSeparator(parent, true);
-
-        createSpacer(parent);
-
-        createLabel(parent, SWT.NONE).setText("Release channel:");
-
-        final Combo comboCanary = new Combo(parent, SWT.READ_ONLY);
-        comboCanary.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
-
-        comboCanary.add("Stable");
-        comboCanary.add("Canary");
-        comboCanary.select(isCanary() ? CANARY_INDEX : STABLE_INDEX);
-
-        createSpacer(parent);
-
-        // a new line
-        createSpacer(parent);
-
-        Link lnkCanary = new Link(parent, SWT.NONE);
-        lnkCanary.setText("<a>What is this?</a>");
-        lnkCanary.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        lnkCanary.addSelectionListener(GUIUtil.createUrlLaunchListener(
-                "https://support.aerofs.com/hc/en-us/articles/201797484"));
-
-        final Button btnCanaryOnce = createButtonContainer(parent, "Canary Once", null, 2, SWT.FILL);
-        btnCanaryOnce.setEnabled(!isCanary());
-        btnCanaryOnce.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                if (GUI.get().ask(_shell, MessageType.INFO, CANARY_MESSAGE, CANARY_CONFIRM,
-                        IDialogConstants.CANCEL_LABEL)) {
-                    UIGlobals.updater().forceCanaryUntilRelaunch();
-                    UIGlobals.updater().checkForUpdate(true);
-                }
-            }
-        });
-
-        createSpacer(parent);
-
-        comboCanary.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent ev)
-            {
-                onCanarySelection(comboCanary, btnCanaryOnce);
-            }
-        });
-    }
-
-    private void onCanarySelection(Combo comboCanary, Button canaryOnce)
-    {
-        boolean toCanary = comboCanary.getSelectionIndex() == CANARY_INDEX;
-        // No change in selection.
-        if (toCanary == isCanary()) return;
-
-        try {
-            if (toCanary) {
-                if (GUI.get().ask(_shell, MessageType.INFO, CANARY_MESSAGE, CANARY_CONFIRM,
-                        IDialogConstants.CANCEL_LABEL)) {
-                    FileUtil.createNewFile(Updater.CANARY_FLAG_FILE);
-                    UIGlobals.updater().checkForUpdate(true);
-                    // must set the control *after* all operations that might fail
-                    canaryOnce.setEnabled(false);
-                } else {
-                    // revert the change
-                    comboCanary.select(STABLE_INDEX);
-                }
-
-            } else {
-                String message = L.product() + " will update to the Stable release when the" +
-                        " Stable release reaches version " + Cfg.ver() + ".\n\n" +
-                        "Warning: do not attempt to downgrade " + L.product() + " to a previous" +
-                        " version. Doing so will cause unexpected behavior and potential data" +
-                        " loss.";
-                GUI.get().show(_shell, MessageType.INFO, message);
-                FileUtil.deleteOrThrowIfExist(Updater.CANARY_FLAG_FILE);
-                // must set the control *after* all operations that might fail
-                canaryOnce.setEnabled(true);
-            }
-        } catch (IOException e) {
-            // Canary users are assumed to be tech savvy. So show them technical details.
-            ErrorMessages.show(_shell, e, "",
-                    new ErrorMessage(IOException.class, "Failed to toggle the release channel: " +
-                            e.getLocalizedMessage()));
-            comboCanary.select(toCanary ? STABLE_INDEX : CANARY_INDEX);
-        }
-    }
-
     // use invisible separator to increase spacing between widgets
     static public void createSeparator(Composite parent, boolean visible)
     {
         Label separator = createLabel(parent, SWT.HORIZONTAL | SWT.SEPARATOR);
-        // spans 5 columns because it's the most number of columns for the layouts we use
-        separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 5, 1));
+        // spans 4 columns because it's the most number of columns for the layouts we use
+        separator.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 4, 1));
         separator.setVisible(visible);
     }
 }

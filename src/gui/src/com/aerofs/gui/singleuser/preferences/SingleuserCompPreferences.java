@@ -121,7 +121,6 @@ public class SingleuserCompPreferences extends Composite
             helper.createAPIAccess(shell);
             createSeparator(shell, false);
             helper.createSelectiveSyncButton(shell);
-            helper.createCanaryControls(shell);
             helper.createUnlinkButton(shell);
         }
     }

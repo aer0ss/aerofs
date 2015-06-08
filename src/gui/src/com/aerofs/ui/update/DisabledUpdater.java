@@ -33,12 +33,6 @@ public class DisabledUpdater extends Updater {
     }
 
     @Override
-    public void forceCanaryUntilRelaunch()
-    {
-        throw new UnsupportedOperationException("Disabled updater does not force canary.");
-    }
-
-    @Override
     public void checkForUpdate(boolean newThread)
     {
         throw new UnsupportedOperationException("Disabled updater does not check for update.");

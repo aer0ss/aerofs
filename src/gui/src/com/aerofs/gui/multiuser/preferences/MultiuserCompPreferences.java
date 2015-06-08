@@ -46,7 +46,6 @@ public class MultiuserCompPreferences extends Composite
 
             helper.createSyncHistory(shell);
             helper.createAPIAccess(shell);
-            helper.createCanaryControls(shell);
             createSeparator(shell, false);
             helper.createUnlinkButton(shell);
         }

@@ -17,8 +17,6 @@ import java.io.IOException;
 
 class CLIPreSetupUpdateCheck
 {
-    private static final Logger l = LoggerFactory.getLogger(CLIPreSetupUpdateCheck.class);
-
     public void run() throws IOException
     {
         System.out.println(S.CHECKING_FOR_DINOSAURS);

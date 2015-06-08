@@ -89,9 +89,6 @@ public abstract class Updater
 
     protected static final Logger l = Loggers.getLogger(Updater.class);
 
-    // This file determines whether the system runs in the Canary mode
-    public static File CANARY_FLAG_FILE = new File(Util.join(Cfg.absRTRoot(), "canary"));
-
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
     private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
             PROD_INSTALLER_URL);
@@ -107,9 +104,6 @@ public abstract class Updater
 
     private final String _installerFilenameFormat;
     private Status _status = Status.NONE;
-
-    // Whether to force to update to Canary until the next AeroFS relaunch.
-    private boolean _forceCanary;
 
     public static Updater getInstance_()
     {
@@ -293,14 +287,7 @@ public abstract class Updater
     public String getServerVersion()
             throws IOException
     {
-        // Are we in the Canary mode?
-        boolean canary = _forceCanary || CANARY_FLAG_FILE.exists();
-
-        // The version URL for public deployment
-        String publicURL = "https://nocache.client.aerofs.com/" +
-                (canary ? "canary.ver" : "current.ver");
-
-        String versionURL = getStringProperty("updater.version.url", publicURL);
+        String versionURL = getStringProperty("updater.version.url", "https://nocache.client.aerofs.com/current.ver");
 
         try {
             l.debug("Reading version from {}", versionURL);
@@ -451,25 +438,22 @@ public abstract class Updater
         conn.setConnectTimeout((int) Cfg.timeout());
 
         if (shouldVerifyHostnamesFromAWS) {
-            conn.setHostnameVerifier(new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, SSLSession session) {
+            conn.setHostnameVerifier((hostname, session) -> {
 
-                    try {
-                        X509Certificate[] x509s = session.getPeerCertificateChain();
-                        for (X509Certificate x509 : x509s) {
-                            String str = x509.getSubjectDN().toString();
-                            // this is for URLs pointing to S3
-                            if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
-                            // this is for URLs pointing to CloudFront
-                            if (str.startsWith("CN=*.cloudfront.net")) return true;
-                        }
-                        l.warn("expected CN not found");
-                        return false;
-                    } catch (SSLPeerUnverifiedException e) {
-                        l.warn(Util.e(e));
-                        return false;
+                try {
+                    X509Certificate[] x509s = session.getPeerCertificateChain();
+                    for (X509Certificate x509 : x509s) {
+                        String str = x509.getSubjectDN().toString();
+                        // this is for URLs pointing to S3
+                        if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
+                        // this is for URLs pointing to CloudFront
+                        if (str.startsWith("CN=*.cloudfront.net")) return true;
                     }
+                    l.warn("expected CN not found");
+                    return false;
+                } catch (SSLPeerUnverifiedException e) {
+                    l.warn(Util.e(e));
+                    return false;
                 }
             });
         }
@@ -485,15 +469,6 @@ public abstract class Updater
         }
 
         return conn;
-    }
-
-    /**
-     * Force to update to Canary until AeroFS relaunches (either automatically by the updater or
-     * manually by the user).
-     */
-    public void forceCanaryUntilRelaunch()
-    {
-        _forceCanary = true;
     }
 
     public void checkForUpdate(boolean newThread)
