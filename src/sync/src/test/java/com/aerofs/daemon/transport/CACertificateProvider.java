@@ -16,12 +16,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 public final class CACertificateProvider implements ICertificateProvider
 {
-    private final Certificate caCertificate;
+    private final X509Certificate caCertificate;
 
     public CACertificateProvider(SecureRandom secureRandom, String caName, KeyPair caKeyPair)
             throws CertificateException, OperatorCreationException, IOException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException // [sigh] definitely bad practice
@@ -32,7 +32,7 @@ public final class CACertificateProvider implements ICertificateProvider
 
     @Nonnull
     @Override
-    public Certificate getCert()
+    public X509Certificate getCert()
     {
         return this.caCertificate;
     }

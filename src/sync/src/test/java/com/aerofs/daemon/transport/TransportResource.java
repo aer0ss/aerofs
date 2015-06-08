@@ -7,26 +7,23 @@ package com.aerofs.daemon.transport;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
+import com.aerofs.daemon.core.net.ServerSSLEngineFactory;
+import com.aerofs.daemon.core.net.Transports;
+import com.aerofs.daemon.transport.xmpp.XMPPParams;
+import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
-import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
-import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.base.ssl.SSLEngineFactory.Mode;
-import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.Prio;
 import com.google.common.io.Files;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -39,7 +36,6 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
@@ -48,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TransportResource extends ExternalResource
 {
@@ -58,14 +55,12 @@ public class TransportResource extends ExternalResource
 
     private static final Logger l = Loggers.getLogger(TransportResource.class);
 
-    private static final Prio PRIO = Prio.LO;
-
     private final long seed = System.nanoTime();
     private final Random random = new Random(seed);
     private final LinkStateService linkStateService = new LinkStateService();
     private final SecureRandom secureRandom = new SecureRandom();
     private final Timer timer = new HashedWheelTimer();
-    private final BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final CoreQueue outgoingEventSink = new CoreQueue();
     private final ClientSocketChannelFactory clientSocketChannelFactory = ChannelFactories.newClientChannelFactory();
     private final ServerSocketChannelFactory serverSocketChannelFactory = ChannelFactories.newServerChannelFactory();
     private final TransportType transportType;
@@ -75,6 +70,7 @@ public class TransportResource extends ExternalResource
     private final IRoundTripTimes roundTripTimes = mock(IRoundTripTimes.class);
 
     private DID did;
+    private Transports tps;
     private ITransport transport;
     private File logFilePath;
     private TransportReader transportReader;
@@ -110,72 +106,50 @@ public class TransportResource extends ExternalResource
         did = DID.generate();
         checkNotNull(did);
 
-        byte[] scrypted = new byte[]{0};
-        checkNotNull(scrypted);
-
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
-        SSLEngineFactory clientSSLEngineFactory = newClientSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
-        SSLEngineFactory serverSSLEngineFactory = newServerSSLEngineFactory(privateKeyProvider, mockCA.getCACertificateProvider());
 
+        CfgLocalUser localid = mock(CfgLocalUser.class);
+        when(localid.get()).thenReturn(userID);
+        CfgLocalDID localdid = mock(CfgLocalDID.class);
+        when(localdid.get()).thenReturn(did);
+        CfgTimeout timeout = mock(CfgTimeout.class);
+        when(timeout.get()).thenReturn(15 * C.SEC);
+        CfgMulticastLoopback multicastLoopback = mock(CfgMulticastLoopback.class);
+        when(multicastLoopback.get()).thenReturn(true);
+        CfgKeyManagersProvider keyProvider = mock(CfgKeyManagersProvider.class);
+        when(keyProvider.getCert()).thenReturn(privateKeyProvider.getCert());
+        when(keyProvider.getPrivateKey()).thenReturn(privateKeyProvider.getPrivateKey());
+        CfgCACertificateProvider trustedCA = mock(CfgCACertificateProvider.class);
+        when(trustedCA.getCert()).thenReturn(mockCA.getCACertificateProvider().getCert());
 
-        XMPPConnectionService xmppConnectionService = new XMPPConnectionService(
-                did,
-                InetSocketAddress.createUnresolved("localhost", 5222),
-                "arrowfs.org",
-                "u",
-                2 * C.SEC,
-                2,
-                1 * C.SEC,
-                5 * C.SEC,
-                linkStateService
-        );
+        CfgEnabledTransports enabled = mock(CfgEnabledTransports.class);
+        when(enabled.isZephyrEnabled()).thenReturn(transportType == TransportType.ZEPHYR);
+        when(enabled.isTcpEnabled()).thenReturn(transportType == TransportType.LANTCP);
 
-        // [sigh] It's stupid to have to create this every time. I think it should be injected in
-        // too bad JUnit doesn't allow nested @Rule definitions
-        TransportFactory transportFactory = new TransportFactory(
-                userID,
-                did,
-                30 * C.SEC,
-                true,
-                "arrowfs.org",
-                10 * C.SEC,
-                90 * C.SEC,
-                3,
-                10 * C.SEC,
-                zephyrAddress,
-                Proxy.NO_PROXY,
-                timer,
-                outgoingEventSink,
-                linkStateService,
-                new MaxcastFilterReceiver(),
-                clientSocketChannelFactory,
-                serverSocketChannelFactory,
-                clientSSLEngineFactory,
-                serverSSLEngineFactory,
-                roundTripTimes,
-                xmppConnectionService
-        );
+        tps =  new Transports(localid, localdid, enabled, timeout, multicastLoopback,
+                new XMPPParams(
+                        InetSocketAddress.createUnresolved("localhost", 5222),
+                        "arrowfs.org"),
+                new ZephyrParams(zephyrAddress),
+                timer, outgoingEventSink,
+                new MaxcastFilterReceiver(), linkStateService,
+                new ClientSSLEngineFactory(keyProvider, trustedCA),
+                new ServerSSLEngineFactory(keyProvider, trustedCA),
+                clientSocketChannelFactory, serverSocketChannelFactory,
+                roundTripTimes);
 
-        transport = transportFactory.newTransport(transportType, transportId, 1);
-        transport.init();
-        transport.start();
+        checkState(tps.getAll().size() == 1);
+        tps.init_();
+        tps.start_();
+
+        transport = tps.getAll().iterator().next();
         linkStateService.markLinksUp();
-    }
-
-    private SSLEngineFactory newServerSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)
-    {
-        return new SSLEngineFactory(Mode.Server, Platform.Desktop, privateKeyProvider, caCertificateProvider, null);
-    }
-
-    private SSLEngineFactory newClientSSLEngineFactory(IPrivateKeyProvider privateKeyProvider, ICertificateProvider caCertificateProvider)
-    {
-        return new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, caCertificateProvider, null);
     }
 
     @Override
     protected synchronized void after()
     {
-        transport.stop();
+        tps.stop_();
 
         if (readerSet) {
             transportReader.stop();
@@ -242,7 +216,7 @@ public class TransportResource extends ExternalResource
 
     public void joinStore(SID sid)
     {
-        getTransport().q().enqueueBlocking(new EOUpdateStores(new SID[]{sid}, new SID[]{}), PRIO);
+        tps.presenceSources().forEach(ps -> ps.updateInterest(new SID[]{sid}, new SID[]{}));
     }
 
     public void send(DID remoteDID, byte[] payload, Prio prio)

@@ -52,7 +52,7 @@ public class TempCert implements IPrivateKeyProvider, ICertificateProvider
     }
 
     @Override
-    public @Nonnull Certificate getCert() throws CertificateException, IOException
+    public @Nonnull X509Certificate getCert() throws CertificateException, IOException
     {
         return cert;
     }

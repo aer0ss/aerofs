@@ -25,9 +25,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 
 public abstract class SecTestUtil
@@ -58,7 +58,7 @@ public abstract class SecTestUtil
         }
     }
 
-    public static Certificate generateCertificate(String issuerName, String subjectName, PublicKey subjectPublicKey, PrivateKey caPrivateKey, SecureRandom secureRandom, boolean isCA)
+    public static X509Certificate generateCertificate(String issuerName, String subjectName, PublicKey subjectPublicKey, PrivateKey caPrivateKey, SecureRandom secureRandom, boolean isCA)
             throws IOException, OperatorCreationException, CertificateException
     {
         Preconditions.checkArgument(!issuerName.isEmpty());
@@ -89,7 +89,8 @@ public abstract class SecTestUtil
         X509CertificateHolder certificateHolder = certificateBuilder.build(signer);
 
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        Certificate certificate = certificateFactory.generateCertificate(new ByteArrayInputStream(certificateHolder.getEncoded()));
+        X509Certificate certificate = (X509Certificate)certificateFactory.generateCertificate(
+                new ByteArrayInputStream(certificateHolder.getEncoded()));
 
         l.trace("generated certificate:{}", certificate);
 

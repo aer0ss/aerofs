@@ -5,10 +5,11 @@
 package com.aerofs.daemon.transport.xmpp.signalling;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.ISignallingService;
+import com.aerofs.daemon.transport.ISignallingServiceListener;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
@@ -43,12 +44,10 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
     private volatile XMPPConnection xmppConnection;
     private ISignallingServiceListener client;
 
-    public SignallingService(String transportId, String xmppServerDomain, XMPPConnectionService xmppConnectionService)
+    public SignallingService(String transportId, String xmppServerDomain)
     {
         this.transportId = transportId;
         this.xmppServerDomain = xmppServerDomain;
-
-        xmppConnectionService.addListener(this); // FIXME (AG): bad to leak this out via the constructor
     }
 
     @Override
@@ -61,7 +60,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
     @Override
     public void sendSignallingMessage(DID did, byte[] msg, ISignallingServiceListener client)
     {
-        OutArg<Integer> len = new OutArg<Integer>(0);
+        OutArg<Integer> len = new OutArg<>(0);
         String enc = encodeBody(len, msg);
 
         final Message xmsg = new Message(did2FormAJid(did, xmppServerDomain, transportId), Message.Type.normal);
@@ -123,7 +122,7 @@ public final class SignallingService implements ISignallingService, IXMPPConnect
             {
                 try {
                     DID did = JabberID.jid2did(m.getFrom(), xmppServerDomain);
-                    OutArg<Integer> wirelen = new OutArg<Integer>(0);
+                    OutArg<Integer> wirelen = new OutArg<>(0);
                     byte[] decoded = decodeBody(did, wirelen, m.getBody(), null);
                     if (decoded == null) return;
                     client.processIncomingSignallingMessage(did, decoded);

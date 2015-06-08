@@ -13,9 +13,7 @@ import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -127,10 +125,8 @@ public class TransportRoutingLayer
     {
         l.debug("{} -> mc {},{}", sid, type, rpcid);
 
-        EOMaxcastMessage ev = new EOMaxcastMessage(sid, _mcfs.getNextMaxcastId(), os.toByteArray());
-        for (ITransport tp : _tps.getAll()) {
-            if (!tp.supportsMulticast()) continue;
-            tp.q().enqueueThrows(ev, TC.currentThreadPrio());
-        }
+        int mcid = _mcfs.getNextMaxcastId();
+        byte[] payload = os.toByteArray();
+        _tps.maxcastProviders().forEach(mc -> mc.sendPayload(sid, mcid, payload));
     }
 }

@@ -57,7 +57,6 @@ import java.util.List;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.HEARTBEAT_INTERVAL;
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
-import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
 import static com.aerofs.proto.Transport.PBStream.Type.BEGIN_STREAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -75,13 +74,13 @@ public class TCP implements ITransport, IAddressResolver
     private final int rank;
     private final ARP arp;
     private final TransportStats transportStats;
-    private final TCPStores stores;
+    public final TCPStores stores;
     private final Unicast unicast;
-    private final Multicast multicast;
+    public final Multicast multicast;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
     private final StreamManager streamManager;
     private final PresenceService presenceService = new PresenceService();
-    private final ChannelMonitor monitor;
+    public final ChannelMonitor monitor;
     private final LinkStateService linkStateService;
     private final PortRange portRange;
 
@@ -209,8 +208,7 @@ public class TCP implements ITransport, IAddressResolver
     public void init() throws Exception
     {
         // must be called *after* the Unicast object is initialized.
-        setupCommonHandlersAndListeners(dispatcher, stores, streamManager, unicast);
-        setupMulticastHandler(dispatcher, multicast);
+        setupCommonHandlersAndListeners(dispatcher, streamManager, unicast);
 
         multicast.init();
 
@@ -260,12 +258,6 @@ public class TCP implements ITransport, IAddressResolver
                 scheduler.schedule(this, HEARTBEAT_INTERVAL);
             }
         }, HEARTBEAT_INTERVAL);
-    }
-
-    @Override
-    public boolean supportsMulticast()
-    {
-        return true;
     }
 
     @Override

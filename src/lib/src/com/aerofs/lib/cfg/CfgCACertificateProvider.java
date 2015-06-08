@@ -5,15 +5,15 @@
 package com.aerofs.lib.cfg;
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import com.aerofs.base.ssl.ICertificateProvider;
 
 public class CfgCACertificateProvider implements ICertificateProvider
 {
     @Override
-    public Certificate getCert()
+    public X509Certificate getCert()
             throws IOException, CertificateException
     {
         return Cfg.cacert();

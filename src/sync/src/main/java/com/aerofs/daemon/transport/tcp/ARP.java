@@ -68,7 +68,7 @@ final class ARP
     /**
      * Removes an {@link ARPEntry}
      *
-     * @param did {@link com.aerofs.base.id.DID} of the peer whose ARPEntry should be removed
+     * @param did {@link com.aerofs.ids.DID} of the peer whose ARPEntry should be removed
      */
     void remove(DID did)
     {

@@ -32,9 +32,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 
 /**
@@ -69,7 +69,7 @@ public class SimpleSslEngineFactory
         return generator.generateKeyPair();
     }
 
-    private static Certificate generateCertificate(String issuerName, String subjectName,
+    private static X509Certificate generateCertificate(String issuerName, String subjectName,
             PublicKey subjectPublicKey, PrivateKey caPrivateKey, SecureRandom secureRandom,
             boolean isCA) throws IOException, CertificateException, OperatorCreationException
     {
@@ -101,7 +101,7 @@ public class SimpleSslEngineFactory
         X509CertificateHolder certificateHolder = certificateBuilder.build(signer);
 
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        return certificateFactory
+        return (X509Certificate)certificateFactory
                 .generateCertificate(new ByteArrayInputStream(certificateHolder.getEncoded()));
     }
 
@@ -115,17 +115,17 @@ public class SimpleSslEngineFactory
         }
         @Nonnull
         @Override
-        public Certificate getCert() throws CertificateException, IOException
+        public X509Certificate getCert() throws CertificateException, IOException
         {
             return caCertificate;
         }
 
-        private final Certificate caCertificate;
+        private final X509Certificate caCertificate;
     }
 
     static class KeyProvider implements IPrivateKeyProvider
     {
-        KeyProvider(KeyPair keyPair, Certificate cert) {
+        KeyProvider(KeyPair keyPair, X509Certificate cert) {
             _keyPair = keyPair;
             _cert = cert;
         }
@@ -138,13 +138,13 @@ public class SimpleSslEngineFactory
 
         @Nonnull
         @Override
-        public Certificate getCert() throws CertificateException, IOException
+        public X509Certificate getCert() throws CertificateException, IOException
         {
             return _cert;
         }
 
         private KeyPair _keyPair;
-        private Certificate _cert;
+        private X509Certificate _cert;
     }
 
     private String _cert;

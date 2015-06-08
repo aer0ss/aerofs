@@ -784,7 +784,7 @@ public abstract class BaseSecUtil
      * @throws java.security.cert.CertificateException
      * @throws IOException
      */
-    public static Certificate newCertificateFromFile(String certFilename)
+    public static X509Certificate newCertificateFromFile(String certFilename)
             throws CertificateException, IOException
     {
         InputStream in = new FileInputStream(certFilename);
@@ -798,7 +798,7 @@ public abstract class BaseSecUtil
      * @throws CertificateException
      * @throws IOException
      */
-    public static Certificate newCertificateFromString(String certData)
+    public static X509Certificate newCertificateFromString(String certData)
             throws CertificateException, IOException
     {
         return newCertificateFromStream(new ByteArrayInputStream(certData.getBytes()));
@@ -810,12 +810,12 @@ public abstract class BaseSecUtil
      * @throws java.security.cert.CertificateException
      * @throws IOException
      */
-    public static Certificate newCertificateFromStream(InputStream in)
+    public static X509Certificate newCertificateFromStream(InputStream in)
             throws CertificateException, IOException
     {
         try {
             CertificateFactory cf = CertificateFactory.getInstance(CERTIFICATE_TYPE);
-            return cf.generateCertificate(in);
+            return (X509Certificate)cf.generateCertificate(in);
         } finally {
             in.close();
         }

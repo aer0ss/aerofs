@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.xmpp.multicast;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.ids.DID;
@@ -12,9 +13,8 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.daemon.transport.lib.IStores;
+import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
@@ -49,7 +49,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 // FIXME: This class has potential for bad state mismatches with XMPPConnectionService (and it's
 // own callers who may do things like updateStores() before we are finished handling a connect
 // notifier). Refactor this so its lifetime is scoped to a particular xmpp connection?
-public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionServiceListener
+public final class XMPPMulticast implements IMaxcast, IPresenceSource, IXMPPConnectionServiceListener
 {
     private static final Logger l = Loggers.getLogger(XMPPMulticast.class);
 
@@ -57,28 +57,22 @@ public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionSe
     private final Map<SID, MultiUserChat> mucs = Maps.newTreeMap();
     private final Set<SID> allStores = Sets.newTreeSet();
     private final DID localdid;
-    private final String xmppTransportId;
     private final String xmppServerDomain;
     private final MaxcastFilterReceiver maxcastFilterReceiver;
     private final XMPPConnectionService xmppConnectionService;
-    private final ITransport transport;
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
 
     public XMPPMulticast(
             DID localDid,
-            String xmppTransportId,
             String xmppServerDomain,
             MaxcastFilterReceiver maxcastFilterReceiver,
             XMPPConnectionService xmppConnectionService,
-            ITransport transport,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink)
     {
         this.localdid = localDid;
-        this.xmppTransportId = xmppTransportId;
         this.xmppServerDomain = xmppServerDomain;
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.xmppConnectionService = xmppConnectionService;
-        this.transport = transport;
         this.outgoingEventSink = outgoingEventSink;
     }
 
@@ -136,14 +130,13 @@ public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionSe
 
     @Override
     public void sendPayload(SID sid, int mcastid, byte[] bs)
-            throws XMPPException
     {
         try {
             OutArg<Integer> len = new OutArg<>();
             getMUC(sid).sendMessage(XMPPUtilities.encodeBody(len, mcastid, bs));
             l.debug("send mc id:{} s:{}", mcastid, sid);
-        } catch (IllegalStateException e) {
-            throw new XMPPException(e);
+        } catch (Exception e) {
+            l.warn("mc {} {}", sid, mcastid, BaseLogUtil.suppress(e));
         }
     }
 
@@ -156,7 +149,8 @@ public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionSe
         history.setMaxChars(0);
 
         try {
-            muc.join(JabberID.getMUCRoomNickname(localdid, xmppTransportId), null, history, SmackConfiguration.getPacketReplyTimeout());
+            // TODO: remove transport id from JID
+            muc.join(JabberID.getMUCRoomNickname(localdid, "z"), null, history, SmackConfiguration.getPacketReplyTimeout());
             muc.addMessageListener(packet -> {
                 Message msg = (Message) packet;
                 if (msg.getBody() == null) {
@@ -204,7 +198,8 @@ public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionSe
         // A null byte stream is returned if the packet is to be filtered away
         if (bs == null) return;
 
-        Endpoint ep = new Endpoint(transport, did);
+        // TODO: mock transport for maxcast messages?
+        Endpoint ep = new Endpoint(null, did);
 
         ByteArrayInputStream is = new ByteArrayInputStream(bs);
         recvMessage(ep, is, wirelen.get());
@@ -243,7 +238,7 @@ public final class XMPPMulticast implements IMaxcast, IStores, IXMPPConnectionSe
     }
 
     @Override
-    public void updateStores(SID[] sidsAdded, SID[] sidsRemoved)
+    public void updateInterest(SID[] sidsAdded, SID[] sidsRemoved)
     {
         for (SID sid : sidsAdded) {
             try {

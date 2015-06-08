@@ -24,7 +24,7 @@ import java.security.cert.X509Certificate;
 public final class PrivateKeyProvider implements IPrivateKeyProvider
 {
     private final KeyPair keyPair;
-    private final Certificate certificate;
+    private final X509Certificate certificate;
 
     public PrivateKeyProvider(SecureRandom secureRandom, String subjectName, String caName, Certificate caCertificate, PrivateKey caPrivateKey)
             throws CertificateException, OperatorCreationException, IOException, NoSuchAlgorithmException, InvalidAlgorithmParameterException // [sigh] definitely bad practice
@@ -32,7 +32,7 @@ public final class PrivateKeyProvider implements IPrivateKeyProvider
         this.keyPair = SecTestUtil.generateKeyPair(secureRandom);
         this.certificate = SecTestUtil.generateCertificate(caName, subjectName, keyPair.getPublic(), caPrivateKey, secureRandom, false);
 
-        Preconditions.checkState(BaseSecUtil.signingPathExists((X509Certificate)certificate, (X509Certificate)caCertificate));
+        Preconditions.checkState(BaseSecUtil.signingPathExists(certificate, (X509Certificate)caCertificate));
     }
 
     @Nonnull
@@ -44,7 +44,7 @@ public final class PrivateKeyProvider implements IPrivateKeyProvider
 
     @Nonnull
     @Override
-    public Certificate getCert()
+    public X509Certificate getCert()
     {
         return certificate;
     }

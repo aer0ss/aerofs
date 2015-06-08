@@ -4,14 +4,13 @@
 
 package com.aerofs.daemon.transport.zephyr;
 
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.ISignallingService;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
-import com.aerofs.daemon.transport.xmpp.multicast.XMPPMulticast;
 import com.aerofs.daemon.transport.presence.ZephyrPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -22,9 +21,6 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
-import com.aerofs.daemon.transport.xmpp.presence.XMPPPresenceProcessor;
-import com.aerofs.daemon.transport.xmpp.signalling.SignallingService;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.Scheduler;
@@ -38,7 +34,6 @@ import com.google.common.collect.Sets;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
-import org.jivesoftware.smack.SASLAuthentication;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -48,7 +43,6 @@ import java.util.Collection;
 import java.util.Set;
 
 import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupCommonHandlersAndListeners;
-import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.setupMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode.TWOWAY;
@@ -69,16 +63,13 @@ public final class Zephyr implements ITransport
     private final Scheduler scheduler;
 
     private final StreamManager streamManager;
-    private final XMPPMulticast XMPPMulticast;
-    private final XMPPConnectionService xmppConnectionService;
 
     private final InetSocketAddress zephyrAddress;
     private final ZephyrConnectionService zephyrConnectionService;
 
     private final TransportStats transportStats = new TransportStats();
-    private final ChannelMonitor monitor;
-
-    private boolean multicastEnabled = false;
+    public final ChannelMonitor monitor;
+    public final ZephyrPresence presence;
 
     public Zephyr(
             UserID localid,
@@ -88,25 +79,19 @@ public final class Zephyr implements ITransport
             int rank,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             LinkStateService linkStateService,
-            MaxcastFilterReceiver maxcastFilterReceiver,
             SSLEngineFactory clientSSLEngineFactory,
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             Timer timer,
-            String xmppServerDomain,
             long heartbeatInterval,
             int maxFailedHeartbeats,
             long zephyrHandshakeTimeout,
-            InetSocketAddress zephyrAddress,
+            ZephyrParams zephyrParams,
             Proxy proxy,
             IRoundTripTimes roundTripTimes,
-            XMPPConnectionService xmppConnectionService)
+            ISignallingService signallingService)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
-
-        // this is required to avoid a NullPointerException during authentication
-        // see http://www.igniterealtime.org/community/thread/35976
-        SASLAuthentication.supportSASLMechanism("PLAIN", 0);
 
         this.dispatcher = new EventDispatcher();
         this.transportEventQueue = new TransportEventQueue(id, this.dispatcher);
@@ -117,17 +102,11 @@ public final class Zephyr implements ITransport
         this.rank = rank;
         this.localdid = localdid;
 
-        this.xmppConnectionService = xmppConnectionService;
-
-        this.XMPPMulticast = new XMPPMulticast(localdid, id, xmppServerDomain, maxcastFilterReceiver,
-                xmppConnectionService, this, outgoingEventSink);
         PresenceService presenceService = new PresenceService();
 
-
-        SignallingService signallingService = new SignallingService(id, xmppServerDomain, xmppConnectionService);
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, outgoingEventSink, streamManager, TWOWAY);
-        this.zephyrAddress = zephyrAddress;
+        this.zephyrAddress = zephyrParams.serverAddress;
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid,
                 localdid,
@@ -151,38 +130,19 @@ public final class Zephyr implements ITransport
                 roundTripTimes);
 
         this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
+        this.presence = new ZephyrPresence(this, outgoingEventSink);
 
-        // FIXME: creating the XMPPPresenceProcessor inside Zephyr seems weird
-        // XMPPServiceConnection is created before the transports for example
-        XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this,
-                outgoingEventSink, monitor, monitor);
-        presenceService.addListener(xmppPresenceProcessor);
         presenceService.addListener(monitor);
-
-        // WARNING: it is very important that XMPPPresenceProcessor listen to XMPPConnectionService
-        // _before_ XMPPMulticast. The reason is that XMPPMulticast will join the chat rooms and this will trigger
-        // sending the presence information. So if we add XMPPMulticast as a listener first, the presence
-        // information will already be sent by the time the presence manager registers to get them.
-        xmppConnectionService.addListener(xmppPresenceProcessor);
-        xmppConnectionService.addListener(XMPPMulticast);
+        presenceService.addListener(presence);
 
         l.debug("{}: enabling multicast", id());
-
-        multicastEnabled = true;
-        setupMulticastHandler(dispatcher, XMPPMulticast);
-    }
-
-    @Override
-    public boolean supportsMulticast()
-    {
-        return multicastEnabled;
     }
 
     @Override
     public void init()
             throws Exception
     {
-        setupCommonHandlersAndListeners(dispatcher, XMPPMulticast, streamManager, zephyrConnectionService);
+        setupCommonHandlersAndListeners(dispatcher, streamManager, zephyrConnectionService);
         zephyrConnectionService.init();
     }
 
@@ -190,7 +150,6 @@ public final class Zephyr implements ITransport
     public void start()
     {
         transportEventQueue.start();
-        xmppConnectionService.start();
         zephyrConnectionService.start();
     }
 
@@ -198,7 +157,6 @@ public final class Zephyr implements ITransport
     public void stop()
     {
         zephyrConnectionService.stop();
-        xmppConnectionService.stop();
         scheduler.shutdown();
         transportEventQueue.stop();
     }
@@ -268,21 +226,6 @@ public final class Zephyr implements ITransport
     private ZephyrDiagnostics getDiagnostics()
     {
         ZephyrDiagnostics.Builder diagnostics = ZephyrDiagnostics.newBuilder();
-
-        // xmpp
-
-        ServerStatus.Builder xmppServerStatus = ServerStatus
-                .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
-
-        try {
-            xmppServerStatus.setReachable(xmppConnectionService.isReachable());
-        } catch (IOException e) {
-            xmppServerStatus.setReachable(false);
-            xmppServerStatus.setReachabilityError(getReachabilityErrorString(xmppServerStatus, e));
-        }
-
-        diagnostics.setXmppServer(xmppServerStatus);
 
         // zephyr
 

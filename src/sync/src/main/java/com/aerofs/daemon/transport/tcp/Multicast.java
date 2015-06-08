@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcp;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
@@ -90,15 +91,11 @@ class Multicast implements IMaxcast, ILinkStateListener
     void init() throws IOException
     {
         // send offline notification on exiting
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run()
-            {
-                try {
-                    sendControlMessage(newGoOfflineMessage());
-                } catch (IOException e) {
-                    l.warn("error sending offline notification. ignored" + e);
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                sendControlMessage(newGoOfflineMessage());
+            } catch (IOException e) {
+                l.warn("error sending offline notification. ignored" + e);
             }
         }));
     }
@@ -153,13 +150,8 @@ class Multicast implements IMaxcast, ILinkStateListener
 
                 l.info("lsc add mc {}", iface.getName());
 
-                new Thread(TransportThreadGroup.get(), new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        thdRecv(s);
-                    }
-                }, "m-" + iface.getName()).start();
+                new Thread(TransportThreadGroup.get(), () -> thdRecv(s), "m-" + iface.getName())
+                        .start();
 
             } catch (IOException e) {
                 l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{}",
@@ -240,6 +232,7 @@ class Multicast implements IMaxcast, ILinkStateListener
 
                 // ignore messages from myself
                 DID did = new DID(BaseUtil.fromPB(h.getTcpMulticastDeviceId()));
+                l.info("mc recv {} {}", did, h.getType());
                 if (did.equals(localdid)) continue;
 
                 if (h.getType() == Type.DATAGRAM)
@@ -270,7 +263,6 @@ class Multicast implements IMaxcast, ILinkStateListener
 
     @Override
     public void sendPayload(SID sid, int mcastid, byte[] buf)
-            throws IOException
     {
         PBTPHeader h = PBTPHeader
                 .newBuilder()
@@ -278,7 +270,11 @@ class Multicast implements IMaxcast, ILinkStateListener
                 .setMcastId(mcastid)
                 .setTcpMulticastDeviceId(BaseUtil.toPB(localdid))
                 .build();
-        send(h, buf);
+        try {
+            send(h, buf);
+        } catch (IOException e) {
+            l.warn("mc {} {}", sid, mcastid, BaseLogUtil.suppress(e, IOException.class));
+        }
     }
 
     void sendControlMessage(PBTPHeader h) throws IOException
@@ -290,8 +286,7 @@ class Multicast implements IMaxcast, ILinkStateListener
     private synchronized void send(PBTPHeader h, byte[] buf) throws IOException
     {
         CRCByteArrayOutputStream cos = new CRCByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(cos);
-        try {
+        try (DataOutputStream dos = new DataOutputStream(cos)) {
             dos.writeInt(LibParam.CORE_PROTOCOL_VERSION);
             dos.flush();
 
@@ -317,7 +312,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                         sendingAddress = inetAddresses.nextElement();
 
                         try {
-                            l.trace("attempt mc send iface:{} send_addr:{} dest_addr:{} t:{}",
+                            l.debug("attempt mc send iface:{} send_addr:{} dest_addr:{} t:{}",
                                     iface, sendingAddress, pkt.getSocketAddress(), h.getType().name());
 
                             s.setInterface(sendingAddress);
@@ -331,8 +326,6 @@ class Multicast implements IMaxcast, ILinkStateListener
                     }
                 }
             }
-        } finally {
-            dos.close();
         }
     }
 
@@ -341,7 +334,7 @@ class Multicast implements IMaxcast, ILinkStateListener
      *
      *
      * @param rem {@link java.net.InetAddress} of the remote peer from which the message
-     * @param did {@link com.aerofs.base.id.DID} from which the message was received
+     * @param did {@link com.aerofs.ids.DID} from which the message was received
      * @param hdr {@link com.aerofs.proto.Transport.PBTPHeader} message that was received
      * @return PBTPHeader response to be sent as a control message to the remote peer
      * @throws com.aerofs.base.ex.ExProtocolError for an unrecognized control message

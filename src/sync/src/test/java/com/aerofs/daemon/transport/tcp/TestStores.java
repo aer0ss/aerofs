@@ -116,7 +116,7 @@ public final class TestStores extends AbstractTest
     @Test
     public void shouldNotSendPresenceIfPeerWithUniterestingStoresComesOnline()
     {
-        stores.updateStores(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
+        stores.updateInterest(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
 
         deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
@@ -131,7 +131,7 @@ public final class TestStores extends AbstractTest
 
         arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
-        stores.updateStores(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
+        stores.updateInterest(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
 
@@ -145,7 +145,7 @@ public final class TestStores extends AbstractTest
             throws Exception
     {
         deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
-        stores.updateStores(new SID[]{SID_00}, new SID[]{}); // only interested in SID_00
+        stores.updateInterest(new SID[]{SID_00}, new SID[]{}); // only interested in SID_00
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
 
@@ -163,7 +163,7 @@ public final class TestStores extends AbstractTest
     {
         deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
-        stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
+        stores.updateInterest(new SID[]{SID_00, SID_01}, new SID[]{});
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);
 
@@ -182,7 +182,7 @@ public final class TestStores extends AbstractTest
     {
         deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
-        stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
+        stores.updateInterest(new SID[]{SID_00, SID_01}, new SID[]{});
 
         updateFilterForRemotePeer(REMOTE_PEER_00, SID_00, SID_01);
 
@@ -199,7 +199,7 @@ public final class TestStores extends AbstractTest
     public void shouldAddEntryToARPAndNotifyCoreWhenPongIsReceived() throws ExDeviceUnavailable
     {
         deviceOnline(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
-        stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
+        stores.updateInterest(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
 
         PBTCPPong pbpong = newPBTCPPong(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS.getPort(), SID_00, SID_01, SID_02); // told of interest in 3
         stores.processPong(REMOTE_PEER_00_ADDRESS.getAddress(), REMOTE_PEER_00, pbpong);
@@ -217,7 +217,7 @@ public final class TestStores extends AbstractTest
     @Test
     public void shouldAddEntryToARPAndWaitToNotifyCoreUntilDeviceIsOnline() throws Exception
     {
-        stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
+        stores.updateInterest(new SID[]{SID_00, SID_01}, new SID[]{}); // only interested in two stores
 
         PBTCPPong pbpong = newPBTCPPong(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS.getPort(), SID_00, SID_01, SID_02); // told of interest in 3
         stores.processPong(REMOTE_PEER_00_ADDRESS.getAddress(), REMOTE_PEER_00, pbpong);
@@ -242,7 +242,7 @@ public final class TestStores extends AbstractTest
     {
         // core is initially interested only in SID_00
 
-        stores.updateStores(new SID[]{SID_00}, new SID[]{});
+        stores.updateInterest(new SID[]{SID_00}, new SID[]{});
 
         // remote peers only have SID 01 and 02
 
@@ -257,7 +257,7 @@ public final class TestStores extends AbstractTest
         // REMOTE_PEER_00: +(SID_01, SID_02)
         // REMOTE_PEER_01: +(SID_01, SID_02)
 
-        stores.updateStores(new SID[]{SID_01, SID_02}, new SID[]{});
+        stores.updateInterest(new SID[]{SID_01, SID_02}, new SID[]{});
 
         // at some point REMOTE_PEER_01 loses SID_02 and notifies us via a filter update
         // this will trigger the following presence notifications: (B) <==
@@ -288,7 +288,7 @@ public final class TestStores extends AbstractTest
     {
         // we're interested in SID_00, SID_01, SID_02
 
-        stores.updateStores(new SID[]{SID_00, SID_01, SID_02}, new SID[]{});
+        stores.updateInterest(new SID[]{SID_00, SID_01, SID_02}, new SID[]{});
 
         // remote peers come online
         // this will trigger the following notifications (A) <==
@@ -305,7 +305,7 @@ public final class TestStores extends AbstractTest
         // this will update internal state, but we will not send presence to the core because
         // presumably the core wanted this to happen
 
-        stores.updateStores(new SID[]{}, new SID[]{SID_01});
+        stores.updateInterest(new SID[]{}, new SID[]{SID_01});
 
         // now, start the verification
 

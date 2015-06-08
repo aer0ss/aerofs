@@ -172,7 +172,7 @@ public class Cfg
             throws CertificateException, IOException
     {
         String certFileName = absRTRoot() + File.separator + LibParam.DEVICE_CERT;
-        _cert = (X509Certificate)BaseSecUtil.newCertificateFromFile(certFileName);
+        _cert = BaseSecUtil.newCertificateFromFile(certFileName);
     }
 
     /**
@@ -615,7 +615,7 @@ public class Cfg
         if (_cacert == null) {
             InputStream in = new ByteArrayInputStream(DeploymentConfig.BASE_CA_CERTIFICATE.getBytes());
 
-            _cacert = (X509Certificate) BaseSecUtil.newCertificateFromStream(in);
+            _cacert = BaseSecUtil.newCertificateFromStream(in);
         }
         return _cacert;
     }

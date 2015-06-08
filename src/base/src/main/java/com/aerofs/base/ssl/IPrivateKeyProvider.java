@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * An interface to provide private keys and certificates.
@@ -16,5 +17,5 @@ import java.security.cert.CertificateException;
 public interface IPrivateKeyProvider
 {
     public @Nonnull PrivateKey getPrivateKey() throws IOException;
-    public @Nonnull Certificate getCert() throws CertificateException, IOException;
+    public @Nonnull X509Certificate getCert() throws CertificateException, IOException;
 }

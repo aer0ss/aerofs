@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.debug;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
@@ -20,50 +19,34 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
+import com.aerofs.daemon.transport.xmpp.XMPPParams;
+import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.*;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertificateProvider;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
-import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
-import java.net.Proxy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Client;
-import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
-import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
-import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
-import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.NioChannelFactories.getServerChannelFactory;
-import static com.aerofs.lib.event.Prio.LO;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -94,7 +77,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
     ));
     private final TC tc = new TC(queue, disp, sched, tokenManager, () -> {});
 
-    // PROG RTROOT [t|z|j] ([send|stream] <did>)*
+    // PROG RTROOT [t|z] ([send|stream] <did>)*
     @Override
     public void launch_(String rtRoot, String prog, String[] args)
             throws Exception
@@ -123,16 +106,21 @@ public final class Pump implements IProgram, IUnicastInputLayer
 
         iss = new IncomingStreams();
 
-        transport = newTransport(args[0]);
+        Transports tps = newTransports(args[0]);
 
         // start transport
-        transport.init();
-        transport.start();
+        tps.init_();
+        tps.start_();
         linkStateService.start();
 
         // join the root store, so that I can actually receive presence info
 
-        transport.q().enqueueBlocking(new EOUpdateStores(new SID[]{Cfg.rootSID()}, new SID[]{}), LO);
+        if (tps.getAll().size() != 1) {
+            throw new ExUnsupportedTransport(args[0]);
+        }
+        transport = tps.getAll().iterator().next();
+        tps.presenceSources()
+                .forEach(ps -> ps.updateInterest(new SID[]{Cfg.rootSID()}, new SID[]{}));
 
         // start event handling
         disp.setDefaultHandler_((incoming, prio) -> {
@@ -149,67 +137,30 @@ public final class Pump implements IProgram, IUnicastInputLayer
         synchronized (obj) { ThreadUtil.waitUninterruptable(obj); }
     }
 
-    private ITransport newTransport(String transportId)
-            throws ExUnsupportedTransport
-    {
-        TransportFactory transportFactory = newTransportFactory();
-
-        if (transportId.equalsIgnoreCase("t")) {
-            return transportFactory.newTransport(LANTCP);
-        } else if (transportId.equalsIgnoreCase("z")) {
-            return transportFactory.newTransport(ZEPHYR);
-        } else {
-            throw new ExUnsupportedTransport(transportId);
-        }
-    }
-
-    private TransportFactory newTransportFactory()
+    private Transports newTransports(String transportId) throws ExUnsupportedTransport
     {
         CfgLocalUser localid = new CfgLocalUser();
         CfgLocalDID localdid = new CfgLocalDID();
-        Timer timer = TimerUtil.getGlobalTimer();
-        MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
         CfgCACertificateProvider trustedCA = new CfgCACertificateProvider();
-        SSLEngineFactory clientSslEngineFactory = new SSLEngineFactory(Client, Desktop, keyProvider, trustedCA, null);
-        SSLEngineFactory serverSslEngineFactory = new SSLEngineFactory(Server, Desktop, keyProvider, trustedCA, null);
-        ClientSocketChannelFactory clientChannelFactory = getClientChannelFactory();
-        ServerSocketChannelFactory serverChannelFactory = getServerChannelFactory();
-        IRoundTripTimes roundTripTimes = new RoundTripTimes();
-        XMPPConnectionService xmppConnectionService = new XMPPConnectionService(
-                localdid.get(),
-                BaseParam.XMPP.SERVER_ADDRESS,
-                BaseParam.XMPP.getServerDomain(),
-                TransportFactory.TransportType.ZEPHYR.toString(),
-                5 * C.SEC,
-                3,
-                LibParam.EXP_RETRY_MIN_DEFAULT,
-                LibParam.EXP_RETRY_MAX_DEFAULT,
-                linkStateService
-        );
 
-        return new TransportFactory(
-                localid.get(),
-                localdid.get(),
-                Cfg.timeout(),
-                false,
-                BaseParam.XMPP.getServerDomain(),
-                DaemonParam.DEFAULT_CONNECT_TIMEOUT,
-                DaemonParam.HEARTBEAT_INTERVAL,
-                DaemonParam.MAX_FAILED_HEARTBEATS,
-                DaemonParam.Zephyr.HANDSHAKE_TIMEOUT,
-                BaseParam.Zephyr.SERVER_ADDRESS,
-                Proxy.NO_PROXY,
-                timer,
-                queue,
-                linkStateService,
-                maxcastFilterReceiver,
-                clientChannelFactory,
-                serverChannelFactory,
-                clientSslEngineFactory,
-                serverSslEngineFactory,
-                roundTripTimes,
-                xmppConnectionService);
+        CfgEnabledTransports enabled = new CfgEnabledTransports() {
+            @Override public boolean isZephyrEnabled() {
+                return transportId.equalsIgnoreCase("t");
+            }
+            @Override public boolean isTcpEnabled() {
+                return transportId.equalsIgnoreCase("z");
+            }
+        };
+
+        return new Transports(localid, localdid, enabled, new CfgTimeout(),
+                new CfgMulticastLoopback(), new XMPPParams(),
+                new ZephyrParams(), TimerUtil.getGlobalTimer(), queue,
+                new MaxcastFilterReceiver(), linkStateService,
+                new ClientSSLEngineFactory(keyProvider, trustedCA),
+                new ServerSSLEngineFactory(keyProvider, trustedCA),
+                getClientChannelFactory(), getServerChannelFactory(),
+                new RoundTripTimes());
     }
 
     @Override

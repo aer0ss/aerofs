@@ -4,6 +4,9 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.TransportResource;
+import com.aerofs.defects.AutoDefect;
+import com.aerofs.defects.DefectFactory;
+import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.LibParam;
 import com.aerofs.testlib.LoggerSetup;
 import org.jboss.netty.channel.ChannelException;
@@ -19,11 +22,13 @@ import java.util.Properties;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class TestTCPStartup {
     static
     {
         ConfigurationProperties.setProperties(new Properties());
+        MockDefects.init(mock(DefectFactory.class), mock(AutoDefect.class));
         LoggerSetup.init();
     }
 

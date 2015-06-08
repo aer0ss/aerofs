@@ -6,7 +6,7 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
-import com.aerofs.daemon.transport.lib.IStores;
+import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.PresenceService;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * FIXME (AG): We equate interest with availability here (i.e. interested in store means we have it)
  */
-class TCPStores implements IStores, IDevicePresenceListener
+class TCPStores implements IPresenceSource, IDevicePresenceListener
 {
     private static final int FILTER_SEQ_INVALID = -1;
     private final PresenceService _presenceService;
@@ -204,7 +204,7 @@ class TCPStores implements IStores, IDevicePresenceListener
      */
     // FIXME (AG): we don't send presence to the core if we delete a store; this seems brittle
     @Override
-    public synchronized void updateStores(SID[] addedSids, SID[] removedSids)
+    public synchronized void updateInterest(SID[] addedSids, SID[] removedSids)
     {
         l.debug("update stores add:{} del:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
 
@@ -217,7 +217,7 @@ class TCPStores implements IStores, IDevicePresenceListener
     /**
      * Uses the updated list of stores the core is interested in to update local data structures
      * related to filters {@code _sid2filterIndex} {@code _filter}. This <em>must</em> be called
-     * by {@link #updateStores(SID[], SID[])} otherwise
+     * by {@link #updateInterest(SID[], SID[])} otherwise
      * remote peers will never be notified about our interest changes.
      */
     private Map<SID, int[]> updateFilter_(SID[] addedSids, SID[] removedSids)
@@ -245,7 +245,7 @@ class TCPStores implements IStores, IDevicePresenceListener
     }
 
     /**
-     * Called by {@link #updateStores(SID[], SID[])}.
+     * Called by {@link #updateInterest(SID[], SID[])}.
      * {@code updateStores} is called by the core when it changes the SIDs that it's interested in.
      * When that happens there are many devices that may have that store. This method checks all
      * devices we're currently aware of and sends presence updates to the core for every device that

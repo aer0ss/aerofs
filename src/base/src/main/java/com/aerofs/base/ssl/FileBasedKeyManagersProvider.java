@@ -48,6 +48,6 @@ public class FileBasedKeyManagersProvider implements IPrivateKeyProvider
     public X509Certificate getCert()
             throws CertificateException, IOException
     {
-        return (X509Certificate) newCertificateFromFile(_crtFile);
+        return newCertificateFromFile(_crtFile);
     }
 }

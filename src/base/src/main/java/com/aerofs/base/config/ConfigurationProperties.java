@@ -104,7 +104,7 @@ public class ConfigurationProperties
             cacert = defaultValue;
         } else {
             try {
-                cacert = (X509Certificate) BaseSecUtil.newCertificateFromString(cacertString);
+                cacert = BaseSecUtil.newCertificateFromString(cacertString);
             } catch (CertificateException e) { // If certificate is garbage, bail.
                 Throwables.propagate(e);
             } catch (IOException e) {

@@ -4,19 +4,13 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.daemon.core.CoreExponentialRetry;
-import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Diagnostics;
 import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
 import com.aerofs.proto.Diagnostics.Store.Builder;
@@ -33,10 +27,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,22 +54,16 @@ public class Devices implements IDiagnosable
     private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();
 
     private final Transports _tps;
-    private final CoreScheduler _sched;
-    private final ExponentialRetry _cer;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public Devices(
-            CoreScheduler sched,
             Transports tps,
-            CoreExponentialRetry cer,
             MapSIndex2Store sidx2s,
             IMapSIndex2SID sidx2sid)
     {
-        _sched = sched;
         _tps = tps;
-        _cer = cer;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
     }
@@ -232,27 +218,7 @@ public class Devices implements IDiagnosable
      */
     private void updateStoresForTransports_(final SID[] sidAdded, final SID[] sidRemoved)
     {
-        final Iterable<ITransport> tps = Lists.newArrayList(_tps.getAll());
-        final Callable<Void> callable = () -> {
-                Iterator<ITransport> it = tps.iterator();
-                while (it.hasNext()) {
-                    EOUpdateStores ev = new EOUpdateStores(sidAdded, sidRemoved);
-                    it.next().q().enqueueThrows(ev, TC.currentThreadPrio());
-                    // "exactly-once" semantics
-                    it.remove();
-                }
-                return null;
-            };
-
-        // run the task in a separate core context as this method may be called in a transaction
-        _sched.schedule(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                // FIXME: exp retry makes out-of-order notifications possible for the same store
-                _cer.retry("updateStores", callable);
-            }
-        }, 0);
+        _tps.presenceSources().forEach(ps -> ps.updateInterest(sidAdded, sidRemoved));
     }
 
     /**

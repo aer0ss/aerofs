@@ -82,7 +82,9 @@ public final class UnicastZephyrDevice
         StreamManager streamManager = new StreamManager(30 * C.SEC);
         TransportStats transportStats = new TransportStats();
 
-        SignallingService signallingService = new SignallingService("z", "arrowfs.org", xmppConnectionService);
+        SignallingService signallingService = new SignallingService("z", "arrowfs.org");
+        xmppConnectionService.addListener(signallingService);
+
         UnicastProxy workaround = new UnicastProxy();
         IPrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(secureRandom, BaseSecUtil.getCertificateCName(userID, did), mockCA.getCaName(), mockCA.getCACertificateProvider().getCert(), mockCA.getCaKeyPair().getPrivate());
         SSLEngineFactory clientSSLEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, privateKeyProvider, mockCA.getCACertificateProvider(), null);

@@ -7,12 +7,12 @@ package com.aerofs.base.ssl;
 import com.aerofs.base.BaseSecUtil;
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 public class FileBasedCertificateProvider implements ICertificateProvider
 {
-    private static Certificate _cacert;
+    private static X509Certificate _cacert;
     private final String _certFilename;
 
     public FileBasedCertificateProvider(String certFilename)
@@ -21,7 +21,7 @@ public class FileBasedCertificateProvider implements ICertificateProvider
     }
 
     @Override
-    public Certificate getCert() throws CertificateException, IOException
+    public X509Certificate getCert() throws CertificateException, IOException
     {
         if (_cacert == null) {
             _cacert = BaseSecUtil.newCertificateFromFile(_certFilename);

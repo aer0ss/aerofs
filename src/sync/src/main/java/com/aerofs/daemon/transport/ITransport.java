@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.daemon.lib.ITransferStat;
+import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
@@ -56,13 +57,6 @@ public interface ITransport extends ITransferStat, IPresenceLocator
      * @return <em>constant</em> ranking relative to siblings for the transport.
      */
     int rank();
-
-    /**
-     * Indicate whether multicast is supported by the transport implementation.
-     *
-     * @return true if multicast is supported, false otherwise
-     */
-    boolean supportsMulticast();
 
     /**
      * Return the transport event queue into which incoming transport

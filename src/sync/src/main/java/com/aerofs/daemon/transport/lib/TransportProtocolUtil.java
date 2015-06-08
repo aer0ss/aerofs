@@ -3,18 +3,14 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.transport.lib.handlers.HdMaxcastMessage;
 import com.aerofs.daemon.transport.lib.handlers.HdRxEndStream;
 import com.aerofs.daemon.transport.lib.handlers.HdUnicastMessage;
-import com.aerofs.daemon.transport.lib.handlers.HdUpdateStores;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
-import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -281,19 +277,12 @@ public abstract class TransportProtocolUtil
 
     public static void setupCommonHandlersAndListeners(
             EventDispatcher dispatcher,
-            IStores stores,
             StreamManager streamManager,
             IUnicast unicast)
     {
         dispatcher
             .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(unicast))
-            .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager))
-            .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores));
-    }
-
-    public static void setupMulticastHandler(EventDispatcher dispatcher, IMaxcast maxcast)
-    {
-        dispatcher.setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(maxcast));
+            .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager));
     }
 
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,

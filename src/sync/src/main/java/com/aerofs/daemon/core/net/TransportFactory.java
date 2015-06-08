@@ -4,7 +4,8 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
+import com.aerofs.daemon.transport.ISignallingService;
+import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -20,7 +21,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 
 public final class TransportFactory
@@ -64,12 +64,11 @@ public final class TransportFactory
     private final DID did;
     private final long streamTimeout;
     private final boolean listenToMulticastOnLoopback;
-    private final String xmppServerDomain;
     private final long channelConnectTimeout;
     private final long heartbeatInterval;
     private final int maxFailedHeartbeats;
     private final long zephyrHandshakeTimeout;
-    private final InetSocketAddress zephyrServerAddress;
+    private final ZephyrParams zephyrParams;
     private final Proxy proxy;
     private final Timer timer;
     private final BlockingPrioQueue<IEvent> transportEventSink;
@@ -80,19 +79,18 @@ public final class TransportFactory
     private final SSLEngineFactory serverSslEngineFactory;
     private final SSLEngineFactory clientSslEngineFactory;
     private final IRoundTripTimes roundTripTimes;
-    private final XMPPConnectionService xmppConnectionService;
+    private final ISignallingService signalling;
 
     public TransportFactory(
             UserID userID,
             DID did,
             long streamTimeout,
             boolean listenToMulticastOnLoopback,
-            String xmppServerDomain,
             long channelConnectTimeout,
             long hearbeatInterval,
             int maxFailedHeartbeats,
             long zephyrHandshakeTimeout,
-            InetSocketAddress zephyrServerAddress,
+            ZephyrParams zephyrParams,
             Proxy proxy,
             Timer timer,
             BlockingPrioQueue<IEvent> transportEventSink,
@@ -103,18 +101,17 @@ public final class TransportFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IRoundTripTimes roundTripTimes,
-            XMPPConnectionService xmppConnectionService)
+            ISignallingService signalling)
     {
         this.userID = userID;
         this.did = did;
         this.streamTimeout = streamTimeout;
         this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
-        this.xmppServerDomain = xmppServerDomain;
         this.channelConnectTimeout = channelConnectTimeout;
         this.heartbeatInterval = hearbeatInterval;
         this.maxFailedHeartbeats = maxFailedHeartbeats;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
-        this.zephyrServerAddress = zephyrServerAddress;
+        this.zephyrParams = zephyrParams;
         this.proxy = proxy;
         this.timer = timer;
         this.transportEventSink = transportEventSink;
@@ -125,7 +122,7 @@ public final class TransportFactory
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.roundTripTimes = roundTripTimes;
-        this.xmppConnectionService = xmppConnectionService;
+        this.signalling = signalling;
     }
 
     public ITransport newTransport(TransportType transportType, String transportId, int transportRank)
@@ -180,18 +177,16 @@ public final class TransportFactory
                 transportRank,
                 transportEventSink,
                 linkStateService,
-                maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
                 timer,
-                xmppServerDomain,
                 heartbeatInterval,
                 maxFailedHeartbeats,
                 zephyrHandshakeTimeout,
-                zephyrServerAddress,
+                zephyrParams,
                 proxy,
                 roundTripTimes,
-                xmppConnectionService);
+                signalling);
     }
 }

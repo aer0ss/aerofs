@@ -8,18 +8,14 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocationReceiver;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.daemon.transport.presence.ExInvalidPresenceLocation;
+import com.aerofs.daemon.transport.presence.IStoreInterestListener;
 import com.aerofs.daemon.transport.presence.PresenceLocationFactory;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.daemon.event.net.EIStoreAvailability;
-import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
 import com.google.common.collect.*;
 import com.google.gson.*;
 import org.jivesoftware.smack.XMPPConnection;
@@ -29,14 +25,12 @@ import org.jivesoftware.smack.packet.Presence;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.aerofs.base.id.JabberID.muc2sid;
 import static com.aerofs.base.id.JabberID.user2did;
-import static com.aerofs.lib.event.Prio.LO;
 import static com.aerofs.lib.log.LogUtil.suppress;
 
 /**
@@ -55,34 +49,29 @@ import static com.aerofs.lib.log.LogUtil.suppress;
  *
  * Oh, one more responsibility:  This class also feeds the multicast listener machinery.
  */
-public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListener, IDevicePresenceListener
+public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListener
 {
     private static final Logger l = Loggers.getLogger(XMPPPresenceProcessor.class);
 
     private final Multimap<DID, SID> multicastReachableDevices = TreeMultimap.create(); // protected by 'this' TODO (AG): should be SID => DID*
-    private final Set<DID> onlineDevices = Sets.newHashSet();
 
     private final DID localdid;
     private final String xmppServerDomain;
     private final IMulticastListener multicastListener;
-    private final String transportId;
-    private final ITransport transport;
-    private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
+    private final IStoreInterestListener storeInterestListener;
     private final IPresenceLocationReceiver presenceLocationReceiver;
 
     /**
      * Constructor
      */
-    public XMPPPresenceProcessor(DID localdid, String xmppServerDomain, ITransport transport,
-            IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
-            IMulticastListener multicastListener, IPresenceLocationReceiver presenceLocationReceiver)
+    public XMPPPresenceProcessor(DID localdid, String xmppServerDomain,
+            IMulticastListener multicastListener, IStoreInterestListener storeInterestListener,
+            IPresenceLocationReceiver presenceLocationReceiver)
     {
         this.localdid = localdid;
         this.xmppServerDomain = xmppServerDomain;
-        this.transportId = transport.id();
-        this.transport = transport;
-        this.outgoingEventSink = outgoingEventSink;
         this.multicastListener = multicastListener;
+        this.storeInterestListener = storeInterestListener;
         this.presenceLocationReceiver = presenceLocationReceiver;
     }
 
@@ -94,7 +83,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
                 try {
                     processPresence((Presence)packet, connection);
                 } catch (Exception e) {
-                    l.warn("{} fail process presence over {}", packet.getFrom(), transportId,
+                    l.warn("{} fail process presence", packet.getFrom(),
                             suppress(e, ExInvalidID.class));
                 }
             }
@@ -142,7 +131,8 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
         if (JabberID.isMobileUser(jidComponents[1])) return false;
         if (!JabberID.isMUCAddress(jidComponents, xmppServerDomain)) return false;
-        if (jidComponents.length == 3 && (jidComponents[2].compareToIgnoreCase(transportId) != 0)) return false;
+        // FIXME: shouldn't filter on transport id here...
+        if (jidComponents.length == 3 && (jidComponents[2].compareToIgnoreCase("z") != 0)) return false;
 
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
@@ -188,13 +178,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         for (JsonElement jsonPresenceLocation : jsonPresenceList) {
             try {
                 IPresenceLocation location = PresenceLocationFactory.fromJson(did, (JsonObject) jsonPresenceLocation);
-                if (location.transportType().getId().equals(transport.id())) {
-                    // DESIGN constraint:
-                    // XMPPPresenceProcessor is instantiated twice, once for each transport (TCP, Zephyr).
-                    // Each instance will notify its transport-specific instance of IPresenceReceiver,
-                    //  so we don't want to notify locations that are not for the current transport.
-                    presenceLocations.add(location);
-                }
+                presenceLocations.add(location);
             } catch (ExInvalidPresenceLocation e) {
                 l.info("dropped location {} for did {} ({})", jsonPresenceLocation.toString(), did, e.getMessage());
             }
@@ -224,30 +208,30 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         }
     }
 
-    private boolean updateStores(boolean available, DID did, SID sid)
-    {
-        boolean deviceTransition, deviceOnline;
-        l.debug("{} process {} for {} on {}", did, available ? "online" : "offline", sid, transportId);
+    private boolean updateStores(boolean available, DID did, SID sid) {
+        boolean deviceTransition, storeTransition;
+        l.debug("{} process {} for {}", did, available ? "online" : "offline", sid);
 
         // lock carefully: monitor protects maps, never held while calling listeners
         // NOTE: On the other hand. Apparently all notifications are going to come via this
         // XMPP thread. So no out-of-order notifications should occur
         synchronized (this) {
-            deviceOnline = onlineDevices.contains(did);
-
             if (available) {
                 deviceTransition = !multicastReachableDevices.containsKey(did);
-                multicastReachableDevices.put(did, sid);
+                storeTransition = multicastReachableDevices.put(did, sid);
             } else {
                 // if remove does nothing, the DID:SID map did not exist; bail out early if so
-                if (!multicastReachableDevices.remove(did, sid)) { return true; }
+                if (!multicastReachableDevices.remove(did, sid)) {
+                    return true;
+                }
+                storeTransition = true;
                 deviceTransition = !multicastReachableDevices.containsKey(did);
             }
         }
 
         // handle multicast state transitions:
         if (deviceTransition) {
-            l.info("{} recv {} presence for {} on {}", did, available ? "online" : "offline", sid, transportId);
+            l.info("{} recv {} presence for {}", did, available ? "online" : "offline", sid);
             if (available) {
                 multicastListener.onDeviceReachable(did);
             } else {
@@ -255,28 +239,13 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             }
         }
 
-        // handle core notifications, sent only for connected devices:
-        if (deviceOnline) {
-            outgoingEventSink.enqueueBlocking(new EIStoreAvailability(transport, available, did, ImmutableList.of(sid)), LO);
+        if (storeTransition) {
+            if (available) {
+                storeInterestListener.onDeviceJoin(did, sid);
+            } else {
+                storeInterestListener.onDeviceLeave(did, sid);
+            }
         }
-
         return true;
-    }
-
-    @Override
-    public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
-    {
-        Collection<SID> onlineStores;
-
-        // update onlineDevices and make a snapshot of the reachable devices for the given DID
-        // lock carefully: monitor protects maps, never held while calling listeners
-        synchronized (this) {
-            boolean b = isPotentiallyAvailable ? onlineDevices.add(did) : onlineDevices.remove(did);
-            onlineStores = ImmutableSet.copyOf(multicastReachableDevices.get(did));
-        }
-
-        if (onlineStores != null && !onlineStores.isEmpty()) {
-            outgoingEventSink.enqueueBlocking(new EIStoreAvailability(transport, isPotentiallyAvailable, did, onlineStores), LO);
-        }
     }
 }
