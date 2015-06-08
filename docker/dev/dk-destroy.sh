@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 

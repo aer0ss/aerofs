@@ -157,6 +157,8 @@ containers:
   zephyr:
     image: aerofs/zephyr
     run:
+      # ulimit requires privilege
+      privileged: true
       detach: true
       publish:
         - "8888:8888"
@@ -167,7 +169,7 @@ containers:
       publish:
         - "29438:29438"
       detach: true
-      # sysctl requires privilege
+      # sysctl & ulimit require privilege
       privileged: true
       # for deployment secret
       volumes-from:
@@ -233,6 +235,8 @@ containers:
   charlie:
     image: aerofs/charlie
     run:
+      # ulimit requires privilege
+      privileged: true
       detach: true
       volumes-from:
         - data
