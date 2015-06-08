@@ -30,12 +30,17 @@ import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
  */
 public class BaseParam
 {
-    // recommended size for file I/O buffers
+    // Recommended size for file I/O buffers.
     public static final int FILE_BUF_SIZE = 512 * C.KB;
+
+    public static class Appliance
+    {
+        public static final String BASE_HOST = getStringProperty("base.host.unified", "aerofs.com");
+    }
 
     public static class Cacert
     {
-        // this property is used by the Android build
+        // This property is used by the Android build.
         public static final X509Certificate CACERT = getCertificateProperty(
                 "config.loader.base_ca_certificate", null);
 

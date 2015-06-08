@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.singleuser.preferences;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIUtil;
@@ -32,6 +33,7 @@ public class SingleuserCompPreferences extends Composite
         PreferencesHelper.setLayout(this);
 
         createUserIDRow(this);
+        createApplianceRow(this);
         helper.createDeviceNameLabelAndText();
         helper.createManageDevices("Manage your devices", WWW.DEVICES_URL);
         helper.createRelocationLabelAndText();
@@ -50,13 +52,11 @@ public class SingleuserCompPreferences extends Composite
         final Label lblUserIDValue = createLabel(parent, SWT.NONE);
         lblUserIDValue.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
         lblUserIDValue.setText(Cfg.user().getString());
-        lblUserIDValue.addMouseListener(new MouseAdapter()
-        {
+        lblUserIDValue.addMouseListener(new MouseAdapter() {
             private boolean _deviceIDShown;
 
             @Override
-            public void mouseUp(MouseEvent e)
-            {
+            public void mouseUp(MouseEvent e) {
                 _deviceIDShown = !_deviceIDShown;
                 if (_deviceIDShown) {
                     lblUserID.setText("Computer ID:");
@@ -68,6 +68,17 @@ public class SingleuserCompPreferences extends Composite
                 layout(new Control[]{lblUserID, lblUserIDValue});
             }
         });
+    }
+
+    private void createApplianceRow(Composite parent)
+    {
+        final Label lblAppliance = createLabel(parent, SWT.RIGHT);
+        lblAppliance.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        lblAppliance.setText("Appliance:");
+
+        final Label lblApplianceValue = createLabel(parent, SWT.NONE);
+        lblApplianceValue.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
+        lblApplianceValue.setText(BaseParam.Appliance.BASE_HOST);
     }
 
     private void createNotificationsRow(Composite parent, final PreferencesHelper helper)
