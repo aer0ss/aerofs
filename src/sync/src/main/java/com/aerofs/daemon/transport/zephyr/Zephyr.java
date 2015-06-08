@@ -7,11 +7,11 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.IPresenceLocator;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.transport.xmpp.multicast.XMPPMulticast;
+import com.aerofs.daemon.transport.presence.ZephyrPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -43,7 +43,6 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
@@ -152,6 +151,8 @@ public final class Zephyr implements ITransport
 
         this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
 
+        // FIXME: creating the XMPPPresenceProcessor inside Zephyr seems weird
+        // XMPPServiceConnection is created before the transports for example
         XMPPPresenceProcessor xmppPresenceProcessor = new XMPPPresenceProcessor(localdid, xmppServerDomain, this, outgoingEventSink, monitor);
         presenceService.addListener(xmppPresenceProcessor);
         presenceService.addListener(monitor);

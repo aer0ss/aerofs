@@ -54,4 +54,17 @@ public interface IPresenceLocation
         obj.addProperty("location", exportLocation());
         return obj;
     }
+
+    /**
+     * Decide whether the incoming version is compatible with our system or not.
+     *
+     * @param incomingVersion the version of the presence to be processed
+     * @param currentVersion the current version of the parser
+     * @return true if compatible
+     */
+    static boolean versionCompatible(int incomingVersion, int currentVersion)
+    {
+        return (incomingVersion/100 == currentVersion/100)
+                && incomingVersion >= currentVersion;
+    }
 }

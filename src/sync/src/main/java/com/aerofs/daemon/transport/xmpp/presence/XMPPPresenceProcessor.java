@@ -154,7 +154,6 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         return updated;
     }
 
-
     /**
      * Retrieve a vCard metadata for a given JID
      *

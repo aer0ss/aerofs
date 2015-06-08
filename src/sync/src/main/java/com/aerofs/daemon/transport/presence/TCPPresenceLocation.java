@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.tcp;
+package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.transport.lib.IPresenceLocation;
@@ -17,7 +17,7 @@ import java.net.InetSocketAddress;
 public class TCPPresenceLocation implements IPresenceLocation {
     private final DID _did;
     private final InetSocketAddress _socketAddress;
-    private final static int version = 100;
+    public final static int VERSION = 100;
 
     public TCPPresenceLocation(final DID did, final InetAddress IPAddress, final int listeningPort) {
         _did = did;
@@ -39,9 +39,13 @@ public class TCPPresenceLocation implements IPresenceLocation {
         return _socketAddress.getAddress().getHostAddress() + ":" + _socketAddress.getPort();
     }
 
+    public InetSocketAddress socketAddress() {
+        return _socketAddress;
+    }
+
     @Override
     public DID did() { return _did; }
 
     @Override
-    public int version() { return version; }
+    public int version() { return VERSION; }
 }

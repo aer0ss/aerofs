@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.zephyr;
+package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.TransportFactory;
