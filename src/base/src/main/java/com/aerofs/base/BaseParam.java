@@ -59,6 +59,8 @@ public class BaseParam
             String[] split = hostname.split("\\.");
 
             if (split.length < 2) {
+                //similar code in function 'is_hostname_xmpp_compatible',
+                //make sure any changes to this code block are reflected accordingly in maintenance_util.py
                 throw Throwables.propagate(new ExBadArgs("bad xmpp address"));
             }
 

@@ -25,6 +25,8 @@ def has_external_db(settings):
 
 
 _maintenance_mode_cache = None
+
+
 def is_maintenance_mode(settings):
     """
     The system is in maintenance mode if the current target is "maintenance" and the system
@@ -120,6 +122,12 @@ def is_ipv4_address(string):
     except socket.error:
         return False
 
+def is_ipv6_address(string):
+    try:
+        socket.inet_pton(socket.AF_INET6, string)
+        return True
+    except socket.error:
+        return False
 
 def is_hostname_resolvable(hostname):
     try:
@@ -127,6 +135,16 @@ def is_hostname_resolvable(hostname):
         return True
     except socket.error:
         return False
+
+
+def is_hostname_xmpp_compatible(hostname):
+    """
+    Similar code in function 'getServerDomain()',
+    make sure any changes to this code block are reflected accordingly in BaseParam.java
+    """
+    if len(hostname.split(".")) >= 2:
+        return True
+
 
 def save_file_to_path(file, path):
     directory, filename = os.path.split(path)

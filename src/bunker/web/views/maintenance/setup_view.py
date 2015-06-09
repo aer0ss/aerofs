@@ -17,8 +17,8 @@ from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
     is_configuration_initialized, is_key_formatted_correctly, \
-    get_conf_client, get_conf, is_ipv4_address, \
-    is_hostname_resolvable, save_file_to_path
+    get_conf_client, get_conf, is_ipv4_address, is_ipv6_address, \
+    is_hostname_resolvable, is_hostname_xmpp_compatible, save_file_to_path
 
 log = logging.getLogger(__name__)
 
@@ -190,8 +190,13 @@ def json_setup_hostname(request):
 
     if hostname == "localhost" or local_ips.match(hostname):
         error("Local hostnames or IP addresses are not allowed.")
+    elif is_ipv6_address(hostname):
+        error("IPv6 addresses are not supported. Please specify a valid hostname or IPv4 address.")
+    elif not is_hostname_xmpp_compatible(hostname):
+        error("Hostname is not XMPP compatible. Please specify a name with both a top-level name (e.g. .com) and a second-level domain (e.g. acme).")
     elif not is_hostname_resolvable(hostname):
         error("Unable to resolve " + hostname + ". Please check your settings.")
+
 
     conf_client = get_conf_client(request)
     conf_client.set_external_property('base_host', hostname)
