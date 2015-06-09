@@ -221,7 +221,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 $log.info('None of your AeroFS clients are currently online, or API access is disabled.');
                 $scope.error = {
                     status: 503,
-                    text: $sce.trustAsHtml(getClientsOfflineErrorText(IS_PRIVATE))
+                    text: $sce.trustAsHtml(getClientsOfflineErrorText())
                 };
             } else if (status == 401) {
                 showErrorMessage("Authorization failure; please login again.");
@@ -350,7 +350,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             // HEAD request failed
             $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
             if (response.status == 503) {
-                showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 404) {
                 showErrorMessage("The file you requested was not found.");
             } else {
@@ -389,7 +389,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             }, function(response) {
                 // create new folder failed
                 if (response.status == 503) {
-                    showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                    showErrorMessageUnsafe(getClientsOfflineErrorText());
                 } else if (response.status == 409) {
                     showErrorMessage("A file or folder with that name already exists.");
                 } else {
@@ -443,7 +443,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }, function(response) {
             // rename failed
             if (response.status == 503) {
-                showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 409) {
                 showErrorMessage("A file or folder with that name already exists.");
             } else {
@@ -487,7 +487,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }, function(response) {
             // move failed
             if (response.status == 503) {
-                showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                showErrorMessageUnsafe(getClientsOfflineErrorText());
             } else if (response.status == 409) {
                 showErrorMessage("A file or folder with that name already exists.");
             } else {
@@ -545,7 +545,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }, function(response) {
             // get children failed
             $log.error("Fetching children failed.");
-            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
             else showErrorMessageUnsafe(getInternalErrorText());
         });
     };
@@ -560,7 +560,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }, function(response) {
             // failed to delete
             $log.error("Deleting object failed: ", object.id);
-            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
             else if (response.status == 404) showErrorMessage("The " + object.type + " you requested was not found.");
             else showErrorMessageUnsafe(getInternalErrorText());
         });

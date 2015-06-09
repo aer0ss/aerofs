@@ -119,13 +119,10 @@ function getInternalErrorText() {
 
 // N.B. this message should match the text in the iOS app. Make sure to keep
 // them in-sync.
-function getClientsOfflineErrorText(isPrivate) {
-    var supportUrl = 'https://support.aerofs.com/hc/en-us/articles/202492734';
-    if (isPrivate) {
-        supportUrl = 'https://support.aerofs.com/hc/en-us/articles/201438964';
-    }
+function getClientsOfflineErrorText() {
+    supportUrl = 'https://support.aerofs.com/hc/en-us/articles/202492734';
     return "<p>Your AeroFS clients are not currently reachable from the web.</p>" +
-        "<p>To administer your files from this page, please make sure at least one " +
+        "<p>To access your files from this page, please make sure at least one " +
         "of your AeroFS desktop clients or your organization's Team Server is " +
         "online and <a href='" + supportUrl + "' target='_blank'>" +
         "has API access enabled</a>.</p>";

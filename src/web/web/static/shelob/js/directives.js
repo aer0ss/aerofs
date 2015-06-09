@@ -29,7 +29,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 if (response.reason == 'read') {
                     showErrorMessage("Upload failed: could not read file from disk.");
                 } else if (response.reason == 'upload') {
-                    if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                    if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
                     else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
                     else showErrorMessageUnsafe(getInternalErrorText());
                 } else showErrorMessageUnsafe(getInternalErrorText());
@@ -79,7 +79,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 // file creation failed
                 $log.error('file creation failed with status ' + response.status);
                 scope.progressModal.dismiss();
-                if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText(IS_PRIVATE));
+                if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
                 else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
                 else showErrorMessageUnsafe(getInternalErrorText());
             });
