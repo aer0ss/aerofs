@@ -23,6 +23,7 @@ echo "Launching agent container ..."
 # $(hostname):127.0.0.1 otherwise hostname resolution may fail (caused by --net=host)
 docker run -d -p 9090:9090 --name ${AGENT_NAME} \
     --net=host \
+    --dns 172.17.42.1 \
     --add-host $(hostname):127.0.0.1 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     teamcity-agent bash -c "${START_UNITTEST_SERVICES} && /scripts/run-teamcity-agent.sh ${AGENT_NAME}"

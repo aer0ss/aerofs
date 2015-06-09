@@ -1,6 +1,8 @@
 #!/bin/bash
 # apt-cacher-ng provides package caching for debian/ubuntu
 
+set -e
+
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
 if [[ -n "$(docker ps -q -f 'name=apt-cacher-ng')" ]] ; then

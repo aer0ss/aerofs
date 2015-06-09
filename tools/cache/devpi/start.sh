@@ -1,6 +1,8 @@
 #!/bin/bash
 # devpi provides package caching for pypi
 
+set -e
+
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
 if [[ -n "$(docker ps -q -f 'name=devpi')" ]] ; then

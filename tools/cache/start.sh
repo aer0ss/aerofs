@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
 # start apt-cacher-ng first to make sure it is ready once
