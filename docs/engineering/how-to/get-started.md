@@ -221,6 +221,11 @@ Setup docker environment the first time:
      dk-create-vm
      docker-machine upgrade
 
+The default toolchain uses docker-machine. Raw docker is only partially supported at this time.
+If you want to use raw docker you will need to add `--dns 172.17.42.1` to the docker daemon options
+(e.g. in `/etc/default/docker` for Ubuntu) and restart it (`sudo service docker restart`) to use the
+containerized DNS server on which the build system relies.
+
 And finally, you can build and configure a fresh appliance
 
      dk-create

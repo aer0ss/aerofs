@@ -39,11 +39,15 @@ DIRS="
     ship-aerofs/loader
 "
 
+PWD="$(dirname "$0")"
+
+$PWD/../tools/cache/start.sh
+
 for i in ${DIRS}; do
     echo "========================================"
     echo "  Building Docker image ${i}"
     echo "========================================"
-    make -C "$(dirname "$0")/${i}" image
+    make -C "$PWD/${i}" image
 done
 
 echo "Removing untagged images to save space..."

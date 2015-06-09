@@ -21,6 +21,17 @@ CI has two physical network adapters; one connects to the world, and the other c
 
 CI runs an instance of dnsmasq which is used as a DNS and DHCP server for the CI LAN. Boxes can be referred to by hostname on this network, which is nice.
 
+## Docker setup
+
+The docker build relies on a containerized DNS server. As CI currently does raw
+docker builds (as opposed to using docker-machine) it the configuration of the
+docker daemon cannot be modified from the build scripts and must be modified
+manually.
+
+Add `--dns 172.17.42.1` to the docker daemon opts in `/etc/default/docker`
+
+Make sure it is the first dns server and that there is at least one other
+server in case the host system uses a localhost resolver (e.g. dnsmasq).
 
 ## Build Agents
 
