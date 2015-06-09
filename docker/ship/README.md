@@ -138,7 +138,8 @@ monitor its state. All API calls should prefix the URL with a version string, e.
 after returning the response to the client.
 Use "current" to refer to the current target. It is also the default value if the
 target field is absent.
-The "default" target refers to the default group defined in crane.yml or all the containers if no default group is defined.
+The "default" target refers to the default group defined in crane.yml or all the 
+containers if no default group is defined.
 The command persists across host reboots. That is, When the host computer restarts,
 the Loader loads the app using the target specified in the last `POST /boot`.
 
@@ -158,9 +159,9 @@ the Loader loads the app using the target specified in the last `POST /boot`.
     finishes rebooting.
 
 - `GET /containers` returns a map of container names and image names as defined in the "containers"
-section of crane.yml. The names may be altered to reflect actual names on the host.
+section of crane.yml. The names may be altered to reflect actual container names.
 For example, registry and tag strings may be prefixed and suffixed to the names. The client may
-used the returned information to query the host about the contianers and images. The map includes
+used the returned information to query the host about the contianers. The map includes
 all the containers defined in crane.yml rather than only those launched by the current boot target.
 
       {
@@ -169,35 +170,41 @@ all the containers defined in crane.yml rather than only those launched by the c
         ...
       }
 
-- `GET /tags/latest`
 - `GET /tags/latest/{registry}` returns the latest tag available in the given registry.
-If the registry field is absent, the current registry is queried.
 
-- `POST /images/pull/{registry}` pulls all the application images of the given tag from
-the given registry. The list of the images is retrieved from the Loader image of the given tag. Status code 202 Accepted is returned on success.
+- `POST /images/pull/{registry}/{tag}` pulls all the application images of the given tag from
+the given registry. The list of the images is retrieved from the Loader image of the tag.
+Status code `202 Accepted` is returned on success, and `409 Conflict` if the last pulling is
+ongoing.
 
-- `GET /images/pull/{registry}` returns the status of the last `POST /images/pull`.
+- `GET /images/pull` returns the status of the last `POST /images/pull`.
 It replies with one of the following responses:
 
-      202: { "status": "pulling" }
+      202: { "status": "pulling", "pulled": 8, "total": 20 }
   
-      201: { "status": "done" }
+      200: { "status": "done" }
 
       500: { 
         "status": "error",
-        "error": "unable to reach host"
+        "message": "unable to reach host"
       }
-  
-  It returns an error if `POST /images` has not been invoked since the last boot.
-    
-- `POST /switch/{registry}/{tag}/{target}` shuts down the running containers,
-and start new containers using the images at the specified registry and tag.
-Only the containers in the target group and their dependencies are launched.
 
-  A previous `POST /switch` call might have created the new containers. In this case,
-  they are restarted as is. If a contianer does not exist, its volume data will be copied
-  from the corresponding old container before the new container starts. The old container
-  is stopped before the copying, and only volumes that exist in both containers are copied.
+  When pulling, the value of `total` is zero if and only if the Loader container is being pulled.
+  
+  The returned status is "done" if no `POST /images/pull` has been invoked.
+    
+- `POST /switch/{registry}/{tag}/{target}` kills all the currently running containers,
+creates new containers using the images at the specified registry and tag, and finally starts
+the new containers defined in the target group and their dependencies.
+
+  When creating new containers, its volume data will be copied from its counterpart container.
+  The counterpart is identified by the same name in crane.yml as the new container, and runs
+  in the previous system before the switch. Only volumes that exist in both containers are copied.
+
+  A previous call to `switch` might have created the containers already. In this case,
+  the containers are started as is. Note that it may be dangerous to start containers as is without
+  data copying, as its data may have become out of sync with its counterpart. If unsure, always
+  `POST /gc` before switching.
 
 - `POST /gc` removes old containers and their volume data that are left behind from
   `POST /switch`.
@@ -205,7 +212,8 @@ Only the containers in the target group and their dependencies are launched.
 ### Web access
 
 The system implements a Web server that shows Docker image pulling progress as soon as the VM
-starts. It runs on port 80 of the VM and stops right before launching application contianers. After the Web server stops, the front-end code continuously polls the URL
+starts. It runs on port 80 of the VM and stops right before launching application contianers.
+After the Web server stops, the front-end code continuously polls the URL
 `http://<ip_of_vm>/ship-ready`. On the first successful response of this URL,
 code redirects the browser to `http://<ip_of_vm>`, which is expected to be the application's
 front page.

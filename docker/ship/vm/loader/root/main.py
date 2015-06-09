@@ -4,7 +4,7 @@ from sys import argv, stderr
 from os import walk
 from os.path import isfile
 import subprocess
-from common import TAG_PATH, CRANE_YML_PATH, MODIFIED_YML_PATH
+from common import TAG_PATH, CRANE_YML_PATH, MODIFIED_YML_PATH, call_crane
 from crane_yml import modify_yaml
 import loader
 import yaml
@@ -67,6 +67,14 @@ def main():
         modify_yaml(argv[2], argv[3])
         with open(MODIFIED_YML_PATH) as f:
             print f.read()
+
+    elif argv[1] == 'create-containers':
+        if len(argv) <= 4:
+            print >>stderr, "Usage: {} {} <repo> <tag> container ...".format(argv[0], argv[1])
+            exit(11)
+        modify_yaml(argv[2], argv[3])
+        for i in argv[4:]:
+            call_crane('create', i)
 
     elif argv[1] == 'simulate-getty':
         install_getty('/tmp')

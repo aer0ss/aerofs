@@ -19,7 +19,7 @@ def post():
 @app.errorhandler(500)
 def internal_error(error):
     print_exc(error)
-    return 'An internal server error has occurred. See server log for stack trace.', 500
+    return 'An internal server error has occurred. Check logs for more info.', 500
 
 
 def reload_ntp():

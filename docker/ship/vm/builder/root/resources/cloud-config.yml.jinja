@@ -150,7 +150,7 @@ write_files:
       write_status_json 0 0
       systemctl start {{ httpd_service }}
 
-      {# Write tag file. Getty_run assumes the it's created _after_ Loader image is pulled and repo file is created. #}
+      {# Write tag file. getty_run assumes it's created _after_ Loader image is pulled and repo file is created. #}
       [[ -f {{ tag_file }} ]] || {
         TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
         echo ${TAG} > {{ tag_file }}

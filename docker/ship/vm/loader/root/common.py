@@ -17,8 +17,7 @@ def call_crane(cmd, target):
     # '-d all' is for the case where not all dependencies are specified in the target group.
     args.extend(['-d', 'all', '-c', MODIFIED_YML_PATH])
 
-    print '>>>', ' '.join(args)
-    subprocess.check_call(args)
+    subprocess.check_call(print_args(args))
 
 
 def add_tag_to_container(c, tag):
@@ -35,13 +34,19 @@ def my_container_id():
     return gethostname()
 
 
+def my_full_image_name():
+    """
+    :return: The loader's image name
+    """
+    return subprocess.check_output(['docker', 'inspect', '-f', '{{ .Config.Image }}', my_container_id()]).strip()
+
+
 def my_image_name():
     """
     :return: The loader's image name, with repo and tag removed, if any.
     """
-    image = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Config.Image }}', my_container_id()]).strip()
     # Remove tag
-    image = sub(':[^:/]+$', '', image)
+    image = sub(':[^:/]+$', '', my_full_image_name())
     # Remove repo
     if image.count('/') > 1:
         image = sub('^[^/]*/', '', image)
@@ -55,3 +60,7 @@ def my_container_name():
 def get_tag():
     with open(TAG_PATH) as f:
         return f.read().strip()
+
+def print_args(args):
+    print '>>>', args
+    return args

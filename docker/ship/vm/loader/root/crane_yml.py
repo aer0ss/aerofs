@@ -46,6 +46,7 @@ def add_repo_and_tag_to_images(containers, repo, tag):
     for key in containers.keys():
         c = containers.pop(key)
         c['image'] = '{}{}{}'.format(prefix, c['image'], suffix)
+        c['original-name'] = key
         # Add the container back with the new container name
         containers[add_tag_to_container(key, tag)] = c
 
