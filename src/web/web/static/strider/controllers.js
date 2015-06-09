@@ -19,6 +19,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 $rootScope.use_restricted = response.use_restricted;
                 $rootScope.me = response.me;
                 $scope.paginationInfo.total = response.total;
+
+                updateUserCountMessage();
             }).error(function(response){
                 $log.warn(response);
             });
@@ -32,6 +34,10 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 getUsersData('Retrieving new page data');
             }
         };
+        var updateUserCountMessage = function() {
+            $scope.userCountMessage = 'User count: ' + $scope.paginationInfo.total;
+        };
+
         getUsersData('Retrieving initial data');
 
         $scope.toggleAdmin = function(user) {
@@ -102,49 +108,6 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
             });
         };
 
-        $scope.remove = function(user) {
-            var removeUserModalCtrl = function ($scope, $modalInstance, user, users) {
-                $scope.user = user;
-                $scope.users = users;
-
-                $scope.cancel = function () {
-                    $modalInstance.close();
-                };
-
-                $scope.ok = function () {
-                    user.has_two_factor = false;
-                    $http.post(removeUserURL, {
-                            "user": $scope.user.email
-                        }
-                    ).success(function(response) {
-                        $log.info($scope.user.email + " has been removed from your organization.");
-                        // remove from list of users
-                        for (var i = 0; i < $scope.users.length; i++) {
-                            if ($scope.users[i].email == $scope.user.email) {
-                                $scope.users.splice(i,1);
-                            }
-                        }
-                        $modalInstance.close();
-                    }).error(function(data, status){
-                        showErrorMessageWith(data, status);
-                        $modalInstance.close();
-                    });
-                };
-            };
-            var modalInstance = $modal.open({
-                templateUrl: '/static/strider/partials/remove-user-modal.html',
-                controller: removeUserModalCtrl,
-                resolve: {
-                    user: function() {
-                        return user;
-                    },
-                    users: function() {
-                        return $scope.users;
-                    }
-                }
-            });
-        };
-
         $scope["delete"] = function(user) {
             var deleteUserModalCtrl = function ($scope, $modalInstance, user, users) {
                 $scope.user = user;
@@ -161,12 +124,13 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                         }
                     ).success(function(response) {
                         $log.info(user.email + " has been deleted.");
-                        // remove from list of users
+                        // Remove from list of users.
                         for (var i = 0; i < $scope.users.length; i++) {
                             if ($scope.users[i].email == $scope.user.email) {
                                 $scope.users.splice(i,1);
                             }
                         }
+                        getUsersData('Refresh after delete');
                         $modalInstance.close();
                     }).error(function(data, status){
                         showErrorMessageWith(data, status);

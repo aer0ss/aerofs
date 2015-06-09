@@ -17,6 +17,9 @@
         <div class="col-sm-12">
             <div ng-controller="UsersController">
                 <h2>Users in my organization</h2>
+
+                <p><div ng-bind="userCountMessage"></div></p>
+
                 <div class="my-table">
                     <div class="my-table-head row">
                         <div class="col-sm-4 hidden-xs">Name</div>
@@ -89,7 +92,6 @@
         setAuthURL = "${request.route_path('json.set_auth_level')}";
         setPubURL = "${request.route_path('json.set_publisher_status')}";
         disable2faURL = "${request.route_path('json.disable_two_factor')}";
-        removeUserURL = "${request.route_path('json.remove_user')}";
         deleteUserURL = "${request.route_path('json.deactivate_user')}";
 
         inviteURL = "${request.route_path('json.invite_user')}";
