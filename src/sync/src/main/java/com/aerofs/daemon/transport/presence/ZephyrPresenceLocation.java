@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.TransportFactory;
-import com.aerofs.daemon.transport.lib.IPresenceLocation;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.ids.DID;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;

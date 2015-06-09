@@ -1,6 +1,4 @@
-package com.aerofs.daemon.lib;
-
-import com.aerofs.daemon.transport.lib.IPresenceLocation;
+package com.aerofs.daemon.transport.lib.presence;
 
 /**
  * Implemented by classes that can receive Presence Location

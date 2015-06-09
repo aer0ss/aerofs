@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.daemon.transport.lib.IPresenceLocation;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.ids.DID;
 import com.google.common.base.Preconditions;
 

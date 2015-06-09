@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport;
 
-import com.aerofs.daemon.transport.lib.IPresenceLocation;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import java.util.Collection;
 
 

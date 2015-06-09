@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.lib;
+package com.aerofs.daemon.transport.lib.presence;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.ids.DID;

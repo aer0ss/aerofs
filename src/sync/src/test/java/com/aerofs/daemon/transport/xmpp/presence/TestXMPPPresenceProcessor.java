@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.xmpp.presence;
 
-import com.aerofs.daemon.lib.IPresenceLocationReceiver;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocationReceiver;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;

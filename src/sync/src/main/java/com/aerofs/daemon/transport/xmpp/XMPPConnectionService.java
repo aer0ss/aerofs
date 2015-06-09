@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.IPresenceLocator;
-import com.aerofs.daemon.transport.lib.IPresenceLocation;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.daemon.transport.xmpp.presence.XMPPvCard;
 import com.aerofs.ids.DID;
 import com.aerofs.base.id.JabberID;

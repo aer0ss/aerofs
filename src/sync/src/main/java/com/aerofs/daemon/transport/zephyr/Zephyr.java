@@ -10,6 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.daemon.transport.xmpp.multicast.XMPPMulticast;
 import com.aerofs.daemon.transport.presence.ZephyrPresenceLocation;
 import com.aerofs.ids.DID;
