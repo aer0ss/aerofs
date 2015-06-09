@@ -96,6 +96,14 @@
       <script src="${request.static_path('web:static/js/compiled/polyfills.js')}"></script>
     <![endif]-->
 
+    ## N.B. to support private deployment, all static assets must be hosted
+    ## locally as opposed to on 3rd-party servers.
+    <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
+    <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/aerofs.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/csrf.js')}"></script>
+
     <%block name="tracking_codes">
         %if not is_private_deployment(request.registry.settings):
             ## because google analytics and pardot are critical to marketing, do not depend on
@@ -200,18 +208,6 @@
     </div>
 
     <%block name="footer"/>
-
-    ## javascript
-    ##==================================================
-    ##Placed at the end of the document so the pages load faster
-
-    ## N.B. to support private deployment, all static assets must be hosted
-    ## locally as opposed to on 3rd-party servers.
-    <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
-    <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
-    <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
-    <script src="${request.static_path('web:static/js/compiled/aerofs.js')}"></script>
-    <script src="${request.static_path('web:static/js/compiled/csrf.js')}"></script>
 
     <%
         from web.util import get_last_flash_message_and_empty_queue

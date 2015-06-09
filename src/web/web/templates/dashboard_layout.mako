@@ -12,13 +12,13 @@
 
 ## N.B. maintenance_layout.mako uses the same layout
 <div class="row">
-    ## Left navigation bar
+    ## Navigation bar
     ## Gets subsumed by top menu on mobile
     <div class="col-sm-3 hidden-xs">
         %if is_admin(request):
-            ${render_left_navigation_for_admin()}
+            ${render_navigation_for_admin("left")}
         %else:
-            ${render_left_navigation_for_nonadmin()}
+            ${render_navigation_for_nonadmin()}
         %endif
         ${render_user_invite()}
     </div>
@@ -45,11 +45,11 @@
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
                 <li class="divider"></li>
-                ## Left navigation bar
+                ## Navigation bar
                 %if is_admin(request):
-                    ${render_left_navigation_for_admin()}
+                    ${render_navigation_for_admin("drop")}
                 %else:
-                    ${render_left_navigation_for_nonadmin()}
+                    ${render_navigation_for_nonadmin()}
                 %endif
             </ul>
         </div>
@@ -161,7 +161,7 @@
     Install
 </%def>
 
-<%def name="render_left_navigation_for_nonadmin()">
+<%def name="render_navigation_for_nonadmin()">
     <ul class="nav nav-list left-nav">
         <li class="nav-header">My AeroFS</li>
         <ul>
@@ -174,7 +174,7 @@
     </ul>
 </%def>
 
-<%def name="render_left_navigation_for_admin()">
+<%def name="render_navigation_for_admin(id_postfix)">
     <ul class="nav nav-list left-nav">
         <li class="nav-header">My AeroFS</li>
         <ul>
@@ -185,20 +185,13 @@
             ${render_org_links()}
             ${render_admin_org_links()}
         </ul>
-        %if is_private_deployment(request.registry.settings):
-            <li class="nav-header">My Deployment</li>
-            <ul>
-                <li><a href='javascript:gotoMaintenance()' id="mng-link">Manage Appliance</a></li>
-                <script>
-                    ## Using this hack to refer to another service is not a best practice.
-                    ## However it has the lowest cost given the current architecture.
-                    function gotoMaintenance() {
-                        window.location.assign("http://" + window.location.hostname + ":8484");
-                    }
-                </script>
-                <li><a href="${request.route_path('download_sccm')}">Enterprise Deployment</a></li>
-            </ul>
-        %endif
+        <li class="nav-header">My Deployment</li>
+        <ul>
+            ## N.B. the href here is populated by JavaScript on page load. Not the cleanest, but
+            ## it's the best solution we have given the docker architecture.
+            <li><a id="mng-link-${id_postfix}">Manage Appliance</a></li>
+            <li><a href="${request.route_path('download_sccm')}">Enterprise Deployment</a></li>
+        </ul>
     </ul>
 </%def>
 <%def name="render_nonadmin_links()">
@@ -272,3 +265,14 @@
         });
     </script>
 </%block>
+
+<script type="text/javascript">
+    $(window).load(function()
+    {
+        var bunker = "http://" + window.location.hostname + ":8484";
+        ## Set href in 'Manage Appliance' link. Do this on page load instead of in real-time
+        ## for better browser experience.
+        document.getElementById("mng-link-left").setAttribute("href", bunker);
+        document.getElementById("mng-link-drop").setAttribute("href", bunker);
+    })
+</script>
