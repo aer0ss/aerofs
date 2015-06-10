@@ -56,6 +56,19 @@ Many places in the codebase currently have inline styles or stylesheets. This is
 
 In general, try to avoid repeating yourself in styling code--use more generic selectors and reuse styles whenever you can. Read the Bootstrap docs--and make sure you're looking at the correct Bootstrap version. Ask Karen if you're not sure what to do.
 
+Code style
+============
+
+Once, our JS was the wild west. Going forward, we will use Airbnb's [ES5 code style guide](https://github.com/airbnb/javascript/tree/master/es5). 
+
+We use the ES5 guide because much of our code has to support versions of Internet Explorer older than IE 11. If working on a frontend project that does not have to support IE, you may use [the ES6 guide](https://github.com/airbnb/javascript/) instead.
+
+Much of our code does not adhere to these style guides because it is old. New code should adhere to these style guides in to be merged. If you are digging into old code, please clean it up to be style-compatible while you're in there.
+
+If you use a code editor with a [JSHint](http://jshint.com/) plugin, I recommend you do so, along with the style guide's [.jshintrc file](https://github.com/airbnb/javascript/blob/master/linters/jshintrc). This will not enforce all of the style guide recommendations, but it will catch many issues, including common JS mistakes.
+
+Try to write your JS in a modular fashion. Avoid cluttering scopes with unrelated objects or variables. (`aerofs.js` is a big offender in that regard; it probably should be refactored to have all those methods be attributes of one or more objects. This would involving changing a lot of function calls across the code base, though, so it hasn't been done yet.)
+
 Creating new modules for AeroFS website
 ================================================
 - Create module in modules folder (copy an existing module as a reference, edit
