@@ -21,6 +21,16 @@ CI has two physical network adapters; one connects to the world, and the other c
 
 CI runs an instance of dnsmasq which is used as a DNS and DHCP server for the CI LAN. Boxes can be referred to by hostname on this network, which is nice.
 
+NB: make sure dnsmasq does NOT listen on the docker0 bridge interface or the containerized dns will fial to start
+
+in /etc/dnsmasq.conf
+```
+except-interface=docker0
+bind-interfaces
+```
+
+Restart dnsmasq to pick up config changes if needed: `sudo service dnsmasq restart`
+
 ## Docker setup
 
 The docker build relies on a containerized DNS server. As CI currently does raw
