@@ -41,9 +41,9 @@ For a desktop installation, the steps are however slightly different.
 
     # Build libmdg-hfsplus
     sudo apt-get install -y cmake p7zip-full zlib1g-dev libbz2-dev fakeroot &&\
-    git clone --branch=bzip2 --depth=1 https://github.com/aerofs/libdmg-hfsplus.git &&\
+    git clone --depth=1 https://github.com/aerofs/libdmg-hfsplus.git &&\
     cd libdmg-hfsplus &&\
-    cmake CMakeLists.txt -DCMAKE_INSTALL_PREFIX=/usr/local/bin &&\
+    cmake CMakeLists.txt -DCMAKE_INSTALL_PREFIX=/usr/local &&\
     cd hfs &&\
     make -j4 &&\
     sudo make install &&\

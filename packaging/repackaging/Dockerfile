@@ -13,9 +13,9 @@ RUN \
     #
     # Build libdmg-hfsplus
     #
-    git clone --branch=bzip2 --depth=1 https://github.com/aerofs/libdmg-hfsplus.git &&\
+    git clone --depth=1 https://github.com/aerofs/libdmg-hfsplus.git &&\
     cd libdmg-hfsplus &&\
-    cmake CMakeLists.txt -DCMAKE_INSTALL_PREFIX=/usr/local/bin &&\
+    cmake CMakeLists.txt -DCMAKE_INSTALL_PREFIX=/usr/local &&\
     cd hfs &&\
     make install &&\
     cd ../dmg &&\
