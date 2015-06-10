@@ -15,6 +15,7 @@ import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Lists;
@@ -48,8 +49,8 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
 
         // Create test users.
         owner = saveUser();
-        user2 = saveUser();
-        user3 = saveUser();
+        user2 = saveUserWithNewOrganization();
+        user3 = saveUserWithNewOrganization();
 
         // Test shared folder.
         sf = factSharedFolder.create(sid);
@@ -258,6 +259,21 @@ public class TestGroup_ACLs extends AbstractBusinessObjectTest
 
         // 2 users and their respective TS
         assertEquals(group.deleteSharedFolder(sf).size(), 4);
+    }
+
+    @Test
+    public void canRemoveGroupWithMultipleMembersFromSameOrg()
+            throws Exception
+    {
+        user3.setOrganization(user2.getOrganization(), AuthorizationLevel.USER);
+        group.addMember(user2);
+        group.addMember(user3);
+
+        group.joinSharedFolder(sf, Permissions.OWNER, owner);
+        sf.setState(user2, SharedFolderState.JOINED);
+        sf.setState(user3, SharedFolderState.JOINED);
+
+        group.deleteSharedFolder(sf);
     }
 
     @Test

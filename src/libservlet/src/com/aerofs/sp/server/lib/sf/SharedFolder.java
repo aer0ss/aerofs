@@ -377,6 +377,11 @@ public class SharedFolder
 
         // difference of prev and curr keySets is users that used to be joined and no longer are
         for (User removed : Sets.difference(prev.keySet(), curr.keySet())) {
+            // we may have already removed the team server due to other removed user
+            if (getPermissionsNullable(removed.getOrganization().getTeamServerUser()) == null) {
+                continue;
+            }
+
             removeTeamServerForUserImpl(removed);
         }
 
@@ -457,7 +462,7 @@ public class SharedFolder
     /**
      * @return whether actual operations are performed.
      *
-     * This method is idempotent if called multiple times with the same parameter
+     * @throws ExNotFound if the team server user for the user is not a member
      */
     private boolean removeTeamServerForUserImpl(User user)
             throws SQLException, ExNotFound

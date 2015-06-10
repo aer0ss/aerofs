@@ -31,6 +31,7 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -126,6 +127,14 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     {
         User user = newUser();
         saveUser(user);
+        return user;
+    }
+
+    protected User saveUserWithNewOrganization()
+            throws Exception
+    {
+        User user = saveUser();
+        user.setOrganization(saveOrganization(), AuthorizationLevel.ADMIN);
         return user;
     }
 
