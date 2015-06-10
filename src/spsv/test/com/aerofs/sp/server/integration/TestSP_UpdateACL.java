@@ -8,6 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.GetACLReply;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
@@ -221,6 +222,27 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         assertACLOnlyContains(getSingleACL(SID_1, reply),
                 new UserAndRole(USER_1, Permissions.EDITOR));
     }
+
+    @Test
+    public void shouldNotConsiderNonexistentUsersForACLChecks() throws Exception
+    {
+        sqlTrans.begin();
+        User owner = saveUser();
+        User admin = saveUser();
+        admin.setLevel(AuthorizationLevel.ADMIN);
+        User invited = newUser();
+        factOrgInvite.save(admin, invited, admin.getOrganization(), null);
+        sqlTrans.commit();
+
+        shareFolder(owner, SID_1, invited, Permissions.OWNER);
+
+        setSession(admin);
+        try {
+            service.updateACL(BaseUtil.toPB(SID_1), owner.id().getString(), Permissions.EDITOR.toPB(), false);
+            fail();
+        } catch (ExNoPerm e) {}
+    }
+
 
     @Test
     public void updateACL_shouldSendNotificationEmail()

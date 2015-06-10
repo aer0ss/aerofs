@@ -297,7 +297,7 @@ C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
     }
 
     private PreparedStatement queryUser(UserID userId, String ... fields)
-            throws SQLException, ExNotFound {
+            throws SQLException {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", fields));
         ps.setString(1, userId.getString());

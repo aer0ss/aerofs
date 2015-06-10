@@ -727,7 +727,7 @@ public class SharedFolder
             for (UserIDRoleAndState srp : _f._db.getAllUsersRolesAndStates(_sid)) {
                 if (srp._permissions.covers(Permission.MANAGE)) {
                     User member = _f._factUser.create(srp._userID);
-                    if (member.belongsTo(org)) return;
+                    if (member.exists() && member.belongsTo(org)) return;
                 }
             }
         }
