@@ -25,7 +25,7 @@ else
 
     echo "starting rawdns"
     docker run -d --restart=always --name rawdns \
-            -p 53:53/udp -p 53:53/tcp \
+            -p 172.17.42.1:53:53/udp -p 172.17.42.1:53:53/tcp \
             -v /var/run/docker.sock:/var/run/docker.sock \
             rawdns
 fi
