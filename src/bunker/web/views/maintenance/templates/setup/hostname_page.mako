@@ -62,14 +62,14 @@
     <p>The following ports need to be open for AeroFS desktop clients and Team
         Servers to connect to the appliance:</p>
     <ul>
-        ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/entries/22661589 as well
+        ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/hc/en-us/articles/204592794 as well
         <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8484, 8888, and 29438.</li>
     </ul>
 
     <p>Your firewall or VPN may require configuration to unblock these ports for
         your AeroFS clients. Please check this now.</p>
     <p><a target="_blank"
-        href="https://support.aerofs.com/entries/22661589">
+        href="https://support.aerofs.com/hc/en-us/articles/204592794">
         Read more about network requirements</a>.</p>
 
     <%def name="footer()">

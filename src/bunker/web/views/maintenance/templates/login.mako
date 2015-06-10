@@ -51,7 +51,7 @@
             <p>You should have received a license with this appliance. If not,
                 please <a href="https://privatecloud.aerofs.com/request_signup" target="_blank">
                 request a license</a>.</p>
-            <p><a href="https://support.aerofs.com/entries/25408319" target="_blank">
+            <p><a href="https://support.aerofs.com/hc/en-us/articles/204951110" target="_blank">
                 What happens if the license expires?</a></p>
         %endif
     </div>

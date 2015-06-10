@@ -47,7 +47,7 @@ public class CmdConfig extends AbstractShellCommand<ShProgram>
         return "valid keys:\n" +
                 " -" + API + ": enable | disable\n" +
                 "  Enable to grant applications you've authorized access to the files on " +
-                "this computer. See https://support.aerofs.com/entries/28215600 for details.";
+                "this computer. See https://support.aerofs.com/hc/en-us/articles/202492734 for details.";
     }
 
     @Override

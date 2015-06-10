@@ -13,7 +13,7 @@
     <h2>Identity Management</h2>
 
     <p>You may choose AeroFS or a 3rd-party identity provider to manage user accounts. Switching between them has
-        minimal disruption to your user base. <a href="https://support.aerofs.com/entries/23544130" target="_blank">
+        minimal disruption to your user base. <a href="https://support.aerofs.com/hc/en-us/articles/204592834" target="_blank">
         Learn more</a>.</p>
 </div>
 
@@ -64,7 +64,7 @@
                         style="display: none;"
                     %endif
                 >
-                    <p><a href="https://support.aerofs.com/hc/en-us/articles/203689174" target="_blank">
+                    <p><a href="https://support.aerofs.com/hc/en-us/articles/204861930" target="_blank">
                             Need help setting up or troubleshooting AD/LDAP?</a></p>
 
                     ${ldap_options()}
@@ -505,7 +505,7 @@
     <%def name="title()">You are almost done</%def>
 
     <p>The configuration is saved. However, to complete switching to the new identity system,
-        please <a href="https://support.aerofs.com/entries/23544130" target="_blank">read
+        please <a href="https://support.aerofs.com/hc/en-us/articles/204592834" target="_blank">read
         this article</a> and instruct users to update their passwords as necessary.</p>
 
     <%def name="footer()">

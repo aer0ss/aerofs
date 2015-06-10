@@ -28,7 +28,7 @@
     <h4>Update your license:</h4>
     <p><a href="mailto:support@aerofs.com">Contact us</a> to request a new license.</p>
     <p><input id="license-file" type="file"></p>
-    <p><a target="_blank" href="https://support.aerofs.com/entries/25408319">
+    <p><a target="_blank" href="https://support.aerofs.com/hc/en-us/articles/204951110">
         What happens if the license expires?</a></p>
 
     <hr />

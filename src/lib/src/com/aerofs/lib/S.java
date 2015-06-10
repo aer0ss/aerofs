@@ -264,25 +264,21 @@ public class S
 
             MOBILE_AND_WEB_ACCESS = "mobile and web access",
             URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?
-                    "https://support.aerofs.com/entries/29044194" :
-                    "https://support.aerofs.com/entries/28215600",
+                    "https://support.aerofs.com/hc/en-us/articles/202492734" :
+                    "https://support.aerofs.com/hc/en-us/articles/202492734",
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 
             CHILD_ALREADY_SHARED = L.product() + " does not support sharing a folder that already " +
-                    "contains another shared folder.\n\n" +
-                    "<a href=\"https://support.aerofs.com/hc/en-us/articles/202222050\">" +
-                    "Why can't I share a folder containing shared folders</a>?",
+                    "contains another shared folder.",
             PARENT_ALREADY_SHARED = L.product() + " does not support sharing a folder under an " +
-                    "already shared folder.\n\n" +
-                    "<a href=\"https://support.aerofs.com/hc/en-us/articles/202222050\">" +
-                    "Why can't I share sub-folders of a shared folder</a>?",
+                    "already shared folder.",
             SIGN_IN_TO_RECERTIFY_ACTION = "To continue syncing files with " + L.product() + " " +
                     "on this device, please sign in to your account now.",
             SIGN_IN_TO_RECERTIFY_EXPLANATION = "(<a>Why is this needed?</a>)",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
-            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
+            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password.",
 
             ENABLE_SYNC_HISTORY = "Keep Sync History",
             SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()

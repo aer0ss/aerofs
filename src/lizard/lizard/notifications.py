@@ -71,7 +71,6 @@ def _license_available_email_for(admin, company):
             "admin": admin,
             "dashboard_url": dashboard_url,
             "virtualbox_url": "https://www.virtualbox.org/wiki/Downloads",
-            "migrating_to_private_url": "https://support.aerofs.com/entries/22978949",
             "implementation_video_url": "http://ae.ro/privateCloudVideo",
             "faqs_url": "https://support.aerofs.com/hc/en-us/articles/204592794",
     }

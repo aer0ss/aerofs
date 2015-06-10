@@ -11,7 +11,7 @@
     <h2>Identity Management</h2>
 
     <p>You may choose AeroFS or a 3rd-party identity provider to manage user accounts. Switching between them has
-        minimal disruption to your user base. <a href="https://support.aerofs.com/entries/23544130" target="_blank">
+        minimal disruption to your user base. <a href="https://support.aerofs.com/hc/en-us/articles/204592834" target="_blank">
         Learn more</a>.</p>
 
     <div class="alert">
