@@ -12,11 +12,10 @@ AGENT_NAME="$1"
 
 TC_AGENT_HOME=/teamcity-agent
 
-if [ ! -d ${TC_AGENT_HOME} ]; then
+if [ ! -f ${TC_AGENT_HOME}/bin/agent.sh ]; then
     echo "Downloading TeamCity Agent ..."
     CI_URL=https://ci.arrowfs.org
     wget --no-check-certificate ${CI_URL}/update/buildAgent.zip -O /download.zip
-    mkdir -p ${TC_AGENT_HOME}
     cd ${TC_AGENT_HOME}
     unzip /download.zip
     chmod +x bin/*.sh

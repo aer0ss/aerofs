@@ -155,5 +155,7 @@ ENV USER root
 
 ADD root /
 
+VOLUME [ "/teamcity-agent" ]
+
 # git sometimes reverts the permission of this file
 RUN chmod 400 /root/.ssh/id_rsa
