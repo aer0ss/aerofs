@@ -17,6 +17,11 @@ if [[ -n "$(docker ps -aq -f 'name=devpi')" ]] ; then
     docker rm --force devpi
 fi
 
+if [[ -z "$(docker ps -aq -f 'name=cache-pypi')" ]] ; then
+    echo "creating pypi cache volume"
+    docker create -v /var/cache/devpi --name cache-pypi debian:sid /bin/true
+fi
+
 echo "starting devpi server"
-docker run -d --restart=always --name devpi devpi
+docker run -d --restart=always --name devpi --volumes-from cache-pypi devpi
 

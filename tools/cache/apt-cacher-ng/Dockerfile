@@ -11,8 +11,6 @@ RUN { \
 
 COPY root /
 
-VOLUME ["/var/cache/apt-cacher-ng"]
-
 EXPOSE 80
 CMD ["apt-cacher-ng", "-c", "/etc/apt-cacher-ng"]
 

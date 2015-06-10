@@ -17,9 +17,15 @@ if [[ -n "$(docker ps -aq -f 'name=apt-cacher-ng')" ]] ; then
     docker rm --force apt-cacher-ng
 fi
 
+if [[ -z "$(docker ps -aq -f 'name=cache-apt')" ]] ; then
+    echo "creating apt cache volume"
+    docker create -v /var/cache/apt-cacher-ng --name cache-apt debian:sid /bin/true
+fi
+
 echo "starting apt-cacher-ng"
 # We specify --dns for this container so that it doesn't clash with rawdns
 docker run -d --restart=always --name apt-cacher-ng \
-        --dns 8.8.8.8 --dns 8.8.4.4 \
+        --dns 172.16.0.83 \
+        --volumes-from cache-apt \
         apt-cacher-ng
 

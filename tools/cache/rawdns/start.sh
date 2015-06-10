@@ -38,8 +38,7 @@ fi
 if docker-machine ls docker-dev &>/dev/null ; then
     echo "updating docker dameon dns config"
     # configure docker daemon to use rawdns resolver
-    # FIXME: boot2docker is very minimalist so we have to use sed, which is pretty fragile...
-    docker-machine ssh docker-dev "sudo cat /var/lib/boot2docker/profile | sed \"s/EXTRA_ARGS='.*--tlsverify/EXTRA_ARGS='--dns 172.17.42.1 --tlsverify/\" | sudo tee cat /var/lib/boot2docker/profile"
+    docker-machine ssh docker-dev "echo 'EXTRA_ARGS=\"--dns 172.17.42.1 \$EXTRA_ARGS\"' | cat /var/lib/boot2docker/profile - | sudo tee /var/lib/boot2docker/profile"
 
     echo "restarting docker daemon"
     # restart docker daemon (the the init script is borked and cannot restart properly...)

@@ -15,7 +15,5 @@ RUN pip install \
 
 COPY root /
 
-VOLUME ["/var/cache/devpi"]
-
 EXPOSE 80
 CMD ["/run.sh"]

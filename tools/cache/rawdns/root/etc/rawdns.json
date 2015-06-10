@@ -18,21 +18,9 @@
         "type": "containers",
         "socket": "unix:///var/run/docker.sock"
     },
-    "devmail.aerofs.com.": {
-        "type": "forwarding",
-        "nameservers": [ "172.16.0.83" ]
-    },
-    "arrowfs.org.": {
-        "type": "forwarding",
-        "nameservers": [ "172.16.0.83" ]
-    },
-    "share.syncfs.com.": {
-        "type": "forwarding",
-        "nameservers": [ "10.0.2.3", "172.16.0.83" ]
-    },
     ".": {
         "type": "forwarding",
-        "nameservers": [ "172.16.0.83", "8.8.8.8", "8.8.4.4" ]
+        "nameservers": [ "172.16.0.83" ]
     }
 }
 
