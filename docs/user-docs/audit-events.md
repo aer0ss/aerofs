@@ -101,7 +101,7 @@ A Device Identifier is a unique identifier generated for a particular AeroFS dev
 
 To correlate events that report DID to a particular user, search backward for the `device.certify` event.
 
-A user can determine the DID for their AeroFS installation; see https://support.aerofs.com/entries/25449638 . Also note that the Network Diagnostics view reports connected peers by DID.
+A user can determine the DID for their AeroFS installation; see https://support.aerofs.com/hc/en-us/articles/204592774 . Also note that the Network Diagnostics view reports connected peers by DID.
 
 Mobile devices (iOS) and applications that are authorized using the Content API are also assigned a DID.
 

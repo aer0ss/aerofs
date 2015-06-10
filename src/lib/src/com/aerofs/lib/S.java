@@ -207,7 +207,7 @@ public class S
             LNK_FIND_DEVICE_ID       = "<a>How to find my Computer ID?</a>",
 
             URL_TRANSPORTS_INFO      = "https://support.aerofs.com/entries/25433817",
-            URL_DEVICE_ID_INFO       = "https://support.aerofs.com/entries/25449638",
+            URL_DEVICE_ID_INFO       = "https://support.aerofs.com/hc/en-us/articles/204592774",
 
             // preferences dialog
             FILE_OPEN_FAIL = "The file couldn't be opened.",
