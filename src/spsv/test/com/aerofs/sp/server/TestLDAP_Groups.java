@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.proto.Sp.ListGroupsReply;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.IAuthority;
@@ -15,7 +14,6 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -28,8 +26,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -122,8 +118,7 @@ public class TestLDAP_Groups extends AbstractSPTest
         sqlTrans.begin();
         try {
             admin = saveUser();
-            org = factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
-            admin.setOrganization(org, AuthorizationLevel.ADMIN);
+            org = admin.getOrganization();
             sqlTrans.commit();
         } catch (Exception e) {
             sqlTrans.rollback();
@@ -158,7 +153,7 @@ public class TestLDAP_Groups extends AbstractSPTest
         sqlTrans.begin();
         Group group;
         try {
-            group = factGroup.save("an external group", OrganizationID.PRIVATE_ORGANIZATION, "externalid".getBytes());
+            group = factGroup.save("an external group", org.id(), "externalid".getBytes());
             sqlTrans.commit();
         } catch (Exception e) {
             sqlTrans.rollback();
@@ -191,7 +186,7 @@ public class TestLDAP_Groups extends AbstractSPTest
 
         sqlTrans.begin();
         Group group;
-        group = factGroup.save("an external group", OrganizationID.PRIVATE_ORGANIZATION, "externalid".getBytes());
+        group = factGroup.save("an external group", org.id(), "externalid".getBytes());
         group.addMember(user);
         group.addMember(ldapUser);
         sqlTrans.commit();
