@@ -120,7 +120,7 @@ public class DlgAbout extends AeroFSDialog
                     case "web site":
                         return WWW.MARKETING_HOST_URL;
                     case "release notes":
-                        return "https://support.aerofs.com/entries/23864878";
+                        return "https://support.aerofs.com/hc/en-us/articles/201439644";
                     case "free software":
                         return "https://www.aerofs.com/terms/#freesoftware";
                     default:

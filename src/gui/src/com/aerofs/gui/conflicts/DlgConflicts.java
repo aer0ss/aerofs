@@ -82,7 +82,7 @@ public class DlgConflicts extends AeroFSDialog
 
         lnkMessage.setText("<a>Learn more about managing conflicts.</a>");
         lnkMessage.addSelectionListener(
-                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/23590415"));
+                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/hc/en-us/articles/201439064"));
 
         btnRefresh.setText("Refresh");
         btnRefresh.addSelectionListener(new SelectionAdapter()

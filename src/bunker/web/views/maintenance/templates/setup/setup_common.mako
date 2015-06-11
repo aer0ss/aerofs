@@ -48,8 +48,8 @@
 ## Note that the availability is determined at page rendering time.
 ##
 #################################
-## N.B. Please update https://support.aerofs.com/entries/25712809 and legal docs
-## when you track more data than what are described in these docs.
+## N.B. Please update https://support.aerofs.com/hc/en-us/articles/201439624
+## and legal docs when you track more data than what are described in these docs.
 #################################
 ##
 <%def name="trackInitialTrialSetup(event)">

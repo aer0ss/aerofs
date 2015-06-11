@@ -9,7 +9,7 @@
 
     <p>This appliance is running version <strong>${current_version}</strong>.
         You may check the latest release notes
-        <a href="https://support.aerofs.com/entries/23864878" target="_blank">here</a>.
+        <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">here</a>.
 
     <p>To upgrade the appliance to a new version, please follow these steps:</p>
 

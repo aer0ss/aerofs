@@ -94,7 +94,7 @@ public class CompUnsyncableFiles extends Composite
         _lnkHelp = new Link(this, SWT.NONE);
         _lnkHelp.setText("<a>Learn more about unsyncable files.</a>");
         _lnkHelp.addSelectionListener(
-                createUrlLaunchListener("https://support.aerofs.com/entries/23776990"));
+                createUrlLaunchListener("https://support.aerofs.com/hc/en-us/articles/201439234"));
 
         _spinner = new CompSpin(this, SWT.NONE);
 

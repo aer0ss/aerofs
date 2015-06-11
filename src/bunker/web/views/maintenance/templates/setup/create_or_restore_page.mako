@@ -40,7 +40,7 @@
         <label>
             <input type="checkbox" id="data-collection" name="data-collection" checked />
             Allow AeroFS to collect setup experience for trial licenses.
-            <a href="https://support.aerofs.com/entries/25712809"
+            <a href="https://support.aerofs.com/hc/en-us/articles/201439624"
                target="_blank">Read more.</a>
         </label>
     </div>

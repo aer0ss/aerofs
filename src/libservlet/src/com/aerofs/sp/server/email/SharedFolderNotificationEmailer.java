@@ -33,7 +33,7 @@ public class SharedFolderNotificationEmailer
                 "%s to %s:\n%s\n" +
                 "If you'd like to find out more about the different " + L.brand() + " roles, " +
                 // Whitespace required after URL for autolinker. TODO (WW) fix this!
-                "please take a look at https://support.aerofs.com/entries/22831810 .";
+                "please take a look at https://support.aerofs.com/hc/en-us/articles/201439384";
 
     private static final String deleteFromFolder = "\n" +
             "This email is a confirmation that %s has removed %s from the folder. %s, " +

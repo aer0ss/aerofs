@@ -14,21 +14,21 @@
 
 <%block name="top_navigation_bar_mobile">
     <li class="visible-xs">
-        <a href="https://support.aerofs.com/entries/23864878" target="_blank">
+        <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">
             Version ${get_private_version(request.registry.settings)}</a>
     </li>
 </%block>
 
 <%block name="top_navigation_bar_tablet">
     <li class="hidden-lg hidden-xs">
-        <a href="https://support.aerofs.com/entries/23864878" target="_blank">
+        <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">
             Version ${get_private_version(request.registry.settings)}</a>
     </li>
 </%block>
 
 <%block name="top_navigation_bar_desktop">
     <li class="pull-right visible-lg" style="font-weight: normal;">
-        <a href="https://support.aerofs.com/entries/23864878" target="_blank">
+        <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">
             v${get_private_version(request.registry.settings)}</a>
     </li>
 </%block>

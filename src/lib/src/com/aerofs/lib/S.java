@@ -206,7 +206,7 @@ public class S
             TXT_COLLECTING_NETWORK_INFO = "Collecting network information.",
             LNK_FIND_DEVICE_ID       = "<a>How to find my Computer ID?</a>",
 
-            URL_TRANSPORTS_INFO      = "https://support.aerofs.com/entries/25433817",
+            URL_TRANSPORTS_INFO      = "https://support.aerofs.com/hc/en-us/articles/201439324",
             URL_DEVICE_ID_INFO       = "https://support.aerofs.com/hc/en-us/articles/204592774",
 
             // preferences dialog
@@ -260,7 +260,7 @@ public class S
             SWIFT_DESCRIPTION = "Store files on OpenStack Swift",
             USERS_DIR = "users",
             SHARED_DIR = "shared",
-            URL_ROLES = "https://support.aerofs.com/entries/22831810",
+            URL_ROLES = "https://support.aerofs.com/hc/en-us/articles/201439384",
 
             MOBILE_AND_WEB_ACCESS = "mobile and web access",
             URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?

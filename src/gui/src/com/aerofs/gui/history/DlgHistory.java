@@ -231,7 +231,7 @@ public class DlgHistory extends AeroFSDialog
         lnkHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         lnkHistory.setText("<a>Learn more about Sync History</a>");
         lnkHistory.addSelectionListener(
-                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/entries/23753136"));
+                GUIUtil.createUrlLaunchListener("https://support.aerofs.com/hc/en-us/articles/201439394"));
 
         // Create a composite that will hold the buttons row
         Composite buttons = GUIUtil.newPackedButtonContainer(shell);
