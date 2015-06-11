@@ -183,7 +183,8 @@ def _get_hostname_page_route_path(request):
     request_method='POST'
 )
 def json_setup_hostname(request):
-    hostname = request.params['base.host.unified']
+    # lower case hostname for XMPP multicast compatibility
+    hostname = request.params['base.host.unified'].lower()
 
     # disallow the IP range 127/8
     local_ips = re.compile("^127.\d{1,3}.\d{1,3}.\d{1,3}$")
