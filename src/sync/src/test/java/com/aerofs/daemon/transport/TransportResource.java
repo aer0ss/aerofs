@@ -49,7 +49,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.mockito.Mockito.mock;
 
-public final class TransportResource extends ExternalResource
+public class TransportResource extends ExternalResource
 {
     static
     {

@@ -23,6 +23,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -41,6 +42,7 @@ import com.google.protobuf.Message;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
@@ -67,8 +69,6 @@ public class TCP implements ITransport, IAddressResolver
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
-    private static final int PORT_ANY = 0;
-
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
     private final Scheduler scheduler;
@@ -85,6 +85,7 @@ public class TCP implements ITransport, IAddressResolver
     private final PresenceService presenceService = new PresenceService();
     private final ChannelMonitor monitor;
     private final LinkStateService linkStateService;
+    private final PortRange portRange;
 
     public TCP(
             UserID localUser,
@@ -116,6 +117,7 @@ public class TCP implements ITransport, IAddressResolver
         this.outgoingEventSink = outgoingEventSink;
         this.streamManager = new StreamManager(streamTimeout);
         this.localdid = localdid;
+        this.portRange = PortRange.loadFromConfiguration();
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
 
@@ -273,7 +275,18 @@ public class TCP implements ITransport, IAddressResolver
     {
         // Start these in the right order; bind the listener, THEN start processing the queues.
         // Otherwise, handling events could die; some handlers assume the transport was started
-        unicast.start(new InetSocketAddress(PORT_ANY));
+        while (portRange.hasNext()) {
+            try {
+                unicast.start(new InetSocketAddress(portRange.next()));
+                break;
+            } catch (ChannelException e) {
+                if (portRange.hasNext()) {
+                    l.info("Failed to bind to local port, retrying on next port", e);
+                } else {
+                    throw e;
+                }
+            }
+        }
         transportEventQueue.start();
 
         l.info("listening to {}", getListeningPort());
@@ -420,5 +433,41 @@ public class TCP implements ITransport, IAddressResolver
     public long bytesOut()
     {
         return transportStats.getBytesSent();
+    }
+
+    private static class PortRange
+    {
+        final int low, high;
+        private int offset;
+
+        PortRange(int low, int high)
+        {
+            this.low = low;
+            this.high = high;
+            this.offset = 0;
+        }
+
+        boolean hasNext()
+        {
+            return low + offset <= high;
+        }
+
+        int next()
+        {
+            return this.low + (offset++);
+        }
+
+        static PortRange loadFromConfiguration()
+        {
+            int low = LibParam.Daemon.PORT_RANGE_LOW, high = LibParam.Daemon.PORT_RANGE_HIGH;
+            if (low > high) {
+                l.warn("invalid range of ports for daemon to use: {}-{}, defaulting to any port", low, high);
+                return new PortRange(0, 0);
+            } else if (high > 0 && low <= 1024) {
+                l.warn("invalid range of ports for daemon to use: {}-{} includes reserved ports, defaulting to any port", low, high);
+                return new PortRange(0, 0);
+            }
+            return new PortRange(Math.max(0, low), Math.min(65535, high));
+        }
     }
 }

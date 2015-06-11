@@ -175,6 +175,14 @@ public class LibParam extends BaseParam
 
         public static final long CHANNEL_RECONNECT_INITIAL_DELAY = 1 * C.SEC;
         public static final long CHANNEL_RECONNECT_MAX_DELAY = 30 * C.SEC;
+
+        // Both bounds on this range are inclusive, hence the default of 0 to 0 covers listening on port 0 (any port)
+        // not final for unit testing
+        public static int PORT_RANGE_LOW =
+                getIntegerProperty("daemon.port.range.low", 0);
+
+        public static int PORT_RANGE_HIGH =
+                getIntegerProperty("daemon.port.range.high", 0);
     }
 
     public static class PostUpdate
