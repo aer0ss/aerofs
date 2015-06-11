@@ -7,9 +7,7 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.group.Group;
-import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,8 +18,6 @@ import static org.junit.Assert.fail;
 
 public class TestGroupMembers extends AbstractBusinessObjectTest
 {
-    final OrganizationID orgId = new OrganizationID(1);
-    Organization org;
     Group group;
 
     User user1, user2, user3, pending1;
@@ -30,11 +26,9 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
     public void setup()
             throws Exception
     {
-        org = factOrg.save(orgId);
-        group = factGroup.save("Common Name", orgId, null);
-
         // Create test users.
         user1 = saveUser();
+        group = factGroup.save("Common Name", user1.getOrganization().id(), null);
         user2 = saveUser();
         user3 = saveUser();
 
@@ -136,6 +130,6 @@ public class TestGroupMembers extends AbstractBusinessObjectTest
     {
         group.addMember(pending1);
         saveUser(pending1);
-        assertEquals(pending1.getOrganization(), org);
+        assertEquals(pending1.getOrganization(), group.getOrganization());
     }
 }
