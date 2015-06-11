@@ -47,7 +47,7 @@
             <div ng-controller="InviteesController">
                 <form class="form-inline" id="invite_form" method="post" ng-submit="invite()">
                     <input type="text" class="form-control" id="invite_user_email" placeHolder="Email address" ng-model="newInvitee"/>
-                    <input id='invite_button' class="btn btn-primary" type="submit" value="Send Invite"/>
+                    <input id='invite_button' class="btn btn-primary" type="submit" value="Send invite"/>
                 </form>
                 <br>
                 <div class="my-table" ng-show="invitees.length > 0">

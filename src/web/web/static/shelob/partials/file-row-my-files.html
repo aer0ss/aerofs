@@ -49,8 +49,8 @@
                        ng-click="showLink(object)"
                        class="edit action action-link">
                         <span class="glyphicon glyphicon-link"></span> 
-                        <span ng-hide="object.links.length > 0">Create Link</span>
-                        <span ng-show="object.links.length > 0">Link Settings</span>
+                        <span ng-hide="object.links.length > 0">Create link</span>
+                        <span ng-show="object.links.length > 0">Link settings</span>
                     </a></li>
                     <li><a
                        ng-click="startRename(object)"
@@ -60,7 +60,7 @@
                        class="redo action action-move"
                        ng-class="{'disabled': isOldIE }"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
                     <li><a ng-href="/shared_folders" ng-show="object.is_shared"
-                       class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage Sharing</a></li>
+                       class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage sharing</a></li>
                     <li class="divider"></li>
                     <li><a
                        ng-click="startDelete(object)"

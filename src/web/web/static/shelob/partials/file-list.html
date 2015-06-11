@@ -6,7 +6,7 @@
       ng-hide="isOldIE" ng-class="{'disabled': error.status == 503 }"></span>
     <button type="button" class="btn btn-default" id="new-folder"
       ng-click="newFolder.hidden=false"
-      ng-class="{'disabled': error.status == 503}">New Folder</button>
+      ng-class="{'disabled': error.status == 503}">New folder</button>
   </div>
 
   <div class="row">
@@ -33,10 +33,10 @@
     <ul class="breadcrumb" ng-if="!currentShare.isSingleObject">
         <li class="active"
           ng-if="(fsLocation.currentFolder.id == 'root' || error.status == 503) && !currentShare.token">
-            My Files
+            My files
         </li>
         <li ng-if="fsLocation.currentFolder.id != 'root' && error.status != 503 && !currentShare.token">
-            <a href="#/root">My Files</a>
+            <a href="#/root">My files</a>
         </li>
 
         <li ng-repeat="folder in breadcrumbs">

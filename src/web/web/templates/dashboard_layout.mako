@@ -40,7 +40,7 @@
                 <%navigation:marketing_links/>
                 <li class="divider"></li>
                 %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 %endif
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
@@ -77,7 +77,7 @@
                 <%navigation:marketing_links/>
                 <li class="divider"></li>
                 %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 %endif
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
@@ -105,7 +105,7 @@
             <ul class="dropdown-menu">
                 ## Remember to update top_navigation_bar_mobile() when adding items
                 %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My Apps</a></li>
+                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 %endif
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
@@ -129,7 +129,7 @@
 <%def name="render_download_links(admin)">
     <ul class="dropdown-menu">
         <li><a href="${request.route_path('download')}">
-            AeroFS Desktop
+            AeroFS desktop
         </a></li>
 
         <%
@@ -145,13 +145,13 @@
         %>
         %if not disable_download_mobile_client:
             <li><a href="${request.route_path('add_mobile_device')}">
-                Mobile Apps
+                Mobile apps
             </a></li>
         %endif
 
         %if admin:
             <li><a href="${request.route_path('download_team_server')}">
-                Team Server
+                Team server
             </a></li>
         %endif
     </ul>
@@ -167,7 +167,7 @@
         <ul>
             ${render_nonadmin_links()}
         </ul>
-        <li class="nav-header">My Organization</li>
+        <li class="nav-header">My organization</li>
         <ul>
             ${render_org_links()}
         </ul>
@@ -180,27 +180,27 @@
         <ul>
             ${render_nonadmin_links()}
         </ul>
-        <li class="nav-header">My Organization</li>
+        <li class="nav-header">My organization</li>
         <ul>
             ${render_org_links()}
             ${render_admin_org_links()}
         </ul>
-        <li class="nav-header">My Deployment</li>
+        <li class="nav-header">My deployment</li>
         <ul>
             ## N.B. the href here is populated by JavaScript on page load. Not the cleanest, but
             ## it's the best solution we have given the docker architecture.
-            <li><a id="mng-link-${id_postfix}">Manage Appliance</a></li>
-            <li><a href="${request.route_path('download_sccm')}">Enterprise Deployment</a></li>
+            <li><a id="mng-link-${id_postfix}">Manage appliance</a></li>
+            <li><a href="${request.route_path('download_sccm')}">Enterprise deployment</a></li>
         </ul>
     </ul>
 </%def>
 <%def name="render_nonadmin_links()">
     <%
         links = []
-        links.append(('files', _("My Files")))
-        links.append(('my_shared_folders', _("Manage Shared Folders")))
-        links.append(('accept', _("Pending Invitations")))
-        links.append(('my_devices', _("My Devices")))
+        links.append(('files', _("My files")))
+        links.append(('my_shared_folders', _("Manage shared folders")))
+        links.append(('accept', _("Pending invitations")))
+        links.append(('my_devices', _("My devices")))
     %>
     % for link in links:
         ${navigation.link(link)}
@@ -222,8 +222,8 @@
 <%def name="render_admin_org_links()">
     <%
         links = [
-            ('org_shared_folders', _("Shared Folders")),
-            ('team_server_devices', _("Team Servers")),
+            ('org_shared_folders', _("Shared folders")),
+            ('team_server_devices', _("Team servers")),
             ('org_settings', _("Settings"))
         ]
     %>
@@ -237,7 +237,7 @@
     <p><strong>Invite a coworker to AeroFS:</strong></p>
     <form id="invite-coworker" class="form">
         <input type="text" class="form-control" id="invite-coworker-email" placeHolder="Email address"/><br/>
-        <button id="invite-coworker-submit" class="btn btn-primary" type="submit">Send Invite</button>
+        <button id="invite-coworker-submit" class="btn btn-primary" type="submit">Send invite</button>
     </form>
     </div>
 </%def>
