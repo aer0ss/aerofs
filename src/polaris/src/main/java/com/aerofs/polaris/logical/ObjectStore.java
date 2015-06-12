@@ -388,8 +388,8 @@ public final class ObjectStore {
     private static boolean checkInsertChildOperation(DAO dao, @Nullable UniqueID currentParent, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName, boolean allowReinsert) throws ParentConflictException
     {
         if (currentParent != null) {
-            // check if this operation would be a no-op
             if (Arrays.equals(dao.children.getActiveChildName(parentOid, childOid), childName)) {
+                // child already exists under the parent with the same name
                 return false;
             // TODO (RD) make this work for mount points, currently we don't use the deleted field for mount points
             } else if (dao.children.isDeleted(currentParent, childOid)) {
@@ -397,7 +397,15 @@ public final class ObjectStore {
                 Preconditions.checkArgument(getExistingObject(dao, childOid).store.equals(getExistingObject(dao, parentOid).store), "cannot restore a deleted object to a different store");
                 dao.children.remove(currentParent, childOid);
                 return true;
-            } else if (!allowReinsert && ObjectType.STORE != childObjectType) {
+            } else if (ObjectType.STORE == childObjectType) {
+                UniqueID store = getExistingObject(dao, parentOid).store;
+                // ensure we're getting the current parent in the correct store
+                currentParent = dao.mountPoints.getMountPointParent(store, childOid);
+                if (currentParent != null) {
+                    // inconsistent reinsertion of mountpoint
+                    throw new ParentConflictException(childOid, parentOid, currentParent);
+                }
+            } else if (!allowReinsert) {
                 // stop reinsertion of non-deleted objects (mount points can be inserted multiple times)
                 throw new ParentConflictException(childOid, parentOid, currentParent);
             }

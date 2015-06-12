@@ -456,6 +456,24 @@ public final class TestObjectResource {
                 .assertThat().body("updated[0].transform_timestamp", equalTo(8));
     }
 
+    @Test
+    public void shouldReturn409OnMountPointReinsertion()
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder1");
+        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, folder, "shared_folder1");
+
+        PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder);
+
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder1", ObjectType.STORE)
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+
+        // similar behavior if reinserting the shared folder with a different name
+        PolarisHelpers.newObject(AUTHENTICATED, folder, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder2", ObjectType.STORE)
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);
