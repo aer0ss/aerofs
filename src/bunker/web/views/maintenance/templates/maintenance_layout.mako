@@ -12,26 +12,26 @@
         <li class="nav-header">Settings</li>
         <%
             non_maintenance_links = [
-                ('status', _("Service Status")),
-                ('registered_apps', _("Registered Apps")),
+                ('status', _("Service status")),
+                ('registered_apps', _("Registered apps")),
             ]
 
             links = [
                 ('auditing', _("Auditing")),
                 ('identity', _("Identity")),
-                ('device_restriction', _("Device Restriction")),
+                ('device_restriction', _("Device restriction")),
                 ('timekeeping', _("Timekeeping")),
-                ('collect_logs', _("Collect Logs")),
+                ('collect_logs', _("Collect logs")),
                 ('upgrade', _("Upgrade")),
                 ('backup', _("Backup")),
                 ('setup', _("Setup")),
             ]
 
             if is_maintenance_mode(None):
-                links.append(('toggle_maintenance_mode', _("Exit Maintenance Mode")))
+                links.append(('toggle_maintenance_mode', _("Exit maintenance mode")))
             else:
                 links = non_maintenance_links + links
-                links.append(('toggle_maintenance_mode', _("Enter Maintenance Mode")))
+                links.append(('toggle_maintenance_mode', _("Enter maintenance mode")))
         %>
         <ul>
             %if is_maintenance_mode(None):
