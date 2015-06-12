@@ -49,7 +49,7 @@ public class RequestToSignUpEmailer
     {
         String subject = "Your " + L.brand() + " account";
         String body = "\n" +
-                "It looks like you were trying to sign up for " + L.product() + " again; but as" +
+                "It looks like you were trying to sign up for " + L.brand() + " again; but as" +
                 " it turns out, you've already signed up!\n" +
                 "\n" +
                 "To log in, head over to " + DASHBOARD_HOME + " and type in your email address" +
@@ -59,7 +59,7 @@ public class RequestToSignUpEmailer
                 WWW.PASSWORD_RESET_REQUEST_URL;
 
         Email email = new Email();
-        email.addSection("You already have an " + L.product() + " account", body);
+        email.addSection("You already have an " + L.brand() + " account", body);
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
