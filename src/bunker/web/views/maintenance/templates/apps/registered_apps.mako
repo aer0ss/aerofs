@@ -59,7 +59,7 @@
 
 <p id="no-clients-label" class="hidden" style="margin-bottom: 40px;">No apps are registered with this appliance yet.</p>
 
-<p class="page-block"><a class="btn btn-primary" href="${request.route_path('register_app')}">Register App</a></p>
+<p class="page-block"><a class="btn btn-primary" href="${request.route_path('register_app')}">Register app</a></p>
 <p class="page-block">To learn more, visit the <a href="https://aerofs.com/developers">AeroFS Developers Website</a>.</p>
 
 <%modal:modal>

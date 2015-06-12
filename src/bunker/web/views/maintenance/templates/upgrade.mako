@@ -37,7 +37,7 @@
 <div class="page-block">
     <button class="btn btn-primary"
             onclick="backup(promptShutdown); return false;">
-        Download Backup File
+        Download backup file
     </button>
 </div>
 

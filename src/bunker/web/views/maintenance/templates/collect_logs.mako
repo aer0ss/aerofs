@@ -20,16 +20,16 @@
 </div>
 
 <div class="page-block">
-    <a name="appliance"></a><h4>Appliance Logs</h4>
+    <a name="appliance"></a><h4>Appliance logs</h4>
     <a href="#" class="btn btn-primary"
             onclick="archiveAndDownloadLogs(); return false;">
-        Download Appliance Logs
+        Download appliance logs
     </a>
     <hr/>
 </div>
 
 <div class="page-block">
-    <a name="client"></a><h4>Client Logs</h4>
+    <a name="client"></a><h4>Client logs</h4>
     <p>
         You can instruct the AeroFS appliance to automatically collect client
         logs from computers running AeroFS.
@@ -215,7 +215,7 @@
     </div>
 
     <hr/>
-    <button type="submit" class="btn btn-primary">Collect Client Logs</button>
+    <button type="submit" class="btn btn-primary">Collect client logs</button>
 </form>
 
 <%common:html/>

@@ -28,7 +28,7 @@
 <p>
     <button class="btn btn-primary"
             onclick="backup(maintenanceExit); return false;">
-        Download Backup File
+        Download backup file
     </button>
 </p>
 

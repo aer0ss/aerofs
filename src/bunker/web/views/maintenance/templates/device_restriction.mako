@@ -46,7 +46,7 @@
                     onchange="deviceEnableToggled(this); optionsUpdated();"
             >
 
-            Enable Device Authorization
+            Enable device authorization
         </label>
 
         <div id="endpoint-options"
@@ -142,7 +142,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
                 %endif
                     onchange="mdmEnableToggled(this);"
             >
-            Enable MDM Support
+            Enable MDM support
         </label>
 
 
