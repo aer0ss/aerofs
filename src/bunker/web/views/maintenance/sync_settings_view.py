@@ -1,7 +1,7 @@
 import logging
 from pyramid.view import view_config
 from maintenance_util import get_conf_client, save_file_to_path
-from backup_view import BACKUP_FILE_PATH, example_backup_download_file_name
+from backup_and_upgrade_view import BACKUP_FILE_PATH, example_backup_download_file_name
 
 log = logging.getLogger(__name__)
 

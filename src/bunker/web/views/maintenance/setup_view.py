@@ -12,7 +12,7 @@ from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_common.bootstrap import BootstrapClient
 from web.error import error
 from web.license import set_license_file_and_attach_shasum_to_session, is_license_present_and_valid
-from backup_view import BACKUP_FILE_PATH, example_backup_download_file_name
+from backup_and_upgrade_view import BACKUP_FILE_PATH, example_backup_download_file_name
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \

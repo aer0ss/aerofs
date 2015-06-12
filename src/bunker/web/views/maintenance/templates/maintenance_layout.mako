@@ -22,16 +22,13 @@
                 ('device_restriction', _("Device restriction")),
                 ('timekeeping', _("Timekeeping")),
                 ('collect_logs', _("Collect logs")),
-                ('upgrade', _("Upgrade")),
-                ('backup', _("Backup")),
+                ('backup_and_upgrade', _("Backup and upgrade")),
                 ('setup', _("Setup")),
+                ('toggle_maintenance_mode', _("System maintenance")),
             ]
 
-            if is_maintenance_mode(None):
-                links.append(('toggle_maintenance_mode', _("Exit maintenance mode")))
-            else:
+            if not is_maintenance_mode(None):
                 links = non_maintenance_links + links
-                links.append(('toggle_maintenance_mode', _("Enter maintenance mode")))
         %>
         <ul>
             %if is_maintenance_mode(None):

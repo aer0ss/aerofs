@@ -23,8 +23,7 @@
 </p>
 
 <p>The appliance enters maintenance mode automatically during
-    <a href="${request.route_path('backup')}">backup</a> and
-    <a href="${request.route_path('upgrade')}">upgrade</a>.</p>
+    <a href="${request.route_path('backup_and_upgrade')}">backup and upgrade</a>.
 
 <hr/>
 
@@ -36,7 +35,7 @@
         %else:
             Enter
         %endif
-        Maintenance Mode
+        maintenance mode
     </button>
 </p>
 

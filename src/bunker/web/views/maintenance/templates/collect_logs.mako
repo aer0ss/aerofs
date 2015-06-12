@@ -43,7 +43,7 @@
 
     <%modal:modal>
         <%def name="id()">modal</%def>
-        <%def name="title()">Select Users</%def>
+        <%def name="title()">Select users</%def>
 
         <p id="message-loading">
             Please wait while we retrieve the list of AeroFS users.

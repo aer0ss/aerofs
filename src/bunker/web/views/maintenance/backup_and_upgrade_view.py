@@ -27,23 +27,14 @@ _DONE_FILE = '/backup-or-restore-done'
 _WRAPPER = '/backup-restore-wrapper.sh'
 
 @view_config(
-    route_name='backup',
+    route_name='backup_and_upgrade',
     permission='maintain',
-    renderer='backup.mako'
+    renderer='backup_and_upgrade.mako'
 )
-def backup(request):
-    return {}
-
-@view_config(
-    route_name='upgrade',
-    permission='maintain',
-    renderer='upgrade.mako'
-)
-def upgrade(request):
+def backup_and_upgrade(request):
     return {
         'current_version': get_private_version(request.registry.settings)
     }
-
 
 @view_config(
     route_name='json-backup',
