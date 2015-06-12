@@ -13,7 +13,7 @@ if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] ; then
     echo "rawdns already running"
 else
     echo "build rawdns base image"
-    $PWD/../../../golang/builder/build.sh aerofs/rawdns github.com/tianon/rawdns $PWD/Dockerfile.base
+    $PWD/../../../golang/builder/build.sh aerofs/rawdns github.com/huguesb/rawdns $PWD/Dockerfile.base
 
     echo "build rawdns configured image"
     docker build -t rawdns $PWD
