@@ -11,7 +11,7 @@ and reboot the VM to have the DNS settings take effect. TODO (WW) cloud-config s
 
 - `scp` this directory to an empty VM or physical computer and run on it:
 
-    $ <this-folder>/start-teamcity-agent.sh agent-1
+    <this-folder>/start-teamcity-agent.sh agent-1 https://ci.arrowfs.org
 
   In a few minutes after the script exits, TeamCity should show a new agent named "agent-1".
 
