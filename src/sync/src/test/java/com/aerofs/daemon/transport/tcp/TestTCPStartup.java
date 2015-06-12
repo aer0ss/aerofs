@@ -76,32 +76,35 @@ public class TestTCPStartup {
             throws Throwable
     {
         // N.B. this assumes that the daemon will start trying ports at the bottom of the range
-        Socket s = new Socket();
-        s.bind(new InetSocketAddress(0));
-        int boundPort = s.getLocalPort();
+        try (Socket s = new Socket()) {
+            s.bind(new InetSocketAddress(0));
+            int boundPort = s.getLocalPort();
 
-        LibParam.Daemon.PORT_RANGE_LOW = boundPort;
-        LibParam.Daemon.PORT_RANGE_HIGH = boundPort + 5;
-        this.transport.publicBefore();
-        TCP tcp = ((TCP) this.transport.getTransport());
-        assertThat("conflict on lower bound", tcp.getListeningPort(), greaterThan(boundPort));
-        this.transport.publicAfter();
+            LibParam.Daemon.PORT_RANGE_LOW = boundPort;
+            LibParam.Daemon.PORT_RANGE_HIGH = boundPort + 5;
+            this.transport.publicBefore();
+            TCP tcp = ((TCP) this.transport.getTransport());
+            assertThat("conflict on lower bound", tcp.getListeningPort(), greaterThan(boundPort));
+            this.transport.publicAfter();
+        }
     }
 
     @Test
     public void willThrowErrorIfNoOpenPorts()
             throws Throwable
     {
-        Socket s = new Socket();
-        s.bind(new InetSocketAddress(0));
-        int boundPort = s.getLocalPort();
+        try (Socket s = new Socket()) {
+            s.bind(new InetSocketAddress(0));
+            int boundPort = s.getLocalPort();
 
-        LibParam.Daemon.PORT_RANGE_LOW = boundPort;
-        LibParam.Daemon.PORT_RANGE_HIGH = boundPort;
-        try {
-            this.transport.publicBefore();
-            fail();
-        } catch (ChannelException e) {}
+            LibParam.Daemon.PORT_RANGE_LOW = boundPort;
+            LibParam.Daemon.PORT_RANGE_HIGH = boundPort;
+            try {
+                this.transport.publicBefore();
+                fail();
+            } catch (ChannelException e) {
+            }
+        }
     }
 
     // Need to override methods here to expose them to testing, junit interfaces require that the original methods are protected
