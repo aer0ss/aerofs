@@ -191,7 +191,7 @@ def login_second_factor_post(request):
         code = int(request.POST.get(URL_PARAM_CODE))
     except ValueError:
         flash_error(request, _("Please enter an integer"))
-        return HTTPFound(request.url)
+        return HTTPFound(location=request.current_route_path())
 
     sp = get_rpc_stub(request)
     # Verify second factor correctness.
@@ -210,7 +210,7 @@ def login_second_factor_post(request):
             flash_error(request, _("You're not enrolled in two-factor auth."))
         else:
             flash_error(request, _("An unexpected error occured"))
-        return HTTPFound(request.url)
+        return HTTPFound(location=request.current_route_path())
     return HTTPFound(resolve_next_url(request, DEFAULT_DASHBOARD_NEXT))
 
 @view_config(
@@ -235,6 +235,7 @@ def login_backup_code_get(request):
 )
 def login_backup_code_post(request):
     _ = request.translate
+
     code = request.POST.get(URL_PARAM_CODE)
     sp = get_rpc_stub(request)
     try:
@@ -249,7 +250,7 @@ def login_backup_code_post(request):
             flash_error(request, _("You're not enrolled in two-factor auth."))
         else:
             flash_error(request, _("An unexpected error occurred"))
-        return HTTPFound(request.url)
+        return HTTPFound(location=request.current_route_path())
     return HTTPFound(resolve_next_url(request, DEFAULT_DASHBOARD_NEXT))
 
 def _sp_cred_signin(request, sp_rpc_stub, **kw_args):

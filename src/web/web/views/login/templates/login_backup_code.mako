@@ -5,7 +5,7 @@
     <div class="col-sm-6 col-sm-offset-3 login">
         <h1>Two-factor Backup Authentication</h1>
 
-        <form id="signin_form" class="form-horizontal" role="form" action="${request.url}" method="post">
+        <form id="signin_form" class="form-horizontal" role="form" action="${request.current_route_path()}" method="post">
             ${self.csrf.token_input()}
             <div class="form-group">
                 <label for="input_backup_code" class="col-sm-4 control-label">Backup code</label>

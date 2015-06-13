@@ -21,17 +21,3 @@
     def sub_item(text):
         return '<span style="margin-left: 12px; font-size: 95%">' + text + '</span>'
 %>
-
-## @items a list of tuples of (title, route).
-<%def name="_render_items(items, highlight_current_item)">
-    %for item in items:
-        <li>
-            <% item_url = request.route_path(item[1]) %>
-            %if highlight_current_item and request.url == item_url:
-                <a href="${item_url}">${item[0] | n} &#x25B8;</a>
-            %else:
-                <a href="${item_url}">${item[0] | n}</a>
-            %endif
-        </li>
-    %endfor
-</%def>
