@@ -88,7 +88,7 @@ public class RestService extends Service
     @Override
     protected Set<Class<?>> singletons()
     {
-        // TODO (MP) reconsider this, as we no longer obfuscate jars.
+        // TODO reconsider this, as we no longer obfuscate jars.
         // Specify all providers explicitly instead of using a package scanner
         return ImmutableSet.of(
                 FactoryReaderProvider.class,

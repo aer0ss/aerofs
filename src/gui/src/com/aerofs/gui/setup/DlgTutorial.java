@@ -102,9 +102,6 @@ public class DlgTutorial extends AeroFSDialog
                     "Right click any folder in " + L.product() + " to share it with friends and " +
                             "colleagues.",
                     "tutorial3.png", null, null)
-
-            // Step 4
-            // TODO (MP) finish this (add sync status)...
     };
 
     public DlgTutorial(Shell parentShell)

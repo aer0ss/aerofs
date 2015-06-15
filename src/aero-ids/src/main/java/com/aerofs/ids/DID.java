@@ -1,6 +1,6 @@
 package com.aerofs.ids;
 
-// TODO (MP) remove public constructors use fromExternal() fromInternal().
+// TODO remove public constructors use fromExternal() fromInternal().
 /**
  * AeroFS device identifier
  */

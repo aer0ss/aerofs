@@ -1,6 +1,6 @@
 FROM aerofs/base.python2.7
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 # TODO (WW) move verkehr's /data/topics to /data/verkehr
 RUN mkdir -p \

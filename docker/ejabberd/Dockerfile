@@ -1,6 +1,6 @@
 FROM aerofs/base
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 # Python is for the auth_all script. MySQL client is for run.sh.
 RUN apt-get update &&\

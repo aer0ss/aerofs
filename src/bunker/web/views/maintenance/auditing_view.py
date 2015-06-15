@@ -82,8 +82,6 @@ def json_setup_audit(request):
         if not audit_downstream_host or not audit_downstream_port:
             error('Please specify the hostname and port.')
 
-        # TODO (MP) need better sanity checking on downstream system.
-
         # Check the validity of the certificate, if provided.
         if len(audit_downstream_certificate) > 0:
             certificate_filename = write_pem_to_file(

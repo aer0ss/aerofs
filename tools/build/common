@@ -135,7 +135,6 @@ readonly LOWERCASE_MODE="private"
 ###############################################################################
 
 # We use the same user account when deploying to public/private.
-# TODO (MP) use a more reasonable username.
 readonly RELEASE_SERVER_USERNAME=release-prod
 readonly RELEASE_SERVER="b.arrowfs.org"
 readonly RELEASE_SERVER_LOGIN="${RELEASE_SERVER_USERNAME}@${RELEASE_SERVER}"

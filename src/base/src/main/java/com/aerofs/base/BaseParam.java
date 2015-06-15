@@ -44,7 +44,6 @@ public class BaseParam
         public static final X509Certificate CACERT = getCertificateProperty(
                 "config.loader.base_ca_certificate", null);
 
-        // TODO (MP) need create ServerParam.java (or something) and move this there.
         public static final String FILE = "/opt/sparta/cacert.pem";
     }
 

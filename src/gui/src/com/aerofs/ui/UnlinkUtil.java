@@ -32,7 +32,6 @@ public class UnlinkUtil
 
     public static void cleanRtRootAndAuxRoots() throws SQLException, IOException
     {
-        // TODO (MP) possibly implement secure delete.
         // Delete aux roots (partial downloads, conflicts and revision history)
         if (Cfg.storageType() == StorageType.LINKED) {
             for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {

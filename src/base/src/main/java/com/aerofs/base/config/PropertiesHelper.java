@@ -141,9 +141,6 @@ public class PropertiesHelper
             }
         }
 
-        // TODO (MP) yikes. loading properties should be separate from resolution.
-        // This is fine for now since it is only used by labeling, which is going away. When
-        // labeling is burned this should be burned as well.
         return parseProperties(staticProperties);
     }
 

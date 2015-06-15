@@ -1,6 +1,6 @@
 FROM registry:0.9.1
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 CMD [ "/run.sh" ]
 

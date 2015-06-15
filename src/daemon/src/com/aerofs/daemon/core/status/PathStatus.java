@@ -32,7 +32,7 @@ public class PathStatus
 
     public PBPathStatus getStatus_(Path path)
     {
-        // TODO (MP) remove the Sync value here, once we rebuild the shell ext.
+        // TODO remove the Sync value here, once we rebuild the shell ext.
         return PBPathStatus.newBuilder()
                 .setSync(Sync.UNKNOWN)
                 .setFlags(_tsa.state_(path))
@@ -61,7 +61,7 @@ public class PathStatus
         for (Entry<Path, Integer> e : flagChanges.entrySet()) {
             Path path = e.getKey();
 
-            // TODO (MP) remove the Sync value here, once we rebuild the shell ext.
+            // TODO remove the Sync value here, once we rebuild the shell ext.
             notifications.put(path, PBPathStatus.newBuilder()
                     .setSync(Sync.UNKNOWN)
                     .setFlags(e.getValue())

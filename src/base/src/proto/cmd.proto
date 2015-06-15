@@ -59,8 +59,6 @@ enum CommandType {
     UPLOAD_LOGS = 10;
 
     // Add more commands here...
-    //
-    // TODO (MP) ACLs should be moved here...
 }
 
 // Command payload that is sent via verkehr.

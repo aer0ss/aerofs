@@ -127,7 +127,7 @@ def json_signup(request):
         elif e.get_type() == common.PBException.LICENSE_LIMIT:
             support_email = request.registry.settings.get('base.www.support_email_address')
             # TODO (WW) format the support email address as a mailto: link
-            # TODO (MP) dedupe code in login_view.py
+            # TODO dedupe code in login_view.py
             msg = "Adding your user account would cause your organization to exceed its " + \
                   "licensed user limit. Please contact your administrator at " + \
                   "{}.".format(support_email)

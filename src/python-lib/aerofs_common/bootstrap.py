@@ -54,9 +54,6 @@ class BootstrapClient(object):
         response = requests.get(url)
 
         if response.status_code == 200:
-            # TODO (MP) in the future when this call returns more details in the
-            # response, we can parse those out as well and return them to the caller
-            # to provide the user with more information in the UI.
             json = response.json()
             # Have to use get() rather than json[] for error_message since the field
             # is optinal.

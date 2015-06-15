@@ -16,10 +16,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * LDAP server and schema configuration.
- *
- * TODO (MP) refactor this class.
- * We should really only try to pull these values out of configuration if we're in LDAP mode. Trying
- * to parse them every time is just annoying.
  */
 public class LdapConfiguration
 {
@@ -240,7 +236,6 @@ public class LdapConfiguration
 
     /**
      * Convert a string to a security type.
-     * TODO (MP) this is used by the LdapVerificationServlet. Might want to refactor to be more user friendly.
      */
     public static SecurityType convertStringToSecurityType(String inputString)
     {

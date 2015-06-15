@@ -1,6 +1,6 @@
 FROM python:2.7
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 RUN pip install Jinja2 pyyaml
 RUN apt-get update && apt-get install -y qemu-utils && rm -rf /var/lib/apt/lists/*

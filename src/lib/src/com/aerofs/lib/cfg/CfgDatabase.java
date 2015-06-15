@@ -66,7 +66,7 @@ public class CfgDatabase
         SHELLEXT_CHECKSUM("shellext_checksum", ""),
 
         // Config for command channel.
-        TRANSIENT_CMD_CHANNEL_ID("cmd_channel_id", 0), // TODO (MP) eventually remove this.
+        TRANSIENT_CMD_CHANNEL_ID("cmd_channel_id", 0), // TODO remove this.
         CMD_CHANNEL_ID("command_channel_id", 0),
 
         // Config for bandwidth throttling
@@ -134,7 +134,7 @@ public class CfgDatabase
         /**
          * @param str the string representation of the key. Ideally it should be derived from
          * symbol names but not possible due to obfuscation.
-         * TODO (MP) revisit now that we no longer obfuscate jars.
+         * TODO revisit now that we no longer obfuscate jars.
          */
         Key(String str, @Nullable String defaultValue)
         {

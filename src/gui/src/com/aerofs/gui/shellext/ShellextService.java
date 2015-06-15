@@ -144,7 +144,7 @@ public class ShellextService
             shareFolder(normalize(call.getShareFolder().getPath()));
             break;
         case SYNC_STATUS:
-            // TODO (MP) remove this when the shell ext is rebuilt.
+            // TODO remove this when the shell ext is rebuilt.
             break;
         case VERSION_HISTORY:
             assert (call.hasVersionHistory());

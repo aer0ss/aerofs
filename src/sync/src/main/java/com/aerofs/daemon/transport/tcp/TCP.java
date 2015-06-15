@@ -1,6 +1,4 @@
 /**
- * Created by Weihan Wang, Air Computing Inc.
- * Authors: Weihan Wang, Allen A. George
  * Copyright (c) Air Computing Inc., 2011.
  */
 

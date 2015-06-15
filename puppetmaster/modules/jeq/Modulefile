@@ -1,8 +1,0 @@
-name 'aerofs-jeq'
-version '0.0.1'
-source 'UNKNOWN'
-author 'aerofs'
-license 'Apache License, Version 2.0'
-summary 'Module for the Jedis Epoch Queue'
-description 'Module for the Jedis Epoch Queue'
-project_page 'UNKNOWN'

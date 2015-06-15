@@ -1,6 +1,6 @@
 FROM aerofs/base
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 RUN apt-get update &&\
     # Preconfigure postfix and suppress its interactive dialogs during apt-get.

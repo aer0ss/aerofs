@@ -1,6 +1,6 @@
 FROM ubuntu:15.04
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 # Pin docker to 1.5.0 otherwise some base CoreOS images might not have the docker
 # daemon with an API recent enough to support us.

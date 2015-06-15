@@ -1,5 +1,5 @@
 FROM redis
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 CMD ["redis-server", "--appendonly", "yes"]

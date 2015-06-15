@@ -176,7 +176,7 @@ public class GroupDatabase extends AbstractSQLDatabase
      *
      * The same pattern is used for searching for users in an organization.
      *
-     * TODO (MP) de-dupe code with org db if this pattern is used elsewhere.
+     * TODO de-dupe code with org db if this pattern is used elsewhere.
      * @see com.aerofs.sp.server.lib.organization.OrganizationDatabase#listUsers
      */
     public List<GroupID> listGroups(OrganizationID orgId, int offset, int maxResults,

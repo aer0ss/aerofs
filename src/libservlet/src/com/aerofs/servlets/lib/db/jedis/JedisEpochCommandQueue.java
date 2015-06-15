@@ -61,7 +61,7 @@ import java.util.List;
  *   -> retry attempts
  *   -> creation timestamp
  *
- * TODO (MP) use SCRIPT LOAD / EVALSHA when Jedis supports it.
+ * TODO use SCRIPT LOAD / EVALSHA when Jedis supports it.
  */
 public class JedisEpochCommandQueue extends AbstractJedisDatabase
 {

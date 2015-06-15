@@ -1,6 +1,6 @@
 FROM nginx:1.7.11
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 

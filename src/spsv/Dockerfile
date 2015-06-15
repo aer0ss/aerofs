@@ -1,6 +1,6 @@
 FROM aerofs/base.jre8-and-mysql-client
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 RUN apt-get update && apt-get install -y tomcat6 &&\
     rm -rf /var/lib/apt/lists/* &&\

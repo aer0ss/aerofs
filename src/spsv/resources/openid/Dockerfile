@@ -1,5 +1,5 @@
 FROM aerofs/servlets
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 COPY root /

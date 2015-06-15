@@ -1,6 +1,6 @@
 FROM aerofs/base
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 RUN \
     apt-get update && apt-get install -y python2.7 &&\

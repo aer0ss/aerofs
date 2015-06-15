@@ -2,7 +2,7 @@
 #
 FROM aerofs/base
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 # see https://bugs.debian.org/775775
 # and https://github.com/docker-library/java/issues/19#issuecomment-70546872

@@ -1,6 +1,6 @@
 FROM aerofs/base.jre8-and-mysql-client
 
-MAINTAINER Weihan Wang "weihan@aerofs.com"
+MAINTAINER AeroFS "support@aerofs.com"
 
 # Use a single RUN statement to minimize image size. Alternatively, run a shell script
 # which would be much cleaner.

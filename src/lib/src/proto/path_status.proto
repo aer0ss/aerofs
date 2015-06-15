@@ -3,7 +3,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 
 // Status information for an object (file/folder) under the AeroFS root
 message PBPathStatus {
-    // TODO (MP) remove this enum once the sync field (below) has been removed.
+    // TODO remove this enum once the sync field (below) has been removed.
     // Summary of the sync status across all devices on which the object is shared
     enum Sync {
         UNKNOWN = 0;                // ignored file or sync status unavailable
@@ -19,7 +19,7 @@ message PBPathStatus {
         CONFLICT    = 4;            // (this file|a file under this folder) has a conflict
     }
 
-    // TODO (MP) this flag is no longer used. Remove during next rebuild of shell ext.
+    // TODO this flag is no longer used. Remove during next rebuild of shell ext.
     required Sync sync = 1;
 
     required int32 flags = 2;       // bitwise OR of zero or more Flag values

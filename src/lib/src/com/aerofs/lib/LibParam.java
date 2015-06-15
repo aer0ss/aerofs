@@ -213,7 +213,6 @@ public class LibParam extends BaseParam
 
     public static class CA
     {
-        // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
         public static final URL URL = getURL("http://ca.service:9002/prod");
 
         private static URL getURL(String url) {

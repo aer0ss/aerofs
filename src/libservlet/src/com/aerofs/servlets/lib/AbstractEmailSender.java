@@ -37,8 +37,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * This class allows you to send emails (either through local or remote SMTP).
- *
- * TODO (MP) This class needs some general refactoring love...
  */
 public abstract class AbstractEmailSender
 {

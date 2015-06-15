@@ -331,7 +331,7 @@ public final class CommandNotificationSubscriber
                     unlinkAndWipeSelf();
                     break;
                 case REFRESH_CRL:
-                    // TODO (MP) finish this - for now ignore.
+                    // TODO finish this.
                     break;
                 case UPLOAD_DATABASE:
                     _infoCollector.startUploadDatabase();
@@ -446,7 +446,6 @@ public final class CommandNotificationSubscriber
         UnlinkUtil.unlink();
 
         // Delete Root Anchor.
-        // TODO (MP) possibly implement secure delete.
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absDefaultRootAnchor()));
         // Also delete the entire config directory, if possible.
         // On Windows, files we hold open may refuse to be deleted.

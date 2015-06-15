@@ -862,7 +862,7 @@ service SPService {
     //
     // Required Auth Level: user
     //
-    // TODO (MP) consider renaming this to ListOrganizationGroups.
+    // TODO consider renaming this to ListOrganizationGroups.
     rpc ListGroups(ListGroupsCall) returns (ListGroupsReply);
 
     // List all group members in the given group.
@@ -1022,7 +1022,6 @@ message RemoveUserFromOrganizationReply {
     required PBStripeData stripe_data = 1;
 }
 
-// TODO (MP) clean this up.
 // I would love to reorganize the parameters of this message a bit, but that's not possible without
 // bumping the API version. Let's do this soon^TM.
 message ShareFolderCall {

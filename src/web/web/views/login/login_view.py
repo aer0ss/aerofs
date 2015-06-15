@@ -60,7 +60,7 @@ def _do_login(request):
                 # When a user logs in with a non-local credential for the first time this actually
                 # does a license check. We might want to handle this nicely on a different page, but
                 # for now we should at least do the right thing with the exception.
-                # TODO (MP) dedupe code in signup_view.py
+                # TODO dedupe code in signup_view.py
                 support_email = request.registry.settings.get('base.www.support_email_address')
                 log.warn(userid + " attempts to login with non-local cred hitting license limit.")
                 flash_error(request,
