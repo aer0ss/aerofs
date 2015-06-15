@@ -3,6 +3,12 @@
   @ Please read README.security.txt before contributing any Web code! @
   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+Learn about frontend code style
+================================
+
+The AeroFS JS and CSS style guide lives at https://github.com/aerofs/javascript. Please read it and use jshint (with the supplied settings) with your editor or dev workflow.
+
+Old code is likely not in compliance with the style guide. If you edit a file, please fix it to be in compliance. New JS code should always follow the code style guide.
 
 Run AeroFS website in a virtual environment
 ================================================
@@ -44,7 +50,7 @@ Third-party CSS files live in static/css. Only compiled files live in static/css
 
 Excepting shelob-related files, JS files written or edited by us live in static-src/js/. Third-party JS files live in static/js. Files in static/js/compiled are compiled; please don't edit them.
 
-Currently, to get Mako changes to show up on https://share.syncfs.com you have to run `sudo service uwsgi stop && sudo service uwsgi start` on Vagrant. Sorry about that. There might be a Pyramid mode that will help the site notice when template files change and refresh itself for you. TODO: Further research required.
+Currently, to get Mako changes to show up on https://share.syncfs.com you have to run `sudo service uwsgi stop && sudo service uwsgi start` on the wsgi container. Sorry about that. There might be a Pyramid mode that will help the site notice when template files change and refresh itself for you. TODO: Further research required.
 
 Many places in the codebase currently have inline styles or stylesheets. This is not great. Please move these out into their own Less files, then include the compiled CSS equivalents (`filename.min.css`) in the page(s) that need them. (Less is a superset of CSS, so you can do this without changing any of the markup--though it's probably worthwhile to sanity-check it at the same time as the move.)
 
