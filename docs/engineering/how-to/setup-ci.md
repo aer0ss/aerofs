@@ -290,9 +290,9 @@ sudo service actor-pool start
 
 ### Set up build agents
 
-Use Dockerized agents when possible. See `tools/ci/agents/README.md`. Eventually
-we will eliminate the need for physical agents. For the time being, to set up a physical
-agents, first follow steps in `tools/ci/agents/Dockerfile`, and then:
+Use Dockerized agents when possible. See [ci/agents/README.md](https://github.com/aerofs/aerofs-infra/blob/master/ci/agents/README.md).
+Eventually we will eliminate the need for physical agents. For the time being, to set up a physical
+agents, first follow steps in [ci/agents/Dockerfile](https://github.com/aerofs/aerofs-infra/blob/master/ci/agents/Dockerfile), and then:
 
 Allow the agent passwordless sudo for some commands (this is needed to make the dmg on linux). Run `sudo visudo` and add these lines:
 

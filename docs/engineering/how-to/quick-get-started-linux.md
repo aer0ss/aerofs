@@ -85,7 +85,7 @@ For a desktop installation, the steps are however slightly different.
     sudo mv Stubs nsis-2.46
 
     # Now msibuild... lucky boy, there is already a script!
-    sudo tools/ci/agents/root/scripts/install-msitools.sh
+    sudo tools/install-msitools.sh
 
 ## VPN
 

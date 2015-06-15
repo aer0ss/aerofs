@@ -1,4 +1,10 @@
 #!/bin/bash
+
+#######
+# BEWARE: this file had to be duplicated in https://github.com/aerofs/aerofs-infra/tree/master/ci/agents/root/scripts
+# If you change this file, please do so with the other one. Or terrible things will happen.
+#######
+
 set -eu
 
 if [ $# = 1 ] && [ $1 = cleanup-apt ]; then
