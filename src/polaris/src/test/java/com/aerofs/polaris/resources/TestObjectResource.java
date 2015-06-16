@@ -24,7 +24,6 @@ import org.apache.http.HttpStatus;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.util.Random;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.RestAssured.when;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -225,6 +223,26 @@ public final class TestObjectResource {
     }
 
     @Test
+    public void canRestoreDeletedObject() throws Exception {
+        SID store = SID.generate();
+        OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deleted_file);
+
+        reset(polaris.getNotifier());
+
+        given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(deleted_file, null, "file"))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(store))
+                .then().assertThat().statusCode(SC_OK);
+
+        checkTreeState(store, "tree/shouldAllowReinsertionOfDeletedObject.json");
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
+    }
+
+    @Test
     public void deletedObjectsShouldNotCauseNameConflicts() throws Exception {
         SID store = SID.generate();
         OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
@@ -269,7 +287,6 @@ public final class TestObjectResource {
                 .and()
                 .assertThat().statusCode(SC_OK);
 
-        System.out.println(getActualTree(store));
         checkTreeState(store, "tree/shouldAllowMoveFromDeletedParentToNonDeletedParent.json");
         verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(store), any(Long.class));
     }
@@ -374,8 +391,8 @@ public final class TestObjectResource {
         checkTreeState(rootStore, "tree/ShouldProperlyMigrateStore1.json");
         checkTreeState(sfSID, "tree/ShouldProperlyMigrateStore2.json");
 
-        // one notification from the share op, and one from the end of migration
-        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(rootStore), any(Long.class));
+        // one notification from the share op
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(rootStore), any(Long.class));
         // one notification from the new file, and one from the end of migration
         verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(sfSID), any(Long.class));
     }
@@ -471,7 +488,29 @@ public final class TestObjectResource {
         // similar behavior if reinserting the shared folder with a different name
         PolarisHelpers.newObject(AUTHENTICATED, folder, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder2", ObjectType.STORE)
                 .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+    }
 
+    @Test
+    public void shouldNotAllowModificationsToMountpointAfterSharing()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared_folder1");
+        OID sharedFile = PolarisHelpers.newFile(AUTHENTICATED, sharedFolder, "shared_file");
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
+
+        PolarisHelpers.newObject(AUTHENTICATED, sharedFolder, OID.generate(), "under_mountpoint", ObjectType.FILE)
+                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
+
+        PolarisHelpers.removeObject(AUTHENTICATED, sharedFolder, sharedFile);
+
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, rootStore, "file");
+        PolarisHelpers.moveObject(AUTHENTICATED, rootStore, sharedFolder, file, "file")
+                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
+
+        PolarisHelpers.moveObject(AUTHENTICATED, sharedFolder, rootStore, sharedFile, "shared_file")
+                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

@@ -29,6 +29,9 @@ public interface LogicalObjects {
     @SqlUpdate("update objects set locked = :locked where oid = :oid")
     int setLocked(@Bind("oid") UniqueID oid, @Bind("locked") boolean locked);
 
+    @SqlUpdate("delete from objects where oid = :oid")
+    int delete(@Bind("oid") UniqueID oid);
+
     @Nullable
     @SqlQuery("select store_oid, objects.oid, version, object_type, locked from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid")
     LockableLogicalObject get(@Bind("oid") UniqueID oid);

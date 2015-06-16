@@ -47,7 +47,7 @@ public final class PolarisExceptionMapper extends BaseExceptionMapper<PolarisExc
         } else if (throwable instanceof NotFoundException) {
             return Response.Status.NOT_FOUND;
         } else if (throwable instanceof ObjectLockedException) {
-            return Response.Status.SERVICE_UNAVAILABLE;
+            return Response.Status.CONFLICT;
         } else {
             return Response.Status.INTERNAL_SERVER_ERROR;
         }

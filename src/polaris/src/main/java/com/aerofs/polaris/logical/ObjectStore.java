@@ -393,8 +393,8 @@ public final class ObjectStore {
                 return false;
             // TODO (RD) make this work for mount points, currently we don't use the deleted field for mount points
             } else if (dao.children.isDeleted(currentParent, childOid)) {
-                // reinserting a deleted object into the store
-                Preconditions.checkArgument(getExistingObject(dao, childOid).store.equals(getExistingObject(dao, parentOid).store), "cannot restore a deleted object to a different store");
+                // reinserting a deleted object into the store, can't reinsert locked objects though
+                Preconditions.checkArgument(getUnlockedObject(dao, childOid).store.equals(getExistingObject(dao, parentOid).store), "cannot restore a deleted object to a different store");
                 dao.children.remove(currentParent, childOid);
                 return true;
             } else if (ObjectType.STORE == childObjectType) {
@@ -426,7 +426,7 @@ public final class ObjectStore {
             return new Updated(matchingTransform, parent);
         }
 
-        // get the parent
+        // parent must be unlocked so we don't insert an object that could miss migration
         LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
         Preconditions.checkArgument(isFolder(parent.objectType), "cannot insert into %s", parent.objectType);
 
@@ -462,10 +462,11 @@ public final class ObjectStore {
 
     private static Updated renameChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, byte[] newChildName) throws NotFoundException, NameConflictException {
         // get the parent
-        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
+        LogicalObject parent = getParent(dao, parentOid);
 
-        // the child we're removing exists
-        getExistingObject(dao, childOid);
+        // the child we're removing exists and is not locked
+        // strictly for rename operations the parent doesn't need to be unlocked, but to keep child names consistent across a migration don't change the name of a locked child
+        getUnlockedObject(dao, childOid);
 
         // the child we're removing is actually the child of this object
         Preconditions.checkArgument(dao.children.isChild(parentOid, childOid), "%s is not a child of %s", childOid, parentOid);
@@ -495,10 +496,10 @@ public final class ObjectStore {
         Preconditions.checkArgument(!Identifiers.isRootStore(childOid), "cannot remove root store %s", childOid);
 
         // get the parent
-        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
+        LogicalObject parent = getUnlockedParent(dao, parentOid);
 
-        // the child we're removing exists
-        LogicalObject child = getExistingObject(dao, childOid);
+        // the child we're removing exists and isn't locked (can't remove objects that are already in migration queue)
+        LogicalObject child = getUnlockedObject(dao, childOid);
 
         if (dao.children.isDeleted(parentOid, childOid) || !dao.children.isChild(parentOid, childOid)) {
             LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
@@ -740,6 +741,9 @@ public final class ObjectStore {
 
         dao.objects.update(folder.store, folder.oid, newVersion);
 
+        // cannot modify a folder after sharing it
+        dao.objects.setLocked(folder.oid, true);
+
         dao.mountPoints.add(folder.store, anchorOID, parent);
 
         return logicalTimestamp;
@@ -892,6 +896,16 @@ public final class ObjectStore {
             throw new ObjectLockedException(oid);
         }
         return parent;
+    }
+
+    private static LockableLogicalObject getUnlockedObject(DAO dao, UniqueID oid)
+            throws ObjectLockedException
+    {
+        LockableLogicalObject object = getExistingObject(dao, oid);
+        if (object.locked) {
+            throw new ObjectLockedException(oid);
+        }
+        return object;
     }
 
     private static boolean isFolder(ObjectType objectType) {

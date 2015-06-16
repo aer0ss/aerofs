@@ -155,12 +155,11 @@ public final class TestTransformsResource {
         PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
-        assertThat(applied.transforms, hasSize(4));
-        assertThat(applied.maxTransformCount, is(5L));
+        assertThat(applied.transforms, hasSize(3));
+        assertThat(applied.maxTransformCount, is(3L));
         assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
         assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
         assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.SHARE, 2, null, null, null));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(5, DEVICE, folder, TransformType.REMOVE_CHILD, 3, file, null, null));
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);

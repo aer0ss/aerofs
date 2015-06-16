@@ -7,6 +7,7 @@ import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
+import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.JobStatus;
@@ -153,8 +154,8 @@ public class TestStoreMigrator {
         migratorExecutor.shutdown();
         assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
 
-        // at least 550 * 3 notifications. 1 for the creation, and the 2 operations for cross-store move
-        verify(notifier).notifyStoreUpdated(eq(newStore), gt(1650L));
+        // at least 550 * 2 notifications. 1 for the creation, and the 1 operations for cross-store move
+        verify(notifier).notifyStoreUpdated(eq(newStore), gt(1100L));
         // FIXME (RD) find out the number of transactions to migrate a smaller shared folder programatically
         verify(dbi, atLeast(6)).open();
 
@@ -172,7 +173,7 @@ public class TestStoreMigrator {
     @Test
     public void shouldLockFolders() throws Exception
     {
-        doReturn(Lists.newArrayList()).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any());
+        doReturn(null).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any());
 
         SID rootStore = SID.rootSID(USERID);
         OID sharedFolder = newFolder(rootStore, "shared_folder");
@@ -197,10 +198,16 @@ public class TestStoreMigrator {
         OID unlockedFolder = newFolder(store, "folder2");
         OID fileUnderLockedFolder = newFile(lockedFolder, "file1");
         OID fileUnderUnlockedFolder = newFile(unlockedFolder, "file2");
+        OID deletedLockedFile = newFile(unlockedFolder, "deleted");
+        OID lockedFile = newFile(unlockedFolder, "locked");
+        objects.performTransform(USERID, DEVICE, unlockedFolder, new RemoveChild(deletedLockedFile));
+
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
             dao.objects.setLocked(lockedFolder, true);
+            dao.objects.setLocked(deletedLockedFile, true);
+            dao.objects.setLocked(lockedFile, true);
             return null;
         });
 
@@ -229,7 +236,34 @@ public class TestStoreMigrator {
             objects.performTransform(USERID, DEVICE, unlockedFolder, new MoveChild(fileUnderUnlockedFolder, lockedFolder, "file2"));
             fail();
         } catch (CallbackFailedException e) {
-        assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+        }
+
+        // a simple rename doesn't need parent to be unlocked
+        objects.performTransform(USERID, DEVICE, lockedFolder, new MoveChild(fileUnderLockedFolder, lockedFolder, "new_filename"));
+
+        // though you can't rename a locked object
+        try {
+            objects.performTransform(USERID, DEVICE, store, new MoveChild(lockedFolder, store, "new_foldername"));
+            fail();
+        } catch (CallbackFailedException e) {
+            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+        }
+
+        // can't reinsert a deleted locked object
+        try {
+            objects.performTransform(USERID, DEVICE, unlockedFolder, new InsertChild(deletedLockedFile, null, "deleted"));
+            fail();
+        } catch (CallbackFailedException e) {
+            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+        }
+
+        // can't delete a locked object
+        try {
+            objects.performTransform(USERID, DEVICE, unlockedFolder, new RemoveChild(lockedFile));
+            fail();
+        } catch (CallbackFailedException e) {
+            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
         }
     }
 
