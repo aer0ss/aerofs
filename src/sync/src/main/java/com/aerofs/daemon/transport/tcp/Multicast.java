@@ -137,7 +137,10 @@ class Multicast implements IMaxcast, ILinkStateListener
 
         for (NetworkInterface iface : added) {
             try {
-                if (!iface.supportsMulticast()) continue;
+                // NB: we do NOT use NetworkInterface#supportsMulticast as it has proven unreliable,
+                // giving both false positives and false negatives.
+                // Instead, we just attempt to create a multicast socket and consider the interface
+                // unusable if we get an exception
 
                 final MulticastSocket s = new MulticastSocket(multicastPort); // bind to *:TCP_MCAST_PORT
                 // N.B. Setting loopback mode to true _disables_ IP multicast on local loopback
