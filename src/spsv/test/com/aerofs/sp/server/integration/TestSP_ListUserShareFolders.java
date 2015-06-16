@@ -12,6 +12,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
@@ -20,18 +21,39 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
 {
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void shouldThrowExNoPermIfNonAdminQueriesOtherUsers()
             throws Exception
     {
-        setSession(USER_1);
-        service.listUserSharedFolders(USER_2.id().getString());
+        Organization org;
+        User admin, user1, user2;
+
+        sqlTrans.begin();
+        try {
+            admin = saveUser();
+            org = admin.getOrganization();
+            user1 = saveUser();
+            user1.setOrganization(org, AuthorizationLevel.USER);
+            user2 = saveUser();
+            user2.setOrganization(org, AuthorizationLevel.USER);
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+
+        setSession(user1);
+
+        try {
+            service.listUserSharedFolders(user2.id().getString());
+            fail();
+        } catch (ExNoPerm ignored) {
+            // expected
+        }
     }
 
     @Test(expected = ExNoPerm.class)
@@ -50,12 +72,29 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         service.listUserSharedFolders("non-existing");
     }
 
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void shouldThrowExNoPermIfAdminQueriesUsersInOtherOrg()
             throws Exception
     {
-        setSession(USER_1);
-        service.listUserSharedFolders(USER_2.id().getString());
+        User user1, user2;
+
+        sqlTrans.begin();
+        try {
+            user1 = saveUser();
+            user2 = saveUserWithNewOrganization();
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+
+        setSession(user1);
+        try {
+            service.listUserSharedFolders(user2.id().getString());
+            fail();
+        } catch (ExNoPerm ignored) {
+            // expected
+        }
     }
 
     @Test
@@ -118,19 +157,29 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldSetOwnedByTeamFlagIfAndOnlyIfOwnedByTeam()
             throws Exception
     {
+        User user1, user2, user3, otherAdmin;
+
+        sqlTrans.begin();
+        try {
+            user1 = saveUser();
+            user2 = saveUserWithNewOrganization();
+            user3 = saveUserWithNewOrganization();
+            otherAdmin = saveUser();
+            otherAdmin.setOrganization(user2.getOrganization(), AuthorizationLevel.ADMIN);
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+
         SID sid1 = SID.generate();
         SID sid2 = SID.generate();
-        shareAndJoinFolder(USER_1, sid1, USER_2, Permissions.allOf(Permission.WRITE));
-        shareAndJoinFolder(USER_2, sid2, USER_3, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(user1, sid1, user2, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(user2, sid2, user3, Permissions.allOf(Permission.WRITE));
 
-        // add an admin to USER_2's team
-        sqlTrans.begin();
-        User admin = saveUser();
-        admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
-        sqlTrans.commit();
-
-        setSession(admin);
-        for (PBSharedFolder sf : service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList()) {
+        setSession(otherAdmin);
+        for (PBSharedFolder sf : service.listUserSharedFolders(user2.id().getString())
+                .get().getSharedFolderList()) {
             SID sid = new SID(BaseUtil.fromPB(sf.getStoreId()));
             if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
             if (sid2.equals(sid)) assertTrue(sf.getOwnedByTeam());

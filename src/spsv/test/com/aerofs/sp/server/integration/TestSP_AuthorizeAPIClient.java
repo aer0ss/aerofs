@@ -9,11 +9,14 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
+import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -21,6 +24,8 @@ import static org.junit.Assert.fail;
 
 public class TestSP_AuthorizeAPIClient extends AbstractSPTest
 {
+    private Organization org;
+    private User admin;
     private User user;
 
     private void setUser(User user)
@@ -33,7 +38,11 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     public void setup() throws Exception
     {
         sqlTrans.begin();
+        admin = saveUser();
+        admin.setLevel(AuthorizationLevel.ADMIN);
+        org = admin.getOrganization();
         user = saveUser();
+        user.setOrganization(org, AuthorizationLevel.USER);
         sqlTrans.commit();
     }
 
@@ -63,20 +72,24 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     @Test
     public void testShouldAuthDevice() throws Exception
     {
-        setUser(user);
-        MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.deauthorize();
+        for (User sessionUser : newArrayList(user, admin))
+        {
+            setUser(sessionUser);
+            MobileAccessCode auth = service.getMobileAccessCode().get();
+            session.deauthorize();
 
-        AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
-                "My Test Device").get();
-        String expectedOrg = attrs.getOrgId();
+            AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
+                    "My Test Device").get();
 
-        assertNotNull( attrs );
-        assertNotNull( attrs.getUserId() );
-        assertNotNull( attrs.getOrgId() );
-        assertEquals( user.id().getString(), attrs.getUserId() );
-        assertEquals( expectedOrg, attrs.getOrgId() );
-        assertEquals( attrs.getIsOrgAdmin(), Boolean.TRUE );
+            assertNotNull( attrs );
+            assertNotNull( attrs.getUserId() );
+            assertNotNull( attrs.getOrgId() );
+            assertEquals( sessionUser.id().getString(), attrs.getUserId() );
+            assertEquals( org.id().toString(), attrs.getOrgId() );
+            // hard-coding this so we can avoid querying the sql database to determine whether
+            //   the session user is the admin.
+            assertEquals( sessionUser == admin, attrs.getIsOrgAdmin() );
+        }
     }
 
     @Test

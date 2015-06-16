@@ -13,6 +13,7 @@ import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -20,6 +21,24 @@ import static org.junit.Assert.fail;
 
 public class TestSP_OrganizationMovement extends AbstractSPTest
 {
+    User user1, user2, user3;
+
+    @Before
+    public void setup()
+            throws Exception
+    {
+        sqlTrans.begin();
+        try {
+            user1 = saveUser();
+            user2 = saveUserWithNewOrganization();
+            user3 = saveUserWithNewOrganization();
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+    }
+
     private void sendInvitation(User user)
             throws Exception
     {
@@ -77,15 +96,15 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void shouldMoveUserToNewOrganizationViaAcceptOrganizationInvitationCall()
             throws Exception
     {
-        setSession(USER_1);
+        setSession(user1);
 
-        sendInvitation(USER_2);
-        setSession(USER_2);
-        acceptFirstInvitation(USER_2);
+        sendInvitation(user2);
+        setSession(user2);
+        acceptFirstInvitation(user2);
 
         // Verify user 2 is indeed in the new organization.
         sqlTrans.begin();
-        assertEquals(USER_1.getOrganization(), USER_2.getOrganization());
+        assertEquals(user1.getOrganization(), user2.getOrganization());
         sqlTrans.commit();
 
         // Verify get organization invitations call does not return any new invitations, since the
@@ -95,82 +114,47 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldAllowInviteToPrivateOrg() throws Exception
-    {
-        sqlTrans.begin();
-        // create the accepter in his own organization
-        User accepter = saveUser();
-
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
-        try {
-            // now, force private deployment so the admin is created in the private organization.
-            User admin = saveUser();
-            Organization adminOrg = admin.getOrganization();
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, adminOrg.id());
-            sqlTrans.commit();
-
-            setSession(admin);
-            sendInvitation(accepter);
-
-            setSession(accepter);
-            acceptOrganizationInvitation(adminOrg, accepter);
-
-            // Verify accepter is indeed in the new organization.
-            sqlTrans.begin();
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, accepter.getOrganization().id());
-            sqlTrans.commit();
-
-            // Verify get organization invitations call does not return any new invitations, since
-            // the user has already been moved over.
-            GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
-            assertEquals(0, invites.getOrganizationInvitationsList().size());
-        } finally {
-            PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
-        }
-    }
-
-    @Test
     public void inviteToOrganization_shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
             throws Exception
     {
-        setSession(USER_1);
-        sendInvitation(USER_2);
+        setSession(user1);
+        sendInvitation(user2);
         try {
-            sendInvitation(USER_2);
+            sendInvitation(user2);
             fail();
-        } catch (ExAlreadyInvited e) {}
+        } catch (ExAlreadyInvited ignored) {}
     }
 
     @Test
     public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserIsAlreadyAccepted()
             throws Exception
     {
-        setSession(USER_1);
-        sendInvitation(USER_2);
-        setSession(USER_2);
-        Organization org = acceptFirstInvitation(USER_2);
+        setSession(user1);
+        sendInvitation(user2);
+        setSession(user2);
+        Organization org = acceptFirstInvitation(user2);
 
         try {
-            acceptOrganizationInvitation(org, USER_2);
+            acceptOrganizationInvitation(org, user2);
             fail();
-        } catch (ExNotFound e) {}
+        } catch (ExNotFound ignored) {}
     }
 
     @Test
     public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserNotInvitedToTargetOrganization()
             throws Exception
     {
-        setSession(USER_1);
+        setSession(user1);
 
-        sendInvitation(USER_2);
-        setSession(USER_2);
-        Organization org = acceptFirstInvitation(USER_2);
-        setSession(USER_3);
+        sendInvitation(user2);
+        setSession(user2);
+        Organization org = acceptFirstInvitation(user2);
+        setSession(user3);
 
         try {
-            acceptOrganizationInvitation(org, USER_2);
+            acceptOrganizationInvitation(org, user2);
             fail();
-        } catch (ExNotFound e) {}
+        } catch (ExNotFound ignored) {}
     }
 
     @Test
@@ -178,16 +162,16 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             throws Exception
     {
         // Make user 1 and admin of a new organization.
-        setSession(USER_1);
+        setSession(user1);
 
         // User 2 is also an admin, and invites user 1 to thier org.
-        setSession(USER_2);
+        setSession(user2);
 
-        sendInvitation(USER_1);
+        sendInvitation(user1);
 
         // User 1 accept invite to user 2's org.
-        setSession(USER_1);
-        acceptFirstInvitation(USER_1);
+        setSession(user1);
+        acceptFirstInvitation(user1);
 
         // Verify user 1 is not an admin in user 2's organization.
         GetAuthorizationLevelReply reply = service.getAuthorizationLevel().get();
@@ -198,16 +182,16 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void acceptOrganizationInvitation_shouldThowExNotFoundWhenTryingToAcceptIgnoredInvitation()
             throws Exception
     {
-        setSession(USER_1);
+        setSession(user1);
 
-        sendInvitation(USER_2);
-        setSession(USER_2);
+        sendInvitation(user2);
+        setSession(user2);
         Organization org = deleteFirstInvitation();
 
         try {
             // Verify that the organization invite has indeed been deleted (ignored).
-            acceptOrganizationInvitation(org, USER_2);
+            acceptOrganizationInvitation(org, user2);
             fail();
-        } catch (ExNotFound e) {}
+        } catch (ExNotFound ignored) {}
     }
 }

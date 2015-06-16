@@ -18,13 +18,11 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 {
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void shouldThrowExNoPermForNonAdmin()
             throws Exception
     {
@@ -32,10 +30,16 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 
         // make USER_1 a non-admin
         sqlTrans.begin();
+        USER_2.setLevel(AuthorizationLevel.ADMIN);
         USER_1.setOrganization(USER_2.getOrganization(), AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        service.listOrganizationSharedFolders(1000, 0);
+        try {
+            service.listOrganizationSharedFolders(1000, 0);
+            fail();
+        } catch (ExNoPerm ignored) {
+            // expected
+        }
     }
 
     @Test
@@ -99,18 +103,28 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
     public void shouldSetOwnedByTeamFlagIfAndOnlyIfOwnedByTeam()
             throws Exception
     {
+        User user1, user2, user3, otherAdmin;
+
+        sqlTrans.begin();
+        try {
+            user1 = saveUser();
+            user2 = saveUserWithNewOrganization();
+            user3 = saveUserWithNewOrganization();
+            otherAdmin = saveUserWithNewOrganization();
+            otherAdmin.setOrganization(user2.getOrganization(), AuthorizationLevel.ADMIN);
+
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+
         SID sid1 = SID.generate();
         SID sid2 = SID.generate();
-        shareAndJoinFolder(USER_1, sid1, USER_2, Permissions.allOf(Permission.WRITE));
-        shareAndJoinFolder(USER_2, sid2, USER_3, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(user1, sid1, user2, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(user2, sid2, user3, Permissions.allOf(Permission.WRITE));
 
-        // add an admin to USER_2's team
-        sqlTrans.begin();
-        User admin = saveUser();
-        admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
-        sqlTrans.commit();
-
-        setSession(admin);
+        setSession(otherAdmin);
         for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0)
                 .get().getSharedFolderList()) {
             SID sid = new SID(BaseUtil.fromPB(sf.getStoreId()));

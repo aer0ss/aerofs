@@ -228,7 +228,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
     {
         sqlTrans.begin();
         User owner = saveUser();
-        User admin = saveUser();
+        User admin = saveUserWithNewOrganization();
         admin.setLevel(AuthorizationLevel.ADMIN);
         User invited = newUser();
         factOrgInvite.save(admin, invited, admin.getOrganization(), null);
@@ -240,7 +240,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         try {
             service.updateACL(BaseUtil.toPB(SID_1), owner.id().getString(), Permissions.EDITOR.toPB(), false);
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
 

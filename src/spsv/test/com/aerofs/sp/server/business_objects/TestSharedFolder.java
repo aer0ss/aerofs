@@ -175,7 +175,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
 
         User ts = user.getOrganization().getTeamServerUser();
         try {
@@ -189,7 +189,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
         // why 4? owner, user, and their Team Servers
         addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), owner, 4);
 
@@ -236,7 +236,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
 
         sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
         assertNull(sf.getPermissionsNullable(getTeamServerUser(user)));
@@ -276,7 +276,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
 
         // why 4? owner, user, and their Team Servers
         addJoinedUser(sf, user, Permissions.allOf(Permission.WRITE), owner, 4);
@@ -317,7 +317,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
         sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
         User tsUser = getTeamServerUser(user);
         assertNull(sf.getPermissionsNullable(tsUser));
@@ -338,7 +338,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
         sf.addPendingUser(user, Permissions.allOf(Permission.WRITE), owner);
 
         // pending => joined
@@ -384,7 +384,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         SharedFolder sf = saveUserAndSharedFolder();
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         User user2 = saveUser();
         // Move the two users to the same org
         user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
@@ -408,7 +408,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         // why 4? owner, user, and their team servers
         addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 4);
         assertEquals(sf.setPermissions(owner, Permissions.allOf(Permission.WRITE)).size(), 4);
@@ -444,7 +444,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         User user2 = saveUser();
         // Move the two users into the same org
         user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
@@ -538,7 +538,9 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         SharedFolder sf = saveUserAndSharedFolder();
 
-        User user = saveUser();
+        User user = saveUserWithNewOrganization();
+
+        assertNull(sf.getPermissionsNullable(getTeamServerUser(user)));
 
         try {
             sf.removeTeamServerForUser(user);
@@ -553,7 +555,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         User user2 = saveUser();
         // Move the two users into the same org
         user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
@@ -587,7 +589,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         // Why 4? owner, user, and their TS
         addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 4);
 
@@ -620,11 +622,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        User user1 = saveUser();
+        User user1 = saveUserWithNewOrganization();
         // Why 4? owner, user, and their TS
         addJoinedUser(sf, user1, Permissions.allOf(Permission.WRITE), owner, 4);
 
-        User user2 = saveUser();
+        User user2 = saveUserWithNewOrganization();
         // Why 6? owner, user1, user2, and their TS
         addJoinedUser(sf, user2, Permissions.allOf(Permission.WRITE, Permission.MANAGE), owner, 6);
 

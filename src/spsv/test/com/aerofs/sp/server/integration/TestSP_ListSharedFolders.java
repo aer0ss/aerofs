@@ -107,14 +107,13 @@ public class TestSP_ListSharedFolders extends AbstractSPFolderTest
     {
         sqlTrans.begin();
         User sharer = saveUser(); // org 1
-        User pendingSharee = saveUser(); // org 2
+        User pendingSharee = saveUserWithNewOrganization(); // org 2
         User joinedSharee = saveUser(); // org 2
         User leftSharee = saveUser(); // org 2
-        User otherSharee = saveUser(); // org 3
+        User otherSharee = saveUserWithNewOrganization(); // org 3
 
         Organization org = pendingSharee.getOrganization();
         User ts = org.getTeamServerUser(); // ts of org 2
-
         joinedSharee.setOrganization(org, AuthorizationLevel.USER);
         leftSharee.setOrganization(org, AuthorizationLevel.USER);
         sqlTrans.commit();

@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,10 +16,23 @@ import static org.junit.Assert.fail;
 
 public class TestSP_SetAuthorizationLevel extends AbstractSPTest
 {
+    User user1, user2;
+
     @Before
     public void setup()
+            throws Exception
     {
-        setSession(USER_1);
+        sqlTrans.begin();
+        try {
+            user1 = saveUserWithNewOrganization();
+            user2 = saveUserWithNewOrganization();
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.handleException();
+            throw e;
+        }
+
+        setSession(user1);
     }
 
     @Test
@@ -28,7 +42,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
         try {
             service.setAuthorizationLevel("non-existing@user", PBAuthorizationLevel.USER);
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
     @Test
@@ -36,16 +50,16 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         try {
-            service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.USER);
+            service.setAuthorizationLevel(user2.id().getString(), PBAuthorizationLevel.USER);
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
     @Test(expected = ExNoPerm.class)
     public void shouldThrowIfRequesterIsNotAdmin()
             throws Exception
     {
-        service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(user2.id().getString(), PBAuthorizationLevel.ADMIN);
     }
 
     @Test
@@ -53,9 +67,9 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         try {
-            service.setAuthorizationLevel(USER_1.id().getString(), PBAuthorizationLevel.ADMIN);
+            service.setAuthorizationLevel(user1.id().getString(), PBAuthorizationLevel.ADMIN);
             fail();
-        } catch (ExNoPerm e) {}
+        } catch (ExNoPerm ignored) {}
     }
 
     @Test
@@ -63,14 +77,14 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         sqlTrans.begin();
-        USER_2.setOrganization(USER_1.getOrganization(), AuthorizationLevel.USER);
-        assertEquals(USER_2.getLevel(), AuthorizationLevel.USER);
+        user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
+        assertEquals(user2.getLevel(), AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(user2.id().getString(), PBAuthorizationLevel.ADMIN);
 
         sqlTrans.begin();
-        assertEquals(USER_2.getLevel(), AuthorizationLevel.ADMIN);
+        assertEquals(user2.getLevel(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
     }
 }

@@ -50,6 +50,10 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * TODO (AT):
+ *   - saveUser() should require explicit org and auth level.
+ */
 public abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
 {
     @Spy protected final SPDatabase db = new SPDatabase(sqlTrans);

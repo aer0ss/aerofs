@@ -26,6 +26,7 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.*;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.server.url_sharing.UrlSharingDatabase;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
@@ -101,6 +102,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * A base class for all tests using the SPService as the "seam"
+ *
+ * TODO (AT):
+ *  - get rid of USER_1, USER_2, and USER_3.
+ *  - saveUser should require explicit org and auth level.
  */
 public class AbstractSPTest extends AbstractTestWithDatabase
 {
@@ -390,6 +395,14 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         User user = newUser();
         saveUser(user);
+        return user;
+    }
+
+    protected User saveUserWithNewOrganization()
+            throws Exception
+    {
+        User user = saveUser();
+        user.setOrganization(saveOrganization(), AuthorizationLevel.ADMIN);
         return user;
     }
 

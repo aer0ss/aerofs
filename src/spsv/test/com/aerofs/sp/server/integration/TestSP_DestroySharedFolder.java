@@ -16,6 +16,7 @@ import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -112,9 +113,12 @@ public class TestSP_DestroySharedFolder extends AbstractSPFolderTest
     public void shouldThrowExNoPermForAdminOfOrgWithNoManagers() throws Exception
     {
         sqlTrans.begin();
-        User otherAdmin = saveUser();
+        User otherAdmin = saveUserWithNewOrganization();
+
         assertTrue(otherAdmin.isAdmin());
+        assertNotEquals(otherAdmin.getOrganization(), owner.getOrganization());
         sqlTrans.commit();
+
         setSession(otherAdmin);
         try {
             service.destroySharedFolder(BaseUtil.toPB(sid));

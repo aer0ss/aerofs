@@ -510,7 +510,7 @@ service SPService {
     // Requires
     //
     // Required Auth Level: admin
-    // Throws: ExNoPerm if the current user isn't an admin of her organization
+    // Throws: ExNoPerm if the current user isn't an admin of their organization
     //         ExNotFound if the specified device does not exist for the given organization. Note
     //              that this is necessary, otherwise, we would allow email-unverified users to
     //              certify Team Servers, bypassing RegisterTeamServerDevice(). The latter method

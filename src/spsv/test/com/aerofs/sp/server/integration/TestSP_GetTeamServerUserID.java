@@ -5,45 +5,44 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.ids.UserID;
-import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+
+import static org.junit.Assert.fail;
 
 public class TestSP_GetTeamServerUserID extends AbstractSPTest
 {
-    @Captor ArgumentCaptor<OrganizationID> capOrganizationID;
-
-    User user;
+    User user, user2;
 
     @Before
     public void setup()
-            throws ExNotAuthenticated
+            throws Exception
     {
-        setSession(USER_1);
-        user = USER_1;
+        sqlTrans.begin();
+        try {
+            user = saveUser();
+            user2 = saveUser();
+            user2.setOrganization(user.getOrganization(), AuthorizationLevel.USER);
+            sqlTrans.commit();
+        } catch (Exception e) {
+            sqlTrans.rollback();
+            throw e;
+        }
     }
 
-    @Test (expected = ExNoPerm.class)
+    @Test
     public void shouldThrowIfUserIsNonAdmin()
             throws Exception
     {
-        // set USER_1 a non-admin
-        sqlTrans.begin();
-        USER_1.setOrganization(USER_2.getOrganization(), AuthorizationLevel.USER);
-        sqlTrans.commit();
+        setSession(user2);
 
-        getTeamServerUserID();
-    }
-
-    private UserID getTeamServerUserID()
-            throws Exception
-    {
-        return UserID.fromInternal(service.getTeamServerUserID().get().getId());
+        try {
+            service.getTeamServerUserID();
+            fail();
+        } catch (ExNoPerm ignored) {
+            // expected
+        }
     }
 }

@@ -47,7 +47,7 @@ public class TestSP_RefreshCertificate extends AbstractSPCertificateBasedTest
     {
         sqlTrans.begin();
         User tsUser = TEST_1_USER.getOrganization().getTeamServerUser();
-        tsUser.setLevel(AuthorizationLevel.ADMIN);
+        TEST_1_USER.setLevel(AuthorizationLevel.ADMIN);
         Device dev = saveDevice(tsUser);
         sqlTrans.commit();
 

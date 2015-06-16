@@ -59,29 +59,6 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         } catch (ExAlreadyExist e) {}
     }
 
-    @Test
-    public void shouldThrowIfNoStripeCustomrIDWhenExceedingFreePlan()
-            throws Exception
-    {
-        inviteMaximumFreeUsers();
-
-        try {
-            service.inviteToOrganization("paid@invitee.com");
-            fail();
-        } catch (ExNoStripeCustomerID e) {}
-    }
-
-    @Test
-    public void shouldNotThrowIfStripeCustomerIDIsPresentWhenExceedingFreePlan()
-            throws Exception
-    {
-        inviteMaximumFreeUsers();
-
-        service.setStripeCustomerID("123");
-
-        service.inviteToOrganization("paid@invitee.com");
-    }
-
     @Captor ArgumentCaptor<String> signUpCodeCaptor;
 
     @Test
@@ -115,7 +92,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
             throws Exception
     {
         sqlTrans.begin();
-        User user1 = newUser(), admin1 = saveUser(), admin2 = saveUser();
+        User user1 = newUser(), admin1 = saveUser(), admin2 = saveUserWithNewOrganization();
         sqlTrans.commit();
 
         setSession(admin1);
@@ -136,14 +113,5 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         assertTrue(factOrgInvite.getBySignUpCodeNullable(firstCode) == null);
         assertTrue(factOrgInvite.getBySignUpCodeNullable(secondCode).exists());
         sqlTrans.commit();
-    }
-
-    private void inviteMaximumFreeUsers()
-            throws Exception
-    {
-        service.setMaxFreeMembers(3);
-        // Current we allow at most three members for free
-        service.inviteToOrganization("free@rider1.com");
-        service.inviteToOrganization("free@rider2.com");
     }
 }

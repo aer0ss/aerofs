@@ -40,7 +40,7 @@ public class TestUser_SetOrganization extends AbstractBusinessObjectTest
         assertEquals(user.getLevel(), ADMIN);
 
         // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
-        User admin = saveUser();
+        User admin = saveUserWithNewOrganization();
         user.setOrganization(admin.getOrganization(), USER);
         assertEquals(user.getLevel(), USER);
     }
@@ -84,9 +84,10 @@ public class TestUser_SetOrganization extends AbstractBusinessObjectTest
             throws Exception
     {
         User user = saveUser();
-        Organization org = saveUser().getOrganization();
+        User inviter = saveUserWithNewOrganization();
+        Organization org = inviter.getOrganization();
 
-        OrganizationInvitation oi = factOrgInvite.save(saveUser(), user, org, null);
+        OrganizationInvitation oi = factOrgInvite.save(inviter, user, org, null);
         assertTrue(oi.exists());
         user.setOrganization(org, USER);
         assertFalse(oi.exists());
@@ -139,7 +140,7 @@ public class TestUser_SetOrganization extends AbstractBusinessObjectTest
         assertJoinedRole(sf2, tsUserOld, Permissions.allOf(Permission.WRITE));
 
         // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
-        User admin = saveUser();
+        User admin = saveUserWithNewOrganization();
         Organization orgNew = admin.getOrganization();
         User tsUserNew = orgNew.getTeamServerUser();
 
