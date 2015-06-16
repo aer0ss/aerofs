@@ -19,5 +19,3 @@ EXPOSE 8085 8700
 
 # Define default command
 CMD [ "/run.sh" ]
-
-RUN mkdir -p /etc/aerofs && touch /etc/aerofs/private-deployment-flag

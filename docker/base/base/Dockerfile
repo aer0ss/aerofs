@@ -5,9 +5,6 @@ MAINTAINER AeroFS "support@aerofs.com"
 
 RUN apt-get update && apt-get install -y curl vim && rm -rf /var/lib/apt/lists/*
 
-# TODO (WW) remove this
-RUN mkdir -p /etc/aerofs && touch /etc/aerofs/private-deployment-flag
-
 ENTRYPOINT [ "/container-scripts/service-barrier" ]
 
 COPY root buildroot /

@@ -53,11 +53,7 @@ public final class ServerConfigurationLoader
 
         Properties systemProperties = System.getProperties();
         Properties merged;
-        if (ConfigurationUtils.isPrivateDeployment()) {
-            merged = helper.mergeProperties(getHttpProperties(serviceName), extra, systemProperties);
-        } else {
-            merged = helper.mergeProperties(extra, systemProperties);
-        }
+        merged = helper.mergeProperties(getHttpProperties(serviceName), extra, systemProperties);
         return helper.parseProperties(merged);
     }
 
