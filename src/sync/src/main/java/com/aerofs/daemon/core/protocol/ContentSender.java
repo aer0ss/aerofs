@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.TransportRoutingLayer;
 import com.aerofs.daemon.core.phy.DigestSerializer;
+import com.aerofs.daemon.core.protocol.OngoingTransfer.End;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -20,8 +21,6 @@ import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetContentRequest;
@@ -169,9 +168,12 @@ public class ContentSender
                 return sendBig(ep, c, os, prefixLen, ul, md);
             } finally {
                 tcb.pseudoResumed_();
+                // IMPORTANT: mark transfer as done to avoid race between any scheduled progress
+                // notification and the end notification
+                ul.done_(End.SUCCESS);
             }
         } catch (Exception e) {
-            _ulstate.ended_(new SOCID(c.sokid.soid(), CID.CONTENT), ep, true);
+            ul.done_(End.FAILURE);
             throw e;
         } finally {
             _ongoing.remove(ul);
@@ -214,7 +216,6 @@ public class ContentSender
             }
 
             checkState(done == c.length);
-            ongoing.progress(0);
         } catch (Exception e) {
             l.warn("{} fail send chunk over {} err:{}", ep.did(), ep.tp(), e.getMessage());
             InvalidationReason reason = (e instanceof ExUpdateInProgress) ?

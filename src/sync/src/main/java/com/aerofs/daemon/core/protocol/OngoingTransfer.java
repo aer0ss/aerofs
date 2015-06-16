@@ -19,6 +19,12 @@ public final class OngoingTransfer extends AbstractEBSelfHandling {
 
     private final CoreScheduler _sched;
     private final BaseTransferState _state;
+    private boolean _done;
+
+    public enum End {
+        SUCCESS,
+        FAILURE
+    }
 
     public OngoingTransfer(CoreScheduler sched, BaseTransferState state, Endpoint ep, SOID soid, long totalFileLength) {
         _sched = sched;
@@ -26,6 +32,11 @@ public final class OngoingTransfer extends AbstractEBSelfHandling {
         _socid = new SOCID(soid, CID.CONTENT);
         _ep = ep;
         _totalFileLength = totalFileLength;
+    }
+
+    void done_(End end) {
+        _done = true;
+        _state.ended_(_socid, _ep, end == End.FAILURE);
     }
 
     void abort() {
@@ -46,6 +57,7 @@ public final class OngoingTransfer extends AbstractEBSelfHandling {
 
     @Override
     public void handle_() {
+        if (_done) return;
         _state.progress_(_socid, _ep, _totalFileLength - _remaining, _totalFileLength);
         _scheduled = false;
     }

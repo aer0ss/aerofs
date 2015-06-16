@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
+import com.aerofs.daemon.core.protocol.OngoingTransfer.End;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
@@ -41,6 +42,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.aerofs.defects.Defects.newMetric;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ContentReceiver
@@ -253,9 +255,11 @@ public class ContentReceiver
                         prefix.delete_();
                         throw e;
                     }
-                    _dlState.ended_(new SOCID(k.soid(), CID.CONTENT), rs.ep(), false);
+                    // IMPORTANT: mark transfer as done to avoid race between any scheduled progress
+                    // notification and the end notification
+                    dl.done_(End.SUCCESS);
                 } catch (Exception e) {
-                    _dlState.ended_(new SOCID(k.soid(), CID.CONTENT), rs.ep(), true);
+                    dl.done_(End.FAILURE);
                     throw e;
                 } finally {
                     _ongoing.remove(dl);
