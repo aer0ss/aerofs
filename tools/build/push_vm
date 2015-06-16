@@ -34,6 +34,7 @@ notify_slack() {
 
 upload_artifact ova
 upload_artifact qcow2
+upload_artifact vmdk
 notify_slack
 
 echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."

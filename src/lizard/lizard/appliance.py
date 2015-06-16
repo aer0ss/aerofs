@@ -5,11 +5,15 @@ from flask import current_app
 
 # Urls for the current appliance images.
 _BUCKET_BASE = "http://d1sj1ujwunpr12.cloudfront.net"
+
 def ova_url(version):
     return "{}/aerofs-appliance-{}.ova".format(_BUCKET_BASE, version)
 
 def qcow_url(version):
-    return "{}/aerofs-appliance-{}.qcow2.gz".format(_BUCKET_BASE, version)
+    return "{}/aerofs-appliance-{}.qcow2".format(_BUCKET_BASE, version)
+
+def vmdk_url(version):
+    return "{}/aerofs-appliance-{}.vmdk".format(_BUCKET_BASE, version)
 
 # A URL where a base release version number is stored on S3.  Only used if no
 # other version number is known; otherwise, the app tracks what it believes to
@@ -40,5 +44,10 @@ def ova_present_for(version):
 
 def qcow_present_for(version):
     qcow = qcow_url(version)
+    r = requests.head(qcow)
+    return r.ok
+
+def vmdk_present_for(version):
+    qcow = vmdk_url(version)
     r = requests.head(qcow)
     return r.ok

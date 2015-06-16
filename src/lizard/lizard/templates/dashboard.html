@@ -67,17 +67,21 @@
                     Download your latest license file</a>
                 </p>
 
-                <h5>Stable</h5>
                 <p><a class="btn btn-primary btn-block" href="{{ url_for('.download_ova') }}">
                     Download OVA (for VirtualBox, VMware)</a>
                 </p>
                 <p><a class="btn btn-primary btn-block" href="{{ url_for('.download_qcow') }}">
                     Download QCow2 (for OpenStack, EC2)</a>
                 </p>
+                <p><a class="btn btn-primary btn-block" href="{{ url_for('.download_vmdk') }}">
+                    Download VMDK (for Hyper-V)</a>
+                </p>
 
                 <br/>
-                <h5>Unstable, Early-Access</h5>
-                <p>For early access to our cloud-init, docker and CoreOS powered Private Cloud Appliance, please visit our <a href="https://github.com/aerofs/aerofs-docker">github page</a>.</p>
+                <p>You may also choose to launch your AeroFS Private Cloud directly via docker and
+                   cloud-init. See our
+                   <a href="https://github.com/aerofs/aerofs-docker">github page</a> for detailed
+                   instructions.</p>
 
                 <br/>
 

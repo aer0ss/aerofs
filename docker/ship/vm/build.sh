@@ -389,17 +389,12 @@ main() {
     (set +x
         echo
         cecho ${GREEN} "Build is complete."
-
         if [ ${OF_CLOUDINIT} = 1 ]; then
-            echo
-            cecho ${GREEN} "    VM cloud-config:        ${OUTPUT}/cloud-config.yml"
+            cecho ${GREEN} "    VM cloud-config: ${OUTPUT}/cloud-config.yml"
         fi
-
         if [ ${OF_PRELOADED} = 1 ]; then
-            echo
-            cecho ${GREEN} "    VM preloaded:           $(du -h ${OVA})"
+            cecho ${GREEN} "    VM preloaded:    $(du -h ${OVA})"
         fi
-
         echo
     )
 }

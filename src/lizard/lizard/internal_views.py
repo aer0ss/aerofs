@@ -271,6 +271,8 @@ def release():
             flash(u'Missing file for release: {}'.format(appliance.ova_url(version)), 'error')
         elif not appliance.qcow_present_for(version):
             flash(u'Missing file for release: {}'.format(appliance.qcow_url(version)), 'error')
+        elif not appliance.vmdk_present_for(version):
+            flash(u'Missing file for release: {}'.format(appliance.vmdk_url(version)), 'error')
         else:
             appliance.set_public_version(version)
             flash(u'Released version {}'.format(version), 'success')
