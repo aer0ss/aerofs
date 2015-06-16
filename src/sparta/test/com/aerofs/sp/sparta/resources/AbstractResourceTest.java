@@ -29,6 +29,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
+import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -65,6 +66,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -110,6 +112,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final VerkehrClient verkehrClient = mock(VerkehrClient.class);
     private static final CommandDispatcher commandDispatcher = mock(CommandDispatcher.class);
     protected static final PasswordManagement passwordManagement = mock(PasswordManagement.class);
+    protected static final License license = mock(License.class);
     @Mock ACLNotificationPublisher aclNotificationPublisher;
     @Mock AuditClient auditClient;
 
@@ -156,6 +159,9 @@ public class AbstractResourceTest extends AbstractBaseTest
         Properties prop = new Properties();
         prop.setProperty("bifrost.port", "0");
         ConfigurationProperties.setProperties(prop);
+
+        when(license.isValid()).thenReturn(true);
+        when(license.seats()).thenReturn(Integer.MAX_VALUE);
 
         sessionFactory = mock(SessionFactory.class);
         session = mock(Session.class);
@@ -270,6 +276,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 bind(PasswordManagement.class).toInstance(passwordManagement);
                 bind(AuditClient.class).toInstance(
                         new AuditClient().setAuditorClient(content -> l.info("audit: {}", content)));
+                bind(License.class).toInstance(license);
             }
         });
     }
@@ -289,6 +296,9 @@ public class AbstractResourceTest extends AbstractBaseTest
                 s.execute("delete from sp_" + table);
             }
         }
+        Organization org = inj.getInstance(Organization.Factory.class)
+                .save(OrganizationID.PRIVATE_ORGANIZATION);
+
         User u = factUser.create(user);
         u.save(new byte[0], new FullName("User", "Foo"));
         User o = factUser.create(other);
@@ -296,8 +306,6 @@ public class AbstractResourceTest extends AbstractBaseTest
         User a = factUser.create(admin);
         a.save(new byte[0], new FullName("Admin", "Foo"));
 
-        Organization org = inj.getInstance(Organization.Factory.class)
-                .save(OrganizationID.PRIVATE_ORGANIZATION);
         a.setOrganization(org, AuthorizationLevel.ADMIN);
         u.setOrganization(org, AuthorizationLevel.USER);
         o.setOrganization(org, AuthorizationLevel.USER);
