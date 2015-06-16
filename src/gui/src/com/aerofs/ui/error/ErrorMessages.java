@@ -8,14 +8,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.misc.DlgDefect;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.JsonFormat.ParseException;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 

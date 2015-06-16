@@ -11,7 +11,6 @@ import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -41,7 +40,7 @@ public class AuditorFactory
      */
     public static IAuditorClient createAuthenticatedWithSharedSecret(String host, String serviceName, String deploymentSecret)
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT && Audit.AUDIT_ENABLED) {
+        if (Audit.AUDIT_ENABLED) {
             try {
                 URL url = new URL(
                         "http", host, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH);
@@ -78,7 +77,7 @@ public class AuditorFactory
      */
     public static IAuditorClient createAuthenticatedWithDeviceCert()
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT && Audit.AUDIT_ENABLED) {
+        if (Audit.AUDIT_ENABLED) {
             l.info("Secure connection to public audit server at {}", Audit.PUBLIC_EVENT_URL);
 
             return new AuditHttpClient(Audit.PUBLIC_EVENT_URL) {

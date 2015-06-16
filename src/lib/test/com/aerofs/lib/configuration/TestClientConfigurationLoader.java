@@ -85,14 +85,6 @@ public class TestClientConfigurationLoader
         doReturn(404).when(_conn).getResponseCode();
     }
 
-    private void mockStaticProperties(boolean isPrivateDeployment)
-    {
-        Properties mockProperties = new Properties();
-        mockProperties.setProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT,
-                String.valueOf(isPrivateDeployment));
-        doReturn(mockProperties).when(_loader).getStaticConfig();
-    }
-
     private AutoCloseable mockOS(String osName)
     {
         String currOsName = System.getProperty("os.name");
@@ -138,31 +130,10 @@ public class TestClientConfigurationLoader
     }
 
     @Test
-    public void shouldDefaultToEmptyConfigWhenLoadingStaticConfigFailed()
-    {
-        doReturn(null).when(_loader).getContextClassLoader();
-        assertTrue(_loader.getStaticConfig().isEmpty());
-
-        ClassLoader classLoader = mock(ClassLoader.class);
-        doReturn(classLoader).when(_loader).getContextClassLoader();
-        doReturn(null).when(classLoader).getResourceAsStream(STATIC_CONFIG_FILE);
-        assertTrue(_loader.getStaticConfig().isEmpty());
-    }
-
-    @Test
-    public void shouldSucceedInHCMode()
-            throws Exception
-    {
-        mockStaticProperties(false);
-        _loader.loadConfiguration();
-    }
-
-    @Test
-    public void shouldSucceedInPCMode()
+    public void shouldSucceed()
             throws Exception
     {
         // ensure all sources are available
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockRemoteHttpConfig(formatHttpConfig(BASE_HOST));
 
@@ -170,27 +141,9 @@ public class TestClientConfigurationLoader
     }
 
     @Test
-    public void shouldThrowWhenSiteConfigIsFoundInHC()
+    public void shouldThrowWhenSiteConfigIsNotFound()
             throws Exception
     {
-        mockStaticProperties(false);
-        mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
-
-        try {
-            _loader.loadConfiguration();
-        } catch (SiteConfigException e) {
-            return; // expected
-        }
-
-        fail();
-    }
-
-    @Test
-    public void shouldThrowWhenSiteConfigIsNotFoundInPC()
-            throws Exception
-    {
-        mockStaticProperties(true);
-
         try {
             _loader.loadConfiguration();
         } catch (SiteConfigException e) {
@@ -204,7 +157,6 @@ public class TestClientConfigurationLoader
     public void shouldThrowWhenSiteConfigIsInvalid()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig("");
 
         try {
@@ -222,7 +174,6 @@ public class TestClientConfigurationLoader
             throws Exception
     {
         try (AutoCloseable ignored = mockOS(OS_OSX)) {
-            mockStaticProperties(true);
             mockOSXSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
             mockRemoteHttpConfig(formatHttpConfig(BASE_HOST));
 
@@ -236,7 +187,6 @@ public class TestClientConfigurationLoader
             throws Exception
     {
         try (AutoCloseable ignored = mockOS(OS_NON_OSX)) {
-            mockStaticProperties(true);
             mockOSXSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
             mockRemoteHttpConfig(formatHttpConfig(BASE_HOST));
 
@@ -256,7 +206,6 @@ public class TestClientConfigurationLoader
             throws Exception
     {
         try (AutoCloseable ignored = mockOS(OS_OSX)) {
-            mockStaticProperties(true);
             mockOSXSiteConfig(formatSiteConfig(BAD_CONFIG_SERVICE_URL, BASE_CA_CERT));
             mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
             // also verifies that the default site config takes precedence on conflicts
@@ -270,7 +219,6 @@ public class TestClientConfigurationLoader
     public void shouldThrowWhenHttpConfigIsNotAvailable()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
 
         mockRemoteHttpConfig(formatHttpConfig(BASE_HOST));
@@ -291,7 +239,6 @@ public class TestClientConfigurationLoader
     public void shouldThrowWithBadConfigServiceURL()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(BAD_CONFIG_SERVICE_URL, BASE_CA_CERT));
         // it is necessary to mock remote http config here to verify a bad url will cause the
         // loader to not get good config
@@ -310,7 +257,6 @@ public class TestClientConfigurationLoader
     public void shouldPassWithOnlyLocalHttpConfig()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST));
 
@@ -321,7 +267,6 @@ public class TestClientConfigurationLoader
     public void shouldPersistRemoteHttpConfigToLocal()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockRemoteHttpConfig(formatHttpConfig(BASE_HOST));
         // mock local to verify that remote takes precedence over local
@@ -340,7 +285,6 @@ public class TestClientConfigurationLoader
     public void shouldFallbackToLocalWhenRemoteIsInvalid()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockRemoteHttpConfig("");
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST));
@@ -352,7 +296,6 @@ public class TestClientConfigurationLoader
     public void shouldThrowWhenHttpConfigInvalid()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         // make sure both http config are invalid because invalid remote will cause loader to
         // fall back to local
@@ -372,36 +315,25 @@ public class TestClientConfigurationLoader
     public void shouldComposeConflictingProperties()
             throws Exception
     {
-        Properties mockStaticProperties = new Properties();
-        mockStaticProperties.setProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "true");
-        mockStaticProperties.setProperty("conflict1", "static");
-        mockStaticProperties.setProperty("conflict2", "static");
-        mockStaticProperties.setProperty("conflict3", "static");
-        doReturn(mockStaticProperties).when(_loader).getStaticConfig();
-
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT) +
                         "conflict1=site\n" +
-                        "conflict2=site\n" +
-                        "conflict4=site\n");
+                        "conflict2=site\n");
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST) +
                         "conflict1=http\n" +
-                        "conflict3=http\n" +
-                        "conflict4=http\n");
+                        "conflict3=http\n");
 
         Properties properties = _loader.loadConfiguration();
 
         // verify that http > site > static
-        assertEquals("static", properties.getProperty("conflict1"));
-        assertEquals("static", properties.getProperty("conflict2"));
-        assertEquals("static", properties.getProperty("conflict3"));
-        assertEquals("site", properties.getProperty("conflict4"));
+        assertEquals("site", properties.getProperty("conflict1"));
+        assertEquals("site", properties.getProperty("conflict2"));
+        assertEquals("http", properties.getProperty("conflict3"));
     }
 
     @Test
     public void shouldRenderProperties()
             throws Exception
     {
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST) +
                         "clone=${" + PROPERTY_BASE_HOST + "}/clone\n");
@@ -417,7 +349,6 @@ public class TestClientConfigurationLoader
     {
         doThrow(ExBadArgs.class).when(_helper).parseProperties(any(Properties.class));
 
-        mockStaticProperties(true);
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST));
 

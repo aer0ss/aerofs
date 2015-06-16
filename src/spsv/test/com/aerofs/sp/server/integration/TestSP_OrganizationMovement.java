@@ -5,12 +5,10 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;

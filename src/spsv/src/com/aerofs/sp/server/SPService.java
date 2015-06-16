@@ -34,7 +34,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
@@ -2480,30 +2479,26 @@ public class SPService implements ISPService
         User invitee = _factUser.createFromExternalID(userID);
         _factOrgInvite.create(invitee, org).delete();
 
-        // Remove the user's sign-up code as well as reminder emails so she will no longer be sign
-        // up to the system at all. See also sign_up_workflow.md. Strictly, this is necessary only
-        // for locally managed users (see Authenticator.isLocallyManaged(), but doing so for
-        // externally managed users doesn't have side effects (no sign-up codes are ever generated
-        // for these users).
-        //
-        // Don't do it for public deployment; otherwise the sign-up codes create by the user herself
-        // or admins of other organizations would be lost, too.
-        //
-        // See also docs/design/sign_up_workflow.md.
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            /**
-             * N.B. we implicitly assumed that there is only one organization invitation for this
-             * user in private deployment because:
-             *
-             * 1. there can only be one invitation to an user from each organization.
-             * 2. there is only one organization in private deployment.
-             *
-             * Note that single invitation was deleted above, so it should be safe to delete
-             * all sign up codes for this user.
-             */
-            invitee.deleteAllSignUpCodes();
-            _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-        }
+        /**
+         * Remove the user's sign-up code as well as reminder emails so they will no longer be signed
+         * up to the system at all. See also sign_up_workflow.md. Strictly, this is necessary only
+         * for locally managed users (see Authenticator.isLocallyManaged(), but doing so for
+         * externally managed users doesn't have side effects (no sign-up codes are ever generated
+         * for these users).
+         *
+         * See also docs/design/sign_up_workflow.md.
+         *
+         * N.B. we implicitly assumed that there is only one organization invitation for this
+         * user in private deployment because:
+         *
+         * 1. there can only be one invitation to an user from each organization.
+         * 2. there is only one organization in private deployment.
+         *
+         * Note that single invitation was deleted above, so it should be safe to delete
+         * all sign up codes for this user.
+         */
+        invitee.deleteAllSignUpCodes();
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         PBStripeData sd = getStripeData(org);
 
@@ -2517,34 +2512,7 @@ public class SPService implements ISPService
     public ListenableFuture<RemoveUserFromOrganizationReply> removeUserFromOrganization(
             String userId) throws Exception
     {
-        _sqlTrans.begin();
-
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            throw new ExNoPerm("Removing users isn't supported in private deployment");
-        }
-
-        User admin = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        User user = _factUser.createFromExternalID(userId);
-
-        if (admin.equals(user)) throw new ExNoPerm("You can't remove yourself from an organization");
-
-        checkUserIsOrAdministers(admin, user);
-
-        Organization newOrg = _factOrg.save();
-        user.setOrganization(newOrg, AuthorizationLevel.ADMIN);
-
-        PBStripeData sd = getStripeData(admin.getOrganization());
-
-        _auditClient.event(AuditTopic.USER, "user.org.remove")
-                .add("admin_user", admin.id())
-                .add("target_user", user.id())
-                .add("organization", admin.getOrganization().id())
-                .publish();
-
-        _sqlTrans.commit();
-
-
-        return createReply(RemoveUserFromOrganizationReply.newBuilder().setStripeData(sd).build());
+        throw new ExNoPerm("Removing users isn't supported.");
     }
 
     @Override
@@ -4016,20 +3984,15 @@ public class SPService implements ISPService
         }
     }
 
-    /**
-     * If this is in private deployment, we know the Private Organization is enough context to
-     * get a seat count. If not in private deployment, return zero.
-     */
     int getSeatCountForPrivateOrg() throws SQLException
     {
         int retval = 0;
 
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            _sqlTrans.begin();
-            Organization privateOrg = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-            retval = privateOrg.countUsers();
-            _sqlTrans.commit();
-        }
+        _sqlTrans.begin();
+        Organization privateOrg = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        retval = privateOrg.countUsers();
+        _sqlTrans.commit();
+
         return retval;
     }
 

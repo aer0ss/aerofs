@@ -16,7 +16,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -30,7 +29,6 @@ import com.aerofs.ui.InfoCollector;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.launch_tasks.UILaunchTasks;
-import com.aerofs.ui.logs.LogArchiver;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
 import com.google.common.base.Preconditions;
@@ -275,13 +273,6 @@ public class Launcher
 
     private static void startWorkerThreads()
     {
-        // There is no SV in enterprise, so the archiver's gzipped logs will stick around
-        // forever. Don't compress on enterprise, and let logback delete old logs
-        if (PrivateDeploymentConfig.isHybridDeployment())
-        {
-            new LogArchiver(absRTRoot()).start();
-        }
-
         new CommandNotificationSubscriber(
                 NioChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),

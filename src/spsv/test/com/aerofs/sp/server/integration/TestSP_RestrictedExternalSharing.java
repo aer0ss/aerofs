@@ -12,7 +12,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription.Type;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
@@ -70,12 +69,12 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         authenticator = authFactory.create();
         sharingRules = new SharingRulesFactory(authenticator, factUser, sharedFolderNotificationEmailer);
 
-
         // reconstruct SP using the new shared folder rules
         rebuildSPService();
 
         sqlTrans.begin();
         saveUser(internalSharer);
+        internalSharer.setLevel(AuthorizationLevel.ADMIN);
         saveUser(internalUser1);
         saveUser(internalUser2);
         saveUser(internalUser3);
@@ -106,7 +105,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
                 enableRestrictedSharing ? "true" : "false");
         props.put("internal_email_pattern", internalAddresses);
         ConfigurationProperties.setProperties(props);
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = enableRestrictedSharing;
     }
 
     @Test

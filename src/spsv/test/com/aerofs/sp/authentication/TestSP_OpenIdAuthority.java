@@ -7,12 +7,9 @@ package com.aerofs.sp.authentication;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Properties;
@@ -23,18 +20,6 @@ import static org.junit.Assert.fail;
 
 public class TestSP_OpenIdAuthority extends AbstractSPTest
 {
-    @Before
-    public void cacheJunk()
-    {
-        _isPrivateCached = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
-    }
-
-    @After
-    public void resetWorld()
-    {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = _isPrivateCached;
-    }
-
     @Test
     public void authenticateUser_shouldRefuseSignin() throws Exception
     {
@@ -44,7 +29,7 @@ public class TestSP_OpenIdAuthority extends AbstractSPTest
         try {
             new OpenIdAuthority().authenticateUser(user, CRED, sqlTrans, CredentialFormat.TEXT);
             fail("expected bad credential");
-        } catch (ExBadCredential expected) {}
+        } catch (ExBadCredential ignored) {}
     }
 
     @Test
@@ -64,14 +49,13 @@ public class TestSP_OpenIdAuthority extends AbstractSPTest
         assertTrue(openid.isInternalUser(u.id()));
         assertTrue(openid.canAuthenticate(u.id()));
 
-        assertFalse( openid.isInternalUser(UserID.fromExternal("external@far.away")) );
+        assertFalse(openid.isInternalUser(UserID.fromExternal("external@far.away")));
         assertFalse(openid.canAuthenticate(UserID.fromExternal("external@far.away")));
     }
 
     @Test
     public void canAuthenticate_shouldBeInternalForEmptyPattern() throws Exception
     {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         User user = newUser();
 
         // set the pattern to match ".*@email$"
@@ -88,25 +72,8 @@ public class TestSP_OpenIdAuthority extends AbstractSPTest
         assertTrue(openid.isInternalUser(UserID.fromExternal("hi@example.com")));
     }
 
-    @Test
-    public void canAuthenticate_shouldBeInternalForPublicDeploy() throws Exception
-    {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
-        User user = newUser();
-
-        IAuthority local = new LocalAuthority();
-
-        assertTrue(local.canAuthenticate(user.id()));
-        assertTrue(local.isInternalUser(user.id()));
-
-        assertTrue(local.canAuthenticate(UserID.fromExternal("hi@example.com")));
-        assertTrue(local.isInternalUser(UserID.fromExternal("hi@example.com")));
-    }
-
-
     private void configureInternalPattern()
     {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         User user = newUser();
 
         // set the pattern to match ".*@email$"
@@ -119,6 +86,4 @@ public class TestSP_OpenIdAuthority extends AbstractSPTest
         properties.put("internal_email_pattern", patt);
         ConfigurationProperties.setProperties(properties);
     }
-
-    Boolean _isPrivateCached;
 }

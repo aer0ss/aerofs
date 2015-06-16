@@ -5,7 +5,7 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -18,12 +18,9 @@ class AddressPattern
 {
     AddressPattern()
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
-                && !getStringProperty(PATTERN_PARAM, "").isEmpty()) {
-            _internalAddressPattern = Pattern.compile(getStringProperty(PATTERN_PARAM, ""));
-        } else {
-            _internalAddressPattern = null;
-        }
+        _internalAddressPattern = StringUtils.isNotEmpty(getStringProperty(PATTERN_PARAM, ""))
+                ? Pattern.compile(getStringProperty(PATTERN_PARAM, ""))
+                : null;
     }
 
     /**

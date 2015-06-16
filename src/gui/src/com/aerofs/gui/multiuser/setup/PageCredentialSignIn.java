@@ -10,7 +10,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
-import com.aerofs.gui.setup.APIAccessSetupHelper;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
@@ -44,13 +43,9 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
     private CompSpin    _compSpin;
     private Button      _btnContinue;
 
-    private final APIAccessSetupHelper _helper;
-
     public PageCredentialSignIn(Composite parent)
     {
         super(parent, SWT.NONE);
-
-        _helper = new APIAccessSetupHelper();
     }
 
     @Override
@@ -102,17 +97,6 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         lblDeviceName.setText(S.SETUP_DEV_ALIAS + ": ");
 
         _txtDeviceName = new Text(composite, SWT.BORDER);
-
-        if (_helper._showAPIAccess) {
-            createLabel(composite, SWT.NONE);
-
-            _helper.createCheckbox(composite);
-            _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
-
-            _helper.createLink(composite);
-            _helper._lnkAPIAccess.setLayoutData(
-                    _helper.createLinkLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false)));
-        }
 
         GridLayout layout = new GridLayout(3, false);
         layout.marginWidth = 20;
@@ -173,8 +157,6 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         _txtUserID.setText(Objects.firstNonNull(model.getUsername(), ""));
         _txtDeviceName.setText(Objects.firstNonNull(model.getDeviceName(), ""));
 
-        _helper.readFromModel(model);
-
         validateInput();
     }
 
@@ -184,8 +166,6 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
         model.setUserID(_txtUserID.getText().trim());
         model.setPassword(_txtPasswd.getText());
         model.setDeviceName(_txtDeviceName.getText().trim());
-
-        _helper.writeToModel(model);
     }
 
     @Override
@@ -205,7 +185,6 @@ public class PageCredentialSignIn extends AbstractSetupWorkPage
     {
         return new Control[] {
                 _btnContinue, _txtUserID, _txtPasswd, _txtDeviceName, _lnkPasswd,
-                _helper._chkAPIAccess, _helper._lnkAPIAccess
         };
     }
 

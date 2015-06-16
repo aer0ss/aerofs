@@ -2,7 +2,6 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.LicenseProperties;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.google.common.base.Optional;
 
 import java.text.ParseException;
@@ -25,11 +24,10 @@ public class License
 
     public License()
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) initForPrivateDeployment();
-        else initForPublicDeployment();
+        init();
     }
 
-    private void initForPrivateDeployment()
+    private void init()
     {
         Optional<String> type = getOptionalStringProperty("license_type");
 
@@ -47,19 +45,6 @@ public class License
 
         _seats = getIntegerProperty(LicenseProperties.LICENSE_SEATS, 0);
 
-        initCommon();
-    }
-
-    private void initForPublicDeployment()
-    {
-        _expireTimestamp = Long.MAX_VALUE;
-        _seats = Integer.MAX_VALUE;
-
-        initCommon();
-    }
-
-    private void initCommon()
-    {
         _customerID = getStringProperty(LicenseProperties.CUSTOMER_ID, "N/A");
         _customerName = getStringProperty(LicenseProperties.CUSTOMER_NAME, "Unknown");
     }

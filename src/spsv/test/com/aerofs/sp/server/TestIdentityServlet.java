@@ -6,7 +6,6 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExExternalAuthFailure;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
@@ -133,7 +132,6 @@ public class TestIdentityServlet extends AbstractTest
     @Before
     public void setUp() throws Exception
     {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         Identity.AUTHENTICATOR = Authenticator.OPENID;
 
         PooledJedisConnectionProvider jedis = new PooledJedisConnectionProvider();
@@ -155,7 +153,6 @@ public class TestIdentityServlet extends AbstractTest
     public void tearDown() throws Exception
     {
         Identity.AUTHENTICATOR = Authenticator.LOCAL_CREDENTIAL;
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
 
         _server.stop();
         _server.destroy();

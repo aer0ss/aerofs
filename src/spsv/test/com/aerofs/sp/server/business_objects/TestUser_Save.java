@@ -16,7 +16,6 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
-import static com.aerofs.lib.LibParam.PrivateDeploymentConfig.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -67,61 +66,41 @@ public class TestUser_Save extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void shouldCreateNewOrgIfPublicDeployment() throws Exception
+    public void shouldSaveToPrivateOrg() throws Exception
     {
+        Organization org = factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+
+        // Check that the private organization doesn't exist yet.
+        // This is important because we want to test that the first user is created with admin
+        // privileges
+        // Note: this test may fail if some earlier test create the private org. In this case,
+        // we either have to get the ordering right, or provide a method for deleting an org.
+        assertFalse(org.exists());
+
+        // Create a new user
         User user = saveUser();
 
-        // Check that the user is *not* in the private org and that he's an admin
-        assertFalse(user.getOrganization().id().equals(OrganizationID.PRIVATE_ORGANIZATION));
+        assertTrue(org.exists());
+
+        // Check that the user *is* in the private org and that he's an admin
+        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
         assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
+
+        // Now create an additional user; check he's also in private org but as a regular user
+        user = saveUser();
+        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
+        assertEquals(AuthorizationLevel.USER, user.getLevel());
     }
 
     @Test
-    public void shouldSaveToPrivateOrgIfPrivateDeployment() throws Exception
-    {
-        IS_PRIVATE_DEPLOYMENT = true;
-        try {
-            Organization org = factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-
-            // Check that the private organization doesn't exist yet.
-            // This is important because we want to test that the first user is created with admin
-            // privileges
-            // Note: this test may fail if some earlier test create the private org. In this case,
-            // we either have to get the ordering right, or provide a method for deleting an org.
-            assertFalse(org.exists());
-
-            // Create a new user
-            User user = saveUser();
-
-            assertTrue(org.exists());
-
-            // Check that the user *is* in the private org and that he's an admin
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
-            assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
-
-            // Now create an additional user; check he's also in private org but as a regular user
-            user = saveUser();
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
-            assertEquals(AuthorizationLevel.USER, user.getLevel());
-        } finally {
-            IS_PRIVATE_DEPLOYMENT = false;
-        }
-    }
-
-    @Test
-    public void shouldRemoveOrgInviteInPrivateDeployment()
+    public void shouldRemoveOrgInvite()
             throws Exception
     {
-        IS_PRIVATE_DEPLOYMENT = true;
-        try {
-            Organization org = factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
-            User user = newUser();
-            OrganizationInvitation oi = factOrgInvite.save(newUser(), user, org, null);
-            assertTrue(oi.exists());
-            saveUser(user);
-            assertFalse(oi.exists());
-        } finally {
-            IS_PRIVATE_DEPLOYMENT = false;
-        }
+        Organization org = factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
+        User user = newUser();
+        OrganizationInvitation oi = factOrgInvite.save(newUser(), user, org, null);
+        assertTrue(oi.exists());
+        saveUser(user);
+        assertFalse(oi.exists());
     }
 }

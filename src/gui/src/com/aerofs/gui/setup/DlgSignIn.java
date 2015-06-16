@@ -86,8 +86,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());
         _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
-
-        _helper = new APIAccessSetupHelper();
     }
 
     @Override
@@ -95,22 +93,12 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     {
         super.configureShell(newShell);
 
-        newShell.addTraverseListener(new TraverseListener()
-        {
-            @Override
-            public void keyTraversed(TraverseEvent e)
-            {
-                if (e.keyCode == SWT.ESC && _inProgress) e.doit = false;
-            }
+        newShell.addTraverseListener(e -> {
+            if (e.keyCode == SWT.ESC && _inProgress) e.doit = false;
         });
 
-        newShell.addListener(SWT.Show, new Listener()
-        {
-            @Override
-            public void handleEvent(Event arg0)
-            {
-                if (!shouldAlwaysOnTop()) GUIUtil.forceActive(newShell);
-            }
+        newShell.addListener(SWT.Show, event -> {
+            if (!shouldAlwaysOnTop()) GUIUtil.forceActive(newShell);
         });
     }
 
@@ -219,14 +207,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
         _txtUserID = new Text(composite, SWT.BORDER);
-        _txtUserID.addVerifyListener(new VerifyListener()
-        {
-            @Override
-            public void verifyText(VerifyEvent verifyEvent)
-            {
-                verify(getNewText(_txtUserID.getText(), verifyEvent));
-            }
-        });
+        _txtUserID.addVerifyListener(verifyEvent -> verify(getNewText(_txtUserID.getText(), verifyEvent)));
         _txtUserID.setLayoutData(createTextBoxLayoutData());
         _controls.add(_txtUserID);
 
@@ -237,30 +218,9 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         // N.B. because MacOSX can't handle password fields' verify events
         // correctly, we have to use ModifyListeners
         _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
-        _txtPasswd.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent ev)
-            {
-                verify(null);
-            }
-        });
+        _txtPasswd.addModifyListener(ev -> verify(null));
         _txtPasswd.setLayoutData(createTextBoxLayoutData());
         _controls.add(_txtPasswd);
-
-       if (_helper._showAPIAccess) {
-            createLabel(composite, SWT.NONE);
-
-           _helper.createCheckbox(composite);
-           _helper.readFromModel(_model);
-           _helper._chkAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
-           _controls.add(_helper._chkAPIAccess);
-
-           _helper.createLink(composite);
-           _helper._lnkAPIAccess.setLayoutData(
-                   _helper.createLinkLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false)));
-           _controls.add(_helper._lnkAPIAccess);
-        }
 
         createLabel(composite, SWT.NONE);
 
@@ -401,8 +361,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             _model.setPassword(_txtPasswd.getText());
             _model.setSignInActor(new CredentialActor());
 
-            _helper.writeToModel(_model);
-
             setInProgressStatus();
 
             GUI.get().safeWork(getShell(), new SignInWorker());
@@ -539,8 +497,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     Control         _defaultControl;
 
     private boolean _showOpenIdDialog;
-
-    private final APIAccessSetupHelper _helper;
 
     private CompSpin _compSpin;
     private Label _lblStatus;

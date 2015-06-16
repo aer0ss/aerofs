@@ -8,7 +8,6 @@ import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.Identity;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.PasswordManagement;
@@ -24,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -41,7 +41,6 @@ public class TestSP_Password extends AbstractTest
     @Mock User user;
 
     UserID userId = UserID.fromInternal("test@awesome.com");
-    private Boolean _cachedPrivate;
     private Identity.Authenticator _cachedAuth;
 
     @Before
@@ -56,7 +55,6 @@ public class TestSP_Password extends AbstractTest
 
         mockSPDatabaseGetUserByPasswordResetTokenTestUser();
 
-        _cachedPrivate = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
         _cachedAuth = Identity.AUTHENTICATOR;
     }
 
@@ -64,7 +62,6 @@ public class TestSP_Password extends AbstractTest
     @After
     public void tearDown()
     {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = _cachedPrivate;
         Identity.AUTHENTICATOR = _cachedAuth;
     }
 
@@ -117,18 +114,22 @@ public class TestSP_Password extends AbstractTest
     public void shouldSucceedResetEmailForInternals() throws Exception
     {
         Identity.AUTHENTICATOR = Identity.Authenticator.EXTERNAL_CREDENTIAL;
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         when(authenticator.isLocallyManaged(Matchers.any(UserID.class))).thenReturn(true);
         _passwordManagement.sendPasswordResetEmail(user);
     }
 
-    @Test(expected=ExCannotResetPassword.class)
+    @Test
     public void shouldThrowExCannotResetPasswordForExternals() throws Exception
     {
         Identity.AUTHENTICATOR = Identity.Authenticator.EXTERNAL_CREDENTIAL;
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         when(authenticator.isLocallyManaged(Matchers.any(UserID.class))).thenReturn(false);
-        _passwordManagement.sendPasswordResetEmail(user);
+
+        try {
+            _passwordManagement.sendPasswordResetEmail(user);
+            fail();
+        } catch (ExCannotResetPassword ignored) {
+            // expected
+        }
     }
 
     //  Tests for resetPassword

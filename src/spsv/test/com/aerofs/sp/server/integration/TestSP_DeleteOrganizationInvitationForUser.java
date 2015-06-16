@@ -5,8 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
@@ -17,7 +15,7 @@ import static org.junit.Assert.fail;
 public class TestSP_DeleteOrganizationInvitationForUser extends AbstractSPFolderTest
 {
     @Test
-    public void shouldDeleteAllSignupCodesAndEmailSubscriptionInPrivateDeployment()
+    public void shouldDeleteAllSignupCodesAndEmailSubscription()
             throws Exception
     {
         User user = newUser();
@@ -39,8 +37,6 @@ public class TestSP_DeleteOrganizationInvitationForUser extends AbstractSPFolder
 
         setSession(admin);
         service.inviteToOrganization(user.id().getString());
-
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
         service.deleteOrganizationInvitationForUser(user.id().getString());
 
         sqlTrans.begin();

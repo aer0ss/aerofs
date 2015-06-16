@@ -11,7 +11,6 @@ import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -33,11 +32,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -411,61 +406,16 @@ public abstract class Updater
 
     private static URLConnection newUpdaterConnection(URL url) throws IOException
     {
-        boolean shouldVerifyHostnamesFromAWS = PrivateDeploymentConfig.isHybridDeployment();
-        boolean shouldUseEnterpriseCert = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
-
-        return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
-    }
-
-    /**
-     * Because the download URLs redirect (as CNAMEs) to AWS servers, which have their own SSL
-     * certificate, we need to work around for cert verification to pass.
-     *
-     * HOWEVER, an attacker can still hijack the DNS and redirect the URLs to their own AWS servers.
-     * The ultimate solution is to sign installer binaries.
-     *
-     * N.B. This method must be identical to the same method in downloader.Main.newAWSConnection()
-     * N.B. the above note is being violated to support enterprise deployment.
-     *
-     * FIXME (AT): the next time we add a boolean flag to this is the time we refactor this
-     *   and related methods into a separate factory.
-     */
-    private static URLConnection newUpdaterConnectionImpl(URL url,
-            boolean shouldVerifyHostnamesFromAWS, boolean shouldUseEnterpriseCert) throws IOException
-    {
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
         conn.setConnectTimeout((int) Cfg.timeout());
 
-        if (shouldVerifyHostnamesFromAWS) {
-            conn.setHostnameVerifier((hostname, session) -> {
-
-                try {
-                    X509Certificate[] x509s = session.getPeerCertificateChain();
-                    for (X509Certificate x509 : x509s) {
-                        String str = x509.getSubjectDN().toString();
-                        // this is for URLs pointing to S3
-                        if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
-                        // this is for URLs pointing to CloudFront
-                        if (str.startsWith("CN=*.cloudfront.net")) return true;
-                    }
-                    l.warn("expected CN not found");
-                    return false;
-                } catch (SSLPeerUnverifiedException e) {
-                    l.warn(Util.e(e));
-                    return false;
-                }
-            });
-        }
-
-        if (shouldUseEnterpriseCert) {
-            try {
-                SSLEngineFactory factory = new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
-                        new EnterpriseCertificateProvider(), null);
-                conn.setSSLSocketFactory(factory.getSSLContext().getSocketFactory());
-            } catch (GeneralSecurityException e) {
-                throw new IOException("Unable to use enterprise certificate.", e);
-            }
+        try {
+            SSLEngineFactory factory = new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
+                    new EnterpriseCertificateProvider(), null);
+            conn.setSSLSocketFactory(factory.getSSLContext().getSocketFactory());
+        } catch (GeneralSecurityException e) {
+            throw new IOException("Unable to use enterprise certificate.", e);
         }
 
         return conn;

@@ -25,7 +25,6 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
  * The responsibility of this class is to execute the loading logic/policy.
  *
  * The class loads configuration in the following order:
- * - static configuration, provided at build time, as a resource stream
  * - if the property "config.loader.is_private_deployment" is present and true, it
  *   loads the following:
  *   - site configuration, provided by installer, at $approot/site-config.properties
@@ -39,16 +38,13 @@ public class ClientConfigurationLoader
 {
     private static final Logger LOGGER = Loggers.getLogger(ClientConfigurationLoader.class);
 
-    public static final String PROPERTY_IS_PRIVATE_DEPLOYMENT
-            = "config.loader.is_private_deployment";
-    public static final String PROPERTY_CONFIG_SERVICE_URL
+    static final String PROPERTY_CONFIG_SERVICE_URL
             = "config.loader.configuration_service_url";
     public static final String PROPERTY_BASE_CA_CERT
             = "config.loader.base_ca_certificate";
-    protected static final String PROPERTY_BASE_HOST
+    static final String PROPERTY_BASE_HOST
             = "base.host.unified";
 
-    static final String STATIC_CONFIG_FILE = "configuration.properties";
     static final String SITE_CONFIG_FILE = "site-config.properties";
     static final String HTTP_CONFIG_CACHE = "config-service-cache.properties";
 
@@ -78,69 +74,29 @@ public class ClientConfigurationLoader
     public Properties loadConfiguration()
             throws SiteConfigException, HttpConfigException, RenderConfigException
     {
-        Properties properties = getStaticConfig();
-
-        // this check is probably too strict
-        if (isPrivateDeployment(properties)) {
-            Properties siteConfig, httpConfig;
-
-            try {
-                siteConfig = getSiteConfig();
-            } catch (Exception e) {
-                throw new SiteConfigException(e);
-            }
-
-            try {
-                httpConfig = getHttpConfig(siteConfig);
-            } catch (Exception e) {
-                throw new HttpConfigException(e);
-            }
-
-            try {
-                properties = _helper.parseProperties(
-                        _helper.mergeProperties(httpConfig, siteConfig, properties));
-            } catch (Exception e) {
-                throw new RenderConfigException(e);
-            }
-        } else if (getDefaultSiteConfigFile().exists()) {
-            // This is a sign of errors in packaging or a bad installation.
-            throw new SiteConfigException("A site config file was found on a HC client.");
-        }
-
-        return properties;
-    }
-
-    // protected so we can mock this in unit tests
-    protected ClassLoader getContextClassLoader()
-    {
-        return Thread.currentThread().getContextClassLoader();
-    }
-
-    // N.B. this method defaults to an empty set of properties if we failed to load static config.
-    protected Properties getStaticConfig()
-    {
-        Properties properties = new Properties();
+        Properties properties;
+        Properties siteConfig, httpConfig;
 
         try {
-            ClassLoader classLoader = getContextClassLoader();
-            checkNotNull(classLoader, "Failed to get context class loader.");
-
-            try (InputStream in = classLoader.getResourceAsStream(STATIC_CONFIG_FILE)) {
-                checkNotNull(in, "Failed to open static config file in the resource.");
-                properties.load(in);
-            }
+            siteConfig = getSiteConfig();
         } catch (Exception e) {
-            // proceed as if it's HC
-            LOGGER.warn("Failed to load static configuration; " +
-                    "proceeding with no static configuration.", e);
+            throw new SiteConfigException(e);
+        }
+
+        try {
+            httpConfig = getHttpConfig(siteConfig);
+        } catch (Exception e) {
+            throw new HttpConfigException(e);
+        }
+
+        try {
+            properties = _helper.parseProperties(
+                    _helper.mergeProperties(httpConfig, siteConfig));
+        } catch (Exception e) {
+            throw new RenderConfigException(e);
         }
 
         return properties;
-    }
-
-    protected boolean isPrivateDeployment(Properties staticConfig)
-    {
-        return staticConfig.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals("true");
     }
 
     /**
@@ -322,7 +278,6 @@ public class ClientConfigurationLoader
     {
         private static final long serialVersionUID = 0;
 
-        public SiteConfigException(String message) { super(message); }
         public SiteConfigException(Exception cause) { super(cause); }
     }
 

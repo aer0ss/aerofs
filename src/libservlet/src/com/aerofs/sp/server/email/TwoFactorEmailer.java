@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.google.common.base.Joiner;
@@ -72,13 +71,8 @@ public class TwoFactorEmailer
         String questions =
                 "Please email " + WWW.SUPPORT_EMAIL_ADDRESS + " with any questions.";
 
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            return Joiner.on("\n\n").join(salutation, preamble, request, admonition, disabling,
-                    questions);
-        } else {
-            return Joiner.on("\n\n").join(salutation, preamble, request, admonition, disabling,
-                    moreinfo, questions);
-        }
+        return Joiner.on("\n\n").join(salutation, preamble, request, admonition, disabling,
+                questions);
     }
 
     private static String getDisabledBody(String emailAddress, String firstName)

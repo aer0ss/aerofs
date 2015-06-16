@@ -10,7 +10,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.*;
 import com.aerofs.base.id.*;
 import com.aerofs.ids.*;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -375,8 +374,7 @@ public class User
     }
 
     /**
-     * In public deployment: create a new organization, add the user to the organization as an admin.
-     * In private deployment: join the user to the private organization. Create the org if it
+     * join the user to the private organization. Create the org if it
      * doesn't exist. When this method concludes, the organization invitation associated with this
      * user will no longer exist in the database.
      *
@@ -388,54 +386,40 @@ public class User
     public void save(byte[] shaedSP, FullName fullName)
             throws ExAlreadyExist, SQLException, ExNotFound, ExLicenseLimit
     {
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // Private deployment: all users are created in the same organization (the "private
-            // organization").
-            Organization privateOrg = _f._factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-            AuthorizationLevel authLevel = AuthorizationLevel.USER;
+        // all users are created in the same organization (the "private organization").
+        Organization privateOrg = _f._factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        AuthorizationLevel authLevel = AuthorizationLevel.USER;
 
-            // But if the private organization doesn't exist yet, create it and make the user an
-            // admin
-            if (!privateOrg.exists()) {
-                privateOrg = _f._factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
-                authLevel = AuthorizationLevel.ADMIN;
-            }
-
-            // Verify valid license
-            if (!_f._license.isValid()) {
-                throw new ExLicenseLimit("No valid license available - refusing to create a user");
-            }
-
-            // Enforce seat limits
-            if (privateOrg.countUsers() >= _f._license.seats()) {
-                throw new ExLicenseLimit("Adding a user would exceed the organization's "
-                         + _f._license.seats() + "-seat limit");
-            }
-
-            saveImpl(shaedSP, fullName, privateOrg, authLevel);
-
-            // Remove organization invitations if any. Why we do this:
-            //
-            // Even though there is only one private organization, the system uses the same code
-            // path as in the public deployment when the organization's admin invites users
-            // (either external or internal) to the organization. Once the user joins the org, the
-            // user should disappear from the member management Web interface. The interface calls
-            // SP.listOrganizationInvitedUsers() to list all the invitations belonging to that org.
-            //
-            OrganizationInvitation oi = _f._factOrgInvite.create(this, privateOrg);
-            if (oi.exists()) oi.delete();
-
-        } else {
-            // If the user is a member of a group, set that user as a member of the group's org
-            ImmutableCollection<Group> groups = getGroups();
-            Organization org = groups.isEmpty() ?
-                    _f._factOrg.save() : groups.iterator().next().getOrganization();
-            // Public deployment: create a new organization for this user and make them an admin
-            saveImpl(shaedSP, fullName, org, AuthorizationLevel.ADMIN);
-
-            // Because a brand new org is created, we don't need to delete any organization invite
-            // like what we do in the case of private deployment (see the other conditional branch).
+        // But if the private organization doesn't exist yet, create it and make the user an
+        // admin
+        if (!privateOrg.exists()) {
+            privateOrg = _f._factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
+            authLevel = AuthorizationLevel.ADMIN;
         }
+
+        // Verify valid license
+        if (!_f._license.isValid()) {
+            throw new ExLicenseLimit("No valid license available - refusing to create a user");
+        }
+
+        // Enforce seat limits
+        if (privateOrg.countUsers() >= _f._license.seats()) {
+            throw new ExLicenseLimit("Adding a user would exceed the organization's "
+                     + _f._license.seats() + "-seat limit");
+        }
+
+        saveImpl(shaedSP, fullName, privateOrg, authLevel);
+
+        // Remove organization invitations if any. Why we do this:
+        //
+        // Even though there is only one private organization, the system uses the same code
+        // path as in the public deployment when the organization's admin invites users
+        // (either external or internal) to the organization. Once the user joins the org, the
+        // user should disappear from the member management Web interface. The interface calls
+        // SP.listOrganizationInvitedUsers() to list all the invitations belonging to that org.
+        //
+        OrganizationInvitation oi = _f._factOrgInvite.create(this, privateOrg);
+        if (oi.exists()) oi.delete();
     }
 
     private void saveImpl(byte[] shaedSP, FullName fullName, Organization org,

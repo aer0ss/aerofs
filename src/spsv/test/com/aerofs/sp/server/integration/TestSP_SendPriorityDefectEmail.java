@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.LicenseProperties;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Common.Void;
@@ -41,7 +40,6 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         properties.setProperty(LicenseProperties.CUSTOMER_ID, "9001");
         properties.setProperty(LicenseProperties.CUSTOMER_NAME, "MyPlops Inc.");
         ConfigurationProperties.setProperties(properties);
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
 
         // renew license is necessary to reload license properties
         license = spy(new License());
@@ -54,7 +52,6 @@ public class TestSP_SendPriorityDefectEmail extends AbstractSPTest
         WWW.SUPPORT_EMAIL_ADDRESS = _supportEmail;
 
         ConfigurationProperties.setProperties(new Properties());
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
 
         // renew license is necessary to reload license properties
         license = spy(new License());

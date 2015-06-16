@@ -19,8 +19,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringPr
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT;
 
 /**
  * Note that Main has dependencies on this class before the configuration is initialized. Hence
@@ -494,26 +492,11 @@ public class LibParam extends BaseParam
     }
 
     // this class depends on ClientConfigurationLoader
-    public static class PrivateDeploymentConfig
+    public static class DeploymentConfig
     {
-        public static Boolean                           IS_PRIVATE_DEPLOYMENT =
-                getBooleanProperty(                     PROPERTY_IS_PRIVATE_DEPLOYMENT,
-                                                        false);
-
         public static final String                      BASE_CA_CERTIFICATE =
                 getStringProperty(                      PROPERTY_BASE_CA_CERT,
                                                         "");
-
-        public static final String                      CONFIG_SERVICE_URL =
-                getStringProperty(                      PROPERTY_CONFIG_SERVICE_URL,
-                                                        "");
-
-        // N.B. it's important the following is a function instead of a cached value because we
-        // update the value of IS_PRIVATE_DEPLOYMENT in automated tests.
-        public static boolean isHybridDeployment()
-        {
-            return !IS_PRIVATE_DEPLOYMENT;
-        }
     }
 
     public static class MobileDeviceManagement {

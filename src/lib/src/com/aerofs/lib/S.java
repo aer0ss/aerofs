@@ -1,7 +1,6 @@
 package com.aerofs.lib;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.Cfg;
 
 /*
@@ -263,9 +262,7 @@ public class S
             URL_ROLES = "https://support.aerofs.com/hc/en-us/articles/201439384",
 
             MOBILE_AND_WEB_ACCESS = "mobile and web access",
-            URL_API_ACCESS = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ?
-                    "https://support.aerofs.com/hc/en-us/articles/202492734" :
-                    "https://support.aerofs.com/hc/en-us/articles/202492734",
+            URL_API_ACCESS = "https://support.aerofs.com/hc/en-us/articles/202492734",
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 

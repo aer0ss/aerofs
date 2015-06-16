@@ -47,14 +47,7 @@ public class CommandDefect
 
     public void sendAsync()
     {
-        _executor.execute(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                sendSyncIgnoreErrors();
-            }
-        });
+        _executor.execute(this::sendSyncIgnoreErrors);
     }
 
     private void sendSyncIgnoreErrors()

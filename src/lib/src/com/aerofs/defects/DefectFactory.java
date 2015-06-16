@@ -6,11 +6,9 @@ package com.aerofs.defects;
 
 import com.aerofs.ids.UserID;
 import com.aerofs.defects.Defect.Priority;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.collect.Queues;
-import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -20,8 +18,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.defects.DryadClientUtil.createPublicDryadClient;
 import static com.google.common.collect.Maps.fromProperties;
 
 public class DefectFactory
@@ -130,18 +126,8 @@ public class DefectFactory
 
         RecentExceptions recentExceptions = new RecentExceptions(programName, rtroot,
                 RecentExceptions.DEFAULT_INTERVAL, new TimeSource());
-        RockLog rockLog;
-        DryadClient dryad;
-
-        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            rockLog = new RockLog.Noop();
-            dryad = new DryadClient.Noop();
-        } else {
-            rockLog = new RockLog(
-                    getStringProperty("lib.rocklog.url", "https://rocklog.aerofs.com"),
-                    new Gson());
-            dryad = createPublicDryadClient();
-        }
+        RockLog rockLog = new RockLog.Noop();
+        DryadClient dryad = new DryadClient.Noop();
 
         return new DefectFactory(executor, recentExceptions, new InjectableCfg(),
                 fromProperties(System.getProperties()), rockLog, dryad);
