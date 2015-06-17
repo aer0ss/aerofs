@@ -113,7 +113,6 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
-import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SetupTwoFactorReply;
 import com.aerofs.proto.Sp.SignInUserReply;
@@ -2508,11 +2507,11 @@ public class SPService implements ISPService
                 DeleteOrganizationInvitationForUserReply.newBuilder().setStripeData(sd).build());
     }
 
+    // this call was previously RemoveUserFromOrganization
     @Override
-    public ListenableFuture<RemoveUserFromOrganizationReply> removeUserFromOrganization(
-            String userId) throws Exception
+    public ListenableFuture<Void> noop() throws Exception
     {
-        throw new ExNoPerm("Removing users isn't supported.");
+        throw new ExNotFound("This call has been removed.");
     }
 
     @Override

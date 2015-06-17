@@ -215,19 +215,6 @@ def json_set_auth_level(request):
     return HTTPOk()
 
 @view_config(
-    route_name = 'json.remove_user',
-    renderer = 'json',
-    permission = 'admin',
-    request_method = 'POST'
-)
-def json_remove_user(request):
-    user = request.json_body[URL_PARAM_USER]
-    sp = get_rpc_stub(request)
-    stripe_data = sp.remove_user_from_organization(user).stripe_data
-    stripe_util.update_stripe_subscription(stripe_data)
-    return HTTPOk()
-
-@view_config(
     route_name = 'json.deactivate_user',
     renderer = 'json',
     permission = 'admin',

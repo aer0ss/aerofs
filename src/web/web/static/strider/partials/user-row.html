@@ -48,10 +48,6 @@
                         <a ng-click="disable2fa(user)">Disable Two-Factor Auth</a>
                     </li>
 
-                    <li ng-if="user.email != me && !isPrivate">
-                        <a ng-click="remove(user)">Remove from Organization</a>
-                    </li>
-
                     <li ng-if="user.email != me">
                         <a ng-click="delete(user)">Delete User</a>
                     </li>

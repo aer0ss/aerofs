@@ -9,7 +9,6 @@ def includeme(config):
     config.add_route('json.list_org_invitees', 'users/invitees/list')
     config.add_route('json.invite_user', 'users/invite')
     config.add_route('json.delete_org_invitation', 'users/invitations/delete')
-    config.add_route('json.remove_user', 'users/remove')
     config.add_route('json.deactivate_user', 'users/deactivate')
     config.add_route('json.set_publisher_status', 'users/set_publisher_status')
     config.add_route('json.disable_two_factor', 'users/disable_two_factor')

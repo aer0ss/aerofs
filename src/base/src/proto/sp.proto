@@ -156,16 +156,8 @@ service SPService {
     rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
             DeleteOrganizationInvitationReply);
 
-    // Remove a user from the caller's organization. The user will be moved to a new empty
-    // organization, and will be seen as an external user on any shared folders that he
-    // may have with the previous organization.
-    //
-    // Required Auth Level: admin
-    //
-    // Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
-    //         to remove itself from the organization
-    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
-            returns(RemoveUserFromOrganizationReply);
+    // this call was RemoveUserFromOrganization and is now removed.
+    rpc Noop(Void) returns(Void);
 
     // Shares a folder with another user.
     //
@@ -1012,14 +1004,6 @@ message AcceptOrganizationInvitationReply {
 
 message DeleteOrganizationInvitationCall {
     required int32 organization_id = 1;
-}
-
-message RemoveUserFromOrganizationCall {
-    required string user_id = 1;
-}
-
-message RemoveUserFromOrganizationReply {
-    required PBStripeData stripe_data = 1;
 }
 
 // I would love to reorganize the parameters of this message a bit, but that's not possible without
