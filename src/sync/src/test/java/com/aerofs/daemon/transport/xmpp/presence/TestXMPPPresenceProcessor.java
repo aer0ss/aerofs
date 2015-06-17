@@ -98,15 +98,6 @@ public final class TestXMPPPresenceProcessor
     }
 
     @Test
-    public void shouldIgnorePresenceNotificationsFromOtherTransports()
-            throws Exception
-    {
-        Presence presence = getPresence(DID_0, SID_0, true);
-        boolean processed = presenceProcessor.processPresenceForUnitTests(presence);
-        assertThat(processed, equalTo(false));
-    }
-
-    @Test
     public void shouldIgnorePresenceNotificationsFromSelf()
             throws Exception
     {
