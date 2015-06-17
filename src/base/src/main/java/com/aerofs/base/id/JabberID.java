@@ -22,8 +22,6 @@ import static java.lang.System.arraycopy;
 
 public abstract class JabberID
 {
-    private final static String MOBILE_PREFIX = "mobile_";
-
     private JabberID()
     {
             // private to enforce uninstantiability
@@ -37,16 +35,6 @@ public abstract class JabberID
     public static DID user2did(String user) throws ExInvalidID
     {
         return new DID(user);
-    }
-
-    public static String did2mobileUser(DID did)
-    {
-        return MOBILE_PREFIX + did2user(did);
-    }
-
-    public static boolean isMobileUser(String user)
-    {
-        return user != null && user.startsWith(MOBILE_PREFIX);
     }
 
     /**
@@ -63,13 +51,9 @@ public abstract class JabberID
         return String.format("%s@%s", did2user(did), xmppServerDomain);
     }
 
-    /**
-     * This is the nickname we use when joining a multicast room. It is very similar to the Form A
-     * jid, except instead of having the xmpp transport ID as a resource we append it to the did
-     */
-    public static String getMUCRoomNickname(DID did, String xmppTransportId)
+    public static String getMUCRoomNickname(DID did)
     {
-        return JabberID.did2user(did) + "-" + xmppTransportId;
+        return JabberID.did2user(did);
     }
 
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");

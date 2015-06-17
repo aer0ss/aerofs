@@ -35,7 +35,7 @@ message PBDumpStat {
 
 //-----------------------------------------------------------------------------
 //
-// transport_id is one of {"t", "j", "z"} TODO (AG): consider using a protobuf enum
+// transport_id is one of {"t", "z"} TODO (AG): consider using a protobuf enum
 
 //-----------------------------------------------------------------------------
 //
@@ -109,7 +109,6 @@ message TCPChannel {
 }
 
 message ZephyrDiagnostics {
-    required ServerStatus xmpp_server = 1;
     required ServerStatus zephyr_server = 2;
     repeated ZephyrDevice reachable_devices = 3;
 }

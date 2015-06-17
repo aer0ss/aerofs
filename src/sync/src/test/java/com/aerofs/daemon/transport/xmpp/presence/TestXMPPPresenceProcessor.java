@@ -9,7 +9,6 @@ import com.aerofs.daemon.transport.presence.IStoreInterestListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import org.jivesoftware.smack.PacketListener;
@@ -34,18 +33,14 @@ public final class TestXMPPPresenceProcessor
         LoggerSetup.init();
     }
 
-    private static final String TRANSPORT_ID = "z";
-
     private static final SID SID_0 = SID.generate();
     private static final SID SID_1 = SID.generate();
 
     private static final DID LOCAL_DID = DID.generate();
 
     private static final DID DID_0 = DID.generate();
-    private static final String OTHER_TRANSPORT_ID = "j";
     private static final String XMPP_SERVER_DOMAIN = "arrowfs.org";
 
-    private final ITransport transport = mock(ITransport.class);
     private final XMPPConnection xmppConnection = mock(XMPPConnection.class);
     private final IMulticastListener multicastListener = mock(IMulticastListener.class);
     private final IStoreInterestListener storeInterestListener = mock(IStoreInterestListener.class);
@@ -56,34 +51,33 @@ public final class TestXMPPPresenceProcessor
     @Before
     public void setup()
     {
-        when(transport.id()).thenReturn(TRANSPORT_ID);
         presenceProcessor = new XMPPPresenceProcessor(LOCAL_DID, XMPP_SERVER_DOMAIN,
                 multicastListener, storeInterestListener, presenceLocationReceiver);
     }
 
-    private String getFrom(SID sid, String transportId, DID remotedid)
+    private String getFrom(SID sid, DID remotedid)
     {
-        return String.format("%s/%s-%s", sid2muc(sid, XMPP_SERVER_DOMAIN), did2user(remotedid), transportId);
+        return String.format("%s/%s", sid2muc(sid, XMPP_SERVER_DOMAIN), did2user(remotedid));
     }
 
-    private Presence getPresence(DID remotedid, SID sid, String transportId, boolean isAvailable)
+    private Presence getPresence(DID remotedid, SID sid, boolean isAvailable)
     {
         Presence presence = new Presence(isAvailable ? Type.available : Type.unavailable);
-        presence.setFrom(getFrom(sid, transportId, remotedid));
+        presence.setFrom(getFrom(sid, remotedid));
         return presence;
     }
 
     private void beInTheMoment(DID remotedid, SID sid)
             throws ExInvalidID
     {
-        boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, TRANSPORT_ID, true));
+        boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, true));
         assertThat(processed, equalTo(true));
     }
 
     private void leaveTheMoment(DID remotedid, SID sid)
             throws ExInvalidID
     {
-        boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, TRANSPORT_ID, false));
+        boolean processed = presenceProcessor.processPresenceForUnitTests(getPresence(remotedid, sid, false));
         assertThat(processed, equalTo(true));
     }
 
@@ -107,7 +101,7 @@ public final class TestXMPPPresenceProcessor
     public void shouldIgnorePresenceNotificationsFromOtherTransports()
             throws Exception
     {
-        Presence presence = getPresence(DID_0, SID_0, OTHER_TRANSPORT_ID, true);
+        Presence presence = getPresence(DID_0, SID_0, true);
         boolean processed = presenceProcessor.processPresenceForUnitTests(presence);
         assertThat(processed, equalTo(false));
     }
@@ -116,7 +110,7 @@ public final class TestXMPPPresenceProcessor
     public void shouldIgnorePresenceNotificationsFromSelf()
             throws Exception
     {
-        Presence presence = getPresence(LOCAL_DID, SID_0, TRANSPORT_ID, true);
+        Presence presence = getPresence(LOCAL_DID, SID_0, true);
         boolean processed = presenceProcessor.processPresenceForUnitTests(presence);
         assertThat(processed, equalTo(false));
     }

@@ -149,8 +149,7 @@ public final class XMPPMulticast implements IMaxcast, IPresenceSource, IXMPPConn
         history.setMaxChars(0);
 
         try {
-            // TODO: remove transport id from JID
-            muc.join(JabberID.getMUCRoomNickname(localdid, "z"), null, history, SmackConfiguration.getPacketReplyTimeout());
+            muc.join(JabberID.getMUCRoomNickname(localdid), null, history, SmackConfiguration.getPacketReplyTimeout());
             muc.addMessageListener(packet -> {
                 Message msg = (Message) packet;
                 if (msg.getBody() == null) {

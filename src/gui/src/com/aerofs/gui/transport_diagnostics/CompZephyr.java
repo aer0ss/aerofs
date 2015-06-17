@@ -23,7 +23,6 @@ public class CompZephyr extends AbstractCompTransport
     private final Logger l = Loggers.getLogger(CompZephyr.class);
 
     protected StatusDecorator   _decStatus;
-    protected StatusDecorator   _decXmpp;
     protected StatusDecorator   _decZephyr;
     protected DevicesDecorator  _decDevices;
 
@@ -42,11 +41,6 @@ public class CompZephyr extends AbstractCompTransport
         _decStatus.setStatus(S.TXT_COLLECTING_NETWORK_INFO);
         _decStatus.setDescription(S.LNK_ZEPHYR_DESC);
         _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_TRANSPORTS_INFO));
-
-        _decXmpp = new StatusDecorator(content);
-        _decXmpp.setText("Presence Service:");
-        _decXmpp.setStatus(S.TXT_COLLECTING_NETWORK_INFO);
-        _decXmpp.setDescription(S.LBL_XMPP_DESC);
 
         _decZephyr = new StatusDecorator(content);
         _decZephyr.setText("Relay Service:");
@@ -70,11 +64,7 @@ public class CompZephyr extends AbstractCompTransport
         if (data != null) {
             ZephyrDiagnostics d = (ZephyrDiagnostics) data;
 
-            Preconditions.checkArgument(d.getXmppServer().hasReachable()
-                    && d.getZephyrServer().hasReachable());
-
             _decStatus.setStatus("Enabled");
-            _decXmpp.setStatus(formatServerStatus(d.getXmppServer()));
             _decZephyr.setStatus(formatServerStatus(d.getZephyrServer()));
 
             String[] deviceIDs = new String[d.getReachableDevicesCount()];
@@ -82,11 +72,6 @@ public class CompZephyr extends AbstractCompTransport
                 deviceIDs[i] = new DID(BaseUtil.fromPB(d.getReachableDevices(i).getDid())).toStringFormal();
             }
             _decDevices.setItems(deviceIDs);
-
-            // logging the error messages
-            if (d.getXmppServer().hasReachabilityError()) {
-                l.error(d.getXmppServer().getReachabilityError());
-            }
 
             if (d.getZephyrServer().hasReachabilityError()) {
                 l.error(d.getZephyrServer().getReachabilityError());

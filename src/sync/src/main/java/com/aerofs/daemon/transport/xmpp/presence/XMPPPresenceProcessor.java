@@ -129,10 +129,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
         String[] jidComponents = JabberID.tokenize(presence.getFrom());
 
-        if (JabberID.isMobileUser(jidComponents[1])) return false;
         if (!JabberID.isMUCAddress(jidComponents, xmppServerDomain)) return false;
-        // FIXME: shouldn't filter on transport id here...
-        if (jidComponents.length == 3 && (jidComponents[2].compareToIgnoreCase("z") != 0)) return false;
 
         SID sid = muc2sid(jidComponents[0]);
         DID did = user2did(jidComponents[1]);
@@ -146,9 +143,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
             @Nullable String metadata = fetchVCard(connection, presence.getFrom());
             if (metadata != null && !metadata.isEmpty()) {
                 l.info("Found metadata for {}: {}", did, metadata);
-                // Parse it
                 Set<IPresenceLocation> presenceLocations = parseMetadata(did, metadata);
-                // Notify it
                 presenceLocations.forEach(presenceLocationReceiver::onPresenceReceived);
             }
         }
