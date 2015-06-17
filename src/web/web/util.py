@@ -34,7 +34,7 @@ def is_valid_email(email):
     Performs a very basic validation of the given userid. Returns true if the
     userid passes, false otherwise
     """
-    return re.match(r"[^@'\";]+@[^@'\";]+\.[^@'\";]+", email)
+    return re.match(r"[^@'\"\s;<>]+@[^@'\"\s;<>]+\.[^@'\"\s;<>]+", email)
 
 # TODO (WW) move email checking to SP
 def error_on_invalid_email(email):
