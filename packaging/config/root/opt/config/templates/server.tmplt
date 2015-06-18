@@ -105,8 +105,8 @@ base.dryad.cert={{ dryad_cert }}
 
 base.collect_logs.url=http://{{ base_host }}:8484/collect_logs
 
-sp.max.membership.sharedfolder=50
-sp.max.membership.group=50
+sp.max.membership.sharedfolder=150
+sp.max.membership.group=150
 
 base.bifrost.internal.host=sparta.service
 
