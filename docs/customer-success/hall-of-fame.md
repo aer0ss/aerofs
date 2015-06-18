@@ -19,6 +19,12 @@ Jun 1, 2015
 
 ## Matt Pillar
 
+> AeroFS has fantastic customer service. You are all very prompt/diligent and
+> explain concepts thoroughly.
+
+Jun 18, 2015
+[Christian Young, UC Davis ARMS Laboratory](https://aerofs.zendesk.com/agent/tickets/16607)
+
 > Matt answered my question swiftly and accurately. I get the feeling this is
 > real, knowledgable support as opposed to boilerplate support that only knows
 > the first 20% of any answer. Thanks.
