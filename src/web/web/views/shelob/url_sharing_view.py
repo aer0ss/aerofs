@@ -110,6 +110,20 @@ def get_url(request):
 
 
 @view_config(
+        route_name='audit_link_download',
+        renderer='json',
+        http_cache = 0,
+        permission=NO_PERMISSION_REQUIRED,
+)
+def audit_link_download(request):
+    key = request.json_body.get("key")
+    oid = request.json_body.get("oid")
+    name = request.json_body.get("name")
+    _audit(request, "LINK", "link.download", {'key': key, 'oid': oid, 'name': name})
+    return {}
+
+
+@view_config(
         route_name='get_url_info',
         renderer='json',
         http_cache = 0,

@@ -322,40 +322,51 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     //
     // Arguments:
     //   oid: the oid of the file to download
+    //   name: the name the file to download
     //
-    $scope.download = function(oid) {
-        // Do a HEAD request for the file, and proceed only if the HEAD returns 2xx
-        // We do this so that we can handle errors before directing the user away from
-        // Shelob to the API
-        //
-        // N.B. add a random query param to prevent caching
-        API.head("/files/" + oid + "/content?t=" + Math.random(), $scope.requestHeaders).then(function(response) {
-            $log.info('HEAD /files/' + oid + '/content succeeded');
-            if ($scope.requestHeaders.token) {
-                $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid +
-                    "/content?token=" + $scope.requestHeaders.token);
-            } else {
-                Token.get().then(function(token) {
-                    // N.B replace(url) will replace the current history with url, whereas
-                    // assign(url) will append url to the history chain. We use replace() so
-                    // that a user can navigate from folder Foo to folder Bar, click to download
-                    // a file, and then use the back button to return to Foo.
-                    $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
-                }, function(response) {
-                    // somehow failed to get token despite the fact that a request just succeeded
+    $scope.download = function(oid, name) {
+        // Talk to the backend for audit purposes. In the future this should be handled exclusively
+        // by a centralized component (polaris).
+        $http.post('/audit_link_download', {
+            'key': $scope.currentShare.token,
+            'oid': oid,
+            'name': name
+        }).success(function(response){
+            // Do a HEAD request for the file, and proceed only if the HEAD returns 2xx
+            // We do this so that we can handle errors before directing the user away from
+            // Shelob to the API
+            //
+            // N.B. add a random query param to prevent caching
+            API.head("/files/" + oid + "/content?t=" + Math.random(), $scope.requestHeaders).then(function(response) {
+                $log.info('HEAD /files/' + oid + '/content succeeded');
+                if ($scope.requestHeaders.token) {
+                    $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid +
+                        "/content?token=" + $scope.requestHeaders.token);
+                } else {
+                    Token.get().then(function(token) {
+                        // N.B replace(url) will replace the current history with url, whereas
+                        // assign(url) will append url to the history chain. We use replace() so
+                        // that a user can navigate from folder Foo to folder Bar, click to download
+                        // a file, and then use the back button to return to Foo.
+                        $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
+                    }, function(response) {
+                        // somehow failed to get token despite the fact that a request just succeeded
+                        showErrorMessageUnsafe(getInternalErrorText());
+                    });
+                }
+            }, function(response) {
+                // HEAD request failed
+                $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
+                if (response.status == 503) {
+                    showErrorMessageUnsafe(getClientsOfflineErrorText());
+                } else if (response.status == 404) {
+                    showErrorMessage("The file you requested was not found.");
+                } else {
                     showErrorMessageUnsafe(getInternalErrorText());
-                });
-            }
-        }, function(response) {
-            // HEAD request failed
-            $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
-            if (response.status == 503) {
-                showErrorMessageUnsafe(getClientsOfflineErrorText());
-            } else if (response.status == 404) {
-                showErrorMessage("The file you requested was not found.");
-            } else {
-                showErrorMessageUnsafe(getInternalErrorText());
-            }
+                }
+            });
+        }).error(function(response, status){
+            showErrorMessageUnsafe(getInternalErrorText());
         });
     };
 
