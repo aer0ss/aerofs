@@ -383,7 +383,7 @@ public final class TestObjectResource {
 
         reset(polaris.getNotifier());
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
 
         SID sfSID = SID.folderOID2convertedStoreSID(sharedFolder);
         PolarisHelpers.newFile(AUTHENTICATED, sfSID, "new_file");
