@@ -1,13 +1,8 @@
 IMAGE_NAME = aerofs/repackaging
 ROOT = buildroot
-MSI = $(ROOT)/opt/msitools/install-msitools.sh
 
-image: $(MSI) .copy-packages
+image: .copy-packages
 	docker build -t $(IMAGE_NAME) .
-
-$(MSI): ../../tools/ci/agents/root/scripts/install-msitools.sh
-	mkdir -p $(@D)
-	cp $< $@
 
 # Copy client packages
 SRC_PKGS_DIR = ../../out.gradle/packages
