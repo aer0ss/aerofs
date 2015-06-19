@@ -6,7 +6,6 @@ package com.aerofs.polaris.api.types;
  *     <li>STORE</li>
  *     <li>FILE</li>
  *     <li>FOLDER</li>
- *     <li>MOUNT_POINT (shared-folder mount point)</li>
  * </ul>
  *
  * <strong>IMPORTANT:</strong> The type ids start at 1 because the Java ResultSet API
