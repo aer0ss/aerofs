@@ -85,7 +85,7 @@ def json_delete_app(request):
     # This is to prevent injection attacks e.g. clients='../tokens'
     if not is_valid_non_builtin_client_id(client_id):
         log.error('json_delete_app(): invalid client_id: ' + client_id)
-        util.error('The application ID is invalid.')
+        util.expected_error('The application ID is invalid.')
 
     bifrost_client = get_privileged_bifrost_client(request)
     bifrost_client.delete_app(client_id)

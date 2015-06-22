@@ -7,7 +7,7 @@ from pyramid.httpexceptions import HTTPBadRequest
 from stripe import CardError
 
 from web.util import flash_success, get_rpc_stub, send_sales_email
-from web.error import error
+from web.error import expected_error
 import stripe_util
 from stripe_util import URL_PARAM_STRIPE_CARD_TOKEN
 
@@ -98,7 +98,7 @@ def json_create_stripe_customer(request):
         stripe_customer_id = stripe_util.create_stripe_customer(
             email, stripe_card_token).id
     except CardError as e:
-        error(stripe_util.get_card_error_message(e))
+        expected_error(stripe_util.get_card_error_message(e))
 
     sp = get_rpc_stub(request)
     sp.set_stripe_customer_id(stripe_customer_id)
@@ -123,7 +123,7 @@ def json_update_credit_card(request):
         stripe_customer.card = stripe_card_token
         stripe_customer.save()
     except CardError as e:
-        error(stripe_util.get_card_error_message(e))
+        expected_error(stripe_util.get_card_error_message(e))
 
 @view_config(
     route_name='json.cancel_subscription',

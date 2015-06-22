@@ -3,26 +3,55 @@ Error handling functions for JSON requests. See README.error.txt for detail.
 """
 import json
 import logging
-from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.httpexceptions import HTTPBadRequest, HTTPBadGateway
 
 log = logging.getLogger(__name__)
 
 
-def error(message, type="unspecified", data=None):
+def expected_error(message, type="unspecified", data=None):
     """
-    Raise an HTTPBadRequest object with a JSON body with the following format:
+    Raise an HTTPBadRequest
+    @param message A plaintext message that should include no markup.  The
+                   frontend gets to decide how this will be displayed.
+    """
+
+    # return 400. See aerofs.js:showErrorMessageFromResponse() for the handling
+    # code of this error.
+
+    raise _create_error_response_object(HTTPBadRequest(), message, type, data)
+
+def unexpected_error(message, type="unspecified", data=None):
+    """
+    Raise an HTTPBadGateway
+    @param message A plaintext message that should include no markup.  The
+                   frontend gets to decide how this will be displayed.
+    """
+
+    # return 502. This is currently used exclusively by bunker to prompt log download
+    # when an unexpected error get caught.
+    raise _create_error_response_object(HTTPBadGateway(), message, type, data)
+
+
+def _create_error_response_object(error_type, message, type, data):
+    response = error_type
+    response.content_type = 'application/json'
+    response.body = json.dumps(_form_json_body(message, type, data))
+
+    return response
+
+def _form_json_body(message, type, data):
+    """
+    Create JSON response object of form:
     {
         type: value of the type parameter
         message: value of the message parameter
         data: additional data for the Web frontend to process (optional)
     }
 
-    Note that the default "unspecified" type is not consumed by any code but is
+    The default "unspecified" type is not consumed by any code but is
     supposed be read by humans.
-
-    @param message A plaintext message that should include no markup.  The
-                   frontend gets to decide how this will be displayed.
     """
+
     message = _normalize(message)
 
     log.error('error type: {}, message: "{}"'.format(type, message))
@@ -33,13 +62,7 @@ def error(message, type="unspecified", data=None):
     }
     if data: json_map['data'] = data
 
-    # return 400. See aerofs.js:showErrorMessageFromResponse() for the handling
-    # code of this error.
-    response = HTTPBadRequest()
-    response.content_type = 'application/json'
-    response.body = json.dumps(json_map)
-    raise response
-
+    return json_map
 
 def _normalize(message):
     """

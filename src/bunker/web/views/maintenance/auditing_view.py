@@ -5,7 +5,7 @@ from web.util import str2bool
 from maintenance_util import write_pem_to_file, \
     is_certificate_formatted_correctly, format_pem, get_conf, \
     get_conf_client, unformat_pem
-from web.error import error
+from web.error import expected_error
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def json_setup_audit(request):
             request.params['audit-downstream-certificate']
 
         if not audit_downstream_host or not audit_downstream_port:
-            error('Please specify the hostname and port.')
+            expected_error('Please specify the hostname and port.')
 
         # Check the validity of the certificate, if provided.
         if len(audit_downstream_certificate) > 0:
@@ -90,7 +90,7 @@ def json_setup_audit(request):
                 is_certificate_valid = is_certificate_formatted_correctly(
                     certificate_filename)
                 if not is_certificate_valid:
-                    error("The certificate you provided is invalid.")
+                    expected_error("The certificate you provided is invalid.")
             finally:
                 os.unlink(certificate_filename)
 

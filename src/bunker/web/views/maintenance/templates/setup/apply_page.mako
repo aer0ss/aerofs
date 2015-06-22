@@ -136,7 +136,7 @@ ${common.render_previous_button()}
                             if (count > 10) {
                                 console.log('waitForHealthyServices() timed out');
                                 hideAllModals();
-                                showErrorMessage('Service ' + service + ' failed to start.');
+                                showErrorMessageWithDownloadLogPrompt('Service ' + service + ' failed to start.');
                                 trackError();
                             } else {
                                 console.log('wait');
@@ -197,7 +197,7 @@ ${common.render_previous_button()}
                         window.clearInterval(interval);
                         console.log('repackaging has not succeeded');
                         hideAllModals();
-                        showErrorMessage("Repackaging of AeroFS clients couldn't complete.");
+                        showErrorMessageWithDownloadLogPrompt("Repackaging of AeroFS clients couldn't complete.");
                         trackError();
                     }
                 }).fail(function(xhr) {

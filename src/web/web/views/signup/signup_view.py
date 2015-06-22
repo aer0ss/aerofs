@@ -14,7 +14,7 @@ from aerofs_common.exception import ExceptionReply
 import aerofs_sp.gen.common_pb2 as common
 from web.sp_util import exception2error
 
-from web.error import error
+from web.error import expected_error
 from web.util import get_error, get_rpc_stub, is_valid_password, send_sales_email
 from web.views.login.login_view import URL_PARAM_EMAIL, URL_PARAM_PASSWORD, \
         URL_PARAM_REMEMBER_ME
@@ -131,7 +131,7 @@ def json_request_to_sign_up(request):
     email_address = request.params[URL_PARAM_EMAIL]
     empty_email_message = _("Please enter an email address")
     if not email_address:
-        error(empty_email_message)
+        expected_error(empty_email_message)
 
     sp = get_rpc_stub(request)
     exception2error(sp.request_to_sign_up, email_address, {

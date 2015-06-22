@@ -1,7 +1,7 @@
 import logging
 from pyramid.view import view_config
 from aerofs_common.bootstrap import BootstrapClient, Status
-from web.util import error
+from web.error import unexpected_error
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def json_get_bootstrap_task_status(request):
     status, error_message = get_bootstrap_client(request).get_task_status(eid)
     if status == Status.ERROR:
         log.error("bootstrap task {} failed: {}".format(eid, error_message))
-        error("The operation couldn't complete. Please try again later."
+        unexpected_error("The operation couldn't complete. Please try again later."
               " Error: {}".format(error_message))
     else:
         return {'status': status}

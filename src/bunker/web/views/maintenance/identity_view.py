@@ -2,7 +2,7 @@ import logging
 from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 import requests
-from web.error import error
+from web.error import expected_error
 from web.util import str2bool
 from web.views.maintenance.maintenance_util import is_certificate_formatted_correctly, write_pem_to_file, get_conf_client, format_pem, get_conf, format_time
 from web.views.maintenance.setup_view import verification_base_url
@@ -42,7 +42,7 @@ def identity(request):
 def json_verify_ldap(request):
     cert = request.params[ldap_server_cert]
     if cert and not is_certificate_formatted_correctly(write_pem_to_file(cert)):
-        error("The certificate you provided is invalid. "
+        expected_error("The certificate you provided is invalid. "
               "Please provide one in PEM format.")
 
     payload = {}
@@ -60,12 +60,12 @@ def json_verify_ldap(request):
     # In this case we have a human readable error. Hopefully it will help them
     # debug their LDAP issues. Return the error string.
     if r.status_code == 400:
-        error("We couldn't connect to the LDAP server. Please check your "
+        expected_error("We couldn't connect to the LDAP server. Please check your "
               "settings. The error is:\n" + r.text)
 
     # Server failure. No human readable error message is available.
     log.warn("received server failure response with status code " + r.status_code + " and contents " + r.text)
-    error("Could not communicate with the LDAP server, please check your settings.")
+    expected_error("Could not communicate with the LDAP server, please check your settings.")
 
 
 @view_config(

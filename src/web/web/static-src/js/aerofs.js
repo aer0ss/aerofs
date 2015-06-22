@@ -135,7 +135,14 @@ function showErrorMessageFromResponse(xhr) {
       encodeURIComponent(window.location.pathname +
         window.location.search + window.location.hash));
   } else {
-    showErrorMessageUnsafe(getInternalErrorText());
+    // In the event of backend failure, 2 scenarios will happen:
+    // 1. Web backend returns 5xx with an error message indicating what service failed or
+    // 2. The web backend died, and we have no data.
+    if (data && data.hasOwnProperty("message")) {
+      showErrorMessageUnsafe(data.message);
+    } else {
+      showErrorMessageUnsafe(getInternalErrorText());
+    }
     console.log('show error message. status: ' + status +
       ' data: ' + data);
   }

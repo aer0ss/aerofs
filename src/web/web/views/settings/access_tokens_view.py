@@ -178,7 +178,7 @@ def json_delete_access_token(request):
     # This is to prevent injection attacks e.g. token='../clients'
     if not is_valid_access_token(token):
         log.error('json_delete_access_token(): invalid token: ' + token)
-        util.error('The application ID is invalid.')
+        util.expected_error('The application ID is invalid.')
 
     bifrost_client = get_bifrost_client(request)
     bifrost_client.delete_access_token(token)

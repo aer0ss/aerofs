@@ -8,7 +8,7 @@ import logging, requests, uuid
 from pyramid.view import view_config
 from maintenance_util import get_conf, get_conf_client, write_pem_to_file, \
     is_certificate_formatted_correctly, format_pem, unformat_pem
-from web.error import error
+from web.error import expected_error, unexpected_error
 from web.version import get_private_version
 
 log = logging.getLogger(__name__)
@@ -184,7 +184,7 @@ def json_collect_logs(request):
         conf.set_external_property(_DRYAD_CERT_EXTERNAL_PROP,
                                    format_pem(request.params[_FORM_PARAM_CERT]))
     else:
-        error('AeroFS was unable to issue commands to collect logs. Please '
+        unexpected_error('AeroFS was unable to issue commands to collect logs. Please '
               'try again later.')
 
 
@@ -206,32 +206,32 @@ def _generate_defect_id():
 
 def _validate_collect_logs_options(params):
     if _FORM_PARAM_OPTION not in params:
-        error('Please select a destination to send logs to.')
+        expected_error('Please select a destination to send logs to.')
     elif params[_FORM_PARAM_OPTION] not in _OPTIONS:
-        error('Please select a valid destination to send logs to.')
+        expected_error('Please select a valid destination to send logs to.')
 
     if params[_FORM_PARAM_OPTION] == _OPTION_AEROFS:
         if _FORM_PARAM_EMAIL not in params:
-            error('Please provide a contact e-mail to reach you at.')
+            expected_error('Please provide a contact e-mail to reach you at.')
             # TODO: validate the email somehow
     elif params[_FORM_PARAM_OPTION] == _OPTION_ON_SITE:
         if _FORM_PARAM_HOST not in params:
-            error('Please enter the hostname of your on-site server.')
+            expected_error('Please enter the hostname of your on-site server.')
             # TODO: validate the hostname somehow
 
         if _FORM_PARAM_PORT not in params:
-            error('Please enter the port of your on-site server.')
+            expected_error('Please enter the port of your on-site server.')
             # TODO: validate the port number somehow
 
         if _FORM_PARAM_CERT not in params:
-            error('Please provide the certificate of your on-site server.')
+            expected_error('Please provide the certificate of your on-site server.')
         else:
             _validate_certificate(params[_FORM_PARAM_CERT])
 
     if _FORM_PARAM_SUBJECT not in params:
-        error('Please provide a subject.')
+        expected_error('Please provide a subject.')
     if _FORM_PARAM_MESSAGE not in params:
-        error('Please provide a message that describes the problem.')
+        expected_error('Please provide a message that describes the problem.')
 
 
 def _validate_certificate(certificate):
@@ -242,9 +242,9 @@ def _validate_certificate(certificate):
         filename = write_pem_to_file(certificate)
         try:
             if not is_certificate_formatted_correctly(filename):
-                error(msg)
+                expected_error(msg)
         finally:
             os.unlink(filename)
     except UnicodeEncodeError:
         # this error indicates bad unicode in the cert => bad cert
-        error(msg)
+        expected_error(msg)

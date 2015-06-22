@@ -6,7 +6,7 @@ import logging
 import smtplib
 from email.mime.text import MIMEText
 
-from error import error
+from error import expected_error
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
@@ -39,7 +39,7 @@ def is_valid_email(email):
 # TODO (WW) move email checking to SP
 def error_on_invalid_email(email):
     if not is_valid_email(email):
-        error("This email doesn't seem to be valid.")
+        expected_error("This email doesn't seem to be valid.")
 
 def domain_sanity_check(domain):
     """

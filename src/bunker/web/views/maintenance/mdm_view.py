@@ -3,7 +3,7 @@ import iptools
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPOk
 from web.util import str2bool
-from web.error import error
+from web.error import expected_error
 from maintenance_util import get_conf_client
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def json_set_mobile_device_management(request):
             proxy_list = is_valid_proxy_list(cidr_inputs)
             conf.set_external_property('mobile_device_management_proxies', proxy_list)
         except InvalidFormInput as feedback:
-            error(str(feedback))
+            expected_error(str(feedback))
 
     #shouldn't reach this if an error is thrown, so on error no permanent state is changed
     conf.set_external_property('mobile_device_management_enabled', str(enabled))

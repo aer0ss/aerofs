@@ -10,7 +10,7 @@ import requests
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_common.bootstrap import BootstrapClient
-from web.error import error
+from web.error import expected_error, unexpected_error
 from web.license import set_license_file_and_attach_shasum_to_session, is_license_present_and_valid
 from backup_and_upgrade_view import BACKUP_FILE_PATH, example_backup_download_file_name
 from maintenance_util import write_pem_to_file, \
@@ -115,7 +115,7 @@ def json_set_license(request):
     license_bytes = request.params['license'].encode('latin1')
 
     if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
-        error("The provided license file is invalid.")
+        expected_error("The provided license file is invalid.")
 
     headers = remember(request, 'fakeuser')
     return HTTPOk(headers=headers)
@@ -190,13 +190,13 @@ def json_setup_hostname(request):
     local_ips = re.compile("^127.\d{1,3}.\d{1,3}.\d{1,3}$")
 
     if hostname == "localhost" or local_ips.match(hostname):
-        error("Local hostnames or IP addresses are not allowed.")
+        expected_error("Local hostnames or IP addresses are not allowed.")
     elif is_ipv6_address(hostname):
-        error("IPv6 addresses are not supported. Please specify a valid hostname or IPv4 address.")
+        expected_error("IPv6 addresses are not supported. Please specify a valid hostname or IPv4 address.")
     elif not is_hostname_xmpp_compatible(hostname):
-        error("Hostname is not XMPP compatible. Please specify a name with both a top-level name (e.g. .com) and a second-level domain (e.g. acme).")
+        expected_error("Hostname is not XMPP compatible. Please specify a name with both a top-level name (e.g. .com) and a second-level domain (e.g. acme).")
     elif not is_hostname_resolvable(hostname):
-        error("Unable to resolve " + hostname + ". Please check your settings.")
+        expected_error("Unable to resolve " + hostname + ". Please check your settings.")
 
 
     conf_client = get_conf_client(request)
@@ -279,10 +279,10 @@ def json_verify_smtp(request):
             # debug their smtp issues. Return the error string.
             # We don't want to show stack dumps for internal failures (500 or any
             # other unexpected failure...)
-            error("Unable to send email. The error is:\n" + r.text)
+            expected_error("Unable to send email. The error is:\n" + r.text)
         else:
             log.error("{} error detail: ".format(r.status_code) + r.text)
-            error("Unable to send email. Please check your SMTP settings.")
+            unexpected_error("Unable to send email. Please check your SMTP settings.")
 
     return {}
 
@@ -331,18 +331,18 @@ def json_setup_certificate(request):
         is_key_valid = is_key_formatted_correctly(key_filename)
 
         if not is_certificate_valid and not is_key_valid:
-            error("The certificate and key you provided is invalid.")
+            expected_error("The certificate and key you provided is invalid.")
         elif not is_certificate_valid:
-            error("The certificate you provided is invalid.")
+            expected_error("The certificate you provided is invalid.")
         elif not is_key_valid:
-            error("The key you provided is invalid.")
+            expected_error("The key you provided is invalid.")
 
         # Check that key matches the certificate.
         certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
         key_modulus = get_modulus_of_key_file(key_filename)
 
         if certificate_modulus != key_modulus:
-            error("The certificate and key you provided do not match each other.")
+            expected_error("The certificate and key you provided do not match each other.")
 
         # All is well - set the external properties.
         configuration = get_conf_client(request)
@@ -369,7 +369,7 @@ def json_setup_certificate(request):
 def json_upload_backup(request):
     # We don't support restoring multiple time since restoration is not an idempotent operation.
     if _is_restored_from_backup(get_conf(request)):
-        error(_get_already_restored_html_message(request))
+        expected_error(_get_already_restored_html_message(request))
 
     log.info("uploading backup file...")
     # See http://docs.pylonsproject.org/projects/pyramid_cookbook/en/latest/forms/file_uploads.html

@@ -2,7 +2,7 @@ import logging
 import os
 from maintenance_util import write_pem_to_file, unformat_pem, \
     is_certificate_formatted_correctly, format_pem, get_conf_client, get_conf
-from web.error import error
+from web.error import expected_error
 from web.util import str2bool
 from pyramid.view import view_config
 from mdm_view import parse_cidr_list
@@ -61,7 +61,7 @@ def json_set_device_authorization(request):
 
     if enabled:
         if not host or not port:
-            error('Please specify the hostname and port.')
+            expected_error('Please specify the hostname and port.')
 
     if use_ssl and len(certificate) > 0:
         certificate_filename = write_pem_to_file(certificate)
@@ -69,7 +69,7 @@ def json_set_device_authorization(request):
             is_certificate_valid = is_certificate_formatted_correctly(
                 certificate_filename)
             if not is_certificate_valid:
-                error("The certificate you provided is invalid.")
+                expected_error("The certificate you provided is invalid.")
         finally:
             os.unlink(certificate_filename)
 

@@ -83,7 +83,7 @@ def _make_sp_request(fn, args):
 def create_url(request):
     soid = request.json_body.get("soid")
     if soid is None:
-        error.error('missing "soid" param')
+        error.expected_error('missing "soid" param')
     reply = _make_sp_request(get_rpc_stub(request).create_url, (soid))
     key = reply.url_info.key
 
@@ -151,15 +151,15 @@ def set_url_expires(request):
     key = request.json_body.get("key")
     expires = request.json_body.get("expires")
     if key is None:
-        error.error('missing "key" param')
+        error.expected_error('missing "key" param')
     if expires is None:
-        error.error('missing "expires" param')
+        error.expected_error('missing "expires" param')
 
     expires_abs_milli = None
     try:
         expires_abs_milli = _delta_seconds_to_abs_milli(int(expires))
     except ValueError:
-        error.error('"expires" param must be a valid number')
+        error.expected_error('"expires" param must be a valid number')
 
     _make_sp_request(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli))
 
@@ -181,7 +181,7 @@ def set_url_expires(request):
 def remove_url_expires(request):
     key = request.json_body.get("key")
     if key is None:
-        error.error('missing "key" param')
+        error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url_expires, (key))
 
     _audit(request, "LINK", "link.remove_expiry", {
@@ -201,7 +201,7 @@ def remove_url_expires(request):
 def remove_url(request):
     key = request.json_body.get("key")
     if key is None:
-        error.error('missing "key" param')
+        error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url, (key))
 
     _audit(request, "LINK", "link.delete", {
@@ -222,9 +222,9 @@ def set_url_password(request):
     key = request.json_body.get("key")
     password = request.json_body.get("password")
     if key is None:
-        error.error('missing "key" param')
+        error.expected_error('missing "key" param')
     if password is None:
-        error.error('missing "password" param')
+        error.expected_error('missing "password" param')
     password = password.encode('utf-8')
     _make_sp_request(get_rpc_stub(request).set_url_password, (key, password))
 
@@ -245,7 +245,7 @@ def set_url_password(request):
 def remove_url_password(request):
     key = request.json_body.get("key")
     if key is None:
-        error.error('missing "key" param')
+        error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url_password, (key))
 
     _audit(request, "LINK", "link.remove_password", {

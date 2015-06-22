@@ -10,6 +10,7 @@ from pyramid.security import authenticated_userid
 import requests
 
 from web import util
+from error import unexpected_error
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class BifrostClient(object):
     def raise_on_error(self, failed_response=None):
         resp = failed_response or self.last_response
         if not resp.ok:
-            util.error(_get_error_message_for_bifrost_resonse(resp))
+            unexpected_error(_get_error_message_for_bifrost_resonse(resp))
 
     def flash_on_error(self, request, failed_response=None):
         resp = failed_response or self.last_response

@@ -1,6 +1,6 @@
 import logging
 from aerofs_common.exception import ExceptionReply
-from web.error import error
+from web.error import expected_error
 
 log = logging.getLogger(__name__)
 
@@ -8,11 +8,11 @@ log = logging.getLogger(__name__)
 def exception2error(func, params, type2message_dict):
     """
     Call {@code func} with {@code params}. If an ExceptionReply is thrown from
-    the func, raise an HTTP error response using the error() function. The type
+    the func, raise an HTTP error response using the expected_error() function. The type
     field in the response body is the ExceptionReply type name (e.g. NOT_FOUND).
     The message is determined by the type2message_dict parameter, which
     specifies a map from PBException types to error messages. The message will
-    be normalized by error(). If a type is not specified in the map, the
+    be normalized by expected_error(). If a type is not specified in the map, the
     PBException will be rethrown to the caller ( and in turn handled by
     error_view.py:protobuf_exception_view). For example:
 
@@ -27,7 +27,7 @@ def exception2error(func, params, type2message_dict):
     except ExceptionReply as e:
         if e.get_type() in type2message_dict:
             message = type2message_dict[e.get_type()]
-            error(message, e.get_type_name(), e.get_data())
+            expected_error(message, e.get_type_name(), e.get_data())
         else:
             raise e
 

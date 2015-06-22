@@ -6,7 +6,7 @@ from web.version import get_private_version
 from web.views.maintenance.logs_view import get_file_download_response, get_download_file_name
 import psutil
 from os.path import isfile
-from web.error import error
+from web.error import expected_error
 from os import unlink
 from sys import stdout, stderr
 
@@ -62,7 +62,7 @@ def _backup_or_restore(action):
     """
     log.info("Running {}...".format(action))
     if is_running():
-        error('backup/restore process is already running')
+        expected_error('backup/restore process is already running')
 
     if isfile(_DONE_FILE):
         unlink(_DONE_FILE)
