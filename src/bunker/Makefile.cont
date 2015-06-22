@@ -1,19 +1,30 @@
 IMAGE_NAME = aerofs/bunker
-ROOT = buildroot/opt/bunker
 
 FILES = $(shell find -L web -type f)
-VERSION_FILE = buildroot/opt/repackaging/installers/original/current.ver
-EXTERNAL_PROP_DOCKER_DEFAULT=buildroot/external.properties.docker.default
 
-image: $(FILES:%=$(ROOT)/%) $(VERSION_FILE) $(EXTERNAL_PROP_DOCKER_DEFAULT)
+BUILD_ROOT = buildroot
+SYNC_ROOT = syncroot
+SYNC_DIR = syncroot/opt/bunker
+VERSION_FILE = syncroot/opt/repackaging/installers/original/current.ver
+EXTERNAL_PROP_DOCKER_DEFAULT=syncroot/external.properties.docker.default
+
+image: $(BUILD_ROOT)
 	docker build -t $(IMAGE_NAME) .
 
-.PHONY: image
+.PHONY: image $(SYNC_ROOT)
+
+$(BUILD_ROOT): $(SYNC_ROOT) $(FILES:%=$(SYNC_DIR)/%) $(EXTERNAL_PROP_DOCKER_DEFAULT) $(VERSION_FILE)
+	rsync --archive --checksum --no-times --delete $</ $@
+	-rm -rf $<
 
 # TODO (WW) move everything from 'web' to 'root' folder
-$(ROOT)/%: %
+$(SYNC_ROOT):
+	-rm -rf $@
+	mkdir -p $@
+
+$(SYNC_DIR)/%: %
 	mkdir -p $(@D)
-	cp $< $@ 
+	cp $< $@
 
 $(EXTERNAL_PROP_DOCKER_DEFAULT): ../../packaging/config/root/external.properties.docker.default
 	mkdir -p $(@D)
