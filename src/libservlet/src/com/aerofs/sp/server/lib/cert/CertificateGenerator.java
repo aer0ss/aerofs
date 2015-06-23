@@ -17,6 +17,8 @@ import java.net.URL;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.DataInputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -81,11 +83,12 @@ public class CertificateGenerator implements ICertificateGenerator
      *
      * This class is really just a wrapper for the HTTP interface of the CA server.
      *
-     * The user ID and the device ID are only used in the URL, which is in turn used by the CA to
-     * choose the filename of the new certificate (certs are saved on the remote system in case
-     * we ever need them in the future). This function doesn't perform any business logic checks
-     * (ex: the session user matches what is in the CSR; such checks should be performed by the
-     * caller).
+     * The user ID and the device ID are used to add Subject Alternative Names to the resulting
+     * cert. This is not great but much easier than modifying the native C/libcrypto code that
+     * generates the CSR.
+     *
+     * This function doesn't perform any business logic checks (ex: the session user matches what is
+     * in the CSR; such checks should be performed by the caller).
     */
     @Override
     public CertificationResult generateCertificate(UserID userId, DID did,
@@ -97,9 +100,11 @@ public class CertificateGenerator implements ICertificateGenerator
 
         HttpURLConnection conn;
         try {
-            conn = (HttpURLConnection)(new URL(LibParam.CA.URL + "?" + userId + '-' + did.toStringFormal())).openConnection();
-        }
-        catch (MalformedURLException e) {
+            conn = (HttpURLConnection)(new URL(LibParam.CA.URL
+                    + "?alt=" + URLEncoder.encode(userId.getString(), StandardCharsets.ISO_8859_1.name())
+                    + "&alt=" + did.toStringFormal()))
+                    .openConnection();
+        } catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly
             // implement the certificate generator interface.
             throw new IOException(e.toString());
@@ -116,11 +121,8 @@ public class CertificateGenerator implements ICertificateGenerator
         conn.setDoOutput(true);
         conn.connect();
 
-        OutputStream os = conn.getOutputStream();
-        try {
+        try (OutputStream os = conn.getOutputStream()) {
             os.write(BaseUtil.string2utf(strCSR));
-        } finally {
-            os.close();
         }
 
         if (conn.getContentLength() <= 0) {
@@ -128,17 +130,12 @@ public class CertificateGenerator implements ICertificateGenerator
                     .getContentLength());
         }
 
-        InputStream is = conn.getInputStream();
-        DataInputStream dis = new DataInputStream(is);
-
-        byte[] bs;
-        try {
-            bs = new byte[conn.getContentLength()];
+        byte[] bs = new byte[conn.getContentLength()];
+        try (DataInputStream dis = new DataInputStream(conn.getInputStream())) {
             dis.readFully(bs);
-        } finally {
-            // This will also close the input stream 'is'.
-            dis.close();
         }
+        // This will also close the input stream 'is'.
+
 
         // If bs is invalid a certificate exception will be thrown.
         return new CertificationResult(bs);

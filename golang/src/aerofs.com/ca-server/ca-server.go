@@ -12,7 +12,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aerofs/httprouter"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -88,7 +90,18 @@ func csrHandler(db *sql.DB, signer *cert.CertSigner, w http.ResponseWriter, r *h
 		WriteError(w, err.Error(), 400)
 		return
 	}
-	fmt.Println("csr for ", csr.Subject)
+	altNames := r.URL.Query()["alt"]
+	fmt.Println("csr for ", csr.Subject, altNames)
+	for _, altName := range altNames {
+		if ip := net.ParseIP(altName); ip != nil {
+			csr.IPAddresses = append(csr.IPAddresses, ip)
+		} else if strings.Contains(altName, "@") {
+			csr.EmailAddresses = append(csr.EmailAddresses, altName)
+		} else {
+			csr.DNSNames = append(csr.DNSNames, altName)
+		}
+	}
+
 	serial, err := acquireSerial(db)
 	if err != nil {
 		WriteError(w, "failed to acquire serial number ["+err.Error()+"]", 500)

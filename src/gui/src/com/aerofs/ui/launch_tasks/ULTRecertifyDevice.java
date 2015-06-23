@@ -61,7 +61,8 @@ public class ULTRecertifyDevice extends UILaunchTask
             recertify(this::signInToRecertify);
 
         } else if (Cfg.recertify(Cfg.absRTRoot())
-                || (!SecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY))) {
+                || !SecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY)
+                || !SecUtil.hasSufficientExtKeyUsage(Cfg.cert())) {
             recertify(() -> {
                 l.info("Attempting to refresh the device certificate...");
 
