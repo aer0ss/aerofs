@@ -307,6 +307,12 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         boolean last = false;
         while (!last && qblocks.size() < MIN_BLOCKS_PER_TX) {
             PBGetVersionsResponseBlock block = PBGetVersionsResponseBlock.parseDelimitedFrom(is);
+            // end of stream is not supposed to be reached before getting a last block
+            // but it has been observed in the wild...
+            if (block == null) {
+                l.warn("stream ended before last block");
+                break;
+            }
             qblocks.add(block);
             last = block.getIsLastBlock();
         }

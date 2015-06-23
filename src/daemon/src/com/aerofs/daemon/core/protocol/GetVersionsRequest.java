@@ -557,6 +557,6 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         // We don't permit any duplicate ticks to be of the alias type (odd-valued)
         checkState(!tick.isAlias(), loggedData);
 
-        l.info("weird tick: {}", loggedData);
+        l.debug("weird tick: {}", loggedData);
     }
 }
