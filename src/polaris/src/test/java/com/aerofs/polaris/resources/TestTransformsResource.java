@@ -28,9 +28,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 public final class TestTransformsResource {
 
@@ -145,27 +143,48 @@ public final class TestTransformsResource {
         assertThat(applied.maxTransformCount, is(0L));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void shouldReturnCorrectTransformsWhenNonemptyFolderIsMigrated()
             throws Exception
     {
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
         SID rootStore = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
-        OID file = PolarisHelpers.newFile(verified, folder, "file");
+        OID newFile = PolarisHelpers.newFile(verified, folder, "file");
+        OID modifiedFile = PolarisHelpers.newFile(verified, folder, "file2");
+        PolarisHelpers.newFileContent(verified, modifiedFile, 0, hash, 100, 1024);
+        OID deletedFile = PolarisHelpers.newFile(verified, folder, "file3");
+        PolarisHelpers.newFileContent(verified, deletedFile, 0, hash, 100, 1024);
+        PolarisHelpers.removeFileOrFolder(verified, folder, deletedFile);
+
         PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
-        assertThat(applied.transforms, hasSize(3));
-        assertThat(applied.maxTransformCount, is(3L));
+        assertThat(applied.transforms, hasSize(8));
+        assertThat(applied.maxTransformCount, is(8L));
         assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.SHARE, 2, null, null, null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, newFile, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.INSERT_CHILD, 2, modifiedFile, ObjectType.FILE, "file2"));
+        assertThat(applied.transforms.get(3), matchesContentTransform(4, DEVICE, modifiedFile, 1, hash, 100, 1024));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder, TransformType.INSERT_CHILD, 3, deletedFile, ObjectType.FILE, "file3"));
+        assertThat(applied.transforms.get(5), matchesContentTransform(6, DEVICE, deletedFile, 1, hash, 100, 1024));
+        assertThat(applied.transforms.get(6), matchesMetaTransform(7, DEVICE, folder, TransformType.REMOVE_CHILD, 4, deletedFile, null, null));
+        assertThat(applied.transforms.get(7), matchesMetaTransform(8, DEVICE, folder, TransformType.SHARE, 5, null, null, null));
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, hasSize(1));
-        assertThat(applied.maxTransformCount, is(4L));
-        assertThat(applied.transforms.get(0), matchesMetaTransform(4, DEVICE, sharedFolder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms, hasSize(5));
+        assertThat(applied.maxTransformCount, is(13L));
+        assertThat(applied.transforms, containsInAnyOrder(
+                matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, newFile, ObjectType.FILE, "file"),
+                matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, modifiedFile, ObjectType.FILE, "file2"),
+                matchesReorderableContentTransform(DEVICE, modifiedFile, 1, hash, 100, 1024),
+                matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, deletedFile, ObjectType.FILE, "file3"),
+                matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.REMOVE_CHILD, deletedFile, null, null)));
     }
 
     @Test
@@ -275,6 +294,42 @@ public final class TestTransformsResource {
         };
     }
 
+    private static Matcher<? super Transform> matchesReorderableMetaTransform(
+            final DID originator,
+            final UniqueID oid,
+            final TransformType transformType,
+            @Nullable final OID child,
+            @Nullable final ObjectType childObjectType,
+            @Nullable final String childName
+    ) {
+        return new TypeSafeMatcher<Transform>() {
+            @Override
+            protected boolean matchesSafely(Transform item) {
+                return Objects.equal(originator, item.getOriginator())
+                        && Objects.equal(oid, item.getOid())
+                        && transformType == item.getTransformType()
+                        && Objects.equal(child, item.getChild())
+                        && Objects.equal(childObjectType, item.getChildObjectType())
+                        && Objects.equal(childName, PolarisUtilities.stringFromUTF8Bytes(item.getChildName()))
+                        && item.getContentHash() == null
+                        && item.getContentSize() == -1
+                        && item.getContentMtime() == -1;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(String.format("meta transform has properties: originator:%s oid:%s transformType:%s child:%s childObjectType:%s childName:%s",
+                        originator,
+                        oid,
+                        transformType,
+                        child,
+                        childObjectType,
+                        childName));
+            }
+        };
+    }
+
+
     private static Matcher<? super Transform> matchesContentTransform(
             final long logicalTimestamp,
             final DID originator,
@@ -304,6 +359,42 @@ public final class TestTransformsResource {
             public void describeTo(Description description) {
                 description.appendText(String.format("content transform has properties: logicalTimestamp:%d originator:%s oid:%s newVersion:%d contentHash:%s contentSize:%s contentMtime:%s",
                         logicalTimestamp,
+                        originator,
+                        oid,
+                        newVersion,
+                        Arrays.toString(contentHash),
+                        contentSize,
+                        contentMtime));
+            }
+        };
+    }
+
+    private static Matcher<? super Transform> matchesReorderableContentTransform(
+            final DID originator,
+            final UniqueID oid,
+            final long newVersion,
+            final byte[] contentHash,
+            final long contentSize,
+            final long contentMtime
+    ) {
+        return new TypeSafeMatcher<Transform>() {
+            @Override
+            protected boolean matchesSafely(Transform item) {
+                return Objects.equal(originator, item.getOriginator())
+                        && Objects.equal(oid, item.getOid())
+                        && item.getTransformType() == TransformType.UPDATE_CONTENT
+                        && newVersion == item.getNewVersion()
+                        && item.getChild() == null
+                        && item.getChildObjectType() == null
+                        && item.getChildName() == null
+                        && Arrays.equals(contentHash, item.getContentHash())
+                        && contentSize == item.getContentSize()
+                        && contentMtime == item.getContentMtime();
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(String.format("content transform has properties: originator:%s oid:%s newVersion:%d contentHash:%s contentSize:%s contentMtime:%s",
                         originator,
                         oid,
                         newVersion,

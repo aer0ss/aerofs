@@ -211,14 +211,16 @@ public class StoreMigrator implements Managed {
                     newParent = migrating.parent.oid;
                 }
                 newParentVersion = versionMap.get(newParent);
+                Atomic atomic = migrating.child.deleted ? new Atomic(2) : null;
 
-                if (!migrating.child.deleted) {
-                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), null);
-                } else {
-                    Atomic atomic = new Atomic(2);
-                    dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
+                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
+
+                if (migrating.child.deleted) {
                     migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, migratingObject.oid, null, System.currentTimeMillis(), atomic);
+                } else if (migratingObject.objectType == ObjectType.FILE && migratingObject.version > Constants.INITIAL_OBJECT_VERSION) {
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, migratingObject.oid, TransformType.UPDATE_CONTENT, migratingObject.version, null, null, System.currentTimeMillis(), null);
                 }
+
 
                 dao.objects.changeStore(newStore, migrating.child.oid);
                 dao.objects.update(newStore, newParent, newParentVersion);
