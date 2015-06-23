@@ -103,6 +103,7 @@ func (c *HttpConfigClient) Get() (map[string]string, error) {
 		return nil, err
 	}
 	d, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}

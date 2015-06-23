@@ -136,7 +136,7 @@ func (e *deviceCertExtractor) Extract(params []string, r *http.Request) AuthToke
 	if err != nil {
 		return nil
 	}
-	if matchingCN(getCN(r.Header.Get("DName")), deviceCN(userid, did[:])) {
+	if MatchingDeviceCN(getCN(r.Header.Get("DName")), userid, did[:]) {
 		return nil
 	}
 	return &deviceCertToken{userid: string(userid), did: did, serial: serial}
@@ -154,10 +154,15 @@ func getCN(dname string) string {
 	return dname[i+3:]
 }
 
-func deviceCN(userid, did []byte) []byte {
+func MatchingDeviceCN(cn string, userid, did []byte) bool {
+	return matchingCN(cn, deviceCN(userid, did))
+}
+
+func deviceCN(userid, did []byte) (r []byte) {
 	h := sha256.New()
-	h.Write([]byte(userid))
-	return h.Sum(did)
+	h.Write(userid)
+	h.Write(did)
+	return h.Sum(r)
 }
 
 func matchingCN(d string, h []byte) bool {
