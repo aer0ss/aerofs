@@ -21,7 +21,7 @@ TAG="$(echo "${LINE}" | awk '{print $2}')"
 # Enable disabled services in Nginx
 NGINX="${REGISTRY}aerofs/nginx:${TAG}"
 echo "Modifying ${NGINX} ..."
-[[ "$(docker run "${NGINX}" ls '/etc/nginx/sites-disabled')" ]] && {
+[[ "$(docker run --rm "${NGINX}" ls '/etc/nginx/sites-disabled')" ]] && {
     TMP="$(mktemp -d -t XXXXXX)"
     cat > "${TMP}/Dockerfile" <<END
 FROM ${NGINX}
