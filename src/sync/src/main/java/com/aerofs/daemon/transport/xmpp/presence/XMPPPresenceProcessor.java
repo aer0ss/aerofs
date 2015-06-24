@@ -136,19 +136,7 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
 
         if (did.equals(localdid)) return false;
 
-        boolean updated = updateStores(presence.isAvailable(), did, sid);
-
-        // TODO: retrieve and process vCard asynchronously to avoid interference with zephyr
-        if (presence.isAvailable()) {
-            @Nullable String metadata = fetchVCard(connection, presence.getFrom());
-            if (metadata != null && !metadata.isEmpty()) {
-                l.info("Found metadata for {}: {}", did, metadata);
-                Set<IPresenceLocation> presenceLocations = parseMetadata(did, metadata);
-                presenceLocations.forEach(presenceLocationReceiver::onPresenceReceived);
-            }
-        }
-
-        return updated;
+        return updateStores(presence.isAvailable(), did, sid);
     }
 
     /**
@@ -180,27 +168,6 @@ public final class XMPPPresenceProcessor implements IXMPPConnectionServiceListen
         }
 
         return presenceLocations;
-    }
-
-    /**
-     * Retrieve a vCard metadata for a given JID
-     *
-     * @param jid the JID of the user we want the metadata
-     * @return The Metadata String, or an empty string if an error occurred
-     */
-    private static @Nullable String fetchVCard(@Nullable XMPPConnection connection, String jid)
-    {
-        // should only be null for tests
-        if (connection == null) return null;
-        try {
-            XMPPvCard card = new XMPPvCard();
-            // Read the given vCard
-            card.load(connection, jid);
-            return card.readMetadata();
-        } catch (Throwable e) {
-            l.warn("Unable to retrieve the vCard for JID {}", jid, e);
-            return null;
-        }
     }
 
     private boolean updateStores(boolean available, DID did, SID sid) {
