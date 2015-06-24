@@ -58,7 +58,7 @@ public final class ServerConfigurationLoader
     }
 
     /**
-     * @throws ConfigurationUtils.ExHttpConfig If a URL was provided but the HTTP service GET failed.
+     * @throws ConfigurationUtils.ExHttpConfig If a URL was provided but the HTTP GET failed.
      */
     private static Properties getHttpProperties(String serviceName)
             throws ConfigurationUtils.ExHttpConfig

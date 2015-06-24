@@ -55,12 +55,6 @@ public class ConfigurationProperties
                 defaultValue);
     }
 
-    public static Long getLongProperty(String key, Long defaultValue)
-    {
-        return _propertiesHelper.getLongWithDefaultValueFromPropertiesObj(_properties, key,
-                defaultValue);
-    }
-
     public static String getStringProperty(String key, String defaultValue)
     {
         return _properties.getProperty(key, defaultValue);
@@ -80,13 +74,6 @@ public class ConfigurationProperties
     public static Optional<String> getOptionalStringProperty(String key)
     {
         return Optional.fromNullable(_properties.getProperty(key));
-    }
-
-    public static Optional<Integer> getOptionalIntegerProperty(String key)
-    {
-        String value = _properties.getProperty(key);
-        Integer intValue = (value != null) ? Integer.valueOf(value) : null ;
-        return Optional.fromNullable(intValue);
     }
 
     public static URL getUrlProperty(String key, String defaultValue)

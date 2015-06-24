@@ -4,7 +4,7 @@ import java.io.File;
 import java.sql.Connection;
 
 /**
- * Abstract class that is reponsible for parsing junit env variables and providing them to the
+ * Abstract class that is responsible for parsing junit env variables and providing them to the
  * user of this class.
  */
 public abstract class DatabaseParameters
@@ -15,7 +15,7 @@ public abstract class DatabaseParameters
     private static final String DEFAULT_LOCAL_MYSQL_HOST = "localhost";
     private static final String DEFAULT_LOCAL_MYSQL_PATH = "/usr/local/bin"; // homebrew default
 
-    // JUnit parameter names (allows defaults to be overriden via the test script)
+    // JUnit parameter names (allows defaults to be overridden via the test script)
     private static final String JUNIT_MYSQL_USER_PARAMETER = "junit.mysqlUser";
     private static final String JUNIT_MYSQL_PASS_PARAMETER = "junit.mysqlPass";
     private static final String JUNIT_MYSQL_HOST_PARAMETER = "junit.mysqlHost";

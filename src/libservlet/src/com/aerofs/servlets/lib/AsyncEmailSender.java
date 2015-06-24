@@ -10,13 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
-import javax.mail.MessagingException;
 import javax.mail.Session;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -39,7 +35,7 @@ public class AsyncEmailSender extends AbstractEmailSender
     private static final String EMAIL_PROPERTIES_FILE = "/etc/aerofs/mail.properties";
     private final int EMAIL_QUEUE_SIZE = 1000;
     private final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
-            TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
+            TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(EMAIL_QUEUE_SIZE));
 
     private AsyncEmailSender(String host, String port, String username, String password,
             boolean useTls, String certificate)
@@ -55,12 +51,10 @@ public class AsyncEmailSender extends AbstractEmailSender
         // We need to be able to load email properties from the filesystem for prod, because prod
         // doesn't have a config server yet and we don't want to embed credentials in the source
         // code that gets shipped for local prod.
-        Properties p = null;
-        if (new File(EMAIL_PROPERTIES_FILE).exists()) {
-            p = PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE);
-        } else {
-            p = new Properties();
-        }
+        Properties p = new File(EMAIL_PROPERTIES_FILE).exists()
+                ? PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE)
+                : new Properties();
+
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
         // We wish there was no default value here, so we could fail loudly if no production
@@ -87,13 +81,9 @@ public class AsyncEmailSender extends AbstractEmailSender
     protected Future<Void> sendMessage(final Message msg, final Session session)
             throws RejectedExecutionException
     {
-        return executor.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws MessagingException
-            {
-                sendMessageImpl(session, msg);
-                return null;
-            }
+        return executor.submit(() -> {
+            sendMessageImpl(session, msg);
+            return null;
         });
     }
 }
