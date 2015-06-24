@@ -14,10 +14,6 @@ Passwd=$PasswdDefault
 CurlOutput="-o /dev/null"
 WebHostDefault=share.syncfs.com
 WebHost=$WebHostDefault
-DbHostDefault=share.syncfs.com
-DbHost=$DbHostDefault
-DbUser=vagrant
-DbKey=~/.vagrant.d/insecure_private_key
 UseridDefault=
 Userid=
 Verbose=0
@@ -27,8 +23,8 @@ declare -i AutoSignup=0
 Usage()
 {
     [ $# -gt 0 ] && echo -e "\n$@\n"
-    echo "$0 [-a] [-w webhost ] [ -d dbhost ] [-p password]"
-    echo "$0 [-v] [-w webhost ] [ -d dbhost ] [-f first] [-l last] -u userid -p password"
+    echo "$0 [-a] [-w webhost ] [-p password]"
+    echo "$0 [-v] [-w webhost ] [-f first] [-l last] -u userid -p password"
     echo ""
     echo "      -a          Auto-sign-up all invited users in the signup_code table."
     echo "                  (useful if you have invitation-only set, invite users from web UI,"
@@ -67,7 +63,6 @@ function DoArgs()
     do
         case $OPTION in
         a)  AutoSignup=1 ;;
-        d)  DbHost=$OPTARG ;;
         f)  First=$OPTARG ;;
         l)  Last=$OPTARG ;;
         p)  Passwd=$OPTARG ;;
@@ -87,25 +82,25 @@ function DoArgs()
 SignupAll()
 {
     [ $Verbose -eq 0 ] || set -x
-    QueryStr="select t_code, t_to from sp_signup_code order by t_ts"
 
-    echo "$QueryStr" \
-        | ssh -l ${DbUser} -i ${DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
-        | while read code user
-        do
-        # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
-            echo "Found user $user $code"
-            CreateAccount $code $user
-        done
+    AllCodes=$(curl -s http://${WebHost}:21337/get_all_codes)
+    NumUsers=$(echo $AllCodes | jq '.signup_codes | length')
+
+    for i in $(seq 0 1 $(($NumUsers - 1)))
+    do
+        $user=$(echo $AllCodes | jq -r '.signup_codes[$i].user')
+        $code=$(echo $AllCodes | jq -r '.signup_codes[$i].signup_code')
+        echo "Found user $user $code"
+        CreateAccount $code $user
+    done
 }
 
 GetCode()
 {
     [ $Verbose -eq 0 ] || set -x
-    QueryStr="select t_code from sp_signup_code where t_to = '${Userid}' order by t_ts desc limit 1 "
-    # Arguably this shouldn't work without a 'sudo' but it sure do. What the what?
-    echo "$QueryStr" | ssh -l ${DbUser} -i ${DbKey} ${DbHost} mysql -N -u root -h localhost aerofs_sp \
-             || Die "mysql error getting the invite code"
+
+    JsonCode=$(curl -X GET -G -s --data-urlencode "userid=${Userid}" http://${WebHost}:21337/get_code)
+    echo $JsonCode | jq -r '.signup_code'
 }
 
 # $1 : Signup code
@@ -115,12 +110,18 @@ CreateAccount()
     [ $Verbose -eq 0 ] || set -x
     Code=$1
     User=$2
+
+    if [ -z $Code ] || [ -z $User ]
+    then
+        Die "Tried to create an account with empty code or userid"
+    fi
+
     # Storing cookies and CsrfTokens to use later when creating an account.
     CookieJar=$(mktemp -t cookieXXXXXX)
-    CsrfToken=$(curl https://${WebHost}/setup -k -c ${CookieJar} | grep csrf-token | awk -F 'content="' '{print $2}' | awk -F '"' '{print $1}')
-    curl -k \
+    CsrfToken=$(curl -s https://${WebHost}/setup -k -c ${CookieJar} | grep csrf-token | awk -F 'content="' '{print $2}' | awk -F '"' '{print $1}')
+    curl --fail -k \
         -s ${CurlOutput} \
-        -d "email=${User}" -d "c=${Code}" -d "company=tempCompany" -d "phone=1231231234" -d "title=tempTitle" -d "company_size=1" \
+        --data-urlencode "email=${User}" -d "c=${Code}" \
         -d "first_name=Jon" -d "last_name=Testo" -d "password=${Passwd}" \
         -d "csrf_token=${CsrfToken}" -b ${CookieJar} \
         https://${WebHost}/json.signup \
@@ -131,10 +132,10 @@ CreateAccount()
 DoInvite()
 {
     [ $Verbose -eq 0 ] || set -x
-    curl -s -G ${CurlOutput} \
+    curl --fail -s -G ${CurlOutput} \
         --data-urlencode "email=${Userid}" \
         "https://${WebHost}/json.request_to_signup" \
-             || Die "Curl reported an error creating the account"
+             || Die "Curl reported an error signing up for the account"
 }
 
 function Main()

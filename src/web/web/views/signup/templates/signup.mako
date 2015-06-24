@@ -1,6 +1,5 @@
 <%inherit file="marketing_layout.mako"/>
 <%! page_title = "Create Account" %>
-<%! from web.util import is_private_deployment %>
 
 <div class="row">
     <div class="col-sm-6 col-sm-offset-3 text-center">
@@ -40,40 +39,6 @@
                             <input id="inputLastName" class="form-control" type="text" name="${url_param_last_name}" required>
                         </div>
                     </div>
-                    <div
-                    %if is_private_deployment:
-                        class="hidden"
-                    %endif
-                    >
-                        <div class="form-group">
-                            <label for="inputPhone" class="col-sm-4">Phone: *</label>
-                            <div class="col-sm-8">
-                            <input id="inputPhone" class="form-control" type="text" name="${url_param_phone}"
-                            %if not is_private_deployment:
-                            required
-                            %endif
-                            ></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputCompany" class="col-sm-4">Company:</label>
-                            <div class="col-sm-8">
-                                <input id="inputCompany" class="form-control" type="text" name="${url_param_company}">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputTitle" class="col-sm-4">Job Title:</label>
-                            <div class="col-sm-8">
-                                <input id="inputTitle" class="form-control" type="text" name="${url_param_title}">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputCompanySize" class="col-sm-4">Company Size:</label>
-                            <div class="col-sm-8">
-                                <input id="inputCompanySize" class="form-control" type="text" name="${url_param_company_size}">
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="form-group">
                         <label for="inputPasswd" class="col-sm-4">Create password: *</label>
@@ -86,13 +51,7 @@
                             <span class="help-block">
                                 Fields marked by (*) are mandatory.<br/><br/>
                                 By signing up, you agree to AeroFS's 
-                                <a
-                                    %if is_private_deployment(request.registry.settings):
-                                        href="https://www.aerofs.com/terms/#privatecloud"
-                                    %else:
-                                        href="https://www.aerofs.com/terms/#tos"
-                                    %endif
-                                    target="_blank">Terms of Service</a>
+                                <a href="https://www.aerofs.com/terms/#privatecloud" target="_blank">Terms of Service</a>
                             </span>
                         </div>
                     </div>
@@ -142,47 +101,7 @@
                         displayError(error);
                     } else {
                         ## automatically sign in once the AJAX call succeeds
-
-                        if (analytics) {
-
-                            ## post to Pardot using hidden iframe tag so that the user is properly cookied
-                            ## this technique is recommended by pardot @ http://www.pardot.com/faqs/forms/form-handlers/
-                            $('body').append("<iframe id=\"pdiframe\" src=\"https://go.pardot.com/l/32882/2014-02-26/5m2y?first_name=" + encodeURIComponent(response['firstName']) +
-                                                "&last_name=" + encodeURIComponent(response['lastName']) +
-                                                "&email=" + encodeURIComponent(response['email_address']) +
-                                                "&company=" + encodeURIComponent(response['company']) +
-                                                "&company_size=" + encodeURIComponent(response['employees']) +
-                                                "&phone=" + encodeURIComponent(response['phone'])
-                                                +"\" width='1' height='1'></iframe>;");
-
-                            ## need to wait for pardot to finish loading
-                            ## before proceeding with signup. We have a lot of marketing dependencies on pardot
-                            ## so need to make sure the iframe fully loads and the data is passed into pardot before going on.
-
-                            $('iframe#pdiframe').load(function() {
-
-                                ## Wait 300 ms for the Analytics call to succeed and then proceed to sign in.
-                                ## This is the delay they recommend in their track_forms API.
-                                ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
-
-                                analytics.identify(response['email_address'],
-                                    {
-                                        'email': response['email_address'],
-                                        'firstName': response['firstName'],
-                                        'lastName': response['lastName'],
-                                        'company': response['company'],
-                                        'employees': response['employees'],
-                                        'phone': response['phone']
-
-                                    });
-                                analytics.track('Signed Up for AeroFS Hybrid Cloud');
-                                setTimeout(sign_in, 300);
-                            });
-
-                        } else {
-                            ## no analytics, proceed to sign-in directly
-                            sign_in();
-                        }
+                        sign_in();
                     }
                 })
                 .fail(function (jqXHR, textStatus, errorThrown) {
