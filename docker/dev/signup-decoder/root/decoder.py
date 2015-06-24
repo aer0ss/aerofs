@@ -29,4 +29,32 @@ def get():
     else:
         return jsonify(signup_code=out.strip())
 
+@app.route("/get_all_codes", methods=["GET"])
+def get_all():
+    # Find mysql container
+    container = None
+    for line in check_output(['docker', 'ps']).split('\n'):
+        if IMAGE in line:
+            # last word is the container name
+            container = line.strip().rsplit(' ', 1)[1]
+            break
+    if not container:
+        return 'found no container running image {}'.format(IMAGE), 400
+
+    # Run SQL in mysql container to print the last signup code of the given user
+    script = 'mysql -N aerofs_sp <<< "select t_to, t_code from sp_signup_code where t_ts in ( select max(t_ts) from sp_signup_code group by t_to );"'
+    cmd = ['docker', 'exec', container, 'bash', '-c', script]
+    print cmd
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    if err:
+        return err, 400
+    else:
+        entries = []
+        for line in out.strip().split("\n"):
+            fields = line.split("\t")
+            entries.append({"user": fields[0], "signup_code": fields[1]})
+
+        return jsonify(signup_codes=entries)
+
 app.run('0.0.0.0', 21337)
