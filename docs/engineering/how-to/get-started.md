@@ -23,7 +23,7 @@ This will require that you reboot.
 
 Your private key is `$HOME/.ssh/id_rsa`.  Keep it secret.  Keep it safe.
 
-Your public key is `$HOME/.ssh/id_rsa.pub`. Provide this file to [Drew](drew@aerofs.ccom) or [Matt](matt@aerofs.com) for further account provisioning.
+Your public key is `$HOME/.ssh/id_rsa.pub`. Ask for a volunteer in the #eng chat channel to add your public key to the appropriate places.
 
 ## Install Tunnelblick and get on the AeroFS VPN
 
@@ -83,7 +83,7 @@ It'll prompt you before it does anything, but the defaults are sane.
 
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
-    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools
+    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools jq
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
