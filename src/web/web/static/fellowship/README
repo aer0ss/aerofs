@@ -1,0 +1,5 @@
+# Fellowship 
+
+This Angular app runs the AeroFS Groups management page. (Because the Fellowship of the Ring was a group...anyway)
+
+The Mako template this app runs within is `src/web/web/views/groups/templates/groups.mako`.

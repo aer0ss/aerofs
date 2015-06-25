@@ -1,0 +1,5 @@
+# Saruman 
+
+This Angular app runs the AeroFS Devices page. ("Saruman and his Devices"... anyway)
+
+The Mako template this app runs within is `src/web/web/views/devices/templates/devices.mako`.

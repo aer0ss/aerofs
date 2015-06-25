@@ -1,0 +1,7 @@
+# Shadowfax 
+
+This Angular app runs the AeroFS Shared Folders page. (Think "SF".)
+
+Note that this app's filters are used by another app, Strider.
+
+The Mako template this app runs within is `src/web/web/views/shelob/templates/shared_folders.mako`.

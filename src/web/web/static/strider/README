@@ -1,0 +1,7 @@
+# Strider 
+
+This Angular app runs the AeroFS "Users in my organization" page.
+
+Note that this app makes use of filters from Shadowfax.
+
+The Mako template this app runs within is `src/web/web/views/org_users/templates/org_users.mako`.

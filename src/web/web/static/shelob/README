@@ -1,0 +1,5 @@
+# Shelob 
+
+This Angular app runs the AeroFS My Files page. It also controls linksharing pages.
+
+The Mako templates this app runs within are in `src/web/web/views/shelob/templates/`.
