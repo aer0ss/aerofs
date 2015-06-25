@@ -28,9 +28,11 @@ version, use `--release-version` in step 4 below.
         ./tools/cache/start.sh
 
 3. Obtain the signing key truecrypt volume `aerofskeys.truecrypt` (used for
-   executable signing) and mount it. You will need the password. Ask Matt.
-   After mounting, open keychain and do a File > Add Keychain... and select
-   the `aerofs.keychain` file which you just mounted.
+   executable signing) and mount it. You will need the mount password. Ask
+   Matt. After mounting, open keychain and do a File > Add Keychain... and
+   select the `aerofs.keychain` file which you just mounted. Press the little
+   unlock button and enter the keychain password (which is _not_ the same as
+   the mount password). For this, also ask Matt.
 
 4. Build the S3 artifacts using:
 
