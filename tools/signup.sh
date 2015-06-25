@@ -111,7 +111,7 @@ CreateAccount()
     Code=$1
     User=$2
 
-    if [ -z $Code ] || [ -z $User ]
+    if [ -z "$Code" ] || [ -z "$User" ]
     then
         Die "Tried to create an account with empty code or userid"
     fi

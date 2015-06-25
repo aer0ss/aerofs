@@ -19,8 +19,8 @@ def get():
         return 'found no container running image {}'.format(IMAGE), 400
 
     # Run SQL in mysql container to print the last signup code of the given user
-    script = 'mysql -N aerofs_sp <<< "select t_code from sp_signup_code where t_to=\'{}\' order by t_ts desc limit 1"'.format(user)
-    cmd = ['docker', 'exec', container, 'bash', '-c', script]
+    query = "select t_code from sp_signup_code where t_to=\'{}\' order by t_ts desc limit 1".format(user)
+    cmd = ['docker', 'exec', container, 'mysql', '-N', 'aerofs_sp', '-e', query]
     print cmd
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
@@ -42,8 +42,8 @@ def get_all():
         return 'found no container running image {}'.format(IMAGE), 400
 
     # Run SQL in mysql container to print the last signup code of the given user
-    script = 'mysql -N aerofs_sp <<< "select t_to, t_code from sp_signup_code where t_ts in ( select max(t_ts) from sp_signup_code group by t_to );"'
-    cmd = ['docker', 'exec', container, 'bash', '-c', script]
+    query = "select t_to, t_code from sp_signup_code where t_ts in ( select max(t_ts) from sp_signup_code group by t_to )"
+    cmd = ['docker', 'exec', container, 'mysql', '-N', 'aerofs_sp', '-e', query]
     print cmd
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
