@@ -38,7 +38,7 @@ fi
 if docker-machine ls docker-dev &>/dev/null ; then
     echo "updating docker dameon dns config"
     # configure docker daemon to use rawdns resolver
-    docker-machine ssh docker-dev "echo 'EXTRA_ARGS=\"--dns 172.17.42.1 \$EXTRA_ARGS\"' | cat /var/lib/boot2docker/profile - | sudo tee /var/lib/boot2docker/profile"
+    docker-machine ssh docker-dev "echo 'EXTRA_ARGS=\"--dns 172.17.42.1 \$EXTRA_ARGS\"' | sudo tee -a /var/lib/boot2docker/profile"
 
     echo "restarting docker daemon"
     # restart docker daemon (the the init script is borked and cannot restart properly...)
