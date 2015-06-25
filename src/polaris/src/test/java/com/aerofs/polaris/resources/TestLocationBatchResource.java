@@ -7,16 +7,12 @@ import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.batch.location.LocationBatch;
-import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
-import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
-import com.aerofs.polaris.api.batch.location.LocationBatchResult;
-import com.aerofs.polaris.api.batch.location.LocationUpdateType;
+import com.aerofs.polaris.api.batch.location.*;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.mockito.ArgumentMatcher;
@@ -28,9 +24,7 @@ import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.doThrow;
 
 public final class TestLocationBatchResource {
@@ -43,11 +37,16 @@ public final class TestLocationBatchResource {
     private static final DID DEVICE = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
-    private final MySQLDatabase database = new MySQLDatabase("test");
-    private final PolarisTestServer polaris = new PolarisTestServer();
+    private static final MySQLDatabase database = new MySQLDatabase("test");
+    private static final PolarisTestServer polaris = new PolarisTestServer();
 
-    @Rule
-    public RuleChain chain = RuleChain.outerRule(database).around(polaris);
+    @ClassRule
+    public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
+
+    @After
+    public void beforeTest() throws Exception {
+        database.clear();
+    }
 
     @Test
     public void shouldSuccessfullyCompleteAllOperationsInBatch() throws InterruptedException {

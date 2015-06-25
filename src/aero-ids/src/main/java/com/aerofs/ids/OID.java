@@ -28,7 +28,7 @@ public class OID extends UniqueID
         super(id);
         assertIsValid();
 
-        // should use one of the conversion methods below to convert between
+        // should use one of the conversion methods in Identifiers.java to convert between
         // OID and SID
         checkArgument(!(id instanceof SID));
     }

@@ -9,6 +9,7 @@ service:
   port: 8086
   numNetworkThreads: 2
   numRequestProcessingThreads: 5
+  useDefaultExceptionMappers: false
 
 database:
   username: MYSQL_USER

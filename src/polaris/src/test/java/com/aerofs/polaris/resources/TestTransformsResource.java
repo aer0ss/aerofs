@@ -1,11 +1,7 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.api.PolarisUtilities;
@@ -21,7 +17,8 @@ import org.apache.http.HttpStatus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 
@@ -41,9 +38,15 @@ public final class TestTransformsResource {
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();
     private final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
+    private static MySQLDatabase database = new MySQLDatabase("test");
 
-    @Rule
-    public RuleChain polaris = RuleChain.outerRule(new MySQLDatabase("test")).around(new PolarisTestServer());
+    @ClassRule
+    public static RuleChain polaris = RuleChain.outerRule(database).around(new PolarisTestServer());
+
+    @After
+    public void afterTest() throws Exception {
+        database.clear();
+    }
 
     @Test
     public void shouldReturnCorrectTransformsWhenAnObjectIsInserted() {
@@ -141,7 +144,7 @@ public final class TestTransformsResource {
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
-        assertThat(applied.transforms, nullValue());
+        assertThat(applied.transforms, empty());
         assertThat(applied.maxTransformCount, is(2L));
     }
 
@@ -273,7 +276,7 @@ public final class TestTransformsResource {
         assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
 
         applied = PolarisHelpers.getTransforms(verified, store, 5, 10);
-        assertThat(applied.transforms, nullValue()); // i.e. no transforms
+        assertThat(applied.transforms, empty()); // i.e. no transforms
         assertThat(applied.maxTransformCount, is(5L));
     }
 

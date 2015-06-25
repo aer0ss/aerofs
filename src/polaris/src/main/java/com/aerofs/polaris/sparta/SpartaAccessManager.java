@@ -7,6 +7,7 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -27,6 +28,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
@@ -122,19 +124,18 @@ public final class SpartaAccessManager implements ManagedAccessManager {
                         throw new AccessException(user, store, requested);
                     }
 
-                    boolean writeAccessRequested = isWriteAccessRequested(requested);
-
-                    // we haven't requested WRITE access
+                    List<String> nonReadAccesses = nonReadAccessRequested(requested);
+                    // we haven't requested WRITE/MANAGE access
                     // members of a shared folder have READ access by default
-                    if (!writeAccessRequested) {
+                    if (nonReadAccesses.size() == 0) {
                         return;
                     }
 
-                    // we've requested WRITE access and the user exists...
+                    // we've requested WRITE/MANAGE access and the user exists...
                     try (InputStream content = response.getEntity().getContent()) {
                         Member member = mapper.readValue(content, Member.class);
-                        if (!member.permissions.contains("WRITE")) {
-                            throw new AccessException(user, store, Access.WRITE);
+                        if (!member.permissions.containsAll(nonReadAccesses)) {
+                            throw new AccessException(user, store, requested);
                         }
                     }
                 }
@@ -145,13 +146,14 @@ public final class SpartaAccessManager implements ManagedAccessManager {
         }
     }
 
-    private boolean isWriteAccessRequested(Access[] requested) {
+    private List<String> nonReadAccessRequested(Access[] requested)
+    {
+        List<String> accesses = Lists.newArrayList();
         for (Access access : requested) {
-            if (access == Access.WRITE) {
-                return true;
+            if (access != Access.READ) {
+                accesses.add(access.name());
             }
         }
-
-        return false;
+        return accesses;
     }
 }

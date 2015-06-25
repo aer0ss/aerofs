@@ -13,5 +13,11 @@ public enum Access {
     /**
      * Modify the current state of the object.
      */
-    WRITE
+    WRITE,
+
+    /**
+     * Only used in the Public API.
+     * Manage access to the object.
+     */
+    MANAGE
 }

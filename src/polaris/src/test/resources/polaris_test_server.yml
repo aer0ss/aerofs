@@ -13,6 +13,7 @@ service:
   directMemoryBacked: false
   maxAcceptQueueSize: 10
   numNetworkThreads: 2
+  useDefaultExceptionMappers: false
 
 database:
   username: test

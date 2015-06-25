@@ -26,4 +26,9 @@ public final class NotFoundException extends PolarisException {
     protected void addErrorFields(Map<String, Object> errorFields) {
         errorFields.put("oid", oid.toStringFormal());
     }
+
+    @Override
+    public String typeForAPIException() {
+        return "NOT_FOUND";
+    }
 }

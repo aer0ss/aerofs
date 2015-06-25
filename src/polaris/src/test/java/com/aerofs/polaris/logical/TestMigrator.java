@@ -33,6 +33,9 @@ import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.polaris.PolarisHelpers.newFile;
+import static com.aerofs.polaris.PolarisHelpers.newFolder;
+import static com.aerofs.polaris.PolarisHelpers.shareFolder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
@@ -106,18 +109,18 @@ public class TestMigrator {
     public void shouldContinueMigrationOnStartup() throws Exception
     {
         SID rootStore = SID.rootSID(USERID);
-        OID sharedFolder = newFolder(rootStore, "shared_folder");
-        OID folder = newFolder(sharedFolder, "folder");
-        OID fileOID = newFile(folder, "file");
+        OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
+        OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
+        OID fileOID = newFile(folder, "file", USERID, DEVICE, objects);
         SID share2 = SID.generate();
-        OID immigrantFolder = newFolder(share2, "migrant_folder");
+        OID immigrantFolder = newFolder(share2, "migrant_folder", USERID, DEVICE, objects);
         // is the equivalent to immigrant_folder in rootstore
-        OID migrationDestination = newFolder(rootStore, "migrant_folder");
-        newFile(immigrantFolder, "migrant_file");
+        OID migrationDestination = newFolder(rootStore, "migrant_folder", USERID, DEVICE, objects);
+        newFile(immigrantFolder, "migrant_file", USERID, DEVICE, objects);
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        shareFolder(sharedFolder);
+        shareFolder(sharedFolder, USERID, DEVICE, objects);
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
         moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes());
 
@@ -147,20 +150,20 @@ public class TestMigrator {
     public void batchesMigratingLargeFolders() throws Exception
     {
         SID rootStore = SID.rootSID(USERID);
-        OID sharedFolder = newFolder(rootStore, "shared_folder");
+        OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
         SID newStore = SID.folderOID2convertedStoreSID(sharedFolder);
         OID folder = null, nestedFile = null, unnestedFile = null;
         for (int i = 0; i < 50; i++) {
-            folder = newFolder(sharedFolder, String.format("folder-%d", i));
+            folder = newFolder(sharedFolder, String.format("folder-%d", i), USERID, DEVICE, objects);
             for (int j = 0; j < 10; j++) {
-                nestedFile = newFile(folder, String.format("file-%d", j));
+                nestedFile = newFile(folder, String.format("file-%d", j), USERID, DEVICE, objects);
             }
         }
         for (int i = 0; i < 50; i++) {
-            unnestedFile = newFile(sharedFolder, String.format("file-%d", i));
+            unnestedFile = newFile(sharedFolder, String.format("file-%d", i), USERID, DEVICE, objects);
         }
 
-        shareFolder(sharedFolder);
+        shareFolder(sharedFolder, USERID, DEVICE, objects);
         migratorExecutor.shutdown();
         assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
 
@@ -186,9 +189,9 @@ public class TestMigrator {
         doReturn(null).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any(), any());
 
         SID rootStore = SID.rootSID(USERID);
-        OID sharedFolder = newFolder(rootStore, "shared_folder");
-        OID folder = newFolder(sharedFolder, "folder");
-        shareFolder(sharedFolder);
+        OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
+        OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
+        shareFolder(sharedFolder, USERID, DEVICE, objects);
 
         verify(this.migrator, timeout(1000).atLeast(1)).migrateBatchOfObjects(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(), any());
 
@@ -204,12 +207,12 @@ public class TestMigrator {
     public void shouldNotOperateOnLockedObjects() throws Exception
     {
         SID store = SID.generate();
-        OID lockedFolder = newFolder(store, "folder1");
-        OID unlockedFolder = newFolder(store, "folder2");
-        OID fileUnderLockedFolder = newFile(lockedFolder, "file1");
-        OID fileUnderUnlockedFolder = newFile(unlockedFolder, "file2");
-        OID deletedLockedFile = newFile(unlockedFolder, "deleted");
-        OID lockedFile = newFile(unlockedFolder, "locked");
+        OID lockedFolder = newFolder(store, "folder1", USERID, DEVICE, objects);
+        OID unlockedFolder = newFolder(store, "folder2", USERID, DEVICE, objects);
+        OID fileUnderLockedFolder = newFile(lockedFolder, "file1", USERID, DEVICE, objects);
+        OID fileUnderUnlockedFolder = newFile(unlockedFolder, "file2", USERID, DEVICE, objects);
+        OID deletedLockedFile = newFile(unlockedFolder, "deleted", USERID, DEVICE, objects);
+        OID lockedFile = newFile(unlockedFolder, "locked", USERID, DEVICE, objects);
         objects.performTransform(USERID, DEVICE, unlockedFolder, new RemoveChild(deletedLockedFile));
 
 
@@ -282,10 +285,10 @@ public class TestMigrator {
             throws Exception
     {
         SID rootStore = SID.rootSID(USERID);
-        OID folder = newFolder(rootStore, "folder");
+        OID folder = newFolder(rootStore, "folder", USERID, DEVICE, objects);
         SID share1 = SID.generate(), share2 = SID.generate();
-        newFile(share1, "file");
-        OID destFolder = newFolder(share2, "folder");
+        newFile(share1, "file", USERID, DEVICE, objects);
+        OID destFolder = newFolder(share2, "folder", USERID, DEVICE, objects);
         insertAnchor(folder, share1, "share");
 
         migrator.start();
@@ -321,17 +324,17 @@ public class TestMigrator {
             throws Exception
     {
         SID rootStore = SID.rootSID(USERID);
-        OID sharedFolder = newFolder(rootStore, "shared_folder");
-        OID folder = newFolder(sharedFolder, "folder");
-        OID file = newFile(folder, "file");
-        OID folder2 = newFolder(sharedFolder, "folder2");
+        OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
+        OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
+        OID file = newFile(folder, "file", USERID, DEVICE, objects);
+        OID folder2 = newFolder(sharedFolder, "folder2", USERID, DEVICE, objects);
 
         OID newAnchor = SID.folderOID2convertedAnchorOID(sharedFolder);
         SID newStore = SID.folderOID2convertedStoreSID(sharedFolder);
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        shareFolder(sharedFolder);
+        shareFolder(sharedFolder, USERID, DEVICE, objects);
 
         // fake some work being done before crash
         dbi.inTransaction(((conn, status) -> {
@@ -367,11 +370,11 @@ public class TestMigrator {
     {
         SID rootStore = SID.rootSID(USERID);
         SID share2 = SID.generate();
-        OID migrationRoot = newFolder(share2, "migrant_folder");
+        OID migrationRoot = newFolder(share2, "migrant_folder", USERID, DEVICE, objects);
         // is the equivalent to immigrant_folder in rootstore
-        newFile(migrationRoot, "migrant_file");
-        OID folder = newFolder(migrationRoot, "folder");
-        newFile(folder, "nested_file");
+        newFile(migrationRoot, "migrant_file", USERID, DEVICE, objects);
+        OID folder = newFolder(migrationRoot, "folder", USERID, DEVICE, objects);
+        newFile(folder, "nested_file", USERID, DEVICE, objects);
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(migrationRoot), any(OID.class), any(UniqueID.class), eq(DEVICE));
@@ -418,13 +421,13 @@ public class TestMigrator {
             throws Exception
     {
         SID rootStore = SID.rootSID(USERID);
-        OID sharedFolder = newFolder(rootStore, "shared_folder");
-        OID folder = newFolder(sharedFolder, "folder");
+        OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
+        OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
         // ensure the second shareFolder call is performed before the migrator can do any work
         doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(any(DAO.class), eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
-        shareFolder(sharedFolder);
+        shareFolder(sharedFolder, USERID, DEVICE, objects);
         try {
-            shareFolder(folder);
+            shareFolder(folder, USERID, DEVICE, objects);
             fail();
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -437,27 +440,9 @@ public class TestMigrator {
         return this.objects.performTransform(USERID, DEVICE, parent, op);
     }
 
-    private OID newFolder(UniqueID parent, String name) {
-        OID folder = OID.generate();
-        Operation op = new InsertChild(folder, ObjectType.FOLDER, name);
-        this.objects.performTransform(USERID, DEVICE, parent, op);
-        return folder;
-    }
-
-    private OID newFile(UniqueID parent, String name) {
-        OID file = OID.generate();
-        Operation op = new InsertChild(file, ObjectType.FILE, name);
-        this.objects.performTransform(USERID, DEVICE, parent, op);
-        return file;
-    }
-
     private void insertAnchor(UniqueID parent, SID store, String name) {
         Operation op = new InsertChild(store, ObjectType.STORE, name);
         this.objects.performTransform(USERID, DEVICE, parent, op);
     }
 
-    private UniqueID shareFolder(UniqueID folder) {
-        Operation op = new Share();
-        return this.objects.performTransform(USERID, DEVICE, folder, op).jobID;
-    }
 }

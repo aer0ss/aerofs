@@ -62,4 +62,9 @@ public final class AccessException extends PolarisException {
         errorFields.put("store", store.toStringFormal());
         errorFields.put("access", requested);
     }
+
+    @Override
+    public String typeForAPIException() {
+        return "FORBIDDEN";
+    }
 }

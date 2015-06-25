@@ -17,16 +17,15 @@ import com.aerofs.polaris.api.types.ObjectType;
 import com.google.common.collect.ImmutableList;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -44,11 +43,16 @@ public final class TestTransformBatchResource {
     private static final DID DEVICE = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
-    private final MySQLDatabase database = new MySQLDatabase("test");
-    private final PolarisTestServer polaris = new PolarisTestServer();
+    private static final MySQLDatabase database = new MySQLDatabase("test");
+    private static final PolarisTestServer polaris = new PolarisTestServer();
 
-    @Rule
-    public RuleChain chain = RuleChain.outerRule(database).around(polaris);
+    @ClassRule
+    public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
+
+    @After
+    public void afterTest() throws Exception {
+        database.clear();
+    }
 
     @Test
     public void shouldSuccessfullyCompleteAllOperationsInBatch() throws InterruptedException {

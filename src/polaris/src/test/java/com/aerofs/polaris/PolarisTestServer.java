@@ -4,21 +4,31 @@ import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.http.HttpConfiguration;
 import com.aerofs.baseline.metrics.MetricRegistries;
+import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.oauth.TokenVerificationClient;
+import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
+import com.google.common.cache.CacheBuilder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.junit.rules.ExternalResource;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 
 import java.io.IOException;
+import java.net.URI;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * JUnit resource that handles the lifecycle of a
@@ -70,6 +80,18 @@ public final class PolarisTestServer extends ExternalResource {
         return String.format("%s/batch/locations/", getServiceURL());
     }
 
+    public static String getApiFoldersURL() {
+        return String.format("%s/v1.2/folders/", getServiceURL());
+    }
+
+    public static String getApiFilesURL() {
+        return String.format("%s/v1.2/files/", getServiceURL());
+    }
+
+    public static String getApiChildrenURL() {
+        return String.format("%s/v0.9/children/", getServiceURL());
+    }
+
     public static String getTreeUrl() {
         return String.format("%s/commands/tree/", getAdminURL());
     }
@@ -87,7 +109,6 @@ public final class PolarisTestServer extends ExternalResource {
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
             super.init(configuration, environment);
-
             environment.addBinder(new AbstractBinder() {
 
                 @Override
@@ -103,7 +124,19 @@ public final class PolarisTestServer extends ExternalResource {
         protected String getDeploymentSecret(PolarisConfiguration configuration) throws IOException {
             return "aa23e7fb907fa7f839f6f418820159ab";
         }
+
+        @Override
+        protected TokenVerifier tokenVerifier()
+        {
+            return tokenVerifier;
+        }
     }
+
+    protected TokenVerifier tokenVerifier = Mockito.spy(new TokenVerifier(
+            BifrostTest.CLIENTID,
+            BifrostTest.CLIENTSECRET,
+            mock(TokenVerificationClient.class),
+            CacheBuilder.newBuilder()));
 
     private final TestPolaris server = new TestPolaris();
 
@@ -114,6 +147,8 @@ public final class PolarisTestServer extends ExternalResource {
     public AccessManager getAccessManager() {
         return server.accessManager;
     }
+
+    public TokenVerifier getTokenVerifier() { return tokenVerifier;}
 
     @Override
     protected void before() throws Throwable {

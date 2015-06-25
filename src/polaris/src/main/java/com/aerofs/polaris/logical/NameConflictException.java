@@ -34,4 +34,9 @@ public final class NameConflictException extends PolarisException {
         errorFields.put("child_name", childName);
         errorFields.put("conflicting_object", conflictingObject.toStringFormal());
     }
+
+    @Override
+    public String typeForAPIException() {
+        return "CONFLICT";
+    }
 }

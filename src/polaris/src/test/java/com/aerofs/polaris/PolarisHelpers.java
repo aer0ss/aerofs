@@ -10,6 +10,7 @@ import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.JobStatus;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.logical.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -25,6 +26,7 @@ import org.apache.http.HttpStatus;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
+import static com.aerofs.auth.client.cert.AeroDeviceCert.*;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_DNAME_HEADER;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_VERIFY_HEADER;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE;
@@ -65,7 +67,7 @@ public abstract class PolarisHelpers {
         String deviceString = device.toStringFormal();
         return new RequestSpecBuilder().addHeaders(
                 ImmutableMap.of(
-                        AUTHORIZATION, com.aerofs.auth.client.cert.AeroDeviceCert.getHeaderValue(userString, deviceString),
+                        AUTHORIZATION, getHeaderValue(userString, deviceString),
                         AERO_DNAME_HEADER, String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(userString, deviceString)),
                         AERO_VERIFY_HEADER, AERO_VERIFY_SUCCEEDED_HEADER_VALUE
                 )).build();
@@ -268,6 +270,31 @@ public abstract class PolarisHelpers {
             throw new Exception(String.format("job did not complete within %d tries", tries));
         }
         return status;
+    }
+
+    public static OID newFolder(UniqueID parent, String name, UserID userid, DID device,
+            ObjectStore objects)
+    {
+        OID folder = OID.generate();
+        Operation op = new InsertChild(folder, ObjectType.FOLDER, name);
+        objects.performTransform(userid, device, parent, op);
+        return folder;
+    }
+
+    public static OID newFile(UniqueID parent, String name, UserID userid, DID device,
+            ObjectStore objects)
+    {
+        OID file = OID.generate();
+        Operation op = new InsertChild(file, ObjectType.FILE, name);
+        objects.performTransform(userid, device, parent, op);
+        return file;
+    }
+
+    public static UniqueID shareFolder(UniqueID folder, UserID userid, DID device,
+            ObjectStore objects)
+    {
+        Operation op = new Share();
+        return objects.performTransform(userid, device, folder, op).jobID;
     }
 
     private PolarisHelpers() {

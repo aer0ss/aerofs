@@ -33,4 +33,9 @@ public final class VersionConflictException extends PolarisException {
         errorFields.put("actual_version", actualVersion);
         errorFields.put("expected_version", expectedVersion);
     }
+
+    @Override
+    public String typeForAPIException() {
+        return "CONFLICT";
+    }
 }

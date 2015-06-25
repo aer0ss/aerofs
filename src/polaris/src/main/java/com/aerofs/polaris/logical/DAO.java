@@ -9,17 +9,17 @@ import org.skife.jdbi.v2.Handle;
  */
 public final class DAO {
 
-    final Children children;
-    final Locations locations;
-    final LogicalObjects objects;
-    final ObjectProperties objectProperties;
-    final ObjectTypes objectTypes;
+    public final Children children;
+    public final Locations locations;
+    public final LogicalObjects objects;
+    public final ObjectProperties objectProperties;
+    public final ObjectTypes objectTypes;
     final Transforms transforms;
     final LogicalTimestamps logicalTimestamps;
     final Migrations migrations;
-    final MountPoints mountPoints;
+    public final MountPoints mountPoints;
 
-    DAO(Handle conn) {
+    public DAO(Handle conn) {
         this.children = conn.attach(Children.class);
         this.locations = conn.attach(Locations.class);
         this.objects = conn.attach(LogicalObjects.class);

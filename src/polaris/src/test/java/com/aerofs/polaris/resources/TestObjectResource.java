@@ -1,11 +1,7 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
@@ -24,7 +20,8 @@ import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.apache.http.HttpStatus;
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.mockito.ArgumentMatcher;
@@ -40,11 +37,11 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyVararg;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public final class TestObjectResource {
 
@@ -56,11 +53,16 @@ public final class TestObjectResource {
     private static final DID DEVICE = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
-    private final MySQLDatabase database = new MySQLDatabase("test");
-    private final PolarisTestServer polaris = new PolarisTestServer();
+    public static MySQLDatabase database = new MySQLDatabase("test");
+    public static PolarisTestServer polaris = new PolarisTestServer();
 
-    @Rule
-    public RuleChain chain = RuleChain.outerRule(database).around(polaris);
+    @ClassRule
+    public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
+
+    @After
+    public void afterTest() throws Exception {
+        database.clear();
+    }
 
     @Test
     public void shouldProperlyCreateObjectTree() throws Exception {

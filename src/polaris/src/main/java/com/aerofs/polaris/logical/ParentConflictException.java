@@ -3,7 +3,6 @@ package com.aerofs.polaris.logical;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
-import com.aerofs.polaris.api.types.LogicalObject;
 
 import java.util.Map;
 
@@ -32,5 +31,10 @@ public final class ParentConflictException extends PolarisException {
         errorFields.put("child", child.toStringFormal());
         errorFields.put("requested_parent", requestedParent.toStringFormal());
         errorFields.put("conflicting_parent", conflictingParent.toStringFormal());
+    }
+
+    @Override
+    public String typeForAPIException() {
+        return "CONFLICT";
     }
 }

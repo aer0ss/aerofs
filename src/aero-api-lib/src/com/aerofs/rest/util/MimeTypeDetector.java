@@ -4,12 +4,11 @@
 
 package com.aerofs.rest.util;
 
-import com.aerofs.base.Loggers;
-import com.google.inject.Inject;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -20,13 +19,7 @@ public class MimeTypeDetector extends DefaultDetector
     private static final long serialVersionUID = 0L;
     public final static String APPLICATION_OCTET_STREAM = "application/octet-stream";
 
-    private final Logger l = Loggers.getLogger(MimeTypeDetector.class);
-
-    @Inject
-    public MimeTypeDetector()
-    {
-
-    }
+    private final Logger l = LoggerFactory.getLogger(MimeTypeDetector.class);
 
     public String detect(String name)
     {

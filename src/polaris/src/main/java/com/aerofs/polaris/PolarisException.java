@@ -46,4 +46,6 @@ public abstract class PolarisException extends RuntimeException {
                 .add("errorMessage", getSimpleMessage())
                 .toString();
     }
+
+    public abstract String typeForAPIException();
 }

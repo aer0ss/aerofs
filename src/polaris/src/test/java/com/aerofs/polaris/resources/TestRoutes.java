@@ -17,6 +17,8 @@ import com.aerofs.polaris.api.operation.InsertChild;
 import com.google.common.collect.ImmutableList;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -41,11 +43,16 @@ public final class TestRoutes {
     private static final DID DEVICE = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
 
-    private final MySQLDatabase database = new MySQLDatabase("test");
-    private final PolarisTestServer polaris = new PolarisTestServer();
+    private static final MySQLDatabase database = new MySQLDatabase("test");
+    private static final PolarisTestServer polaris = new PolarisTestServer();
 
-    @Rule
-    public RuleChain chain = RuleChain.outerRule(database).around(polaris);
+    @ClassRule
+    public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
+
+    @After
+    public void afterTest() throws Exception {
+        database.clear();
+    }
 
     @Test
     public void shouldReachRoute0() { // POST /objects/{oid}/versions/{version}/locations/{did}
