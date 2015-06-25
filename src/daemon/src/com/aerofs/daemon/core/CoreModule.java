@@ -2,7 +2,6 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
@@ -52,9 +51,6 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.metriks.IMetriks;
-import com.aerofs.metriks.Metriks;
-import com.aerofs.metriks.NoopMetriks;
 import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -202,17 +198,6 @@ public class CoreModule extends AbstractModule
     public IAuditorClient provideAuditorClient()
     {
         return AuditorFactory.createAuthenticatedWithDeviceCert();
-    }
-
-    @Provides
-    @Singleton
-    public IMetriks provideMetriks(CfgLocalUser localUser, CfgLocalDID did, IOSUtil iosUtil)
-    {
-        if (BaseParam.Metriks.METRIKS_ENABLED) {
-            return new Metriks(localUser.get(), did.get(), iosUtil.getFullOSName(), BaseParam.Metriks.TRIKS_URL);
-        } else {
-            return new NoopMetriks();
-        }
     }
 
     @Provides

@@ -55,12 +55,6 @@ public class BaseParam
         public static final URL CHARLIE_URL = getUrlProperty("base.charlie.url", "https://charlie.aerofs.com/checkin");
     }
 
-    public static class Metriks
-    {
-        public static final URL TRIKS_URL = getUrlProperty("base.triks.url", "http://triks.aerofs.com");
-        public static boolean METRIKS_ENABLED = getBooleanProperty("base.triks.enabled", true);
-    }
-
     public static class Zephyr
     {
         // this property is used by the Android build
