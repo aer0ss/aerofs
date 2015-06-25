@@ -5,32 +5,32 @@
 1. Run `touch ~/.aerofsts/unattended-setup.properties`
 2. Populate the **unattended-setup.properties** file with the following contents:
 
-    `userid = admin@acme.com` [Required]  
-    `password = admin_password` [Required]
+        userid = admin@acme.com` [Required]  
+        password = admin_password` [Required]
 
     **Storage Type [Optional - default is LINKED storage]:**
 
-    `storage_type = LINKED` [Preserves folder structure storage]  
-    `storage_type = LOCAL` [Uses compressed and deduplicated storage]  
-    `storage_type = S3` [Uses compressed and deduplicated storage pn S3]
-    `storage_type = SWIFT` [Uses compressed and deduplicated storage on OpenStack Swift]
+        storage_type = LINKED` [Preserves folder structure storage]  
+        storage_type = LOCAL` [Uses compressed and deduplicated storage]  
+        storage_type = S3` [Uses compressed and deduplicated storage pn S3]
+        storage_type = SWIFT` [Uses compressed and deduplicated storage on OpenStack Swift]
 
     **S3 Credentials [Optional - required only if you specified S3 for the storage type]:**
 
-    `s3_endpoint = <endpoint>`
-    `s3_bucket_id = <bucket_name>`
-    `s3_access_key = <access_key>`
-    `s3_secret_key = <secret_key>`
-    `remote_storage_encryption_password = <encryption_password>`
+        s3_endpoint = <endpoint>
+        s3_bucket_id = <bucket_name>
+        s3_access_key = <access_key>
+        s3_secret_key = <secret_key>
+        remote_storage_encryption_password = <encryption_password>
 
     **Swift Credentials [Optional - required only if you specified SWIFT for the storage type]:**
 
-    `swift_auth_mode = <basic (ony method supported>`
-    `swift_username = <username>`
-    `swift_password = <password>`
-    `swift_url = <endpoint_url>`
-    `swift_container = <existing_container>`
-    `remote_storage_encryption_password = <encryption_password>`
+        swift_auth_mode = <basic (ony method supported>
+        swift_username = <username>
+        swift_password = <password>
+        swift_url = <endpoint_url>
+        swift_container = <existing_container>
+        remote_storage_encryption_password = <encryption_password>
 
 3. Run `aerofsts-cli`
 
@@ -57,7 +57,6 @@ Sample unattended-setup.properties file for S3 Storage:
     s3_access_key = JKHIEAKGHGGE5K89
     s3_secret_key = Lkihg/ieabherGuDier2x9pULle
     remote_storage_encryption_password = passencrypt
-
 
 Sample unattended-setup.properties file for SWIFT Storage:
 
