@@ -34,9 +34,14 @@ version, use `--release-version` in step 4 below.
    unlock button and enter the keychain password (which is _not_ the same as
    the mount password). For this, also ask Matt.
 
-4. Build the S3 artifacts using:
+4. Build using:
 
         invoke --signed clean proto build_client package_clients build_docker_images build_vm
+
+   Note ([*FIXME*](https://aerofs.atlassian.net/browse/ENG-2455)): during the
+   build_vm phase, ssh onto the ship-enterprise builder using the ssh command
+   provided in the execution output. Then run `top -d 0.1` to speed up the
+   docker pull.
 
 5. *QA the VMs* (exact process documentation coming soon).
 

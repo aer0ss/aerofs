@@ -201,11 +201,10 @@ def _mkdir_p(path):
         os.makedirs(path)
 
 def format_seconds(seconds):
-    seconds = round(seconds, 2)
     if seconds < 60:
-        return "{} sec".format(seconds)
+        return "{} sec".format(round(seconds, 2))
     else:
-        return "{} min".format(round(seconds / 60.0), 2)
+        return "{} min".format(round(seconds / 60.0, 2))
 
 # Task time analysis
 def print_timing_stats(records):
