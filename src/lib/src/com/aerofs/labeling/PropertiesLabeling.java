@@ -28,8 +28,6 @@ class PropertiesLabeling implements ILabeling
         } catch (Exception e) {
             properties = new Properties();
         }
-
-        _propertiesHelper.logProperties(LOGGER, "Labeling properties", properties);
     }
 
     // TESTING only

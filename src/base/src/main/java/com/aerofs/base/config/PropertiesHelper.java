@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,20 +130,6 @@ public class PropertiesHelper
         }
 
         return parseProperties(staticProperties);
-    }
-
-    /**
-     * Prints properties to l with description description.
-     */
-    public void logProperties(Logger l, String description, Properties properties)
-    {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            properties.store(byteArrayOutputStream, description);
-            l.debug(byteArrayOutputStream.toString("UTF-8"));
-        } catch (Exception e) {
-            l.error("Failed to log server configuration with exception " + e.toString());
-        }
     }
 
     /**

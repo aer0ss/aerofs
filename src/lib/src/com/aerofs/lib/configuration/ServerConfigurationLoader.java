@@ -12,7 +12,7 @@ import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -42,8 +42,12 @@ public final class ServerConfigurationLoader
         // Set properties in global registry.
         ConfigurationProperties.setProperties(merged);
         // Log that we have loaded config.
-        new PropertiesHelper().logProperties(LOGGER, "Configuration initialized", merged);
-
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            merged.store(stream, "Configuration initialized");
+            LOGGER.debug(stream.toString("UTF-8"));
+        } catch (Exception e) {
+            LOGGER.error("Failed to log server configuration with exception " + e.toString());
+        }
     }
 
     private static Properties effectiveProperties(String serviceName, Properties extra)
