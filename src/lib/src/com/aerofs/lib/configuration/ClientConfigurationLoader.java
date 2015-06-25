@@ -74,7 +74,7 @@ public class ClientConfigurationLoader
     public Properties loadConfiguration()
             throws SiteConfigException, HttpConfigException, RenderConfigException
     {
-        Properties properties;
+        Properties properties = new Properties();
         Properties siteConfig, httpConfig;
 
         try {
@@ -90,8 +90,9 @@ public class ClientConfigurationLoader
         }
 
         try {
-            properties = _helper.parseProperties(
-                    _helper.mergeProperties(httpConfig, siteConfig));
+            properties.putAll(httpConfig);
+            properties.putAll(siteConfig);
+            properties = _helper.parseProperties(properties);
         } catch (Exception e) {
             throw new RenderConfigException(e);
         }

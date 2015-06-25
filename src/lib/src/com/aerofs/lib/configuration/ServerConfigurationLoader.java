@@ -54,11 +54,11 @@ public final class ServerConfigurationLoader
             throws ConfigurationUtils.ExHttpConfig, ExBadArgs
     {
         PropertiesHelper helper = new PropertiesHelper();
-
-        Properties systemProperties = System.getProperties();
-        Properties merged;
-        merged = helper.mergeProperties(getHttpProperties(serviceName), extra, systemProperties);
-        return helper.parseProperties(merged);
+        Properties properties = new Properties();
+        properties.putAll(getHttpProperties(serviceName));
+        properties.putAll(extra);
+        properties.putAll(System.getProperties());
+        return helper.parseProperties(properties);
     }
 
     /**

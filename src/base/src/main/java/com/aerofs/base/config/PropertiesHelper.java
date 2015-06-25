@@ -6,14 +6,12 @@ package com.aerofs.base.config;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,50 +23,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class PropertiesHelper
 {
     private static final Logger l = Loggers.getLogger(PropertiesHelper.class);
-
-    /**
-     * This function returns a Properties object that is the union of p1 and p2. It logs a warning
-     * for each property set in both p1 and p2. p2 wins conflicts.
-     *
-     * @param p1
-     * @param p2
-     * @return Union of p1 and p2.
-     */
-    private Properties unionProperties(Properties p1, Properties p2)
-    {
-        Set<Object> intersection = Sets.intersection(p1.keySet(), p2.keySet());
-        if (!intersection.isEmpty()) {
-            for (Object sharedKey : intersection) {
-                String key = (String) sharedKey;
-                String val = p2.getProperty(key);
-                // having duplicated properties is alarming.
-                //
-                // Note that this is expected for clients that have updater disabled.
-                //
-                l.warn("Key {} set multiple times in configuration file.", key);
-                // do not log the actual value (sensitive) unless we are in debug
-                l.debug("Setting {} to {}", key, val);
-            }
-        }
-        Properties disjointUnion = new Properties();
-        disjointUnion.putAll(p1);
-        disjointUnion.putAll(p2);
-        return disjointUnion;
-    }
-
-    /**
-     * Merges a list of Properties objects ordered from lowest precedence to highest.
-     * @param propsArgs A series of Properties objects, ordered from lowest precedence to highest precedence.
-     * @return A Properties object representing the merged value of all of the propsArgs.
-     */
-    public Properties mergeProperties(Properties... propsArgs)
-    {
-        Properties merged = new Properties();
-        for (Properties props: propsArgs) {
-            merged = unionProperties(merged, props);
-        }
-        return merged;
-    }
 
     /**
      * Retrieves the boolean value corresponding to key from properties. If key has no entry in
@@ -129,7 +83,7 @@ public class PropertiesHelper
             }
         }
 
-        return parseProperties(staticProperties);
+        return staticProperties;
     }
 
     /**

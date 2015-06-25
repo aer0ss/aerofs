@@ -21,51 +21,6 @@ public class TestPropertiesHelper
     private PropertiesHelper _propertiesHelper = new PropertiesHelper();
 
     @Test
-    public void testUnionProperties()
-    {
-        Properties a = new Properties();
-        Properties b = new Properties();
-
-        a.setProperty("foo", "bar");
-        a.setProperty("baz", "qux");
-
-        b.setProperty("foo", "zomg");
-        b.setProperty("quux", "corge");
-        b.setProperty("grault", "garply");
-        b.setProperty("waldo", "fred");
-
-        Properties c = _propertiesHelper.mergeProperties(a, b);
-
-        assertEquals("zomg", c.getProperty("foo"));
-        assertEquals("qux", c.getProperty("baz"));
-        assertEquals("corge", c.getProperty("quux"));
-        assertEquals("garply", c.getProperty("grault"));
-        assertEquals("fred", c.getProperty("waldo"));
-        assertNull(c.getProperty("plugh"));
-    }
-
-    @Test
-    public void testUnionOfThreeProperties()
-    {
-        Properties a = new Properties();
-        Properties b = new Properties();
-        Properties c = new Properties();
-
-        a.setProperty("conflict3", "a");
-        b.setProperty("conflict3", "b");
-        c.setProperty("conflict3", "c");
-
-        a.setProperty("conflict2", "a");
-        b.setProperty("conflict2", "b");
-
-        Properties d = _propertiesHelper.mergeProperties(a, b, c);
-
-        assertEquals("c", d.getProperty("conflict3"));
-        assertEquals("b", d.getProperty("conflict2"));
-        assertNull(d.getProperty("nonexistant"));
-    }
-
-    @Test
     public void testGetBooleanWithDefaultValueFromProperties()
     {
         Properties a = new Properties();

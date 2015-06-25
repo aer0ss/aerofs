@@ -24,7 +24,8 @@ class PropertiesLabeling implements ILabeling
         _propertiesHelper = new PropertiesHelper();
 
         try {
-            properties = _propertiesHelper.readPropertiesFromPwdOrClasspath("labeling.properties");
+            properties = _propertiesHelper.parseProperties(
+                    _propertiesHelper.readPropertiesFromPwdOrClasspath("labeling.properties"));
         } catch (Exception e) {
             properties = new Properties();
         }
