@@ -17,10 +17,6 @@ def main(global_config, **settings):
     This function returns a Pyramid WSGI application.
     """
 
-    # Some Python functions shared between the web and bunker projects
-    # need this property to behave properly. i.e. util.is_private_deployment()
-    settings['config.loader.is_private_deployment'] = True
-
     _initialize_session_keys(settings)
 
     # Import template directories from views

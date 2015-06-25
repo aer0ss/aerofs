@@ -8,8 +8,6 @@ import logging
 from aerofs_common.configuration import Configuration
 import requests
 
-from util import is_private_deployment
-
 log = logging.getLogger(__name__)
 
 _CONF_KEY_LICENSE_TYPE = 'license_type'
@@ -24,7 +22,7 @@ def is_license_present(conf):
     Return whether the license exists. Always return true for public deployment
     @param conf a dict of configuration properties
     """
-    return not is_private_deployment(conf) or _CONF_KEY_LICENSE_TYPE in conf
+    return _CONF_KEY_LICENSE_TYPE in conf
 
 def is_license_present_and_valid(conf):
     """
@@ -32,8 +30,6 @@ def is_license_present_and_valid(conf):
     for public deployment.
     @param conf a dict of configuration properties
     """
-    if not is_private_deployment(conf): return True
-
     if not is_license_present(conf): return False
 
     # We only accept normal licenses for the time being

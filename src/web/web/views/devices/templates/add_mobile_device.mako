@@ -3,7 +3,7 @@
 <%! page_title = "AeroFS for Mobile Devices" %>
 
 <%!
-    from web.util import is_private_deployment, is_mobile_disabled
+    from web.util import is_mobile_disabled
 %>
 
 <%
@@ -24,13 +24,6 @@
 %if not is_mobile_disabled(request.registry.settings):
 
 <ol>
-%if not is_private_deployment(request.registry.settings):
-    <li class="page-block">
-        <h4>Turn on API access</h4>
-        <p>For the mobile app to work, at least one of your computers running AeroFS will need to have API access enabled. <a href="https://support.aerofs.com/hc/en-us/articles/202492734">Learn how to turn on API access.</a></p>
-    </li>
-%endif
-
 <li class="page-block">
     <h4>Get the app</h4>
     <a href="https://itunes.apple.com/us/app/aerofs-for-private-cloud/id778103731?mt=8" target="_blank">

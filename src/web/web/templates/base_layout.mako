@@ -2,8 +2,6 @@
         inheritable="True"/>
 <%namespace name="segment_io" file="segment_io.mako"/>
 
-<%! from web.util import is_private_deployment %>
-
 ##
 ## N.B. Match this file's content with Lizard's base.html
 ##
@@ -44,19 +42,6 @@
     ## using www.aerofs.com instead of just aerofs.com because most people linking in to us from other sources use
     ## www.aerofs.com, so the domain authority of www.aerofs.com is already higher than aerofs.com
 
-    ## need to check if we are in private cloud deployment mode. If not, disable ref canonical
-    ## since we don't want the canonical pages to be www.aerofs.com
-    %if not is_private_deployment(request.registry.settings):
-        <%
-            try:
-                current_route_path = request.current_route_path()
-            except Exception:
-                current_route_path = None
-        %>
-        %if current_route_path:
-            <link rel="canonical" href="https://www.aerofs.com${current_route_path}" />
-        %endif
-    %endif
     <%block name="meta_tags"/>
 
     ## fav and touch icons
@@ -105,45 +90,8 @@
     <script src="${request.static_path('web:static/js/compiled/csrf.js')}"></script>
 
     <%block name="tracking_codes">
-        %if not is_private_deployment(request.registry.settings):
-            ## because google analytics and pardot are critical to marketing, do not depend on
-            ## segment.io. In general, we should use segment.io for non "critical" flows
-            ## and when we're trying to test out new technologies
-
-            ## this is google analytics code
-            <script>
-              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-              ga('create', 'UA-24554389-1', 'aerofs.com');
-              ga('send', 'pageview');
-
-            </script>
-
-            ## this is pardot code
-            <script>
-                piAId = '33882';
-                piCId = '1470';
-
-                (function() {
-                    function async_load(){
-                        var s = document.createElement('script'); s.type = 'text/javascript';
-                        s.src = ('https:' == document.location.protocol ? 'https://pi' : 'http://cdn') + '.pardot.com/pd.js';
-                        var c = document.getElementsByTagName('script')[0]; c.parentNode.insertBefore(s, c);
-                    }
-                    if(window.attachEvent) { window.attachEvent('onload', async_load); }
-                    else { window.addEventListener('load', async_load, false); }
-                })();
-            </script>
-            
-            <script src="//cdn.optimizely.com/js/29642448.js"></script>
-            ${segment_io.code(request.registry.settings['segmentio.api_key'])}
-        % else:
-            ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
-            <script>window.analytics = false;</script>
-        %endif
+        ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
+        <script>window.analytics = false;</script>
     </%block>
 
     <%block name="page_view_tracker"/>
@@ -241,8 +189,5 @@
 
     <%block name="scripts"/>
 
-    %if not is_private_deployment(request.registry.settings):
-        <script src="${request.static_path('web:static/js/compiled/recruiting.js')}"></script>
-    %endif
 </body>
 </html>

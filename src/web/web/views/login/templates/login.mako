@@ -3,11 +3,7 @@
 
 <div class="row">
     <div class="col-sm-6 col-sm-offset-3 login">
-        <h1>Sign In to AeroFS
-            %if not is_private_deployment:
-                Hybrid Cloud
-            %endif
-        </h1>
+        <h1>Sign In to AeroFS</h1>
         %if openid_enabled:
         <div class="openid-login">
             <div class="col-sm-12">

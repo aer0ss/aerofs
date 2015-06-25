@@ -2,7 +2,6 @@
 <%! page_title = "Users" %>
 
 <%!
-    from web.util import is_private_deployment
     from web.auth import is_admin
 %>
 
@@ -68,12 +67,6 @@
 
 <%block name="scripts">
     <script type="text/javascript">
-        %if is_private_deployment(request.registry.settings):
-            isPrivate = true;
-        %else:
-            isPrivate = false;
-        %endif
-
         %if is_admin(request):
             isAdmin = true;
         %else:

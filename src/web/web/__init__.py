@@ -5,7 +5,6 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
-from util import is_private_deployment
 import views
 
 
@@ -46,15 +45,9 @@ def main(global_config, **settings):
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
     config.add_static_view(settings['base.installers.url'], 'installer')
 
-    # Use different home page for private and public deployment
-    if is_private_deployment(settings):
-        # The "/" URL string must be consistent with RequestToSignUpEmailer.java
-        config.add_route('dashboard_home', '/')
-        config.add_route('marketing_home', 'marketing_home')
-    else:
-        # The "home" URL string must be consistent with RequestToSignUpEmailer.java
-        config.add_route('dashboard_home', 'home')
-        config.add_route('marketing_home', '/')
+    # The "/" URL string must be consistent with RequestToSignUpEmailer.java
+    config.add_route('dashboard_home', '/')
+    config.add_route('marketing_home', 'marketing_home')
 
     # Import routes from views
     for view in views.__all__:

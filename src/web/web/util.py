@@ -187,12 +187,8 @@ def get_deployment_secret(settings):
     with open(secret_file) as f:
         return f.read().strip()
 
-def is_private_deployment(settings):
-    return str2bool(get_settings_nonempty(settings, 'config.loader.is_private_deployment', False))
-
 def is_mobile_disabled(settings):
-    # only true if on private deployment
-    return is_private_deployment(settings) and str2bool(get_settings_nonempty(settings, 'web.disable_download_mobile_client', False))
+    return str2bool(get_settings_nonempty(settings, 'web.disable_download_mobile_client', False))
 
 def is_linksharing_enabled(settings):
     # Unfortunately, upgrading appliances will have an empty string for this property

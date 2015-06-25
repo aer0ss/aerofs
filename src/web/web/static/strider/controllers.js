@@ -7,7 +7,6 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
         $scope.userFoldersURL = userFoldersURL;
         $scope.userDevicesURL = userDevicesURL;
         $scope.isAdmin = isAdmin;
-        $rootScope.isPrivate = isPrivate;
         var getUsersData = function(message){
             $log.info(message);
             $http.get(userDataURL, {

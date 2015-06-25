@@ -39,7 +39,6 @@
                             <input id="inputLastName" class="form-control" type="text" name="${url_param_last_name}" required>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label for="inputPasswd" class="col-sm-4">Create password: *</label>
                         <div class="col-sm-8">

@@ -8,7 +8,7 @@ from aerofs_common.exception import ExceptionReply
 
 from aerofs_sp.gen.common_pb2 import PBException
 import requests
-from web.util import flash_error, get_rpc_stub, is_private_deployment
+from web.util import flash_error, get_rpc_stub
 
 from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, \
         log_in_user, resolve_next_url
@@ -30,8 +30,7 @@ def _is_openid_enabled(request):
     """
     True if the local deployment allows OpenID authentication
     """
-    return is_private_deployment(request.registry.settings) \
-        and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
+    return request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
 
 def _do_login(request):
@@ -114,15 +113,10 @@ def login_view(request):
         'openid_service_identifier': identifier,
         'openid_service_external_hint': external_hint,
         'login': login,
-        'is_private_deployment': is_private_deployment(request.registry.settings)
     }
 
 
 def _has_users(settings):
-    if not is_private_deployment(settings):
-        # Public deployment always has users populated
-        return True
-
     # Once there are any users created, we use the cached value (which is always True) to avoid
     # SP lookups. N.B. we assume that the last user in the system cannot delete himself.
     global _has_users_cache

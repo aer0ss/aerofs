@@ -15,12 +15,11 @@ import aerofs_sp.gen.common_pb2 as common
 from web.sp_util import exception2error
 
 from web.error import error
-from web.util import get_error, get_rpc_stub, is_private_deployment, is_valid_password, send_sales_email
+from web.util import get_error, get_rpc_stub, is_valid_password, send_sales_email
 from web.views.login.login_view import URL_PARAM_EMAIL, URL_PARAM_PASSWORD, \
         URL_PARAM_REMEMBER_ME
 from web.login_util import URL_PARAM_NEXT
 
-import analytics
 import markupsafe
 
 log = logging.getLogger(__name__)
@@ -90,7 +89,7 @@ def json_signup(request):
     last_name = markupsafe.escape(request.params[URL_PARAM_LAST_NAME])
     password = request.params[URL_PARAM_PASSWORD].encode("utf-8")
 
-    (valid_password, invalid_message) = is_valid_password(request, password)
+    valid_password, invalid_message = is_valid_password(request, password)
     if not valid_password:
         return { 'error': invalid_message }
 
@@ -101,7 +100,7 @@ def json_signup(request):
         return {
             'email_address': email_address,
             'firstName': first_name,
-            'lastName': last_name
+            'lastName': last_name,
         }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:
@@ -131,15 +130,8 @@ def json_request_to_sign_up(request):
     _ = request.translate
     email_address = request.params[URL_PARAM_EMAIL]
     empty_email_message = _("Please enter an email address")
-    if not email_address: error(empty_email_message)
-
-    if not is_private_deployment(request.registry.settings):
-        analytics.init(request.registry.settings['segmentio.secret_key'], flush_at=1, async=False)
-        analytics.identify(request.params[URL_PARAM_EMAIL],{
-                    'email': request.params[URL_PARAM_EMAIL]
-                })
-
-        analytics.track(request.params[URL_PARAM_EMAIL], "Signup Initiated for Hybrid Cloud");
+    if not email_address:
+        error(empty_email_message)
 
     sp = get_rpc_stub(request)
     exception2error(sp.request_to_sign_up, email_address, {

@@ -7,7 +7,7 @@
 <%!
     from web.auth import is_admin
     from pyramid.security import authenticated_userid
-    from web.util import is_private_deployment, str2bool
+    from web.util import str2bool
 %>
 
 ## N.B. maintenance_layout.mako uses the same layout
@@ -39,9 +39,7 @@
             <ul class="dropdown-menu">
                 <%navigation:marketing_links/>
                 <li class="divider"></li>
-                %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
-                %endif
+                <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
                 <li class="divider"></li>
@@ -76,9 +74,7 @@
             <ul class="dropdown-menu">
                 <%navigation:marketing_links/>
                 <li class="divider"></li>
-                %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
-                %endif
+                <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
             </ul>
@@ -104,9 +100,7 @@
             </a>
             <ul class="dropdown-menu">
                 ## Remember to update top_navigation_bar_mobile() when adding items
-                %if is_private_deployment(request.registry.settings):
-                    <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
-                %endif
+                <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
             </ul>
@@ -138,10 +132,7 @@
 
             ## the intended default behaviour is to _display_ the item
             ## so this value is true iff everything points to true
-            disable_download_mobile_client = \
-                is_private_deployment(settings) \
-                and prop in settings \
-                and str2bool(settings[prop])
+            disable_download_mobile_client = prop in settings and str2bool(settings[prop])
         %>
         %if not disable_download_mobile_client:
             <li><a href="${request.route_path('add_mobile_device')}">
