@@ -200,16 +200,23 @@ def _mkdir_p(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def format_seconds(seconds):
+    seconds = round(seconds, 2)
+    if seconds < 60:
+        return "{} sec".format(seconds)
+    else:
+        return "{} min".format(round(seconds / 60.0), 2)
+
 # Task time analysis
 def print_timing_stats(records):
     if len(records) == 0:
         print "No commands executed successfully."
         return
     max_command_width = max( len(r["command"]) for r in records )
-    print "Total time: {} sec".format(sum([ r["time"] for r in records]))
+    print "Total time: {}".format(format_seconds(sum([r["time"] for r in records])))
     for r in records:
-        formatstring = "{:<" + str(max_command_width) + "} : {} sec"
-        print formatstring.format(r["command"], r["time"])
+        formatstring = "{:<" + str(max_command_width) + "} : {}"
+        print formatstring.format(r["command"], format_seconds(r["time"]))
 
 # OS detection/mapping
 def get_current_os():
