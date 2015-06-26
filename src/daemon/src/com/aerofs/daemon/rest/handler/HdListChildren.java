@@ -17,7 +17,7 @@ public class HdListChildren extends AbstractRestHdIMC<EIListChildren>
     @Inject private OutboundEventLogger _eol;
 
     @Override
-    protected void handleThrows_(EIListChildren ev) throws ExNotFound, SQLException
+    protected void restHandleThrows_(EIListChildren ev) throws ExNotFound, SQLException
     {
         OA oa = _access.resolveFollowsAnchor_(ev._object, ev._token);
 

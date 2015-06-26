@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SOID;
@@ -26,7 +25,7 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
     }
 
     @Override
-    protected void handleThrows_(EIGetChildrenAttr ev, Prio prio) throws Exception
+    protected void handleThrows_(EIGetChildrenAttr ev) throws Exception
     {
         SOID soid = _ds.resolveFollowAnchorThrows_(ev._path);
         ev.setResult_(getChildrenAttrImpl_(soid, _ds));

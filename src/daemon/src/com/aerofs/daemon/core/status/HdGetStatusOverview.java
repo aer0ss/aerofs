@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.status;
 
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.google.common.collect.Lists;
@@ -25,7 +24,7 @@ public class HdGetStatusOverview extends AbstractHdIMC<EIGetStatusOverview>
     }
 
     @Override
-    protected void handleThrows_(EIGetStatusOverview ev, Prio prio) throws Exception
+    protected void handleThrows_(EIGetStatusOverview ev) throws Exception
     {
         List<PBPathStatus> statusOverviews = Lists.newArrayList();
         for (Path path : ev.getPathList()) {

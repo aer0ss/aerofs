@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -34,7 +33,7 @@ public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
     }
 
     @Override
-    public void handle_(EIStoreAvailability ev, Prio prio)
+    public void handle_(EIStoreAvailability ev)
     {
         if (ev._did2sids.isEmpty()) {
             Preconditions.checkArgument(!ev._online);

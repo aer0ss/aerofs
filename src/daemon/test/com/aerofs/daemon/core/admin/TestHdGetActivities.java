@@ -34,7 +34,6 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
@@ -185,17 +184,17 @@ public class TestHdGetActivities extends AbstractTest
             throws Exception
     {
         ev = new EIGetActivities(false, null, 1, null);
-        hd.handleThrows_(ev, Prio.LO);
+        hd.handleThrows_(ev);
         assertTrue(ev._activities.size() == 1);
         assertTrue(ev._replyPageToken != null);
 
         ev = new EIGetActivities(false, ev._replyPageToken, 1, null);
-        hd.handleThrows_(ev, Prio.LO);
+        hd.handleThrows_(ev);
         assertTrue(ev._activities.size() == 1);
         assertTrue(ev._replyPageToken != null);
 
         ev = new EIGetActivities(false, ev._replyPageToken, 1, null);
-        hd.handleThrows_(ev, Prio.LO);
+        hd.handleThrows_(ev);
         assertTrue(ev._activities.size() == 0);
         assertTrue(ev._replyPageToken == null);
     }
@@ -411,7 +410,7 @@ public class TestHdGetActivities extends AbstractTest
             throws Exception
     {
         ev = new EIGetActivities(brief, null, 100, null);
-        hd.handleThrows_(ev, Prio.LO);
+        hd.handleThrows_(ev);
     }
 
     private String firstMsg()

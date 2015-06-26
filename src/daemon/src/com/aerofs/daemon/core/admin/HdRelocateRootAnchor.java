@@ -15,14 +15,12 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExInUse;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -60,7 +58,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     }
 
     @Override
-    protected void handleThrows_(EIRelocateRootAnchor ev, Prio prio) throws Exception
+    protected void handleThrows_(EIRelocateRootAnchor ev) throws Exception
     {
         l.info("relocate {} {}", ev._sid, ev._newRootAnchor);
 

@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdGetTransferStat extends AbstractHdIMC<EIGetTransferStat>
@@ -20,7 +19,7 @@ public class HdGetTransferStat extends AbstractHdIMC<EIGetTransferStat>
     }
 
     @Override
-    protected void handleThrows_(EIGetTransferStat ev, Prio prio)
+    protected void handleThrows_(EIGetTransferStat ev)
             throws Exception
     {
         ev._ts = _ts;

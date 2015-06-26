@@ -55,7 +55,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
     @Inject private ICollectorStateDatabase _csdb;
 
     @Override
-    protected void handleThrows_(EIFileUpload ev) throws Exception
+    protected void restHandleThrows_(EIFileUpload ev) throws Exception
     {
         final OA oa = checkSanity_(ev);
         if (oa == null) return;

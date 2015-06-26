@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.admin;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdUpdateACL extends AbstractHdIMC<EIUpdateACL>
@@ -19,7 +18,7 @@ public class HdUpdateACL extends AbstractHdIMC<EIUpdateACL>
     }
 
     @Override
-    protected void handleThrows_(EIUpdateACL ev, Prio prio)
+    protected void handleThrows_(EIUpdateACL ev)
             throws Exception
     {
         l.info("Updating acl for store with path: {}", ev._path);

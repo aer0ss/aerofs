@@ -19,7 +19,7 @@ public class HdObjectInfo extends AbstractRestHdIMC<EIObjectInfo>
     @Inject private OutboundEventLogger _eol;
 
     @Override
-    protected void handleThrows_(EIObjectInfo ev) throws ExNotFound, SQLException
+    protected void restHandleThrows_(EIObjectInfo ev) throws ExNotFound, SQLException
     {
         OA oa = _access.resolve_(ev._object, ev._token);
         if (oa.isDirOrAnchor() != (ev._type == Type.FOLDER)) throw new ExNotFound();

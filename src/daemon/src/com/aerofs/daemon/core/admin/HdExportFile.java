@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportFile;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
@@ -31,7 +30,7 @@ public class HdExportFile extends AbstractHdExport<EIExportFile>
     }
 
     @Override
-    protected void handleThrows_(EIExportFile ev, Prio prio) throws Exception
+    protected void handleThrows_(EIExportFile ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._src);
         OA oa = _ds.getOAThrows_(soid);

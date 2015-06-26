@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.daemon.core.phy.linked.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 class HdTestPauseOrResumeLinker extends AbstractHdIMC<EITestPauseOrResumeLinker>
@@ -25,7 +24,7 @@ class HdTestPauseOrResumeLinker extends AbstractHdIMC<EITestPauseOrResumeLinker>
     }
 
     @Override
-    protected void handleThrows_(EITestPauseOrResumeLinker ev, Prio prio)
+    protected void handleThrows_(EITestPauseOrResumeLinker ev)
             throws Exception
     {
         l.debug(ev._pause ? "paused" : "resumed");

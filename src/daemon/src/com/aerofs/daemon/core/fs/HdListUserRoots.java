@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.event.admin.EIListUserRoots;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -31,7 +30,7 @@ public class HdListUserRoots extends AbstractHdIMC<EIListUserRoots>
     }
 
     @Override
-    protected void handleThrows_(EIListUserRoots ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListUserRoots ev) throws Exception
     {
         Collection<SIndex> all = _ss.getAll_();
         Map<SID, String> userRoots = Maps.newHashMap();

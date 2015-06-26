@@ -11,7 +11,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.event.Prio;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -31,7 +30,7 @@ public class HdTestGetAliasObject extends AbstractHdIMC<EITestGetAliasObject>
     }
 
     @Override
-    protected void handleThrows_(EITestGetAliasObject ev, Prio prio) throws Exception
+    protected void handleThrows_(EITestGetAliasObject ev) throws Exception
     {
         IDBIterator<OID> it = _aldb.getAliases_(_ds.resolveNullable_(ev._path));
         try {

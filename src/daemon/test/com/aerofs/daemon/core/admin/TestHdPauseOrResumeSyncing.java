@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +48,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
             throws Exception
     {
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(true, _imce);
-        _handler.handle_(event, Prio.LO);
+        _handler.handle_(event);
 
         verify(pause).pause();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
@@ -65,7 +64,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
             throws Exception
     {
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(false, _imce);
-        _handler.handle_(event, Prio.LO);
+        _handler.handle_(event);
 
         verify(pause).resume();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);

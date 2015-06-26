@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportConflict;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
@@ -33,7 +32,7 @@ public class HdExportConflict extends AbstractHdExport<EIExportConflict>
     }
 
     @Override
-    protected void handleThrows_(EIExportConflict ev, Prio prio) throws Exception
+    protected void handleThrows_(EIExportConflict ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._path);
         OA oa = _ds.getOAThrows_(soid);

@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.admin;
 import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.core.UserAndDeviceNames;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdInvalidateUserNameCache extends AbstractHdIMC<EIInvalidateUserNameCache>
@@ -17,7 +16,7 @@ public class HdInvalidateUserNameCache extends AbstractHdIMC<EIInvalidateUserNam
     }
 
     @Override
-    protected void handleThrows_(EIInvalidateUserNameCache ev, Prio prio) throws Exception
+    protected void handleThrows_(EIInvalidateUserNameCache ev) throws Exception
     {
         _uadn.clearUserNameCache_();
     }

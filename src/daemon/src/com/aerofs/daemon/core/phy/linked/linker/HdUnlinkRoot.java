@@ -11,7 +11,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -43,7 +42,7 @@ public class HdUnlinkRoot extends AbstractHdIMC<EIUnlinkRoot>
      * adds it as unlinked root.
      */
     @Override
-    protected void handleThrows_(EIUnlinkRoot ev, Prio prio) throws Exception
+    protected void handleThrows_(EIUnlinkRoot ev) throws Exception
     {
         SIndex sidxRoot = _sid2sidx.getThrows_(ev._sid);
 

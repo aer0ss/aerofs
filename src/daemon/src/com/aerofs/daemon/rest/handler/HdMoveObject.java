@@ -28,7 +28,7 @@ public class HdMoveObject extends AbstractRestHdIMC<EIMoveObject>
     @Inject private ImmigrantCreator _imc;
 
     @Override
-    protected void handleThrows_(EIMoveObject ev) throws Exception
+    protected void restHandleThrows_(EIMoveObject ev) throws Exception
     {
         OA from = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
         OA toParent = _access.resolveFollowsAnchorWithPermissions_(ev._newParent, ev._token,

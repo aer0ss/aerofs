@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -42,7 +41,7 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
     }
 
     @Override
-    protected void handleThrows_(EILeaveSharedFolder ev, Prio prio) throws Exception
+    protected void handleThrows_(EILeaveSharedFolder ev) throws Exception
     {
         SID sid;
         if (ev._path.isEmpty() && !ev._path.sid().isUserRoot()) {

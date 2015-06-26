@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExBadArgs;
@@ -58,7 +57,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
     }
 
     @Override
-    protected void handleThrows_(EIImportFile ev, Prio prio) throws Exception
+    protected void handleThrows_(EIImportFile ev) throws Exception
     {
         File f = new File(ev._source);
         if (!(f.exists() && f.isFile())) throw new ExBadArgs("Invalid source");

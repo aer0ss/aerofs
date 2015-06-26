@@ -5,7 +5,6 @@ import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
@@ -23,7 +22,7 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
     }
 
     @Override
-    protected void handleThrows_(EIDeleteACL ev, Prio prio)
+    protected void handleThrows_(EIDeleteACL ev)
             throws Exception
     {
         l.info("Deleting acl for store with path: {}", ev._path);

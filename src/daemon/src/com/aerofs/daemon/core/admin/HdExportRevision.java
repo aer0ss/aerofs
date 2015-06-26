@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.RevInputStream;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportRevision;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.os.IOSUtil;
 import com.google.inject.Inject;
 
@@ -22,7 +21,7 @@ public class HdExportRevision extends AbstractHdExport<EIExportRevision>
     }
 
     @Override
-    protected void handleThrows_(EIExportRevision ev, Prio prio) throws Exception
+    protected void handleThrows_(EIExportRevision ev) throws Exception
     {
         File dst = createTempFileWithSameExtension(ev._path.last());
         RevInputStream rev = _ps.getRevProvider().getRevInputStream_(ev._path, ev._index);

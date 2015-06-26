@@ -5,7 +5,6 @@ import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.log.LogUtil;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
     }
 
     @Override
-    public void handle_(EOUnicastMessage ev, Prio prio)
+    public void handle_(EOUnicastMessage ev)
     {
         try {
             byte[][] payload = TransportProtocolUtil.newDatagramPayload(ev.byteArray());

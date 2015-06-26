@@ -24,7 +24,7 @@ public class HdDeleteObject extends AbstractRestHdIMC<EIDeleteObject>
     @Inject private ObjectDeleter _od;
 
     @Override
-    protected void handleThrows_(EIDeleteObject ev) throws Exception
+    protected void restHandleThrows_(EIDeleteObject ev) throws Exception
     {
         OA from = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
 

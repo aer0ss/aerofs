@@ -126,7 +126,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 .forEach(ps -> ps.updateInterest(new SID[]{Cfg.rootSID()}, new SID[]{}));
 
         // start event handling
-        disp.setDefaultHandler_((incoming, prio) -> {
+        disp.setDefaultHandler_(incoming -> {
             if (incoming instanceof EIStoreAvailability) {
                 handlePresence_((EIStoreAvailability) incoming);
             } else {

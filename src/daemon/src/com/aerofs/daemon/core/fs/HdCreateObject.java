@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -29,7 +28,7 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
     }
 
     @Override
-    public void handleThrows_(EICreateObject ev, Prio prio) throws Exception
+    public void handleThrows_(EICreateObject ev) throws Exception
     {
         SOID soidExist = _ds.resolveNullable_(ev._path);
         if (soidExist != null) {

@@ -26,7 +26,7 @@ public class HdCreateObject extends AbstractRestHdIMC<EICreateObject>
     @Inject private ObjectCreator _oc;
 
     @Override
-    protected void handleThrows_(EICreateObject ev) throws Exception
+    protected void restHandleThrows_(EICreateObject ev) throws Exception
     {
         OA oaParent = _access.resolveFollowsAnchorWithPermissions_(ev._parent, ev._token,
                 Permissions.EDITOR);

@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 import static com.aerofs.lib.LibParam.seedFileName;
@@ -26,7 +25,7 @@ public class HdCreateSeedFile extends AbstractHdIMC<EICreateSeedFile>
     }
 
     @Override
-    protected void handleThrows_(EICreateSeedFile ev, Prio prio) throws Exception
+    protected void handleThrows_(EICreateSeedFile ev) throws Exception
     {
         String absRoot = Cfg.getRootPathNullable(ev._sid);
         if (absRoot == null) throw new ExBadArgs();

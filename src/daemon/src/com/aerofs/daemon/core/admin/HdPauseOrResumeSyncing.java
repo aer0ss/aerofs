@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.link.LinkStateService;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,7 @@ public class HdPauseOrResumeSyncing extends AbstractHdIMC<EIPauseOrResumeSyncing
     }
 
     @Override
-    protected void handleThrows_(EIPauseOrResumeSyncing ev, Prio prio) throws Exception
+    protected void handleThrows_(EIPauseOrResumeSyncing ev) throws Exception
     {
         l.info(ev._pause ? "pause syncing" : "resume syncing");
 

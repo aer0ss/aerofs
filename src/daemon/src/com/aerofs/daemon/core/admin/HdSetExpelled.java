@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SOID;
@@ -33,7 +32,7 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
     }
 
     @Override
-    protected void handleThrows_(EISetExpelled ev, Prio prio) throws Exception
+    protected void handleThrows_(EISetExpelled ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._path);
         Trans t = _tm.begin_();

@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.daemon.event.fs.EILinkRoot;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
@@ -27,7 +26,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     }
 
     @Override
-    protected void handleThrows_(EILinkRoot ev, Prio prio)
+    protected void handleThrows_(EILinkRoot ev)
             throws Exception
     {
         InjectableFile f = _factFile.create(ev._path);

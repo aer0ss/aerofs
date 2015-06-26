@@ -23,7 +23,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -77,7 +76,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
     }
 
     @Override
-    protected void handleThrows_(EIGetActivities ev, Prio prio)
+    protected void handleThrows_(EIGetActivities ev)
             throws Exception
     {
         Result res = getActivities_(ev._brief, ev._maxResults, ev._pageToken);

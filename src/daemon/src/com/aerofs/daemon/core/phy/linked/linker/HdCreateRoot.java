@@ -17,7 +17,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -55,7 +54,7 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
     }
 
     @Override
-    protected void handleThrows_(EICreateRoot ev, Prio prio)
+    protected void handleThrows_(EICreateRoot ev)
             throws Exception
     {
         InjectableFile f = _factFile.create(ev._path);

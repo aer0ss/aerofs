@@ -5,7 +5,6 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNoPerm;
@@ -27,7 +26,7 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
     }
 
     @Override
-    protected void handleThrows_(EIDeleteObject ev, Prio prio) throws Exception
+    protected void handleThrows_(EIDeleteObject ev) throws Exception
     {
         if (ev._path.isEmpty()) {
             throw new ExNoPerm("removing root folder");

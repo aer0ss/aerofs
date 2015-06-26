@@ -32,7 +32,7 @@ public class CoreEventDispatcher extends EventDispatcher
         setDefaultHandler_(new AbstractHdIMC<IEBIMC>()
         {
             @Override
-            protected void handleThrows_(IEBIMC ev, Prio prio)
+            protected void handleThrows_(IEBIMC ev)
                     throws Exception
             {
                 throw new ExNotSupported();

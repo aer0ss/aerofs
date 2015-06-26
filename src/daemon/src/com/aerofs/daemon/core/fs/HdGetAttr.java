@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
@@ -53,7 +52,7 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
     }
 
     @Override
-    public void handleThrows_(EIGetAttr ev, Prio prio) throws Exception
+    public void handleThrows_(EIGetAttr ev) throws Exception
     {
         // Do not follow anchor
         SOID soid = _ds.resolveNullable_(ev._path);

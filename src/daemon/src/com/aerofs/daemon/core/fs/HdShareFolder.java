@@ -32,7 +32,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -101,7 +100,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     }
 
     @Override
-    protected void handleThrows_(EIShareFolder ev, Prio prio) throws Exception
+    protected void handleThrows_(EIShareFolder ev) throws Exception
     {
         l.info("sharing: {}", ev._path);
 

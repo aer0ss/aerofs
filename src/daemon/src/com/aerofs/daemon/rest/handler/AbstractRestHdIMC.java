@@ -25,7 +25,6 @@ import com.aerofs.daemon.rest.event.AbstractRestEBIMC;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.daemon.rest.util.MetadataBuilder;
 import com.aerofs.daemon.rest.util.RestObjectResolver;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
@@ -54,12 +53,12 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
     @Inject protected IDID2UserDatabase _did2user;
 
     @Override
-    protected final void handleThrows_(T ev, Prio prio) throws Exception
+    protected final void handleThrows_(T ev) throws Exception
     {
         try {
             updateDID2UserMappingIfNeeded(ev._token);
             ActivityLog.onBehalfOf(ev.did());
-            handleThrows_(ev);
+            restHandleThrows_(ev);
         } finally {
             ActivityLog.onBehalfOf(null);
         }
@@ -81,7 +80,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
         }
     }
 
-    protected abstract void handleThrows_(T ev) throws Exception;
+    protected abstract void restHandleThrows_(T ev) throws Exception;
 
     protected boolean hasAccessToFile(OAuthToken token, Scope scope, OA oa, ResolvedPath path)
             throws SQLException

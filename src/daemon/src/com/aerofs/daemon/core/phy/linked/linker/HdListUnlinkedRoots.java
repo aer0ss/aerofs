@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.daemon.event.fs.EIListUnlinkedRoots;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdListUnlinkedRoots extends AbstractHdIMC<EIListUnlinkedRoots>
@@ -21,7 +20,7 @@ public class HdListUnlinkedRoots extends AbstractHdIMC<EIListUnlinkedRoots>
     }
 
     @Override
-    protected void handleThrows_(EIListUnlinkedRoots ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListUnlinkedRoots ev) throws Exception
     {
         ev.setResult(_urdb.getUnlinkedRoots());
     }

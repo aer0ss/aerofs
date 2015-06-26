@@ -5,7 +5,6 @@ import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNoPerm;
@@ -27,7 +26,7 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
     }
 
     @Override
-    protected void handleThrows_(EIMoveObject ev, Prio prio) throws Exception
+    protected void handleThrows_(EIMoveObject ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._from);
 

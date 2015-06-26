@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.IPhysicalStorage.NonRepresentableObject;
 import com.aerofs.daemon.event.fs.EIListNonRepresentableObjects;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.proto.Ritual.ListNonRepresentableObjectsReply.PBNonRepresentableObject;
@@ -37,7 +36,7 @@ public class HdListNonRepresentableObjects extends AbstractHdIMC<EIListNonRepres
     }
 
     @Override
-    protected void handleThrows_(EIListNonRepresentableObjects ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListNonRepresentableObjects ev) throws Exception
     {
         ImmutableList.Builder<PBNonRepresentableObject> bd = ImmutableList.builder();
 

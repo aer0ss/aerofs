@@ -4,7 +4,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
@@ -25,7 +24,7 @@ public class HdListExpelledObjects extends AbstractHdIMC<EIListExpelledObjects>
     }
 
     @Override
-    protected void handleThrows_(EIListExpelledObjects ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListExpelledObjects ev) throws Exception
     {
         ImmutableList.Builder<Path> bdExpelled = new ImmutableList.Builder<>();
 

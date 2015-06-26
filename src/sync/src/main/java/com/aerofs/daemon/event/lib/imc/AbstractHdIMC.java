@@ -5,17 +5,16 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.daemon.event.IEventHandler;
-import com.aerofs.lib.event.Prio;
 
 public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E>
 {
     protected static final Logger l = Loggers.getLogger(AbstractHdIMC.class);
 
     @Override
-    public final void handle_(E ev, Prio prio)
+    public final void handle_(E ev)
     {
         try {
-            handleThrows_(ev, prio);
+            handleThrows_(ev);
             ev.okay();
         } catch (Exception e) {
             l.warn("{} failed: ", getClass(), e);
@@ -23,5 +22,5 @@ public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E
         }
     }
 
-    protected abstract void handleThrows_(E ev, Prio prio) throws Exception;
+    protected abstract void handleThrows_(E ev) throws Exception;
 }

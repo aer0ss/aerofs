@@ -22,7 +22,6 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -97,7 +96,7 @@ public class TestHdCreateRoot extends AbstractTest
 
     private void handle(String path) throws Exception
     {
-        hdCreateRoot.handleThrows_(new EICreateRoot(path), Prio.LO);
+        hdCreateRoot.handleThrows_(new EICreateRoot(path));
     }
 
     @SuppressWarnings("unchecked")

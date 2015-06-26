@@ -20,7 +20,6 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -95,7 +94,7 @@ public class TestHdLinkRoot extends AbstractTest
 
     private void handle(InjectableFile f, SID sid) throws Exception
     {
-        hdLinkRoot.handleThrows_(new EILinkRoot(f.getPath(), sid), Prio.LO);
+        hdLinkRoot.handleThrows_(new EILinkRoot(f.getPath(), sid));
     }
     @Test
     public void shouldLinkExternalSharedFolder() throws Exception

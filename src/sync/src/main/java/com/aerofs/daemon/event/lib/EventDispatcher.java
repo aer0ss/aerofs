@@ -44,9 +44,9 @@ public class EventDispatcher
         } else {
             IEventHandler<? extends IEvent> hd = _map.get(ev.getClass());
             if (hd != null) {
-                ((IEventHandler<IEvent>) hd).handle_(ev, prio);
+                ((IEventHandler<IEvent>) hd).handle_(ev);
             } else if (_hdDefault != null) {
-                ((IEventHandler<IEvent>) _hdDefault).handle_(ev, prio);
+                ((IEventHandler<IEvent>) _hdDefault).handle_(ev);
             } else {
                 SystemUtil.fatal("unsupported event " + ev.getClass());
             }

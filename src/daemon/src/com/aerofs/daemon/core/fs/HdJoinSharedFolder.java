@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
@@ -29,7 +28,7 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
     }
 
     @Override
-    protected void handleThrows_(EIJoinSharedFolder ev, Prio prio) throws Exception
+    protected void handleThrows_(EIJoinSharedFolder ev) throws Exception
     {
         l.info("join: {}", ev._sid);
 

@@ -45,7 +45,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
       and partial content requests
      */
     @Override
-    protected void handleThrows_(EIFileContent ev) throws ExNotFound, SQLException
+    protected void restHandleThrows_(EIFileContent ev) throws ExNotFound, SQLException
     {
         final OA oa = _access.resolve_(ev._object, ev._token);
         if (!oa.isFile()) throw new ExNotFound("No such file");

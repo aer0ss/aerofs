@@ -8,7 +8,6 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.google.common.collect.Lists;
@@ -52,7 +51,7 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
      *  identifying whether the folder is a linked/admitted, expelled or unlinked.
      */
     @Override
-    protected void handleThrows_(EIListSharedFolders ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListSharedFolders ev) throws Exception
     {
         Collection<SIndex> accessibleStores = _lacl.getAccessibleStores_();
         Collection<PBSharedFolder> sharedFolders =

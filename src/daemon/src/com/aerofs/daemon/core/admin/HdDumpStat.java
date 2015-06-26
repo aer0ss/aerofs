@@ -4,7 +4,6 @@ import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 
 import java.io.ByteArrayOutputStream;
@@ -16,7 +15,7 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
     private final long _launchTime = System.currentTimeMillis();
 
     @Override
-    protected void handleThrows_(EIDumpStat ev, Prio prio) throws Exception
+    protected void handleThrows_(EIDumpStat ev) throws Exception
     {
         PBDumpStat template = ev.template();
         if (template == null) return;

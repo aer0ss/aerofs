@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdDeleteRevision extends AbstractHdIMC<EIDeleteRevision>
@@ -22,7 +21,7 @@ public class HdDeleteRevision extends AbstractHdIMC<EIDeleteRevision>
     }
 
     @Override
-    protected void handleThrows_(EIDeleteRevision ev, Prio prio) throws Exception
+    protected void handleThrows_(EIDeleteRevision ev) throws Exception
     {
         if (ev._index == null) {
             _prp.deleteAllRevisionsUnder_(ev._path);

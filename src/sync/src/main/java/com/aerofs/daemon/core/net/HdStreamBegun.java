@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 /**
@@ -19,7 +18,7 @@ public class HdStreamBegun implements IEventHandler<EIStreamBegun>
     }
 
     @Override
-    public void handle_(EIStreamBegun ev, Prio prio)
+    public void handle_(EIStreamBegun ev)
     {
         PeerContext pc = new PeerContext(ev._ep, ev._userID);
         RawMessage r = new RawMessage(ev.is());

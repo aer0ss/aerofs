@@ -21,7 +21,6 @@ import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -89,7 +88,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
 
     private void handle(Path path) throws Exception
     {
-        hd.handleThrows_(new EILeaveSharedFolder(path), Prio.LO);
+        hd.handleThrows_(new EILeaveSharedFolder(path));
     }
 
     @Test

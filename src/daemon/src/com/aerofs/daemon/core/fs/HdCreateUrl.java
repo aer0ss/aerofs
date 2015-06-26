@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EICreateUrl;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Sp.CreateUrlReply;
 import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
@@ -43,7 +42,7 @@ public class HdCreateUrl extends AbstractHdIMC<EICreateUrl>
     }
 
     @Override
-    protected void handleThrows_(EICreateUrl ev, Prio prio)
+    protected void handleThrows_(EICreateUrl ev)
             throws Exception
     {
         l.info("Creating link for : {}", ev._path);

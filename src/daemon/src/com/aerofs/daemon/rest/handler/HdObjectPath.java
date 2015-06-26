@@ -19,7 +19,7 @@ public class HdObjectPath extends AbstractRestHdIMC<EIObjectPath>
     @Inject private OutboundEventLogger _eol;
 
     @Override
-    protected void handleThrows_(EIObjectPath ev) throws Exception
+    protected void restHandleThrows_(EIObjectPath ev) throws Exception
     {
         OA oa = _access.resolve_(ev._object, ev._token);
         ResolvedPath p = requireAccessToFile(ev._token, Scope.READ_FILES, oa);

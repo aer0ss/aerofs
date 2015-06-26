@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAuthClientFactory;
@@ -24,7 +23,7 @@ public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFol
     }
 
     @Override
-    protected void handleThrows_(EIListSharedFolderInvitations ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListSharedFolderInvitations ev) throws Exception
     {
         ev.setResult_(_tokenManager.inPseudoPause_(Cat.UNLIMITED, "list-invitations", () -> {
                     return newMutualAuthClientFactory().create()

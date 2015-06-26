@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.Path;
@@ -28,7 +27,7 @@ public class HdListConflicts extends AbstractHdIMC<EIListConflicts>
     }
 
     @Override
-    protected void handleThrows_(EIListConflicts ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListConflicts ev) throws Exception
     {
         Map<Path, Integer> conflicts = Maps.newTreeMap();
 

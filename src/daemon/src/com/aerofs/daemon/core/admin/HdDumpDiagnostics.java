@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIDumpDiagnostics;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import com.google.inject.Inject;
 
@@ -30,7 +29,7 @@ public class HdDumpDiagnostics extends AbstractHdIMC<EIDumpDiagnostics>
     }
 
     @Override
-    protected void handleThrows_(EIDumpDiagnostics ev, Prio prio) throws Exception
+    protected void handleThrows_(EIDumpDiagnostics ev) throws Exception
     {
         final GetDiagnosticsReply.Builder diagnosticsReplyBuilder = GetDiagnosticsReply.newBuilder();
 

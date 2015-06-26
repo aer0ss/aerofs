@@ -38,7 +38,6 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgStorageType;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -139,7 +138,7 @@ public class TestHdShareFolder extends AbstractTest
     {
         ImmutableMap.Builder<String, Permissions> roles = new ImmutableMap.Builder<>();
         for (UserID u : users) roles.put(u.getString(), Permissions.EDITOR);
-        hd.handleThrows_(new EIShareFolder(path, roles.build(), "", false), Prio.LO);
+        hd.handleThrows_(new EIShareFolder(path, roles.build(), "", false));
     }
 
     @SuppressWarnings("unchecked")
