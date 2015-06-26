@@ -6,7 +6,6 @@ import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.swig.driver.Driver;
-import com.google.common.base.Optional;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
 
@@ -14,6 +13,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Optional;
 
 abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {

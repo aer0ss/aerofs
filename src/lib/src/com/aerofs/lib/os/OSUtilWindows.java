@@ -12,7 +12,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.text.StrSubstitutor;
@@ -26,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static com.aerofs.defects.Defects.newDefectWithLogs;

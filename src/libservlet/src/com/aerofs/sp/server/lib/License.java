@@ -2,10 +2,10 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.LicenseProperties;
-import com.google.common.base.Optional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Optional;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;

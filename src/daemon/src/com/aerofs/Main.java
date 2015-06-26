@@ -2,7 +2,7 @@ package com.aerofs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.config.PropertiesHelper;
+import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -135,7 +135,7 @@ public class Main
 
         try {
             ClientConfigurationLoader loader = new ClientConfigurationLoader(appRoot, rtRoot,
-                    new PropertiesHelper());
+                    new PropertiesRenderer());
             Properties properties = loader.loadConfiguration();
             ConfigurationProperties.setProperties(properties);
         } catch (SiteConfigException e) {

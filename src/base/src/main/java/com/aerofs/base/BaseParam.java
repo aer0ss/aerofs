@@ -109,10 +109,10 @@ public class BaseParam
                 getStringProperty("base.verkehr.host", "verkehr.aerofs.com");
 
         public static final short PROTOBUF_PORT =
-                (short) getIntegerProperty("base.verkehr.port.pb", 443).intValue();
+                (short) getIntegerProperty("base.verkehr.port.pb", 443);
 
         public static final short REST_PORT =
-                (short) getIntegerProperty("base.verkehr.port.rest", 25234).intValue();
+                (short) getIntegerProperty("base.verkehr.port.rest", 25234);
 
         public static final long MIN_RETRY_INTERVAL = 5 * C.SEC;
         public static final long MAX_RETRY_INTERVAL = 30 * C.SEC;

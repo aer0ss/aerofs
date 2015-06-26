@@ -1,6 +1,6 @@
 package com.aerofs.lib.configuration;
 
-import com.aerofs.base.config.PropertiesHelper;
+import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.io.Files;
@@ -55,7 +55,7 @@ public class TestClientConfigurationLoader
     String _rtroot;
 
     ClientConfigurationLoader _loader;
-    PropertiesHelper _helper;
+    PropertiesRenderer _helper;
     HttpsURLConnection _conn;
 
     @Before
@@ -72,7 +72,7 @@ public class TestClientConfigurationLoader
         _rtrootFolder.create();
         _rtroot = _rtrootFolder.getRoot().getAbsolutePath();
 
-        _helper = spy(new PropertiesHelper());
+        _helper = spy(new PropertiesRenderer());
         _loader = spy(new ClientConfigurationLoader(_approot, _rtroot, _helper));
         _conn = mock(HttpsURLConnection.class);
 
@@ -347,7 +347,7 @@ public class TestClientConfigurationLoader
     public void shouldThrowWhenFailingToRender()
             throws Exception
     {
-        doThrow(ExBadArgs.class).when(_helper).parseProperties(any(Properties.class));
+        doThrow(ExBadArgs.class).when(_helper).renderProperties(any(Properties.class));
 
         mockDefaultSiteConfig(formatSiteConfig(CONFIG_SERVICE_URL, BASE_CA_CERT));
         mockLocalHttpConfig(formatHttpConfig(BASE_HOST));

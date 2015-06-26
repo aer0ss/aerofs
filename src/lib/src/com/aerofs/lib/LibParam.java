@@ -7,11 +7,11 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.ids.SID;
-import com.google.common.base.Optional;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.Optional;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;

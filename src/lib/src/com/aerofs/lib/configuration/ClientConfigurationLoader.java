@@ -2,7 +2,7 @@ package com.aerofs.lib.configuration;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.config.PropertiesHelper;
+import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -17,7 +17,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
@@ -51,16 +50,16 @@ public class ClientConfigurationLoader
     private static final int CONNECTION_TIMEOUT = (int)(3 * C.SEC);
     private static final int READ_TIMEOUT = (int)(3 * C.SEC);
 
-    private final String            _approot;
-    private final String            _rtroot;
-    private final PropertiesHelper  _helper;
+    private final String                _approot;
+    private final String                _rtroot;
+    private final PropertiesRenderer    _renderer;
 
 
-    public ClientConfigurationLoader(String approot, String rtroot, PropertiesHelper helper)
+    public ClientConfigurationLoader(String approot, String rtroot, PropertiesRenderer renderer)
     {
         _approot = approot;
         _rtroot = rtroot;
-        _helper = helper;
+        _renderer = renderer;
     }
 
     /**
@@ -92,7 +91,7 @@ public class ClientConfigurationLoader
         try {
             properties.putAll(httpConfig);
             properties.putAll(siteConfig);
-            properties = _helper.parseProperties(properties);
+            properties = _renderer.renderProperties(properties);
         } catch (Exception e) {
             throw new RenderConfigException(e);
         }

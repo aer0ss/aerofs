@@ -6,7 +6,7 @@ package com.aerofs.lib.configuration;
 
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.config.PropertiesHelper;
+import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.collect.Range;
 import org.slf4j.Logger;
@@ -53,12 +53,11 @@ public final class ServerConfigurationLoader
     private static Properties effectiveProperties(String serviceName, Properties extra)
             throws ConfigurationUtils.ExHttpConfig, ExBadArgs
     {
-        PropertiesHelper helper = new PropertiesHelper();
         Properties properties = new Properties();
         properties.putAll(getHttpProperties(serviceName));
         properties.putAll(extra);
         properties.putAll(System.getProperties());
-        return helper.parseProperties(properties);
+        return new PropertiesRenderer().renderProperties(properties);
     }
 
     /**
