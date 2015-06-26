@@ -23,7 +23,7 @@ import static com.aerofs.daemon.transport.lib.TransportProtocolUtil.newResumeInc
  * InputStream (synchronous, blocking) wrapper for reading chunks of data multiplexed over a Netty
  * channel (asynchronous, non-blocking)
  *
- * When a remoter peer initiates a stream, StreamManager will create an IncomingStream object.
+ * When a remote peer initiates a stream, StreamManager will create an IncomingStream object.
  * Incoming stream chunks are buffered here and the core can be read synchronously from the core.
  *
  * Flow control is based on a watermark system to prevent unbounded accumulation of buffered data.
@@ -44,24 +44,19 @@ public final class IncomingStream extends InputStream {
     private final static int HI_WATERMARK = 128;
     private final static int BRK_WATERMARK = 512;
 
-    private static final AtomicLongFieldUpdater<IncomingStream> BEGUN_UPDATER =
-            AtomicLongFieldUpdater.newUpdater(IncomingStream.class, "_begun");
+    private static final AtomicLongFieldUpdater<IncomingStream> STATE_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(IncomingStream.class, "_state");
 
     private static final AtomicLongFieldUpdater<IncomingStream> QUEUE_UPDATER =
             AtomicLongFieldUpdater.newUpdater(IncomingStream.class, "_queueSize");
 
-    @SuppressWarnings("unused")
-    private volatile long _begun;
+    private final long NONE = 0;
+    private final long STREAMING = 1;
+    private final long FAILED = 2;
+    private final long CLOSED = 3;
 
-    private enum State
-    {
-        STREAMING,
-        FAILED,
-        CLOSED
-    }
-
-    private volatile State _state;
-    private InvalidationReason _reason;
+    private volatile long _state;
+    private volatile InvalidationReason _reason;
 
     private final StreamKey _sk;
     final Channel _channel;
@@ -79,7 +74,7 @@ public final class IncomingStream extends InputStream {
     public IncomingStream(StreamKey sk, Channel channel, long timeout) {
         _sk = sk;
         _channel = channel;
-        _state = State.STREAMING;
+        _state = NONE;
         _timeout = timeout;
         _queueSize = 0;
     }
@@ -87,24 +82,25 @@ public final class IncomingStream extends InputStream {
     // for testing only
     public boolean hasBegun()
     {
-        return _begun == 1;
+        return _state > NONE;
     }
 
     // for testing only
-    public int bufferedChunkCount() {
-        return _data.size();
+    public long bufferedChunkCount() {
+        return _queueSize;
     }
 
     public boolean begin()
     {
-        return BEGUN_UPDATER.compareAndSet(this, 0, 1);
+        return STATE_UPDATER.compareAndSet(this, NONE, STREAMING);
     }
 
     // NB: call from io thread
     public final void offer(ChannelBuffer s) throws ExStreamInvalid
     {
-        if (_state != State.STREAMING) {
-            throw new ExStreamInvalid(_state == State.CLOSED ? InvalidationReason.ENDED : _reason);
+        long state = _state;
+        if (state != STREAMING) {
+            throw new ExStreamInvalid(state == CLOSED ? InvalidationReason.ENDED : _reason);
         }
         _data.offer(s);
         if (QUEUE_UPDATER.getAndIncrement(this) > HI_WATERMARK) increaseBackpressure();
@@ -125,8 +121,7 @@ public final class IncomingStream extends InputStream {
 
     public synchronized void fail(InvalidationReason reason)
     {
-        if (_state == State.CLOSED) return;
-        _state = State.FAILED;
+        if (!STATE_UPDATER.compareAndSet(this, STREAMING, FAILED)) return;
         _reason = reason;
         l.debug("{} fail", _channel);
         notify();
@@ -135,8 +130,7 @@ public final class IncomingStream extends InputStream {
     @Override
     public synchronized void close()
     {
-        if (_state == State.CLOSED) return;
-        _state = State.CLOSED;
+        if (!STATE_UPDATER.compareAndSet(this, STREAMING, CLOSED)) return;
         _head = null;
         _data.clear();
         QUEUE_UPDATER.set(this, 0);
@@ -170,27 +164,28 @@ public final class IncomingStream extends InputStream {
     @Override
     public int read() throws IOException {
         byte[] d = new byte[1];
-        return read(d) != - 1 ? d[0]: -1;
+        return read(d, 0, 1) != - 1 ? d[0]: -1;
     }
 
     @Override
     public int read(byte b[], int off, int len) throws IOException
     {
-        if(_state == State.CLOSED) throw new IOException("stream closed");
+        if (_state == CLOSED) throw new IOException("stream closed");
         if (len == 0) return 0;
         int total = 0;
-        while (len > 0) {
-            // block until at least one bytes can be read
-            // return available data immediately if nothing left in the queue
-            if (isEmpty(_head) && !fetchMore(total == 0)) break;
+        while (len > 0 && (!isEmpty(_head) || fetchMore(total == 0))) {
             int n = Math.min(len, _head.readableBytes());
             _head.readBytes(b, off, n);
             total += n;
             off += n;
             len -= n;
         }
+        if (total <= 0) {
+            l.warn("bad stream {} {} {} {}", _sk, _channel, _state, _head);
+            throw new IOException("internal stream error");
+        }
         l.trace("{} read {}", _channel, total);
-        return total == 0 ? - 1 : total;
+        return total;
     }
 
     private static boolean isEmpty(@Nullable ChannelBuffer buf)
@@ -216,8 +211,8 @@ public final class IncomingStream extends InputStream {
         while ((_head = _data.poll()) == null) {
             if (timer.elapsed() >= _timeout) throw new IOException("stream timeout");
             synchronized (this) {
-                if (_state == State.CLOSED) throw new IOException("stream closed");
-                if (_state == State.FAILED) throw new IOException("stream failed: " + _reason);
+                if (_state == CLOSED) throw new IOException("stream closed");
+                if (_state == FAILED) throw new IOException("stream failed: " + _reason);
                 if (_paused) {
                     _channel.getPipeline().execute(this::relieveBackpressure);
                 }

@@ -142,7 +142,6 @@ public final class TestTransportProtocolHandler
         assertThat(streamBegun._ep, equalTo(new Endpoint(transport, DID_0)));
         assertThat(streamBegun._userID, equalTo(USER_0));
         assertThat(streamBegun._streamId, equalTo(streamId));
-        assertThat(streamBegun._seq, equalTo(0));
         assertThatIncomingDataMatchesTestData(streamBegun.is());
 
         //
@@ -198,7 +197,6 @@ public final class TestTransportProtocolHandler
         assertThat(streamBegun._ep, equalTo(new Endpoint(transport, DID_0)));
         assertThat(streamBegun._userID, equalTo(USER_0));
         assertThat(streamBegun._streamId, equalTo(streamId));
-        assertThat(streamBegun._seq, equalTo(0));
         assertThatIncomingDataMatchesTestData(streamBegun.is());
 
         //
@@ -271,7 +269,6 @@ public final class TestTransportProtocolHandler
         assertThat(streamBegun._ep, equalTo(new Endpoint(transport, DID_0)));
         assertThat(streamBegun._userID, equalTo(USER_0));
         assertThat(streamBegun._streamId, equalTo(streamId));
-        assertThat(streamBegun._seq, equalTo(0));
         assertThatIncomingDataMatchesTestData(streamBegun.is());
 
         //
