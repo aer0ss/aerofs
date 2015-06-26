@@ -47,7 +47,7 @@ public class SSMPEvent {
     public final @Nullable SSMPIdentifier to;
     public final @Nullable String payload;
 
-    SSMPEvent(SSMPIdentifier from, Type type, @Nullable SSMPIdentifier to, @Nullable String payload) {
+    public SSMPEvent(SSMPIdentifier from, Type type, @Nullable SSMPIdentifier to, @Nullable String payload) {
         this.from = from;
         this.type = type;
         this.to = to;

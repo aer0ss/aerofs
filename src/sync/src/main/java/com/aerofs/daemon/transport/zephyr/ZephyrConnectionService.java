@@ -5,6 +5,8 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
+import com.aerofs.daemon.transport.presence.LocationManager;
+import com.aerofs.daemon.transport.presence.ZephyrPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -28,6 +30,7 @@ import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -74,6 +77,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
 
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
+    private final ITransport tp;
     private final LinkStateService linkStateService;
     private final ISignallingService signallingService;
     private final IUnicastStateListener unicastListener;
@@ -84,6 +88,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    private final LocationManager locationManager;
     private final IRoundTripTimes roundTripTimes;
 
     ZephyrConnectionService(
@@ -106,8 +111,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
             ChannelFactory channelFactory,
             InetSocketAddress zephyrAddress,
             Proxy proxy,
+            LocationManager locationManager,
             IRoundTripTimes roundTripTimes)
     {
+        this.tp = transport;
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
         this.bootstrap.setPipelineFactory(
@@ -133,6 +140,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         this.unicastListener = unicastListener;
         this.directory = new ChannelDirectory(transport, this);
         directory.setDeviceConnectionListener(deviceConnectionListener);
+        this.locationManager = locationManager;
         this.roundTripTimes = roundTripTimes;
     }
 
@@ -204,10 +212,16 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
                 return removedAddresses.contains(address);
             };
 
+            // update advertised presence locations
+            locationManager.onLocationChanged(tp,
+                    ImmutableList.of(new ZephyrPresenceLocation(null, zephyrAddress)));
         } else {
             // all interfaces went down
             // remove all the channels
             channelsToDisconnectFilter = TRUE_FILTER;
+
+            // update advertised presence locations
+            locationManager.onLocationChanged(tp, ImmutableList.of());
         }
 
         synchronized (this) {

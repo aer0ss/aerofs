@@ -10,8 +10,7 @@ import com.aerofs.daemon.transport.ISignallingService;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
-import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
-import com.aerofs.daemon.transport.presence.ZephyrPresenceLocation;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -29,7 +28,6 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.aerofs.proto.Transport;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -89,6 +87,7 @@ public final class Zephyr implements ITransport
             ZephyrParams zephyrParams,
             Proxy proxy,
             IRoundTripTimes roundTripTimes,
+            LocationManager locationManager,
             ISignallingService signallingService)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
@@ -127,6 +126,7 @@ public final class Zephyr implements ITransport
                 clientSocketChannelFactory,
                 this.zephyrAddress,
                 proxy,
+                locationManager,
                 roundTripTimes);
 
         this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
@@ -197,18 +197,6 @@ public final class Zephyr implements ITransport
         // will be reflected when sending the payload data below
         Channel channel = (Channel)zephyrConnectionService.send(did, TransportProtocolUtil.newControl(h), null);
         return streamManager.newOutgoingStream(sk, channel);
-    }
-
-    /**
-     * Return the Zephyr locations
-     *
-     * @return The list of presence locations
-     */
-    @Override
-    public Collection<IPresenceLocation> getPresenceLocations() {
-        // We have the Zephyr IP and port
-        // And we only have one location (one Zephyr server)
-        return ImmutableList.of(new ZephyrPresenceLocation(localdid, zephyrAddress));
     }
 
     @Override

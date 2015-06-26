@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
@@ -51,6 +52,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.ssmp.SSMPConnection;
 import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -214,5 +216,14 @@ public class CoreModule extends AbstractModule
                 Verkehr.MAX_RETRY_INTERVAL,
                 Cfg.db().getLong(Key.TIMEOUT),
                 timer);
+    }
+
+    @Provides
+    @Singleton
+    public SSMPConnection provideSSMPConnection(CfgLocalDID did, Timer timer,
+                                                ClientSocketChannelFactory channelFactory,
+                                                ClientSSLEngineFactory sslEngineFactory) {
+        return new SSMPConnection(did.get(), SSMP.SERVER_ADDRESS, timer, channelFactory,
+                sslEngineFactory::newSslHandler);
     }
 }

@@ -20,12 +20,12 @@ import static com.aerofs.ssmp.SSMPDecoder.*;
 public class SSMPClientHandler extends SimpleChannelHandler {
     private final static Logger L = LoggerFactory.getLogger(SSMPClientHandler.class);
 
-    private final SSMPEventHandler _handler;
+    private final EventHandler _handler;
 
     private final ElapsedTimer _timer = new ElapsedTimer();
     private final Queue<SettableFuture<SSMPResponse>> _responses = new ConcurrentLinkedQueue<>();
 
-    public SSMPClientHandler(SSMPEventHandler handler) {
+    public SSMPClientHandler(EventHandler handler) {
         _handler = handler;
     }
 

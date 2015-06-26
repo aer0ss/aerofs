@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.daemon.transport.*;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
@@ -101,6 +102,7 @@ public final class UnicastZephyrDevice
                 ChannelFactories.newClientChannelFactory(),
                 new InetSocketAddress(zephyrHost, zephyrPort),
                 Proxy.NO_PROXY,
+                mock(LocationManager.class),
                 roundTripTimes);
 
         workaround.setRealUnicast(unicast);

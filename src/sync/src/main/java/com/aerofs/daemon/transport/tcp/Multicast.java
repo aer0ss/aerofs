@@ -45,6 +45,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newConcurrentMap;
 
 // FIXME (AG): Remove call from TCPStores and make final
+// FIXME: port to nio or netty
 class Multicast implements IMaxcast, ILinkStateListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
@@ -235,8 +236,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 l.info("mc recv {} {}", did, h.getType());
                 if (did.equals(localdid)) continue;
 
-                if (h.getType() == Type.DATAGRAM)
-                {
+                if (h.getType() == Type.DATAGRAM) {
                     checkArgument(h.hasMcastId());
                     // filter packets from core that were sent on other interface
                     if (!maxcastFilterReceiver.isRedundant(did, h.getMcastId())) {

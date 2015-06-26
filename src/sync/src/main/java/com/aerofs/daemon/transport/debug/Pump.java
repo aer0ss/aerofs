@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.debug;
 
+import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
@@ -19,8 +20,8 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
-import com.aerofs.daemon.transport.ssmp.SSMPParams;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
@@ -36,6 +37,7 @@ import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.util.Timer;
@@ -160,14 +162,17 @@ public final class Pump implements IProgram, IUnicastInputLayer
         MaxcastFilterReceiver maxcastFilter = new MaxcastFilterReceiver();
         ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
 
+        SSMPConnection ssmp = new SSMPConnection(localdid.get(), SSMP.SERVER_ADDRESS, timer,
+                getClientChannelFactory(), clientSslEngineFactory::newSslHandler);
+
         return new Transports(localid, localdid, enabled, new CfgTimeout(),
                 new CfgMulticastLoopback(), new ZephyrParams(), timer, queue,
                 maxcastFilter, linkStateService,
                 clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 getClientChannelFactory(), getServerChannelFactory(),
-                new SSMPConnectionService(localdid, localid, timer, getClientChannelFactory(),
-                        clientSslEngineFactory, queue, linkStateService, new SSMPParams()),
+                new SSMPConnectionService(queue, linkStateService, ssmp),
+                new LocationManager(ssmp),
                 new RoundTripTimes());
     }
 

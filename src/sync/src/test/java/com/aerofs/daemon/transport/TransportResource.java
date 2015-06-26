@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport;
 
+import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -11,6 +12,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.net.ServerSSLEngineFactory;
 import com.aerofs.daemon.core.net.Transports;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.ssmp.SSMPParams;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
@@ -26,6 +28,7 @@ import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.io.Files;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -42,6 +45,7 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.mockito.Mockito.mock;
@@ -126,6 +130,9 @@ public class TransportResource extends ExternalResource
 
         ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
 
+        SSMPConnection ssmp = new SSMPConnection(localdid.get(), ssmpAddress, timer,
+                clientSocketChannelFactory, clientSslEngineFactory::newSslHandler);
+
         tps = new Transports(localid, localdid, enabled, timeout, multicastLoopback,
                 new ZephyrParams(zephyrAddress),
                 timer, outgoingEventSink,
@@ -133,9 +140,8 @@ public class TransportResource extends ExternalResource
                 clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 clientSocketChannelFactory, serverSocketChannelFactory,
-                new SSMPConnectionService(localdid, localid, timer, clientSocketChannelFactory,
-                        clientSslEngineFactory, outgoingEventSink, linkStateService,
-                        new SSMPParams(ssmpAddress)),
+                new SSMPConnectionService(outgoingEventSink, linkStateService, ssmp),
+                mock(LocationManager.class),
                 roundTripTimes);
 
         checkState(tps.getAll().size() == 1);

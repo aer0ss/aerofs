@@ -1,10 +1,10 @@
 package com.aerofs.ssmp;
 
-import com.aerofs.ssmp.SSMPEvent.Type;
-import com.aerofs.ssmp.SSMPRequest.SubscriptionFlag;
 import com.aerofs.ssmp.SSMPServerHandler.Authenticator;
 import com.aerofs.ssmp.SSMPServerHandler.ChannelData;
 import com.aerofs.ssmp.SSMPServerHandler.IdAddress;
+import com.aerofs.ssmp.SSMPEvent.Type;
+import com.aerofs.ssmp.SSMPRequest.SubscriptionFlag;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.frame.LineBasedFrameDecoder;
@@ -105,7 +105,7 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
 
 
     public SSMPServer(InetSocketAddress addr, Timer timer, ChannelFactory channelFactory,
-                      ISslHandlerFactory sslHandlerFactory, Authenticator auth) {
+                      SslHandlerFactory sslHandlerFactory, Authenticator auth) {
         _addr = addr;
         _bootstrap = new ServerBootstrap(channelFactory);
         _bootstrap.setPipelineFactory(() -> Channels.pipeline(

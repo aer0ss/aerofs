@@ -99,6 +99,7 @@ dependencies {
     compile 'org.slf4j:jcl-over-slf4j:1.7.12'
     compile 'org.slf4j:jul-to-slf4j:1.7.12'
     compile project(':src/aero-ids')
+    compile project(':src/ssmp')
     testutilCompile 'junit:junit:4.11'
     testutilCompile 'org.hamcrest:hamcrest-all:1.3'
     testutilCompile 'org.bouncycastle:bcprov-jdk15on:1.50+'

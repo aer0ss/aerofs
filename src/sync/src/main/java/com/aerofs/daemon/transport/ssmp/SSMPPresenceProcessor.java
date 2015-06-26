@@ -8,7 +8,7 @@ import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
 import com.aerofs.ssmp.SSMPClient.ConnectionListener;
 import com.aerofs.ssmp.SSMPEvent;
-import com.aerofs.ssmp.SSMPEventHandler;
+import com.aerofs.ssmp.EventHandler;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SSMPPresenceProcessor implements ConnectionListener, SSMPEventHandler {
+public class SSMPPresenceProcessor implements ConnectionListener, EventHandler {
     private final static Logger l = Loggers.getLogger(SSMPPresenceProcessor.class);
 
     public final List<IMulticastListener> multicastListeners = new ArrayList<>();

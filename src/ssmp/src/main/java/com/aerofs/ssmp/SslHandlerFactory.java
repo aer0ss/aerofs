@@ -5,6 +5,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
-public interface ISslHandlerFactory {
+public interface SslHandlerFactory {
     SslHandler newSslHandler() throws IOException, GeneralSecurityException;
 }

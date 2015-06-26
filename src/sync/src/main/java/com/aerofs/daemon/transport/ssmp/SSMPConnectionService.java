@@ -3,7 +3,6 @@ package com.aerofs.daemon.transport.ssmp;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.link.ILinkStateListener;
@@ -11,12 +10,9 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ISignallingService;
 import com.aerofs.daemon.transport.ISignallingServiceFactory;
 import com.aerofs.daemon.transport.lib.*;
-import com.aerofs.daemon.transport.lib.presence.IPresenceLocationReceiver;
 import com.aerofs.daemon.transport.presence.IStoreInterestListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.ssmp.*;
 import com.aerofs.ssmp.SSMPClient.ConnectionListener;
@@ -28,145 +24,89 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.net.NetworkInterface;
 import java.nio.channels.ClosedChannelException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SSMPConnectionService implements
-        SSMPClient.ConnectionListener, SSMPEventHandler,
+public class SSMPConnectionService implements ConnectionListener, EventHandler,
         IMaxcast, IPresenceSource, ISignallingServiceFactory, ILinkStateListener {
     private final static Logger l = Loggers.getLogger(SSMPConnectionService.class);
 
-    private final DID _did;
-    private final SSMPIdentifier _login;
-
-    private final Timer _timer;
-    private final SSMPClient _client;
     private final CoreQueue _q;
+    private final SSMPConnection _c;
 
-    private long _delay = 0;
     private boolean linkUp = false;
-    private final AtomicBoolean _stopped = new AtomicBoolean(true);
-    private final AtomicBoolean _loggedIn = new AtomicBoolean();
 
     private final Set<SID> _interest = Sets.newSetFromMap(new ConcurrentHashMap<>());
-
     public final SSMPPresenceProcessor presenceProcessor = new SSMPPresenceProcessor();
-    
-    private final List<SSMPClient.ConnectionListener> _connectionListeners = new ArrayList<>();
-    private final List<SSMPEventHandler> _eventHandlers = new ArrayList<>();
-
-    public final List<IPresenceLocationReceiver> presenceLocationListeners = new ArrayList<>();
 
     @Inject
-    public SSMPConnectionService(CfgLocalDID localdid, CfgLocalUser localuser, Timer timer,
-                                 ClientSocketChannelFactory channelFactory,
-                                 ClientSSLEngineFactory sslHandlerFactory,
-                                 CoreQueue q, LinkStateService lss, SSMPParams params) {
-        _did = localdid.get();
-        _timer = timer;
+    public SSMPConnectionService(CoreQueue q, LinkStateService lss, SSMPConnection c) {
         _q = q;
-        _client = new SSMPClient(params.serverAddress, timer, channelFactory,
-                sslHandlerFactory::newSslHandler, this);
+        _c = c;
 
-        _connectionListeners.add(presenceProcessor);
-        _eventHandlers.add(presenceProcessor);
+        // maxcast
+        c.addConnectionListener(this);
+        c.addEventHandler(this);
 
-        _login = SSMPIdentifier.fromInternal(_did.toStringFormal());
+        // presence
+        c.addConnectionListener(presenceProcessor);
+        c.addEventHandler(presenceProcessor);
 
         lss.addListener(this, MoreExecutors.sameThreadExecutor());
     }
 
+    // TODO: think about who should own SSMP start/stop when it eventually replaces vk...
     public void start() {
-        if (_stopped.compareAndSet(true, false)) {
-            connect();
-        }
-    }
-
-    private void connect() {
-        _client.connect(_login, SSMPIdentifier.fromInternal("cert"), "", this);
+        _c.start();
     }
 
     public void stop() {
-        if (_stopped.compareAndSet(false, true)) {
-            _client.disconnect();
-        }
+        _c.stop();
     }
 
     @Override
     public void eventReceived(SSMPEvent ev) {
-        l.info("recv event {} {} {} {}", ev.from, ev.type, ev.to, ev.payload);
-        if (ev.type == Type.MCAST) {
-            try {
-                DID did = new DID(ev.from.toString());
-                SID sid = new SID(ev.to.toString());
-
-                // NB: protocol *should* ensure that this doesn't happen
-                if (did.equals(_did)) return;
-                // unsubscribe/mcast race
-                if (!_interest.contains(sid)) return;
-
-                l.info("{} recv mc", did);
-
-                byte[] bs = SSMPUtil.decodeMcastPayload(did, ev.payload);
-
-                if (bs == null) return;
-
-                // TODO: why is the SID not passed upwards?
-                Endpoint ep = new Endpoint(null, did);
-                ByteArrayInputStream is = new ByteArrayInputStream(bs);
-                _q.enqueue(new EIMaxcastMessage(ep, is), Prio.LO);
-
-                return;
-            } catch (Exception e) {}
+        if (ev.type != Type.MCAST) {
+            return;
         }
-        _eventHandlers.forEach(h -> h.eventReceived(ev));
+        try {
+            DID did = new DID(ev.from.toString());
+            SID sid = new SID(ev.to.toString());
+
+            // unsubscribe/mcast race
+            if (!_interest.contains(sid)) return;
+
+            l.info("{} recv mc", did);
+
+            byte[] bs = SSMPUtil.decodeMcastPayload(did, ev.payload);
+
+            if (bs == null) return;
+
+            // TODO: why is the SID not passed upwards?
+            Endpoint ep = new Endpoint(null, did);
+            ByteArrayInputStream is = new ByteArrayInputStream(bs);
+            _q.enqueue(new EIMaxcastMessage(ep, is), Prio.LO);
+        } catch (Exception e) {}
     }
 
     @Override
     public void connected() {
-        try {
-            l.info("logged in");
-            _loggedIn.set(true);
-            _delay = 0;
-            _connectionListeners.forEach(ConnectionListener::connected);
-            _interest.forEach(SSMPConnectionService.this::subscribe);
-        } catch (Exception e) {
-            l.warn("login failed", e);
-        }
+        _interest.forEach(SSMPConnectionService.this::subscribe);
     }
 
     @Override
     public void disconnected() {
-        _connectionListeners.forEach(ConnectionListener::disconnected);
-        reconnect();
-    }
-
-    private void reconnect() {
-        _loggedIn.set(false);
-        if (_stopped.get()) {
-            l.info("stopped");
-            return;
-        }
-        l.info("reconnect in {}", _delay);
-        _timer.newTimeout(timeout -> connect(),_delay, TimeUnit.MILLISECONDS);
-        _delay = Math.min(Math.max(_delay * 2, 100), 60000);
     }
 
     @Override
     public void sendPayload(SID sid, int mcastid, byte[] bs) {
         try {
-            _client.request(SSMPRequest.mcast(
+            _c.request(SSMPRequest.mcast(
                     SSMPIdentifier.fromInternal(sid.toStringFormal()),
                     encodeMaxcast(bs)));
         } catch (Exception e) {
@@ -182,14 +122,14 @@ public class SSMPConnectionService implements
     public void updateInterest(SID[] sidsAdded, SID[] sidsRemoved) {
         for (SID sid : sidsAdded) {
             _interest.add(sid);
-            if (_loggedIn.get()) subscribe(sid);
+            if (_c.isLoggedIn()) subscribe(sid);
         }
 
         for (SID sid : sidsRemoved) {
             _interest.remove(sid);
-            if (!_loggedIn.get()) continue;
+            if (!_c.isLoggedIn()) continue;
             try {
-                Futures.addCallback(_client.request(SSMPRequest.unsubscribe(
+                Futures.addCallback(_c.request(SSMPRequest.unsubscribe(
                         SSMPIdentifier.fromInternal(sid.toStringFormal()))), new FutureCallback<SSMPResponse>() {
                     @Override
                     public void onSuccess(SSMPResponse r) {
@@ -215,7 +155,7 @@ public class SSMPConnectionService implements
 
     private void subscribe(SID sid) {
         try {
-            Futures.addCallback(_client.request(SSMPRequest.subscribe(
+            Futures.addCallback(_c.request(SSMPRequest.subscribe(
                     SSMPIdentifier.fromInternal(sid.toStringFormal()),
                     SubscriptionFlag.PRESENCE)), new FutureCallback<SSMPResponse>() {
                 @Override
@@ -240,9 +180,7 @@ public class SSMPConnectionService implements
     }
 
     public ISignallingService newSignallingService(String transportId) {
-        SignallingService s = new SignallingService(transportId, _client);
-        _eventHandlers.add(s);
-        return s;
+        return new SignallingService(transportId, _c);
     }
 
     public void addMulticastListener(IMulticastListener l) {
@@ -251,10 +189,6 @@ public class SSMPConnectionService implements
 
     public void addStoreInterestListener(IStoreInterestListener l) {
         presenceProcessor.storeInterestListeners.add(l);
-    }
-
-    public void addPresenceLocationListener(IPresenceLocationReceiver l) {
-        presenceLocationListeners.add(l);
     }
 
     @Override

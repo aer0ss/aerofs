@@ -6,25 +6,30 @@ import com.aerofs.daemon.transport.ISignallingServiceListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ssmp.*;
+import com.aerofs.ssmp.SSMPClient;
+import com.aerofs.ssmp.SSMPEvent;
 import com.aerofs.ssmp.SSMPEvent.Type;
+import com.aerofs.ssmp.EventHandler;
+import com.aerofs.ssmp.SSMPRequest;
 import com.google.common.base.Throwables;
 
 import java.util.Base64;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
 
-class SignallingService implements ISignallingService, SSMPEventHandler {
+class SignallingService implements ISignallingService, EventHandler {
 
     private final String _prefix;
-    private final SSMPClient _client;
+    private final SSMPConnection _c;
     private final Base64.Encoder _encoder = Base64.getEncoder();
     private final Base64.Decoder _decoder = Base64.getDecoder();
 
     private ISignallingServiceListener _listener;
 
-    SignallingService(String id, SSMPClient client) {
-        _client = client;
-        _prefix = "sig:" + id + ":";
+    SignallingService(String id, SSMPConnection c) {
+        _c = c;
+        _prefix = "sig:" + id + " ";
+        _c.addUcastHandler("sig:" + id, this);
     }
 
     @Override
@@ -35,7 +40,7 @@ class SignallingService implements ISignallingService, SSMPEventHandler {
     @Override
     public void sendSignallingMessage(DID did, byte[] msg, ISignallingServiceListener client) {
         try {
-            addCallback(_client.request(SSMPRequest.ucast(
+            addCallback(_c.request(SSMPRequest.ucast(
                             SSMPIdentifier.fromInternal(did.toStringFormal()),
                             _prefix + _encoder.encodeToString(msg))),
                     new FailedFutureCallback() {
@@ -55,14 +60,14 @@ class SignallingService implements ISignallingService, SSMPEventHandler {
 
     @Override
     public void eventReceived(SSMPEvent ev) {
-        if (ev.type == Type.UCAST) {
-            try {
-                DID did = new DID(ev.from.toString());
-                if (ev.payload.startsWith(_prefix)) {
-                    _listener.processIncomingSignallingMessage(did,
-                            _decoder.decode(ev.payload.substring(_prefix.length())));
-                }
-            } catch (ExInvalidID ex) {}
-        }
+        if (ev.type != Type.UCAST) return;
+
+        try {
+            DID did = new DID(ev.from.toString());
+            if (ev.payload.startsWith(_prefix)) {
+                _listener.processIncomingSignallingMessage(did,
+                        _decoder.decode(ev.payload.substring(_prefix.length())));
+            }
+        } catch (ExInvalidID ex) {}
     }
 }

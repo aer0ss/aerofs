@@ -14,7 +14,7 @@ import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 /**
  * Implemented by classes that provide a message transport mechanism and a presence locator.
  */
-public interface ITransport extends ITransferStat, IPresenceLocator
+public interface ITransport extends ITransferStat
 {
     /**
      * Initialize internal state for the transport.

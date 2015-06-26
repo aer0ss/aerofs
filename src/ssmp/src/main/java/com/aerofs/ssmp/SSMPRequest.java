@@ -24,7 +24,6 @@ public class SSMPRequest {
         CLOSE("CLOSE", NO_FIELD),
         ;
 
-
         final byte[] _s;
         final int _fields;
 
@@ -81,6 +80,13 @@ public class SSMPRequest {
         if (payload.length() == 0 || !isValid(payload)) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "[" + type + " " + to + " "
+                + (payload != null ? new String(payload, StandardCharsets.UTF_8) : null)
+                + "]";
     }
 
     public static SSMPRequest login(@Nonnull SSMPIdentifier id, @Nonnull SSMPIdentifier scheme,

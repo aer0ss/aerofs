@@ -17,6 +17,7 @@ import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
@@ -81,6 +82,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             ClientSocketChannelFactory clientSocketChannelFactory,
             ServerSocketChannelFactory serverSocketChannelFactory,
             SSMPConnectionService ssmp,
+            LocationManager locationManager,
             IRoundTripTimes roundTripTimes)
             throws ExUnsupportedTransport
     {
@@ -106,6 +108,7 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 roundTripTimes,
+                locationManager,
                 ssmp);
 
         ImmutableList.Builder<IMaxcast> maxcastBuilder = ImmutableList.builder();
@@ -118,16 +121,18 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             // FIXME: reaching down to get these fields is gross
             maxcastBuilder.add(tp.multicast);
             presenceBuilder.add(tp.stores);
-            ssmp.addPresenceLocationListener(tp.monitor);
+            locationManager.addPresenceLocationListener(tp.monitor);
         }
         if (enabledTransports.isZephyrEnabled()) {
             Zephyr tp = (Zephyr)transportFactory.newTransport(ZEPHYR);
             transportBuilder.add(tp);
 
             ssmp.addMulticastListener(tp.monitor);
-            ssmp.addPresenceLocationListener(tp.monitor);
+            locationManager.addPresenceLocationListener(tp.monitor);
             ssmp.addStoreInterestListener(tp.presence);
         }
+
+        ssmp.addMulticastListener(locationManager);
 
         maxcastBuilder.add(ssmp);
         presenceBuilder.add(ssmp);
@@ -135,10 +140,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
         maxcastProviders = maxcastBuilder.build();
         presenceSources = presenceBuilder.build();
         availableTransports = transportBuilder.build();
-
-        // The XMPPConnectionService needs to know the list of locators (=transports)
-        // that can be used to gather presence locations for the local DID
-        // TODO: ssmp.addLocators(availableTransports);
     }
 
     public ImmutableList<IMaxcast> maxcastProviders() {

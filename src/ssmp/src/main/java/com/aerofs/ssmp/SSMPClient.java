@@ -29,15 +29,15 @@ public class SSMPClient {
 
     public SSMPClient(String host, int port, Timer timer,
                       ChannelFactory channelFactory,
-                      ISslHandlerFactory sslHandlerFactory,
-                      SSMPEventHandler handler) {
+                      SslHandlerFactory sslHandlerFactory,
+                      EventHandler handler) {
         this(InetSocketAddress.createUnresolved(host, port), timer, channelFactory, sslHandlerFactory, handler);
     }
 
     public SSMPClient(InetSocketAddress addr, Timer timer,
                       ChannelFactory channelFactory,
-                      ISslHandlerFactory sslHandlerFactory,
-                      SSMPEventHandler handler)
+                      SslHandlerFactory sslHandlerFactory,
+                      EventHandler handler)
     {
         _addr = addr;
         _bootstrap = new ClientBootstrap(channelFactory);

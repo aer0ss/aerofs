@@ -9,6 +9,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
+import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.presence.TCPPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -52,6 +53,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
@@ -62,7 +64,7 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 // FIXME (AG): remove direct call from TCPStores and make this final
-public class TCP implements ITransport, IAddressResolver
+public class TCP implements ITransport, IAddressResolver, ILinkStateListener
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
@@ -81,7 +83,7 @@ public class TCP implements ITransport, IAddressResolver
     private final StreamManager streamManager;
     private final PresenceService presenceService = new PresenceService();
     public final ChannelMonitor monitor;
-    private final LinkStateService linkStateService;
+    private final LocationManager locationManager;
     private final PortRange portRange;
 
     public TCP(
@@ -102,6 +104,7 @@ public class TCP implements ITransport, IAddressResolver
             Timer timer,
             ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory,
+            LocationManager locationManager,
             IRoundTripTimes roundTripTimes)
     {
         this.dispatcher = new EventDispatcher();
@@ -115,6 +118,8 @@ public class TCP implements ITransport, IAddressResolver
         this.streamManager = new StreamManager(streamTimeout);
         this.localdid = localdid;
         this.portRange = PortRange.loadFromConfiguration();
+
+        this.locationManager = locationManager;
 
         this.multicast = new Multicast(localdid, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
 
@@ -151,21 +156,6 @@ public class TCP implements ITransport, IAddressResolver
         ClientBootstrap clientBootstrap = bootstrapFactory.newClientBootstrap(clientChannelFactory, clientChannelTeardownHandler);
         unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
-        // For TCP only, the link state listeners have a strange (and bad) interdependency.
-        // The XMPPMulticast class controls whether we are sending/receiving tcp ping/pong traffic, and
-        // winds up talking to ARP.
-        // The Unicast infrastructure does bad things if it is asked to deal with a peer before the
-        // link state (suspended/resumed) flag has been updated internally.
-        //
-        //  Since the Notifier as we use it does not provide a way to guarantee safe ordering, we
-        // do so explicitly with the following trivial compound notifier.
-        //
-        linkStateService.addListener((previous, current, added, removed) -> {
-            unicast.onLinkStateChanged(previous, current, added, removed);
-            multicast.onLinkStateChanged(previous, current, added, removed);
-        }, sameThreadExecutor());
-        this.linkStateService = linkStateService;
-
         // presence hookups
         unicast.setUnicastStateListener(presenceService);
         unicast.setDeviceConnectionListener(presenceService);
@@ -173,35 +163,53 @@ public class TCP implements ITransport, IAddressResolver
         presenceService.addListener(stores);
         presenceService.addListener(monitor);
 
+        linkStateService.addListener(this, sameThreadExecutor());
+    }
+
+    @Override
+    public void onLinkStateChanged(ImmutableSet<NetworkInterface> previous,
+                                   ImmutableSet<NetworkInterface> current,
+                                   ImmutableSet<NetworkInterface> added,
+                                   ImmutableSet<NetworkInterface> removed) {
         // flush all the arp entries immediately when the link-state changes
-        linkStateService.addListener(new ILinkStateListener()
-        {
-            @Override
-            public void onLinkStateChanged(
-                    ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current,
-                    ImmutableSet<NetworkInterface> added,
-                    ImmutableSet<NetworkInterface> removed)
-            {
+        if (!previous.isEmpty() && current.isEmpty()) {
+            evictAllArpEntries();
+        }
 
-                if (!previous.isEmpty() && current.isEmpty()) {
-                    evictAllArpEntries();
+        // For TCP only, the link state listeners have a strange (and bad) interdependency.
+        // The Multicast class controls whether we are sending/receiving tcp ping/pong traffic, and
+        // winds up talking to ARP.
+        // The Unicast infrastructure does bad things if it is asked to deal with a peer before the
+        // link state (suspended/resumed) flag has been updated internally.
+        //
+        // Since the Notifier as we use it does not provide a way to guarantee safe ordering, we
+        // do so explicitly.
+        unicast.onLinkStateChanged(previous, current, added, removed);
+        multicast.onLinkStateChanged(previous, current, added, removed);
+
+        // update advertised presence locations
+        if (!added.isEmpty() || !removed.isEmpty()) {
+            int port = getListeningPort();
+            List<IPresenceLocation> locations = new ArrayList<>();
+            for (NetworkInterface iface: current) {
+                for (Enumeration<InetAddress> e = iface.getInetAddresses(); e.hasMoreElements();) {
+                    locations.add(new TCPPresenceLocation(null, e.nextElement(), port));
                 }
             }
+            locationManager.onLocationChanged(this, locations);
+        }
+    }
 
-            private void evictAllArpEntries()
-            {
-                final List<DID> evicted = Lists.newArrayList();
+    private void evictAllArpEntries()
+    {
+        final List<DID> evicted = Lists.newArrayList();
 
-                arp.visitARPEntries((did, arp1) -> evicted.add(did));
+        arp.visitARPEntries((did, arp1) -> evicted.add(did));
 
-                // Call remove() out of the visitor to avoid holding the ARP lock
-                for (DID did : evicted) {
-                    arp.remove(did);
-                }
-
-            }
-        }, sameThreadExecutor());
+        // Call remove() out of the visitor to avoid holding the ARP lock
+        for (DID did : evicted) {
+            arp.remove(did);
+        }
     }
 
     @Override
@@ -212,8 +220,8 @@ public class TCP implements ITransport, IAddressResolver
 
         multicast.init();
 
-        scheduler.schedule(new AbstractEBSelfHandling()
-        {
+        // TODO: move to ARP or Multicast?
+        scheduler.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
@@ -240,6 +248,7 @@ public class TCP implements ITransport, IAddressResolver
 
         }, ARP_GC_INTERVAL);
 
+        // TODO: move to Multicast or Stores?
         scheduler.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
@@ -346,27 +355,6 @@ public class TCP implements ITransport, IAddressResolver
     int getListeningPort()
     {
         return ((InetSocketAddress)unicast.getListeningAddress()).getPort();
-    }
-
-    /**
-     * Collect and return the list of presence locations
-     *
-     * @return list of PresenceLocations for this transport
-     */
-    @Override
-    public ArrayList<IPresenceLocation> getPresenceLocations()
-    {
-        ArrayList<IPresenceLocation> locations = new ArrayList<>();
-
-        // We have the listening port
-        int listeningPort = getListeningPort();
-
-        // We need the list of IPs from the linkStateService
-        for (InetAddress addr: linkStateService.getCurrentIPs()) {
-            locations.add(new TCPPresenceLocation(localdid, addr, listeningPort));
-        }
-
-        return locations;
     }
 
     @Override
