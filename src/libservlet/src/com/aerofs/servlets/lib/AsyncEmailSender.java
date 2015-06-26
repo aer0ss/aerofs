@@ -42,14 +42,23 @@ public class AsyncEmailSender extends AbstractEmailSender
     {
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
+        //
         // We wish there was no default value here, so we could fail loudly if no production
         // config is found; however this breaks the development environment.
-        String host = getStringProperty("email.sender.public_host", null);
-        String port = getStringProperty("email.sender.public_port", null);
-        String username = getStringProperty("email.sender.public_username", null);
-        String password = getStringProperty("email.sender.public_password", null);
+        //
+        // FIXME: clean up email senders and their static dependencies.
+        //
+        // N.B. the current codebase is tightly-coupled and that leads to the default value for
+        // these properties being used in dev environment and tests. So we use a blank hostname
+        // so that the email will always fail to send by default but it will trip exception only
+        // when we send e-mail and we ignore those exceptions.
+        //
+        String host = getStringProperty("email.sender.public_host", "        ");
+        String port = getStringProperty("email.sender.public_port", "");
+        String username = getStringProperty("email.sender.public_username", "");
+        String password = getStringProperty("email.sender.public_password", "");
         boolean useTls = getBooleanProperty("email.sender.public_enable_tls", true);
-        String cert = getStringProperty("email.sender.public_cert", null);
+        String cert = getStringProperty("email.sender.public_cert", "");
 
         return new AsyncEmailSender(host, port, username, password, useTls, cert);
     }
