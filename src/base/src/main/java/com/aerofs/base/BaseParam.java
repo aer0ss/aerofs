@@ -10,11 +10,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.security.cert.X509Certificate;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
@@ -36,14 +34,6 @@ public class BaseParam
         public static final String BASE_HOST = getStringProperty("base.host.unified", "aerofs.com");
     }
 
-    public static class Cacert
-    {
-        // This property is used by the Android build.
-        public static final X509Certificate CACERT = getCertificateProperty(
-                "config.loader.base_ca_certificate", null);
-
-    }
-
     public static class SSMP
     {
         public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.ssmp.address",
@@ -57,9 +47,6 @@ public class BaseParam
 
     public static class Zephyr
     {
-        // this property is used by the Android build
-        public static final String TRANSPORT_ID = "z";
-
         // this value is dynamic but clients will not pick up the new value on failure
         public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.zephyr.address",
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443));

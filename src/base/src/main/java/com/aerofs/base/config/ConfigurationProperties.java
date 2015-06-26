@@ -4,18 +4,14 @@
 
 package com.aerofs.base.config;
 
-import com.aerofs.base.BaseSecUtil;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Properties;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -79,27 +75,6 @@ public class ConfigurationProperties
     public static URL getUrlProperty(String key, String defaultValue)
     {
         return parseUrl(_properties.getProperty(key, defaultValue));
-    }
-
-    public static X509Certificate getCertificateProperty(String key,
-            X509Certificate defaultValue)
-    {
-        X509Certificate cacert = null;
-        String cacertString = _properties.getProperty(key);
-
-        if (cacertString == null) {
-            cacert = defaultValue;
-        } else {
-            try {
-                cacert = BaseSecUtil.newCertificateFromString(cacertString);
-            } catch (CertificateException e) { // If certificate is garbage, bail.
-                Throwables.propagate(e);
-            } catch (IOException e) {
-                Throwables.propagate(e);
-            }
-        }
-
-        return cacert;
     }
 
     private static InetSocketAddress parseAddress(@Nullable String address, InetSocketAddress defaultValue)
