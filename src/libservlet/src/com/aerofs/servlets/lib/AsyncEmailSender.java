@@ -4,15 +4,10 @@
 
 package com.aerofs.servlets.lib;
 
-import com.aerofs.base.config.PropertiesHelper;
 import com.aerofs.proto.Common.Void;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
 import javax.mail.Session;
-import java.io.File;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -30,9 +25,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  */
 public class AsyncEmailSender extends AbstractEmailSender
 {
-    private static Logger l = LoggerFactory.getLogger(AsyncEmailSender.class);
-
-    private static final String EMAIL_PROPERTIES_FILE = "/etc/aerofs/mail.properties";
     private final int EMAIL_QUEUE_SIZE = 1000;
     private final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(EMAIL_QUEUE_SIZE));
@@ -48,27 +40,16 @@ public class AsyncEmailSender extends AbstractEmailSender
      */
     public static AsyncEmailSender create()
     {
-        // We need to be able to load email properties from the filesystem for prod, because prod
-        // doesn't have a config server yet and we don't want to embed credentials in the source
-        // code that gets shipped for local prod.
-        Properties p = new File(EMAIL_PROPERTIES_FILE).exists()
-                ? PropertiesHelper.readPropertiesFromFile(EMAIL_PROPERTIES_FILE)
-                : new Properties();
-
         // Note that the config server overrides local credentials, and that at
         // least one of (config server, local creds) must be present.
         // We wish there was no default value here, so we could fail loudly if no production
         // config is found; however this breaks the development environment.
-        String host = getStringProperty("email.sender.public_host",
-                                        p.getProperty("host", "postfix.service"));
-        String port = getStringProperty("email.sender.public_port",
-                                        p.getProperty("port", "25"));
-        String username = getStringProperty("email.sender.public_username",
-                                        p.getProperty("username", ""));
-        String password = getStringProperty("email.sender.public_password",
-                                        p.getProperty("password", ""));
+        String host = getStringProperty("email.sender.public_host", null);
+        String port = getStringProperty("email.sender.public_port", null);
+        String username = getStringProperty("email.sender.public_username", null);
+        String password = getStringProperty("email.sender.public_password", null);
         boolean useTls = getBooleanProperty("email.sender.public_enable_tls", true);
-        String cert = getStringProperty("email.sender.public_cert", "");
+        String cert = getStringProperty("email.sender.public_cert", null);
 
         return new AsyncEmailSender(host, port, username, password, useTls, cert);
     }

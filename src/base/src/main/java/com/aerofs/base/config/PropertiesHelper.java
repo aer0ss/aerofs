@@ -134,29 +134,6 @@ public class PropertiesHelper
     }
 
     /**
-     * Reads properties from a fully qualified filename. Exceptions are logged and life continues
-     * on.
-     */
-    public static Properties readPropertiesFromFile(String fullyQualifiedFilename)
-    {
-        Properties staticProperties = new Properties();
-
-        try {
-            InputStream propertyStream = new File(fullyQualifiedFilename).toURI().toURL().openStream();
-            try {
-                staticProperties.load(propertyStream);
-            } finally {
-                if (propertyStream != null) {
-                    propertyStream.close();
-                }
-            }
-        } catch (IOException e) {
-            l.warn("Couldn't read file {}: {}", fullyQualifiedFilename, e);
-        }
-        return staticProperties;
-    }
-
-    /**
      * Prints properties to l with description description.
      */
     public void logProperties(Logger l, String description, Properties properties)
@@ -205,14 +182,14 @@ public class PropertiesHelper
                 String variable = match.substring(2, match.length() - 1);
 
                 // Sub out the variable, if the one it is referencing exists.
-                String referenedValue = properties.getProperty(variable);
+                String referencedValue = properties.getProperty(variable);
 
-                if (referenedValue == null) {
+                if (referencedValue == null) {
                     throw new ExBadArgs(
                             "Bad reference variable=" + variable + " (" + key + "=" + value + ")");
                 }
 
-                value = value.replace(match, referenedValue);
+                value = value.replace(match, referencedValue);
             }
 
             properties.setProperty(key, value);
