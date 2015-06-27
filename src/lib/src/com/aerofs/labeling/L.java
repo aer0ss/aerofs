@@ -7,6 +7,7 @@ package com.aerofs.labeling;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.BaseProperties;
 import com.aerofs.base.config.PropertiesLoader;
+import com.aerofs.base.config.PropertiesRenderer;
 
 import java.util.Properties;
 
@@ -36,6 +37,7 @@ public class L
         try {
             properties = new PropertiesLoader()
                     .loadPropertiesFromPwdOrClasspath(DEFAULT_LABELING_FILE);
+            properties = new PropertiesRenderer().renderProperties(properties);
         } catch (Exception e) {
             // note that this is expected to occur on servers.
             Loggers.getLogger(L.class).warn("Failed to load labeling properties from {}.",
