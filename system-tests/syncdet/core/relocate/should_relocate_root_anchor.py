@@ -1,6 +1,6 @@
 import os
-import platform
 import socket
+import time
 
 from lib import files
 from lib.app.cfg import get_cfg
@@ -10,6 +10,8 @@ from lib import ritual
 from syncdet.case.assertion import assertFalse, assertEqual, assertNotEqual, expect_exception
 from syncdet.case import instance_unique_string
 
+from aerofs_common.exception import ExceptionReply
+from aerofs_ritual.gen.common_pb2 import PBException
 
 class _ShouldRelocateRootAnchorTest:
     def __init__(self):
@@ -48,10 +50,19 @@ class _ShouldRelocateRootAnchorTest:
         os.mkdir(self._new_root_parent_path)
 
     def _relocate_root_anchor(self, target):
-        # Windows: daemon runs as a Win process, not a cygwin process, so convert to NT-path
-        native_target = target
+        n = 0
         r = ritual.connect()
-        expect_exception(r.relocate, socket.error)(native_target)
+        while True:
+            try:
+                expect_exception(r.relocate, socket.error)(target)
+                break
+            except ExceptionReply as e:
+                if n < 10\
+                        and e.get_type() == PBException.INTERNAL_ERROR\
+                        and e.get_message_deprecated().startswith("files in the AeroFS folder are in use"):
+                    time.sleep(0.2)
+                    n += 1
+                raise
         aerofs_proc.stop_all()
         aerofs_proc.run_ui()
 
