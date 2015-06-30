@@ -7,7 +7,7 @@
             <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
           </div>
           <div class="name">
-            <a ng-if="object.type === 'folder'" ng-href="#/{{deref_anchor(object)}}">{{object.name}}</a>
+            <a ng-if="object.type === 'folder'" ng-href="#/{{derefAnchor(object)}}">{{object.name}}</a>
             <a ng-if="object.type === 'file' && object.size >= 0" ng-click="download(object.id, object.name)">{{object.name}}</a>
           </div>
         </div>

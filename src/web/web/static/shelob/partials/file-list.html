@@ -40,7 +40,7 @@
         </li>
 
         <li ng-repeat="folder in breadcrumbs">
-          <a ng-href="#/{{deref_anchor(folder)}}">{{folder.name}}</a>
+          <a ng-href="#/{{derefAnchor(folder)}}">{{folder.name}}</a>
         </li>
 
         <li ng-if="fsLocation.currentFolder.id != 'root'" class="active">

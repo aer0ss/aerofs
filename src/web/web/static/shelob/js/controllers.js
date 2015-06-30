@@ -61,7 +61,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     // for anchor SID/OID: return root folder SID/OID
     // for regular folder or file: return input id
-    $scope.deref_anchor = function(folder) {
+    $scope.derefAnchor = function(folder) {
         if (folder.is_shared) return folder.sid + "00000000000000000000000000000000";
         else return folder.id;
     };
@@ -76,7 +76,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         });
 
     $scope.isManagedObject = function(object) {
-        var sid = $scope.deref_anchor(object).substring(0, 32);
+        var sid = $scope.derefAnchor(object).substring(0, 32);
         for (var i = 0; i < $scope.managedShares.length; i++) {
             if (sid == $scope.managedShares[i]) return true;
         }
