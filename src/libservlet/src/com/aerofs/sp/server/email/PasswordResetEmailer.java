@@ -6,7 +6,6 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.ids.UserID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
@@ -21,7 +20,7 @@ public class PasswordResetEmailer
     public void sendPasswordResetEmail(UserID userId, String resetToken)
             throws IOException, MessagingException
     {
-        String subject = L.brand() + " password request";
+        String subject = SPParam.BRAND + " password request";
         String url = WWW.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
@@ -35,9 +34,9 @@ public class PasswordResetEmailer
     public void sendPasswordResetConfirmation(UserID userId)
             throws IOException, MessagingException
     {
-        String subject = L.brand() + " password has changed";
+        String subject = SPParam.BRAND + " password has changed";
         String body = "\n" +
-                "You have changed the password for your " + L.brand() + " account.\n" +
+                "You have changed the password for your " + SPParam.BRAND + " account.\n" +
                 "\n" +
                 "If you didn't change the password," +
                 " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +
@@ -52,10 +51,10 @@ public class PasswordResetEmailer
     public void sendPasswordChangeNotification(UserID userId)
             throws IOException, MessagingException
     {
-        String subject = L.brand() + " password has changed";
+        String subject = SPParam.BRAND + " password has changed";
         String body = "\n" +
                 "You, or an administrator in your organization, has changed the password for your "
-                + L.brand() + " account.\n\n" +
+                + SPParam.BRAND + " account.\n\n" +
                 "If you didn't expect this password change," +
                 " please contact " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately.";
 
@@ -68,12 +67,12 @@ public class PasswordResetEmailer
     public void sendPasswordRevokeNotification(UserID userId, String resetToken)
             throws IOException, MessagingException
     {
-        String subject = L.brand() + " password request";
+        String subject = SPParam.BRAND + " password request";
         String url = WWW.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
         String body = "\nAn administrator in your organization has changed the password for your "
-                + L.brand() + " account.\n\nFollow this link " +
+                + SPParam.BRAND + " account.\n\nFollow this link " +
                 "to set a new password:\n\n" + url + "\n\n" +
                 "If you didn't expect this password change," +
                 " please contact " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately.";

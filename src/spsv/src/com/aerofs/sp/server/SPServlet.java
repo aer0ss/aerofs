@@ -77,11 +77,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.aerofs.sp.server.lib.SPParam.AUDIT_CLIENT_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 

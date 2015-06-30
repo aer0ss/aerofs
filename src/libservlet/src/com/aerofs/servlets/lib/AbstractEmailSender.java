@@ -13,8 +13,8 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
-import com.aerofs.labeling.L;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.sp.server.lib.SPParam;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 
@@ -174,7 +174,7 @@ public abstract class AbstractEmailSender
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
         Session session = getMailSession();
         msg = composeMessage(from,
-                (fromName == null) ? L.brand() : fromName,
+                (fromName == null) ? SPParam.BRAND : fromName,
                 to,
                 replyTo,
                 subject,

@@ -1,6 +1,5 @@
 package com.aerofs.sp.server.email;
 
-import com.aerofs.lib.S;
 import com.aerofs.sp.common.SubscriptionParams;
 import com.aerofs.sp.server.lib.SPParam;
 
@@ -54,7 +53,7 @@ public class HTMLEmail implements IEmail {
         "   <table cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:11px;color:#999999;width:100%;\">" +
         "       <tr>"+
         "            <td align=\"left\">" +
-        "                Copyrights &copy; " + S.COPYRIGHT +
+        "                Copyrights &copy; " + SPParam.COPYRIGHT +
         "            </td>" +
         "            <td align=\"right\">" +
         "                <table align=\"right\">" +

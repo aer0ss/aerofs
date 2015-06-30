@@ -6,9 +6,9 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.UserID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.Util;
+import com.aerofs.sp.server.lib.SPParam;
 import com.google.common.base.Strings;
 
 import javax.annotation.Nonnull;
@@ -46,11 +46,11 @@ class InvitationEmailContentStrategy
     String subject()
     {
         if (isFolderInvite()) {
-            return "Join My " + L.brand() + " Folder";
+            return "Join My " + SPParam.BRAND + " Folder";
         } else if (isGroupInvite()) {
-            return "Join My " + L.brand() + " Group";
+            return "Join My " + SPParam.BRAND + " Group";
         } else {
-            return "Invitation to " + L.brand();
+            return "Invitation to " + SPParam.BRAND;
         }
     }
 
@@ -58,12 +58,12 @@ class InvitationEmailContentStrategy
     {
         if (isFolderInvite()) {
             assert _permissions != null;
-            return "a shared " + L.brand() + " folder " + Util.quote(_folderName) + " as " +
+            return "a shared " + SPParam.BRAND + " folder " + Util.quote(_folderName) + " as " +
                     _permissions.roleName();
         } else if (isGroupInvite()) {
-            return "the " + L.brand() + " group " + Util.quote(_groupName);
+            return "the " + SPParam.BRAND + " group " + Util.quote(_groupName);
         } else {
-            return L.brand();
+            return SPParam.BRAND;
         }
     }
 

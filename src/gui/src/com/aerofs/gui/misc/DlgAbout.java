@@ -78,7 +78,7 @@ public class DlgAbout extends AeroFSDialog
 
         Label lblCopyright = createLabel(compCopyright, SWT.NONE);
         lblCopyright.setFont(makeSubtitle(lblCopyright.getFont()));
-        lblCopyright.setText("Copyright \u00a9 " + S.BASE_COPYRIGHT + " " + S.ALL_RIGHTS_RESERVED);
+        lblCopyright.setText("Copyright \u00a9 " + S.COPYRIGHT);
 
         Link linkOss = new Link(compCopyright, SWT.NONE);
         linkOss.setFont(makeSubtitle(linkOss.getFont()));

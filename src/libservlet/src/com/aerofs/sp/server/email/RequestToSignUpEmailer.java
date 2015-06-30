@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.labeling.L;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 
@@ -28,13 +27,13 @@ public class RequestToSignUpEmailer
     public void sendRequestToSignUpEmail(String emailAddress, String signUpCode)
             throws IOException, MessagingException
     {
-        String subject = "Complete your " + L.brand() + " sign up";
+        String subject = "Complete your " + SPParam.BRAND + " sign up";
         String body = "\n" +
-                "Please click this link to proceed signing up for " + L.brand() + ":\n" +
+                "Please click this link to proceed signing up for " + SPParam.BRAND + ":\n" +
                 "\n" +
                 getSignUpLink(signUpCode) + "\n" +
                 "\n" +
-                "Simply ignore this email if you didn't request an " + L.brand() + " account.";
+                "Simply ignore this email if you didn't request an " + SPParam.BRAND + " account.";
 
         Email email = new Email();
         email.addSection("You're almost ready to go!", body);
@@ -47,9 +46,9 @@ public class RequestToSignUpEmailer
     public void sendAlreadySignedUpEmail(String emailAddress)
             throws IOException, MessagingException
     {
-        String subject = "Your " + L.brand() + " account";
+        String subject = "Your " + SPParam.BRAND + " account";
         String body = "\n" +
-                "It looks like you were trying to sign up for " + L.brand() + " again; but as" +
+                "It looks like you were trying to sign up for " + SPParam.BRAND + " again; but as" +
                 " it turns out, you've already signed up!\n" +
                 "\n" +
                 "To log in, head over to " + DASHBOARD_HOME + " and type in your email address" +
@@ -59,7 +58,7 @@ public class RequestToSignUpEmailer
                 WWW.PASSWORD_RESET_REQUEST_URL;
 
         Email email = new Email();
-        email.addSection("You already have an " + L.brand() + " account", body);
+        email.addSection("You already have an " + SPParam.BRAND + " account", body);
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,

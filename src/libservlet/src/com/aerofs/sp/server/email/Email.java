@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.labeling.L;
+import com.aerofs.sp.server.lib.SPParam;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.annotation.Nullable;
@@ -57,7 +57,7 @@ public class Email implements IEmail
 
     public void addDefaultSignature() throws IOException
     {
-        addSignature("Happy Syncing,", "The " + L.brand() + " Team", Email.DEFAULT_PS);
+        addSignature("Happy Syncing,", "The " + SPParam.BRAND + " Team", Email.DEFAULT_PS);
     }
 
     // A crappy linkifier

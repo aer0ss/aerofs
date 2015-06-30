@@ -7,10 +7,10 @@ package com.aerofs.sp.server.email;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.SID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.AsyncEmailSender;
+import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
@@ -51,16 +51,11 @@ public class InvitationEmailer
 
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                        invitee.id().getString(), getReplyTo(inviter), cs.subject(),
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -76,16 +71,11 @@ public class InvitationEmailer
 
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                        invitee.id().getString(), getReplyTo(inviter), cs.subject(),
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -101,16 +91,11 @@ public class InvitationEmailer
 
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                        invitee.id().getString(), getReplyTo(inviter), cs.subject(),
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -122,16 +107,16 @@ public class InvitationEmailer
                 nsInviter.nameAndEmail() + " has invited you to " +
                 cs.invitedTo() + cs.noteAndEndOfSentence() + "\n" +
                 "\n" +
-                L.brand() + " is a file syncing, sharing, and collaboration tool that" +
+                SPParam.BRAND + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using the public cloud. You can learn more" +
                     // Whitespace required after URL for autolinker. TODO (WW) fix this!
                 " about it at " + WWW.MARKETING_HOST_URL + " ." + "\n" +
                 "\n" +
-                "Get started with " + L.brand() + " at:\n" +
+                "Get started with " + SPParam.BRAND + " at:\n" +
                 "\n" + cs.signUpURLAndInstruction();
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
-            email.addSection(nsInviter.nameOnly() + " Invited You to " + L.brand() + "!",
+            email.addSection(nsInviter.nameOnly() + " Invited You to " + SPParam.BRAND + "!",
                     body);
             email.addDefaultSignature();
         }
@@ -150,7 +135,7 @@ public class InvitationEmailer
                     sharee.id(), folderName, permissions, note, null, null);
 
             String body = "\n" +
-                    nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
+                    nsSharer.nameAndEmail() + " has invited you to a shared " + SPParam.BRAND +
                     " folder as " + permissions.roleName() + cs.noteAndEndOfSentence() + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
@@ -162,16 +147,11 @@ public class InvitationEmailer
             email.addSection(title, body);
             email.addDefaultSignature();
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
-                            sharee.id().getString(), getReplyTo(sharer), cs.subject(),
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
+                        sharee.id().getString(), getReplyTo(sharer), cs.subject(),
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -197,16 +177,11 @@ public class InvitationEmailer
             email.addSection(title, body);
             email.addDefaultSignature();
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
-                            newMember.id().getString(), getReplyTo(changer), title,
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                        newMember.id().getString(), getReplyTo(changer), title,
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -228,7 +203,7 @@ public class InvitationEmailer
             String body = "\n" +
                     nf.nameAndEmail() + " has added you to the group " + quotedGroupName + ".\n" +
                     "As part of being added to the group " + quotedGroupName +
-                    ", you've been invited to " + sharedFolders.size() + " " + L.brand() +
+                    ", you've been invited to " + sharedFolders.size() + " " + SPParam.BRAND +
                     " shared " + folderOrFolders + ".\n" +
                     "From now on you will also be invited to any shared folders that " +
                     quotedGroupName + " joins.\n\n" +
@@ -240,16 +215,11 @@ public class InvitationEmailer
             email.addSection(title, body);
             email.addDefaultSignature();
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
-                            sharee.id().getString(), getReplyTo(sharer), title,
-                            email.getTextEmail(), email.getHTMLEmail());
-                    return null;
-                }
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                        sharee.id().getString(), getReplyTo(sharer), title,
+                        email.getTextEmail(), email.getHTMLEmail());
+                return null;
             });
         }
 
@@ -270,31 +240,18 @@ public class InvitationEmailer
             email.addSection(subject, body);
             email.addDefaultSignature();
 
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    _emailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
-                            getReplyTo(inviter), subject, email.getTextEmail(),
-                            email.getHTMLEmail());
+            return new InvitationEmailer(() -> {
+                _emailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
+                        getReplyTo(inviter), subject, email.getTextEmail(),
+                        email.getHTMLEmail());
 
-                    return null;
-                }
+                return null;
             });
         }
 
         public InvitationEmailer doesNothing()
         {
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call()
-                        throws Exception
-                {
-                    return null;
-                }
-            });
+            return new InvitationEmailer(() -> null);
         }
 
     }

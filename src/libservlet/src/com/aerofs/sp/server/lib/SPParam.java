@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -26,7 +25,11 @@ public class SPParam
             getIntegerProperty("sp.max.membership.sharedfolder", 50);
 
     // Email related constants.
-    public static final String EMAIL_FROM_NAME = L.brand();
+    public static final String BRAND = getStringProperty("labeling.brand", "AeroFS");
+    public static final String EMAIL_FROM_NAME = BRAND;
+    // duplicated in S.COPYRIGHT, keep these two strings identical
+    // this is duplicated so that SP and sparta will not depend on S which depends on L
+    public static final String COPYRIGHT = "2010-2015 Air Computing Inc. All Rights Reserved.";
 
     /**
      * Number of bytes we use for the salt

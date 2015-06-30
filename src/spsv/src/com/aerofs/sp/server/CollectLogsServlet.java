@@ -10,7 +10,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AbstractEmailSender;
@@ -126,7 +125,7 @@ public class CollectLogsServlet extends HttpServlet
                 enqueueCommandsForUsers(commandMessage, userIDs);
                 emailAeroSupport(customerID, customerName, email, defectID, version, userIDs,
                         subject, message);
-                notifyOnSiteSupport(L.brand() + " Support", subject, defectID, userIDs);
+                notifyOnSiteSupport(SPParam.BRAND + " Support", subject, defectID, userIDs);
             }
 
             resp.setStatus(200);
@@ -200,14 +199,14 @@ public class CollectLogsServlet extends HttpServlet
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = WWW.SUPPORT_EMAIL_ADDRESS;
-        subject = format("[%s Support] %s", L.brand(), subject);
-        String header = format("%s Support", L.brand());
+        subject = format("[%s Support] %s", SPParam.BRAND, subject);
+        String header = format("%s Support", SPParam.BRAND);
         String body = format("An administrator has issued a command to collect logs from %s users. " +
                         "%s client logs from the following users' computers will be uploaded " +
                         "to %s over the next seven days.\n\n" +
                         "Defect ID: %s\n" +
                         "Users:\n%s\n",
-                L.brand(), L.brand(), dest, defectID, formatUsersList(users));
+                SPParam.BRAND, SPParam.BRAND, dest, defectID, formatUsersList(users));
 
         Email email = new Email();
         email.addSection(header, body);
@@ -229,7 +228,8 @@ public class CollectLogsServlet extends HttpServlet
 
         String to = "support@aerofs.com";
         String replyTo = contactEmail;
-        String header = format("%s has reported an issue while using %s.", contactEmail, L.brand());
+        String header = format("%s has reported an issue while using %s.", contactEmail,
+                SPParam.BRAND);
         String body = format(
                 "Defect ID: %s\n" +
                 "Version: %s\n" +

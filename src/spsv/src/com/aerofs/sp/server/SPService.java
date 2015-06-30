@@ -30,7 +30,6 @@ import com.aerofs.base.ex.ExWrongOrganization;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.*;
 import com.aerofs.ids.*;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
@@ -2100,7 +2099,7 @@ public class SPService implements ISPService
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String replyTo = contactEmail;
-        String header = format("%s Support", L.brand());
+        String header = format("%s Support", SPParam.BRAND);
         String body;
 
         String link = format("%s?defect_id=%s&email=%s&users=%s&subject=%s&message=%s#client",
@@ -2112,7 +2111,7 @@ public class SPService implements ISPService
                 urlEncode(message));
         body = format("A user has reported a problem using %s.\n\nUser: %s\nSubject: %s\nMessage: %s\n\n" +
                       "Use the following link to collect logs from this user and optionally submit them to %s Support:\n\n%s\n\n",
-                L.brand(), contactEmail, subject, message, L.brand(), link);
+                SPParam.BRAND, contactEmail, subject, message, SPParam.BRAND, link);
 
         Email email = new Email();
         email.addSection(header, body);
@@ -2120,7 +2119,7 @@ public class SPService implements ISPService
                 fromName,
                 to,
                 replyTo,
-                format("[%s Support] %s", L.brand(), subject),
+                format("[%s Support] %s", SPParam.BRAND, subject),
                 email.getTextEmail(),
                 email.getHTMLEmail());
 

@@ -3,8 +3,8 @@ package com.aerofs.lib;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 
-/*
-    N.B. depends on private deployment flag. Do not use before configuration system is initialized.
+/**
+ * Depends on L, so _do_not_ use this class on any server.
  */
 public class S
 {
@@ -78,7 +78,6 @@ public class S
             SETUP_SWIFT_AUTH_MODE_CLI  = "Authentication Mode ('basic' or 'keystone')",
             SETUP_SWIFT_USERNAME       = "Username",
             SETUP_SWIFT_PASSWORD       = "Password",
-            SETUP_SWIFT_CONFIRM        = "Confirm",
             SETUP_SWIFT_CONTAINER      = "Container",
             SETUP_SWIFT_TENANT_ID      = "Tenant ID",
             SETUP_SWIFT_TENANT_NAME    = "Tenant Name",
@@ -87,7 +86,6 @@ public class S
             SETUP_SWIFT_AUTH_MODE_GUI  = SETUP_SWIFT_AUTH_MODE + ":",
             SETUP_SWIFT_USERNAME_GUI   = SETUP_SWIFT_USERNAME + ":",
             SETUP_SWIFT_PASSWORD_GUI   = SETUP_SWIFT_PASSWORD + ":",
-            SETUP_SWIFT_CONFIRM_GUI    = SETUP_SWIFT_CONFIRM + ":",
             SETUP_SWIFT_CONTAINER_GUI  = SETUP_SWIFT_CONTAINER + ":",
             SETUP_SWIFT_TENANT_ID_GUI  = SETUP_SWIFT_TENANT_ID + ":",
             SETUP_SWIFT_TENANT_NAME_GUI = SETUP_SWIFT_TENANT_NAME + ":",
@@ -192,7 +190,6 @@ public class S
                     "These computers discover each other using IP multicast, and then they " +
                     "establish peer-to-peer connections to coordinate and sync. " +
                     "<a>Learn more</a>",
-            LBL_XMPP_DESC            = "The presence server allows computers to find each other.",
             LNK_ZEPHYR_DESC          = "The computers on the Relay network sync files via an " +
                     "intermediate server acting as a relay. These computers discover each " +
                     "other using a common presence server, and then they communicate over a " +
@@ -209,7 +206,6 @@ public class S
             URL_DEVICE_ID_INFO       = "https://support.aerofs.com/hc/en-us/articles/204592774",
 
             // preferences dialog
-            FILE_OPEN_FAIL = "The file couldn't be opened.",
             REPORT_A_PROBLEM = "Report a Problem",
             DEFAULT_DIALOG_TITLE = L.product(),
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
@@ -225,10 +221,7 @@ public class S
             IMPORTANT_UPDATE_DOWNLOADED =
                 "An important update has been downloaded for " + L.product() + ".",
             NO_CONSOLE = "No console is found.",
-            VENDOR = "Air Computing Inc.",
-            BASE_COPYRIGHT = "2010-2015 " + VENDOR,
-            ALL_RIGHTS_RESERVED = "All Rights Reserved.",
-            COPYRIGHT = BASE_COPYRIGHT + " " + ALL_RIGHTS_RESERVED,
+            COPYRIGHT = "2010-2015 Air Computing Inc. All Rights Reserved.",
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
             COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
@@ -247,7 +240,6 @@ public class S
             CLI_NAME = L.productUnixName() + "-cli",
             SH_NAME = L.productUnixName()  + "-sh",
             TRY_AGAIN_LATER = "Please try again later.",
-            PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " + TRY_AGAIN_LATER,
             FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results. " + TRY_AGAIN_LATER,
             COULDNT_LIST_ACTIVITIES = "Couldn't list activities",
             MODIFIED = "updated",
@@ -275,7 +267,6 @@ public class S
             SIGN_IN_TO_RECERTIFY_EXPLANATION = "(<a>Why is this needed?</a>)",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
-            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password.",
 
             ENABLE_SYNC_HISTORY = "Keep Sync History",
             SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()

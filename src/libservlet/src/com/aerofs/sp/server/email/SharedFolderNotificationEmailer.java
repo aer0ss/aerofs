@@ -9,7 +9,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
@@ -31,7 +30,7 @@ public class SharedFolderNotificationEmailer
     private static final String changeRoles = "\n" +
                 "This email is a confirmation that %s has changed %s role in the folder from " +
                 "%s to %s:\n%s\n" +
-                "If you'd like to find out more about the different " + L.brand() + " roles, " +
+                "If you'd like to find out more about the different " + SPParam.BRAND + " roles, " +
                 // Whitespace required after URL for autolinker. TODO (WW) fix this!
                 "please take a look at https://support.aerofs.com/hc/en-us/articles/201439384";
 

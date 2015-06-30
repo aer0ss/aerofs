@@ -6,7 +6,6 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.ids.DID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
@@ -23,7 +22,7 @@ public class DeviceRegistrationEmailer
             throws IOException, MessagingException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
-        sendDeviceCertifiedEmailImpl(L.brand() + " Team Server", emailAddress, firstName, osFamily,
+        sendDeviceCertifiedEmailImpl(SPParam.BRAND + " Team Server", emailAddress, firstName, osFamily,
                 deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL, did);
     }
 
@@ -32,7 +31,7 @@ public class DeviceRegistrationEmailer
             throws IOException, MessagingException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
-        sendDeviceCertifiedEmailImpl(L.brand(), emailAddress, firstName, osFamily, deviceName,
+        sendDeviceCertifiedEmailImpl(SPParam.BRAND, emailAddress, firstName, osFamily, deviceName,
                 "your devices at " + WWW.DEVICES_URL, did);
     }
 

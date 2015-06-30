@@ -16,6 +16,9 @@ import java.util.Properties;
  * refer to it.
  *
  * TODO: merge this in with ConfigurationProperties someday
+ *
+ * Warning: this class depends on how the desktop clients are provisioned, so _do_not_ use this
+ *   class on any server. If you need L.brand(), use SPParam.BRAND instead.
  */
 public class L
 {
