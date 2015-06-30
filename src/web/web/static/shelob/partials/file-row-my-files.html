@@ -45,7 +45,7 @@
                     Actions <span class="caret"></span>
                   </button>
                   <ul class="dropdown-menu pull-right" role="menu">
-                    <li ng-if="enableLinksharing"><a
+                    <li ng-if="enableLinksharing && isManagedObject(object)"><a
                        ng-click="showLink(object)"
                        class="edit action action-link">
                         <span class="glyphicon glyphicon-link"></span> 

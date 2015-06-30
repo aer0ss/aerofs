@@ -1,7 +1,7 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', '$sce', 'API', 'Token', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter',
-        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, $sce, API, Token, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter',
+        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, $sce, $q, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -58,14 +58,32 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     };
     // email address of logged-in user, if any
     $scope.user = currentUser;
+
     // for anchor SID/OID: return root folder SID/OID
-    // for folder: return input
+    // for regular folder or file: return input id
     $scope.deref_anchor = function(folder) {
         if (folder.is_shared) return folder.sid + "00000000000000000000000000000000";
         else return folder.id;
     };
 
-    var _getFolders = function (){
+    // initialize managedShares array and populate it when the data arrives
+    $scope.managedShares = [];
+    $q.all({
+            rootSid: MyStores.getRoot(),
+            managedShares: MyStores.getManagedShares()
+        }).then(function(r) {
+            $scope.managedShares = r.managedShares.concat([r.rootSid]);
+        });
+
+    $scope.isManagedObject = function(object) {
+        var sid = $scope.deref_anchor(object).substring(0, 32);
+        for (var i = 0; i < $scope.managedShares.length; i++) {
+            if (sid == $scope.managedShares[i]) return true;
+        }
+        return false;
+    }
+
+    var _getFolders = function () {
         OutstandingRequestsCounter.push();
         API.get('/folders/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
             $scope.requestHeaders).then(function(response) {

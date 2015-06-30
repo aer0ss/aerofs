@@ -275,3 +275,58 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
     }
 ]);
 
+shelobServices.factory('MyStores', ['$log', 'API', function($log, API) {
+
+    var _root = null;
+    var _managedShares = null;
+
+    // helper-function for compiling a list of folders managed by the current user
+    function _isShareManagedBy(share, userId) {
+        for (var i = 0; i < share.members.length; i++) {
+            if (share.members[i].email == userId &&
+                share.members[i].permissions.indexOf('MANAGE') > -1) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    function _getRoot() {
+        if (_root === null) {
+            _root = API.get('/shares/root')
+                .then(function(response) {
+                $log.debug("got root store id: ", response.data.id);
+                return response.data.id;
+            });
+        }
+        return _root;
+    }
+
+    function _getManagedShares() {
+        // TODO: invalidate the cached promise every...30 seconds?
+        if (_managedShares === null) {
+            _managedShares = API.get('/users/me/shares')
+                .then(function(response) {
+                    var managed = [];
+                    for (var i = 0; i < response.data.length; i++) {
+                        if (_isShareManagedBy(response.data[i], currentUser)) {
+                            managed.push(response.data[i].id);
+                        }
+                    }
+                    return managed;
+                });
+        }
+        return _managedShares;
+    }
+
+    return {
+        // return the user's root SID
+        getRoot: _getRoot,
+
+        // return a list of the SIDs of the user's shared folders where the user has
+        // MANAGE privileges.
+        // N.B. does NOT include the user's root store
+        getManagedShares: _getManagedShares,
+    }
+}]);
+
