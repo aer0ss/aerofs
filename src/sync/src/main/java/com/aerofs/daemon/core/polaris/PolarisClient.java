@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.polaris;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseLogUtil;
-import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -69,21 +68,16 @@ public class PolarisClient
     private static class Auth implements UnaryOperator<HttpHeaders>
     {
         private final String auth;
-        private final String cname;
 
         Auth(UserID user, DID did)
         {
             auth = AeroDeviceCert.getHeaderValue(user.getString(), did.toStringFormal());
-            cname = "CN=" + BaseSecUtil.getCertificateCName(user, did);
         }
 
         @Override
         public HttpHeaders apply(HttpHeaders headers)
         {
             headers.add(HttpHeaderNames.AUTHORIZATION, auth);
-            // TODO: remove DName and Verify headers when Polaris instance is behind nginx
-            headers.add("DName", cname);
-            headers.add("Verify", "SUCCESS");
             return headers;
         }
     }
@@ -92,7 +86,7 @@ public class PolarisClient
     public PolarisClient(CoreExecutor executor, CfgLocalDID localDID, CfgLocalUser localUser,
             ClientSSLEngineFactory sslEngineFactory)
     {
-        this(URI.create(getStringProperty("daemon.polaris.url", "http://polaris.aerofs.com:9999")),
+        this(URI.create(getStringProperty("daemon.polaris.url", "")),
                 executor,
                 new Auth(localUser.get(), localDID.get()), sslEngineFactory);
     }
@@ -103,7 +97,9 @@ public class PolarisClient
         _executor = executor;
         _endpoint = endpoint;
         _bootstrap = new Bootstrap();
-        _bootstrap.group(new NioEventLoopGroup());
+        _bootstrap.group(new NioEventLoopGroup(1, r -> {
+            return new Thread(r, "pc");
+        }));
         _bootstrap.channel(NioSocketChannel.class);
         _bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         _bootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -189,16 +185,18 @@ public class PolarisClient
         }
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx)
+        public void channelActive(ChannelHandlerContext ctx) throws Exception
         {
             l.info("active");
+            super.channelActive(ctx);
         }
 
         @Override
-        public void channelInactive(ChannelHandlerContext ctx)
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception
         {
             l.info("inactive");
             failRequests();
+            super.channelInactive(ctx);
         }
 
         private synchronized void failRequests()
@@ -244,16 +242,28 @@ public class PolarisClient
     public void post(String url, Object body, AsyncTaskCallback cb,
                      Function<FullHttpResponse, Boolean, Exception> cons)
     {
+        post(url, body, cb, cons, _executor);
+    }
+
+    public void post(String url, Object body, AsyncTaskCallback cb,
+                     Function<FullHttpResponse, Boolean, Exception> cons, Executor executor)
+    {
         FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
                 url, Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(body))));
         req.headers().add(HttpHeaderNames.CONTENT_TYPE, "application/json");
         req.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
 
-        send(req, cb, cons);
+        send(req, cb, cons, executor);
     }
 
     public void send(HttpRequest req, AsyncTaskCallback cb,
             Function<FullHttpResponse, Boolean, Exception> cons)
+    {
+        send(req, cb, cons, _executor);
+    }
+
+    public void send(HttpRequest req, AsyncTaskCallback cb,
+                     Function<FullHttpResponse, Boolean, Exception> cons, Executor executor)
     {
         SettableFuture<FullHttpResponse> f = SettableFuture.create();
         // NB: MUST add the listener before passing the future to avoid some nasty race conditions
@@ -276,11 +286,16 @@ public class PolarisClient
             checkState(f.isDone());
             checkState(!f.isCancelled());
             try {
-                cb.onSuccess_(cons.apply(f.get()));
+                FullHttpResponse r = f.get();
+                try {
+                    cb.onSuccess_(cons.apply(r));
+                } finally {
+                    r.release();
+                }
             } catch (Throwable t) {
                 cb.onFailure_(t);
             }
-        }, _executor);
+        }, executor);
 
         send(req, f);
     }

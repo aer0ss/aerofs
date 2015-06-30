@@ -127,13 +127,15 @@ public class ContentFetcher
 
     public void schedule_(OID oid, Trans t) throws SQLException
     {
-        _f._cfqdb.insert_(_sidx, oid, t);
+        boolean ok = _f._cfqdb.insert_(_sidx, oid, t);
+        l.debug("schedule fetch {}{}: {}", _sidx, oid, ok);
+        // FIXME: restart from scratch if !ok
         _tlSched.get(t);
     }
 
     private void start_()
     {
-        if (_it.started_() || _ongoingDownloads > 0 || _scheduled) return;
+        if (_it.started_() || _scheduled) return;
 
         l.info("{} start content fetch", _sidx);
         _totalDownloads = 0;

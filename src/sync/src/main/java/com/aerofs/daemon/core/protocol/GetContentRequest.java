@@ -155,13 +155,14 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
         if (_cedb.getChangeEpoch_(sidx) == null) throw new ExProtocolError();
 
         SOID soid = new SOID(sidx, oid);
-        KIndex kidx = _provider.pickBranch(soid);
 
         Long lcv = _cvdb.getVersion_(sidx, oid);
         if (lcv == null || lcv < rcv) {
             l.debug("{} {} r {} >= {} l", msg.did(), soid, rcv, lcv);
             throw new ExNoComponentWithSpecifiedVersion();
         }
+
+        KIndex kidx = _provider.pickBranch(soid);
         sendResponse_(msg, new SOKID(soid, kidx), lcv);
     }
 
