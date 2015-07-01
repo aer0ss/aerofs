@@ -19,7 +19,7 @@ while true; do
     CONTAINER=loader
 
     # List running containers, which is the last column of 'docker ps' output
-    for i in $(docker ps | rev | awk '{print $1}' | rev); do
+    for i in $(docker ps | awk '{print $NF}'); do
         [[ ${CONTAINER} = "${i}" ]] && {
             echo "Container '${CONTAINER}' is already running."
             echo "PID $$ exits with code 0."
@@ -28,7 +28,7 @@ while true; do
     done
 
     # Create the loader container as needed
-    [[ "$(docker ps -a | rev | awk '{print $1}' | rev | grep ${CONTAINER})" ]] || {
+    [[ "$(docker ps -a | awk '{print $NF}' | grep ${CONTAINER})" ]] || {
         echo "Creating container ${CONTAINER} ..."
         LOADER_IMAGE=$(yml 'loader')
         # Emulation doesn't allow changing of repo or tag and hence /dev/null
