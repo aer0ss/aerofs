@@ -49,6 +49,7 @@ for i in $(docker run --rm ${LOADER_IMAGE} images); do
     echo "============================================================"
     PUSH_IMAGE="${PUSH_REPO}/${i}:${TAG}"
     docker tag -f "${i}" "${PUSH_IMAGE}"
+    docker tag -f "${i}" "${PUSH_REPO}/${i}:latest"
     push "${PUSH_IMAGE}"
     docker rmi "${PUSH_IMAGE}"
 done
