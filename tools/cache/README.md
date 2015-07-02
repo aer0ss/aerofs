@@ -4,7 +4,7 @@ Package caching for docker builds
 Problems
 --------
 
- - apt index download form upstream is slow (and sometimes unreliable)
+ - apt index download from upstream is slow (and sometimes unreliable)
    and this is magnified by the fact that many base containers discard
    the apt index to save space
  - package downloads from upstream is slow (and sometimes unreliable)
@@ -24,7 +24,7 @@ Design
 The package caching infrastructure is fully containerized. The main
 components are as follows:
 
- - rawdns: This containers provides a configurable DNS resolver which
+ - rawdns: This container provides a configurable DNS resolver which
    is set as the default resolver used by the docker daemon. Ideally
    this would only be used by `docker build`, unfortunately docker
    currently doesn't have a provision to override the resolver at build
@@ -79,16 +79,15 @@ before trying to `start` the dameon again.
 
 Environments using raw docker cannot be easily supported because tweaking the
 docker daemon config will be platform-dependent and most likely requires root
-access. User can manually perform this tweak but need to be careful about to
-do it after the rawdns container is up and running, otherwise it will fail to
-build.
+access. User can manually perform this tweak but need to be careful to do it
+after the rawdns container is up and running, otherwise it will fail to build.
 
 
 TODO
 ----
 
  - Improve reliability of docker daemon restart
- - Allow rawdns container to be build even with broken DNS config (vendor
+ - Allow rawdns container to be built even with broken DNS config (vendor
    rawdns sources to avoid github clone)
  - Get docker to support build-time `--dns` settings to remove the need for
    persistent docker daemon config tweak
