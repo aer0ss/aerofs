@@ -9,4 +9,4 @@ ulimit -S -n 1024000
 ulimit -H -n 1024000
 
 # -u to disable log output buffering
-/pythonenv/bin/python -u /opt/charlie/charles.py
+/container-scripts/restart-on-error /pythonenv/bin/python -u /opt/charlie/charles.py

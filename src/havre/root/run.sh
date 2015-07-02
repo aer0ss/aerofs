@@ -13,5 +13,5 @@ set -e
 
 echo Starting Havre...
 cd /opt/havre
-java -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/havre -Xmx1536m \
-    -jar aerofs-havre.jar havre.properties
+/container-scripts/restart-on-error java -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/var/log/havre -Xmx1536m -jar aerofs-havre.jar havre.properties

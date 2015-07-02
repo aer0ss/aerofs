@@ -6,4 +6,4 @@ set -e
 echo Starting up Repackaging...
 
 # -u to disable output buffering
-python -u /opt/repackaging/api/main.py
+/container-scripts/restart-on-error python -u /opt/repackaging/api/main.py

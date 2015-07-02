@@ -11,4 +11,4 @@ END
 
 echo "Starting API server..."
 # -u to timely flush python output to docker logs
-python -u /api.py
+/container-scripts/restart-on-error python -u /api.py

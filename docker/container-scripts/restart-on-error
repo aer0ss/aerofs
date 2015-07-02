@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# This script is to restart a service when it exits with a non-zero code.
+# We can't use `docker run --restart` as it doesn't preserve container links.
+# 
+
+while true; do
+    "$@"
+    EXIT=$?
+    [[ $EXIT = 0 ]] && break
+    echo "ERROR: command \"$@\" exited with code $EXIT. Re-run it now..."
+done

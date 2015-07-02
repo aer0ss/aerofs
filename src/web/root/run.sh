@@ -88,4 +88,4 @@ export PYTHONPATH=/opt/web
 export STRIPE_PUBLISHABLE_KEY=dummy.stripe.key
 export STRIPE_SECRET_KEY=dummy.stripe.secret
 
-pserve /opt/web/production.ini
+/container-scripts/restart-on-error pserve /opt/web/production.ini

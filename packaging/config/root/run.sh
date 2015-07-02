@@ -8,4 +8,4 @@ if [ ! -f $PROP_FILE ]; then
 fi
 
 # -u to disable console print caching
-python -u /opt/config/entry.py
+/container-scripts/restart-on-error python -u /opt/config/entry.py

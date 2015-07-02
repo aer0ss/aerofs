@@ -14,7 +14,7 @@ RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-hos
 EXPOSE 8000
 
 # -u to disable log output buffering
-CMD [ "python", "-u", "/opt/sanity/check.py" ]
+CMD [ "/container-scripts/restart-on-error", "python", "-u", "/opt/sanity/check.py" ]
 
 # Add source files last
 COPY root /

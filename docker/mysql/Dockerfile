@@ -3,3 +3,7 @@ FROM mysql:5.6
 MAINTAINER AeroFS "support@aerofs.com"
 
 ENV MYSQL_ALLOW_EMPTY_PASSWORD 1
+
+ENTRYPOINT [ "/container-scripts/restart-on-error", "/entrypoint.sh", "mysqld" ]
+
+COPY buildroot /

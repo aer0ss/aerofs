@@ -5,7 +5,8 @@ FILES = service-barrier \
 	get-config-property \
 	set-config-property \
 	create-database \
-	crt-create
+	crt-create \
+	restart-on-error
 
 SRC_DIR = $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 DST_DIR = buildroot/container-scripts
