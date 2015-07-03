@@ -15,8 +15,7 @@ import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Transactional;
-import com.aerofs.verkehr.api.rest.Update;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.google.common.net.HttpHeaders;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,17 +28,21 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.SQLException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.auth.client.shared.AeroService.*;
+import static com.aerofs.sp.authentication.DeploymentSecret.*;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 @Path(Service.VERSION + "/devices")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,7 +51,6 @@ public class DevicesResource extends AbstractSpartaResource
 {
     private static Logger l = LoggerFactory.getLogger(DevicesResource.class);
 
-    private final VerkehrClient _vk;
     private final User.Factory _factUser;
 
     // This value must be larger than the charlie check-in interval.
@@ -68,9 +70,8 @@ public class DevicesResource extends AbstractSpartaResource
     };
 
     @Inject
-    public DevicesResource(VerkehrClient vk, User.Factory factUser)
+    public DevicesResource(User.Factory factUser)
     {
-        _vk = vk;
         _factUser = factUser;
     }
 
@@ -141,12 +142,17 @@ public class DevicesResource extends AbstractSpartaResource
         validateAuth(token, Scope.READ_USER, d.getOwner());
 
         try {
-            List<Update> l = _vk.getUpdates("online%2F" + d.id().toStringFormal(), -1).get().getUpdates();
-            boolean online = false;
-            Date lastSeen = null;
-            if (l.size() == 1) {
-                String s = new String(l.get(0).getPayload(), StandardCharsets.UTF_8);
-                OnlinePayload payload = _gson.fromJson(s, OnlinePayload.class);
+            HttpURLConnection conn = (HttpURLConnection)(new URL("http://charlie.service:8701"))
+                    .openConnection();
+            conn.addRequestProperty(HttpHeaders.AUTHORIZATION, getHeaderValue("sparta", getSecret()));
+            conn.setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(5L, TimeUnit.SECONDS));
+            conn.connect();
+            checkState(conn.getResponseCode() == 200);
+
+            boolean online;
+            Date lastSeen;
+            try (Reader r = new InputStreamReader(conn.getInputStream())) {
+                OnlinePayload payload = _gson.fromJson(r, OnlinePayload.class);
                 lastSeen = _dateFormat.get().parse(payload.time);
                 long checkinDiffSeconds = (System.currentTimeMillis() - lastSeen.getTime()) / 1000;
                 online = checkinDiffSeconds <= ALLOWED_OFFLINE_SECONDS;
@@ -154,7 +160,7 @@ public class DevicesResource extends AbstractSpartaResource
             return Response.ok()
                     .entity(new com.aerofs.rest.api.DeviceStatus(online, lastSeen))
                     .build();
-        } catch (InterruptedException|ExecutionException|ParseException e) {
+        } catch (Exception e) {
             return Response.status(Status.SERVICE_UNAVAILABLE).build();
         }
     }

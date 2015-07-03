@@ -32,6 +32,9 @@ cp -a /opt/config/properties/external.properties aerofs-db-backup/external.prope
 echo ">>> Backing up verkehr persistent topics to v2topics..."
 cp -a /data/topics aerofs-db-backup/v2topics
 
+echo ">>> Backing up charlie database..."
+cp -a /data/charlie aerofs-db-backup/charlie
+
 echo ">>> Creating backup file..."
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
 # bsd tar does not handle extracting sparse files efficiently and fills all the holes

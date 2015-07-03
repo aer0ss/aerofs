@@ -150,8 +150,8 @@ containers:
         - config:config.service
         - sp:sp.service
         - havre:havre.service
+        - charlie:charlie.service
         - auditor:auditor.service
-        - verkehr:verkehr.service
 
   zephyr:
     image: aerofs/zephyr
@@ -216,6 +216,7 @@ containers:
         - config:config.service
         - mysql:mysql.service
         - redis:redis.service
+        - charlie:charlie.service
         - auditor:auditor.service
         - verkehr:verkehr.service
         - postfix:postfix.service
@@ -234,13 +235,9 @@ containers:
   charlie:
     image: aerofs/charlie
     run:
-      # ulimit requires privilege
-      privileged: true
       detach: true
       volumes-from:
         - data
-      link:
-        - verkehr:verkehr.service
 
   sp:
     image: aerofs/sp

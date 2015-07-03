@@ -273,7 +273,7 @@ def _get_device_id_from_request(request, action):
 
 def _get_last_seen_data(deployment_secret, user_id, devices):
     """
-    Call verkehr to retrieve last seen time and location for the given list of devices.
+    Call charlie to retrieve last seen time and location for the given list of devices.
     @return a dict of:
 
         { "<device_id>": { "time": "Just Now", "ip": "1.2.3.4" }, ... }
@@ -284,36 +284,25 @@ def _get_last_seen_data(deployment_secret, user_id, devices):
     last_seen = {}
     for device in devices:
         did = device.device_id.encode('hex')
-
-        last_seen_topic = quote('online/{}'.format(did), safe='') # by setting safe to empty we also quote '/'
-        url = 'http://verkehr.service:25234/v2/topics/{}/updates'.format(last_seen_topic)
+        url = 'http://charlie.service:8701/checkin/{}'.format(did)
         auth_headers = {
-            "Authorization": "Aero-Delegated-User {} {} {}".format(
+            "Authorization": "Aero-Service-Shared-Secret {} {}".format(
                 "web",
-                deployment_secret,
-                b64encode(user_id)
+                deployment_secret
                 )
         }
-        r = requests.get(url, headers=auth_headers, params={'from': '-1'})
+        r = requests.get(url, headers=auth_headers)
 
         # device was never seen - ignore it
         if r.status_code == requests.codes.not_found:
             continue
 
         if not r.ok:
-            msg = 'verkehr returns {}: {}'.format(r.status_code, r.text)
+            msg = 'charlie returns {}: {}'.format(r.status_code, r.text)
             log.error(msg)
             raise HTTPInternalServerError(msg)
 
-        updates_container = r.json()
-        updates = updates_container['updates']
-
-        # the topic exists but no updates are available (?!)
-        if len(updates) == 0:
-            continue
-
-        payload = updates[0]['payload'] # should only be one entry
-        device_last_seen = json.loads(b64decode(payload))
+        device_last_seen = r.json()
         last_seen_time = datetime.strptime(device_last_seen['time'], '%Y-%m-%dT%H:%M:%SZ')
         log.info('last_seen:{}'.format(last_seen_time))
 

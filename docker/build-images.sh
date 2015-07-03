@@ -14,7 +14,7 @@ DIRS="
     ../src/bunker 
     ../golang/src/aerofs.com/ca-server
     ../packaging/config 
-    ../packaging/charlie 
+    ../golang/src/aerofs.com/charlie 
     data-container 
     enforcer 
     ../src/havre 

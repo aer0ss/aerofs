@@ -131,6 +131,12 @@ if [ -d aerofs-db-backup/v2topics ] ; then
     cp -a aerofs-db-backup/v2topics /data/topics
 fi
 
+# Only restore charlie db for backups that are new enough to contain it
+if [ -d aerofs-db-backup/charlie ] ; then
+    rm -rf /data/charlie
+    cp -a aerofs-db-backup/charlie /data/charlie
+fi
+
 echo ">>> Restoring configuration properties..."
 PROPS=/opt/config/properties/external.properties
 
