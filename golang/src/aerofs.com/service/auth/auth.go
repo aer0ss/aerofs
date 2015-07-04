@@ -132,11 +132,11 @@ func (e *deviceCertExtractor) Extract(params []string, r *http.Request) AuthToke
 	if err != nil || n != 16 {
 		return nil
 	}
-	serial, err := strconv.ParseUint(r.Header.Get("Serial"), 10, 64)
+	serial, err := strconv.ParseUint(r.Header.Get("Serial"), 16, 64)
 	if err != nil {
 		return nil
 	}
-	if MatchingDeviceCN(getCN(r.Header.Get("DName")), userid, did[:]) {
+	if !MatchingDeviceCN(getCN(r.Header.Get("DName")), userid, did[:]) {
 		return nil
 	}
 	return &deviceCertToken{userid: string(userid), did: did, serial: serial}
