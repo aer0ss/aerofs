@@ -7,10 +7,7 @@ config.loader.base_ca_certificate={{ base_ca_cert }}
 base.www.url=https://{{ base_host }}
 base.installers.url=https://{{ base_host }}/static/installers
 base.sp.url=https://{{ base_host }}:4433/sp/
-base.verkehr.host={{ base_host }}
-base.verkehr.port.pb=29438
-base.verkehr.port.rest=25234
-base.ssmp.address={{ base_host }}:5222
+base.ssmp.address={{ base_host }}:29438
 base.zephyr.address={{ base_host }}:8888
 base.charlie.url=https://{{ base_host }}:4433/checkin
 

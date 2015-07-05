@@ -34,7 +34,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
                 Permissions.OWNER.toPB(), false);
 
         // check that notifications were published on update
-        assertVerkehrPublishedOnlyTo(USER_1, USER_3);
+        assertPublishedOnlyTo(USER_1, USER_3);
 
         // verify user 3 has updated ACL in place
         setSession(USER_3);

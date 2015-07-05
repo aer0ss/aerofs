@@ -40,17 +40,6 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         assertTrue(cert.equals(RETURNED_CERT));
     }
 
-    /**
-     * Short-circuit the verkehr admin; make sure it always passes.
-     */
-    @SuppressWarnings("unchecked")
-    @Before
-    public void setupVerkehrToCommandSuccessfully()
-    {
-        when(verkehrClient.revokeSerials(any(ImmutableList.class)))
-                .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
-    }
-
     @Test
     public void shouldUnlinkDeviceEvenWhenCertificateDoesNotExist()
             throws Exception

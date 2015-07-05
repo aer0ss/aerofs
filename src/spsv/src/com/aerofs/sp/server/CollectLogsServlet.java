@@ -23,7 +23,7 @@ import com.aerofs.sp.server.email.Email;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.UserDatabase;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ import java.util.List;
 
 import static com.aerofs.sp.server.CommandUtil.createUploadLogsToAeroFSCommandMessage;
 import static com.aerofs.sp.server.CommandUtil.createUploadLogsToOnSiteCommandMessage;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.SSMP_CLIENT_ATTRIBUTE;
 import static com.google.common.base.Objects.equal;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -74,16 +74,17 @@ public class CollectLogsServlet extends HttpServlet
         // - defaults to use local smtp client
         _email = AsyncEmailSender.create();
 
-        VerkehrClient _verkehrClient = (VerkehrClient) getServletContext()
-                .getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
-        checkNotNull(_verkehrClient);
+        SSMPConnection ssmp = (SSMPConnection) getServletContext()
+                .getAttribute(SSMP_CLIENT_ATTRIBUTE);
+        checkNotNull(ssmp);
+        ssmp.start();
 
         PooledJedisConnectionProvider _jedisConnProvider = new PooledJedisConnectionProvider();
         _jedisConnProvider.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 
         JedisThreadLocalTransaction _jedisTrans = new JedisThreadLocalTransaction(_jedisConnProvider);
         JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
-        _cmd = new CommandDispatcher(_commandQueue, _jedisTrans, _verkehrClient);
+        _cmd = new CommandDispatcher(_commandQueue, _jedisTrans, ssmp);
 
         _license = new License();
 

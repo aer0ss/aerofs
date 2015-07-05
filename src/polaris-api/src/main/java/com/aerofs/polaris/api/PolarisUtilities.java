@@ -8,10 +8,8 @@ import javax.annotation.Nullable;
 
 public abstract class PolarisUtilities {
 
-    public static final String VERKEHR_UPDATE_TOPIC_PREFIX = "pol/";
-
-    public static String getVerkehrUpdateTopic(String store) {
-        return UrlEscapers.urlPathSegmentEscaper().escape(VERKEHR_UPDATE_TOPIC_PREFIX + store);
+    public static String getUpdateTopic(String store) {
+        return "pol/" + store;
     }
 
     public static String hexEncode(byte[] bytes) {

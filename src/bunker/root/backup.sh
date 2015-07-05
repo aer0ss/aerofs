@@ -29,9 +29,6 @@ fi
 echo ">>> Backing up configuration properties..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
-echo ">>> Backing up verkehr persistent topics to v2topics..."
-cp -a /data/topics aerofs-db-backup/v2topics
-
 echo ">>> Backing up charlie database..."
 cp -a /data/charlie aerofs-db-backup/charlie
 

@@ -10,11 +10,11 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.verkehr.client.wire.ConnectionListener;
-import com.aerofs.verkehr.client.wire.UpdateListener;
-import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
+import com.aerofs.ssmp.*;
+import com.aerofs.ssmp.SSMPClient.ConnectionListener;
+import com.aerofs.ssmp.SSMPEvent.Type;
+import com.aerofs.ssmp.SSMPRequest.SubscriptionFlag;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -23,13 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public class ChangeNotificationSubscriber implements ConnectionListener, UpdateListener
+public class ChangeNotificationSubscriber implements ConnectionListener, EventHandler
 {
     private final static Logger l = Loggers.getLogger(ChangeNotificationSubscriber.class);
 
-    private final VerkehrPubSubClient _vk;
+    private final SSMPConnection _ssmp;
     private final IMapSIndex2SID _sidx2sid;
     private final CoreScheduler _sched;
 
@@ -37,17 +36,18 @@ public class ChangeNotificationSubscriber implements ConnectionListener, UpdateL
     private final Map<SID, Store> _stores = new ConcurrentHashMap<>();
 
     @Inject
-    public ChangeNotificationSubscriber(VerkehrPubSubClient vk, IMapSIndex2SID sidx2sid,
+    public ChangeNotificationSubscriber(SSMPConnection ssmp, IMapSIndex2SID sidx2sid,
                                         CoreScheduler sched)
     {
-        _vk = vk;
+        _ssmp = ssmp;
         _sched = sched;
         _sidx2sid = sidx2sid;
     }
 
     public void init_()
     {
-        _vk.addConnectionListener(this, MoreExecutors.sameThreadExecutor());
+        _ssmp.addConnectionListener(this);
+        _ssmp.addEventHandler(this);
     }
 
     public void subscribe_(Store s)
@@ -55,7 +55,7 @@ public class ChangeNotificationSubscriber implements ConnectionListener, UpdateL
         SID sid = _sidx2sid.get_(s.sidx());
         _stores.put(sid, s);
         if (_connected.get()) {
-            subscribe(_vk, sid);
+            subscribe(sid);
         }
     }
 
@@ -65,43 +65,46 @@ public class ChangeNotificationSubscriber implements ConnectionListener, UpdateL
     }
 
     @Override
-    public void onConnected(VerkehrPubSubClient client) {
+    public void connected() {
         _connected.set(true);
-        l.warn("connected to vk");
-        for (SID sid : _stores.keySet()) {
-            subscribe(client, sid);
-        }
+        l.warn("connected to lipwig");
+        _stores.keySet().forEach(this::subscribe);
     }
 
-    private void subscribe(VerkehrPubSubClient client, SID sid)
+    @Override
+    public void disconnected() {
+        _connected.set(false);
+        l.warn("disconnected from lipwig");
+    }
+
+    private void subscribe(SID sid)
     {
-        addCallback(client.subscribe("pol/" + sid.toStringFormal(), this, sameThreadExecutor()),
-                new FutureCallback<Void>() {
+        SSMPIdentifier topic = SSMPIdentifier.fromInternal("pol/" + sid.toStringFormal());
+        addCallback(_ssmp.request(SSMPRequest.subscribe(topic, SubscriptionFlag.NONE)),
+                new FutureCallback<SSMPResponse>() {
                     @Override
-                    public void onSuccess(Void aVoid)
-                    {
-                        l.warn("subscribed to polaris notif for {}", sid);
-                        scheduleFetch(sid);
+                    public void onSuccess(SSMPResponse r) {
+                        if (r.code == SSMPResponse.OK) {
+                            l.warn("subscribed to polaris notif for {}", sid);
+                            scheduleFetch(sid);
+                        } else {
+                            l.error("failed to polaris sub {} {}", sid, r.code);
+                            // TODO: exp retry?
+                        }
                     }
 
                     @Override
-                    public void onFailure(Throwable throwable)
-                    {
-                        _vk.disconnect();
+                    public void onFailure(Throwable throwable) {
+                        // TODO: force reconnect?
                     }
                 });
     }
 
     @Override
-    public void onDisconnected(VerkehrPubSubClient client) {
-        _connected.set(false);
-        l.warn("disconnected from vk");
-    }
-
-    @Override
-    public void onUpdate(String topic, byte[] payload) {
+    public void eventReceived(SSMPEvent ev) {
+        if (ev.type != Type.MCAST || !ev.to.toString().startsWith("pol/")) return;
         try {
-            scheduleFetch(new SID(topic.substring(4)));
+            scheduleFetch(new SID(ev.to.toString().substring(4)));
         } catch (Exception e) {
             l.warn("invalid notification", e);
         }

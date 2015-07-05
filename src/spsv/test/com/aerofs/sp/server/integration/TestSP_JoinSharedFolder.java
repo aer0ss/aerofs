@@ -23,12 +23,12 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.EDITOR);
 
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
         clearPublishedMessages();
 
         joinSharedFolder(USER_2, SID_1);
 
-        assertVerkehrPublishedOnlyTo(USER_1, USER_2);
+        assertPublishedOnlyTo(USER_1, USER_2);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 
         joinSharedFolder(USER_2, SID_1);
 
-        assertVerkehrPublishedOnlyTo(USER_1, USER_2);
+        assertPublishedOnlyTo(USER_1, USER_2);
 
         sqlTrans.begin();
         assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),

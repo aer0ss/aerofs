@@ -55,7 +55,6 @@ dependencies {
     compile jedisDependencies
     compile project(':src/lib')
     compile project(':src/rest-api')
-    compile project(path: ':src/verkehr', configuration: 'restClient')
     testutilCompile 'org.subethamail:subethasmtp:3.1.7'
     testutilCompile project(path: ':src/lib', configuration: 'testutil')
 }

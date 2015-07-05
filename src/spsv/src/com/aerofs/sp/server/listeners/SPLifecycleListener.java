@@ -6,7 +6,6 @@ import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSession;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -17,7 +16,6 @@ import javax.servlet.http.HttpSessionListener;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
 
 public class SPLifecycleListener extends ConfigurationLifecycleListener
         implements ServletContextListener, HttpSessionListener
@@ -47,19 +45,6 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);
         ctx.setAttribute(SESSION_INVALIDATOR, _sessionInvalidator);
         ctx.setAttribute(SESSION_EXTENDER, _sessionExtender);
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent)
-    {
-        ServletContext ctx = servletContextEvent.getServletContext();
-        VerkehrClient verkehrClient = (VerkehrClient) ctx.getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
-        if (verkehrClient != null) {
-            verkehrClient.disconnectAll();
-            verkehrClient.shutdown();
-        }
-
-        super.contextDestroyed(servletContextEvent);
     }
 
     @Override

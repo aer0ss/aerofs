@@ -28,7 +28,7 @@ import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.ritual_notification.RitualNotificationServer;
-import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.inject.Inject;
 
 
@@ -44,7 +44,7 @@ public class Core implements IModule
     private final Transports _tps;
     private final TC _tc;
     private final TokenManager _tokenManager;
-    private final VerkehrPubSubClient _vk;
+    private final SSMPConnection _ssmp;
     private final ACLNotificationSubscriber _aclsub;
     private final ILinker _linker;
     private final NotificationService _ns;
@@ -72,7 +72,7 @@ public class Core implements IModule
             NativeVersionControl nvc,
             ImmigrantVersionControl ivc,
             IDBCW dbcw,
-            VerkehrPubSubClient vk,
+            SSMPConnection ssmp,
             ACLNotificationSubscriber aclsub,
             RitualNotificationServer rns,
             NotificationService ns,
@@ -100,7 +100,7 @@ public class Core implements IModule
         _nvc = nvc;
         _ivc = ivc;
         _dbcw = dbcw;
-        _vk = vk;
+        _ssmp = ssmp;
         _aclsub = aclsub;
         _linker = linker;
         _rns = rns;
@@ -236,7 +236,7 @@ public class Core implements IModule
         _sa.start_();
         _ps.start_();
         _linker.start_();
-        _vk.start();
+        _ssmp.start();
         _quota.start_();
         _cc.start();
     }

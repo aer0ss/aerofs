@@ -22,7 +22,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
         clearPublishedMessages();
 
         leaveSharedFolder(USER_2, SID_1);
-        assertVerkehrPublishedOnlyTo(USER_2, USER_1);
+        assertPublishedOnlyTo(USER_2, USER_1);
     }
 
     @Test

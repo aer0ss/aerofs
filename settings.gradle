@@ -29,5 +29,4 @@ include 'src/aero-auth',
         'src/support',
         'src/sync',
         'src/tunnel',
-        'src/verkehr',
         'src/zephyr'

@@ -501,7 +501,7 @@ public class User
             rootStore.destroy();
         }
 
-        // Ignore the return value and do not publish verkehr notifications, as this newly added
+        // Ignore the return value and do not publish lipwig notifications, as this newly added
         // user mustn't have any daemon running at this moment.
         try {
             rootStore.save("root store: " + _id, this);

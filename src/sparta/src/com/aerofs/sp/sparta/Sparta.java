@@ -7,12 +7,14 @@ package com.aerofs.sp.sparta;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.bifrost.oaaas.auth.*;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.lib.LibParam.REDIS;
@@ -41,9 +43,8 @@ import com.aerofs.sp.sparta.resources.DevicesResource;
 import com.aerofs.sp.sparta.resources.OrganizationsResource;
 import com.aerofs.sp.sparta.resources.SharedFolderResource;
 import com.aerofs.sp.sparta.resources.UsersResource;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.*;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -62,12 +63,11 @@ import java.net.URI;
 import java.sql.Connection;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Standalone RESTful SP
@@ -121,7 +121,7 @@ public class Sparta extends Service
 
         ServerConfigurationLoader.initialize("sparta", extra);
 
-        ICertificateProvider cacert = new FileBasedCertificateProvider("/opt/sparta/cacert.pem");
+        ICertificateProvider cacert = URLBasedCertificateProvider.server();
 
         Timer timer = new HashedWheelTimer();
         ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
@@ -130,9 +130,11 @@ public class Sparta extends Service
 
         SpartaSQLConnectionProvider sqlConnProvider = new SpartaSQLConnectionProvider();
 
+        Module clients = clientsModule(cacert, secret, timer);
+
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(sqlConnProvider),
-                clientsModule(cacert, secret),
+                clients,
                 spartaModule(timer, clientFactory));
 
 
@@ -145,7 +147,7 @@ public class Sparta extends Service
                 Bifrost.databaseModule(sqlConnProvider),
                 Bifrost.bifrostModule(),
                 databaseModule(sqlConnProvider),
-                clientsModule(cacert, secret),
+                clients,
                 new AbstractModule() {
                     @Override
                     protected void configure() {
@@ -209,10 +211,17 @@ public class Sparta extends Service
         };
     }
 
-    static private Module clientsModule(final ICertificateProvider cacert, String secret)
+    static private Module clientsModule(final ICertificateProvider cacert, String secret, Timer timer)
     {
-        return new AbstractModule()
-        {
+        return new AbstractModule() {
+            Executor executor = Executors.newCachedThreadPool();
+            SSMPConnection c = new SSMPConnection(secret,
+                    InetSocketAddress.createUnresolved("lipwig.service", 8787),
+                    timer,
+                    new NioClientSocketChannelFactory(executor, executor, 1, 2),
+                    new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)::newSslHandler
+            );
+
             @Override
             protected void configure()
             {
@@ -227,18 +236,10 @@ public class Sparta extends Service
             }
 
             @Provides @Singleton
-            public VerkehrClient providesPublisher()
+            public SSMPConnection providesPublisher()
             {
-                NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 1, 2);
-                return VerkehrClient.create(
-                        "verkehr.service",
-                        Verkehr.REST_PORT,
-                        MILLISECONDS.convert(30, SECONDS),
-                        MILLISECONDS.convert(60, SECONDS),
-                        () -> AeroService.getHeaderValue("sparta", secret),
-                        new HashedWheelTimer(),
-                        MoreExecutors.sameThreadExecutor(),
-                        channelFactory);
+                c.start();
+                return c;
             }
 
             @Provides @Singleton

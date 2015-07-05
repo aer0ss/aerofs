@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.Topics;
+import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
@@ -77,7 +77,7 @@ public class TestSP_OpenID extends AbstractSPTest
                 .getOrganization().id().toTeamServerUserID().getString();
         sqlTrans.commit();
 
-        assertEquals(ImmutableSet.of(Topics.getACLTopic(ts, true)), getTopicsPublishedTo());
+        assertEquals(ImmutableSet.of(SSMPIdentifiers.getACLTopic(ts)), getTopicsPublishedTo());
     }
 
     @Test

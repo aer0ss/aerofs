@@ -31,7 +31,7 @@ public class UserManagement
     /**
      * Perform all the bookkeeping needed after a device is unlinked.
      *
-     * Send the CRL update to verkehr. Notify all the peer devices that it is time to refresh
+     * Send the CRL update to lipwig. Notify all the peer devices that it is time to refresh
      * their view of the CRLs.
      */
     public static void propagateDeviceUnlink(
@@ -40,12 +40,9 @@ public class UserManagement
             ImmutableCollection<Long> revokedSerials)
             throws Exception
     {
-        if (!revokedSerials.isEmpty())
-        {
-            l.info("command verkehr, #serials: " + revokedSerials.size());
-            ACLNotificationPublisher.verkehrFutureGet_(dispatcher.getVerkehrClient().revokeSerials(
-                    revokedSerials));
-
+        if (!revokedSerials.isEmpty()) {
+            l.info("command lipwig, #serials: " + revokedSerials.size());
+            // TODO: make all services honor CRLs (nginx, havre, lipwig, ...)
             for (Device peer : peerDevices) {
                 dispatcher.enqueueCommand(peer.id(), createCommandMessage(CommandType.REFRESH_CRL));
             }

@@ -17,12 +17,6 @@ database:
   driverClass: com.mysql.jdbc.Driver
   url: jdbc:mysql://MYSQL_URL/polaris
 
-verkehr:
-  url: http://verkehr.service:25234
-  connectTimeout: 30000
-  responseTimeout: 45000
-  maxConnections: 10
-
 sparta:
   url: http://sparta.service:8085
   connectTimeout: 30000

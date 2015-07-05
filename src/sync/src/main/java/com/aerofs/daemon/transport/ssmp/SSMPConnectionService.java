@@ -60,7 +60,6 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
         lss.addListener(this, MoreExecutors.sameThreadExecutor());
     }
 
-    // TODO: think about who should own SSMP start/stop when it eventually replaces vk...
     public void start() {
         _c.start();
     }

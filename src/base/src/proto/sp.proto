@@ -329,7 +329,7 @@ service SPService {
     rpc GetCRL(Void) returns(GetCRLReply);
 
     // Revoke the certificate of a specific device and optionally erase AeroFS files from the
-    // device. This will trigger a verkehr notification for the CRL.
+    // device. This will trigger a ssmp notification for the CRL.
     //
     // Q. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
     // A. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their

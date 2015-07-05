@@ -121,16 +121,6 @@ else
 
 fi
 
-# Only restore verkehr topics for backups that are new enough to contain
-# backed-up topic sets, version 2. This works around a bug that existed
-# in private-0.8.63 to private-0.8.68. We deliberately exclude topics
-# under /data/topics in the tar expansion.
-echo ">>> Restoring verkehr persistent topics..."
-if [ -d aerofs-db-backup/v2topics ] ; then
-    rm -rf /data/topics
-    cp -a aerofs-db-backup/v2topics /data/topics
-fi
-
 # Only restore charlie db for backups that are new enough to contain it
 if [ -d aerofs-db-backup/charlie ] ; then
     rm -rf /data/charlie

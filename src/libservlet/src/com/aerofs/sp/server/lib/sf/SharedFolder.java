@@ -172,7 +172,7 @@ public class SharedFolder
 
     /**
      * Add the shared folder to db. Also add {@code owner} as the first owner.
-     * @return A map of user IDs to epochs to be published via verkehr.
+     * @return A map of user IDs to epochs to be published via lipwig.
      * @throws com.aerofs.base.ex.ExAlreadyExist if the store already exists
      * @throws com.aerofs.base.ex.ExNotFound if the owner is not found
      */
@@ -191,7 +191,7 @@ public class SharedFolder
     /**
      * Delete the folder completely from the universe. It will cause the folder to disappear from
      * all the devices.
-     * @return A set of user IDs for which epoch should be increased and published via verkehr
+     * @return A set of user IDs for which epoch should be increased and published via lipwig
      */
     public ImmutableCollection<UserID> destroy()
             throws SQLException
@@ -202,7 +202,7 @@ public class SharedFolder
     }
 
     /**
-     * @return A set of user IDs for which epoch should be increased and published via verkehr
+     * @return A set of user IDs for which epoch should be increased and published via lipwig
      * @throws com.aerofs.base.ex.ExAlreadyExist if the user is already added.
      */
     public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)

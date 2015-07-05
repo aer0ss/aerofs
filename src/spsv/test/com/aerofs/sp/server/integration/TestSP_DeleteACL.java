@@ -38,7 +38,7 @@ public class TestSP_DeleteACL extends AbstractSPACLTest
 
         // expect first, second and third guy all to be notified
 
-        assertVerkehrPublishedOnlyTo(USER_1, USER_2, USER_3);
+        assertPublishedOnlyTo(USER_1, USER_2, USER_3);
 
         // have the first guy get his acl
 

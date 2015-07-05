@@ -177,7 +177,7 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -332,7 +332,7 @@ public class SPService implements ISPService
             JedisRateLimiter rateLimiter,
             ScheduledExecutorService scheduledExecutor,
             BifrostClient bifrostClient,
-            VerkehrClient verkehrClient,
+            SSMPConnection ssmp,
             AuditClient auditClient,
             ACLNotificationPublisher aclPublisher)
     {
@@ -376,7 +376,7 @@ public class SPService implements ISPService
                 factGroup, _invitationHelper);
 
         _commandQueue = commandQueue;
-        _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans, verkehrClient);
+        _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans, ssmp);
         _analytics = checkNotNull(analytics);
 
         _rateLimiter = rateLimiter;
@@ -593,7 +593,7 @@ public class SPService implements ISPService
             deviceNameUpdated = true;
         }
 
-        // Verkehr messages and command queue related stuff.
+        // lipwig messages and command queue related stuff.
         if (userNameUpdated || deviceNameUpdated)
         {
             Collection<Device> peerDevices = user.getPeerDevices();
@@ -612,7 +612,7 @@ public class SPService implements ISPService
             }
         }
 
-        // Wrap the jedis calls and verkehr pushes in the sql transaction so if any of the above
+        // Wrap the jedis calls and lipwig pushes in the sql transaction so if any of the above
         // fail we can ask the user to perform the rename later.
         _sqlTrans.commit();
 
@@ -1472,7 +1472,7 @@ public class SPService implements ISPService
         if (created || rules.shouldBumpEpoch()) {
             affected.addAll(sf.getJoinedUserIDs());
         }
-        // Send verkehr notification as the last step of the transaction.
+        // Send lipwig notification as the last step of the transaction.
         _aclPublisher.publish_(affected.build());
 
         for (AuditableEvent e : events) e.publish();
@@ -3139,7 +3139,7 @@ public class SPService implements ISPService
         // This audit event is temporarily being used by Bloomberg to identify a device's last
         // known IP address for the purpose of detecting file transfers across network boundaries.
         // We rely on the ACL Synchronizer to reconnect to SP and sign in using the device
-        // certificate on Verkehr reconnect.
+        // certificate on lipwig reconnect.
         _auditClient.event(AuditTopic.DEVICE, "device.signin")
                 .add("user", user.id())
                 .add("device_id", device.id().toStringFormal())

@@ -13,7 +13,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 // and you can invoke it via the 'cmd' tools script.
 //
 // Note: do not remove command types. These values are persisted in the database and removing
-// command types will cause SP & Verkehr to fail to parse the command and block the command queue.
+// command types will cause SP to fail to parse the command and block the command queue.
 // Instead, obsolete the command type and have the client do no-op and ack the command.
 
 //
@@ -61,7 +61,7 @@ enum CommandType {
     // Add more commands here...
 }
 
-// Command payload that is sent via verkehr.
+// Command payload that is sent via lipwig.
 message Command {
     required uint64 epoch = 1;
     required CommandType type = 2;

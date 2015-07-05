@@ -21,6 +21,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Base64;
+
 public class TestSP_EpochCommandQueue extends AbstractSPTest
 {
     // Device that we will use for testing.
@@ -82,7 +84,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     }
 
     @Test
-    public void shouldSendVerkehrMessageWhenUserNameUpdated()
+    public void shouldSendMessageWhenUserNameUpdated()
             throws Exception
     {
         updateUserName();
@@ -92,7 +94,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
     }
 
     @Test
-    public void shouldSendVerkehrMessageWhenDeviceNameUpdated()
+    public void shouldSendMessageWhenDeviceNameUpdated()
             throws Exception
     {
         updateDeviceName();
@@ -106,7 +108,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
             throws InvalidProtocolBufferException
     {
         Published published = getPublishedMessages().get(0);
-        return Command.parseFrom(published.bytes);
+        return Command.parseFrom(Base64.getDecoder().decode(published.bytes));
     }
 
     @Test

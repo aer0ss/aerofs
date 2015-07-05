@@ -127,6 +127,6 @@ public class TestEISendSnapshot
         EISendSnapshot handler = createHandler(true);
         handler.handle_();
 
-        verify(_osn).sendOnlineStatusNotification_();
+        verify(_osn).sendOnlineStatusNotification();
     }
 }

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 
-// copy of the original from verkehr
 public final class DefaultUncaughtExceptionHandler implements UncaughtExceptionHandler
 {
     private static final Logger l = LoggerFactory.getLogger(DefaultUncaughtExceptionHandler.class);

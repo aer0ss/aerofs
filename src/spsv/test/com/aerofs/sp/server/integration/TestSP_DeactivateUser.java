@@ -11,13 +11,11 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.collect.ImmutableCollection;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Timestamp;
-import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -33,8 +31,6 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     Device u0d0;
     Device u0d1;
     Device u1d0;
-
-    List<ImmutableCollection<Long>> crls;
 
     @Override
     protected Device saveDevice(User user) throws Exception
@@ -53,8 +49,6 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     @Before
     public void setUp() throws Exception
     {
-        crls = mockAndCaptureVerkehrUpdateCRL();
-
         sqlTrans.begin();
 
         u0 = saveUser();

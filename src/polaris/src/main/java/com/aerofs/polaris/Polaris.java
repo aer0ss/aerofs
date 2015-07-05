@@ -27,10 +27,7 @@ import com.aerofs.polaris.resources.ObjectsResource;
 import com.aerofs.polaris.resources.TransformsResource;
 import com.aerofs.polaris.sparta.SpartaAccessManager;
 import com.aerofs.polaris.sparta.SpartaConfiguration;
-import com.aerofs.polaris.verkehr.ServiceSharedSecretProvider;
-import com.aerofs.polaris.verkehr.VerkehrConfiguration;
-import com.aerofs.polaris.verkehr.VerkehrPublisher;
-import com.aerofs.verkehr.client.rest.AuthorizationHeaderProvider;
+import com.aerofs.polaris.ssmp.SSMPPublisher;
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
@@ -90,12 +87,10 @@ public class Polaris extends Service<PolarisConfiguration> {
             @Override
             protected void configure() {
                 bind(dbi).to(DBI.class);
-                bind(configuration.getVerkehr()).to(VerkehrConfiguration.class);
                 bind(configuration.getSparta()).to(SpartaConfiguration.class);
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
-                bind(ServiceSharedSecretProvider.class).to(AuthorizationHeaderProvider.class).in(Singleton.class);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
-                bind(VerkehrPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
+                bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class).in(Singleton.class);
                 bind(StoreMigrator.class).to(StoreMigrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);

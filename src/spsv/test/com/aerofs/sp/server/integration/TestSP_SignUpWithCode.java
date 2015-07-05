@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.BaseParam.Topics;
+import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
@@ -48,10 +48,10 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
             throws Exception
     {
         String orgId = signUp().get().getOrgId();
-        assertEquals(ImmutableSet.of(Topics.getACLTopic(":" + orgId, true)), getTopicsPublishedTo());
+        assertEquals(ImmutableSet.of(SSMPIdentifiers.getACLTopic(":" + orgId)), getTopicsPublishedTo());
         clearPublishedMessages();
         signUp();
-        assertVerkehrPublishedOnlyTo();
+        assertPublishedOnlyTo();
     }
 
     @Test

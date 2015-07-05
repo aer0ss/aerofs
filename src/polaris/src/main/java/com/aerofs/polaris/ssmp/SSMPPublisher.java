@@ -1,12 +1,17 @@
-package com.aerofs.polaris.verkehr;
+package com.aerofs.polaris.ssmp;
 
-import com.aerofs.auth.client.shared.AeroService;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.baseline.Threads;
-import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPIdentifier;
+import com.aerofs.ssmp.SSMPRequest;
+import com.aerofs.ssmp.SSMPResponse;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -28,63 +33,55 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
 import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
+import static com.aerofs.polaris.api.PolarisUtilities.getUpdateTopic;
 
 // FIXME (AG): this is a piss-poor updater. I have another approach in mind where you can dump out the actual transforms
 @Singleton
-public final class VerkehrPublisher implements ManagedUpdatePublisher {
+public final class SSMPPublisher implements ManagedUpdatePublisher {
 
     private static final int NUM_BOSS_THREADS = 1;
     private static final int NUM_WORK_THREADS = 8;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(VerkehrPublisher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SSMPPublisher.class);
 
     private final Timer timer = new HashedWheelTimer(Threads.newNamedThreadFactory("vk-tmr-%d"));
     private final ExecutorService addressResolverExecutor = Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-res-%d"));
     private BossPool<NioClientBoss> bossPool = new NioClientBossPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-boss-%d")), NUM_BOSS_THREADS);
     private WorkerPool<NioWorker> workerPool = new NioWorkerPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-wrk-%d")), NUM_WORK_THREADS);
     private final ChannelFactory channelFactory = new NioClientSocketChannelFactory(bossPool, workerPool);
-    private final ObjectMapper mapper;
-    private final VerkehrClient verkehrClient;
+    private final SSMPConnection ssmp;
 
     @Inject
-    public VerkehrPublisher(ObjectMapper mapper, VerkehrConfiguration configuration,
-                            @Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret,
-                            @Named(SERVICE_NAME_INJECTION_KEY) String serviceName)
-            throws MalformedURLException
+    public SSMPPublisher(@Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret)
     {
-        URL url = new URL(configuration.getUrl());
-        String host = url.getHost();
-        short port = (short) url.getPort();
+        InetSocketAddress lipwigAddress = InetSocketAddress.createUnresolved("lipwig.service", 8787);
+        LOGGER.info("setup lipwig update publisher {}", lipwigAddress);
 
-        LOGGER.info("setup verkehr update publisher {}:{}", host, port);
+        ICertificateProvider cacert = URLBasedCertificateProvider.server();
 
-        this.mapper = mapper;
-        this.verkehrClient = VerkehrClient.create(
-                host,
-                port,
-                configuration.getConnectTimeout(),
-                configuration.getResponseTimeout(),
-                () -> AeroService.getHeaderValue(serviceName, deploymentSecret),
+        this.ssmp = new SSMPConnection(deploymentSecret,
+                lipwigAddress,
                 timer,
-                addressResolverExecutor,
-                channelFactory);
+                channelFactory,
+                new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)
+                        ::newSslHandler
+        );
     }
 
     @Override
     public void start() throws Exception {
+        this.ssmp.start();
         // noop
     }
 
     @Override
     public void stop() {
-        verkehrClient.shutdown();
+        ssmp.stop();
         channelFactory.shutdown();
         addressResolverExecutor.shutdownNow();
         timer.stop();
@@ -97,14 +94,18 @@ public final class VerkehrPublisher implements ManagedUpdatePublisher {
         LOGGER.debug("notify {}", topic);
 
         try {
-            byte[] serialized = mapper.writeValueAsBytes(update);
-            ListenableFuture<Void> publishFuture = verkehrClient.publish(PolarisUtilities.getVerkehrUpdateTopic(topic), serialized);
-            Futures.addCallback(publishFuture, new FutureCallback<Void>() {
-
+            Futures.addCallback(
+                    ssmp.request(SSMPRequest.mcast(SSMPIdentifier.fromInternal(getUpdateTopic(topic)),
+                            Long.toString(update.latestLogicalTimestamp))),
+                    new FutureCallback<SSMPResponse>() {
                 @Override
-                public void onSuccess(@Nullable Void result) {
-                    LOGGER.debug("done notify {}", topic);
-                    returned.set(result);
+                public void onSuccess(@Nullable SSMPResponse result) {
+                    LOGGER.debug("done notify {} {}", topic, result.code);
+                    if (result.code == SSMPResponse.OK || result.code == SSMPResponse.NOT_FOUND) {
+                        returned.set(null);
+                    } else {
+                        returned.setException(new Exception("failed notify " + topic + " " + result.code));
+                    }
                 }
 
                 @Override

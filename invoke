@@ -101,12 +101,6 @@ PROTO_MAPPINGS = {
                 "protos": [ os.path.join(SRC_GUI, "src", "proto", "shellext.proto"),
                             ],
             },
-        os.path.join(GIT_ROOT, "src", "verkehr", "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(GIT_ROOT, "src", "verkehr", "src", "main", "proto"), ],
-                "protos": [ os.path.join(GIT_ROOT, "src", "verkehr", "src", "main", "proto", "verkehr.proto"), ],
-            },
         os.path.join(GIT_ROOT, "src", "zephyr", "gen"):
             {
                 "lang": "java",

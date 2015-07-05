@@ -46,7 +46,7 @@ containers:
     run:
       detach: true
       publish:
-        - "5222:8787"
+        - "29438:8787"
       # For /data/deployment-secret
       volumes-from:
         - data
@@ -162,22 +162,6 @@ containers:
       publish:
         - "8888:8888"
 
-  verkehr:
-    image: aerofs/verkehr
-    run:
-      publish:
-        - "29438:29438"
-      detach: true
-      # sysctl & ulimit require privilege
-      privileged: true
-      # for deployment secret
-      volumes-from:
-        - data
-      link:
-        - config:config.service
-        - ca-server:ca.service
-        - mysql:mysql.service
-
   havre:
     image: aerofs/havre
     run:
@@ -201,9 +185,11 @@ containers:
         - data
       link:
         - config:config.service
+        # for cacert.pem
+        - ca-server:ca.service
         - mysql:mysql.service
         - sparta:sparta.service
-        - verkehr:verkehr.service
+        - lipwig:lipwig.service
 
   sparta:
     image: aerofs/sparta
@@ -214,11 +200,13 @@ containers:
         - data
       link:
         - config:config.service
+        # for cacert.pem
+        - ca-server:ca.service
         - mysql:mysql.service
         - redis:redis.service
         - charlie:charlie.service
         - auditor:auditor.service
-        - verkehr:verkehr.service
+        - lipwig:lipwig.service
         - postfix:postfix.service
 
   auditor:
@@ -251,7 +239,7 @@ containers:
         - mysql:mysql.service
         - redis:redis.service
         - postfix:postfix.service
-        - verkehr:verkehr.service
+        - lipwig:lipwig.service
         - auditor:auditor.service
         - config:config.service
         - sparta:sparta.service
@@ -286,11 +274,13 @@ containers:
         - data
       detach: true
       link:
+        # for cacert.pem
+        - ca-server:ca.service
         - postfix:postfix.service
         - redis:redis.service
         - mysql:mysql.service
         - config:config.service
-        - verkehr:verkehr.service
+        - lipwig:lipwig.service
 
   openid:
     image: aerofs/openid
@@ -327,7 +317,6 @@ containers:
         - sp:sp.service
         - sparta:sparta.service
         - verification:verification.service
-        - verkehr:verkehr.service
         - web:web.service
         - zephyr:zephyr.service
 

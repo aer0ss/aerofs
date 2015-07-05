@@ -30,11 +30,10 @@ nginx, proxying for:
   5435 - config service frontend (should probably be moved under web frontends)
   443 - browser-cert web/sp/api frontend
   4433 - aerofs-cert web/sp/api frontend
-verkehr:
-  29438 - subscribe
-5222 - ejabberd
+5222 - ejabberd [deprecated]
 8888 - zephyr
 8084 - havre (daemons connect here)
+29438 - lipwig [used to be vk protobuf endpoint]
 ```
 
 # Client port assignments

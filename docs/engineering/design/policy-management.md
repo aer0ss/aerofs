@@ -90,7 +90,7 @@ The normal workflow is as follows. (Box and arrow diagram to come)
 [ _vigorous hand-waving_ ] which updates the centralized Configuration Server.
 
 - The Configuration Server initiates notifications for the affected users and devices
-through verkehr. The notification just indicates "You need to check for updated configs".
+through lipwig. The notification just indicates "You need to check for updated configs".
 
 - On next device startup, or in response to the message from verkehr, the device
 gets the new or updated configuration values from the centralized Config Server; the

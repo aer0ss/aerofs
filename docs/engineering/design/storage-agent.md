@@ -20,7 +20,7 @@ These will be built for the MVP.
 * Re-use.
 * Need to include TCB, Token, TokenManager, & ExponentialRetry et al.
 
-#### VerkehrClient
+#### Polaris Notification Subscriber
 * Re-use.
 * Listens in on interested stores.
 

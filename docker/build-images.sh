@@ -32,7 +32,6 @@ DIRS="
     ../src/sparta
     ../src/spsv
     ../golang/src/aerofs.com/ts-probe
-    ../src/verkehr
     ../src/web
     ../src/zephyr
 

@@ -4,12 +4,12 @@
 
 package com.aerofs.base;
 
-import com.google.common.base.Charsets;
+import com.aerofs.ids.DID;
+import com.aerofs.ssmp.SSMPIdentifier;
 
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
@@ -37,7 +37,7 @@ public class BaseParam
     public static class SSMP
     {
         public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.ssmp.address",
-                InetSocketAddress.createUnresolved(Appliance.BASE_HOST, 5222));
+                InetSocketAddress.createUnresolved(Appliance.BASE_HOST, 29438));
     }
 
     public static class Charlie
@@ -103,50 +103,17 @@ public class BaseParam
         public static final String URL = getStringProperty("base.sp.url", "https://sp.aerofs.com/sp/");
     }
 
-    public static class Verkehr
+    public static class SSMPIdentifiers
     {
-        public static final String HOST =
-                getStringProperty("base.verkehr.host", "verkehr.aerofs.com");
-
-        public static final short PROTOBUF_PORT =
-                (short) getIntegerProperty("base.verkehr.port.pb", 443);
-
-        public static final short REST_PORT =
-                (short) getIntegerProperty("base.verkehr.port.rest", 25234);
-
-        public static final long MIN_RETRY_INTERVAL = 5 * C.SEC;
-        public static final long MAX_RETRY_INTERVAL = 30 * C.SEC;
-    }
-
-    public static class Topics
-    {
-        public static String getACLTopic(String userId, boolean urlEncoded)
+        public static SSMPIdentifier getACLTopic(String userId)
         {
-            String topicName = "acl/" + userId;
-            if (urlEncoded) {
-                try {
-                    return URLEncoder.encode(topicName, Charsets.UTF_8.toString());
-                } catch (UnsupportedEncodingException e) {
-                    throw new IllegalArgumentException("fail create acl topic for " + userId, e);
-                }
-            } else {
-                return topicName;
-            }
+            return SSMPIdentifier.fromInternal("acl/" + java.util.Base64.getEncoder().encodeToString(
+                    userId.getBytes(StandardCharsets.UTF_8)));
         }
 
-        public static String getCMDTopic(String formalDID, boolean urlEncoded)
+        public static SSMPIdentifier getCMDUser(DID did)
         {
-            String topicName = "cmd/" + formalDID;
-
-            if (urlEncoded) {
-                try {
-                    return URLEncoder.encode(topicName, Charsets.UTF_8.toString());
-                } catch (UnsupportedEncodingException e) {
-                    throw new IllegalArgumentException("fail create cmd topic for " + formalDID, e);
-                }
-            } else {
-                return topicName;
-            }
+            return SSMPIdentifier.fromInternal(did.toStringFormal() + "/cmd");
         }
     }
 

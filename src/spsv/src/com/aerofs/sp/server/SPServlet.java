@@ -3,10 +3,15 @@ package com.aerofs.sp.server;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.SPServiceReactor;
@@ -60,11 +65,9 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.aerofs.ssmp.SSMPConnection;
 import org.flywaydb.core.Flyway;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -73,6 +76,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -80,8 +84,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SPServlet extends AeroServlet
 {
@@ -159,7 +161,7 @@ public class SPServlet extends AeroServlet
 
     private final AuditClient _auditClient;
     private final BifrostClient _bifrostClient;
-    private final VerkehrClient _verkehrClient;
+    private final SSMPConnection _ssmpConnection;
 
     private final SPService _service;
 
@@ -205,9 +207,9 @@ public class SPServlet extends AeroServlet
         _factEmailer = new InvitationEmailer.Factory();
         _asyncEmailSender = AsyncEmailSender.create();
         String deploymentSecret = AeroService.loadDeploymentSecret();
-        _verkehrClient = createVerkehrClient(deploymentSecret);
+        _ssmpConnection = createSSMPConnection(deploymentSecret, URLBasedCertificateProvider.server());
         _auditClient = createAuditClient(deploymentSecret);
-        _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _verkehrClient);
+        _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection);
         _authenticator = new AuthenticatorFactory(
                 _aclNotificationPublisher,
                 _auditClient
@@ -270,7 +272,7 @@ public class SPServlet extends AeroServlet
                 _rateLimiter,
                 _scheduledExecutor,
                 _bifrostClient,
-                _verkehrClient,
+                _ssmpConnection,
                 _auditClient,
                 _aclNotificationPublisher);
         _reactor = new SPServiceReactor(_service);
@@ -292,6 +294,8 @@ public class SPServlet extends AeroServlet
 
         InvitationReminder er = new InvitationReminder(_esdb, _sqlTrans, _invitationReminderEmailer);
         er.start();
+
+        _ssmpConnection.start();
     }
 
     /**
@@ -309,27 +313,25 @@ public class SPServlet extends AeroServlet
         flyway.migrate();
     }
 
-    private static VerkehrClient createVerkehrClient(String secret)
-    {
-        Executor nioExecutor = Executors.newCachedThreadPool();
-        NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
-        return VerkehrClient.create(
-                "verkehr.service",
-                BaseParam.Verkehr.REST_PORT,
-                MILLISECONDS.convert(30, SECONDS),
-                MILLISECONDS.convert(60, SECONDS),
-                () -> AeroService.getHeaderValue("sp", secret),
-                new HashedWheelTimer(),
-                MoreExecutors.sameThreadExecutor(),
-                channelFactory);
-    }
-
     private static AuditClient createAuditClient(String deploymentSecret)
     {
         AuditClient auditClient = new AuditClient();
         auditClient.setAuditorClient(AuditorFactory.createAuthenticatedWithSharedSecret(
                 "auditor.service", "sp", deploymentSecret));
         return auditClient;
+    }
+
+    private static SSMPConnection createSSMPConnection(String deploymentSecret,
+                                                       ICertificateProvider cacert)
+    {
+        Executor executor = Executors.newCachedThreadPool();
+        return new SSMPConnection(deploymentSecret,
+                InetSocketAddress.createUnresolved("lipwig.service", 8787),
+                TimerUtil.getGlobalTimer(),
+                new NioClientSocketChannelFactory(executor, executor, 1, 2),
+                new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)
+                        ::newSslHandler
+                );
     }
 
     private SPActiveUserSessionTracker getUserTracker()

@@ -11,8 +11,8 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
-import com.aerofs.verkehr.client.wire.ConnectionListener;
-import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
+import com.aerofs.ssmp.SSMPClient.ConnectionListener;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.ImmutableSet;
 import org.hamcrest.Matcher;
 import org.junit.Before;
@@ -24,11 +24,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.net.NetworkInterface;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.when;
  */
 public class TestOnlineStatusNotifier
 {
-    @Mock VerkehrPubSubClient _vk;
+    @Mock SSMPConnection _ssmp;
     @Mock LinkStateService _lss;
     @Mock RitualNotificationServer _ritualNotificationServer;
     @Mock CoreExecutor _coreExecutor;
@@ -57,7 +58,7 @@ public class TestOnlineStatusNotifier
     ImmutableSet<NetworkInterface> _nonEmpty;
 
     // these references are used to simulate callbacks
-    ConnectionListener _verkehrListener;
+    ConnectionListener _ssmpListener;
     ILinkStateListener _linkStateListener;
 
     @Before
@@ -73,13 +74,13 @@ public class TestOnlineStatusNotifier
 
         _notifier.init_();
 
-        ArgumentCaptor<ConnectionListener> verkehrCaptor = ArgumentCaptor.forClass(ConnectionListener.class);
-        verify(_vk).addConnectionListener(verkehrCaptor.capture(), eq(_coreExecutor));
-        _verkehrListener = verkehrCaptor.getValue();
+        ArgumentCaptor<ConnectionListener> ssmpCaptor = ArgumentCaptor.forClass(ConnectionListener.class);
+        verify(_ssmp).addConnectionListener(ssmpCaptor.capture());
+        _ssmpListener = ssmpCaptor.getValue();
 
         ArgumentCaptor<ILinkStateListener> linkStateCaptor =
                 ArgumentCaptor.forClass(ILinkStateListener.class);
-        verify(_lss).addListener(linkStateCaptor.capture(), eq(_coreExecutor));
+        verify(_lss).addListener(linkStateCaptor.capture(), any(Executor.class));
         _linkStateListener = linkStateCaptor.getValue();
     }
 
@@ -87,21 +88,21 @@ public class TestOnlineStatusNotifier
     public void shouldBeOfflineInitially()
     {
         assertFalse(_notifier._isOnline);
-        assertFalse(_notifier._isVerkehrConnected);
+        assertFalse(_notifier._isSSMPConnected);
         assertFalse(_notifier._isLinkStateConnected);
     }
 
     @Test
-    public void shouldMaintainVerkehrAndLinkState()
+    public void shouldMaintainSSMPrAndLinkState()
     {
         boolean[] initialStates = { false, false, true, true };
         boolean[] externalStates = { false, true, false, true };
         boolean[] expectedStates = { false, true, false, true };
 
         for (int i = 0; i < initialStates.length; i++) {
-            _notifier._isVerkehrConnected = initialStates[i];
-            triggerVerkehrCallback(externalStates[i]);
-            assertEquals(expectedStates[i], _notifier._isVerkehrConnected);
+            _notifier._isSSMPConnected = initialStates[i];
+            triggerSSMPCallback(externalStates[i]);
+            assertEquals(expectedStates[i], _notifier._isSSMPConnected);
 
             _notifier._isLinkStateConnected = initialStates[i];
             triggerLinkStateCallback(externalStates[i]);
@@ -112,12 +113,12 @@ public class TestOnlineStatusNotifier
     @Test
     public void shouldMaintainOnlineState()
     {
-        boolean[] verkehrTriggers = { false, false, true, true };
+        boolean[] ssmpTriggers = { false, false, true, true };
         boolean[] linkStateTriggers = { false, true, false, true };
         boolean[] expectedStates = { false, false, false, true };
 
-        for (int i = 0; i < verkehrTriggers.length; i++) {
-            triggerVerkehrCallback(verkehrTriggers[i]);
+        for (int i = 0; i < ssmpTriggers.length; i++) {
+            triggerSSMPCallback(ssmpTriggers[i]);
             triggerLinkStateCallback(linkStateTriggers[i]);
             assertEquals(expectedStates[i], _notifier._isOnline);
         }
@@ -128,7 +129,7 @@ public class TestOnlineStatusNotifier
     {
         for (boolean isOnline : new boolean[] { false, true }) {
             _notifier._isOnline = isOnline;
-            _notifier.sendOnlineStatusNotification_();
+            _notifier.sendOnlineStatusNotification();
             verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(isOnline)));
         }
     }
@@ -138,7 +139,7 @@ public class TestOnlineStatusNotifier
     @Test
     public void shouldNotifyCorrectlyOnStateTransitions()
     {
-        triggerVerkehrCallback(true);
+        triggerSSMPCallback(true);
         verifyZeroInteractions(_ritualNotifier);
 
         triggerLinkStateCallback(true);
@@ -148,7 +149,7 @@ public class TestOnlineStatusNotifier
         // each state transition
         reset(_ritualNotifier);
 
-        triggerVerkehrCallback(false);
+        triggerSSMPCallback(false);
         verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(false)));
         verifyNoMoreInteractions(_ritualNotifier);
         reset(_ritualNotifier);
@@ -159,7 +160,7 @@ public class TestOnlineStatusNotifier
         triggerLinkStateCallback(true);
         verifyZeroInteractions(_ritualNotifier);
 
-        triggerVerkehrCallback(true);
+        triggerSSMPCallback(true);
         verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(true)));
         verifyNoMoreInteractions(_ritualNotifier);
         reset(_ritualNotifier);
@@ -169,16 +170,19 @@ public class TestOnlineStatusNotifier
         verifyNoMoreInteractions(_ritualNotifier);
         reset(_ritualNotifier);
 
-        triggerVerkehrCallback(false);
+        triggerSSMPCallback(false);
         verifyZeroInteractions(_ritualNotifier);
     }
 
     // N.B. when we trigger callback like this, we are bypassing the core executor and are
     // effectively using the same thread executor.
-    private void triggerVerkehrCallback(boolean isOnline)
+    private void triggerSSMPCallback(boolean isOnline)
     {
-        if (isOnline) _verkehrListener.onConnected(_vk);
-        else _verkehrListener.onDisconnected(_vk);
+        if (isOnline) {
+            _ssmpListener.connected();
+        } else {
+            _ssmpListener.disconnected();
+        }
     }
 
     // N.B. when we trigger callback like this, we are bypassing the core executor and are

@@ -155,9 +155,9 @@ To enforce the time limits placed on the license, the setup service SHOULD
 schedule a periodic task to check the license validity (say, every hour or
 day).  If the license is no longer valid, then the setup service SHOULD stop
 all AeroFS services that are not essential to providing a new license to the
-appliance.  (That is, it SHOULD stop tomcat, ejabberd, zephyr, havre, verkehr,
-and ideally, also make all web pages save the setup-related ones 302 redirect
-to a "license expired" page.  This can be done easily and robustly with nginx.)
+appliance.  (That is, it SHOULD stop tomcat, lipwig, zephyr, havre, and ideally,
+also make all web pages save the setup-related ones 302 redirect to a
+"license expired" page.  This can be done easily and robustly with nginx.)
 
 Services MAY perform a check on service startup to see if the license is valid,
 and terminate if the license is expired, as a fast path to service termination.

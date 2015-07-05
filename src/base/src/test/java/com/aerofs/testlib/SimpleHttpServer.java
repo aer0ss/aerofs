@@ -104,7 +104,6 @@ public class SimpleHttpServer extends AbstractIdleService
     @Override
     protected void startUp() throws Exception
     {
-        // TODO: consolidate this with {@link com.aerofs.verkehr.client.rest.StupidHttpServer}
         _bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override

@@ -22,19 +22,19 @@ import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.ssmp.SSMPRequest.Type;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +65,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
         verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
         verifyNewUserAccountInvitation(USER_1, USER_2, SID_1, false);
     }
@@ -76,7 +76,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         shareFolderExternal(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
 
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
         verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
         verifyNewUserAccountInvitation(USER_1, USER_2, SID_1, false);
     }
@@ -89,7 +89,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         // the new hasn't actually been added to the db yet so this should trigger an invite to them
         shareFolder(USER_1, SID_1, user, Permissions.allOf(Permission.WRITE));
 
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
         verifyFolderInvitation(USER_1, user, SID_1, 0);
         verifyNewUserAccountInvitation(USER_1, user, SID_1, true);
     }
@@ -188,7 +188,8 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
 
         for (Published published : getPublishedMessages()) {
             try {
-                Command command = Command.parseFrom(published.bytes);
+                if (published.type != Type.UCAST) continue;
+                Command command = Command.parseFrom(Base64.getDecoder().decode(published.bytes));
                 Assert.assertEquals(CommandType.REFRESH_CRL, command.getType());
                 commands.add(command);
             } catch (InvalidProtocolBufferException e) {
@@ -210,7 +211,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         assertGetACLReplyIncrementsEpochBy(reply, 1);
         assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Permissions.allOf(
                 Permission.WRITE, Permission.MANAGE));
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
     }
 
     @Test
@@ -219,12 +220,12 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         // create shared folder and invite a first user
         shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE, Permission.MANAGE));
-        assertVerkehrPublishedOnlyTo(USER_1);
+        assertPublishedOnlyTo(USER_1);
         clearPublishedMessages();
 
         // inviteee joins
         joinSharedFolder(USER_2, SID_1);
-        assertVerkehrPublishedOnlyTo(USER_1, USER_2);
+        assertPublishedOnlyTo(USER_1, USER_2);
         clearPublishedMessages();
 
         // now lets see if the other person can add a third person
@@ -233,7 +234,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         sqlTrans.commit();
 
         shareAndJoinFolder(USER_2, SID_1, user, Permissions.allOf(Permission.WRITE));
-        assertVerkehrPublishedOnlyTo(USER_1, USER_2, user);
+        assertPublishedOnlyTo(USER_1, USER_2, user);
         clearPublishedMessages();
 
         // now let's see what the acls are like

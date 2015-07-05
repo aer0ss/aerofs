@@ -36,9 +36,10 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Sparta;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPRequest;
+import com.aerofs.ssmp.SSMPResponse;
 import com.aerofs.testlib.AbstractBaseTest;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.FieldNamingPolicy;
@@ -64,9 +65,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -84,7 +83,6 @@ import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -109,7 +107,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final String ADMIN = "admin";
     private static final String OTHER = "other";
 
-    private static final VerkehrClient verkehrClient = mock(VerkehrClient.class);
+    private static final SSMPConnection ssmp = mock(SSMPConnection.class);
     private static final CommandDispatcher commandDispatcher = mock(CommandDispatcher.class);
     protected static final PasswordManagement passwordManagement = mock(PasswordManagement.class);
     protected static final License license = mock(License.class);
@@ -168,22 +166,12 @@ public class AbstractResourceTest extends AbstractBaseTest
 
         when(sessionFactory.openSession()).thenReturn(session);
 
-        when(verkehrClient.publish(anyString(), any(byte[].class)))
+        when(ssmp.request(any(SSMPRequest.class)))
                 .thenAnswer(invocation -> {
-                    SettableFuture<Void> f = SettableFuture.create();
-                    f.set(null);
+                    SettableFuture<SSMPResponse> f = SettableFuture.create();
+                    f.set(new SSMPResponse(SSMPResponse.OK, ""));
                     return f;
                 });
-
-        when(verkehrClient.revokeSerials(Matchers.<ImmutableCollection<Long>>anyObject())).thenAnswer(
-                invocation -> {
-                    SettableFuture<Void> f = SettableFuture.create();
-                    f.set(null);
-                    return f;
-                }
-        );
-
-        when(commandDispatcher.getVerkehrClient()).thenReturn(verkehrClient);
 
         ElapsedTimer t = new ElapsedTimer();
 
@@ -271,7 +259,7 @@ public class AbstractResourceTest extends AbstractBaseTest
             @Override
             protected void configure()
             {
-                bind(VerkehrClient.class).toInstance(verkehrClient);
+                bind(SSMPConnection.class).toInstance(ssmp);
                 bind(CommandDispatcher.class).toInstance(commandDispatcher);
                 bind(PasswordManagement.class).toInstance(passwordManagement);
                 bind(AuditClient.class).toInstance(

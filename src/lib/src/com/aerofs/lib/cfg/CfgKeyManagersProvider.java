@@ -10,7 +10,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * Simple wrapper for Cfg credentials required to instantiate the verkehr publisher.
+ * Simple wrapper for Cfg credentials
  */
 public class CfgKeyManagersProvider implements IPrivateKeyProvider
 {

@@ -2,7 +2,6 @@ FROM aerofs/base.python2.7
 
 MAINTAINER AeroFS "support@aerofs.com"
 
-# TODO (WW) move verkehr's /data/topics to /data/verkehr
 RUN mkdir -p \
     /data/bunker \
     /data/web \

@@ -26,7 +26,10 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
     private final SSMPClient _client;
 
     private long _delay = 0;
+
     private final SSMPIdentifier _login;
+    private String _secret;
+
     private final AtomicBoolean _stopped = new AtomicBoolean(true);
     private final AtomicBoolean _loggedIn = new AtomicBoolean();
 
@@ -38,10 +41,20 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
 
     private final List<EventHandler> _eventHandlers = new ArrayList<>();
 
+    public SSMPConnection(String secret, InetSocketAddress serverAddress, Timer timer,
+                          ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
+        this(SSMPIdentifier.ANONYMOUS, serverAddress, timer, channelFactory, sslHandlerFactory);
+        _secret = secret;
+    }
     public SSMPConnection(DID did, InetSocketAddress serverAddress, Timer timer,
                           ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
+        this(SSMPIdentifier.fromInternal(did.toStringFormal()), serverAddress, timer, channelFactory, sslHandlerFactory);
+    }
+
+    public SSMPConnection(SSMPIdentifier login, InetSocketAddress serverAddress, Timer timer,
+                          ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
         _timer = timer;
-        _login = SSMPIdentifier.fromInternal(did.toStringFormal());
+        _login = login;
         _client = new SSMPClient(serverAddress, timer, channelFactory, sslHandlerFactory, this);
     }
 
@@ -86,7 +99,11 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
     }
 
     private void connect() {
-        _client.connect(_login, SSMPIdentifier.fromInternal("cert"), "", this);
+        if (_login.isAnonymous()) {
+            _client.connect(_login, SSMPIdentifier.fromInternal("secret"), _secret, this);
+        } else {
+            _client.connect(_login, SSMPIdentifier.fromInternal("cert"), "", this);
+        }
     }
 
     private void reconnect() {

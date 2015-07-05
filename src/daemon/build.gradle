@@ -32,7 +32,6 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/tunnel')
     compile project(':src/sync')
-    compile project(path: ':src/verkehr', configuration: 'wireClient')
     compile project(path: ':src/zephyr', configuration: 'client')
     testCompile 'com.jayway.restassured:rest-assured:2.3.4'
     testCompile 'org.hibernate:hibernate-core:4.1.9.Final'

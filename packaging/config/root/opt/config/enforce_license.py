@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # A script which is run periodically to see if the current license file has expired.
 # If the license file doesn't exist or is not currently valid, then it shuts
-# down verkehr and zephyr.
+# down lipwig and zephyr.
 
 from aerofs_licensing import license_file
 import os
@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 LICENSE_FILE_PATH = "/etc/aerofs/license.gpg"
-SERVICES_TO_STOP = ["verkehr", "zephyr"]
+SERVICES_TO_STOP = ["lipwig", "zephyr"]
 
 def shut_down_services_and_create_flag_file_and_exit():
     for service in SERVICES_TO_STOP:

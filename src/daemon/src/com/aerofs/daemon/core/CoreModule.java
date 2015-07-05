@@ -3,7 +3,6 @@ package com.aerofs.daemon.core;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.BaseParam.SSMP;
-import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.activity.LegacyOutboundEventLogger;
@@ -47,7 +46,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ssmp.SSMPConnection;
-import com.aerofs.verkehr.client.wire.VerkehrPubSubClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -56,7 +54,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 
-import static com.aerofs.lib.cfg.ICfgStore.TIMEOUT;
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class CoreModule extends AbstractModule
@@ -199,25 +196,7 @@ public class CoreModule extends AbstractModule
         return AuditorFactory.createAuthenticatedWithDeviceCert();
     }
 
-    @Provides
-    @Singleton
-    public VerkehrPubSubClient provideVerkehrClient(CfgKeyManagersProvider keyManagersProvider,
-            CfgCACertificateProvider certificateProvider, ClientSocketChannelFactory channelFactory, Timer timer)
-    {
-        return VerkehrPubSubClient.create(
-                Verkehr.HOST,
-                Verkehr.PROTOBUF_PORT,
-                keyManagersProvider,
-                certificateProvider,
-                channelFactory,
-                Verkehr.MIN_RETRY_INTERVAL,
-                Verkehr.MAX_RETRY_INTERVAL,
-                Cfg.db().getLong(TIMEOUT),
-                timer);
-    }
-
-    @Provides
-    @Singleton
+    @Provides @Singleton
     public SSMPConnection provideSSMPConnection(CfgLocalDID did, Timer timer,
                                                 ClientSocketChannelFactory channelFactory,
                                                 ClientSSLEngineFactory sslEngineFactory) {

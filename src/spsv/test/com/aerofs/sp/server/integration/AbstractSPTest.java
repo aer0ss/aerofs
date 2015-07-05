@@ -5,8 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseParam.Topics;
+import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
@@ -65,9 +64,12 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPIdentifier;
+import com.aerofs.ssmp.SSMPRequest;
+import com.aerofs.ssmp.SSMPRequest.Type;
+import com.aerofs.ssmp.SSMPResponse;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -77,8 +79,6 @@ import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -111,11 +111,13 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 {
     public final class Published
     {
-        public String topic;
+        public Type type;
+        public SSMPIdentifier topic;
         public byte[] bytes;
 
-        public Published(String topic, byte[] bytes)
+        public Published(Type type, SSMPIdentifier topic, byte[] bytes)
         {
+            this.type = type;
             this.topic = topic;
             this.bytes = bytes;
         }
@@ -138,15 +140,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         }
     }
 
-    // Some subclasses will add custom mocking to the verkehr objects.
-    protected VerkehrClient verkehrClient = mock(VerkehrClient.class);
+    protected SSMPConnection ssmp = mock(SSMPConnection.class);
     @Spy protected AuditClient auditClient = spy(new AuditClient()
-            .setAuditorClient(new IAuditorClient() {
-                @Override
-                public void submit(String content) throws IOException {
-                    System.out.println(content);
-                }
-            }));
+            .setAuditorClient(System.out::println));
 
     protected SPActiveUserSessionTracker userSessionTracker =
             new SPActiveUserSessionTracker();
@@ -214,7 +210,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSession(UserID)
     @Spy protected MockSession session;
 
-    @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, verkehrClient);
+    @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, ssmp);
 
     @Spy protected Authenticator authenticator = spy(new AuthenticatorFactory(aclNotificationPublisher, auditClient).create());
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
@@ -265,16 +261,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         mockLicense();
         mockRateLimiter();
 
-        // mock out verkehr
-        when(verkehrClient.publish(any(String.class), any(byte[].class))).then(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                allPublished.add(new Published((String)invocation.getArguments()[0], (byte[])invocation.getArguments()[1]));
-                return UncancellableFuture.createSucceeded(null);
-            }
+        // mock out ssmp
+        when(ssmp.request(any(SSMPRequest.class))).then(invocation -> {
+            SSMPRequest r = (SSMPRequest) invocation.getArguments()[0];
+            allPublished.add(new Published(r.type, r.to, r.payload));
+            return UncancellableFuture.createSucceeded(new SSMPResponse(SSMPResponse.OK, ""));
         });
 
         ///////////////////////////////////////////////////////////////////////////
@@ -357,7 +348,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 rateLimiter,
                 scheduledExecutorService,
                 bifrostClient,
-                verkehrClient,
+                ssmp,
                 auditClient,
                 aclNotificationPublisher);
         wireSPService();
@@ -472,35 +463,14 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 user.id(), device.id()).getEncoded());
     }
 
-    // FIXME (AG): this is ridiculous; we should capture all CRLs and simply return the ones we've captured
-    @SuppressWarnings("unchecked")
-    protected List<ImmutableCollection<Long>> mockAndCaptureVerkehrUpdateCRL()
-    {
-        final List<ImmutableCollection<Long>> crls = Lists.newArrayList();
-
-        when(verkehrClient.revokeSerials((ImmutableCollection<Long>)any(ImmutableCollection.class)))
-                .thenAnswer(new Answer<Object>()
-                {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        crls.add((ImmutableCollection<Long>)invocation.getArguments()[0]);
-                        return UncancellableFuture.createSucceeded(null);
-                    }
-                });
-
-        return crls;
-    }
-
     protected List<Published> getPublishedMessages()
     {
         return ImmutableList.copyOf(allPublished);
     }
 
-    protected Set<String> getTopicsPublishedTo()
+    protected Set<SSMPIdentifier> getTopicsPublishedTo()
     {
-        Set<String> topicNames = Sets.newHashSet();
+        Set<SSMPIdentifier> topicNames = Sets.newHashSet();
 
         for (Published published : allPublished) {
             topicNames.add(published.topic);
@@ -511,16 +481,16 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     protected void assertPublishedTo(User... users)
     {
-        Set<String> topicsPublishedTo = getTopicsPublishedTo();
+        Set<SSMPIdentifier> topicsPublishedTo = getTopicsPublishedTo();
 
         for (User user : users) {
-            if (!topicsPublishedTo.contains(Topics.getACLTopic(user.id().getString(), true))) {
-                fail("verkehr publish doesn't contain " + user + ". actual: " + allPublished);
+            if (!topicsPublishedTo.contains(SSMPIdentifiers.getACLTopic(user.id().getString()))) {
+                fail("ssmp publish doesn't contain " + user + ". actual: " + allPublished);
             }
         }
     }
 
-    protected void assertVerkehrPublishedOnlyTo(User... users)
+    protected void assertPublishedOnlyTo(User... users)
             throws Exception
     {
         assertPublishedTo(users);
@@ -535,7 +505,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         assertPublishedTo(tsUsers.toArray(new User[tsUsers.size()]));
 
         if (users.length + tsUsers.size() != allPublished.size()) {
-            fail("verkerh publish has more than expected: " + Arrays.toString(users) + " actual: " + allPublished);
+            fail("ssmp publish has more than expected: " + Arrays.toString(users) + " actual: " + allPublished);
         }
     }
 

@@ -25,7 +25,6 @@ dependencies {
     compile 'io.netty:netty-transport:4.1.0.Beta4'
     compile project(':src/lib')
     compile project(':src/ssmp')
-    compile project(path: ':src/verkehr', configuration: 'wireClient')
     compile project(path: ':src/zephyr', configuration: 'client')
     testCompile 'javax.mail:mail:1.4.2'
     testCompile project(':src/zephyr')

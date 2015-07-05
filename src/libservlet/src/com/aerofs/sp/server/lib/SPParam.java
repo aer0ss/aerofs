@@ -13,8 +13,7 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 public class SPParam
 {
     // Context attributes.
-    public static final String VERKEHR_CLIENT_ATTRIBUTE = "verkehr_client";
-    public static final String AUDIT_CLIENT_ATTRIBUTE = "audit_client";
+    public static final String SSMP_CLIENT_ATTRIBUTE = "ssmp_client";
 
     public static final String SESSION_USER_TRACKER = "session_user_tracker";
     public static final String SESSION_INVALIDATOR = "session_invalidator";

@@ -4,38 +4,41 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.Topics;
+import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.ids.DID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPRequest;
 import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
+import java.util.Base64;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Manage sending commands and verkehr messages for device actions.
+ * Manage sending commands and SSMP messages for device actions.
  */
 public class CommandDispatcher
 {
-    private VerkehrClient _verkehrClient;
+    private SSMPConnection _ssmp;
     private JedisEpochCommandQueue _commandQueue;
     private JedisThreadLocalTransaction _jedisTrans;
 
     @Inject
-    public CommandDispatcher(JedisEpochCommandQueue cmdQueue, JedisThreadLocalTransaction jedisTrans, VerkehrClient verkehrClient)
+    public CommandDispatcher(JedisEpochCommandQueue cmdQueue, JedisThreadLocalTransaction jedisTrans,
+                             SSMPConnection ssmp)
     {
         _commandQueue = cmdQueue;
         _jedisTrans = jedisTrans;
-        _verkehrClient = verkehrClient;
+        _ssmp = ssmp;
     }
 
     /**
      * Flush the command queue and then append the given command message.
-     * After, send a verkehr message.
+     * After, send a SSMP message.
      * @param did               Targeted device
      * @param commandMessage    Command message
      * @throws java.util.concurrent.ExecutionException
@@ -48,7 +51,7 @@ public class CommandDispatcher
     }
 
     /**
-     * Add the given command message to the device command queue, and send a verkehr message.
+     * Add the given command message to the device command queue, and send a SSMP message.
      * @param did               Targeted device
      * @param commandMessage    Command message
      * @throws java.util.concurrent.ExecutionException
@@ -60,12 +63,10 @@ public class CommandDispatcher
         deliver(did, commandMessage, false);
     }
 
-    public VerkehrClient getVerkehrClient() { return _verkehrClient; }
-
     private void deliver(DID did, String commandMessage, boolean flushFirst)
             throws ExecutionException, InterruptedException
     {
-        Preconditions.checkState(_verkehrClient != null);
+        Preconditions.checkState(_ssmp != null);
 
         Epoch epoch;
 
@@ -82,6 +83,7 @@ public class CommandDispatcher
         assert epoch != null;
 
         Command command = CommandUtil.createCommandFromMessage(commandMessage, epoch.get());
-        _verkehrClient.publish(Topics.getCMDTopic(did.toStringFormal(), true), command.toByteArray()).get();
+        _ssmp.request(SSMPRequest.ucast(SSMPIdentifiers.getCMDUser(did),
+                Base64.getEncoder().encodeToString(command.toByteArray()))).get();
     }
 }

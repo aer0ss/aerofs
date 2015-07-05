@@ -5,20 +5,22 @@
 package com.aerofs.sp.server.listeners;
 
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.Verkehr;
-import com.aerofs.verkehr.client.rest.VerkehrClient;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.aerofs.base.TimerUtil;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.URLBasedCertificateProvider;
+import com.aerofs.ssmp.SSMPConnection;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.servlet.ServletContextEvent;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CLIENT_ATTRIBUTE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.aerofs.sp.server.lib.SPParam.SSMP_CLIENT_ATTRIBUTE;
 
 public class LogCollectionLifecycleListener extends ConfigurationLifecycleListener
 {
@@ -27,35 +29,31 @@ public class LogCollectionLifecycleListener extends ConfigurationLifecycleListen
     {
         super.contextInitialized(event);
 
-        // verkehr
-        event.getServletContext().setAttribute(VERKEHR_CLIENT_ATTRIBUTE, createVerkehrClient());
+        event.getServletContext().setAttribute(SSMP_CLIENT_ATTRIBUTE, createSSMPConnection());
     }
 
-    private static VerkehrClient createVerkehrClient()
+    private static SSMPConnection createSSMPConnection()
     {
-        Executor nioExecutor = Executors.newCachedThreadPool();
-        NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(nioExecutor, nioExecutor, 1, 2);
+        Executor executor = Executors.newCachedThreadPool();
         String secret = AeroService.loadDeploymentSecret();
-        return VerkehrClient.create(
-                "verkehr.service",
-                Verkehr.REST_PORT,
-                MILLISECONDS.convert(30, SECONDS),
-                MILLISECONDS.convert(60, SECONDS),
-                () -> AeroService.getHeaderValue("log-collection", secret),
-                new HashedWheelTimer(),
-                MoreExecutors.sameThreadExecutor(),
-                channelFactory);
+        ICertificateProvider cacert = URLBasedCertificateProvider.server();
+        return new SSMPConnection(secret,
+                InetSocketAddress.createUnresolved("lipwig.service", 8787),
+                TimerUtil.getGlobalTimer(),
+                new NioClientSocketChannelFactory(executor, executor, 1, 2),
+                new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)
+                        ::newSslHandler
+        );
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent event)
     {
-        VerkehrClient verkehrClient = (VerkehrClient) event.getServletContext()
-                .getAttribute(VERKEHR_CLIENT_ATTRIBUTE);
+        SSMPConnection ssmp = (SSMPConnection) event.getServletContext()
+                .getAttribute(SSMP_CLIENT_ATTRIBUTE);
 
-        if (verkehrClient != null) {
-            verkehrClient.disconnectAll();
-            verkehrClient.shutdown();
+        if (ssmp != null) {
+            ssmp.stop();
         }
 
         super.contextDestroyed(event);

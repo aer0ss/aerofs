@@ -3,7 +3,6 @@ package com.aerofs.polaris;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.polaris.sparta.SpartaConfiguration;
-import com.aerofs.polaris.verkehr.VerkehrConfiguration;
 import com.google.common.base.Objects;
 import org.hibernate.validator.constraints.NotBlank;
 
@@ -28,10 +27,6 @@ public final class PolarisConfiguration extends Configuration {
     @NotNull
     @Valid
     private SpartaConfiguration sparta;
-
-    @NotNull
-    @Valid
-    private VerkehrConfiguration verkehr;
 
     public String getDeploymentSecretPath() {
         return deploymentSecretPath;
@@ -65,14 +60,6 @@ public final class PolarisConfiguration extends Configuration {
         this.sparta = sparta;
     }
 
-    public VerkehrConfiguration getVerkehr() {
-        return verkehr;
-    }
-
-    public void setVerkehr(VerkehrConfiguration verkehr) {
-        this.verkehr = verkehr;
-    }
-
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
@@ -83,13 +70,12 @@ public final class PolarisConfiguration extends Configuration {
 
         return maxReturnedTransforms == other.maxReturnedTransforms
                 && Objects.equal(database, other.database)
-                && Objects.equal(sparta, other.sparta)
-                && Objects.equal(verkehr, other.verkehr);
+                && Objects.equal(sparta, other.sparta);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + Objects.hashCode(maxReturnedTransforms, database, sparta, verkehr);
+        return super.hashCode() + Objects.hashCode(maxReturnedTransforms, database, sparta);
     }
 
     @Override
@@ -102,7 +88,6 @@ public final class PolarisConfiguration extends Configuration {
                 .add("logging", getLogging())
                 .add("database", getDatabase())
                 .add("sparta", getSparta())
-                .add("verkehr", getVerkehr())
                 .toString();
     }
 }
