@@ -31,7 +31,7 @@ Servers and clients MUST NOT use more than a single delimiter between messages.
 A message is composed of space-separated fields of the following types:
 
   - `VERB`       `[A-Z]+`
-  - `IDENTIFIER` `[a-zA-Z0-9.:@/_-]+`
+  - `IDENTIFIER` `[a-zA-Z0-9.:@/_-+=~]+`
   - `PAYLOAD`    `[^\n]+`
   - `CODE`       `[0-9]{3}`
 

@@ -12,7 +12,7 @@ public class SSMPRequest {
     final static int FIELD_PAYLOAD = 2;
     final static int FIELD_OPTION = 6;
 
-    enum Type {
+    public enum Type {
         LOGIN("LOGIN", -1),
         SUBSCRIBE("SUBSCRIBE", FIELD_ID | FIELD_OPTION),
         UNSUBSCRIBE("UNSUBSCRIBE", FIELD_ID),

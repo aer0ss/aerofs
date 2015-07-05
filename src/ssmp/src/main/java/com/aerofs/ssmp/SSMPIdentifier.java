@@ -16,8 +16,12 @@ public class SSMPIdentifier {
             Range('a', 'z'),
             Range('A', 'Z'),
             Range('0', '9'),
-            All('.', '@', ':', '/', '-', '_')
+            All(".@:/-_+=~")
     );
+
+    public boolean isAnonymous() {
+        return ANONYMOUS.equals(this);
+    }
 
     public static class InvalidIdentifier extends Exception {
         public static final long serialVersionUID = -1;

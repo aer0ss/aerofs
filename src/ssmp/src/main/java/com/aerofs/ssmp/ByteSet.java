@@ -21,9 +21,9 @@ public class ByteSet {
         };
     }
 
-    public static Initializer All(char... l) {
+    public static Initializer All(String l) {
         return s -> {
-            for (char c : l) s.set((byte)c);
+            for (int i = 0; i < l.length(); ++i) s.set((byte)l.charAt(i));
         };
     }
     public static Initializer All(byte... l) {

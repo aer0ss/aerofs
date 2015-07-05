@@ -65,7 +65,7 @@ var ID_CHARSET *ByteSet = NewByteSet(
 	Range('a', 'z'),
 	Range('A', 'Z'),
 	Range('0', '9'),
-	All(".:@/-_"),
+	All(".:@/-_+=~"),
 )
 
 // VerbField extracts a VERB field from c.
