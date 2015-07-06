@@ -14,7 +14,6 @@ Passwd=$PasswdDefault
 CurlOutput="-o /dev/null"
 WebHostDefault=share.syncfs.com
 WebHost=$WebHostDefault
-UseridDefault=
 Userid=
 Verbose=0
 
@@ -30,7 +29,6 @@ Usage()
     echo "                  (useful if you have invitation-only set, invite users from web UI,"
     echo "                   then use auto-signup)"
     echo ""
-    echo "      -d <host>   Hostname of the box running the user database (default $DbHostDefault)"
     echo "      -w <host>   Hostname of the box running the website (default $WebHostDefault)"
     echo ""
     echo "      -u <userid> Username (email address) to create. No default."
@@ -122,7 +120,7 @@ CreateAccount()
     curl --fail -k \
         -s ${CurlOutput} \
         --data-urlencode "email=${User}" -d "c=${Code}" \
-        -d "first_name=Jon" -d "last_name=Testo" -d "password=${Passwd}" \
+        -d "first_name=${First}" -d "last_name=${Last}" -d "password=${Passwd}" \
         -d "csrf_token=${CsrfToken}" -b ${CookieJar} \
         https://${WebHost}/json.signup \
              || Die "Curl reported an error creating the account"
@@ -132,7 +130,7 @@ CreateAccount()
 DoInvite()
 {
     [ $Verbose -eq 0 ] || set -x
-    curl --fail -s -G ${CurlOutput} \
+    curl --fail -s -k -G ${CurlOutput} \
         --data-urlencode "email=${Userid}" \
         "https://${WebHost}/json.request_to_signup" \
              || Die "Curl reported an error signing up for the account"
