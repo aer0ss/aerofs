@@ -68,6 +68,26 @@ def main():
         with open(MODIFIED_YML_PATH) as f:
             print f.read()
 
+    elif argv[1] == 'modified-containers':
+        if len(argv) != 4:
+            print >>stderr, "Usage: {} {} <repo> <tag>".format(argv[0], argv[1])
+            exit(11)
+        modify_yaml(argv[2], argv[3])
+        with open(MODIFIED_YML_PATH) as f:
+            y = yaml.load(f)
+        for key in y['containers']:
+            print key
+
+    elif argv[1] == 'modified-images':
+        if len(argv) != 4:
+            print >>stderr, "Usage: {} {} <repo> <tag>".format(argv[0], argv[1])
+            exit(11)
+        modify_yaml(argv[2], argv[3])
+        with open(MODIFIED_YML_PATH) as f:
+            y = yaml.load(f)
+        for value in y['containers'].itervalues():
+            print value['image']
+
     elif argv[1] == 'create-containers':
         if len(argv) <= 4:
             print >>stderr, "Usage: {} {} <repo> <tag> container ...".format(argv[0], argv[1])

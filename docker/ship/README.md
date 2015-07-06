@@ -206,8 +206,8 @@ the new containers defined in the target group and their dependencies.
   data copying, as its data may have become out of sync with its counterpart. If unsure, always
   `POST /gc` before switching.
 
-- `POST /gc` removes old containers and their volume data that are left behind from
-  `POST /switch`.
+- `POST /gc` removes old containers, their volume data, and container images, that are
+left behind from `POST /switch`.
 
 ### Web access
 

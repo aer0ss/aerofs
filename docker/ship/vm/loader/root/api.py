@@ -213,6 +213,14 @@ def switch(repo, tag, target):
     return restart_to(target)
 
 
+@app.route(PREFIX + "/gc", methods=["POST"])
+def gc():
+    # TODO currently GC don't perform cleaning for loader images of the same tag but different repo names than the
+    # current loader.
+    subprocess.check_call(print_args(['/gc.sh', my_image_name(), _tag]))
+    return ''
+
+
 def has_container(container):
     with open(devnull, 'w') as null:
         return subprocess.call(print_args(['docker', 'inspect', container]), stdout=null, stderr=null) == 0
