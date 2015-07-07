@@ -1,7 +1,6 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
@@ -92,15 +91,11 @@ public class BaseCfg {
         _inited = true;
     }
 
-    public void readPrivateKey(boolean readPasswd) throws ExNotSetup, IOException, ExBadCredential
+    public void readPrivateKey(boolean readPasswd) throws IOException, GeneralSecurityException
     {
-        try {
-            if (readPasswd) {
-                String key = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
-                _privKey = BaseSecUtil.newPrivateKeyFromFile(key);
-            }
-        } catch (GeneralSecurityException e) {
-            throw new ExNotSetup();
+        if (readPasswd) {
+            String key = absRTRoot() + File.separator + LibParam.DEVICE_KEY;
+            _privKey = BaseSecUtil.newPrivateKeyFromFile(key);
         }
     }
 

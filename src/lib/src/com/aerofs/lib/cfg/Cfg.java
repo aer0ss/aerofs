@@ -127,6 +127,8 @@ public class Cfg
 
         try {
             _baseCfg.readPrivateKey(readPasswd);
+        } catch(FileNotFoundException|GeneralSecurityException e) {
+            throw new ExNotSetup();
         } catch (IOException e) {
             Loggers.getLogger(Cfg.class).info("convert private key");
             // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
