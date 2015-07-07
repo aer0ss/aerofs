@@ -50,8 +50,8 @@ public class SwiftBackendModule extends AbstractBackendModule
             store.get(SWIFT_URL),
             authMethod,
             store.get(SWIFT_CONTAINER),
-            store.get(SWIFT_TENANT_ID),
-            store.get(SWIFT_TENANT_NAME)
+            store.getNullable(SWIFT_TENANT_ID),
+            store.getNullable(SWIFT_TENANT_NAME)
         );
     }
 }
