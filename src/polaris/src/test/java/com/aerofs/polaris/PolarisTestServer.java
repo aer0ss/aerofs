@@ -12,7 +12,9 @@ import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.StoreMigrator;
 import com.aerofs.polaris.notification.ManagedNotifier;
+import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
+import com.aerofs.polaris.notification.UpdatePublisher;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
 import org.mockito.Mockito;
@@ -79,6 +81,7 @@ public final class PolarisTestServer extends ExternalResource {
 
     private final class TestPolaris extends Polaris {
 
+        private final ManagedUpdatePublisher publisher = Mockito.mock(ManagedUpdatePublisher.class);
         private final ManagedAccessManager accessManager = Mockito.mock(ManagedAccessManager.class);
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
 
@@ -91,6 +94,7 @@ public final class PolarisTestServer extends ExternalResource {
                 @Override
                 protected void configure() {
                     bind(notifier).to(ManagedNotifier.class).to(Notifier.class).ranked(1);
+                    bind(publisher).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).ranked(1);
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
                 }
             });

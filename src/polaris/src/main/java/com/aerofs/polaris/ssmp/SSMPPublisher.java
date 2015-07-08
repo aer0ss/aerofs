@@ -57,12 +57,11 @@ public final class SSMPPublisher implements ManagedUpdatePublisher {
     private final SSMPConnection ssmp;
 
     @Inject
-    public SSMPPublisher(@Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret)
+    public SSMPPublisher(ICertificateProvider cacert,
+                         @Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret)
     {
         InetSocketAddress lipwigAddress = InetSocketAddress.createUnresolved("lipwig.service", 8787);
         LOGGER.info("setup lipwig update publisher {}", lipwigAddress);
-
-        ICertificateProvider cacert = URLBasedCertificateProvider.server();
 
         this.ssmp = new SSMPConnection(deploymentSecret,
                 lipwigAddress,

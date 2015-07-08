@@ -4,6 +4,8 @@ import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
 import com.aerofs.auth.server.shared.AeroService;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.Service;
 import com.aerofs.baseline.db.DBIExceptionMapper;
@@ -79,6 +81,9 @@ public class Polaris extends Service<PolarisConfiguration> {
         // pick up the deployment secret
         String deploymentSecret = getDeploymentSecret(configuration);
 
+        // fetch cacert
+        ICertificateProvider cacert = URLBasedCertificateProvider.server();
+
         // register the command that dumps the object tree
         environment.registerCommand("tree", TreeCommand.class);
 
@@ -88,6 +93,7 @@ public class Polaris extends Service<PolarisConfiguration> {
             protected void configure() {
                 bind(dbi).to(DBI.class);
                 bind(configuration.getSparta()).to(SpartaConfiguration.class);
+                bind(cacert).to(ICertificateProvider.class);
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
