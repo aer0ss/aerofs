@@ -2,6 +2,7 @@ package server
 
 import (
 	"aerofs.com/lipwig/ssmp"
+	"bytes"
 	"crypto/subtle"
 	"crypto/tls"
 	"net"
@@ -30,7 +31,7 @@ func (a *MultiSchemeAuthenticator) Auth(c net.Conn, user, scheme, cred []byte) b
 
 func SecretAuth(sharedSecret []byte) AuthenticatorFunc {
 	return func(_ net.Conn, _, _, cred []byte) bool {
-		return subtle.ConstantTimeCompare([]byte(cred), sharedSecret) == 1
+		return subtle.ConstantTimeCompare(cred, sharedSecret) == 1
 	}
 }
 
@@ -38,6 +39,11 @@ func CertAuth(c net.Conn, user, _, cred []byte) bool {
 	tc, ok := c.(*tls.Conn)
 	if !ok {
 		return false
+	}
+	// discard path suffix
+	i := bytes.IndexByte(user, '/')
+	if i > 1 {
+		user = user[0:i]
 	}
 	s := tc.ConnectionState()
 	for _, chain := range s.VerifiedChains {

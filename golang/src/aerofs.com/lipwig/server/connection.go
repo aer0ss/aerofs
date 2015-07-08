@@ -100,6 +100,7 @@ func NewConnection(c net.Conn, a Authenticator, d Dispatcher) (Connection, error
 	}
 	cred := cmd.Trailing()
 	if !a.Auth(c, user, scheme, cred) {
+		fmt.Println("failed login for", user, "with", scheme)
 		return nil, ErrUnauthorized
 	}
 	cc := &connection{

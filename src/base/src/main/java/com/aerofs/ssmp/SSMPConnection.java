@@ -144,7 +144,7 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
             h = routeByPayload(ev.payload, _ucastHandlers);
             break;
         case MCAST:
-            h = _mcastHandlers.get(ev.to);
+            h = _mcastHandlers.get(ev.to.toString());
             break;
         case BCAST:
             h = routeByPayload(ev.payload, _bcastHandlers);
