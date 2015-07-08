@@ -116,7 +116,9 @@ public class TestIncomingStream {
         is.offer(ChannelBuffers.wrappedBuffer(BUFFER));
 
         for (int i = 0; i < BUFFER.length; ++i) {
-            assertEquals(BUFFER[i], is.read());
+            int b = is.read();
+            assertTrue(0 <= b && b <= 255);
+            assertEquals(BUFFER[i], (byte)b);
         }
 
         try {
@@ -156,6 +158,20 @@ public class TestIncomingStream {
             }
         } finally {
             t.join();
+        }
+    }
+
+    @Test
+    public void shouldNotSignExtend() throws Exception {
+        byte[] d = new byte[] {-1, -2, -3, -4, -5};
+        IncomingStream is = new IncomingStream(sk, channel, TIMEOUT);
+        assertTrue(is.begin());
+        is.offer(ChannelBuffers.wrappedBuffer(d));
+
+        for (int i = 0; i < d.length; ++i) {
+            int b = is.read();
+            assertTrue(0 <= b && b <= 255);
+            assertEquals(d[i], (byte)b);
         }
     }
 }

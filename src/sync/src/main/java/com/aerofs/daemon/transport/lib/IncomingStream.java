@@ -164,7 +164,10 @@ public final class IncomingStream extends InputStream {
     @Override
     public int read() throws IOException {
         byte[] d = new byte[1];
-        return read(d, 0, 1) != - 1 ? d[0]: -1;
+        if (read(d, 0, 1) != 1) {
+            throw new IOException("internal stream error");
+        }
+        return d[0] & 0xff;
     }
 
     @Override
