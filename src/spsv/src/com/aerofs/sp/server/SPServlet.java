@@ -3,7 +3,6 @@ package com.aerofs.sp.server;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.Analytics;
@@ -81,6 +80,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.aerofs.sp.client.SPProtocol.*;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
@@ -276,7 +276,7 @@ public class SPServlet extends AeroServlet
                 _auditClient,
                 _aclNotificationPublisher);
         _reactor = new SPServiceReactor(_service);
-        _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL, SP.SP_POST_PARAM_DATA);
+        _postDelegate = new DoPostDelegate(SP_POST_PARAM_PROTOCOL, SP_POST_PARAM_DATA);
     }
 
     @Override
@@ -375,8 +375,8 @@ public class SPServlet extends AeroServlet
             resp.sendError(400, "invalid request");
             return;
         }
-        if (protocol != SP.SP_PROTOCOL_VERSION) {
-            l.warn("protocol version mismatch. servlet: " + SP.SP_PROTOCOL_VERSION + " client: " +
+        if (protocol != SP_PROTOCOL_VERSION) {
+            l.warn("protocol version mismatch. servlet: " + SP_PROTOCOL_VERSION + " client: " +
                     protocol);
             resp.sendError(400, "prototcol version mismatch");
             return;

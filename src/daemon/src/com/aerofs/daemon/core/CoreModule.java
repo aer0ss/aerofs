@@ -2,7 +2,6 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.activity.LegacyOutboundEventLogger;
@@ -200,7 +199,7 @@ public class CoreModule extends AbstractModule
     public SSMPConnection provideSSMPConnection(CfgLocalDID did, Timer timer,
                                                 ClientSocketChannelFactory channelFactory,
                                                 ClientSSLEngineFactory sslEngineFactory) {
-        return new SSMPConnection(did.get(), SSMP.SERVER_ADDRESS, timer, channelFactory,
-                sslEngineFactory::newSslHandler);
+        return new SSMPConnection(did.get(), SSMPConnection.getServerAddressFromConfiguration(),
+                timer, channelFactory, sslEngineFactory::newSslHandler);
     }
 }

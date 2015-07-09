@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.debug;
 
-import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
@@ -169,7 +168,8 @@ public final class Pump implements IProgram, IUnicastInputLayer
         MaxcastFilterReceiver maxcastFilter = new MaxcastFilterReceiver();
         ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
 
-        SSMPConnection ssmp = new SSMPConnection(localdid.get(), SSMP.SERVER_ADDRESS, timer,
+        SSMPConnection ssmp = new SSMPConnection(localdid.get(),
+                SSMPConnection.getServerAddressFromConfiguration(), timer,
                 getClientChannelFactory(), clientSslEngineFactory::newSslHandler);
 
         return new Transports(localid, localdid, enabled, new CfgTimeout(),

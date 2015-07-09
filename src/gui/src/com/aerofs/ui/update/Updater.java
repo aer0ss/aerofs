@@ -1,5 +1,6 @@
 package com.aerofs.ui.update;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -338,7 +339,7 @@ public abstract class Updater
                     int bytesRead;
                     int downloadedFileSize = 0;
                     int oldPercent = 0;
-                    byte[] buf = new byte[LibParam.FILE_BUF_SIZE];
+                    byte[] buf = new byte[BaseUtil.FILE_BUF_SIZE];
                     while ((bytesRead = downloadStream.read(buf)) >= 0) {
                         out.write(buf, 0, bytesRead);
                         downloadedFileSize += bytesRead;

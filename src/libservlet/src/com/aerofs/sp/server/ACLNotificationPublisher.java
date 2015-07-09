@@ -4,14 +4,9 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
-import com.aerofs.base.Loggers;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.ssmp.SSMPConnection;
-import com.aerofs.ssmp.SSMPIdentifier;
-import com.aerofs.ssmp.SSMPRequest;
-import com.aerofs.ssmp.SSMPResponse;
+import com.aerofs.ssmp.*;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import javax.inject.Inject;

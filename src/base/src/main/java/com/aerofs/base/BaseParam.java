@@ -4,14 +4,8 @@
 
 package com.aerofs.base;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ssmp.SSMPIdentifier;
-
-import java.net.InetSocketAddress;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
-import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -26,32 +20,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
  */
 public class BaseParam
 {
-    // Recommended size for file I/O buffers.
-    public static final int FILE_BUF_SIZE = 512 * C.KB;
-
-    public static class Appliance
-    {
-        public static final String BASE_HOST = getStringProperty("base.host.unified", "aerofs.com");
-    }
-
-    public static class SSMP
-    {
-        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.ssmp.address",
-                InetSocketAddress.createUnresolved(Appliance.BASE_HOST, 29438));
-    }
-
-    public static class Charlie
-    {
-        public static final URL CHARLIE_URL = getUrlProperty("base.charlie.url", "https://charlie.aerofs.com/checkin");
-    }
-
-    public static class Zephyr
-    {
-        // this value is dynamic but clients will not pick up the new value on failure
-        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.zephyr.address",
-                InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
-    }
-
     public static class WWW
     {
         public static final String DASHBOARD_HOST_URL = getStringProperty("base.www.url", "https://www.aerofs.com");
@@ -92,37 +60,6 @@ public class BaseParam
         public static final String COLLECT_LOGS_URL = getStringProperty("base.collect_logs.url", "");
     }
 
-    public static class SP
-    {
-        public static final String SP_POST_PARAM_PROTOCOL = "protocol_vers";
-        public static final String SP_POST_PARAM_DATA = "data";
-
-        // See comment in sp.proto
-        public static final int SP_PROTOCOL_VERSION = 21;
-
-        public static final String URL = getStringProperty("base.sp.url", "https://sp.aerofs.com/sp/");
-    }
-
-    public static class SSMPIdentifiers
-    {
-        public static SSMPIdentifier getACLTopic(String userId)
-        {
-            return SSMPIdentifier.fromInternal("acl/" + java.util.Base64.getEncoder().encodeToString(
-                    userId.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        public static SSMPIdentifier getCMDUser(DID did)
-        {
-            return SSMPIdentifier.fromInternal(did.toStringFormal() + "/cmd");
-        }
-    }
-
-    public static class Mixpanel
-    {
-        public static final String API_ENDPOINT = getStringProperty("base.mixpanel.url",
-                "https://api.mixpanel.com/track/?data=");
-    }
-
     public static class Audit
     {
         /**
@@ -135,12 +72,6 @@ public class BaseParam
          */
         public static boolean                   AUDIT_ENABLED =
                 getBooleanProperty(             "base.audit.enabled", false);
-
-        /**
-         * Hostname for private (server-component-only) access to the audit service.
-         */
-        public static final String              SERVICE_HOST =
-                getStringProperty(              "base.audit.service.host", "localhost");
 
         /**
          * Port number for private (server-component-only) access to the audit service.
@@ -172,21 +103,6 @@ public class BaseParam
          */
         public static final int                 READ_TIMEOUT =
                 getIntegerProperty(             "base.audit.service.read.timeout", 10 * (int)C.SEC);
-
-        // ----
-        // Downstream channel config
-
-        public static String                    CHANNEL_HOST =
-                getStringProperty(              "base.audit.downstream_host", null);
-
-        public static int                       CHANNEL_PORT =
-                getIntegerProperty(             "base.audit.downstream_port", 0);
-
-        public static boolean                   CHANNEL_SSL =
-                getBooleanProperty(             "base.audit.downstream_ssl_enabled", false);
-
-        public static String                    CHANNEL_CERT =
-                getStringProperty(              "base.audit.downstream_certificate", "");
 
         // ----
         // Audit log posting

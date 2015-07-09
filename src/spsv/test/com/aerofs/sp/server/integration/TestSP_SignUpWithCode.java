@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.ssmp.SSMPIdentifiers;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;

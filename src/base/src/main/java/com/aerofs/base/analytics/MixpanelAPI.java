@@ -5,7 +5,6 @@
 package com.aerofs.base.analytics;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.BaseParam.Mixpanel;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -19,8 +18,8 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
-
 
 /**
 * A simple Mixpanel track API for Java
@@ -40,7 +39,7 @@ public class MixpanelAPI
      */
     public MixpanelAPI(String token)
     {
-        this(token, Mixpanel.API_ENDPOINT);
+        this(token, getApiEndpointFromConfiguration());
     }
 
     /**
@@ -51,6 +50,11 @@ public class MixpanelAPI
     {
         _token = checkNotNull(token);
         _apiEndpoint = checkNotNull(apiEndpoint);
+    }
+
+    private static String getApiEndpointFromConfiguration()
+    {
+        return getStringProperty("base.mixpanel.url", "https://api.mixpanel.com/track/?data=");
     }
 
     /**

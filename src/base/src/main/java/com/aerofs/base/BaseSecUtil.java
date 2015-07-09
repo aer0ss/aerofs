@@ -43,7 +43,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
@@ -676,7 +675,7 @@ public abstract class BaseSecUtil
         MessageDigest md = newMessageDigest();
 
         try (FileInputStream is = new FileInputStream(f)) {
-            byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
+            byte[] bs = new byte[BaseUtil.FILE_BUF_SIZE];
             while (true) {
                 int read = is.read(bs);
                 if (read < 0) break;

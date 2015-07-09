@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.charlie;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
-import com.aerofs.base.BaseParam.Charlie;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.ids.DID;
@@ -27,10 +26,12 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.DataInputStream;
+import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CharlieClient
@@ -79,18 +80,13 @@ public class CharlieClient
             return;
         }
 
-        checkpointExecutor.scheduleWithFixedDelay(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    checkInWithCharlie();
-                } catch (Error e) {
-                    SystemUtil.fatal(e);
-                } catch (Throwable t) {
-                    l.warn("fail check in with charlie err:{}", t.getMessage());
-                }
+        checkpointExecutor.scheduleWithFixedDelay(() -> {
+            try {
+                checkInWithCharlie();
+            } catch (Error e) {
+                SystemUtil.fatal(e);
+            } catch (Throwable t) {
+                l.warn("fail check in with charlie err:{}", t.getMessage());
             }
         }, INITIAL_CHECK_IN_DELAY, CHECK_IN_INTERVAL, MILLISECONDS);
     }
@@ -100,8 +96,11 @@ public class CharlieClient
     {
         l.debug("beg check in with charlie");
 
+        URL url = new URL(getStringProperty("base.charlie.url",
+                "https://charlie.aerofs.com/checkin"));
+
         // create and set up the connection
-        HttpsURLConnection connection = (HttpsURLConnection) Charlie.CHARLIE_URL.openConnection();
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         sslConnectionConfigurator.configure(connection);
         connection.setUseCaches(false);
         connection.setDoOutput(true);

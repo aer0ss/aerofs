@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -219,19 +219,7 @@ public class Hasher
                 for (TCB thread : waitingThreads) thread.resume_();
 
                 return h;
-            } catch (ExAborted e) {
-                abortException = e;
-                throw e;
-            } catch (ExNotFound e) {
-                abortException = e;
-                throw e;
-            } catch (SQLException e) {
-                abortException = e;
-                throw e;
-            } catch (DigestException e) {
-                abortException = e;
-                throw e;
-            } catch (IOException e) {
+            } catch (ExAborted | ExNotFound | SQLException | IOException | DigestException e) {
                 abortException = e;
                 throw e;
             } finally {
@@ -260,7 +248,7 @@ public class Hasher
         }
     }
 
-    public static interface IAborter
+    public interface IAborter
     {
         // the implementer can throw at any time to abort hash computation
         void checkAbortion() throws ExAborted;
@@ -272,7 +260,7 @@ public class Hasher
         MessageDigest md = SecUtil.newMessageDigest();
 
         long bytesRead = 0;
-        byte[] buffer = new byte[LibParam.FILE_BUF_SIZE];
+        byte[] buffer = new byte[BaseUtil.FILE_BUF_SIZE];
 
         int n;
         while (bytesRead < fileLen && (n = is.read(buffer)) != -1) {

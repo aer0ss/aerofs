@@ -4,8 +4,6 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.base.BaseParam.SSMP;
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -47,6 +45,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Collections;
@@ -106,13 +105,15 @@ public final class CommandNotificationSubscriber implements EventHandler
         _defectFactory = new Factory(dm);
 
         _exponential = new ExponentialRetry(scheduler);
+
+        InetSocketAddress address = SSMPConnection.getServerAddressFromConfiguration();
         _ssmp = new SSMPConnection(
                 SSMPIdentifiers.getCMDUser(localDevice),
-                SSMP.SERVER_ADDRESS, getGlobalTimer(), clientChannelFactory,
+                address, getGlobalTimer(), clientChannelFactory,
                 new SSLEngineFactory(Mode.Client, Platform.Desktop, new CfgKeyManagersProvider(),
                         new CfgCACertificateProvider(), null)::newSslHandler);
 
-        l.debug("cmd: {}", SSMP.SERVER_ADDRESS);
+        l.debug("cmd: {}", address);
     }
 
     public void start()

@@ -4,12 +4,12 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.ids.UserID;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.server.integration.AbstractSPTest;
+import com.aerofs.ssmp.SSMPIdentifiers;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;

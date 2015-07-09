@@ -1,6 +1,5 @@
 package com.aerofs.sp.client;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.net.AbstractHttpRpcClient;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.ex.Exceptions;
@@ -9,11 +8,13 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 
 import java.net.URL;
 
+import static com.aerofs.sp.client.SPProtocol.*;
+
 public class SPClientHandler extends AbstractHttpRpcClient implements SPServiceStubCallbacks
 {
     public SPClientHandler(URL url, IURLConnectionConfigurator conf)
     {
-        super(url, SP.SP_POST_PARAM_PROTOCOL, SP.SP_POST_PARAM_DATA, SP.SP_PROTOCOL_VERSION, conf);
+        super(url, SP_POST_PARAM_PROTOCOL, SP_POST_PARAM_DATA, SP_PROTOCOL_VERSION, conf);
     }
 
     @Override

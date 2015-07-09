@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+
 /**
  * Auto-reconnecting SSMP client with more granular event dispatching
  */
@@ -160,5 +162,11 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
     private static EventHandler routeByPayload(String payload, TrieNode<EventHandler> root) {
         int idx = payload != null ? payload.indexOf(' ') : -1;
         return idx > 0 ? root.get(payload.substring(0, idx)) : null;
+    }
+
+    public static InetSocketAddress getServerAddressFromConfiguration()
+    {
+        return getAddressProperty("base.ssmp.address",
+                InetSocketAddress.createUnresolved("aerofs.com", 29438));
     }
 }

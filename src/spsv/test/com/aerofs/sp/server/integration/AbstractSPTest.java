@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
@@ -64,11 +63,8 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.settings.token.UserSettingsTokenDatabase;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
-import com.aerofs.ssmp.SSMPConnection;
-import com.aerofs.ssmp.SSMPIdentifier;
-import com.aerofs.ssmp.SSMPRequest;
+import com.aerofs.ssmp.*;
 import com.aerofs.ssmp.SSMPRequest.Type;
-import com.aerofs.ssmp.SSMPResponse;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

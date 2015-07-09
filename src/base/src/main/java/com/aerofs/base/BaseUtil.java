@@ -32,6 +32,9 @@ public class BaseUtil
         new char[] { '.', '!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
                      '=', '?', '^', '_', '`', '{', '|', '}', '~' };
 
+    // Recommended size for file I/O buffers.
+    public static final int FILE_BUF_SIZE = 512 * C.KB;
+
     public static byte[] string2utf(String str)
     {
         return str.getBytes(CHARSET_UTF);

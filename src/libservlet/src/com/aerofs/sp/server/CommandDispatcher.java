@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.SSMPIdentifiers;
 import com.aerofs.ids.DID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPIdentifiers;
 import com.aerofs.ssmp.SSMPRequest;
 import com.google.common.base.Preconditions;
 

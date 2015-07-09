@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport;
 
-import com.aerofs.base.BaseParam.SSMP;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -14,7 +13,6 @@ import com.aerofs.daemon.core.net.ServerSSLEngineFactory;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
-import com.aerofs.daemon.transport.ssmp.SSMPParams;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -45,7 +43,6 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.aerofs.lib.NioChannelFactories.getClientChannelFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.mockito.Mockito.mock;
