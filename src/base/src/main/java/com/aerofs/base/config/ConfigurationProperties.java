@@ -5,7 +5,6 @@
 package com.aerofs.base.config;
 
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -49,10 +48,5 @@ public class ConfigurationProperties
     public static Optional<String> getOptionalStringProperty(String key)
     {
         return _properties.getOptionalStringProperty(key);
-    }
-
-    public static URL getUrlProperty(String key, String defaultValue)
-    {
-        return _properties.getUrlProperty(key, defaultValue);
     }
 }

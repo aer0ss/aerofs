@@ -8,7 +8,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.AuditParam;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.ids.DID;
@@ -53,10 +53,10 @@ import static com.google.common.collect.Iterables.getOnlyElement;
  * reports them to the centralized audit service.
  * <p/>
  * This implementation posts events to the auditor
- * every {@link com.aerofs.base.BaseParam.Audit#AUDIT_POSTING_INTERVAL}
+ * every {@link com.aerofs.base.AuditParam#_interval}
  * milliseconds.
  */
-public final class ClientAuditEventReporter // this can be final because it's not injected anywhere
+public final class ClientAuditEventReporter implements IClientAuditEventReporter
 {
     public static final int AUDIT_EVENT_BATCH_SIZE = 50;
     public static final int MAX_ACTIVITY_LOG_EVENTS_TO_ITERATE_OVER_ON_EACH_RUN = 200;
@@ -77,6 +77,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
     private final IDID2UserDatabase _did2user;
     private final SimpleDateFormat _dateFormat;
     private final AuditClient _auditClient = new AuditClient();
+    private final AuditParam _param;
 
     private boolean running = false;
     private long lastActivityLogIndex;
@@ -143,7 +144,8 @@ public final class ClientAuditEventReporter // this can be final because it's no
             ActivityLog activityLog,
             IDID2UserDatabase did2user,
             IAuditorClient auditorClient,
-            IAuditDatabase auditDatabase)
+            IAuditDatabase auditDatabase,
+            AuditParam param)
     {
         _localdid = localdid.get();
         _hexEncodedLocalDid = localdid.get().toStringFormal();
@@ -157,6 +159,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
         _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         _dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         _auditClient.setAuditorClient(auditorClient);
+        _param = param;
     }
 
     /**
@@ -175,9 +178,9 @@ public final class ClientAuditEventReporter // this can be final because it's no
      * Start the service.
      * <p/>
      * Schedules a audit report
-     * {@link com.aerofs.base.BaseParam.Audit#START_POSTING_AUDIT_EVENTS_AFTER}
+     * {@link com.aerofs.base.AuditParam#_initialDelay}
      * milliseconds after this method is called. Subsequent reports are
-     * scheduled every {@link com.aerofs.base.BaseParam.Audit#AUDIT_POSTING_INTERVAL}
+     * scheduled every {@link com.aerofs.base.AuditParam#_initialDelay}
      * milliseconds.
      * <p/>
      * Once {@code start_} is called, subsequent calls are noops.
@@ -190,7 +193,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
 
         running = true;
 
-        scheduleReport_(Audit.START_POSTING_AUDIT_EVENTS_AFTER);
+        scheduleReport_(_param._initialDelay);
     }
 
     /**
@@ -251,7 +254,7 @@ public final class ClientAuditEventReporter // this can be final because it's no
                 // reschedule
                 synchronized (this) {
                     if (running) {
-                        scheduleReport_(Audit.AUDIT_POSTING_INTERVAL);
+                        scheduleReport_(_param._interval);
                     }
                 }
             }
@@ -423,5 +426,20 @@ public final class ClientAuditEventReporter // this can be final because it's no
             t.commit_();
         }
         l.debug("mark event {} as successfully stored", lastActivityLogIndex);
+    }
+
+    public static class Noop implements IClientAuditEventReporter
+    {
+        @Override
+        public void init_() throws Exception
+        {
+
+        }
+
+        @Override
+        public void start_()
+        {
+            l.info("Auditing is disabled. Use no-op CAER.");
+        }
     }
 }

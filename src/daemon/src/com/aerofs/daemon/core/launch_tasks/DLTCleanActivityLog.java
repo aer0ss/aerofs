@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.launch_tasks;
 
-import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.AuditParam;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -46,13 +46,16 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
 
     private final IDBCW _dbcw;
     private final IAuditDatabase _auditdb;
+    private final boolean _auditEnabled;
 
     @Inject
-    public DLTCleanActivityLog(CoreScheduler sched, IDBCW dbcw, IAuditDatabase auditdb)
+    public DLTCleanActivityLog(CoreScheduler sched, IDBCW dbcw, IAuditDatabase auditdb,
+                               AuditParam param)
     {
         super(sched);
         _dbcw = dbcw;
         _auditdb = auditdb;
+        _auditEnabled = param._enabled;
     }
 
     @Override
@@ -84,9 +87,9 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
         _sched.schedule(this, DELAY_BETWEEN_CHUNKS);
     }
 
-    private static long bound(long val, long max)
+    private long bound(long val, long max)
     {
-        return Audit.AUDIT_ENABLED ? Math.min(val, max) : val;
+        return _auditEnabled ? Math.min(val, max) : val;
     }
 
     private static long selectIdx_(Statement s, String expr) throws SQLException

@@ -1,9 +1,8 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
-import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
+import com.aerofs.daemon.core.activity.IClientAuditEventReporter;
 import com.aerofs.daemon.core.charlie.CharlieClient;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.db.TamperingDetection;
@@ -31,7 +30,6 @@ import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ssmp.SSMPConnection;
 import com.google.inject.Inject;
 
-
 public class Core implements IModule
 {
     private final FirstLaunch _fl;
@@ -54,7 +52,7 @@ public class Core implements IModule
     private final TamperingDetection _tamperingDetection;
     private final CharlieClient _cc;
     private final HealthCheckService _hcs;
-    private final ClientAuditEventReporter _caer;
+    private final IClientAuditEventReporter _caer;
     private final DaemonLaunchTasks _dlts;
     private final IQuotaEnforcement _quota;
     private final LogicalStagingArea _sa;
@@ -83,7 +81,7 @@ public class Core implements IModule
             Stores ss,
             CharlieClient charlieClient,
             HealthCheckService hcs,
-            ClientAuditEventReporter caer,
+            IClientAuditEventReporter caer,
             IQuotaEnforcement quota,
             DaemonLaunchTasks dlts,
             LogicalStagingArea sa,
@@ -142,13 +140,7 @@ public class Core implements IModule
         _linker.init_();
         _ps.init_();
 
-        // this service should not be enabled
-        // unless auditing is allowed for this
-        // installation
-        // TDOO (WW) use DI and polymorphism
-        if (Audit.AUDIT_ENABLED) {
-            _caer.init_();
-        }
+        _caer.init_();
 
         _ss.init_();
         _aclsub.init_();
@@ -217,14 +209,7 @@ public class Core implements IModule
 
     private void startAll_()
     {
-        // audit service
-        // this service should not be started
-        // unless auditing is allowed for this
-        // installation
-        // TDOO (WW) use DI and polymorphism
-        if (Audit.AUDIT_ENABLED) {
-            _caer.start_();
-        }
+        _caer.start_();
 
         // transports
 

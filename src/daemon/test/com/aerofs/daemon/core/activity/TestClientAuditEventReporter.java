@@ -5,11 +5,11 @@
 package com.aerofs.daemon.core.activity;
 
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.AuditParam;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -32,13 +32,11 @@ import com.google.common.collect.Sets;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,8 +46,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.notNull;
@@ -60,8 +56,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
-import static org.junit.Assert.assertEquals;
 
 // TODO (AG): verify date format?
 // TODO (AG): attempt to inject batch size and num events/publish size
@@ -159,6 +153,7 @@ public final class TestClientAuditEventReporter
     private final IAuditDatabase _auditDatabase = mock(IAuditDatabase.class);
     private final UserAndDeviceNames _udinfo = mock(UserAndDeviceNames.class);
     private final IDID2UserDatabase _did2user = mock(IDID2UserDatabase.class);
+    private final AuditParam _params = AuditParam.getDefault();
 
     private ClientAuditEventReporter _caer; // sut
 
@@ -181,7 +176,8 @@ public final class TestClientAuditEventReporter
                 _al,
                 _did2user,
                 _auditorClient,
-                _auditDatabase);
+                _auditDatabase,
+                _params);
     }
 
     @Test

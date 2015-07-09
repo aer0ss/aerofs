@@ -2,8 +2,11 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.AuditParam;
 import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
+import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
+import com.aerofs.daemon.core.activity.IClientAuditEventReporter;
 import com.aerofs.daemon.core.activity.LegacyOutboundEventLogger;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
@@ -72,12 +75,20 @@ public class CoreModule extends AbstractModule
         bind(DirectoryService.class).to(DirectoryServiceImpl.class);
         bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
 
+        AuditParam auditParam = AuditParam.fromConfiguration();
+        bind(AuditParam.class).toInstance(auditParam);
+
         bind(IPathResolver.class).to(DirectoryServiceImpl.class);
         bind(Causality.class).to(TransitionalCausality.class);
         bind(ContentSender.class).to(LegacyContentSender.class);
         bind(ContentReceiver.class).to(LegacyContentReceiver.class);
         bind(ContentProvider.class).to(DaemonContentProvider.class);
-        bind(OutboundEventLogger.class).to(LegacyOutboundEventLogger.class);
+        bind(OutboundEventLogger.class).to(auditParam._enabled
+                ? LegacyOutboundEventLogger.class
+                : LegacyOutboundEventLogger.Noop.class);
+        bind(IClientAuditEventReporter.class).to(auditParam._enabled
+                ? ClientAuditEventReporter.class
+                : ClientAuditEventReporter.Noop.class);
 
         bind(NewUpdatesSender.class).asEagerSingleton();
 
@@ -148,7 +159,7 @@ public class CoreModule extends AbstractModule
         multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
-        // instanciation. However we don't want to leak the specific classes outside the package
+        // instantiation. However we don't want to leak the specific classes outside the package
         // hence the use of a static method
         DaemonLaunchTasks.bindTasks(binder());
     }

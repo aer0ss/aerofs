@@ -6,7 +6,7 @@ package com.aerofs.audit.client;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.auth.client.shared.AeroService;
-import com.aerofs.base.BaseParam.Audit;
+import com.aerofs.base.AuditParam;
 import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -14,6 +14,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.google.common.base.Throwables;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import org.slf4j.Logger;
@@ -38,12 +39,14 @@ public class AuditorFactory
     /**
      * Create an unauthenticated client - can only be used by trusted server-side processes (SP).
      */
-    public static IAuditorClient createAuthenticatedWithSharedSecret(String host, String serviceName, String deploymentSecret)
+    public static IAuditorClient createAuthenticatedWithSharedSecret(String host,
+                                                                     String serviceName,
+                                                                     String deploymentSecret)
     {
-        if (Audit.AUDIT_ENABLED) {
+        AuditParam params = AuditParam.fromConfiguration();
+        if (params._enabled) {
             try {
-                URL url = new URL(
-                        "http", host, Audit.SERVICE_PORT, Audit.SERVICE_EVENT_PATH);
+                URL url = new URL("http", host, params._servicePort, params._servicePath);
                 l.info("Unauthenticated connection to private audit endpoint {}", url);
 
                 return new AuditHttpClient(url) {
@@ -52,8 +55,8 @@ public class AuditorFactory
                     {
                         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
                         conn.setUseCaches(true);
-                        conn.setConnectTimeout(Audit.CONN_TIMEOUT);
-                        conn.setReadTimeout(Audit.READ_TIMEOUT);
+                        conn.setConnectTimeout(params._connTimeout);
+                        conn.setReadTimeout(params._readTimeout);
                         conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
                         String authHeader = AeroService.getHeaderValue(serviceName, deploymentSecret);
                         conn.addRequestProperty(HttpHeaders.AUTHORIZATION, authHeader);
@@ -77,30 +80,38 @@ public class AuditorFactory
      */
     public static IAuditorClient createAuthenticatedWithDeviceCert()
     {
-        if (Audit.AUDIT_ENABLED) {
-            l.info("Secure connection to public audit server at {}", Audit.PUBLIC_EVENT_URL);
+        AuditParam param = AuditParam.fromConfiguration();
+        if (param._enabled) {
+            l.info("Secure connection to public audit server at {}", param._publicUrl);
 
-            return new AuditHttpClient(Audit.PUBLIC_EVENT_URL) {
-                @Override
-                HttpURLConnection getConnection(URL url) throws IOException
-                {
-                    HttpsURLConnection conn = (HttpsURLConnection)url.openConnection();
+            try {
+                URL url = new URL(param._publicUrl);
+                return new AuditHttpClient(url) {
+                    @Override
+                    HttpURLConnection getConnection(URL url) throws IOException {
+                        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
-                    conn.setUseCaches(false);
-                    conn.setConnectTimeout(Audit.CONN_TIMEOUT);
-                    conn.setReadTimeout(Audit.READ_TIMEOUT);
-                    conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
-                    conn.setSSLSocketFactory(socketFactory.get());
-                    conn.addRequestProperty(HttpHeaders.AUTHORIZATION, AeroDeviceCert.getHeaderValue(Cfg.user().getString(), Cfg.did().toStringFormal()));
-                    conn.setDoOutput(true);
-                    conn.connect();
+                        conn.setUseCaches(false);
+                        conn.setConnectTimeout(param._connTimeout);
+                        conn.setReadTimeout(param._readTimeout);
+                        conn.setRequestProperty(HttpHeaders.CONTENT_TYPE,
+                                MediaType.JSON_UTF_8.toString());
+                        conn.setSSLSocketFactory(socketFactory.get());
+                        conn.addRequestProperty(HttpHeaders.AUTHORIZATION,
+                                AeroDeviceCert.getHeaderValue(Cfg.user().getString(),
+                                        Cfg.did().toStringFormal()));
+                        conn.setDoOutput(true);
+                        conn.connect();
 
-                    return conn;
-                }
+                        return conn;
+                    }
 
-                private final LazyChecked<SSLSocketFactory, IOException> socketFactory =
-                        new LazyChecked<>(AuditorFactory::createSocketFactory);
-            };
+                    private final LazyChecked<SSLSocketFactory, IOException> socketFactory =
+                            new LazyChecked<>(AuditorFactory::createSocketFactory);
+                };
+            } catch (MalformedURLException e) {
+                Throwables.propagate(e);
+            }
         }
 
         return createNoopClient();

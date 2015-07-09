@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.activity;
 
-import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -19,7 +18,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
-
 
 public class LegacyOutboundEventLogger implements OutboundEventLogger
 {
@@ -42,10 +40,6 @@ public class LegacyOutboundEventLogger implements OutboundEventLogger
 
     public void log_(int type, SOID soid, DID to) throws SQLException
     {
-        if (!Audit.AUDIT_ENABLED) {
-            return;
-        }
-
         Path path = _ds.resolveNullable_(soid);
         if (path == null) {
             // the SOID is obtained before the transfer start and the core lock may be released
@@ -64,6 +58,15 @@ public class LegacyOutboundEventLogger implements OutboundEventLogger
         try (Trans t = _tm.begin_()) {
             _aldb.insertActivity_(soid, type, path, null, ImmutableSet.of(to), t);
             t.commit_();
+        }
+    }
+
+    public static class Noop implements OutboundEventLogger
+    {
+        @Override
+        public void log_(int type, SOID soid, DID to) throws SQLException
+        {
+
         }
     }
 }

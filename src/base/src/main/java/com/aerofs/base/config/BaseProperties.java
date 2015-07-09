@@ -1,11 +1,8 @@
 package com.aerofs.base.config;
 
-import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -67,15 +64,5 @@ public class BaseProperties
         }
         HostAndPort addr = HostAndPort.fromString(value);
         return InetSocketAddress.createUnresolved(addr.getHostText(), addr.getPort());
-    }
-
-    // rethrows parsing exceptions as runtime exceptions.
-    public URL getUrlProperty(String key, String defaultValue)
-    {
-        try {
-            return new URL(_properties.getProperty(key, defaultValue));
-        } catch (MalformedURLException e) {
-            throw Throwables.propagate(e);
-        }
     }
 }

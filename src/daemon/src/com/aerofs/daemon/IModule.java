@@ -18,5 +18,5 @@ public interface IModule extends IStartable
      * @throws Exception if there is any setup error; if an exception is thrown this
      * module cannot be started and cannot be used
      */
-    public void init_() throws Exception;
+    void init_() throws Exception;
 }

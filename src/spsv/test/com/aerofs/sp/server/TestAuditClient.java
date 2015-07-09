@@ -8,12 +8,10 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.base.BaseParam.Audit;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,19 +39,11 @@ public class TestAuditClient extends AbstractTest
     @Before
     public void setUp() throws IOException
     {
-        Audit.AUDIT_ENABLED = true;
         _payload = ArgumentCaptor.forClass(String.class);
         doNothing().when(_httpMock).submit(anyString());
 
         _client = new AuditClient().setAuditorClient(_httpMock);
     }
-
-    @After
-    public void tearDown()
-    {
-        Audit.AUDIT_ENABLED = false;
-    }
-
 
     private void captureEvent() throws Exception
     {

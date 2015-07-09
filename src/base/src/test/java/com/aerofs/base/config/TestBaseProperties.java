@@ -4,8 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -126,38 +124,6 @@ public class TestBaseProperties
                 // note that failure to parse the property value could've resulted in
                 // either IllegalArgumentException (failed to parse port) or
                 // IllegalStateException (no ports provided).
-            }
-        }
-    }
-
-    @Test
-    public void shouldHandleUrlProperties()
-            throws Exception
-    {
-        URL url1 = new URL("http://example.test.com");
-        URL url2 = new URL("http://example.test.com/path/to/resource");
-        URL url3 = new URL("http://example.test.com:80/path/to/resource");
-        String defaultPath = "http://default";
-        URL defaultURL = new URL(defaultPath);
-
-        assertEquals(url1, _properties.getUrlProperty("url1", defaultPath));
-        assertEquals(url2, _properties.getUrlProperty("url2", defaultPath));
-        assertEquals(url3, _properties.getUrlProperty("url3", defaultPath));
-        // falls back to default if the property is not specified
-        assertEquals(defaultURL, _properties.getUrlProperty("null", defaultPath));
-        assertEquals(defaultURL, _properties.getUrlProperty("null", defaultPath));
-    }
-
-    @Test
-    public void shouldThrowOnInvalidURLs()
-    {
-        for (String key : newArrayList("inet1", "string", "empty")) {
-            try {
-                _properties.getUrlProperty(key, "http://default");
-                fail();
-            } catch (RuntimeException e) {
-                // expected
-                assertTrue(e.getCause() instanceof MalformedURLException);
             }
         }
     }
