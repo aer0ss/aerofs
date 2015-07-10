@@ -17,7 +17,7 @@ class SignupForm(Form):
     company_name = TextField('Organization Name', validators=[InputRequired()])
     phone_number = TextField("Phone Number", validators=[InputRequired()])
     job_title = TextField("Job Title", validators=[InputRequired()])
-    stated_company_size = TextField("Company Size", validators=[Optional()])
+    company_size = TextField("Company Size", validators=[Optional()])
     deployment_environment = TextField("Deployment Environment", validators=[Optional()])
 
 class CompleteSignupForm(Form):
