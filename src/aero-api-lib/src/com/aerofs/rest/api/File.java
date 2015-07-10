@@ -43,13 +43,13 @@ public class File extends CommonMetadata
 
     public File(String id, String name, String parent, @Nullable ParentPath path,
             @Nullable Date last_modified, @Nullable Long size, String mime_type, String etag,
-            ContentState state)
+            @Nullable ContentState state)
     {
         super(id, name, parent, path);
         this.size = size;
         this.last_modified = last_modified;
         this.mime_type = mime_type;
         this.etag = etag;
-        this.content_state = state.toString();
+        this.content_state = state != null ? state.toString() : null;
     }
 }

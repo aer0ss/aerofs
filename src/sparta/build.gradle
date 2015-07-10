@@ -25,6 +25,7 @@ sourceSets {
 dependencies {
     compile project(':src/libservlet')
     compile project(':src/oauth-verify')
+    compile project(':src/aero-api-lib')
     compile project(':src/rest-api')
     compile project(':src/restless')
     compile project(':src/bifrost')

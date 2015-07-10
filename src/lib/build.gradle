@@ -49,6 +49,7 @@ dependencies {
     compile 'com.aerofs:sqlite-jdbc:3.8.7'
     compile 'com.aerofs:jnotify:0.96'
     compile 'com.aerofs:aerofsd:0.1.0'
+    compile 'org.apache.tika:tika-core:1.4'
     compile name: 'guice-aerofs'
     compile name: 'guice-multibindings-aerofs'
     compile name: 'netty-native-socket'

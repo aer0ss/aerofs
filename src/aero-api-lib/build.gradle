@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-rest-api'
+archivesBaseName = 'aerofs-api-lib'
 
 sourceSets {
     main {
@@ -11,9 +11,6 @@ sourceSets {
         }
     }
 }
-
 dependencies {
-    compile project(':src/aero-api-lib')
-    compile project(':src/oauth-verify')
-    compile project(':src/restless')
+    compile 'com.google.code.findbugs:jsr305:3.0.0'
 }

@@ -4,7 +4,8 @@
 
 rootProject.name = 'aerofs-gradle'
 
-include 'src/aero-auth',
+include 'src/aero-api-lib',
+        'src/aero-auth',
         'src/aero-ids',
         'src/base',
         'src/bifrost',

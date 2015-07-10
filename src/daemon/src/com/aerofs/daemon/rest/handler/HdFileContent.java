@@ -11,7 +11,7 @@ import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
-import com.aerofs.daemon.rest.util.MimeTypeDetector;
+import com.aerofs.rest.util.MimeTypeDetector;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.oauth.Scope;
 import com.aerofs.restless.util.HttpStatus;
