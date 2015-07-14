@@ -14,6 +14,7 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.InsertChild;
+import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -388,8 +389,8 @@ public final class TestObjectResource {
         SID sfSID = SID.folderOID2convertedStoreSID(sharedFolder);
         PolarisHelpers.newFile(AUTHENTICATED, sfSID, "new_file");
 
-        checkTreeState(rootStore, "tree/ShouldProperlyMigrateStore1.json");
-        checkTreeState(sfSID, "tree/ShouldProperlyMigrateStore2.json");
+        checkTreeState(rootStore, "tree/shouldProperlyMigrateStore1.json");
+        checkTreeState(sfSID, "tree/shouldProperlyMigrateStore2.json");
 
         // one notification from the share op
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(rootStore), any(Long.class));
@@ -501,16 +502,63 @@ public final class TestObjectResource {
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
 
         PolarisHelpers.newObject(AUTHENTICATED, sharedFolder, OID.generate(), "under_mountpoint", ObjectType.FILE)
-                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
 
-        PolarisHelpers.removeObject(AUTHENTICATED, sharedFolder, sharedFile);
+        PolarisHelpers.removeObject(AUTHENTICATED, sharedFolder, sharedFile)
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
 
         OID file = PolarisHelpers.newFile(AUTHENTICATED, rootStore, "file");
         PolarisHelpers.moveObject(AUTHENTICATED, rootStore, sharedFolder, file, "file")
-                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
 
         PolarisHelpers.moveObject(AUTHENTICATED, sharedFolder, rootStore, sharedFile, "shared_file")
-                .assertThat().statusCode(HttpStatus.SC_NOT_FOUND);
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+    }
+
+    @Test
+    public void shouldMoveObjectsBetweenStores()
+            throws Exception
+    {
+        byte[] hash = PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF");
+        SID share1 = SID.generate(), share2 = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, share1, "src_folder");
+        for (int i = 0; i < 4; i++) {
+            OID file = PolarisHelpers.newFile(AUTHENTICATED, folder1, String.format("file%d", i));
+            PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, hash, 100, 1024);
+            PolarisHelpers.newFolder(AUTHENTICATED, folder1, String.format("folder%d", i));
+        }
+
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, share1, "src_file");
+        reset(polaris.getNotifier());
+        PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, file, "dest_file")
+                .assertThat().statusCode(HttpStatus.SC_OK);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share1), any(Long.class));
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share2), any(Long.class));
+
+        reset(polaris.getNotifier());
+        OperationResult result =  PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "dest_folder")
+                .assertThat().statusCode(HttpStatus.SC_OK)
+                .and().extract().response().as(OperationResult.class);
+        // cross-store moves of folders cause an actual migration
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, result.jobID, 10);
+
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share1), any(Long.class));
+        // one notification for creating the migration destination, then another for finishing the migration
+        verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(share2), any(Long.class));
+        checkTreeState(share1, "tree/shouldMigrateCrossStore1.json");
+        checkTreeState(share2, "tree/shouldMigrateCrossStore2.json");
+    }
+
+    @Test
+    public void shouldThrowParentConflictAcrossStores()
+            throws Exception
+    {
+        SID share1 = SID.generate(), share2 = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, share1, "folder1");
+        PolarisHelpers.newFolder(AUTHENTICATED, share2, "folder2");
+
+        PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "folder2")
+                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

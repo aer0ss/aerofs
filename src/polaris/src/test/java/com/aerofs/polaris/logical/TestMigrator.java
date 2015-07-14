@@ -7,9 +7,9 @@ import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
-import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.*;
+import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.api.types.JobStatus;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
@@ -17,7 +17,6 @@ import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.Migrations;
 import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.notification.Notifier;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
@@ -27,6 +26,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 
 import java.sql.SQLException;
@@ -34,12 +34,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-public class TestStoreMigrator {
+public class TestMigrator {
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();
@@ -47,7 +48,7 @@ public class TestStoreMigrator {
     private BasicDataSource dataSource;
     private DBI dbi;
     private Notifier notifier = mock(Notifier.class);
-    private StoreMigrator migrator;
+    private Migrator migrator;
     private ListeningExecutorService migratorExecutor;
     private ObjectStore objects;
 
@@ -80,7 +81,7 @@ public class TestStoreMigrator {
         this.dbi = spy(dbi);
 
         this.migratorExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
-        this.migrator = spy(new StoreMigrator(this.dbi, notifier, migratorExecutor));
+        this.migrator = spy(new Migrator(this.dbi, notifier, migratorExecutor));
         migrator.start();
 
         this.objects = new ObjectStore(mock(AccessManager.class), dbi, migrator);
@@ -104,15 +105,26 @@ public class TestStoreMigrator {
         OID sharedFolder = newFolder(rootStore, "shared_folder");
         OID folder = newFolder(sharedFolder, "folder");
         OID fileOID = newFile(folder, "file");
+        SID share2 = SID.generate();
+        OID immigrantFolder = newFolder(share2, "migrant_folder");
+        // is the equivalent to immigrant_folder in rootstore
+        OID migrationDestination = newFolder(rootStore, "migrant_folder");
+        newFile(immigrantFolder, "migrant_file");
 
         // make the first call do nothing, as if the server had crashed
-        doReturn(OID.generate()).doCallRealMethod().when(this.migrator).migrateStore(eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
+        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
+        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).moveCrossStore(eq(immigrantFolder), any(OID.class), eq(DEVICE));
         shareFolder(sharedFolder);
 
         dbi.inTransaction((conn, status) -> {
             Migrations migrations = conn.attach(Migrations.class);
             assertFalse(migrations.activeMigrations().hasNext());
-            migrations.add(SID.folderOID2convertedStoreSID(sharedFolder), DEVICE, JobStatus.RUNNING);
+            migrations.addStoreMigration(sharedFolder, SID.folderOID2convertedStoreSID(sharedFolder), UniqueID.generate(), DEVICE, JobStatus.RUNNING);
+
+            // do the equivalent of moveCrossStore
+            UniqueID migrationJob = UniqueID.generate();
+            migrations.addFolderMigration(immigrantFolder, migrationDestination, migrationJob, DEVICE, JobStatus.RUNNING);
+            migrations.addOidMapping(immigrantFolder, migrationDestination, migrationJob);
             return null;
         });
 
@@ -121,8 +133,10 @@ public class TestStoreMigrator {
         assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
 
         LogicalObject nestedFile = dbi.inTransaction((conn, status) -> {
-            LogicalObjects objects = conn.attach(LogicalObjects.class);
-            return objects.get(fileOID);
+            DAO dao = new DAO(conn);
+            assertTrue("failed to delete migrated object", dao.children.getActiveReferenceCount(immigrantFolder) == 0);
+            assertTrue("failed to migrate object to new store", dao.children.getActiveChildNamed(migrationDestination, "migrant_file".getBytes()) != null);
+            return dao.objects.get(fileOID);
         });
         assertThat(nestedFile.store, equalTo(SID.folderOID2convertedStoreSID(sharedFolder)));
 
@@ -173,14 +187,14 @@ public class TestStoreMigrator {
     @Test
     public void shouldLockFolders() throws Exception
     {
-        doReturn(null).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any());
+        doReturn(null).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any(), any());
 
         SID rootStore = SID.rootSID(USERID);
         OID sharedFolder = newFolder(rootStore, "shared_folder");
         OID folder = newFolder(sharedFolder, "folder");
         shareFolder(sharedFolder);
 
-        verify(this.migrator, timeout(1000).atLeast(1)).migrateBatchOfObjects(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any());
+        verify(this.migrator, timeout(1000).atLeast(1)).migrateBatchOfObjects(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(), any());
 
         LockableLogicalObject folderObject = dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
@@ -267,6 +281,38 @@ public class TestStoreMigrator {
         }
     }
 
+    @Test
+    public void shouldMoveAnchorsInMigration()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder = newFolder(rootStore, "folder");
+        SID share1 = SID.generate(), share2 = SID.generate();
+        newFile(share1, "file");
+        OID destFolder = newFolder(share2, "folder");
+        insertAnchor(folder, share1, "share");
+
+        migrator.start();
+        migrator.moveCrossStore(folder, destFolder, DEVICE);
+        migratorExecutor.shutdown();
+        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+
+        dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            ResultIterator<DeletableChild> migrants = dao.children.getChildren(destFolder);
+            assertTrue("did not migrate any children under destination", migrants.hasNext());
+            DeletableChild child = migrants.next();
+            assertThat("did not migrate share name", child.name, equalTo("share".getBytes()));
+            assertThat("did not convert anchor to folder", dao.objects.get(child.oid).objectType, equalTo(ObjectType.FOLDER));
+            migrants = dao.children.getChildren(child.oid);
+            assertTrue("did not migrate any children under anchor", migrants.hasNext());
+            child = migrants.next();
+            assertThat("did not migrate shared file", child.name, equalTo("file".getBytes()));
+            assertThat("did not mark root anchor as deleted", dao.mountPoints.getMountPointParent(rootStore, share1), nullValue());
+            return null;
+        });
+    }
+
     private OID newFolder(UniqueID parent, String name) {
         OID folder = OID.generate();
         Operation op = new InsertChild(folder, ObjectType.FOLDER, name);
@@ -279,6 +325,11 @@ public class TestStoreMigrator {
         Operation op = new InsertChild(file, ObjectType.FILE, name);
         this.objects.performTransform(USERID, DEVICE, parent, op);
         return file;
+    }
+
+    private void insertAnchor(UniqueID parent, SID store, String name) {
+        Operation op = new InsertChild(store, ObjectType.STORE, name);
+        this.objects.performTransform(USERID, DEVICE, parent, op);
     }
 
     private UniqueID shareFolder(UniqueID folder) {

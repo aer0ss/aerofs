@@ -88,13 +88,14 @@ public class TestJobsResource {
     @Test
     public void shouldReportJobsAsRunning() {
         SID store = SID.generate();
+        UniqueID jobID = UniqueID.generate();
         dbi.inTransaction((conn, status) -> {
             Migrations migrations = conn.attach(Migrations.class);
-            migrations.add(store, DEVICE, JobStatus.RUNNING);
+            migrations.addStoreMigration(SID.convertedStoreSID2folderOID(store), store, jobID, DEVICE, JobStatus.RUNNING);
             return null;
         });
 
-        assertThat(PolarisHelpers.getJobStatus(verified, store), Matchers.equalTo(JobStatus.RUNNING));
+        assertThat(PolarisHelpers.getJobStatus(verified, jobID), Matchers.equalTo(JobStatus.RUNNING));
     }
 
     @Test

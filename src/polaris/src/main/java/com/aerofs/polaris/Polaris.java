@@ -16,7 +16,7 @@ import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.logical.ObjectStore;
-import com.aerofs.polaris.logical.StoreMigrator;
+import com.aerofs.polaris.logical.Migrator;
 import com.aerofs.polaris.logical.TreeCommand;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
@@ -98,7 +98,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class).in(Singleton.class);
-                bind(StoreMigrator.class).to(StoreMigrator.class).in(Singleton.class);
+                bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);
             }
@@ -107,7 +107,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addManaged(ManagedAccessManager.class);
         environment.addManaged(ManagedUpdatePublisher.class);
         environment.addManaged(ManagedNotifier.class);
-        environment.addManaged(StoreMigrator.class);
+        environment.addManaged(Migrator.class);
 
         // setup resource authorization
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());

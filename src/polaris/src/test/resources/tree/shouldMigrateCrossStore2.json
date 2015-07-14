@@ -1,0 +1,44 @@
+{
+    "dest_file": {
+        "type": "FILE"
+    },
+    "dest_folder": {
+        "type": "FOLDER",
+        "file0": {
+            "type": "FILE",
+            "hash":"95a8cd21628626307eedd4439f0e40e3e5293afd16305d8a4e82d9f851ae7aaf",
+            "size":100,
+            "mtime":1024
+        },
+        "file1": {
+            "type": "FILE",
+            "hash":"95a8cd21628626307eedd4439f0e40e3e5293afd16305d8a4e82d9f851ae7aaf",
+            "size":100,
+            "mtime":1024
+        },
+        "file2": {
+            "type": "FILE",
+            "hash":"95a8cd21628626307eedd4439f0e40e3e5293afd16305d8a4e82d9f851ae7aaf",
+            "size":100,
+            "mtime":1024
+        },
+        "file3": {
+            "type": "FILE",
+            "hash":"95a8cd21628626307eedd4439f0e40e3e5293afd16305d8a4e82d9f851ae7aaf",
+            "size":100,
+            "mtime":1024
+        },
+        "folder0": {
+            "type": "FOLDER"
+        },
+        "folder1": {
+            "type": "FOLDER"
+        },
+        "folder2": {
+            "type": "FOLDER"
+        },
+        "folder3": {
+            "type": "FOLDER"
+        }
+    }
+}

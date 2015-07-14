@@ -4,7 +4,7 @@ import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.JobStatus;
-import com.aerofs.polaris.logical.StoreMigrator;
+import com.aerofs.polaris.logical.Migrator;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -19,9 +19,9 @@ import javax.ws.rs.core.MediaType;
 @Path("/jobs")
 @Singleton
 public class JobsResource {
-    private final StoreMigrator migrator;
+    private final Migrator migrator;
 
-    public JobsResource(@Context StoreMigrator migrator) {
+    public JobsResource(@Context Migrator migrator) {
         this.migrator = migrator;
     }
 

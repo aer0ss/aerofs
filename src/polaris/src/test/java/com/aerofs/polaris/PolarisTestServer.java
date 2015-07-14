@@ -10,7 +10,6 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
-import com.aerofs.polaris.logical.StoreMigrator;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;

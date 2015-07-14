@@ -55,6 +55,10 @@ public abstract class Identifiers {
         return SID.generate().toStringFormal();
     }
 
+    public static boolean isMountPoint(UniqueID identifier) {
+        return isMountPoint(identifier.getBytes());
+    }
+
     public static boolean isMountPoint(String identifier) {
         return isMountPoint(hexDecode(identifier));
     }

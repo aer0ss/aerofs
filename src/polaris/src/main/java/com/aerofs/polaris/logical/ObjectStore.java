@@ -87,7 +87,7 @@ public final class ObjectStore {
 
     private final AccessManager accessManager;
     private final DBI dbi;
-    private final StoreMigrator migrator;
+    private final Migrator migrator;
 
     /**
      * Constructor.
@@ -96,7 +96,7 @@ public final class ObjectStore {
      * @param dbi database wrapper used to read/update the logical object database
      */
     @Inject
-    public ObjectStore(AccessManager accessManager, DBI dbi, StoreMigrator migrator) {
+    public ObjectStore(AccessManager accessManager, DBI dbi, Migrator migrator) {
         this.accessManager = accessManager;
         this.dbi = dbi;
         this.migrator = migrator;
@@ -352,11 +352,21 @@ public final class ObjectStore {
                 if (oid.equals(mc.newParent)) {
                     updated.add(renameChild(dao, device, oid, mc.child, mc.newChildName));
                 } else {
-                    Atomic atomic = new Atomic(2);
-                    // TODO (RD) make a single move operation since both insert and remove child have extra code in them at this point specifically for move ops
-                    updated.add(insertChild(dao, device, mc.newParent, mc.child, null, mc.newChildName, true, atomic));
-                    updated.add(removeChild(dao, device, oid, mc.child, atomic));
-                    Preconditions.checkState(updated.get(0).object.store.equals(updated.get(1).object.store), "cannot move object %s across store boundaries", mc.child);
+                    LogicalObject currentObject = getExistingObject(dao, mc.child);
+                    LogicalObject newParent = getParent(dao, mc.newParent);
+                    if (currentObject.store.equals(newParent.store)) {
+                        Atomic atomic = new Atomic(2);
+                        // TODO (RD) make a single move operation since both insert and remove child have extra code in them at this point specifically for move ops
+                        updated.add(insertChild(dao, device, mc.newParent, mc.child, currentObject.objectType, mc.newChildName, true, atomic));
+                        updated.add(removeChild(dao, device, oid, mc.child, atomic));
+                    } else if (currentObject.objectType == ObjectType.FILE) {
+                        updated.add(migrateObject(dao, device, mc.newParent, OID.generate(), currentObject, mc.newChildName));
+                        updated.add(removeChild(dao, device, oid, mc.child, null));
+                    } else {
+                        OID newOid = OID.generate();
+                        updated.add(migrateObject(dao, device, mc.newParent, newOid, currentObject, mc.newChildName));
+                        jobID = migrator.moveCrossStore(mc.child, newOid, device);
+                    }
                 }
                 break;
             }
@@ -519,6 +529,18 @@ public final class ObjectStore {
 
         // return the latest version of the object
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
+    }
+
+    private static Updated migrateObject(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, LogicalObject migrant, byte[] childName)
+    {
+        Preconditions.checkArgument(!Identifiers.isRootStore(migrant.oid), "can't migrate root store");
+        Updated update = insertChild(dao, device, parentOid, childOid, migrant.objectType, childName, true, null);
+        if (migrant.objectType == ObjectType.FILE && migrant.version > Constants.INITIAL_OBJECT_VERSION) {
+            Content currentContent = dao.objectProperties.getLatest(migrant.oid);
+            Preconditions.checkState(currentContent != null, "could not find latest content for file %s", migrant.oid);
+            update = makeContent(dao, device, childOid, currentContent.version, currentContent.hash, currentContent.size, currentContent.mtime);
+        }
+        return update;
     }
 
     private static Updated makeContent(DAO dao, DID device, UniqueID oid, long deviceVersion, byte[] contentHash, long contentSize, long contentTime) throws NotFoundException, VersionConflictException {
