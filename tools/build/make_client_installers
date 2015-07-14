@@ -383,24 +383,50 @@ function create_release_version_file() {
     chmod a+r "$VERSION_FILE"
 }
 
+function make_installers() {
+    local JOBS=""
+
+    if [ "$BUILD_LINUX_INSTALL_DEB" == "true" ] ; then
+        make_linux_installer_deb &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_LINUX_INSTALL_TGZ" == "true" ] ; then
+        make_linux_installer_tgz &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_LINUX_UPDATE_TGZS" == "true" ] ; then
+        make_linux_update_tgz i386 &
+        JOBS="$JOBS $!"
+        make_linux_update_tgz amd64 &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_WINDOWS_EXE" == "true" ] || [ "$BUILD_WINDOWS_MSI" == "true" ] ; then
+        make_windows_installers &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_OSX_PACKAGES" == "true" ] ; then
+        make_osx_packages &
+        JOBS="$JOBS $!"
+    fi
+
+    # Check that all the background tasks completed successfully
+    FAIL=0
+    for JOB in "$JOBS" ; do
+        wait $JOB || let "FAIL+=1"
+    done
+
+    if [ "$FAIL" != "0" ] ; then
+        echo "$FAIL of the packaging tasks failed."
+        exit $FAIL
+    fi
+}
+
 echo ">> make client installers and packages in $PACKAGE_DIR"
 compute_product_names
-if [ "$BUILD_LINUX_INSTALL_DEB" == "true" ] ; then make_linux_installer_deb & fi
-if [ "$BUILD_LINUX_INSTALL_TGZ" == "true" ] ; then make_linux_installer_tgz & fi
-if [ "$BUILD_LINUX_UPDATE_TGZS" == "true" ] ; then make_linux_update_tgz i386 & make_linux_update_tgz amd64 & fi
-if [ "$BUILD_WINDOWS_EXE" == "true" ] || [ "$BUILD_WINDOWS_MSI" == "true" ] ; then make_windows_installers & fi
-if [ "$BUILD_OSX_PACKAGES" == "true" ] ; then make_osx_packages & fi
-
-# Check that all the background tasks completed successfully
-FAIL=0
-for job in $(jobs -p)
-do
-    wait $job || let "FAIL+=1"
-done
-if [ "$FAIL" != "0" ] ; then
-    echo "$FAIL of the packaging tasks failed."
-    exit $FAIL
-fi
-
+make_installers
 create_release_version_file
 exit 0
