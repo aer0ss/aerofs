@@ -38,7 +38,7 @@ $ make clean && make
 4. If you have watchman, run:
 $ make watch
 
-Watchman will automagically (and silently) re-run make in the background every time the source files change.
+Watchman will automatically (and silently) re-run make in the background every time the source files change.
 
 By default, compiled static files are no longer included in source control. Thus, you will need to run make (or have make watch running) every time LESS or JS files are changed.
 

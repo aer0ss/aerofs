@@ -94,9 +94,7 @@
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.11/angular-sanitize.js"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
-    <script src="${request.static_path('web:static/strider/app.js')}"></script>
+    <script src="${request.static_path('web:static/strider.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
-    <script src="${request.static_path('web:static/strider/controllers.js')}"></script>
-    <script src="${request.static_path('web:static/strider/directives.js')}"></script>
-    <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>
+    <script src="${request.static_path('web:static/shadowfax.js')}"></script>
 </%block>

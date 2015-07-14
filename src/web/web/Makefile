@@ -6,7 +6,8 @@ JS=js
 
 IS_WATCHMAN=$(shell which watchman)
 
-.PHONY : all clean watch clean-watch clean-dirs
+.PHONY : all clean watch clean-watch clean-dirs setup_test test copy cache jshint
+APP_TARGETS = $(DEST)/shadowfax.js $(DEST)/strider.js $(DEST)/shelob.js $(DEST)/fellowship.js $(DEST)/saruman.js
 
 # input less files
 FILES_IN_LESS = $(wildcard $(SRC)/$(LESS)/*.less)
@@ -25,7 +26,7 @@ EXTERNAL_ASSETS_OUT = $(DOCS_DEST)/css/compiled/aerofs.min.css \
 	$(DOCS_DEST)/css/compiled/api.min.css
 
 # Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT)
+all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS)
 
 # Destroy the final targets
 ifneq ($(IS_WATCHMAN),)
@@ -38,6 +39,11 @@ clean-watch:
 	watchman trigger-del $(shell pwd) remakejs
 	watchman trigger-del $(shell pwd) remakeless
 
+
+cache:
+	node_modules/.bin/gulp update-cache
+
+
 clean-dirs:
 	rm -rf $(DEST)/css/compiled/
 	rm -rf $(DEST)/js/compiled/
@@ -47,11 +53,38 @@ clean-dirs:
 	mkdir $(DEST)/js/compiled/
 	mkdir $(DOCS_DEST)/css/compiled/
 
+.ONESHELL:
+# set up npm install to run the tests
+setup_test:
+	cd ../jstest/shelob 
+	npm install
+
+.ONESHELL:
+# run karma tests
+test:
+	cd jstest/shelob && ./node_modules/karma/bin/karma start karma.conf.unit.js && ./node_modules/karma/bin/karma start karma.conf.e2e.js
+ 
 # Watch the filesystem and recompile on file modification
+TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax
+
+# The list to run the jshint on
+FILES = $(SRC)/js/recruiting.js $(SRC)/js/csrf.js $(SRC)/js/aerofs.js
+
+jshint:
+	for t in $(FILES) ; \
+	do \
+		jshint --config $(PWD)/jshintrc $$t ; \
+	done
+
 watch:
 	watchman watch $(shell pwd)
-	watchman -- trigger $(shell pwd) remakejs '*.js' -- python $(shell pwd)/make.py
-	watchman -- trigger $(shell pwd) remakeless '*.less' -- python $(shell pwd)/make.py
+	for t in $(TARGS) ; \
+	 do \
+	 	watchman -- trigger $$t remakejs_$$t '*.js' -- python $(shell pwd)/make.py $(shell pwd) ; \
+	 	watchman -- trigger $$t remakeless_$$t '*.less' -- python $(shell pwd)/make.py $(shell pwd) ; \
+	 done
+
+
 
 # Special rules for things which get placed outside of the web project
 # API docs site files
@@ -75,3 +108,49 @@ $(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
 $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
 	mkdir -p $(@D)
 	uglifyjs -o $@ $?
+
+#concatenation, watch the changes in $(DEST)/js/compiled/%.js turn it into bundled.js
+
+# Copy files from static-src to static.
+$(DEST)/%: $(SRC)/%
+	cp -R $< $@
+
+FOLDERS_SRC=$(SRC)/shelob \
+	$(SRC)/strider \
+	$(SRC)/fellowship \
+	$(SRC)/saruman \
+	$(SRC)/shadowfax
+
+FILES_SRC=$(shell find -L $(FOLDERS_SRC) -type f)
+
+copy: $(FILES_SRC:$(SRC)/%=$(DEST)/%
+
+$(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
+	$(SRC)/shelob/js/controllers.js \
+	$(SRC)/shelob/js/directives.js \
+	$(SRC)/shelob/js/filters.js \
+	$(SRC)/shelob/js/services.js
+	cat $^ > $@
+
+$(DEST)/fellowship.js: $(SRC)/fellowship/app.js \
+	$(SRC)/fellowship/controllers.js \
+	$(SRC)/fellowship/directives.js \
+	$(SRC)/fellowship/filters.js
+	cat $^ > $@
+
+$(DEST)/saruman.js: $(SRC)/saruman/app.js \
+	$(SRC)/saruman/controllers.js \
+	$(SRC)/saruman/directives.js \
+	$(SRC)/saruman/filters.js
+	cat $^ > $@
+
+$(DEST)/shadowfax.js: $(SRC)/shadowfax/app.js \
+	$(SRC)/shadowfax/controllers.js \
+	$(SRC)/shadowfax/pagination.js \
+	$(SRC)/shadowfax/filters.js
+	cat $^ > $@
+
+$(DEST)/strider.js: $(SRC)/strider/app.js \
+	$(SRC)/strider/controllers.js \
+	$(SRC)/strider/directives.js
+	cat $^ > $@

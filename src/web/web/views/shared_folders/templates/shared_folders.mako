@@ -120,9 +120,7 @@
         getGroupsURL = "${request.route_path('json.list_org_groups')}";
         getGroupMembersURL = "${request.route_path('json.list_group_members')}";
     </script>
-    <script src="${request.static_path('web:static/shadowfax/app.js')}"></script>
-    <script src="${request.static_path('web:static/shadowfax/filters.js')}"></script>
+    <script src="${request.static_path('web:static/shadowfax.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/typeahead/typeahead.js')}"></script>
-    <script src="${request.static_path('web:static/shadowfax/controllers.js')}"></script>
 </%block>

@@ -76,10 +76,7 @@
     </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
-    <script src="${request.static_path('web:static/fellowship/app.js')}"></script>
+    <script src="${request.static_path('web:static/fellowship.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/typeahead/typeahead.js')}"></script>
-    <script src="${request.static_path('web:static/fellowship/controllers.js')}"></script>
-    <script src="${request.static_path('web:static/fellowship/filters.js')}"></script>
-    <script src="${request.static_path('web:static/fellowship/directives.js')}"></script>
 </%block>
