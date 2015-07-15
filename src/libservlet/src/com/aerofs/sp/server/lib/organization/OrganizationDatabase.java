@@ -428,11 +428,14 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
-        // Return results in case sensitive manner.
+        // Return results that are sorted:
+        // 1. Alphabetical order
+        // 2. Uppercase before lowercase after 1 is applied.
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF +
                  " on " + C_AC_STORE_ID + " = " + C_SF_ID,
                 C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID), C_AC_STORE_ID)
-                + " order by BINARY " + C_SF_ORIGINAL_NAME + " limit ? offset ?")) {
+                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
+                + C_SF_ORIGINAL_NAME + ") ASC limit ? offset ?")) {
 
             ps.setString(1, orgId.toTeamServerUserID().getString());
             ps.setInt(2, maxResults);

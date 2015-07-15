@@ -429,8 +429,11 @@ C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
      */
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
-            C_AC_USER_ID + "=?", C_AC_STORE_ID))) {
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF
+                        + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
+                        C_AC_USER_ID + "=?", C_AC_STORE_ID)
+                        + " order by " + C_SF_ORIGINAL_NAME + ", binary("
+                        + C_SF_ORIGINAL_NAME + ") ASC")) {
             ps.setString(1, userId.getString());
 
             return executeGetFoldersQuery(ps);

@@ -6,6 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.DID;
@@ -19,12 +20,15 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -36,6 +40,18 @@ import static org.junit.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
 {
+
+    private void addSharedFolder(User sharer, List<User> sharees, String name, SharedFolderState sfs)
+            throws SQLException, ExAlreadyExist, ExNotFound
+    {
+        SharedFolder sf = factSharedFolder.create(SID.generate());
+        sf.save(name, sharer);
+        for (User sharee: sharees) {
+            sf.addPendingUser(sharee, Permissions.allOf(Permission.WRITE), sharer);
+            sf.setState(sharee, sfs);
+        }
+    }
+
     @Test(expected = ExNotFound.class)
     public void getOrganization_shouldThrowIfUserNotFound()
             throws ExNotFound, SQLException
@@ -122,13 +138,7 @@ public class TestUser extends AbstractBusinessObjectTest
         factDevice.create(new DID(UniqueID.generate())).save(user3, "", "", "Device3c");
         factDevice.create(new DID(UniqueID.generate())).save(user4, "", "", "Device4");
 
-        SharedFolder sf = factSharedFolder.create(SID.generate());
-
-        sf.save("Test Folder", user1);
-        sf.addPendingUser(user2, Permissions.allOf(Permission.WRITE), user1);
-        sf.setState(user2, SharedFolderState.JOINED);
-        sf.addPendingUser(user3, Permissions.allOf(Permission.WRITE), user1);
-        sf.setState(user3, SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2, user3), "Test Folder", SharedFolderState.JOINED);
 
         Collection<Device> userDevices = user1.getDevices();
         Collection<Device> peerDevices = user1.getPeerDevices();
@@ -153,5 +163,32 @@ public class TestUser extends AbstractBusinessObjectTest
 
         Assert.assertEquals(2, userDevices.size());
         Assert.assertEquals(2, peerDevices.size());
+    }
+
+    @Test
+    public void listSharedFolders_shouldListSharedFoldersInAlphabeticalOrder() throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+
+        // Add 5 shared folders.
+        addSharedFolder(user1, Arrays.asList(user2), "Test Folder", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2), "test Folder", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2), "1sf", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2), "1Sf", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2), "sf", SharedFolderState.JOINED);
+
+        List<String> orderedNames =
+                Lists.newArrayList("1Sf", "1sf", "sf", "Test Folder", "test Folder");
+        List<String> resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders()) {
+            // Skip user root store.
+            if (!sf.id().isUserRoot()) {
+                resultNames.add(sf.getName(user1));
+            }
+
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
     }
 }
