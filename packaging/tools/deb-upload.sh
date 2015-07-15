@@ -54,7 +54,7 @@ function upload_payload() {
 
 # Notify the team via slack that debs have been uploaded.
 function notify_team() {
-    echo -e "Build notification: $TARGET_REPOSITORY packages have been updated by $(whoami)@$(hostname)\n" > mail.txt
+    echo -e "Release notification: $TARGET_REPOSITORY packages have been updated by $(whoami)@$(hostname)\n" > mail.txt
     echo -e "New Versions:\n" >> mail.txt
 
     for ver in $(ls debs/*.ver)

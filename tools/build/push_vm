@@ -23,7 +23,7 @@ notify_slack() {
 
     for room in "#eng" "#success"
     do
-        echo "Build notification: Appliance VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
+        echo "Release notification: Appliance VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
             $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
                 -r "$room" \
                 -c good \

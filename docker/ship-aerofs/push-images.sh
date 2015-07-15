@@ -18,7 +18,7 @@ VERSION=$(docker run --rm aerofs/loader tag)
 
 for room in "#eng" "#success"
 do
-    echo "Build notification: Docker images version ${VERSION} pushed to registry.aerofs.com (by $(whoami)). This version is immediately available to the public." |
+    echo "Release notification: Docker images version ${VERSION} pushed to registry.aerofs.com (by $(whoami)). This version is immediately available to the public." |
         $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
             -r "$room" \
             -c good \
