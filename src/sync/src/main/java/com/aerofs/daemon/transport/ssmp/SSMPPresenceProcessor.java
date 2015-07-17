@@ -9,12 +9,14 @@ import com.aerofs.ids.SID;
 import com.aerofs.ssmp.SSMPClient.ConnectionListener;
 import com.aerofs.ssmp.SSMPEvent;
 import com.aerofs.ssmp.EventHandler;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 
 public class SSMPPresenceProcessor implements ConnectionListener, EventHandler {
     private final static Logger l = Loggers.getLogger(SSMPPresenceProcessor.class);
@@ -92,6 +94,11 @@ public class SSMPPresenceProcessor implements ConnectionListener, EventHandler {
 
     @Override
     public void disconnected() {
+        // cleanup device map and notify listeners appropriately
+        // TODO: more efficient cleanup (requires all listeners to do their own efficient cleanup)
+        for (Entry<DID, SID> e : ImmutableList.copyOf(_devices.entries())) {
+            updateStores(false, e.getKey(), e.getValue());
+        }
         multicastListeners.forEach(IMulticastListener::onMulticastUnavailable);
     }
 }

@@ -63,6 +63,10 @@ public class SSMPClientHandler extends SimpleChannelHandler {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
+        if (!ctx.getChannel().isConnected()) {
+            L.info("drop msg on disconnected channel");
+            return;
+        }
         _timer.restart();
 
         ChannelBuffer b = (ChannelBuffer)me.getMessage();

@@ -220,8 +220,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
             // remove all the channels
             channelsToDisconnectFilter = TRUE_FILTER;
 
-            // update advertised presence locations
-            locationManager.onLocationChanged(tp, ImmutableList.of());
+            // NB: no point advertising presence locations as ssmp connection is most likely down
         }
 
         synchronized (this) {
