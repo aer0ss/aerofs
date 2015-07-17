@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
 import com.aerofs.testlib.LoggerSetup;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,21 +54,16 @@ public final class TestPresenceService
     @Before
     public void setup()
     {
-        presenceService = new PresenceService();
+        presenceService = new PresenceService(MoreExecutors.sameThreadExecutor());
     }
 
     @Test
     public void shouldNotifyDeviceOnlineIfDeviceUnreachableOnMulticastAndBecomesConnectedOnUnicast()
         throws Exception
     {
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isOnline)
-            {
-                assertThat(did, equalTo(DID_0));
-                assertThat(isOnline, equalTo(true));
-            }
+        presenceService.addListener((did, isOnline) -> {
+            assertThat(did, equalTo(DID_0));
+            assertThat(isOnline, equalTo(true));
         });
 
         presenceService.onDeviceConnected(DID_0);
@@ -83,14 +79,9 @@ public final class TestPresenceService
     {
         presenceService.onDeviceConnected(DID_0);
 
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isOnline)
-            {
-                assertThat(did, equalTo(DID_0));
-                assertThat(isOnline, equalTo(false));
-            }
+        presenceService.addListener((did, isOnline) -> {
+            assertThat(did, equalTo(DID_0));
+            assertThat(isOnline, equalTo(false));
         });
 
         presenceService.onDeviceDisconnected(DID_0);
@@ -103,16 +94,11 @@ public final class TestPresenceService
             throws Exception
     {
         final AtomicInteger presenceNotifications = new AtomicInteger(0);
-        presenceService.addListener(new IDevicePresenceListener()
-        {
-            @Override
-            public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
-            {
-                assertThat(did, equalTo(DID_0));
-                assertThat(isPotentiallyAvailable, equalTo(true));
+        presenceService.addListener((did, isPotentiallyAvailable) -> {
+            assertThat(did, equalTo(DID_0));
+            assertThat(isPotentiallyAvailable, equalTo(true));
 
-                presenceNotifications.getAndIncrement();
-            }
+            presenceNotifications.getAndIncrement();
         });
 
         // NOTE: some of the transport components _may_ report connection twice

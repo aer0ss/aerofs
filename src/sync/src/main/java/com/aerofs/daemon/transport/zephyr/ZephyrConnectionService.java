@@ -281,16 +281,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
     public Object send(DID did, byte[][] bss, @Nullable IResultWaiter wtr)
             throws ExTransportUnavailable, ExDeviceUnavailable {
         l.trace("{} send cke:{}", did, null);
-        Channel channel;
-        synchronized (this) {
-            // DirectoryChannel does not require outside synchronization. However, it
-            // allows for more than one channel being created (if multiple threads arrive at
-            // the zero-available state simultaneously). Zephyr does not want more than one
-            // channel instance per DID, so we give the channel directory a stronger guarantee.
-            // Lock ordering is important: always lock this first. ChannelDirectory will not
-            // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
-            channel = directory.chooseActiveChannel(did).getChannel();
-        }
+        Channel channel = chooseActiveChannel(did);
 
         // can happen because the upper layer hasn't yet been notified of a disconnection
         if (channel == null) {
@@ -389,42 +380,47 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         // 1) Since notifications are sent via the netty I/O thread, it's possible to get the following order: disconnected, connected
         // 2) I'm not comfortable automatically initiating a connection on your behalf
 
-        // TODO: I suspect this 'synchronized' can be made unnecessary...
-        synchronized (this) {
+        try {
             try {
-                try {
-                    consumeHandshake(did, handshake);
-                } catch (ExHandshakeRenegotiation e) {
-                    // the zephyr server breaks both legs of a connection
-                    // if it detects that one leg has died
-                    // there are cases where the remote peer knows
-                    // that a connection is broken before the server does
-                    // this may cause the remote peer to attempt to re-establish
-                    // a connection. we want to detect this case an
-                    // 1. immediately teardown the old connection with zephyr
-                    // 2. immediately start negotiating the next connection
-                    // doing this allows us to avoid an expensive handshake timeout
-                    // on the remote peer and multiple additional roundtrips
-                    newMetric(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
-                            .sendAsync();
-                    disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
-                    consumeHandshake(did, handshake);
-                }
-            } catch (Exception e) {
-                disconnect(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e));
+                consumeHandshake(did, handshake);
+            } catch (ExHandshakeRenegotiation e) {
+                // the zephyr server breaks both legs of a connection
+                // if it detects that one leg has died
+                // there are cases where the remote peer knows
+                // that a connection is broken before the server does
+                // this may cause the remote peer to attempt to re-establish
+                // a connection. we want to detect this case an
+                // 1. immediately teardown the old connection with zephyr
+                // 2. immediately start negotiating the next connection
+                // doing this allows us to avoid an expensive handshake timeout
+                // on the remote peer and multiple additional roundtrips
+                newMetric(DEFECT_NAME_HANDSHAKE_RENEGOTIATION)
+                        .sendAsync();
+                disconnect(did, new IllegalStateException("attempted renegotiation of zephyr channel to " + did, e));
+                consumeHandshake(did, handshake);
             }
+        } catch (Exception e) {
+            disconnect(did, new ExDeviceUnavailable("fail to process signalling message from " + did, e));
+        }
+    }
+
+    private Channel chooseActiveChannel(DID did) throws ExTransportUnavailable, ExDeviceUnavailable {
+        synchronized (this) {
+            // DirectoryChannel does not require outside synchronization. However, it
+            // allows for more than one channel being created (if multiple threads arrive at
+            // the zero-available state simultaneously). Zephyr does not want more than one
+            // channel instance per DID, so we give the channel directory a stronger guarantee.
+            // Lock ordering is important: always lock this first. ChannelDirectory will not
+            // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
+            return directory.chooseActiveChannel(did).getChannel();
         }
     }
 
     private void consumeHandshake(DID did, ZephyrHandshake handshake)
             throws ExDeviceUnavailable, ExHandshakeFailed, ExHandshakeRenegotiation
     {
-        // synchronization is not required by ChannelDirectory except that it allows multiple
-        // peer channels for one Device. synchronization here guards the zero-to-one transition.
-        Preconditions.checkArgument(Thread.holdsLock(this), "improper synchronization");
-
         try {
-            Channel channel = directory.chooseActiveChannel(did).getChannel();
+            Channel channel = chooseActiveChannel(did);
             getZephyrClient(channel).consumeHandshake(handshake);
         } catch (ExTransportUnavailable exTransportUnavailable) {
             throw new ExDeviceUnavailable("cannot reach " + did);

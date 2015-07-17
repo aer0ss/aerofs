@@ -8,10 +8,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import org.slf4j.Logger;
 
-import java.util.List;
+import java.util.Deque;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 
 /**
@@ -23,15 +25,33 @@ import static com.google.common.collect.Sets.newHashSet;
  *     <li>Transitions from potentially available -> unavailable.</li>
  * </ul>
  * <br/>
+ *
+ * FIXME: the entire presence flow is long overdue for a refactor
  */
 public class PresenceService implements IUnicastStateListener, IDeviceConnectionListener
 {
     private static final Logger l = Loggers.getLogger(PresenceService.class);
 
-    private final List<IDevicePresenceListener> listeners = newArrayList();
+    private final Deque<IDevicePresenceListener> listeners = new ConcurrentLinkedDeque<>();
     private final Set<DID> onlineOnUnicast = newHashSet();
 
-    public synchronized void addListener(IDevicePresenceListener listener)
+    private final Executor _executor;
+
+    public PresenceService()
+    {
+        // call listeners in a single thread executor to:
+        //  - avoid deadlocks
+        //  - ensure a sane ordering of notifications is preserved
+        this(Executors.newSingleThreadExecutor(r -> new Thread(r, "ps")));
+    }
+
+    // allow custom executor for unit tests
+    PresenceService(Executor executor)
+    {
+        _executor = executor;
+    }
+
+    public void addListener(IDevicePresenceListener listener)
     {
         listeners.add(listener);
     }
@@ -46,13 +66,13 @@ public class PresenceService implements IUnicastStateListener, IDeviceConnection
     public synchronized boolean isConnected(DID did) { return onlineOnUnicast.contains(did); }
 
     @Override
-    public synchronized void onUnicastReady()
+    public void onUnicastReady()
     {
         // noop for now
     }
 
     @Override
-    public synchronized void onUnicastUnavailable()
+    public void onUnicastUnavailable()
     {
         // noop for now
     }
@@ -77,8 +97,10 @@ public class PresenceService implements IUnicastStateListener, IDeviceConnection
     {
         l.info("{} {}", did, isPotentiallyAvailable ? "potentially available" : "unavailable");
 
-        for (IDevicePresenceListener listener : listeners) {
-            listener.onDevicePresenceChanged(did, isPotentiallyAvailable);
-        }
+        _executor.execute(() -> {
+            for (IDevicePresenceListener listener : listeners) {
+                listener.onDevicePresenceChanged(did, isPotentiallyAvailable);
+            }
+        });
     }
 }
