@@ -52,7 +52,7 @@ public class InvitationEmailer
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -72,7 +72,7 @@ public class InvitationEmailer
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -92,7 +92,7 @@ public class InvitationEmailer
             composeSignUpInvitationEmail(cs, nsInviter, email);
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -148,7 +148,7 @@ public class InvitationEmailer
             email.addDefaultSignature();
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         sharee.id().getString(), getReplyTo(sharer), cs.subject(),
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -178,7 +178,7 @@ public class InvitationEmailer
             email.addDefaultSignature();
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         newMember.id().getString(), getReplyTo(changer), title,
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -216,7 +216,7 @@ public class InvitationEmailer
             email.addDefaultSignature();
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(nf.nameOnly(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND,
                         sharee.id().getString(), getReplyTo(sharer), title,
                         email.getTextEmail(), email.getHTMLEmail());
                 return null;
@@ -241,7 +241,7 @@ public class InvitationEmailer
             email.addDefaultSignature();
 
             return new InvitationEmailer(() -> {
-                _emailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
+                _emailSender.sendPublicEmailFromSupport(SPParam.BRAND, invitee.id().getString(),
                         getReplyTo(inviter), subject, email.getTextEmail(),
                         email.getHTMLEmail());
 
