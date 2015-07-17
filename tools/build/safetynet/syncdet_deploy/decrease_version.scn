@@ -1,5 +1,0 @@
-# Decreases the AeroFS release version on each actor system
-
-:serial
-    safetynet.manage.stop_aerofs
-    safetynet.manage.decrease_version

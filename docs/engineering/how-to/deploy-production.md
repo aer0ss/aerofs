@@ -55,7 +55,7 @@ git clone git@github.arrowfs.org:aerofs/syncdet
 
 # Deployment process
 
-A commit must pass CI before we will push it to production.  Additionally, we test for client regressions with safetynet to ensure that the to-be-pushed client will be able to update once deployed.  It is not okay to break the updater. :)
+A commit must pass CI before we will push it to production.
 
 ```
 # build all server code

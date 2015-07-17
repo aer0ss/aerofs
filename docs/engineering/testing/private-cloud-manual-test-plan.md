@@ -36,7 +36,7 @@ Non-goals:
  - browser compatibility
  - functional (sync) testing
  - UI/UX except for setup flow
- - anything handled by existing testing (safetynet, CI, hybrid users)
+ - anything handled by existing testing (CI)
  
 Long term:
 

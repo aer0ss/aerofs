@@ -1,7 +1,0 @@
-:scn,nofail assert
-    :serial
-        safetynet.assert.updated
-        safetynet.assert.launched
-
-:serial
-    assert()

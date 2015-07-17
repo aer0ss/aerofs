@@ -51,7 +51,7 @@ We use the following networks for the following purposes:
 
 ## Misc (non-VPC)
   - 54.236.64.76 webhooks
-  - S3/CDN ( {no,}cache.client{.stg,.safetynet,}.aerofs.com )
+  - S3/CDN ( {no,}cache.client.aerofs.com )
   - 107.20.173.137 - build (b.arrowfs.org, build and deploy host)
   - 23.20.80.150 - sentry (sentry.aerofs.com)
   - 54.243.210.100 - blog

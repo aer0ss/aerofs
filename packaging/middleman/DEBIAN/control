@@ -1,7 +1,0 @@
-Package: aerofs-middleman
-Section: admin
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS man in the middle server
-Architecture: all
-Depends: ruby1.8, rubygems

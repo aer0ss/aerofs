@@ -9,7 +9,6 @@ PACKAGES= \
 	cmd-tools \
 	dryad \
 	lizard \
-	middleman \
 	pagerduty \
 	rocklog
 

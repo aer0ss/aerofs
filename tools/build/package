@@ -8,12 +8,11 @@ set -eu
 ###############################################################################
 
 function DieUsage {
-    echo "usage: $0 <build_mode> <build_product> <version> <sign_mode>" >&2
+    echo "usage: $0 <build_product> <version> <sign_mode>" >&2
     echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
     echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
     echo "       [--build-all]" >&2
     echo " " >&2
-    echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<version>: formatted <major>.<minor>.<build>" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
@@ -25,8 +24,8 @@ function DieUsage {
     echo "[--build-osx-packages]: build the OSX installer/updater packages " >&2
     echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
-    echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED --build-all" >&2
-    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz" >&2
+    echo "example: $0 CLIENT 0.1.0 UNSIGNED --build-all" >&2
+    echo "example: $0 TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz" >&2
     exit $ERRBADARGS
 }
 
@@ -35,19 +34,15 @@ function DieUsage {
 # #SADFACE positional args
 ##
 case ${1:-} in
-    PUBLIC|PRIVATE) BUILD_MODE=$1;;
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$1;;
     *) DieUsage;;
 esac
-case ${2:-} in
-    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$2;;
+RELEASE_VERSION=${2:-}
+case ${3:-} in
+    SIGNED|UNSIGNED) SIGN_MODE=$3;;
     *) DieUsage;;
 esac
-RELEASE_VERSION=${3:-}
-case ${4:-} in
-    SIGNED|UNSIGNED) SIGN_MODE=$4;;
-    *) DieUsage;;
-esac
-shift 4
+shift 3
 
 
 ##
@@ -72,7 +67,6 @@ while [ "${1:-}" != "" ]; do
 done
 
 include common $BUILD_PRODUCT
-
 check_version_format $RELEASE_VERSION
 
 #******************************************************************************
@@ -84,10 +78,10 @@ check_version_format $RELEASE_VERSION
 #******************************************************************************
 
 echo '+---------------------------------------'
-echo '| ' $RELEASE_VERSION $PRODUCT $MODE $SIGN_MODE
+echo '| ' $RELEASE_VERSION $PRODUCT $SIGN_MODE
 echo '+---------------------------------------'
 
-call make_release_resources $MODE $PRODUCT $RELEASE_VERSION $RELEASE_FLAGS
-call make_client_installers $MODE $PRODUCT $RELEASE_VERSION $SIGN_MODE $BUILD_FLAGS
-echo ">> successfully built $SIGN_MODE $MODE $PRODUCT release version $RELEASE_VERSION"
+call make_release_resources $PRODUCT $RELEASE_VERSION $RELEASE_FLAGS
+call make_client_installers $PRODUCT $RELEASE_VERSION $SIGN_MODE $BUILD_FLAGS
+echo ">> successfully built $SIGN_MODE $PRODUCT release version $RELEASE_VERSION"
 exit 0

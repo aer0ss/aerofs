@@ -10,7 +10,7 @@ set -x
 #
 ###############################################################################
 
-include common ${2:-}
+include common ${1:-}
 
 ###############################################################################
 #
@@ -19,18 +19,17 @@ include common ${2:-}
 ###############################################################################
 function DieUsage() {
     set +x
-    echo "usage: $0 [build mode] [build product] [release version]" >&2
+    echo "usage: $0 [build product] [release version]" >&2
     echo " " >&2
-    echo "[build mode]: PUBLIC|PRIVATE" >&2
     echo "[build product]: CLIENT|TEAM_SERVER" >&2
     echo "[release version]: major.minor.build" >&2
     echo " " >&2
-    echo "example: $0 PUBLIC TEAM_SERVER 0.4.99" >&2
+    echo "example: $0 0.4.99" >&2
     exit $ERRBADARGS
 }
 
-[[ $# -eq 3 ]] || DieUsage
-readonly RELEASE_VERSION="$3"
+[[ $# -eq 2 ]] || DieUsage
+readonly RELEASE_VERSION="$2"
 
 ######################################################################
 #

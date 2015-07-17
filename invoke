@@ -591,7 +591,6 @@ def package_clients(args):
     for product in products:
         cmdline = [ BOOTSTRAP_ENTRY,
                 "package",
-                "PRIVATE",
                 product,
                 version,
                 signed_arg,

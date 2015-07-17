@@ -5,55 +5,39 @@ set -e
 # arguments
 
 function DieUsage {
-    echo usage "$0 [build mode] [version number] [aerofs_product_unix] [remote release dir] [output deb filename]"
-    echo "[build mode]: PUBLIC|PRIVATE"
+    echo usage "$0 [version number] [aerofs_product_unix] [remote release dir] [output deb filename]"
     echo "[version number]: major.minor.release (e.g. 0.4.65)"
     echo "[aerofs_product_unix]: the name of the AeroFS product on Unix (\"aerofs\" or \"aerofsts\")"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
-    echo "example: $0 PUBLIC CLIENT 0.4.65 aerofs ~/aerofs.release /data/public-downloads/aerofs-installer.deb"
+    echo "example: $0 0.4.65 aerofs ~/aerofs.release /data/public-downloads/aerofs-installer.deb"
     exit 1
 }
 
-[[ $# -eq 5 ]] || DieUsage
+[[ $# -eq 4 ]] || DieUsage
 
 set -u
 
 #################################
-# build mode
-
-MODE=""
-LOWERCASE_MODE=""
-if [ "$1" == "PUBLIC" ]; then
-    MODE="PUBLIC"
-    LOWERCASE_MODE="public"
-elif [ "$1" == "PRIVATE" ]; then
-    MODE="PRIVATE"
-    LOWERCASE_MODE="private"
-else
-    echo "Invalid build mode $1. Expected PUBLIC|PRIVATE."
-fi
-
-#################################
 # set parameters
 
-case "$3" in
-    aerofs|aerofsts) readonly AEROFS_PRODUCT_UNIX=$3 ;;
+case "$2" in
+    aerofs|aerofsts) readonly AEROFS_PRODUCT_UNIX=$2 ;;
     *) DieUsage ;;
 esac
 
 # check that server relase dir exists
-[[ -d "$4" ]] || DieUsage
-readonly SERVER_RELEASE_DIR="$4"
+[[ -d "$3" ]] || DieUsage
+readonly SERVER_RELEASE_DIR="$3"
 
 # check that output deb does not already exist
-[[ ! -d "$5" ]] || DieUsage
-readonly OUTPUT_DEB_NAME="$5"
+[[ ! -d "$4" ]] || DieUsage
+readonly OUTPUT_DEB_NAME="$4"
 
 # debian control-file parameters
 readonly PACKAGE_NAME=$(echo $OUTPUT_DEB_NAME | awk -F'/' '{print $NF}' | awk -F '.' '{print $1}')
-readonly VERSION=$2
+readonly VERSION=$1
 readonly SECTION='utility'
 readonly PRIORITY='optional'
 
@@ -64,7 +48,7 @@ readonly DESCRIPTION='AeroFS: Private file sync and share.'
 #################################
 # create a working directory for package building
 
-readonly DEB_BUILD_DIR="$( mktemp -d -t make_deb_${LOWERCASE_MODE}_XXXXXX )"
+readonly DEB_BUILD_DIR="$( mktemp -d -t make_deb_XXXXXX )"
 trap "rm -r $DEB_BUILD_DIR" EXIT
 
 #################################

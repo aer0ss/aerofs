@@ -11,12 +11,11 @@ set -x
 
 function DieUsage {
     set +x
-    echo "usage: $0 <build_mode> <build_product> <release_version> <sign_mode>" >&2
+    echo "usage: $0 <build_product> <release_version> <sign_mode>" >&2
     echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
     echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
     echo "       [--build-all]" >&2
     echo " " >&2
-    echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<release_version>: release version (for example: 0.1.0)" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
@@ -28,8 +27,8 @@ function DieUsage {
     echo "[--build-osx-packages]: build the OSX installer/updater packages" >&2
     echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
-    echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED --build-all" >&2
-    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz --build-linux-update-tgzs" >&2
+    echo "example: $0 CLIENT 0.1.0 UNSIGNED --build-all" >&2
+    echo "example: $0 TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz --build-linux-update-tgzs" >&2
     exit $ERRBADARGS
 }
 
@@ -37,23 +36,19 @@ function DieUsage {
 # Parse positional args
 ##
 case ${1:-} in
-    PUBLIC|PRIVATE) BUILD_MODE=$1;;
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$1;;
     *) DieUsage;;
 esac
 case ${2:-} in
-    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$2;;
-    *) DieUsage;;
+    '') DieUsage;;
+    *) readonly RELEASE_VERSION=$2;;
 esac
 case ${3:-} in
-    '') DieUsage;;
-    *) readonly RELEASE_VERSION=$3;;
-esac
-case ${4:-} in
     SIGNED) SIGNED=true;;
     UNSIGNED) SIGNED=false;;
     *) DieUsage;;
 esac
-shift 4
+shift 3
 
 ##
 # Parse long opts
@@ -90,8 +85,6 @@ done
 
 include common $BUILD_PRODUCT
 
-readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
-
 ###############################################################################
 #
 # Functions to make packages on all operating systems
@@ -101,8 +94,7 @@ readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
 function make_linux_installer_deb() {
     local DEBSCRIPT="${BUILD_SCRIPT_DIR}/make_deb"
     mkdir -p "$PACKAGE_DIR"
-    "$DEBSCRIPT" $MODE \
-                 $RELEASE_VERSION \
+    "$DEBSCRIPT" $RELEASE_VERSION \
                  $AEROFS_PRODUCT_UNIX \
                  "$LOCAL_RELEASE_DIR" \
                  "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
@@ -170,28 +162,13 @@ function make_windows_installers() {
     function sign_exe() {
         FILENAME="$1"
 
-        local CERT_FILE=""
-        local KEY_FILE=""
-        case "$MODE" in
-        "PRIVATE")
-            CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
-            KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
-            CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
-            ;;
-        "PUBLIC")
-            CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
-            KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
-            CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
-            ;;
+        local CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
+        local KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
+        local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
         # If we later want to let CI use a test cert and key for signing, use the following:
         # CERT_FILE="$BUILD_SCRIPT_DIR/signing/cert.spc"
         # KEY_FILE="$BUILD_SCRIPT_DIR/signing/privateKey.pvk"
         # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
-        *)
-            echo "error: unsupported mode: $MODE" >&2
-            return 1
-            ;;
-        esac
         if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
             echo "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE" >&2
             return 1
