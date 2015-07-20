@@ -70,8 +70,7 @@ def _license_available_email_for(admin, company):
     template_args = {
             "admin": admin,
             "dashboard_url": dashboard_url,
-            "virtualbox_url": "https://www.virtualbox.org/wiki/Downloads",
-            "implementation_video_url": "http://ae.ro/privateCloudVideo",
+            "implementation_video_url": "https://www.youtube.com/watch?v=pVqpobLdoHk",
             "faqs_url": "https://support.aerofs.com/hc/en-us/articles/204592794",
     }
     text_body = render_template("emails/license_ready_email.txt", **template_args)
