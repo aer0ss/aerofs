@@ -32,9 +32,11 @@ def archive_container_logs(request):
                 container_name = check_output(['docker', 'inspect', '--format="{{ .Name }}"', container_id]).strip().replace("/", "")
 
                 for line in logfile.readlines():
-                    logObject = json.loads(line)
+                    # some docker log files have null bytes left over
+                    logObject = json.loads(line.strip('\0'))
                     formatted_logs.write("{}:{}".format(logObject["time"], logObject["log"]))
 
+                formatted_logs.flush()
                 z.write(formatted_logs.name, "".join(tuple(container_name) + splitext(basename(path))[1:]))
 
     print 'Log archiving done.'
