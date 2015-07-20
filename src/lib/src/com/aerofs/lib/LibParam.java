@@ -139,7 +139,6 @@ public class LibParam extends BaseParam
     public static final String GUI_NAME                 = "gui";
     public static final String CLI_NAME                 = "cli";
     public static final String SH_NAME                  = "sh";
-    public static final String TOOLS_NAME               = "tools";
     public static final String END_OF_DEFECT_MESSAGE    = "---EOM---";
 
     public static final InetAddress LOCALHOST_ADDR;

@@ -5,7 +5,6 @@ import com.aerofs.gui.GUIProgram;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
 import com.aerofs.shell.ShProgram;
-import com.aerofs.tools.ToolsProgram;
 
 public class Program implements IProgram {
 
@@ -27,7 +26,6 @@ public class Program implements IProgram {
         case LibParam.SH_NAME:      return new ShProgram();
         case LibParam.GUI_NAME:     return new GUIProgram();
         case LibParam.CLI_NAME:     return new CLIProgram();
-        case LibParam.TOOLS_NAME:   return new ToolsProgram();
         default: throw new ExProgramNotFound(prog);
         }
     }

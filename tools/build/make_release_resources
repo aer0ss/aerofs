@@ -87,10 +87,6 @@ function copy_resources_to_local_release_directories() {
     find "${local_BIN}/" -name .DS_Store  | xargs rm -f
     find "${local_BIN}/" -name .gitignore | xargs rm -f
 
-    # TODO: (AG) move these as excludes into build.xml
-    # TODO: (WW) Verify this package is valid before removing
-    rm -rf "${local_BIN}/com/aerofs/tools"
-
     # remove platform-specific gradle-resolved deps
     # they will be resolved appropriately for each packkage later on
     rm -f "${local_ALL_PLATFORMS_RELEASE_LIB}/swt-4.jar"
@@ -187,11 +183,6 @@ function create_java_jar() {
 
     #echo N.B. platform-dependent jars must have identical names
     for i in "$AEROFS_RELEASE_WIN_DIR"/lib/*; do
-        echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
-    done
-
-    # s3 jars
-    for i in "$CLIENT_RESOURCES_DIR"/s3/lib/*.jar; do
         echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
     done
 
