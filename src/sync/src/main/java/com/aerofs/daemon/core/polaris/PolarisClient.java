@@ -20,22 +20,15 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.*;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -60,7 +53,7 @@ public class PolarisClient
 
     private final Auth _auth;
     private final URI _endpoint;
-    private final Bootstrap _bootstrap;
+    private final ClientBootstrap _bootstrap;
     private final Executor _executor;
 
     private AtomicReference<Channel> _channel = new AtomicReference<>();
@@ -77,45 +70,37 @@ public class PolarisClient
         @Override
         public HttpHeaders apply(HttpHeaders headers)
         {
-            headers.add(HttpHeaderNames.AUTHORIZATION, auth);
+            headers.add(HttpHeaders.Names.AUTHORIZATION, auth);
             return headers;
         }
     }
 
     @Inject
     public PolarisClient(CoreExecutor executor, CfgLocalDID localDID, CfgLocalUser localUser,
-            ClientSSLEngineFactory sslEngineFactory)
+            Timer timer, ClientSocketChannelFactory channelFactory, ClientSSLEngineFactory sslEngineFactory)
     {
         this(URI.create(getStringProperty("daemon.polaris.url", "")),
                 executor,
-                new Auth(localUser.get(), localDID.get()), sslEngineFactory);
+                new Auth(localUser.get(), localDID.get()), timer, channelFactory, sslEngineFactory);
     }
 
-    private PolarisClient(URI endpoint, Executor executor, Auth auth, SSLEngineFactory sslEngineFactory)
+    private PolarisClient(URI endpoint, Executor executor, Auth auth, Timer timer,
+                          ChannelFactory channelFactory, SSLEngineFactory sslEngineFactory)
     {
         _auth = auth;
         _executor = executor;
         _endpoint = endpoint;
-        _bootstrap = new Bootstrap();
-        _bootstrap.group(new NioEventLoopGroup(1, r -> {
-            return new Thread(r, "pc");
-        }));
-        _bootstrap.channel(NioSocketChannel.class);
-        _bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
-        _bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            public void initChannel(SocketChannel ch)
-            {
-                try {
-                    ch.pipeline().addLast(
-                            new IdleStateHandler(0, 0, 5),
-                            new SslHandler(sslEngineFactory.getSSLEngine()),
-                            new HttpClientCodec(),
-                            new HttpObjectAggregator(256 * C.KB),
-                            new Handler());
-                } catch (IOException | GeneralSecurityException e) {
-                    throw new RuntimeException(e);
-                }
+        _bootstrap = new ClientBootstrap(channelFactory);
+        _bootstrap.setPipelineFactory(() -> {
+            try {
+                return Channels.pipeline(
+                        new IdleStateHandler(timer, 0, 0, 5),
+                        sslEngineFactory.newSslHandler(),
+                        new HttpClientCodec(),
+                        new HttpChunkAggregator(256 * C.KB),
+                        new Handler());
+            } catch (IOException | GeneralSecurityException e) {
+                throw new RuntimeException(e);
             }
         });
     }
@@ -123,80 +108,71 @@ public class PolarisClient
     private static class Request
     {
         final HttpRequest http;
-        final SettableFuture<FullHttpResponse> f;
+        final SettableFuture<HttpResponse> f;
 
-        Request(HttpRequest http, SettableFuture<FullHttpResponse> f)
+        Request(HttpRequest http, SettableFuture<HttpResponse> f)
         {
             this.http = http;
             this.f = f;
         }
     }
 
-    private static class Handler extends ChannelDuplexHandler
+    private static class Handler extends IdleStateAwareChannelHandler
     {
-        private final Queue<SettableFuture<FullHttpResponse>> _requests =
+        private final Queue<SettableFuture<HttpResponse>> _requests =
                 Queues.newConcurrentLinkedQueue();
 
         @Override
-        public void write(ChannelHandlerContext ctx, Object request,
-                ChannelPromise promise)
+        public void writeRequested(ChannelHandlerContext ctx, MessageEvent ev)
         {
+            Object request = ev.getMessage();
             if (request instanceof Request) {
                 Request r = (Request)request;
                 _requests.add(r.f);
-                if (r.http instanceof FullHttpMessage) {
+                if (r.http.getContent() != null) {
                     l.info("write {}\n{}", r.http,
-                            ((FullHttpMessage)r.http).content().toString(BaseUtil.CHARSET_UTF));
+                            r.http.getContent().toString(BaseUtil.CHARSET_UTF));
                 } else {
                     l.info("write {}", r.http);
                 }
-                ctx.writeAndFlush(r.http, promise);
+                ctx.sendDownstream(new DownstreamMessageEvent(ev.getChannel(), ev.getFuture(),
+                        r.http, ev.getRemoteAddress()));
             } else {
-                ctx.write(request, promise);
+                ctx.sendDownstream(ev);
             }
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object response)
+        public void messageReceived(ChannelHandlerContext ctx, MessageEvent ev)
         {
-            FullHttpResponse r = (FullHttpResponse)response;
-            l.info("recv {} {}", r.status(), r.headers());
+            HttpResponse r = (HttpResponse)ev.getMessage();
+            l.info("recv {} {}", r.getStatus(), r.headers());
             if (l.isDebugEnabled()) {
-                l.debug("{}", r.content().toString(BaseUtil.CHARSET_UTF));
+                l.debug("{}", r.getContent().toString(BaseUtil.CHARSET_UTF));
             }
-            _requests.poll().set((FullHttpResponse)response);
+            _requests.poll().set(r);
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent ev)
         {
-            l.warn("ex", BaseLogUtil.suppress(cause, ClosedChannelException.class));
-            ctx.close();
+            l.warn("ex", BaseLogUtil.suppress(ev.getCause(), ClosedChannelException.class));
+            ctx.getChannel().close();
         }
 
         @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
+        public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
         {
-            if (evt instanceof IdleStateEvent) {
-                IdleStateEvent e = (IdleStateEvent) evt;
-                l.info("timeout {}", e.state());
-                ctx.close();
-            }
+            l.info("timeout {}", e.getState());
+            ctx.getChannel().close();
         }
 
         @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception
-        {
-            l.info("active");
-            super.channelActive(ctx);
-        }
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception
+        public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
         {
             l.info("inactive");
             failRequests();
-            super.channelInactive(ctx);
+            super.channelClosed(ctx, e);
         }
 
         private synchronized void failRequests()
@@ -209,14 +185,14 @@ public class PolarisClient
         }
     }
 
-    private void send(HttpRequest req, final SettableFuture<FullHttpResponse> f)
+    private void send(HttpRequest req, final SettableFuture<HttpResponse> f)
     {
         _auth.apply(req.headers());
-        req.headers().add(HttpHeaderNames.HOST, _endpoint.getHost());
-        req.setUri(_endpoint.getPath() + req.uri());
+        req.headers().add(HttpHeaders.Names.HOST, _endpoint.getHost());
+        req.setUri(_endpoint.getPath() + req.getUri());
 
         Channel c = _channel.get();
-        if (c != null && c.isActive()) {
+        if (c != null && c.isConnected()) {
             write(c, req, f);
             return;
         }
@@ -224,11 +200,11 @@ public class PolarisClient
         _bootstrap.connect(new InetSocketAddress(_endpoint.getHost(), _endpoint.getPort()))
                 .addListener((ChannelFuture cf) -> {
                     if (cf.isSuccess()) {
-                        onConnect(cf.channel());
-                        write(cf.channel(), req, f);
+                        onConnect(cf.getChannel());
+                        write(cf.getChannel(), req, f);
                     } else {
-                        l.info("connect failed", cf.cause());
-                        f.setException(cf.cause());
+                        l.info("connect failed", cf.getCause());
+                        f.setException(cf.getCause());
                     }
                 });
     }
@@ -240,32 +216,32 @@ public class PolarisClient
     }
 
     public void post(String url, Object body, AsyncTaskCallback cb,
-                     Function<FullHttpResponse, Boolean, Exception> cons)
+                     Function<HttpResponse, Boolean, Exception> cons)
     {
         post(url, body, cb, cons, _executor);
     }
 
     public void post(String url, Object body, AsyncTaskCallback cb,
-                     Function<FullHttpResponse, Boolean, Exception> cons, Executor executor)
+                     Function<HttpResponse, Boolean, Exception> cons, Executor executor)
     {
-        FullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
-                url, Unpooled.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(body))));
-        req.headers().add(HttpHeaderNames.CONTENT_TYPE, "application/json");
-        req.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+        DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, url);
+        req.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
+        req.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+        req.setContent(ChannelBuffers.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(body))));
 
         send(req, cb, cons, executor);
     }
 
     public void send(HttpRequest req, AsyncTaskCallback cb,
-            Function<FullHttpResponse, Boolean, Exception> cons)
+            Function<HttpResponse, Boolean, Exception> cons)
     {
         send(req, cb, cons, _executor);
     }
 
     public void send(HttpRequest req, AsyncTaskCallback cb,
-                     Function<FullHttpResponse, Boolean, Exception> cons, Executor executor)
+                     Function<HttpResponse, Boolean, Exception> cons, Executor executor)
     {
-        SettableFuture<FullHttpResponse> f = SettableFuture.create();
+        SettableFuture<HttpResponse> f = SettableFuture.create();
         // NB: MUST add the listener before passing the future to avoid some nasty race conditions
         //
         // We use CoreExecutor to make sure the listener is invoked through a core event to be able
@@ -286,12 +262,8 @@ public class PolarisClient
             checkState(f.isDone());
             checkState(!f.isCancelled());
             try {
-                FullHttpResponse r = f.get();
-                try {
-                    cb.onSuccess_(cons.apply(r));
-                } finally {
-                    r.release();
-                }
+                HttpResponse r = f.get();
+                cb.onSuccess_(cons.apply(r));
             } catch (Throwable t) {
                 cb.onFailure_(t);
             }
@@ -303,16 +275,16 @@ public class PolarisClient
     private void onConnect(Channel c)
     {
         _channel.set(c);
-        c.closeFuture().addListener(f -> _channel.compareAndSet(c, null));
+        c.getCloseFuture().addListener(f -> _channel.compareAndSet(c, null));
     }
 
-    private void write(Channel c, HttpRequest req, SettableFuture<FullHttpResponse> f)
+    private void write(Channel c, HttpRequest req, SettableFuture<HttpResponse> f)
     {
         c.write(new Request(req, f)).addListener(cf -> {
             if (!cf.isSuccess()) {
-                l.info("write failed", BaseLogUtil.suppress(cf.cause(),
+                l.info("write failed", BaseLogUtil.suppress(cf.getCause(),
                         ClosedChannelException.class));
-                f.setException(cf.cause());
+                f.setException(cf.getCause());
             }
         });
     }

@@ -8,7 +8,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.polaris.fetch.ApplyChange;
 import com.aerofs.daemon.core.store.PolarisStore;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
@@ -48,7 +47,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import io.netty.handler.codec.http.FullHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -243,11 +242,11 @@ public class MetaChangeSubmitter implements Submitter
         _client.post("/batch/transforms", batch, cb, r -> handleBatch_(c, batch, r));
     }
 
-    private boolean handleBatch_(List<MetaChange> c, Batch batch, FullHttpResponse resp)
+    private boolean handleBatch_(List<MetaChange> c, Batch batch, HttpResponse resp)
              throws Exception
     {
-        int statusCode = resp.status().code();
-        String body = resp.content().toString(BaseUtil.CHARSET_UTF);
+        int statusCode = resp.getStatus().getCode();
+        String body = resp.getContent().toString(BaseUtil.CHARSET_UTF);
         switch (statusCode) {
         case 200: {
             BatchResult r = GsonUtil.GSON.fromJson(body, BatchResult.class);

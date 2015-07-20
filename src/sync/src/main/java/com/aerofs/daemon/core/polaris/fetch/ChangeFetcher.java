@@ -24,7 +24,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
-import io.netty.handler.codec.http.*;
+import org.jboss.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 
 /**
@@ -91,23 +91,23 @@ public class ChangeFetcher
                 "/transforms/" + sid.toStringFormal());
         encoder.addParam("since", Long.toString(lastLocalEpoch));
         encoder.addParam("count", Long.toString(CHANGES_PER_REQUEST));
-        HttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET,
+        DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET,
                 encoder.toString());
-        req.headers().set(HttpHeaderNames.CONTENT_LENGTH, "0");
+        req.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
 
         _client.send(req, cb, r -> handle_(sid, r));
     }
 
-    private boolean handle_(SID sid, FullHttpResponse r) throws Exception
+    private boolean handle_(SID sid, HttpResponse r) throws Exception
     {
         // TODO: streaming response processing
-        String content = r.content().toString(BaseUtil.CHARSET_UTF);
-        if (!r.status().equals(HttpResponseStatus.OK)) {
-            l.info("polaris error {}\n{}", r.status(), content);
-            if (HttpStatusClass.SERVER_ERROR.contains(r.status().code())) {
-                throw new ExRetryLater(r.status().reasonPhrase());
+        String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
+        if (!r.getStatus().equals(HttpResponseStatus.OK)) {
+            l.info("polaris error {}\n{}", r.getStatus(), content);
+            if (r.getStatus().getCode() >= 500) {
+                throw new ExRetryLater(r.getStatus().getReasonPhrase());
             }
-            throw new ExProtocolError(r.status().reasonPhrase());
+            throw new ExProtocolError(r.getStatus().getReasonPhrase());
         }
 
         SIndex sidx = _sid2sidx.getNullable_(sid);
