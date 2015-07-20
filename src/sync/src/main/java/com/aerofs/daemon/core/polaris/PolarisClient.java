@@ -25,6 +25,8 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.*;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
@@ -224,10 +226,11 @@ public class PolarisClient
     public void post(String url, Object body, AsyncTaskCallback cb,
                      Function<HttpResponse, Boolean, Exception> cons, Executor executor)
     {
+        byte[] d = BaseUtil.string2utf(GsonUtil.GSON.toJson(body));
         DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, url);
         req.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
-        req.headers().add(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
-        req.setContent(ChannelBuffers.wrappedBuffer(BaseUtil.string2utf(GsonUtil.GSON.toJson(body))));
+        req.headers().add(Names.CONTENT_LENGTH, d.length);
+        req.setContent(ChannelBuffers.wrappedBuffer(d));
 
         send(req, cb, cons, executor);
     }
