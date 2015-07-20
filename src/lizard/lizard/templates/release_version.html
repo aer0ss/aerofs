@@ -9,12 +9,16 @@
     <p>Download links:<p>
     <ul>
         <li><a href="{{ ova_url }}">OVA</a></li>
-        <li><a href="{{ qcow_url }}">QCOW2</a></li>
+        <li><a href="{{ qcow_url }}">QCow2</a></li>
+        <li><a href="{{ vmdk_url }}">VMDK</a></li>
     </ul>
-    <p>To release a newer appliance, make sure the images are in
-the aerofs.privatecloud S3 bucket with public ACLs and filenames
-<code>aerofs-appliance-&lt;version&gt;.ova</code> and
-<code>aerofs-appliance-&lt;version&gt;.qcow2.gz</code></p>
+    <p>
+        To release a newer appliance, make sure the images are in
+        the aerofs.privatecloud S3 bucket with public ACLs and filenames
+        <code>aerofs-appliance-&lt;version&gt;.ova</code>,
+        <code>aerofs-appliance-&lt;version&gt;.qcow2</code> and
+        <code>aerofs-appliance-&lt;version&gt;.vmdk</code>.
+    </p>
 
     <form role="form" class="form-horizontal" action="" method="post">
         {{ form.hidden_tag() }}

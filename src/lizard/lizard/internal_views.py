@@ -283,4 +283,5 @@ def release():
             current_version=current_ver,
             ova_url=appliance.ova_url(current_ver),
             qcow_url=appliance.qcow_url(current_ver),
+            vmdk_url=appliance.vmdk_url(current_ver),
             )
