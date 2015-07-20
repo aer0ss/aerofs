@@ -6,16 +6,16 @@ The customer success engineer (CSE) will be reponsible for:
 
 * The technical side of <u>customer success management</u>, which is composed
   of:
-    * [Implementation](../implementation.html)
+    * [Implementation](../organization/implementation.html)
         * AKA "sales engineering".
         * Helping scale and deploy the AeroFS appliance and other AeroFS
           products and systems, and more generally serving as the
           technical point of contact for our customers).
-    * [Support](../support.html)
+    * [Support](../organization/support.html)
         * Responding to customer questions and diagnosing bug reports.
         * Fixing bugs in our software.
-    * [Solutions](../solutions.html)
-        * AKA "professinal services".
+    * [Solutions](../organization/solutions.html)
+        * AKA "professional services".
         * Designing and implementing customer-specific solutions.
 
 The ideal candidate is an mixture of software engineer, product manager, sales
