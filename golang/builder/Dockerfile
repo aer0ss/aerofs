@@ -9,6 +9,7 @@ RUN apt-get update &&\
         git \
         golang \
         mercurial \
+        patch \
         &&\
     mkdir /gopath
 

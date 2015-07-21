@@ -32,8 +32,8 @@ DIRS="
     ../src/sparta
     ../src/spsv
     ../golang/src/aerofs.com/ts-probe
+    ../golang/src/aerofs.com/valkyrie
     ../src/web
-    ../src/zephyr
 
     ship-aerofs/loader
 "
