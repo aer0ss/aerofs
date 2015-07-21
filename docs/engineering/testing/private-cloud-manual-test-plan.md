@@ -79,7 +79,7 @@ Doesn't matter which virtualization environment we use here.
 
 ### Pass 1
 
- - configure TLS LDAP:
+- [configure TLS LDAP](OpenDJ-LDAP-Setup.html)
     IP, bind DN, certificate info
     (an OpenDS server is probably a-ok)
 
