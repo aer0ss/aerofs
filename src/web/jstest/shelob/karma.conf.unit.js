@@ -14,7 +14,7 @@ module.exports = function(config) {
       '../../web/static/js/angular-lib/angular/angular.min.js',
       '../../web/static/js/angular-lib/angular/angular-*.js',
       'lib/**/*.js',
-      '../../web/static/shelob/js/**/*.js',
+      '../../web/static-src/shelob/js/**/*.js',
       'unit/stubs.js',
       'unit/*Spec.js',
     ],

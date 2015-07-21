@@ -92,6 +92,7 @@ function hideAllModals() {
 // Caveat: the 'this' element needs to be set to the desired element to exclude.
 // related: hideAllModals()
 function hideAllModalsExceptThis() {
+  'use strict';
   $('div.modal').not(this).modal('hide');
 }
 
@@ -136,9 +137,10 @@ function showErrorMessageFromResponse(xhr) {
         window.location.search + window.location.hash));
   } else {
     // In the event of backend failure, 2 scenarios will happen:
-    // 1. Web backend returns 5xx with an error message indicating what service failed or
+    // 1. Web backend returns 5xx with an error message indicating 
+    //	what service failed or
     // 2. The web backend died, and we have no data.
-    if (data && data.hasOwnProperty("message")) {
+    if (data && data.hasOwnProperty('message')) {
       showErrorMessageUnsafe(data.message);
     } else {
       showErrorMessageUnsafe(getInternalErrorText());
@@ -153,11 +155,12 @@ function showErrorMessageFromResponse(xhr) {
 function getClientsOfflineErrorText() {
     'use strict';
     var supportUrl = 'https://support.aerofs.com/hc/en-us/articles/202492734';
-    return "<p>Your AeroFS clients are not currently reachable from the web.</p>" +
-        "<p>To access your files from this page, please make sure at least one " +
-        "of your AeroFS desktop clients or your organization's Team Server is " +
-        "online and <a href='" + supportUrl + "' target='_blank'>" +
-        "has API access enabled</a>.</p>";
+    return '<p>Your AeroFS clients are not currently reachable from ' +
+	'the web.</p><p>To access your files from this page, please ' +
+	'make sure at least one of your AeroFS desktop clients or ' +
+	'your organization\'s Team Server is ' +
+        'online and <a href=\'' + supportUrl + '\' target=\'_blank\'>' +
+        'has API access enabled</a>.</p>';
 }
 
 function getErrorTypeNullable(xhr) {
