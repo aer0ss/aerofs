@@ -4,6 +4,15 @@
 
 ## Elvis Ye
 
+> Your customer service is outstanding. Not only did I receive relevant and
+> useful information, but Elvis Ye, the technician who answered my questions,
+> was extremely kind and supportive, and even suggested ways in which he could
+> help me once I started the process of migrating to the private cloud.  I’m
+> very grateful because AeroFS is a crucial element in my academic work setup. 
+
+Jul 22, 2015
+[Cecilia Rennie, Universidad de la República](https://aerofs.zendesk.com/agent/tickets/16920)
+
 > Elvis Ye responded quickly and answered my qualms in his first response.
 
 Jun 9, 2015
