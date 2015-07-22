@@ -6,7 +6,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.ex.*;
-import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
@@ -78,9 +77,8 @@ public abstract class Util
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
 
-                        // exceptions used by shared folder rules
+                        // exception used by shared folder rules
                         .put(Type.SHARING_RULES_WARNINGS, ExSharingRulesWarning.class)
-                        .put(Type.SHARING_RULES_ERROR, ExSharingRulesError.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.

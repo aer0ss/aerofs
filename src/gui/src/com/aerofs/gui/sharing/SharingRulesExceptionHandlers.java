@@ -9,7 +9,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.sharing_rules.AbstractExSharingRules.DetailedDescription;
-import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessage;
@@ -36,7 +35,7 @@ public class SharingRulesExceptionHandlers
      */
     public static boolean canHandle(Throwable e)
     {
-        return e instanceof ExSharingRulesError || e instanceof ExSharingRulesWarning;
+        return e instanceof ExSharingRulesWarning;
     }
 
     /**
@@ -46,9 +45,7 @@ public class SharingRulesExceptionHandlers
     public static boolean promptUserToSuppressWarning(Shell shell, Throwable e)
     {
         checkArgument(canHandle(e));
-        if (e instanceof ExSharingRulesError) {
-            return handleError(shell, (ExSharingRulesError)e);
-        } else if (e instanceof ExSharingRulesWarning) {
+        if (e instanceof ExSharingRulesWarning) {
             return handleWarning(shell, (ExSharingRulesWarning)e);
         } else {
             checkState(false);
@@ -74,15 +71,6 @@ public class SharingRulesExceptionHandlers
         }
 
         return builder.toString();
-    }
-
-    private static boolean handleError(Shell shell, ExSharingRulesError e)
-    {
-        ErrorMessages.show(shell, e, "Unused Default.",
-                new ErrorMessage(e.getClass(),
-                        e.description().description.replace("{}", formatUsers(e.description().users))));
-
-        return false;
     }
 
     private static boolean handleWarning(Shell shell, ExSharingRulesWarning e)

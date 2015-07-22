@@ -5,12 +5,12 @@
 package com.aerofs.lib.ex.sharing_rules;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.proto.Common.PBException;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -21,8 +21,11 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractExSharingRules extends AbstractExWirable
@@ -93,33 +96,19 @@ public abstract class AbstractExSharingRules extends AbstractExWirable
     // sharing common logic between error and warnings require some genericity as error exceptions
     // have a single {@link DetailedDescription} but warning exceptions have a list of such objects
     // unfortunately Java generics suck so we have to fallback to the pre-generics ways of yore.
-    private final Object _decodedExceptionData;
+    protected final List<DetailedDescription> _decodedExceptionData;
 
-    protected AbstractExSharingRules(Object decodedExceptionData)
+    protected AbstractExSharingRules(List<DetailedDescription> decodedExceptionData)
     {
         super(BaseUtil.string2utf(_gson.toJson(decodedExceptionData)));
         _decodedExceptionData = decodedExceptionData;
     }
 
-    protected AbstractExSharingRules(PBException pb, Class<?> clazz)
+    protected AbstractExSharingRules(PBException pb)
     {
         super(pb);
-        _decodedExceptionData = _gson.fromJson(pb.getData().toStringUtf8(), clazz);
-    }
-
-    /**
-     * Cast decoded exception data to expected java type
-     *
-     * This is required because:
-     *      1. Java generics suck
-     *      2. subclasses of throwable cannot be generic
-     *      3. generics *really* suck
-     */
-    @SuppressWarnings("unchecked")
-    protected <T> T decodedExceptionData(Class<T> clazz)
-    {
-        Preconditions.checkState(clazz.isAssignableFrom(_decodedExceptionData.getClass()));
-        return (T)_decodedExceptionData;
+        Type listType = new TypeToken<List<DetailedDescription>>() {}.getType();
+        _decodedExceptionData = _gson.fromJson(pb.getData().toStringUtf8(), listType);
     }
 
     private static class UserIDDeserializer

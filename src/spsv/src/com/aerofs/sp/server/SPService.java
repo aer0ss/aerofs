@@ -39,7 +39,6 @@ import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.lib.ex.sharing_rules.ExSharingRulesError;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Cmd.Command;
@@ -452,7 +451,6 @@ public class SPService implements ISPService
                 ExBadCredential.class,
                 ExBadArgs.class,
                 ExAlreadyExist.class,
-                ExSharingRulesError.class,
                 ExSharingRulesWarning.class,
                 ExCannotResetPassword.class,
                 ExNotAuthenticated.class));

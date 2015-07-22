@@ -15,7 +15,7 @@ public class ExSharingRulesWarning extends AbstractExSharingRules
 {
     private static final long serialVersionUID = 0L;
 
-    public ExSharingRulesWarning(Collection<DetailedDescription> d)
+    public ExSharingRulesWarning(List<DetailedDescription> d)
     {
         super(d);
     }
@@ -28,8 +28,7 @@ public class ExSharingRulesWarning extends AbstractExSharingRules
     @SuppressWarnings("unchecked")
     public ImmutableList<DetailedDescription> descriptions()
     {
-        return ImmutableList.copyOf((List<DetailedDescription>)decodedExceptionData(
-                List.class));
+        return ImmutableList.copyOf(_decodedExceptionData);
     }
 
     @Override
