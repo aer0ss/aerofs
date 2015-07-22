@@ -37,6 +37,7 @@ module.exports = function(config) {
         '/index.html': 'http://localhost:9876/base/e2e/index.html',
         '/appTest.js': 'http://localhost:9876/base/e2e/appTest.js',
         '/lib/': 'http://localhost:9876/base/lib/',
+        '/static-src/shelob/': 'http://localhost:9876/base/e2e/static-src/shelob/',
         '/static/shelob/': 'http://localhost:9876/base/e2e/static/shelob/',
         '/static/js/': 'http://localhost:9876/base/e2e/static/js/',
     },
