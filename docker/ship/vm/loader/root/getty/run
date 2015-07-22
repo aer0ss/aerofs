@@ -72,7 +72,7 @@ write_static_network_file() {
 Name=$(default_iface)
 
 [Network]
-Address=$(validated_read 'IP Address & prefix' '1.2.3.4 or 1.2.3.4/24' "^${IPV4_PATTERN_SNIPPET}(|/[0-9]{1,2})$")
+Address=$(validated_read 'IP Address & prefix' '1.2.3.4/24' "^${IPV4_PATTERN_SNIPPET}/[0-9]{1,2}$")
 Gateway=$(validated_read 'Gateway' '1.2.3.1' "${IPV4_PATTERN}")
 DNS=$(validated_read 'DNS Nameserver' '8.8.8.8' "${IPV4_PATTERN}")
 END
