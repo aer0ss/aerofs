@@ -395,7 +395,6 @@ def _add_shared_folder_rules_errors(dict):
     """
     # These exceptions are handled by JavaScript, and the messages are ignored
     dict.update({
-        PBException.SHARING_RULES_ERROR: "",
         PBException.SHARING_RULES_WARNINGS: "",
     })
     return dict

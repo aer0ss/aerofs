@@ -15,7 +15,6 @@ class ExceptionReplyTest(unittest.TestCase):
             PBException.NO_STRIPE_CUSTOMER_ID: "NO_STRIPE_CUSTOMER_ID",
             PBException.NO_ADMIN_OR_OWNER: "NO_ADMIN_OR_OWNER",
             PBException.NOT_AUTHENTICATED: "NOT_AUTHENTICATED",
-            PBException.SHARING_RULES_ERROR: "SHARING_RULES_ERROR",
             PBException.SHARING_RULES_WARNINGS: "SHARING_RULES_WARNINGS",
         }
 

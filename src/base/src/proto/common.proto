@@ -94,22 +94,6 @@ message PBException {
         INVALID_EMAIL_ADDRESS = 405;
         EXTERNAL_SERVICE_UNAVAILABLE = 407;
 
-        // ####################################################################
-        // # N.B.: When adding new types that may be consumed by JavaScripts, #
-        // #       update exception_reply_test.py to include them.            #
-        // ####################################################################
-
-        // data: UTF-8 JSON, e.g.
-        //      {
-        //          "type": "FOOBAR",
-        //          "description" : "The foobar is bazed because of the following users:\n %s",
-        //          "users" : {
-        //              "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
-        //              "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
-        //          }
-        //      }
-        SHARING_RULES_ERROR = 408;
-
         // data: UTF-8 JSON list of warnings, e.g.
         //      [
         //          {

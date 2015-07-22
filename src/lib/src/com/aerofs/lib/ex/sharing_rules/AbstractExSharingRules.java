@@ -88,14 +88,11 @@ public abstract class AbstractExSharingRules extends AbstractExWirable
         }
     }
 
-    // In case you're wondering, Gson is thread-safe
+    // In case you're wondering, Gson is thread-safe.
     private final static Gson _gson = new GsonBuilder()
             .registerTypeAdapter(UserID.class, new UserIDDeserializer())
             .create();
 
-    // sharing common logic between error and warnings require some genericity as error exceptions
-    // have a single {@link DetailedDescription} but warning exceptions have a list of such objects
-    // unfortunately Java generics suck so we have to fallback to the pre-generics ways of yore.
     protected final List<DetailedDescription> _decodedExceptionData;
 
     protected AbstractExSharingRules(List<DetailedDescription> decodedExceptionData)

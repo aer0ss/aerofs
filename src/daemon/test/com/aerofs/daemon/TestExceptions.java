@@ -22,7 +22,6 @@ import static com.aerofs.proto.Common.PBException.Type.MEMBER_LIMIT_EXCEEDED;
 import static com.aerofs.proto.Common.PBException.Type.NOT_DIR;
 import static com.aerofs.proto.Common.PBException.Type.NOT_FILE;
 import static com.aerofs.proto.Common.PBException.Type.NO_ADMIN_OR_OWNER;
-import static com.aerofs.proto.Common.PBException.Type.SHARING_RULES_ERROR;
 import static com.aerofs.proto.Common.PBException.Type.SHARING_RULES_WARNINGS;
 import static com.google.protobuf.ByteString.copyFrom;
 
@@ -58,7 +57,7 @@ public class TestExceptions
             if (isAbstractExObfuscatedWirable(t)) builder.setPlainTextMessageDeprecated("");
 
             // AbstractExSharedFolderRules expects the data to be populated
-            if (isAbstractExSharedFolderRules(t)) builder.setData(copyFrom("{}", "UTF-8"));
+            if (isAbstractExSharedFolderRules(t)) builder.setData(copyFrom("[]", "UTF-8"));
 
             Assert.assertTrue("Failed to unmarshal exception type: " + t.name(),
                     !(Exceptions.fromPB(builder.build()) instanceof ExInternalError));
@@ -82,6 +81,6 @@ public class TestExceptions
 
     private boolean isAbstractExSharedFolderRules(Type t)
     {
-        return t == SHARING_RULES_ERROR || t == SHARING_RULES_WARNINGS;
+        return t == SHARING_RULES_WARNINGS;
     }
 }
