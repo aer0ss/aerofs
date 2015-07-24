@@ -9,59 +9,119 @@ VM=docker-dev
 alias dk-env='eval "$(docker-machine env ${VM})"'
 function dk-create-vm()
 {
-    ${DEV_DIR}/dk-create-vm.sh ${VM} && dk-env
+    if [[ $# -eq 0 ]]
+    then
+        ${DEV_DIR}/dk-create-vm.sh ${VM} && dk-env
+    else
+        echo "dk-create-vm takes no arguments"
+        return 1
+    fi
 }
 function dk-create()
 {
-    dk-start-vm && ${DEV_DIR}/../../invoke --unsigned proto build_client package_clients build_docker_images && dk-reconfig
+    if [[ $# -eq 0 ]]
+    then
+        dk-start-vm && ${DEV_DIR}/../../invoke --unsigned proto build_client package_clients build_docker_images && dk-reconfig
+    else
+        echo "dk-create takes no arguments"
+        return 1
+    fi
 }
 function dk-start-vm()
 {
-    ${DEV_DIR}/dk-start-vm.sh ${VM} && dk-env
+    if [[ $# -eq 0 ]]
+    then
+        ${DEV_DIR}/dk-start-vm.sh ${VM} && dk-env
+    else
+        echo "dk-start-vm takes no arguments"
+        return 1
+    fi
 }
 function dk-start()
 {
-    dk-start-vm && ${DEV_DIR}/emulate-ship.sh default
+    if [[ $# -eq 0 ]]
+    then
+        dk-start-vm && ${DEV_DIR}/emulate-ship.sh default
+    else
+        echo "dk-start takes no arguments"
+        return 1
+    fi
 }
 function dk-crane()
 {
-    ${DEV_DIR}/dk-crane.sh
+    ${DEV_DIR}/dk-crane.sh $@
 }
 function dk-destroy()
 {
-    ${DEV_DIR}/dk-destroy.sh
+    if [[ $# -eq 0 ]]
+    then
+        ${DEV_DIR}/dk-destroy.sh
+    else
+        echo "dk-destroy takes no arguments"
+        return 1
+    fi
 }
 function dk-destroy-vm()
 {
-    docker-machine rm -f ${VM}
+    if [[ $# -eq 0 ]]
+    then
+        docker-machine rm -f ${VM}
+    else
+        echo "dk-destroy-vm takes no arguments"
+        return 1
+    fi
 }
 function dk-exec()
 {
-    docker exec -it
+    docker exec -it $@
 }
 function dk-halt()
 {
-    ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance
+    if [[ $# -eq 0 ]]
+    then
+        ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance
+    else
+        echo "dk-halt takes no arguments"
+        return 1
+    fi
 }
 function dk-help()
 {
-    ${DEV_DIR}/dk-help.sh
+    ${DEV_DIR}/dk-help.sh $@
 }
 function dk-ip()
 {
-    docker-machine ip ${VM}
+    if [[ $# -eq 0  ]]
+    then
+        docker-machine ip ${VM}
+    else
+        echo "dk-ip takes no arguments"
+        return 1
+    fi
 }
 function dk-reconfig()
 {
-    dk-start-vm && ${DEV_DIR}/dk-reconfig.sh no-create-first-user
+    if [[ $# -eq 0 ]]
+    then
+        dk-start-vm && ${DEV_DIR}/dk-reconfig.sh no-create-first-user
+    else
+        echo "dk-reconfig takes no arguments"
+        return 1
+    fi
 }
 function dk-reload()
 {
-    ${DEV_DIR}/dk-reload.sh
+    ${DEV_DIR}/dk-reload.sh $@
 }
 function dk-restart()
 {
-    dk-halt && dk-start
+    if [[ $# -eq 0 ]]
+    then
+        dk-halt && dk-start
+    else
+        echo "dk-restart takes no arguments"
+        return 1
+    fi
 }
 
 # Autocomplete
