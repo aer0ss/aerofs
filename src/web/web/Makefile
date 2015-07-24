@@ -26,7 +26,7 @@ EXTERNAL_ASSETS_OUT = $(DOCS_DEST)/css/compiled/aerofs.min.css \
 	$(DOCS_DEST)/css/compiled/api.min.css
 
 # Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS)
+all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS) copy
 
 # Destroy the final targets
 ifneq ($(IS_WATCHMAN),)
@@ -117,6 +117,7 @@ $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
 
 # Copy files from static-src to static.
 $(DEST)/%: $(SRC)/%
+	mkdir -p $(@D)
 	cp -R $< $@
 
 FOLDERS_SRC=$(SRC)/shelob \
@@ -127,7 +128,7 @@ FOLDERS_SRC=$(SRC)/shelob \
 
 FILES_SRC=$(shell find -L $(FOLDERS_SRC) -type f)
 
-copy: $(FILES_SRC:$(SRC)/%=$(DEST)/%
+copy: $(FILES_SRC:$(SRC)/%=$(DEST)/%)
 
 $(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
 	$(SRC)/shelob/js/controllers.js \
