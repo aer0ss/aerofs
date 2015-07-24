@@ -134,11 +134,13 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         User caller = validateAuth(token, Scope.READ_ACL, sf);
+        Permissions callerPermissions = caller == null ? null : sf.getPermissionsNullable(caller);
 
         return Response.ok()
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
                         sf.getName(caller), listMembers(sf), listPendingMembers(sf),
-                        caller == null ? null : sf.isExternal(caller)))
+                        caller == null ? null : sf.isExternal(caller),
+                        callerPermissions == null ? null : callerPermissions.toArray()))
                 .build();
     }
 
@@ -174,7 +176,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
                         sf.getName(caller), listMembers(sf), listPendingMembers(sf),
-                        sf.isExternal(caller)))
+                        sf.isExternal(caller), Permissions.OWNER.toArray()))
                 .build();
     }
 
@@ -602,14 +604,14 @@ public class SharedFolderResource extends AbstractSpartaResource
         return members;
     }
 
-    static PendingMember toPendingMember(User u, Permissions p, User sharer)
+    static PendingMember toPendingMember(User u, Permissions p, @Nullable User sharer)
             throws ExNotFound, SQLException
     {
         FullName n = u.exists() ? u.getFullName() : null;
         return new PendingMember(u.id().getString(),
                 n != null ? n._first : null,
                 n != null ? n._last : null,
-                sharer.id().getString(),
+                sharer != null ? sharer.id().getString() : null,
                 p.toArray());
     }
 

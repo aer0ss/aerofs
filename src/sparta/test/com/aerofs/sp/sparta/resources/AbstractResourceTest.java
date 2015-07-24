@@ -10,6 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -31,6 +32,7 @@ import com.aerofs.sp.server.CommandDispatcher;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -119,6 +121,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected SQLThreadLocalTransaction sqlTrans;
     protected User.Factory factUser;
     protected SharedFolder.Factory factSF;
+    protected Group.Factory factGroup;
     protected Device.Factory factDevice;
     private int nextUserID = 1;
 
@@ -276,6 +279,7 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans = inj.getInstance(SQLThreadLocalTransaction.class);
         factUser = inj.getInstance(User.Factory.class);
         factSF = inj.getInstance(SharedFolder.Factory.class);
+        factGroup = inj.getInstance(Group.Factory.class);
         factDevice = inj.getInstance(Device.Factory.class);
 
         sqlTrans.begin();
@@ -335,6 +339,13 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.commit();
     }
 
+    protected void mkGroup(GroupID gid, String name) throws Exception
+    {
+        sqlTrans.begin();
+        factGroup.save(gid, name, OrganizationID.PRIVATE_ORGANIZATION, null);
+        sqlTrans.commit();
+    }
+
     protected void mkDevice(DID did, UserID owner, String name, String osFamily, String osName)
             throws Exception
     {
@@ -364,6 +375,20 @@ public class AbstractResourceTest extends AbstractBaseTest
     {
         sqlTrans.begin();
         factSF.create(sid).addJoinedUser(factUser.create(user), p);
+        sqlTrans.commit();
+    }
+
+    protected void addGroup(SID sid, GroupID groupID, Permissions p) throws Exception
+    {
+        sqlTrans.begin();
+        factGroup.create(groupID).joinSharedFolder(factSF.create(sid), p, null);
+        sqlTrans.commit();
+    }
+
+    protected void addUserToGroup(GroupID group, User user) throws Exception
+    {
+        sqlTrans.begin();
+        factGroup.create(group).addMember(user);
         sqlTrans.commit();
     }
 

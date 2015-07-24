@@ -116,16 +116,9 @@ def _is_pending(folder, user):
     return any(ups.user.user_email == user and ups.state == PENDING for ups in folder.user_permissions_and_state)
 
 def _session_user_privileger(folder, session_user):
-    return _has_permission(folder, session_user, common.MANAGE)
-
-
-def _has_permission(folder, user, permission):
-    for user_permissions_and_state in folder.user_permissions_and_state:
-        if user_permissions_and_state.user.user_email == user:
-            for p in user_permissions_and_state.permissions.permission:
-                if p == permission:
-                    return True
-            break
+    for p in folder.requested_users_permissions_and_state.permissions.permission:
+        if p == MANAGE:
+            return True
     return False
 
 

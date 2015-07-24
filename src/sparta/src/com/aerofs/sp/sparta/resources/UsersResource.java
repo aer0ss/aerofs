@@ -233,10 +233,12 @@ public class UsersResource extends AbstractSpartaResource
 
         _aclPublisher.publish_(affected);
 
+        String[] permissions = sf.getPermissions(user).toArray();
+
         audit(caller, token, AuditTopic.SHARING, "folder.join")
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
                 .add("target", user.id())
-                .embed("role", sf.getPermissionsNullable(user).toArray())
+                .embed("role", permissions)
                 .publish();
 
         String location = Service.DUMMY_LOCATION
@@ -246,7 +248,7 @@ public class UsersResource extends AbstractSpartaResource
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
                         sf.getName(user), listMembers(sf), listPendingMembers(sf),
-                        sf.isExternal(user)))
+                        sf.isExternal(user), permissions))
                 .build();
     }
 
@@ -298,7 +300,7 @@ public class UsersResource extends AbstractSpartaResource
                     sf.id().toStringFormal(), sf.getName(user),
                     SharedFolderResource.listMembers(sf),
                     SharedFolderResource.listPendingMembers(sf),
-                    sf.isExternal(user));
+                    sf.isExternal(user), sf.getPermissions(user).toArray());
             if (token.hasFolderPermission(Scope.READ_ACL, sf.id())) bd.add(s);
         }
         return bd.build();

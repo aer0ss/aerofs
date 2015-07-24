@@ -762,9 +762,8 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         checkUserIsOrAdministers(requester, user);
 
-        User sessionUser = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
-                sessionUser.getOrganization(), user);
+                requester.getOrganization(), user);
 
         _sqlTrans.commit();
 

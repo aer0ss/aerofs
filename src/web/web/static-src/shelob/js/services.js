@@ -280,17 +280,6 @@ shelobServices.factory('MyStores', ['$log', 'API', function($log, API) {
     var _root = null;
     var _managedShares = null;
 
-    // helper-function for compiling a list of folders managed by the current user
-    function _isShareManagedBy(share, userId) {
-        for (var i = 0; i < share.members.length; i++) {
-            if (share.members[i].email == userId &&
-                share.members[i].permissions.indexOf('MANAGE') > -1) {
-                return true;
-            }
-        }
-        return false;
-    };
-
     function _getRoot() {
         if (_root === null) {
             _root = API.get('/shares/root')
@@ -309,7 +298,7 @@ shelobServices.factory('MyStores', ['$log', 'API', function($log, API) {
                 .then(function(response) {
                     var managed = [];
                     for (var i = 0; i < response.data.length; i++) {
-                        if (_isShareManagedBy(response.data[i], currentUser)) {
+                        if (response.data[i].caller_effective_permissions.indexOf('MANAGE') > -1) {
                             managed.push(response.data[i].id);
                         }
                     }

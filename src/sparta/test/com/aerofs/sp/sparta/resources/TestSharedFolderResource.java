@@ -8,6 +8,7 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.id.GroupID;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
@@ -17,6 +18,7 @@ import com.aerofs.rest.api.Member;
 import com.aerofs.rest.api.PendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.group.Group;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import com.jayway.restassured.specification.RequestSpecification;
@@ -30,12 +32,7 @@ import java.util.Random;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
@@ -987,7 +984,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "Shareme", null, null, false),
+                .body(new SharedFolder(null, "Shareme", null, null, false, null),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -1006,7 +1003,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "External", null, null, true),
+                .body(new SharedFolder(null, "External", null, null, true, null),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -1018,5 +1015,24 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .body("pending", emptyIterable())
         .when().log().everything()
                 .post(BASE_RESOURCE);
+    }
+
+    @Test
+    public void shouldReturnEffectivePermissions() throws Exception
+    {
+        GroupID group = GroupID.fromExternal(1);
+        mkGroup(group, "Test Group");
+        SID share = mkShare("Test Folder", other.getString());
+        addUser(share, user, Permissions.VIEWER);
+        addUserToGroup(group, factUser.create(user));
+        addGroup(share, group, Permissions.EDITOR);
+
+        givenReadAccess()
+            .expect()
+                .statusCode(200)
+                .body("id", equalTo(share.toStringFormal()))
+                .body("caller_effective_permissions", hasItem("WRITE"))
+            .when()
+                .get(RESOURCE, share.toStringFormal());
     }
 }
