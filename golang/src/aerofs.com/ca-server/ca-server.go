@@ -48,7 +48,7 @@ func loadCaCert(db *sql.DB) *cert.CertSigner {
 				fmt.Println("failed to parse key from db as pkcs1; trying pkcs8")
 				var pkcs8key interface{}
 				pkcs8key, err = x509.ParsePKCS8PrivateKey(priv)
-				if err != nil {
+				if err == nil {
 					key = pkcs8key.(*rsa.PrivateKey)
 				}
 			}
