@@ -507,3 +507,27 @@ div.arch-image {
 .member-list {
     columns:2; -moz-columns:2; -webkit-columns:2;
 }
+
+/* Mixin: used for signup button and free trial button */
+#dark-blue-header .gold-button {
+    background-color: @gold;
+    border-color: darken(@gold, 20%);
+    color: black;
+    font-weight: 600;
+    &:hover {
+        background-color: lighten(@gold, 7%);
+    }
+    &:active {
+        border-color: @gold;
+        background-color: darken(@gold, 10%);
+    }
+}
+
+.btn {
+    &:not(.btn-lg) {
+      height: 38px;
+    }
+    &:not(.btn-default) {
+      color: white;
+    }
+  }
