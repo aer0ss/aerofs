@@ -28,7 +28,7 @@ def main():
     s = requests.Session()
     r = s.get(LOGIN_URL, params={'email': local_actor().aero_userid, 'password': local_actor().aero_password})
     r.raise_for_status()
-    r = s.get(TOKEN_URL)
+    r = s.post(TOKEN_URL)
     r.raise_for_status()
     token = r.json()['token']
     print 'token is', token

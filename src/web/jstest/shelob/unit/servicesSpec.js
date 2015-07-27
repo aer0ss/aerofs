@@ -21,7 +21,7 @@ describe('Shelob Services', function() {
             $httpBackend.expectGET('/api/v1.2/folders/root/children', function(headers) {
                 return headers.Authorization == 'Bearer stale_token';
             }).respond(401);
-            $httpBackend.expectGET('/json_new_token').respond({token: 'new_token'});
+            $httpBackend.expectPOST('/json_new_token').respond({token: 'new_token'});
             $httpBackend.expectGET('/api/v1.2/folders/root/children', function(headers) {
                 return headers.Authorization == 'Bearer new_token';
             }).respond(200);
@@ -33,8 +33,8 @@ describe('Shelob Services', function() {
         });
 
         it('should not request a second new token if successive API calls get a 401 response', function() {
-            $httpBackend.whenGET(tokenRoute).respond('token');
-            $httpBackend.whenGET('/json_new_token').respond('newtoken');
+            $httpBackend.whenPOST(tokenRoute).respond('token');
+            $httpBackend.whenPOST('/json_new_token').respond('newtoken');
             // should only try twice
             $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(401);
             $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(401);
@@ -46,7 +46,7 @@ describe('Shelob Services', function() {
         });
 
         it('should fail without requesting a second token if API call gets a 500 response', function() {
-            $httpBackend.whenGET(tokenRoute).respond('token');
+            $httpBackend.whenPOST(tokenRoute).respond('token');
             $httpBackend.expectGET('/api/v1.2/folders/root/children').respond(500);
             var failure = jasmine.createSpy();
             API.get('/folders/root/children').catch(failure);
@@ -55,7 +55,7 @@ describe('Shelob Services', function() {
         });
 
         it('should fail API call with 500 status if getting a token fails', function() {
-            $httpBackend.expectGET(tokenRoute).respond(500);
+            $httpBackend.expectPOST(tokenRoute).respond(500);
             var failure = jasmine.createSpy();
             API.get('/folders/root/children').catch(failure);
             $httpBackend.flush();
@@ -84,8 +84,8 @@ describe('Shelob Services', function() {
                 }});
 
                 // assume token acquisition succeeds
-                $httpBackend.whenGET(tokenRoute).respond('token');
-                $httpBackend.whenGET('/json_new_token').respond('newtoken');
+                $httpBackend.whenPOST(tokenRoute).respond('token');
+                $httpBackend.whenPOST('/json_new_token').respond('newtoken');
             });
 
             it('should upload small file in a single chunk', function() {

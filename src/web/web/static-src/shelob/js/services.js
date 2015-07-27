@@ -32,7 +32,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
         if (token === null) {
             token = $q.defer();
             OutstandingRequestsCounter.push();
-            $http.get('/json_token?t=' + Math.random())
+            $http.post('/json_token?t=' + Math.random())
                 .success(function (data) {
                     token.resolve(data.token);
                 })
@@ -54,7 +54,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
             token = $q.defer();
             outstandingNewTokenRequest = true;
             OutstandingRequestsCounter.push();
-            $http.get('/json_new_token')
+            $http.post('/json_new_token')
                 .success(function (data) {
                     token.resolve(data.token);
                 })

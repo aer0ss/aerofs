@@ -40,7 +40,7 @@ _oauth_token = {}
     permission='user',
     http_cache = 0,
     renderer='json',
-    request_method='GET',
+    request_method='POST',
 )
 def json_token(request):
     """
@@ -58,7 +58,7 @@ def json_token(request):
     permission='user',
     http_cache = 0,
     renderer='json',
-    request_method='GET',
+    request_method='POST',
 )
 def json_new_token(request):
     """
