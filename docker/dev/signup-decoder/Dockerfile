@@ -5,11 +5,9 @@ RUN apt-get update && apt-get install -y \
         python \
         docker.io &&\
     curl -SL 'https://bootstrap.pypa.io/get-pip.py' > /tmp/get-pip.py &&\
-    python /tmp/get-pip.py \
-        --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker &&\
+    python /tmp/get-pip.py  &&\
     rm /tmp/get-pip.py &&\
-    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
-        Flask
+    pip install Flask
 
 COPY root /
 
