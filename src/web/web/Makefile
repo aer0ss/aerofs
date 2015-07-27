@@ -6,7 +6,7 @@ JS=js
 
 IS_WATCHMAN=$(shell which watchman)
 
-.PHONY : all clean watch clean-watch clean-dirs setup_test test copy cache jshint
+.PHONY : all clean watch clean-watch clean-dirs setup_test test cache jshint
 APP_TARGETS = $(DEST)/shadowfax.js $(DEST)/strider.js $(DEST)/shelob.js $(DEST)/fellowship.js $(DEST)/saruman.js
 
 # input less files
@@ -26,7 +26,7 @@ EXTERNAL_ASSETS_OUT = $(DOCS_DEST)/css/compiled/aerofs.min.css \
 	$(DOCS_DEST)/css/compiled/api.min.css
 
 # Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS) copy
+all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS)
 
 # Destroy the final targets
 ifneq ($(IS_WATCHMAN),)
@@ -49,6 +49,7 @@ clean-dirs:
 	rm -rf $(DEST)/js/compiled/
 	rm -rf $(DOCS_DEST)/css/compiled/
 	rm -f $(EXTERNAL_ASSETS_OUT)
+	rm -f $(DEST)/*.js
 	mkdir $(DEST)/css/compiled/
 	mkdir $(DEST)/js/compiled/
 	mkdir $(DOCS_DEST)/css/compiled/
@@ -116,9 +117,9 @@ $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
 #concatenation, watch the changes in $(DEST)/js/compiled/%.js turn it into bundled.js
 
 # Copy files from static-src to static.
-$(DEST)/%: $(SRC)/%
-	mkdir -p $(@D)
-	cp -R $< $@
+# $(DEST)/%: $(SRC)/%
+# 	mkdir -p $(@D)
+# 	cp -R $< $@
 
 FOLDERS_SRC=$(SRC)/shelob \
 	$(SRC)/strider \
@@ -127,8 +128,6 @@ FOLDERS_SRC=$(SRC)/shelob \
 	$(SRC)/shadowfax
 
 FILES_SRC=$(shell find -L $(FOLDERS_SRC) -type f)
-
-copy: $(FILES_SRC:$(SRC)/%=$(DEST)/%)
 
 $(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
 	$(SRC)/shelob/js/controllers.js \
