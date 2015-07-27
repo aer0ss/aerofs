@@ -122,7 +122,7 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
     {
         return ok
                 .type(_detector.detect(name))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; " + filename(name))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; " + filename(name))
                 .header(HttpHeaders.CONTENT_LENGTH, ca.length())
                 .entity(new SimpleStream(pf, ca, 0, ca.length()));
     }
