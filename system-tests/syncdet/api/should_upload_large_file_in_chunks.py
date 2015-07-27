@@ -15,6 +15,7 @@ def main():
     API_URL = "https://{}/api/v1.0".format(local_actor().aero_host)
     LOGIN_URL = "https://{}/login_for_tests.json".format(local_actor().aero_host)
     TOKEN_URL = "https://{}/json_new_token".format(local_actor().aero_host)
+    CSRF_URL = "https://{}/csrf.json".format(local_actor().aero_host)
 
     # create this test's unique folder and wait for the daemon to notice it
     dirname = os.path.basename(instance_unique_path())
@@ -28,7 +29,10 @@ def main():
     s = requests.Session()
     r = s.get(LOGIN_URL, params={'email': local_actor().aero_userid, 'password': local_actor().aero_password})
     r.raise_for_status()
-    r = s.post(TOKEN_URL)
+    r = s.get('CSRF_URL')
+    r.raise_for_status()
+    csrf_token = r.json()['csrf_token']
+    r = s.post(TOKEN_URL, headers={'X-CSRF-Token': csrf_token})
     r.raise_for_status()
     token = r.json()['token']
     print 'token is', token

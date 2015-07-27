@@ -17,4 +17,5 @@ __all__ = [
     'error',
     'settings',
     'shelob',
+    'csrf',
 ]
