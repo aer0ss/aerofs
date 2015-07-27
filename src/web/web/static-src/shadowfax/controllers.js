@@ -176,7 +176,6 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }
 
                 $scope.error = false;
-                $log.info("inviting " + invitee);
                 startModalSpinner();
                 var permissions = _get_json_permissions(inviteeRole);
 
@@ -210,7 +209,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                         return item.search('@') != -1;
                     });
                     for (var i = 0; i < emailList.length; i++) {
-                        $log.info("inviting user " + invitee.email + " to folder");
+                        $log.info("inviting user " + emailList[i] + " to folder");
                         _make_member_request(emailList[i], {'email' : emailList[i]}, permissions, false);
                     }
                 }
