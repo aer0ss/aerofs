@@ -189,6 +189,7 @@ write_files:
 
         {# Use the same container name across restarts as crane/docker doesn't update container links on restarts. #}
         {# Attach tag to support live upgrades. #}
+        {# N.B. This name must be consistent with api.py:create_loader_container() #}
         CONTAINER=loader-$(cat {{ tag_file }})
 
         {# Create Loader container if not exist #}

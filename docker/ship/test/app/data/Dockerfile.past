@@ -1,0 +1,7 @@
+FROM alpine
+
+RUN mkdir /data1 && echo "magic string" > /data1/file
+
+VOLUME /data1
+
+CMD [ "true" ]

@@ -1,0 +1,7 @@
+FROM alpine
+
+VOLUME /data1
+
+VOLUME /data2
+
+CMD [ "cp", "/data1/file", "/data2" ]

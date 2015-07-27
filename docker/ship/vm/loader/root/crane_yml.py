@@ -3,16 +3,20 @@ import yaml
 from common import MODIFIED_YML_PATH, CRANE_YML_PATH, my_image_name, my_container_name
 
 
-def modify_yaml(repo, tag):
+def modify_yaml(repo, tag, my_container=None, remove_loader_container=True):
+    if not my_container:
+        my_container = my_container_name()
+    my_image = my_image_name()
 
     with open(CRANE_YML_PATH) as f:
         y = yaml.load(f)
 
     containers = y['containers']
-    my_image = my_image_name()
-    my_container = my_container_name()
 
-    loader_container = remove_loader_container(containers, my_image)
+    loader_container = get_loader_container(containers, my_image)
+    if remove_loader_container:
+        del containers[loader_container]
+
     tagged_loader_container = add_tag_to_container(loader_container, tag)
     add_repo_and_tag_to_images(containers, repo, tag)
     modify_links(containers, tagged_loader_container, my_container, tag)
@@ -25,7 +29,7 @@ def modify_yaml(repo, tag):
         f.write(yaml.dump(y, default_flow_style=False))
 
 
-def remove_loader_container(containers, my_image):
+def get_loader_container(containers, my_image):
     loader_container = None
     for key, c in containers.iteritems():
         if c['image'] == my_image:
@@ -35,7 +39,6 @@ def remove_loader_container(containers, my_image):
 
     if not loader_container:
         raise Exception('{} contains no Loader image {}'.format(CRANE_YML_PATH, my_image))
-    del containers[loader_container]
 
     return loader_container
 

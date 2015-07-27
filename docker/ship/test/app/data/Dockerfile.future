@@ -1,0 +1,5 @@
+FROM alpine
+
+VOLUME /data2
+
+CMD [ "true" ]

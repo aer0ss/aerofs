@@ -2,7 +2,8 @@ from flask import Flask, json, jsonify, request
 from uuid import uuid4
 from os.path import exists
 from os import devnull
-from common import call_crane, my_container_name, my_full_image_name, my_image_name, print_args, MODIFIED_YML_PATH
+from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
+    MODIFIED_YML_PATH
 import yaml, requests, subprocess
 from traceback import print_exc
 
@@ -191,10 +192,14 @@ def switch(repo, tag, target):
     print 'Containers for data copying, in the format of "target-container: (source-container, volumes)":'
     print new
 
+    # Create the loader container first. Otherwise when launching the containers that we create below, the system would
+    # fail if one of them links to the new loader -- the `create-containers` command doesn't create the loader.
+    new_loader = create_loader_container(new_loader_image, tag)
+
     if new:
         # Create containers
         cmd = ['docker', 'run', '--rm', '-v', '/var/run/docker.sock:/var/run/docker.sock', new_loader_image,
-               'create-containers', repo, tag]
+               'create-containers', repo, tag, new_loader]
         cmd.extend(new.keys())
         subprocess.check_call(print_args(cmd))
 
@@ -233,6 +238,25 @@ def volume_set_of(image):
     cmd = ['docker', 'inspect', image]
     vols = yaml.load(subprocess.check_output(print_args(cmd)))[0]['Config']['Volumes']
     return set(vols.keys()) if vols else None
+
+
+def create_loader_container(loader_image, tag):
+    # N.B. this name must be consistent with the definition in cloud-config.yml.jinja
+    container = "loader-{}".format(tag)
+
+    if not has_container(container):
+        # Retrieve runtime parameters from the current loader and reuse them for the new loader.
+        inspect = yaml.load(subprocess.check_output(['docker', 'inspect', my_container_id()]))
+
+        cmd = ['docker', 'create', '--name', container]
+        for bind in inspect[0]['HostConfig']['Binds']:
+            cmd.append('-v')
+            cmd.append(bind)
+        cmd.append(loader_image)
+        cmd.extend(inspect[0]['Config']['Cmd'])
+        subprocess.check_call(print_args(cmd))
+
+    return container
 
 
 @app.errorhandler(500)

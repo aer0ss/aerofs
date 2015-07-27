@@ -1,0 +1,19 @@
+containers:
+  loader:
+    image: {{ image_prefix }}loader
+
+  nginx:
+    image: {{ image_prefix }}nginx
+    run:
+      detach: true
+      publish:
+        - "80:80"
+      link:
+        - loader:loader.service
+      volumes-from:
+        - data
+
+  data:
+    image: {{ image_prefix }}data
+    run:
+      detach: true

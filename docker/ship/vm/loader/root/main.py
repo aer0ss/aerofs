@@ -89,11 +89,11 @@ def main():
             print value['image']
 
     elif argv[1] == 'create-containers':
-        if len(argv) <= 4:
-            print >>stderr, "Usage: {} {} <repo> <tag> container ...".format(argv[0], argv[1])
+        if len(argv) <= 5:
+            print >>stderr, "Usage: {} {} <repo> <tag> <loader-container> container ...".format(argv[0], argv[1])
             exit(11)
-        modify_yaml(argv[2], argv[3])
-        for i in argv[4:]:
+        modify_yaml(argv[2], argv[3], argv[4], False)
+        for i in argv[5:]:
             call_crane('create', i)
 
     elif argv[1] == 'simulate-getty':
