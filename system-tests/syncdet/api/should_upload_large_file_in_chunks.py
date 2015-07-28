@@ -29,7 +29,7 @@ def main():
     s = requests.Session()
     r = s.get(LOGIN_URL, params={'email': local_actor().aero_userid, 'password': local_actor().aero_password})
     r.raise_for_status()
-    r = s.get('CSRF_URL')
+    r = s.get(CSRF_URL)
     r.raise_for_status()
     csrf_token = r.json()['csrf_token']
     r = s.post(TOKEN_URL, headers={'X-CSRF-Token': csrf_token})
