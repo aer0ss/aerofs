@@ -182,21 +182,22 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
         final BlockPrefix from = (BlockPrefix)prefix;
         final BlockFile to = (BlockFile)file;
 
-        checkArgument(from._sokid.equals(to._sokid),
-                "tried to move prefix %s to storage loc for %s", from, to);
-
+        long id = getOrCreateFileId_(to._sokid, t);
+        checkSanity(from, to, id, wasPresent);
         long length = from.length();
         ContentBlockHash hash = from.hash();
 
-        long id = getOrCreateFileId_(to._sokid, t);
-        FileInfo oldInfo = _bsdb.getFileInfo_(id);
-        if (!wasPresent) {
-            if (FileInfo.exists(oldInfo)) throw new FileAlreadyExistsException(file.toString());
-        } else {
-            if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(file.toString());
-        }
+        consumePrefixBlocksToUploadDir(from, t);
+        // no need to explicitly specify version, DB auto-increments it
+        updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, hash), t);
+        l.debug("inserted {}", hash);
+        return mtime;
+    }
 
-        // NB: MUST happen before updateFileInfo (DB update dependency)
+    // NB: MUST happen before updateFileInfo (DB update dependency)
+    private void consumePrefixBlocksToUploadDir(BlockPrefix from, Trans t)
+            throws SQLException, IOException
+    {
         from.consumeChunks_((key, f) -> {
             if (!prePutBlock(key, f.length(), t)) {
                 return;
@@ -204,10 +205,6 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
             InjectableFile dst = _uploadDir.newChild(key.toHex());
             if (!dst.exists()) TransUtil.moveWithRollback_(f, dst, t);
         });
-
-        // no need to explicitly specify version, DB auto-increments it
-        updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, hash), t);
-        l.debug("inserted {}", hash);
 
         // If transaction succeeds, delete the prefix file
         t.addListener_(new AbstractTransListener() {
@@ -217,8 +214,20 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
                 _uploadScheduler.schedule_();
             }
         });
+    }
 
-        return mtime;
+    private void checkSanity(BlockPrefix from, BlockFile to, long id, boolean wasPresent)
+            throws SQLException, FileAlreadyExistsException, FileNotFoundException
+    {
+        checkArgument(from._sokid.equals(to._sokid),
+                "tried to move prefix %s to storage loc for %s", from, to);
+
+        FileInfo oldInfo = _bsdb.getFileInfo_(id);
+        if (!wasPresent) {
+            if (FileInfo.exists(oldInfo)) throw new FileAlreadyExistsException(to.toString());
+        } else {
+            if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(to.toString());
+        }
     }
 
     boolean prePutBlock(ContentBlockHash hash, long length, Trans t)
@@ -363,6 +372,30 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
             it.close_();
         }
         _prefixDir.newChild(prefixFilePath(soid)).deleteOrThrowIfExistRecursively();
+    }
+
+    @Override
+    public void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t)
+            throws IOException, SQLException
+    {
+        if (!_tlUseHistory.get(t)) return;
+
+        final BlockPrefix from = (BlockPrefix) prefix;
+        final BlockFile to = (BlockFile) file;
+        long id = getOrCreateFileId_(to._sokid, t);
+
+        checkSanity(from, to, id, true);
+        long length = from.length();
+        ContentBlockHash hash = from.hash();
+        consumePrefixBlocksToUploadDir(from, t);
+        FileInfo currFile = _bsdb.getFileInfo_(id);
+        // Since we are applying file directly to sync history, current version in File Info
+        // table is incremented by 1 and File history table gets File Info with version of current
+        // file.
+        _bsdb.updateFileInfo_(new FileInfo(currFile._id, currFile._ver + 1,
+                currFile._length, currFile._mtime, currFile._chunks), t);
+        _bsdb.preserveFileInfo(to._path, new FileInfo(id, currFile._ver, length, mtime,
+                hash), t);
     }
 
     private final TransLocal<Boolean> _tlScheduleCleaner = new TransLocal<Boolean>()  {

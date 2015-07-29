@@ -1,42 +1,40 @@
 package com.aerofs.daemon.core;
 
-import java.security.MessageDigest;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.SortedMap;
-
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
+import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
+import com.aerofs.ids.DID;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.MessageDigest;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -52,6 +50,23 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     private final ICollectorSequenceDatabase _csdb;
     private final MapAlias2Target _alias2target;
     private final MapSIndex2Contributors _sidx2contrib;
+    private final NewUpdatesSender _nus;
+
+    private final TransLocal<Set<SIndex>> _tlAdded = new TransLocal<Set<SIndex>>() {
+        @Override
+        protected Set<SIndex> initialValue(Trans t)
+        {
+            final Set<SIndex> s = Sets.newHashSet();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    _nus.schedStoreUpdates(s);
+                }
+            });
+            return s;
+        }
+    };
 
     @Override
     public void createStore_(SIndex sidx, boolean usePolaris, Trans t)
@@ -71,13 +86,14 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
             StoreCreationOperators sco, StoreDeletionOperators sdo,
-            MapSIndex2Contributors sidx2contrib)
+            MapSIndex2Contributors sidx2contrib, NewUpdatesSender nus)
     {
         super(nvdb, cfgLocalDID, tlva, sdo);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;
         _sidx2contrib = sidx2contrib;
+        _nus = nus;
         sco.add_(this);
     }
 
@@ -194,6 +210,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         }
 
         for (IVersionControlListener listener : _listeners) listener.localVersionAdded_(k, v, t);
+        _tlAdded.get(t).add(k.sidx());
     }
 
     public void deleteLocalVersion_(SOCKID k, Version v, Trans t)

@@ -22,6 +22,7 @@ sourceSets {
             include 'com/aerofs/daemon/core/lib/BaseDownloadsTest.java'
             include 'com/aerofs/daemon/core/lib/BaseStoreJoinerTest.java'
             include 'com/aerofs/daemon/core/lib/AsyncDownloadTestHelper.java'
+            include 'com/aerofs/daemon/rest/BaseAbstractRestTest.java'
             compileClasspath += main.output
             runtimeClasspath += main.output
         }
@@ -32,6 +33,7 @@ sourceSets {
             exclude 'com/aerofs/daemon/core/lib/BaseDownloadsTest.java'
             exclude 'com/aerofs/daemon/core/lib/BaseStoreJoinerTest.java'
             exclude 'com/aerofs/daemon/core/lib/AsyncDownloadTestHelper.java'
+            exclude 'com/aerofs/daemon/rest/BaseAbstractRestTest.java'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output
         }
@@ -52,12 +54,21 @@ dependencies {
     compile 'org.javaswift:joss:0.9.8'
     compile 'com.amazonaws:aws-java-sdk-s3:1.9.32'
     compile project(':src/lib')
+    compile project(':src/tunnel')
+    compile project(':src/rest-api')
     compile project(':src/ssmp')
     compile project(path: ':src/zephyr', configuration: 'client')
-    testCompile 'javax.mail:mail:1.4.2'
     testCompile project(':src/zephyr')
-    testCompile project(path: ':src/lib', configuration: 'testutil')
-    testutilCompile project(path:':src/lib', configuration:'testutil')
+    testutilCompile 'javax.mail:mail:1.4.2'
+    testutilCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testutilCompile 'org.hibernate:hibernate-core:4.1.9.Final'
+    testutilCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
+    testutilCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+    testutilCompile project(':src/bifrost')
+    testutilCompile project(':src/havre')
+    testutilCompile project(':src/zephyr')
+    testutilCompile project(path: ':src/bifrost', configuration: 'testutil')
+    testutilCompile project(path: ':src/lib', configuration: 'testutil')
 }
 
 task testutilJar(type: Jar) {

@@ -2,33 +2,35 @@ package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.*;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.polaris.db.*;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.PolarisStore;
-import com.aerofs.daemon.lib.db.ExpulsionDatabase;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
+import com.aerofs.daemon.core.store.DaemonPolarisStore;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.*;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
@@ -328,7 +330,7 @@ public class ImmigrantCreator
         });
 
         // make sure any local changes moved to the new store get submitted
-        PolarisStore s = (PolarisStore)_sidx2s.get_(sidxTo);
+        DaemonPolarisStore s = (DaemonPolarisStore)_sidx2s.get_(sidxTo);
         s.contentSubmitter().startOnCommit_(t);
         s.metaSubmitter().startOnCommit_(t);
 

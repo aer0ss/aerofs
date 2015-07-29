@@ -7,13 +7,8 @@ package com.aerofs.daemon.core.polaris.submit;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.GsonUtil;
+import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.Batch;
 import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
 import com.aerofs.daemon.core.polaris.api.BatchResult;
@@ -28,12 +23,14 @@ import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase.ContentChange;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
+import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.NewUpdatesSender;
+import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -68,19 +65,19 @@ public class ContentChangeSubmitter implements Submitter
     private final PolarisClient _client;
     private final ContentChangesDatabase _ccdb;
     private final CentralVersionDatabase _cvdb;
-    private final RemoteLinkDatabase _rldb;
+    protected final RemoteLinkDatabase _rldb;
     private final RemoteContentDatabase _rcdb;
     private final PauseSync _pauseSync;
-    private final DirectoryService _ds;
-    private final IPhysicalStorage _ps;
     private final TransManager _tm;
     private final NewUpdatesSender _nus;
+    private final ContentProvider _provider;
+    private final CfgLocalDID _did;
 
     @Inject
     public ContentChangeSubmitter(PolarisClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
-            PauseSync pauseSync, DirectoryService ds, IPhysicalStorage ps, TransManager tm,
-            NewUpdatesSender nus)
+            PauseSync pauseSync, TransManager tm, NewUpdatesSender nus,
+            ContentProvider provider, CfgLocalDID did)
     {
         _client = client;
         _rldb = rldb;
@@ -88,10 +85,10 @@ public class ContentChangeSubmitter implements Submitter
         _ccdb = ccdb;
         _cvdb = cvdb;
         _pauseSync = pauseSync;
-        _ds = ds;
-        _ps = ps;
         _tm = tm;
+        _provider = provider;
         _nus = nus;
+        _did = did;
     }
 
     @Override
@@ -108,8 +105,7 @@ public class ContentChangeSubmitter implements Submitter
      * TODO(phoenix): batch multiple changes in a single request
      */
     @Override
-    public void submit_(SIndex sidx, AsyncTaskCallback cb)
-            throws SQLException
+    public void submit_(SIndex sidx, AsyncTaskCallback cb) throws Exception
     {
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
@@ -168,10 +164,9 @@ public class ContentChangeSubmitter implements Submitter
         long conflict;
     }
 
-    private BatchOp op_(ContentChange c, Counters cnt)
-            throws SQLException
+    private BatchOp op_(ContentChange c, Counters cnt) throws Exception
     {
-        OA oa = _ds.getOA_(new SOID(c.sidx, c.oid));
+        SOID soid = new SOID(c.sidx, c.oid);
 
         // skip content submission until meta is successfully submitted
         if (_rldb.getParent_(c.sidx, c.oid) == null) {
@@ -180,35 +175,29 @@ public class ContentChangeSubmitter implements Submitter
         }
 
         // don't submit changes when a conflict exists
-        if (oa.cas().size() != 1) {
+        if (_provider.hasConflict(soid)) {
             ++cnt.conflict;
-            // TODO(phoenix): remove ccbd entry?
+            // TODO(phoenix): remove ccd entry?
             return null;
         }
-        CA ca = oa.caMaster();
 
-        ContentHash h = _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
-        if (h == null) {
+        SendableContent content = _provider.content(new SOKID(soid, KIndex.MASTER));
+        if (content.hash == null) {
             ++cnt.hash_delay;
             return null;
         }
 
-        try {
-            IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
-            if (pf.wasModifiedSince(ca.mtime(), ca.length())) {
-                ++cnt.scan_delay;
-                return null;
-            }
-        } catch (IOException e) {
+        if (content.pf.wasModifiedSince(content.mtime, content.length)) {
+            ++cnt.scan_delay;
             return null;
         }
 
         LocalChange change = new LocalChange();
         change.type = Type.UPDATE_CONTENT;
         change.localVersion = Objects.firstNonNull(_cvdb.getVersion_(c.sidx, c.oid), 0L);
-        change.mtime = ca.mtime();
-        change.size = ca.length();
-        change.hash = h.toHex();
+        change.mtime = content.mtime;
+        change.size = content.length;
+        change.hash = content.hash.toHex();
 
         return new BatchOp(c.oid.toStringFormal(), change);
     }
@@ -306,7 +295,7 @@ public class ContentChangeSubmitter implements Submitter
             _cvdb.setVersion_(c.sidx, c.oid, updated.object.version, t);
             _rcdb.deleteUpToVersion_(c.sidx, c.oid, updated.object.version, t);
             // add "remote" content entry for latest version (in case of expulsion)
-            _rcdb.insert_(c.sidx, c.oid, updated.object.version, Cfg.did(),
+            _rcdb.insert_(c.sidx, c.oid, updated.object.version, _did.get(),
                     new ContentHash(BaseUtil.hexDecode(change.hash)), change.size, t);
         }
 

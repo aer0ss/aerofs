@@ -37,6 +37,7 @@ public class VersionResource
      * filtering and may not be used to service users outside of the org. The
      * value will only be taken into account if it comes from a Team Server.
      */
+    // TODO(AS): StorageAgentSharding.
     public static class TeamServerInfo extends Version
     {
         public final List<UserID> users;

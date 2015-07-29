@@ -5,8 +5,8 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.IVersionUpdater;
+import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -14,57 +14,60 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileUpload;
+import com.aerofs.daemon.rest.util.ContentEntityTagUtil;
 import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.id.*;
 import com.aerofs.oauth.Scope;
+import com.aerofs.rest.api.Error;
 import com.aerofs.restless.util.ContentRange;
 import com.aerofs.restless.util.HttpStatus;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
-import com.aerofs.rest.api.Error;
-import com.aerofs.rest.api.Error.Type;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 
+import static com.aerofs.rest.api.Error.Type;
 import static com.google.common.base.Preconditions.checkState;
+import static javax.ws.rs.core.Response.ResponseBuilder;
+import static javax.ws.rs.core.Response.Status;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 
-public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
+public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
 {
-    @Inject  private IPhysicalStorage _ps;
+    @Inject private IPhysicalStorage _ps;
     @Inject private TokenManager _tokenManager;
-    @Inject private VersionUpdater _vu;
+    @Inject protected TransManager _tm;
+    @Inject private IVersionUpdater _vu;
+    @Inject private RestContentHelper _content;
+    @Inject private ContentEntityTagUtil _etags;
+    @Inject private IPathResolver _resolver;
     @Inject private ICollectorStateDatabase _csdb;
 
     @Override
-    protected void restHandleThrows_(EIFileUpload ev) throws Exception
+    protected void handleThrows_(EIFileUpload ev) throws Exception
     {
-        final OA oa = checkSanity_(ev);
-        if (oa == null) return;
+        SOID soid = checkSanity_(ev);
+        if (soid == null) return;
 
-        l.info("upload {} {}", ev._ulid, ev._range);
+        l.info("upload id {} range {}", (ev._ulid != null && ev._ulid.isValid()) ? ev._ulid : null, ev._range);
 
         // to avoid prefix clashes, generate a unique upload ID if none given
         UploadID uploadId = ev._ulid.isValid() ? ev._ulid : UploadID.generate();
-        IPhysicalPrefix pf = _ps.newPrefix_(new SOKID(oa.soid(), KIndex.MASTER),
+        IPhysicalPrefix pf = _ps.newPrefix_(new SOKID(soid, KIndex.MASTER),
                 uploadId.toStringFormal());
 
         if (ev._range != null) {
@@ -91,13 +94,12 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
             }
 
             // anything can happen when the core lock is released...
-            final OA newOA = checkSanity_(ev);
-            if (newOA == null) return;
+            SOID newSoid = checkSanity_(ev);
+            if (newSoid == null) return;
 
-            applyPrefix_(pf, newOA, out.digest());
-
+            applyPrefix_(pf, newSoid, out.digest());
             ev.setResult_(Response.ok()
-                    .tag(_etags.etagForContent(newOA.soid())));
+                    .tag(_etags.etagForContent(newSoid)));
         } catch (Exception e) {
             l.warn("upload failed", e);
             // if anything goes wrong, delete the prefix, unless the upload is resumable
@@ -113,26 +115,18 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         }
     }
 
-    private OA checkSanity_(EIFileUpload ev)
-            throws ExNotFound, ExNoPerm, SQLException
-    {
-        OA oa = _access.resolveWithPermissions_(ev._object, ev._token, Permissions.EDITOR);
+    private SOID checkSanity_(EIFileUpload ev) throws SQLException, ExNotFound, ExNoPerm {
+        SOID soid = _content.resolveObjectWithPerm(ev._object, ev._token,
+                Scope.WRITE_FILES, Permissions.EDITOR);
+        if (soid == null) return null;
 
-        if (!oa.isFile()) throw new ExNotFound("No such file");
-        if (oa.isExpelled()) {
-            throw new ExNotFound(_ds.isDeleted_(oa)
-                    ? "No such file" : "Content not synced on this device");
-        }
-        if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
+        if (!_csdb.isCollectingContent_(soid.sidx())) {
             ev.setResult_(Response.status(HttpStatus.INSUFFICIENT_STORAGE)
                     .entity(new Error(Type.INSUFFICIENT_STORAGE, "Quota exceeded")));
             return null;
         }
 
-        requireAccessToFile(ev._token, Scope.WRITE_FILES, oa);
-
-        final EntityTag etag = _etags.etagForContent(oa.soid());
-
+        final EntityTag etag = _etags.etagForContent(soid);
         // TODO: select target branch based on etag instead of always trying to upload to MASTER?
         if (ev._ifMatch.isValid() && !ev._ifMatch.matches(etag)) {
             ev.setResult_(Response
@@ -140,7 +134,7 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
                     .entity(new Error(Type.CONFLICT, "Etag mismatch. Found: " + etag)));
             return null;
         }
-        return oa;
+        return soid;
     }
 
     private @Nullable ResponseBuilder preValidateChunk(UploadID uploadId,
@@ -245,21 +239,17 @@ public class HdFileUpload extends AbstractRestHdIMC<EIFileUpload>
         }
     }
 
-    private void applyPrefix_(IPhysicalPrefix pf, OA oa, ContentHash h)
+    private void applyPrefix_(IPhysicalPrefix pf, SOID soid, ContentHash h)
             throws SQLException, IOException, ExNoResource
     {
-        SOID soid = oa.soid();
         try (Trans t = _tm.begin_()) {
-            ResolvedPath path = _ds.resolve_(oa);
+            ResolvedPath path = _resolver.resolveNullable_(soid);
             // NB: MUST get prefix length BEFORE apply_
             long length = pf.getLength_();
             long mtime = System.currentTimeMillis();
-            boolean wasPresent = (oa.caMasterNullable() != null);
-            mtime = _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), wasPresent, mtime, t);
-
-            // update CA
-            if (!wasPresent) _ds.createCA_(soid, KIndex.MASTER, t);
-            _ds.setCA_(new SOKID(soid, KIndex.MASTER), length, mtime, h, t);
+            mtime = _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), _content.wasPresent(soid),
+                    mtime, t);
+            _content.updateContent(soid, h, t, length, mtime, _content.wasPresent(soid));
 
             // increment version number after update
             _vu.update_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER), t);

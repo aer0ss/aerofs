@@ -5,6 +5,8 @@ import com.aerofs.base.TimerUtil;
 import com.aerofs.daemon.core.IContentVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
+import com.aerofs.daemon.core.IVersionUpdater;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -41,7 +43,8 @@ import com.aerofs.daemon.core.transfers.download.IContentDownloads;
 import com.aerofs.daemon.lib.db.*;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.db.ver.*;
+import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
+import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.ids.*;
@@ -57,7 +60,6 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ssmp.SSMPConnection;
@@ -207,7 +209,8 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
                 bind(IQuotaEnforcement.class).to(NullQuotaEnforcement.class);
 
-                bind(Store.Factory.class).to(PolarisStore.Factory.class);
+                bind(IVersionUpdater.class).to(VersionUpdater.class);
+                bind(Store.Factory.class).to(DaemonPolarisStore.Factory.class);
                 bind(AbstractLogicalStagingArea.class).to(LogicalStagingArea.class);
                 bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
                 bind(IContentDownloads.class).to(Downloads.class);

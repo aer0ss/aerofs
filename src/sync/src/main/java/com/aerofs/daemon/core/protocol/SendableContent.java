@@ -7,11 +7,11 @@ import com.aerofs.lib.id.SOKID;
 import javax.annotation.Nullable;
 
 public class SendableContent {
-    final SOKID sokid;
-    final long mtime;
-    final long length;
-    final @Nullable ContentHash hash;
-    final IPhysicalFile pf;
+    public final SOKID sokid;
+    public final long mtime;
+    public final long length;
+    public final @Nullable ContentHash hash;
+    public final IPhysicalFile pf;
 
     public SendableContent(SOKID sokid, long mtime, long length, @Nullable ContentHash hash, IPhysicalFile pf) {
         this.sokid = sokid;

@@ -122,6 +122,7 @@ public class CoreModule extends AbstractModule
         bind(IAuditDatabase.class).to(AuditDatabase.class);
         bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
         bind(IRoundTripTimes.class).toInstance(new RoundTripTimes());
+        bind(IVersionUpdater.class).to(VersionUpdater.class);
 
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
         // exactly as much as required depending on Module instantiation and preventing
@@ -134,7 +135,7 @@ public class CoreModule extends AbstractModule
             // to keep maximum flexibility, avoid rolling out schema changes for now
             multibind(binder(), ISchema.class, PolarisSchema.class);
 
-            bind(Store.Factory.class).to(PolarisStore.Factory.class);
+            bind(Store.Factory.class).to(DaemonPolarisStore.Factory.class);
 
             bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
             // client/SA behavioral differences

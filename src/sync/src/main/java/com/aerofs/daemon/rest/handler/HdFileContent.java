@@ -1,19 +1,24 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
-import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.IPathResolver;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
+import com.aerofs.daemon.core.protocol.ContentProvider;
+import com.aerofs.daemon.core.protocol.SendableContent;
+import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
-import com.aerofs.rest.util.MimeTypeDetector;
-import com.aerofs.lib.id.KIndex;
+import com.aerofs.daemon.rest.util.ContentEntityTagUtil;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.oauth.Scope;
+import com.aerofs.rest.util.MimeTypeDetector;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.restless.util.Ranges;
 import com.google.common.collect.Iterables;
@@ -25,75 +30,64 @@ import com.google.inject.Inject;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import java.sql.SQLException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
 
 import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUEST;
 
-public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
+public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
     @Inject private IPhysicalStorage _ps;
     @Inject private MimeTypeDetector _detector;
     @Inject private OutboundEventLogger _oel;
-    @Inject private ICollectorStateDatabase _csdb;
+    @Inject private ContentEntityTagUtil _etags;
+    @Inject private IPathResolver _resolver;
+    @Inject private RestContentHelper _helper;
+    @Inject private ContentProvider _provider;
 
     /**
      * Build Http response for file content requests
      *
      * see RFC2616 for more details on conditional
-      and partial content requests
+     and partial content requests
      */
     @Override
-    protected void restHandleThrows_(EIFileContent ev) throws ExNotFound, SQLException
+    protected void handleThrows_(EIFileContent ev) throws Exception
     {
-        final OA oa = _access.resolve_(ev._object, ev._token);
-        if (!oa.isFile()) throw new ExNotFound("No such file");
+        SOID soid = _helper.resolveObjectWithPerm(ev._object, ev._token,
+                Scope.READ_FILES, Permissions.VIEWER);
+        _helper.checkDeviceHasFile(soid);
 
-        requireAccessToFile(ev._token, Scope.READ_FILES, oa);
-
-        final CA ca = oa.caMasterNullable();
-        if (ca == null) {
-            String message;
-            if (oa.isExpelled()) {
-                message = _ds.isDeleted_(oa) ? "No such file" : "Content not synced on this device";
-            } else if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
-                message = "Quota exceeded";
-            }  else {
-                message = "Content not yet available on this device";
-            }
-            throw new ExNotFound(message);
-        }
-        final EntityTag etag = _etags.etagForContent(oa.soid());
-
+        final EntityTag etag =  _etags.etagForContent(soid);
         // conditional request: 304 Not Modified on ETAG match
         if (ev._ifNoneMatch.isValid() && ev._ifNoneMatch.matches(etag)) {
             ev.setResult_(Response.notModified(etag));
             return;
         }
 
-        _oel.log_(CONTENT_REQUEST, oa.soid(), ev.did());
+        _oel.log_(CONTENT_REQUEST, soid, ev.did());
 
-        // build range list for partial request, honoring If-Range header
-        RangeSet<Long> ranges = Ranges.parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());
-
-        // base response template
-        ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
-
-        IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
-        pf.prepareForAccessWithoutCoreLock_();
+        ResolvedPath path = _resolver.resolveNullable_(soid);
+        SendableContent content = _provider.content(new SOKID(soid, _helper.selectBranch(soid)));
+        content.pf.prepareForAccessWithoutCoreLock_();
 
         // Deletions take ~6s to register in the VFS which leaves a sizable window where files
         // remain listed but their content is gone.
         // Check for existence of physical file before returning a 200 to avoid closing the
         // connection when reading the content fails.
-        if (!pf.exists_()) throw new ExNotFound();
+        if (!content.pf.exists_()) throw new ExNotFound();
+
+        // build range list for partial request, honoring If-Range header
+        RangeSet<Long> ranges = Ranges.parseRanges(ev._rangeset, ev._ifRange, etag, content.length);
+
+        // base response template
+        ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(content.mtime));
 
         // TODO: send CONTENT_COMPLETION from ContentStream
-
         ev.setResult_(ranges != null
-                ? partialContent(bd, pf, ca, ranges)
-                : fullContent(bd, oa.name(), pf, ca));
+                ? partialContent(bd, content.pf, content.length, content.mtime, ranges)
+                : fullContent(bd, path.last(), content.pf, content.length, content.mtime));
     }
 
     /**
@@ -118,21 +112,23 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
         return bd.toString();
     }
 
-    private ResponseBuilder fullContent(ResponseBuilder ok, String name, IPhysicalFile pf, CA ca)
+    private ResponseBuilder fullContent(ResponseBuilder bd, String name, IPhysicalFile pf,
+            long length, long mtime) throws IOException
     {
-        return ok
+        return bd
                 .type(_detector.detect(name))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; " + filename(name))
-                .header(HttpHeaders.CONTENT_LENGTH, ca.length())
-                .entity(new SimpleStream(pf, ca, 0, ca.length()));
+                .header(HttpHeaders.CONTENT_LENGTH, length)
+                .entity(new SimpleStream(pf, length, mtime, 0, length));
     }
 
-    private ResponseBuilder partialContent(ResponseBuilder ok, IPhysicalFile pf, CA ca, RangeSet<Long> ranges)
+    private ResponseBuilder partialContent(ResponseBuilder ok, IPhysicalFile pf, long length,
+            long mtime, RangeSet<Long> ranges) throws IOException
     {
         // if rangeset is empty, the request is not satisfiable
         if (ranges.isEmpty()) {
             return Response.status(HttpStatus.UNSATISFIABLE_RANGE)
-                    .header(HttpHeaders.CONTENT_RANGE, "bytes */" + ca.length());
+                    .header(HttpHeaders.CONTENT_RANGE, "bytes */" + length);
         }
 
         Set<Range<Long>> parts = ranges.asRanges();
@@ -145,11 +141,11 @@ public class HdFileContent extends AbstractRestHdIMC<EIFileContent>
 
             return ok.status(HttpStatus.PARTIAL_CONTENT)
                     .header(HttpHeaders.CONTENT_RANGE,
-                            "bytes " + skip + "-" + last + "/" + ca.length())
-                    .entity(new SimpleStream(pf, ca, skip, span));
+                            "bytes " + skip + "-" + last + "/" + length)
+                    .entity(new SimpleStream(pf, length, mtime, skip, span));
         } else {
             // multiple ranges -> multipart response
-            MultipartStream stream = new MultipartStream(pf, ca, parts);
+            MultipartStream stream = new MultipartStream(pf, length, mtime, parts);
             return ok.status(HttpStatus.PARTIAL_CONTENT)
                     .type("multipart/byteranges; boundary=" + stream._boundary)
                     .entity(stream);

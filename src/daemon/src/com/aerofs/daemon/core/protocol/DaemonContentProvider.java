@@ -38,7 +38,6 @@ public class DaemonContentProvider implements ContentProvider {
     private ContentChangesDatabase _ccdb;
     private final AnalyticsEventCounter _conflictCounter;
 
-
     @Inject
     public DaemonContentProvider(DirectoryService ds, IPhysicalStorage ps,
                                  ContentChangesDatabase ccdb, Analytics analytics)
@@ -183,5 +182,10 @@ public class DaemonContentProvider implements ContentProvider {
             _ds.createCA_(k.soid(), k.kidx(), t);
         }
         _ds.setCA_(k, len, mtime, h, t);
+    }
+
+    @Override
+    public boolean hasConflict(SOID soid) throws SQLException {
+        return _ds.getOA_(soid).cas().size() != 1;
     }
 }

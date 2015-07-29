@@ -122,4 +122,10 @@ public interface IPhysicalStorage extends IStartable
      */
     void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
             throws SQLException, IOException;
+
+    /**
+     * Move downloaded prefix directly to sync history.
+     * @pre The file must already exist.
+     */
+    void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t) throws IOException, SQLException;
 }

@@ -37,6 +37,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
+import javax.ws.rs.core.EntityTag;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
@@ -177,7 +178,8 @@ public class MetadataBuilder
             throws SQLException
     {
         String mimeType = _detector.detect(oa.name());
-        String etag =  _etags.etagForContent(oa.soid()).getValue();
+        EntityTag etag = _etags.etagForContent(oa.soid());
+        String etagVal = etag == null ? null : etag.getValue();
 
         ContentState state;
 
@@ -187,12 +189,12 @@ public class MetadataBuilder
             CA ca = oa.caMasterNullable();
             if (ca != null) {
                 return new File(object, oa.name(), parent, path, new Date(ca.mtime()), ca.length(),
-                        mimeType, etag, ContentState.AVAILABLE);
+                        mimeType, etagVal, ContentState.AVAILABLE);
             }
             state = _csdb.isCollectingContent_(oa.soid().sidx())
                     ? ContentState.SYNCING : ContentState.INSUFFICIENT_STORAGE;
         }
-        return new File(object, oa.name(), parent, state, mimeType, etag, path);
+        return new File(object, oa.name(), parent, state, mimeType, etagVal, path);
     }
 
     public ParentPath path(ResolvedPath path, OAuthToken token) throws ExNotFound, SQLException

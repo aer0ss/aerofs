@@ -1,11 +1,5 @@
 package com.aerofs.daemon.core;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -13,12 +7,15 @@ import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOCKID;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import com.aerofs.lib.id.SOCKID;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * TODO don't include KIndex in parameters, writing non-master branches is not allowed after all.
  */
-public class VersionUpdater
+public class VersionUpdater implements IVersionUpdater
 {
     private static final Logger l = Loggers.getLogger(VersionUpdater.class);
 
@@ -37,12 +34,6 @@ public class VersionUpdater
     private final MetaChangesDatabase _mcdb;
     private final ContentChangesDatabase _ccdb;
     private final DirectoryService _ds;
-
-    @FunctionalInterface
-    public interface IListener
-    {
-        public void updated_(SOID soid, Trans t);
-    }
 
     private final List<IListener> _listeners = Lists.newArrayList();
 
@@ -57,6 +48,7 @@ public class VersionUpdater
         _ds = ds;
     }
 
+    @Override
     public void addListener_(IListener l)
     {
         _listeners.add(l);
@@ -65,6 +57,7 @@ public class VersionUpdater
     /**
      * Use this method to increment non-alias versions.
      */
+    @Override
     public void update_(SOCKID k, @Nonnull Trans t)
         throws SQLException, IOException
     {
@@ -101,7 +94,7 @@ public class VersionUpdater
                 checkArgument(k.cid().isContent());
                 _ccdb.insertChange_(k.sidx(), k.oid(), t);
             }
-            for (IListener l : _listeners) l.updated_(k.soid(), t);
+            for (IListener l : _listeners) l.updated_(k, t);
         } else {
             _nvc.updateMyVersion_(k, alias, t);
         }

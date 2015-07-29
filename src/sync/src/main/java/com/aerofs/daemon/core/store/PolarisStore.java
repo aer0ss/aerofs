@@ -1,10 +1,13 @@
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.daemon.core.IVersionUpdater;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
+import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
@@ -18,10 +21,11 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class ReadOnlyPolarisStore extends Store
+public class PolarisStore extends Store
 {
     private final ChangeFetchScheduler _cfs;
     private final ContentFetcher _cf;
+    private final SubmissionScheduler<ContentChangeSubmitter> _ccss;
 
     public static class Factory implements Store.Factory
     {
@@ -30,17 +34,19 @@ public class ReadOnlyPolarisStore extends Store
         @Inject protected ChangeFetchScheduler.Factory _factCFS;
         @Inject protected ContentFetcher.Factory _factCF;
         @Inject private PauseSync _pauseSync;
+        @Inject private SubmissionScheduler.Factory<ContentChangeSubmitter> _factCCSS;
+        @Inject private IVersionUpdater _vu;
 
         public Store create_(SIndex sidx) throws SQLException
         {
-            return new ReadOnlyPolarisStore(this, sidx, _factCFS.create(sidx), _factCF.create_(sidx));
+            return new PolarisStore(this, sidx, _factCFS.create(sidx), _factCF.create_(sidx), _vu);
         }
     }
 
     private final Factory _f;
 
-    protected ReadOnlyPolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs, ContentFetcher cf)
-            throws SQLException
+    protected PolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs,
+                           ContentFetcher cf, IVersionUpdater vu) throws SQLException
     {
         super(sidx, ImmutableMap.of(
                 ChangeFetchScheduler.class, cfs,
@@ -48,6 +54,10 @@ public class ReadOnlyPolarisStore extends Store
         _cfs = cfs;
         _cf = cf;
         _f = f;
+        _ccss = f._factCCSS.create(sidx);
+        vu.addListener_((k, t) -> {
+            if (k.sidx().equals(sidx) && k.cid().isContent()) _ccss.startOnCommit_(t);
+        });
     }
 
     @Override
@@ -62,11 +72,17 @@ public class ReadOnlyPolarisStore extends Store
         _cf.offline_(did);
     }
 
+    public SubmissionScheduler<ContentChangeSubmitter> contentSubmitter()
+    {
+        return _ccss;
+    }
+
     @Override
     public void onPauseSync_()
     {
        _cfs.stop_();
        _f._cnsub.unsubscribe_(this);
+        _ccss.stop_();
     }
 
     @Override
@@ -74,11 +90,13 @@ public class ReadOnlyPolarisStore extends Store
     {
         _cfs.start_();
         _f._cnsub.subscribe_(this);
+        _ccss.start_();
     }
 
     @Override
     void postCreate_()
     {
+        _ccss.start_();
         // start fetching updates from polaris
         _cfs.start_();
 
@@ -95,6 +113,7 @@ public class ReadOnlyPolarisStore extends Store
     @Override
     void preDelete_()
     {
+        _ccss.stop_();
         _f._pauseSync.removeListener_(this);
 
         // stop fetching updates from polaris

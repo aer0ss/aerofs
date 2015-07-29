@@ -1,21 +1,15 @@
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
-import com.aerofs.daemon.core.CoreEventDispatcher;
-import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.VersionUpdater;
+import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -24,105 +18,78 @@ import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSObject;
-import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.PrefixOutputStream;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.protocol.ContentProvider;
+import com.aerofs.daemon.core.protocol.DaemonContentProvider;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreHierarchy;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.rest.handler.DaemonRestContentHelper;
+import com.aerofs.daemon.rest.handler.RestContentHelper;
+import com.aerofs.daemon.rest.resources.AbstractResource;
+import com.aerofs.daemon.rest.resources.ChildrenResource;
+import com.aerofs.daemon.rest.resources.FilesMetadataResource;
+import com.aerofs.daemon.rest.resources.FoldersResource;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
-import com.aerofs.havre.Havre;
-import com.aerofs.ids.*;
+import com.aerofs.ids.MDID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgCACertificateProvider;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgStorageType;
+import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.oauth.TokenVerificationClient;
-import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
-import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.testlib.AbstractTest;
-import com.aerofs.testlib.TempCert;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.config.ObjectMapperConfig;
-import com.jayway.restassured.config.RestAssuredConfig;
-import com.jayway.restassured.config.SSLConfig;
-import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.util.Timer;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.slf4j.Logger;
 
 import javax.ws.rs.core.EntityTag;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.security.Permission;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Properties;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
@@ -132,18 +99,14 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 /**
  * Base class for tests exercising the public REST API
  */
 @RunWith(Parameterized.class)
-public class AbstractRestTest extends AbstractTest
+public class AbstractRestTest extends BaseAbstractRestTest
 {
     @Parameters
     public static Collection<Object[]> data()
@@ -154,240 +117,34 @@ public class AbstractRestTest extends AbstractTest
     protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
 
     protected @Mock DirectoryService ds;
-    protected @Mock IPhysicalStorage ps;
-    protected @Mock IOSUtil os;
-    protected @Mock CfgStorageType storageType;
-    protected @Mock CfgAbsRoots absRoots;
-
-    protected @Mock LocalACL acl;
-    protected @Mock SIDMap sm;
-    protected @Mock StoreHierarchy ss;
-    protected @Mock IDID2UserDatabase did2user;
-
-    protected @Mock CfgLocalUser localUser;
-    protected @Mock CfgLocalDID localDID;
-    protected static CfgKeyManagersProvider kmgr;
-    protected static CfgCACertificateProvider cacert;
-
     protected @Mock NativeVersionControl nvc;
-
-    protected @InjectMocks ClientSSLEngineFactory clientSslEngineFactory;
-
-    protected @Mock Trans t;
-    protected @Mock TransManager tm;
-
-    protected @Mock Token tk;
-    protected @Mock TokenManager tokenManager;
-    protected @Mock TCB tcb;
-    protected @Spy TokenVerifier tokenVerifier = new TokenVerifier(
-            BifrostTest.CLIENTID,
-            BifrostTest.CLIENTSECRET,
-            mock(TokenVerificationClient.class),
-            CacheBuilder.newBuilder());
-
     protected @Mock ObjectCreator oc;
     protected @Mock ObjectDeleter od;
     protected @Mock VersionUpdater vu;
     protected @Mock Expulsion expulsion;
     protected ObjectMover om;
     protected @Mock ImmigrantCreator ic;
-    protected @Mock ICollectorStateDatabase csdb;
 
-    protected @Spy InMemoryPrefix pf = new InMemoryPrefix();
-
-    private static Properties prop;
-
-    protected class InMemoryPrefix implements IPhysicalPrefix
-    {
-        private ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        public byte[] data()
-        {
-            return baos.toByteArray();
-        }
-
-        @Override
-        public long getLength_()
-        {
-            return baos.toByteArray().length;
-        }
-
-        @Override
-        public byte[] hashState_()
-        {
-            return null;
-        }
-
-        @Override
-        public PrefixOutputStream newOutputStream_(boolean append) throws IOException
-        {
-            if (!append) baos = new ByteArrayOutputStream();
-            return new PrefixOutputStream(baos);
-        }
-
-        @Override
-        public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void delete_() throws IOException
-        {
-            baos = new ByteArrayOutputStream();
-        }
-    }
-
-    protected  @Mock OutboundEventLogger oel;
-
-    protected static SessionFactory sessionFactory;
-    protected static Session session;
-
-    private static TempCert ca;
-    private static TempCert client;
-
-    protected static final UserID user = UserID.fromInternal("foo@bar.baz");
-    protected static final DID did = DID.generate();
-
-    protected final boolean useProxy;
+    protected @Mock OutboundEventLogger oel;
+    protected @Mock DaemonContentProvider _provider;
 
     public AbstractRestTest(boolean useProxy)
     {
-        this.useProxy = useProxy;
+        super(useProxy);
     }
 
-    /** Temporary measure, trying to debug a weird "unexpected exit" that is occurring in CI. */
-    private static class TestSecurityManager extends SecurityManager {
-        @Override
-        public void checkExit( final int status ) {
-            SecurityException sec = new SecurityException( "System.exit(" + status + ")!!");
-            sec.printStackTrace();
-            throw sec;
-        }
-        @Override
-        public void checkPermission( final Permission perm ) { }
-        @Override
-        public void checkPermission( final Permission perm, final Object context ) { }
-    }
+    protected MockDS mds;
 
     @BeforeClass
     public static void commonSetup() throws Exception
     {
-        System.setSecurityManager(new TestSecurityManager());
-
-        ca = TempCert.generateCA();
-        client = TempCert.generateDaemon(user, did, ca);
-
-        cacert = mock(CfgCACertificateProvider.class);
-        when(cacert.getCert()).thenReturn(ca.cert);
-
-        kmgr = mock(CfgKeyManagersProvider.class);
-        when(kmgr.getCert()).thenReturn(client.cert);
-        when(kmgr.getPrivateKey()).thenReturn(client.key);
-
-        sessionFactory = mock(SessionFactory.class);
-        session = mock(Session.class);
-
-        when(sessionFactory.openSession()).thenReturn(session);
-
-        prop = new Properties();
-        prop.setProperty("bifrost.port", "0");
-        ConfigurationProperties.setProperties(prop);
-
-        // start OAuth service
-        bifrost = new Bifrost(bifrostInjector(), testDeploymentSecret());
-        bifrost.start();
-        l.info("OAuth service at {}", bifrost.getListeningPort());
-
-        String bifrostUrl =
-                "http://localhost:" + bifrost.getListeningPort() + "/tokeninfo";
-
-        prop.setProperty("api.daemon.port", "0");
-        prop.setProperty("api.tunnel.host", "localhost");
-        prop.setProperty("daemon.oauth.id", BifrostTest.RESOURCEKEY);
-        prop.setProperty("daemon.oauth.secret", BifrostTest.RESOURCESECRET);
-        prop.setProperty("daemon.oauth.url", bifrostUrl);
-        prop.setProperty("havre.tunnel.host", "localhost");
-        prop.setProperty("havre.tunnel.port", "0");
-        prop.setProperty("havre.proxy.host", "localhost");
-        prop.setProperty("havre.proxy.port", "0");
-        prop.setProperty("havre.oauth.id", BifrostTest.RESOURCEKEY);
-        prop.setProperty("havre.oauth.secret", BifrostTest.RESOURCESECRET);
-        prop.setProperty("havre.oauth.url", bifrostUrl);
-        ConfigurationProperties.setProperties(prop);
-
-        RestAssured.config = RestAssuredConfig.config()
-                .sslConfig(SSLConfig.sslConfig().with()
-                        .keystore(ca.keyStore, TempCert.KS_PASSWD)
-                        .allowAllHostnames())
-                .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
-                        .gsonObjectMapperFactory(new GOMF()));
-    }
-
-    static String testDeploymentSecret()
-    {
-        return "d5beeb631f223a644a32ca343d9da6de";
-    }
-
-    private static class GOMF implements GsonObjectMapperFactory
-    {
-        @Override
-        @SuppressWarnings("rawtypes")
-        public Gson create(Class cls, String charset)
-        {
-            return new GsonBuilder()
-                    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-        }
-    }
-
-    @AfterClass
-    public static void commonCleanup()
-    {
-        bifrost.stop();
-
-        ca.cleanup();
-        client.cleanup();
-        /* temporary measure debugging CI */
-        System.setSecurityManager(null);
-    }
-
-    protected MockDS mds;
-    protected SID rootSID = SID.rootSID(user);
-
-    private RestService service;
-
-    private Injector inj;
-
-    private RestTunnelClient tunnel;
-    private Havre havre;
-    private static Bifrost bifrost;
-
-    protected final static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
-    protected final static byte[] VERSION_HASH =
-            BaseSecUtil.newMessageDigestMD5().digest(new byte[]{0});
-
-    protected final String CURRENT_ETAG_VALUE = BaseUtil.hexEncode(VERSION_HASH);
-    protected final String CURRENT_ETAG = "\"" + CURRENT_ETAG_VALUE + "\"";
-
-    protected final static byte[] OTHER_HASH =
-            BaseSecUtil.newMessageDigestMD5().digest(new byte[] {1});
-
-    protected final String OTHER_ETAG = "\"" + BaseUtil.hexEncode(OTHER_HASH) + "\"";
-
-    private static Gson _gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
-
-    private static DateFormat utcFormat(String pattern) {
-        DateFormat dateFormat = new SimpleDateFormat(pattern);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateFormat;
+        BaseAbstractRestTest.commonSetup();
     }
 
     @Before
     public void setUp() throws Exception
     {
+        super.setUp();
         mds = new MockDS(rootSID, ds, sm, sm, ss);
         mds.root();  // setup sid<->sidx mapping for root..
 
@@ -395,25 +152,13 @@ public class AbstractRestTest extends AbstractTest
         om.inject_(vu, ds, expulsion);
         om = spy(om);
 
-        when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(pf);
-
-        when(localUser.get()).thenReturn(user);
-        when(localDID.get()).thenReturn(did);
-
-        when(tm.begin_()).thenReturn(t);
-        when(tokenManager.acquire_(any(Cat.class), anyString())).thenReturn(tk);
-        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-
-        when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(true);
-
-        when(nvc.getVersionHash_(any(SOID.class), any(CID.class))).thenReturn(VERSION_HASH);
-
+        when(ds.getCAHash_(any(SOKID.class))).thenReturn(new ContentHash(CONTENT_HASH));
         when(ic.move_(any(SOID.class), any(SOID.class), anyString(), any(PhysicalOp.class), eq(t)))
                 .thenAnswer(invocation -> {
-                    SOID soid = (SOID)invocation.getArguments()[0];
-                    SOID soidToParent = (SOID)invocation.getArguments()[1];
-                    String toName = (String)invocation.getArguments()[2];
-                    PhysicalOp op = (PhysicalOp)invocation.getArguments()[3];
+                    SOID soid = (SOID) invocation.getArguments()[0];
+                    SOID soidToParent = (SOID) invocation.getArguments()[1];
+                    String toName = (String) invocation.getArguments()[2];
+                    PhysicalOp op = (PhysicalOp) invocation.getArguments()[3];
                     if (soidToParent.sidx().equals(soid.sidx())) {
                         om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true,
                                 t);
@@ -424,17 +169,14 @@ public class AbstractRestTest extends AbstractTest
                     }
                 });
 
-        // start local gateway
-        if (useProxy) {
-            havre = new Havre(user, did, kmgr, kmgr, cacert, getGlobalTimer(), tokenVerifier);
-            havre.start();
-
-            prop.setProperty("api.tunnel.port", Integer.toString(havre.getTunnelPort()));
-        }
-
+        doNothing().when(vu).update_(any(SOCKID.class), any(Trans.class));
         // start REST service
+
         inj = coreInjector();
-        service = new RestService(inj, kmgr) {
+        Set<AbstractResource> resources = Sets.newHashSet(inj.getInstance(ChildrenResource.class),
+                inj.getInstance(FilesMetadataResource.class), inj.getInstance(FoldersResource.class));
+
+        service = new RestService(inj, kmgr, resources) {
             @Override
             protected ServerSocketChannelFactory getServerSocketFactory()
             {
@@ -481,12 +223,11 @@ public class AbstractRestTest extends AbstractTest
         return inj.getInstance(EntityTagUtil.class).etagForMeta(soid);
     }
 
-
     private Injector coreInjector()
     {
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
-        Injector inj = Guice.createInjector(new RestModule(tokenVerifier), new AbstractModule()
+        Injector inj = Guice.createInjector(new TestTokenVerifierModule(), new RestModule(), new AbstractModule()
         {
             @Override
             protected void configure()
@@ -515,6 +256,12 @@ public class AbstractRestTest extends AbstractTest
                 bind(CfgStorageType.class).toInstance(storageType);
                 bind(CfgAbsRoots.class).toInstance(absRoots);
                 bind(ICollectorStateDatabase.class).toInstance(csdb);
+                bind(CentralVersionDatabase.class).toInstance(_cvdb);
+                bind(IVersionUpdater.class).toInstance(vu);
+                bind(CfgUsePolaris.class).toInstance(usePolaris);
+                bind(IPathResolver.class).toInstance(ds);
+                bind(RestContentHelper.class).to(DaemonRestContentHelper.class);
+                bind(ContentProvider.class).toInstance(_provider);
             }
         });
 
@@ -528,38 +275,6 @@ public class AbstractRestTest extends AbstractTest
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
         return inj;
-    }
-
-    private static Injector bifrostInjector() throws Exception
-    {
-        final SPBlockingClient.Factory factSP = mock(SPBlockingClient.Factory.class);
-        SPBlockingClient sp = mock(SPBlockingClient.class);
-        when(factSP.create()).thenReturn(sp);
-        when(sp.signInRemote()).thenReturn(sp);
-
-        Injector inj = Guice.createInjector(Bifrost.bifrostModule(),
-                BifrostTest.mockDatabaseModule(sessionFactory),
-                new AbstractModule() {
-                    @Override
-                    protected void configure()
-                    {
-                        bind(SPBlockingClient.Factory.class).toInstance(factSP);
-                    }
-                });
-
-        BifrostTest.createTestEntities(user, inj);
-
-        return inj;
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-        service.stop();
-        if (useProxy) {
-            havre.stop();
-            tunnel.stop();
-        }
     }
 
     protected RestObject object(String path) throws SQLException
@@ -633,31 +348,6 @@ public class AbstractRestTest extends AbstractTest
         return given()
                 .header(Names.AUTHORIZATION, "Bearer invalid");
     }
-
-    protected static Matcher<String> matches(final String regex)
-    {
-        return new BaseMatcher<String>() {
-            final Pattern p = Pattern.compile(regex);
-            @Override
-            public boolean matches(Object o)
-            {
-                return o instanceof String && (p.matcher((String)o).matches());
-            }
-
-            @Override
-            public void describeTo(Description description)
-            {
-                description.appendText("matches(" + regex + ")");
-            }
-        };
-    }
-
-    protected static Matcher<String> anyUUID()
-    {
-        return matches("[0-9a-fA-F]{32}");
-    }
-
-    protected static String json(Object o) { return _gson.toJson(o); }
 
     private class EqualFutureObject extends BaseMatcher<String>
     {

@@ -379,6 +379,11 @@ public class LinkedStorage implements IPhysicalStorage
         _factFile.create(prefixFolderPath(auxRoot, soid)).deleteOrThrowIfExistRecursively();
     }
 
+    @Override
+    public void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t) {
+        throw new UnsupportedOperationException("Applying file directly to history for Linked Storage");
+    }
+
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {
         _sfti.addTagFileAndIconIn(sid, path, t);

@@ -3,19 +3,21 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.ids.OID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.rest.util.UploadID;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.rest.api.CommonMetadata;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.SettableFuture;
@@ -35,13 +37,8 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isEmptyString;
-import static org.hamcrest.Matchers.iterableWithSize;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -69,11 +66,17 @@ public class TestFileResource extends AbstractRestTest
     void mockContent(String path, final byte[] content) throws Exception
     {
         IPhysicalFile pf = mock(IPhysicalFile.class);
+        SOID soid = ds.resolveThrows_(Path.fromString(rootSID, path));
+
         when(pf.exists_()).thenReturn(true);
+        when(pf.lastModified()).thenReturn(FILE_MTIME);
+        when(pf.lengthOrZeroIfNotFile()).thenReturn((long)FILE_CONTENT.length);
         when(pf.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(content));
-        when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, path)))),
-                eq(KIndex.MASTER)))
-                .thenReturn(pf);
+        when(ps.newFile_(eq(ds.resolve_(soid)), eq(KIndex.MASTER))).thenReturn(pf);
+
+        when(_provider.content(any(SOKID.class)))
+                .thenReturn(new SendableContent(new SOKID(soid, KIndex.MASTER), FILE_MTIME,
+                        FILE_CONTENT.length, new ContentHash(CONTENT_HASH) ,pf));
     }
 
     @Before
@@ -293,6 +296,10 @@ public class TestFileResource extends AbstractRestTest
         when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, "foobar")))),
                 eq(KIndex.MASTER)))
                 .thenReturn(pf);
+
+        when(_provider.content(any(SOKID.class)))
+                .thenReturn(new SendableContent(mock(SOKID.class), FILE_MTIME,
+                        FILE_CONTENT.length, new ContentHash(CONTENT_HASH) ,pf));
 
         givenAccess()
         .expect()

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.polaris.submit;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkScheduler;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -13,21 +12,17 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import java.sql.SQLException;
-
 public class SubmissionScheduler<T extends Submitter>
 {
     public static class Factory<T extends Submitter>
     {
         private final CoreScheduler _sched;
-        private final VersionUpdater _vu;
         private final T _submitter;
 
         @Inject
-        public Factory(CoreScheduler sched, VersionUpdater vu, T submitter)
+        public Factory(CoreScheduler sched, T submitter)
         {
             _sched = sched;
-            _vu = vu;
             _submitter = submitter;
         }
 
@@ -63,15 +58,9 @@ public class SubmissionScheduler<T extends Submitter>
         _sched = new AsyncWorkScheduler(name(), _f._sched, cb -> {
             try {
                _f._submitter.submit_(_sidx, cb);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 cb.onFailure_(e);
             }
-        });
-
-        // TODO: META/CONTENT split
-        // TODO: don't start content submit for object pending meta submit
-        _f._vu.addListener_((soid, t) -> {
-            if (soid.sidx().equals(_sidx)) startOnCommit_(t);
         });
     }
 

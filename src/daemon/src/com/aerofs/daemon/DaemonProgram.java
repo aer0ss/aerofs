@@ -20,6 +20,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.RestTunnelClient;
+import com.aerofs.daemon.rest.TokenVerifierModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
@@ -126,7 +127,8 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), getMultiplicityModule(),
-                new CoreModule(), getStorageModule(), new RestModule(), new NativeSocketModule());
+                new CoreModule(), getStorageModule(), new TokenVerifierModule(), new RestModule(),
+                new NativeSocketModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
@@ -134,7 +136,7 @@ public class DaemonProgram implements IProgram
 
         // NB: the RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
-        if (new CfgRestService().isEnabled()) {
+        if (new CfgRestService(Cfg.db()).isEnabled()) {
             injCore.getInstance(RestService.class).start();
             RestTunnelClient rc = injCore.getInstance(RestTunnelClient.class);
             rc.start();

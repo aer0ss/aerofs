@@ -1,11 +1,10 @@
 package com.aerofs.daemon.rest.stream;
 
 import com.aerofs.base.C;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.fs.FileChunker;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.restless.stream.ContentStream;
 import com.google.common.base.Preconditions;
@@ -36,11 +35,11 @@ public class MultipartStream implements ContentStream
     // null before first chunk, to simplify boundary writing logic
     private @Nullable FileChunker _chunker;
 
-    public MultipartStream(IPhysicalFile pf, CA ca, Set<Range<Long>> parts)
+    public MultipartStream(IPhysicalFile pf, long length, long mtime, Set<Range<Long>> parts)
     {
         _pf = pf;
-        _length = ca.length();
-        _mtime = ca.mtime();
+        _length = length;
+        _mtime = mtime;
         // random boundary string to reduce likelihood of boundary appearing within a part
         _boundary = UniqueID.generate().toStringFormal();
 

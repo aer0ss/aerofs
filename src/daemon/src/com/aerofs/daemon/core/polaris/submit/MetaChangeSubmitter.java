@@ -8,37 +8,31 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.api.Batch;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
-import com.aerofs.daemon.core.polaris.api.BatchResult;
 import com.aerofs.daemon.core.polaris.api.BatchResult.BatchOpResult;
 import com.aerofs.daemon.core.polaris.api.BatchResult.PolarisError;
-import com.aerofs.daemon.core.polaris.api.LocalChange;
-import com.aerofs.daemon.core.polaris.api.LogicalObject;
-import com.aerofs.daemon.core.polaris.api.ObjectType;
-import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
-import com.aerofs.daemon.core.polaris.api.UpdatedObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
-import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.status.PauseSync;
+import com.aerofs.daemon.core.store.DaemonPolarisStore;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.PolarisStore;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -154,7 +148,7 @@ public class MetaChangeSubmitter implements Submitter
      * Asynchronously submit the next queued local metadata change(s) to Polaris.
      */
     @Override
-    public void submit_(SIndex sidx, AsyncTaskCallback cb) throws SQLException
+    public void submit_(SIndex sidx, AsyncTaskCallback cb) throws Exception
     {
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
@@ -431,7 +425,7 @@ public class MetaChangeSubmitter implements Submitter
             OA oa = _ds.getOANullable_(new SOID(c.sidx, c.oid));
             if (oa != null && !oa.isExpelled() && oa.isFile()) {
                 // fast retry content submission
-                ((PolarisStore)_sidx2s.get_(c.sidx)).contentSubmitter().startOnCommit_(t);
+                ((DaemonPolarisStore)_sidx2s.get_(c.sidx)).contentSubmitter().startOnCommit_(t);
             }
             break;
         case MOVE_CHILD:

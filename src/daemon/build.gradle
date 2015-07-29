@@ -31,7 +31,6 @@ dependencies {
     compile project(':src/aero-api-lib')
     compile project(':src/rest-api')
     compile project(':src/restless')
-    compile project(':src/tunnel')
     compile project(':src/sync')
     compile project(path: ':src/zephyr', configuration: 'client')
     testCompile 'com.jayway.restassured:rest-assured:2.3.4'
@@ -39,10 +38,6 @@ dependencies {
     testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
     testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
     testCompile 'javax.mail:mail:1.4.2'
-    testCompile project(':src/bifrost')
-    testCompile project(':src/havre')
-    testCompile project(':src/zephyr')
-    testCompile project(path: ':src/bifrost', configuration: 'testutil')
     testCompile project(path: ':src/lib', configuration: 'testutil')
     testCompile project(path: ':src/sync', configuration: 'testutil')
 }

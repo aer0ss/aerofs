@@ -449,7 +449,7 @@ public class PreferencesHelper
 
         btnAPIAccess.setText("Enable API access");
         btnAPIAccess.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        btnAPIAccess.setSelection(new CfgRestService().isEnabled());
+        btnAPIAccess.setSelection(new CfgRestService(Cfg.db()).isEnabled());
         btnAPIAccess.addSelectionListener(new SelectionAdapter()
         {
             @Override

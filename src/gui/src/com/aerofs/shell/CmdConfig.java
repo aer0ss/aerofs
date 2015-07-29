@@ -85,7 +85,7 @@ public class CmdConfig extends AbstractShellCommand<ShProgram>
             throws InvalidKeyException
     {
         if (key.equals(API)) {
-            CfgRestService cfg = new CfgRestService();
+            CfgRestService cfg = new CfgRestService(Cfg.db());
             out.println(API + ": " + (cfg.isEnabled() ? "enabled" : "disabled"));
         } else {
             throw new InvalidKeyException(key);

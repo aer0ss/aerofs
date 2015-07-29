@@ -903,4 +903,45 @@ public class TestBlockStorage extends AbstractBlockTest
         // check that dead block was removed from backend on commit
         verify(bsb).deleteBlock(eq(b._key), any(TokenWrapper.class));
     }
+
+    @Test
+    public void shouldApplyToSyncHistory() throws Exception
+    {
+        SOKID sokid = newSOKID();
+        byte[] content1 = new byte[] {0, 1, 2, 3, 4};
+        String path = "foo/bar";
+        store(path, sokid, content1, false, 0L);
+        verify(bsb).putBlock(forKey(content1), any(InputStream.class), eq((long) content1.length));
+        verify(bsb, never()).getBlock(any(ContentBlockHash.class));
+
+        FileInfo before = bs.getFileInfoNullable_(sokid);
+        when(storagePolicy.useHistory()).thenReturn(true);
+        byte[] content2 = new byte[] {5, 6, 7, 8};
+
+        // Call applyToSyncHistory directly.
+        IPhysicalPrefix prefix = bs.newPrefix_(sokid, null);
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx());
+
+        try (OutputStream out = prefix.newOutputStream_(false)) {
+            ByteStreams.copy(new ByteArrayInputStream(content2), out);
+        }
+        ContentBlockHash expectedHash = ((BlockPrefix)prefix).hash();
+        try (Trans t = tm.begin_()) {
+            bs.applyToHistory_(prefix, file, 1L, t);
+            t.commit_();
+        }
+        FileInfo after = bs.getFileInfoNullable_(sokid);
+        Assert.assertEquals(before._id, after._id);
+        Assert.assertEquals(before._length, after._length);
+        Assert.assertEquals(before._chunks, after._chunks);
+        Assert.assertEquals(before._mtime, after._mtime);
+        Assert.assertEquals(before._ver + 1, after._ver);
+
+        FileInfo history = bsdb.getHistFileInfo_(revIndex(path, -1));
+        Assert.assertEquals(after._id, history._id);
+        Assert.assertEquals(content2.length, history._length);
+        Assert.assertEquals(expectedHash, history._chunks);
+        Assert.assertEquals(1L, history._mtime);
+        Assert.assertEquals(before._ver, history._ver);
+    }
 }

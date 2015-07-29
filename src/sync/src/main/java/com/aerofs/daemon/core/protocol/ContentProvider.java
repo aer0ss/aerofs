@@ -27,4 +27,6 @@ public interface ContentProvider {
 
     void apply_(IPhysicalPrefix prefix, IPhysicalFile pf, long replyMTime, ContentHash h, Trans t)
             throws Exception;
+
+    boolean hasConflict(SOID soid) throws SQLException;
 }
