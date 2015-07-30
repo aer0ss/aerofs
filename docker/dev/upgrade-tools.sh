@@ -27,7 +27,7 @@ if [ $(uname -s) = "Darwin" ] ; then
     mv crane /usr/local/bin/crane
 
     # Install docker-machine
-    wget https://github.com/docker/machine/releases/download/v0.2.0/docker-machine_darwin-amd64 \
+    wget https://github.com/docker/machine/releases/download/v0.3.1/docker-machine_darwin-amd64 \
         -O /usr/local/bin/docker-machine
     chmod +x /usr/local/bin/docker-machine
 fi
