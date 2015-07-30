@@ -105,6 +105,14 @@ public class TestLinkedRevProvider extends AbstractTest
         assertEquals(1, localRevProvider.listRevHistory_(path).size());
     }
 
+    /**
+     * WARNING This test assume that the filesystem is able to write files with a
+     * filename of 255 characters. This is not the case on some platforms: when using
+     * AUFS (docker containers running on an Ubuntu host), when the partition is
+     * encrypted (ecryptfs)...
+     *
+     * @throws Exception
+     */
     @Test
     public void shouldSaveFileWithLongName() throws Exception
     {
