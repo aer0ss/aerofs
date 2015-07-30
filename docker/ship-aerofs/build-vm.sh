@@ -19,6 +19,7 @@ rm -r ${BASENAME}.mf ${BASENAME}.ovf
 QCOW2="${BASENAME}.qcow2"
 echo "Creating QCOW2 image ${QCOW2} ..."
 qemu-img convert -f vmdk -O qcow2 "${VMDK}" "${QCOW2}"
+gzip "${QCOW2}"
 
 # Success!
 echo "Images successfully built."

@@ -10,7 +10,7 @@ def ova_url(version):
     return "{}/aerofs-appliance-{}.ova".format(_BUCKET_BASE, version)
 
 def qcow_url(version):
-    return "{}/aerofs-appliance-{}.qcow2".format(_BUCKET_BASE, version)
+    return "{}/aerofs-appliance-{}.qcow2.gz".format(_BUCKET_BASE, version)
 
 def vmdk_url(version):
     return "{}/aerofs-appliance-{}.vmdk".format(_BUCKET_BASE, version)
