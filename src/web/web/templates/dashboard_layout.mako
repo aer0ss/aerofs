@@ -261,9 +261,18 @@
     $(window).load(function()
     {
         var bunker = "http://" + window.location.hostname + ":8484";
+
         ## Set href in 'Manage Appliance' link. Do this on page load instead of in real-time
         ## for better browser experience.
-        document.getElementById("mng-link-left").setAttribute("href", bunker);
-        document.getElementById("mng-link-drop").setAttribute("href", bunker);
+
+        var mngLinkLeft = document.getElementById("mng-link-left");
+        if (mngLinkLeft != null) {
+            mngLinkLeft.setAttribute("href", bunker);
+        }
+
+        var mngLinkDrop = document.getElementById("mng-link-drop");
+        if (mngLinkDrop != null) {
+            mngLinkDrop.setAttribute("href", bunker);
+        }
     })
 </script>
