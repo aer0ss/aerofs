@@ -127,7 +127,7 @@ public class MainUtil
                     "Please make sure your computer is connected to the network and " +
                             L.product() + " can make network connections to the " +
                             L.brand() + " Appliance on the " +
-                            "<a href=\"http://ae.ro/1kH9UgV\">required ports</a>.\n\n" +
+                            "<a href=\"http://ae.ro/1SJWimL\">required ports</a>.\n\n" +
                             "Please contact your system administrator if the problem persists.");
         } catch (RenderConfigException e) {
             // failing to render the configuration means that the config server and clients are
