@@ -25,15 +25,15 @@ EOF
 
 patch -p1 << EOF
 diff --git a/src/web/root/run.sh b/src/web/root/run.sh
-index e37b789..74b0d0b 100755
+index 192aefc..4c76094 100755
 --- a/src/web/root/run.sh
 +++ b/src/web/root/run.sh
-@@ -93,4 +93,4 @@ export PYTHONPATH=/opt/web
+@@ -88,4 +88,4 @@ export PYTHONPATH=/opt/web
  export STRIPE_PUBLISHABLE_KEY=dummy.stripe.key
  export STRIPE_SECRET_KEY=dummy.stripe.secret
-
--pserve /opt/web/production.ini
-+pserve --reload /opt/web/production.ini
+ 
+-/container-scripts/restart-on-error pserve /opt/web/production.ini
++/container-scripts/restart-on-error pserve --reload /opt/web/production.ini
 EOF
 
 patch -p1 << EOF
