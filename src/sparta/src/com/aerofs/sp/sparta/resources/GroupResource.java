@@ -51,7 +51,7 @@ public class GroupResource extends AbstractSpartaResource
 {
     public static Version FIRST_GROUP_API_VERSION = new Version(1, 3);
 
-    static int MAX_RESULTS_RETURNED = 10;
+    static int MAX_RESULTS_RETURNED = 1000;
 
     private final User.Factory _factUser;
     private final Group.Factory _factGroup;
@@ -136,7 +136,7 @@ public class GroupResource extends AbstractSpartaResource
     {
         Preconditions.checkArgument(offset >= 0, "Offset cannot be negative");
         Preconditions.checkArgument(results>= 0, "Number of results returned cannot be negative");
-        Preconditions.checkArgument(results<= MAX_RESULTS_RETURNED, "Number of results returned must be less than 20");
+        Preconditions.checkArgument(results<= MAX_RESULTS_RETURNED, "Number of results returned must be less than " + MAX_RESULTS_RETURNED);
 
         requirePermission(Scope.READ_GROUPS, token);
         User caller = userFromAuthToken(token);
@@ -211,8 +211,6 @@ public class GroupResource extends AbstractSpartaResource
         if (!_authenticator.isInternalUser(newMember.id())) {
             throw new ExWrongOrganization(newMember + " is external to this organization, " +
                     "and not allowed to be in this organization's groups");
-        } if (!newMember.exists()) {
-            throw new ExNotFound("No such user");
         }
 
         AffectedUserIDsAndInvitedFolders result = group.addMember(newMember);
@@ -228,7 +226,7 @@ public class GroupResource extends AbstractSpartaResource
                 + "/groups/" + group.id().getString()
                 + "/members/" + member.email;
 
-        FullName fn = newMember.getFullName();
+        FullName fn = newMember.exists() ? newMember.getFullName() : new FullName("", "");
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.GroupMember(member.email, fn._first, fn._last))
                 .build();
