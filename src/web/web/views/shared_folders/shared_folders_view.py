@@ -108,12 +108,10 @@ def json_get_my_shared_folders(request):
     return json_get_user_shared_folders(request, is_me=True)
 
 def _is_left(folder, user):
-    """ return true if the user is a LEFT member of the PBSharedFolder """
-    return any(ups.user.user_email == user and ups.state == LEFT for ups in folder.user_permissions_and_state)
+    return folder.requested_users_permissions_and_state.state == LEFT
 
 def _is_pending(folder, user):
-    """ return true if the user is a PENDING member of the PBSharedFolder"""
-    return any(ups.user.user_email == user and ups.state == PENDING for ups in folder.user_permissions_and_state)
+    return folder.requested_users_permissions_and_state.state == PENDING
 
 def _session_user_privileger(folder, session_user):
     for p in folder.requested_users_permissions_and_state.permissions.permission:
