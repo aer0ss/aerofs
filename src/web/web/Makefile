@@ -133,7 +133,8 @@ $(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
 	$(SRC)/shelob/js/controllers.js \
 	$(SRC)/shelob/js/directives.js \
 	$(SRC)/shelob/js/filters.js \
-	$(SRC)/shelob/js/services.js
+	$(SRC)/shelob/js/services.js \
+	$(SRC)/shelob/js/config/config_private.js
 	cat $^ > $@
 
 $(DEST)/fellowship.js: $(SRC)/fellowship/app.js \
