@@ -1,5 +1,6 @@
-FROM aerofs/rawdns
+FROM scratch
 
 COPY root /
 
-CMD ["/etc/rawdns.json"]
+EXPOSE 53
+ENTRYPOINT ["/rawdns", "/etc/rawdns.json"]

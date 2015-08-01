@@ -11,11 +11,13 @@ VM=$1
 
 if [ -z "$(docker-machine ls | grep ${VM})" ]
 then
-    docker-machine create -d virtualbox --virtualbox-disk-size 50000 --virtualbox-memory 3072 ${VM}
+    docker-machine create -d virtualbox --virtualbox-disk-size 50000 \
+        --virtualbox-memory 3072 --virtualbox-cpu-count 2 ${VM}
 
     # XXX
     # Only on Linux, we need to manually create a home folder mount for the current user.
     # This is not the case on Mac OS X.
+    # FIXME: this should no longer be necessary with docker-machine 0.4+
     if [ "$(uname -s)" = "Linux" ]
     then
         # The docker machine must be stopped for the shared folder creation op.
