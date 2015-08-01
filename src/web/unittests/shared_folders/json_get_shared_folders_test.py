@@ -51,6 +51,8 @@ class GetSharedFoldersTest(TestBase):
         urs.user.first_name = 'first'
         urs.user.last_name = 'last'
 
+        folder.requested_users_permissions_and_state.CopyFrom(urs)
+
         urs = folder.user_permissions_and_state.add()
         urs.permissions.permission.append(WRITE)
         urs.state = JOINED
