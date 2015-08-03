@@ -3892,6 +3892,8 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
         Group group = _factGroup.create(groupID);
+        // Auth check.
+        _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         // N.B. we don't check that the sessionOrg owns the group here because we want any member of
         // a shared folder to be able to list the members of the groups in that folder.
         SharedFolder sf = _factSharedFolder.create(shareID);
