@@ -17,7 +17,6 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExCannotResetPassword;
-import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
@@ -185,7 +184,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import com.unboundid.ldap.sdk.LDAPSearchException;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -946,11 +944,10 @@ public class SPService implements ISPService
     private static PBGroup.Builder group2pb(Group group)
             throws SQLException, ExNotFound
     {
-        PBGroup.Builder bd = PBGroup.newBuilder()
+        return PBGroup.newBuilder()
                 .setGroupId(group.id().getInt())
                 .setCommonName(group.getCommonName())
                 .setExternallyManaged(group.isExternallyManaged());
-        return bd;
     }
 
     @Override
@@ -1791,11 +1788,7 @@ public class SPService implements ISPService
                 User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
                 _factSharedFolder.create(object.getSID()).throwIfNoPrivilegeToChangeACL(requester);
                 l.info("getUrlInfo {} is admin/manager; not checking pwd", key);
-            } catch (ExNoPerm e) {
-                l.info("getUrlInfo {} not admin/manager; checking pwd", key, LogUtil.suppress(e));
-                if (password == null) throw new ExBadCredential();
-                link.validatePassword(password.toByteArray());
-            } catch (ExNotAuthenticated e) {
+            } catch (ExNoPerm | ExNotAuthenticated e) {
                 l.info("getUrlInfo {} not admin/manager; checking pwd", key, LogUtil.suppress(e));
                 if (password == null) throw new ExBadCredential();
                 link.validatePassword(password.toByteArray());
@@ -3706,18 +3699,6 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> addGroupMembers(Integer groupID, List<String> userEmails)
             throws
-            SQLException,
-            ExNotAuthenticated,
-            ExSecondFactorRequired,
-            ExNotFound,
-            ExNoPerm,
-            ExNotLocallyManaged,
-            ExWrongOrganization,
-            ExAlreadyExist,
-            IOException,
-            LDAPSearchException,
-            ExExternalServiceUnavailable,
-            ExSecondFactorSetupRequired,
             Exception
     {
         ImmutableCollection.Builder<UserID> needsACLUpdate = ImmutableSet.builder();
@@ -3784,14 +3765,6 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> removeGroupMembers(Integer groupID, List<String> userEmails)
             throws
-            SQLException,
-            ExNotAuthenticated,
-            ExSecondFactorRequired,
-            ExNotFound,
-            ExNoPerm,
-            ExNotLocallyManaged,
-            ExBadArgs,
-            ExSecondFactorSetupRequired,
             Exception
     {
         _sqlTrans.begin();
@@ -3823,13 +3796,6 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> deleteGroup(Integer groupID) throws
-            SQLException,
-            ExNotAuthenticated,
-            ExSecondFactorRequired,
-            ExNotFound,
-            ExNoPerm,
-            ExNotLocallyManaged,
-            ExSecondFactorSetupRequired,
             Exception
     {
         _sqlTrans.begin();
@@ -3925,10 +3891,9 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         Group group = _factGroup.create(groupID);
-        // N.B. we don't check that the sessionOrg owns the group here because in hybrid cloud we
-        // want any member of a shared folder to list the members of the groups in that folder
+        // N.B. we don't check that the sessionOrg owns the group here because we want any member of
+        // a shared folder to be able to list the members of the groups in that folder.
         SharedFolder sf = _factSharedFolder.create(shareID);
 
         ListGroupStatusInSharedFolderReply.Builder builder = ListGroupStatusInSharedFolderReply.newBuilder();
@@ -3981,14 +3946,14 @@ public class SPService implements ISPService
 
     int getSeatCountForPrivateOrg() throws SQLException
     {
-        int retval = 0;
+        int returnValue = 0;
 
         _sqlTrans.begin();
         Organization privateOrg = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-        retval = privateOrg.countUsers();
+        returnValue = privateOrg.countUsers();
         _sqlTrans.commit();
 
-        return retval;
+        return returnValue;
     }
 
     /**
