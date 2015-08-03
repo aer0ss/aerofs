@@ -83,7 +83,7 @@ public class BaseCfg {
 
         try {
             _cert = readCert();
-        } catch (FileNotFoundException e) {
+        } catch (CertificateException|FileNotFoundException e) {
             throw new ExNotSetup();
         }
 

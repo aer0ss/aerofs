@@ -126,20 +126,22 @@ public class Cfg
         }
 
         try {
-            _baseCfg.readPrivateKey(readPasswd);
-        } catch(FileNotFoundException|GeneralSecurityException e) {
+            try {
+                _baseCfg.readPrivateKey(readPasswd);
+            } catch (IOException e) {
+                Loggers.getLogger(Cfg.class).info("convert private key");
+                // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
+                // is loaded before either of them are run  so we need to do an ad-hoc upgrade path
+                // when configuration is loaded.
+                // The updater kills the daemon and the UI must load the config before it can restart
+                // it so there shouldn't be room for any race conditions
+                // TODO: remove conversion code and deprecated deps once support deems it acceptable,
+                // presumably in about 1 year to give old customers ample time to upgrade so sometimes
+                // in July 2016
+                if (!convertPrivateKey()) throw e;
+            }
+        } catch (FileNotFoundException|GeneralSecurityException e) {
             throw new ExNotSetup();
-        } catch (IOException e) {
-            Loggers.getLogger(Cfg.class).info("convert private key");
-            // NB: We cannot use a DPUT or UPUT to perform key decryption because configuration
-            // is loaded before either of them are run  so we need to do an ad-hoc upgrade path
-            // when configuration is loaded.
-            // The updater kills the daemon and the UI must load the config before it can restart
-            // it so there shouldn't be room for any race conditions
-            // TODO: remove conversion code and deprecated deps once support deems it acceptable,
-            // presumably in about 1 year to give old customers ample time to upgrade so sometimes
-            // in July 2016
-            if (!convertPrivateKey()) throw e;
         }
 
         _portbase = readPortbase();
