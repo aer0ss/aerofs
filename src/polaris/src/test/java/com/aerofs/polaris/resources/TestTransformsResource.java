@@ -167,7 +167,7 @@ public final class TestTransformsResource {
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
         assertThat(applied.transforms, hasSize(8));
-        assertThat(applied.maxTransformCount, is(8L));
+        assertThat(applied.maxTransformCount, is(13L));
         assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
         assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, newFile, ObjectType.FILE, "file"));
         assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.INSERT_CHILD, 2, modifiedFile, ObjectType.FILE, "file2"));
@@ -175,12 +175,12 @@ public final class TestTransformsResource {
         assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder, TransformType.INSERT_CHILD, 3, deletedFile, ObjectType.FILE, "file3"));
         assertThat(applied.transforms.get(5), matchesContentTransform(6, DEVICE, deletedFile, 1, hash, 100, 1024));
         assertThat(applied.transforms.get(6), matchesMetaTransform(7, DEVICE, folder, TransformType.REMOVE_CHILD, 4, deletedFile, null, null));
-        assertThat(applied.transforms.get(7), matchesMetaTransform(8, DEVICE, folder, TransformType.SHARE, 5, null, null, null));
+        assertThat(applied.transforms.get(7), matchesMetaTransform(13, DEVICE, folder, TransformType.SHARE, 5, null, null, null));
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.transforms, hasSize(5));
-        assertThat(applied.maxTransformCount, is(13L));
+        assertThat(applied.maxTransformCount, is(12L));
         assertThat(applied.transforms, containsInAnyOrder(
                 matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, newFile, ObjectType.FILE, "file"),
                 matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, modifiedFile, ObjectType.FILE, "file2"),

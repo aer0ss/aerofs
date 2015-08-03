@@ -381,8 +381,9 @@ public final class ObjectStore {
                 break;
             }
             case SHARE: {
-                updated.add(changeToStore(dao, device, oid));
-                jobID = migrator.migrateStore(SID.folderOID2convertedStoreSID(new OID(oid)), device);
+                OID folderOID = new OID(oid);
+                changeToStore(dao, folderOID);
+                jobID = migrator.migrateStore(SID.folderOID2convertedStoreSID(folderOID), device);
                 break;
             }
             default:
@@ -571,7 +572,7 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, oid));
     }
 
-    private static Updated changeToStore(DAO dao, DID device, UniqueID folderOID) {
+    private static void changeToStore(DAO dao, OID folderOID) {
         // check that object exists
         LogicalObject folder = getExistingObject(dao, folderOID);
 
@@ -582,17 +583,14 @@ public final class ObjectStore {
         // cannot share a folder that contains shared folders
         Preconditions.checkArgument(!containsSharedFolder(dao, folder.store, folderOID), "cannot share oid %s because it contains a shared folder", folderOID);
 
-        // need to replace the old folder transparently, which requires its name
-        UniqueID parentOID = dao.children.getParent(folderOID);
-        Preconditions.checkState(parentOID!= null, "folder to be migrated does not have a parent");
-        byte[] folderName = dao.children.getActiveChildName(parentOID, folderOID);
+        UniqueID parent = dao.children.getParent(folder.oid);
+        Preconditions.checkState(parent != null, "folder to be migrated does not have a parent");
+        byte[] folderName = dao.children.getActiveChildName(parent, folder.oid);
         Preconditions.checkState(folderName != null, "folder to be migrated does not have a name");
 
-        // change the object type to mount
-        long timestamp = convertToAnchor(dao, device, folder, folderName, parentOID);
-        newStore(dao, SID.folderOID2convertedStoreSID(new OID(folderOID)));
-
-        return new Updated(timestamp, getExistingObject(dao, folderOID));
+        // create the mountpoint entry and lock the migrating folder
+        convertToAnchor(dao, folderOID, folder.store, parent, folderName);
+        newStore(dao, SID.folderOID2convertedStoreSID(folderOID));
     }
 
     private static LockableLogicalObject getParent(DAO dao, UniqueID oid) throws NotFoundException {
@@ -750,25 +748,14 @@ public final class ObjectStore {
         return logicalTimestamp;
     }
 
-    private static long convertToAnchor(DAO dao, DID device, LogicalObject folder, byte[] folderName, UniqueID parent) {
-        long newVersion = folder.version + 1;
-
-        // add entry in transforms table and update our latest known max logical timestamp
-        long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, folder.store, folder.oid, TransformType.SHARE, newVersion, null, null, null);
-
-        // replace the old folder's references with the new mount point's
-        UniqueID anchorOID = SID.folderOID2convertedAnchorOID(new OID(folder.oid));
-        dao.children.remove(parent, folder.oid);
-        dao.children.add(parent, anchorOID, folderName);
-
-        dao.objects.update(folder.store, folder.oid, newVersion);
-
+    private static void convertToAnchor(DAO dao, OID folder, UniqueID store, UniqueID parent, byte[] folderName) {
         // cannot modify a folder after sharing it
-        dao.objects.setLocked(folder.oid, true);
+        dao.objects.setLocked(folder, true);
+        dao.children.remove(parent, folder);
 
-        dao.mountPoints.add(folder.store, anchorOID, parent);
-
-        return logicalTimestamp;
+        OID anchor = SID.folderOID2convertedAnchorOID(folder);
+        dao.children.add(parent, anchor, folderName);
+        dao.mountPoints.add(store, anchor, parent);
     }
 
     private static long addTransformAndUpdateMaxLogicalTimestamp(DAO dao, DID device, UniqueID store, UniqueID oid, TransformType transformType, long newVersion, @Nullable UniqueID child, @Nullable byte[] name, @Nullable Atomic atomic) {

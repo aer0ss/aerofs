@@ -6,7 +6,9 @@ import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.api.types.*;
 import com.aerofs.polaris.dao.Atomic;
+import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.Migrations;
+import com.aerofs.polaris.dao.Transforms;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -49,13 +51,13 @@ public class Migrator implements Managed {
 
     @Override
     public void start() throws Exception {
-        LOGGER.info("starting store migrator");
+        LOGGER.info("starting migrator");
         resumeMigrations();
     }
 
     @Override
     public void stop() {
-        LOGGER.info("stopping store migrator");
+        LOGGER.info("stopping migrator");
         executor.shutdown();
     }
 
@@ -129,6 +131,8 @@ public class Migrator implements Managed {
             if (update != null) {
                 notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
             }
+            update = markOldFolderAsStore(originator, storeSID);
+            notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
             return null;
         });
 
@@ -216,6 +220,19 @@ public class Migrator implements Managed {
         }
 
         return update;
+    }
+
+    private Update markOldFolderAsStore(DID originator, SID store) {
+        OID folder = SID.convertedStoreSID2folderOID(store);
+        return dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            LogicalObject oldFolder = getObject(dao, folder);
+
+            long logicalTimestamp = dao.transforms.add(originator, oldFolder.store, folder, TransformType.SHARE, oldFolder.version + 1, null, null, System.currentTimeMillis(), null);
+            dao.objects.update(oldFolder.store, folder, oldFolder.version + 1);
+
+            return new Update(oldFolder.store, logicalTimestamp);
+        });
     }
 
     private List<Update> updateOIDs(UniqueID migrant, OID destination, UniqueID jobID, DID originator) {

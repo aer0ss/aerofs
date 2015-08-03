@@ -14,7 +14,6 @@ import java.util.List;
 public final class OperationResult {
 
     @NotNull
-    @Size(min = 1)
     @Valid
     public final List<Updated> updated;
 

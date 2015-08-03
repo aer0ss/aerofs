@@ -68,9 +68,6 @@ public class TestJobsResource {
 
         OperationResult result = PolarisHelpers.shareFolder(verified, folder);
 
-        assertThat(result.updated, Matchers.hasSize(1));
-        assertThat(result.updated.get(0).object.oid, Matchers.equalTo(folder));
-
         assertThat(result.jobID, Matchers.notNullValue());
     }
 
