@@ -1,0 +1,19 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "gerrit.arrowfs.org:29418/aerofs"
+  },
+  "scripts": {
+    "make": "make clean && make"
+  },
+  "dependencies": {
+    "less": "^2.5.1",
+    "minifier": "^0.7.0",
+    "uglify-js": "^2.4.24"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0"
+  }
+}

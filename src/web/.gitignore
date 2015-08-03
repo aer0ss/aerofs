@@ -4,3 +4,4 @@ gen
 *.egg
 .idea
 MANIFEST
+node_modules

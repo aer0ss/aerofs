@@ -517,17 +517,13 @@ def test_go(args):
     print colored("Go tests passed", Colors.GREEN)
 
 def test_js(args):
-    # Generate minified CSS/JS for JS tests
+    WEB_ROOT = os.path.join(GIT_ROOT, "src", "web", "web")
     # Clean first to ensure output folder creation
-    subprocess.check_call(["make", "clean"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
-    subprocess.check_call(["make"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
-    # Prepare node modules
-    SHELOB_DIR = os.path.join(GIT_ROOT, "src", "web", "jstest", "shelob")
-    subprocess.check_call(["npm", "install"], cwd=SHELOB_DIR)
-    # Run unit test suites
-    KARMA_EXECUTABLE = os.path.join(SHELOB_DIR, "node_modules", "karma", "bin", "karma")
-    subprocess.check_call([KARMA_EXECUTABLE, "start", "karma.conf.unit.js"], cwd=SHELOB_DIR)
-    subprocess.check_call([KARMA_EXECUTABLE, "start", "karma.conf.e2e.js"], cwd=SHELOB_DIR)
+    subprocess.check_call(["make", "clean"], cwd=WEB_ROOT)
+    # Make everything
+    subprocess.check_call(["make"], cwd=WEB_ROOT)
+    # Setup and run the tests
+    subprocess.check_call(["make", "setup_test", "test"], cwd=WEB_ROOT)
     print colored("JS tests passed.", Colors.GREEN)
 
 def prepare_syncdet(args):

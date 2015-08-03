@@ -6,7 +6,7 @@ JS=js
 
 IS_WATCHMAN=$(shell which watchman)
 
-.PHONY : all clean watch clean-watch clean-dirs setup_test test cache jshint
+.PHONY : all clean install watch clean-watch clean-dirs setup_test test cache jshint
 APP_TARGETS = $(DEST)/shadowfax.js $(DEST)/strider.js $(DEST)/shelob.js $(DEST)/fellowship.js $(DEST)/saruman.js
 
 # input less files
@@ -35,17 +35,16 @@ else
 clean: clean-dirs
 endif
 
+install:
+	npm install
+
 clean-watch:
 	watchman trigger-del $(shell pwd) remakejs
 	watchman trigger-del $(shell pwd) remakeless
 
-
-cache:
-	node_modules/.bin/gulp update-cache
-
-
 clean-dirs:
 	rm -rf $(DEST)/css/compiled/
+	rm -rf node_modules/
 	rm -rf $(DEST)/js/compiled/
 	rm -rf $(DOCS_DEST)/css/compiled/
 	rm -f $(EXTERNAL_ASSETS_OUT)
@@ -57,13 +56,14 @@ clean-dirs:
 .ONESHELL:
 # set up npm install to run the tests
 setup_test:
-	cd ../jstest/shelob 
+	npm install
+	cd ../jstest/shelob
 	npm install
 
 .ONESHELL:
 # run karma tests
 test:
-	cd jstest/shelob && ./node_modules/karma/bin/karma start karma.conf.unit.js && ./node_modules/karma/bin/karma start karma.conf.e2e.js
+	cd ../jstest/shelob && ./node_modules/karma/bin/karma start karma.conf.unit.js && ./node_modules/karma/bin/karma start karma.conf.e2e.js
  
 # Watch the filesystem and recompile on file modification
 TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax
@@ -101,18 +101,18 @@ $(DOCS_DEST)/css/compiled/api.min.css: $(DEST)/css/compiled/api.min.css
 	cp $? $@
 
 # .min.css files come from .css files...
-$(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css
-	minify $?
+$(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css install
+	node_modules/.bin/minify $<
 
 # and .css files come from .less files.
-$(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less
+$(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less install
 	mkdir -p $(@D)
-	lessc $? > $@
+	node_modules/.bin/lessc $< > $@
 
 # .js files in the compiled folder come from .js files in the source folder
-$(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js
+$(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js install
 	mkdir -p $(@D)
-	uglifyjs -o $@ $?
+	node_modules/.bin/uglifyjs -o $@ $<
 
 #concatenation, watch the changes in $(DEST)/js/compiled/%.js turn it into bundled.js
 

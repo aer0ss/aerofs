@@ -25,7 +25,7 @@ Compiling Less and JS:
 $ brew install npm
 
 1. Install npm packages for compiling and minifying.
-$ npm install -g less minifier uglify-js
+$ npm install
 
 2. If you're going to be modifying LESS or JS more than once, install watchman to enable automatic compilation on save. 
 
