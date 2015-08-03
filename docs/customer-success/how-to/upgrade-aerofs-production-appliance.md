@@ -2,10 +2,10 @@
 
 ###Part 1: Launch New Instance
 1. Log into [AWS](https://signin.aws.amazon.com/oauth?SignatureVersion=4&X-Amz-Algorithm=AWS4-H  %0A
-MAC-SHA256&X-Amz-Credential=AKIAJMOATPLHVSJ563XQ&X-Amz-Date=2015-07-31T22%3A28%3A26.170Z&X-Amz-  %0A 
-Signature=2aefe55d7ac5b98b8acab0be0fbd9c8634b584e148e37e37d7527db17e1c0aab&X-Amz-SignedHeaders=  %0A 
-host&client_id=arn%3Aaws%3Aiam%3A%3A015428540659%3Auser%2Fhomepage&redirect_uri=https%3A%2F%2Fc  %0A 
-onsole.aws.amazon.com%2Fconsole%2Fhome%3Fstate%3DhashArgs%2523%26isauthcode%3Dtrue&response_typ  %0A 
+MAC-SHA256&X-Amz-Credential=AKIAJMOATPLHVSJ563XQ&X-Amz-Date=2015-07-31T22%3A28%3A26.170Z&X-Amz-  %0A
+Signature=2aefe55d7ac5b98b8acab0be0fbd9c8634b584e148e37e37d7527db17e1c0aab&X-Amz-SignedHeaders=  %0A
+host&client_id=arn%3Aaws%3Aiam%3A%3A015428540659%3Auser%2Fhomepage&redirect_uri=https%3A%2F%2Fc  %0A
+onsole.aws.amazon.com%2Fconsole%2Fhome%3Fstate%3DhashArgs%2523%26isauthcode%3Dtrue&response_typ  %0A
 e=code&state=hashArgs%23).
 2. Click on **EC2**.
 3. Click **Launch Instance**.
