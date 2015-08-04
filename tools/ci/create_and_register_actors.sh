@@ -16,7 +16,7 @@ mysql -uroot --password='temp123' < "$ACTOR_POOL_DIR"/actorpool.sql  # clear the
 # Linux actors
 pushd "$VAGRANT_BASE_DIR"/syncdet_linux
 vagrant destroy --force
-vagrant up | tee /var/log/ci/syncdet-vagrant-up.log
+vagrant up
 bottom=0
 top=$(($CLIENT_COUNT - 1))
 if [[ $top -ge $bottom ]]; then
@@ -27,7 +27,7 @@ popd
 # Windows actors
 pushd "$VAGRANT_BASE_DIR"/syncdet_win
 vagrant destroy --force
-vagrant up | tee /var/log/ci/win7-syncdet-vagrant-up.log
+vagrant up
 bottom=0
 top=$(($WCLIENT_COUNT - 1))
 if [[ $top -ge $bottom ]]; then
