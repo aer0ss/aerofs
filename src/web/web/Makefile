@@ -57,8 +57,7 @@ clean-dirs:
 # set up npm install to run the tests
 setup_test:
 	npm install
-	cd ../jstest/shelob
-	npm install
+	cd ../jstest/shelob && npm install
 
 .ONESHELL:
 # run karma tests
