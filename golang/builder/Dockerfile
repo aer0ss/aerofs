@@ -24,7 +24,6 @@ ENV GOPATH /gopath
 
 ENV PATH $PATH:/gopath/bin
 
-COPY builder/root /
-COPY src /gopath/src
+COPY root /
 
 ENTRYPOINT [ "/run.sh" ]
