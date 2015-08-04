@@ -3,11 +3,29 @@ Lipwig
 
 A new Postmaster General to replace ejabberd
 
+Lipwig is the reference implementation of SSMP: the Stupid-Simple Messaging Protocol
+which aims to be a lightweight alternative to XMPP.
+
+
+License
+-------
+
+BSD 3-clause, see accompanying LICENSE file.
+
+
+Dependencies
+------------
+
+Required:
+  - [Go](https://golang.org) 1.4+
+
+Optional:
+  - [golang-builder](https://github.com/aerofs/golang-builder)
+    to build minimal docker container
+
 
 Protocol
 --------
-
-Lipwig is the reference implementation of SSMP: the Stupid-Simple Messaging Protocol.
 
 SSMP is a text-based protocol that mix requests/responses in the style of HTTP, NMTP,
 and SMTP and push notifications similar to HTML5 Server Sent Events.
@@ -42,8 +60,9 @@ Server response: `<CODE> <PAYLOAD>?`
 
 Server event: `000 <IDENTIFIER> <VERB> <IDENTIFIER>? <PAYLOAD>?`
 
-
 ## Response codes
+
+Response code values are borrowed from HTTP where appropriate:
 
 `200` OK
 `400` Bad Request
@@ -77,9 +96,15 @@ methods to be offered by the server.
 All servers that accept connection over SSL/TLS MUST allow authentication through
 client certificates. The `scheme` value for cert-based authentication is `cert`.
 When a connection is made with a client certificate, LOGIN should succeed for any
-`<id>` matching either the Common Name or one of the Subject Alternative Names
+`id` matching either the Common Name or one of the Subject Alternative Names
 specified in the certificate.
 
+To accommodate multiple connections being opened using the same certificate,
+servers MAY accept identifiers consisting of a valid CN or altName followed by
+a forward slash (`/`) and an arbitrary sequence of `IDENTIFIER` characters.
+
+The `secret` scheme is reserved to the use of a pre-shared secret as
+`credential`.
 
 ## Anonymous connections
 
@@ -171,8 +196,8 @@ Any `BCAST` request from an anonymous user should be rejected with code `405`.
 NB: Peers that share multiple topics with the sender MUST NOT receive
 multiple identical `BCAST` events.
 
-## Events
 
+## Events
 
 ### Presence
 

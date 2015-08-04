@@ -2,26 +2,52 @@ package main
 
 import (
 	"aerofs.com/lipwig/server"
-	"aerofs.com/service"
+	"bytes"
+	"crypto/tls"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"net"
 )
 
-func main() {
-	fmt.Println("waiting for deps")
-	service.ServiceBarrier()
+var hostname string
+var certFile string
+var keyFile string
+var cacertFile string
 
-	tls := service.NewConfig("lipwig")
+var secret string
+
+func main() {
+	var address string
+
+	flag.StringVar(&address, "listen", "0.0.0.0:8787", "listening address")
+	flag.StringVar(&secret, "secret", "", "file from which to read shared secret for authentication")
+	flag.StringVar(&hostname, "host", "", "TLS hostname")
+	flag.StringVar(&cacertFile, "cacert", "", "CA certificate for client authentication")
+	flag.StringVar(&certFile, "cert", "", "Certificate for server authentication, must be signed by CA certificate")
+	flag.StringVar(&keyFile, "key", "", "Private key for server authentication")
+	flag.Parse()
+
+	cfg := tlsConfig()
 	auth := &server.MultiSchemeAuthenticator{
 		Schemes: map[string]server.AuthenticatorFunc{
-			"cert":   server.CertAuth,
-			"secret": server.SecretAuth([]byte(service.ReadDeploymentSecret())),
+			"cert": server.CertAuth,
 		},
 	}
-	l, err := service.Listen(8787, tls)
+
+	if len(secret) > 0 {
+		b, err := ioutil.ReadFile(secret)
+		if err != nil {
+			panic(err)
+		}
+		auth.Schemes["secret"] = server.SecretAuth(bytes.TrimSpace(b))
+	}
+
+	l, err := net.Listen("tcp", address)
 	if err != nil {
 		panic(err)
 	}
-	s := server.NewServer(l, auth)
+	s := server.NewServer(tls.NewListener(l, cfg), auth)
 	fmt.Println("lipwig serving at", s.ListeningPort())
 	err = s.Serve()
 	if err != nil {
