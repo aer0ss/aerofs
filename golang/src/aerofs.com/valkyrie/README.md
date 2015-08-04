@@ -14,11 +14,11 @@ Dependencies
 ------------
 
 Required:
-  - Go 1.4+
+  - [Go](https://golang.org) 1.4+
 
 Optional:
   - [golang-builder](https://github.com/aerofs/golang-builder)
-    To build a minimal docker container.
+    To build a minimal docker container <br/>
     Also useful to enable support for zero-copy via the `splice` syscall,
     which currently requires a patch to the standard library.
 
@@ -29,7 +29,7 @@ Usage
     ./valkyrie [-port <port>] [-splice=<true|false>]
 
   - `port`: listening port
-  - `splice`: whether to enable use of the `splice` syscall
+  - `splice`: whether to enable use of the `splice` syscall <br/>
      NB: do NOT use if the binary wasn't built with a patched standard library
      as it will significantly increase memory footprint and degrade performance
      due to suboptimal buffer allocation strategy
@@ -100,15 +100,14 @@ A Zephyr server MUST close any connection that fails to send a valid bind
 request within a reasonable amount of time.
 
 A Zephyr server MUST immediately close any connection through which it receives
-a bind request for a Zephyr Identifier that does not correspond to any existing
-connection.
+a bind request:
+  - to an unknown peer
+  - to a peer that is already bound
+  - to the caller itself (i.e. a self-bind request)
 
 A Zephyr server MUST close any connection through which it receives a valid bind
 request that is not matched by the corresponding peer within a reasonable amount
 of time.
-
-A Zephyr server MUST immediately close any connection through which it receives
-a bind request to a peer that is already bound.
 
 
 ## Streaming
