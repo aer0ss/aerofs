@@ -1,3 +1,6 @@
+// Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+// All rights reserved.
+
 // Package ssmp provides constants and utilities shared between client and server.
 package ssmp
 

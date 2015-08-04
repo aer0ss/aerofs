@@ -1,3 +1,6 @@
+// Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+// All rights reserved.
+
 package client
 
 import (
