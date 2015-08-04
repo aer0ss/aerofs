@@ -8,7 +8,7 @@ Start: July 16 2015. author: John
 
 Today if an admin wants to upgrade her appliance, she needs to make a backup of the current appliance, launch a new VM, restore the new backup to the new VM, optionally update the DNS record to point to the new appliance IP, the last step being not under control and difficult to achieve if dependent on the company processes. 
 
-This has two effects. First, it increases the perception that managing AeroFS is difficult, which is the opposite of what we claim and customers were sold on. Second, admins have been reluctant to upgrade, resulting in lower adoption in new features or bug fixes.
+This has two effects. First, it makes the upgrade process more difficult, going against our simplicity mantra. Second, and as a result of the first point, admins have been reluctant to upgrade, which slows down the adoption of new features or bug fixes.
 
 Making upgrade easier helps carry our value 'Customers First'.
 
@@ -31,7 +31,7 @@ To upgrade, admins:
 
 * If new version is found: 
   * provides a button to start the upgrade. See next section.
-  * provides an option to set up their own private repository so they don't need to rely on us. by default, the upgrade process pulls the docker image to our own registry. Some customers like Bloomberb might not want to do this. They prefer to download the new containers in a airtight environment. In that case, they need to provide a private registry url. 
+  * provides an option to set up their own private repository so they don't need to rely on us. by default, the upgrade process pulls the docker image to our own registry. Some customers like Bloomberg might not want to do this. They prefer to download the new containers in a airtight environment. In that case, they need to provide a private registry url. 
  
 *  If no version is found:
   * provides a message that says no new version was found
@@ -112,12 +112,12 @@ A subset of containers. Maintenance defines a subset of containers that are requ
 
 0. ~~read the uxreview discussions.~~
 1. ~~read the documentation in docker/ship/README.md~~
-2. dk-create. (on-going)
-3. run bunker locally.
-4. get up to speed on the front-end framework.
-5. write test cases, finish design, provide timeline.
-6. implement changes bunker.
-7. implement changes front-end.
-8. CI and test.
-9. Ship.
-10. Test in production.
+2. ~~dk-create.~~
+3. ~~define experience.~~
+3. get up to speed on the front-end framework.
+4. write test cases, finish design, provide timeline.
+5. implement changes bunker.
+6. implement changes front-end.
+7. CI and test.
+8. Ship.
+9. Test in production.
