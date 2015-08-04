@@ -52,10 +52,9 @@ docker build -t $tmpimg -f "$tmpfile" "$SRC_DIR"
 
 rm -f "$tmpfile"
 
-EXTRA_ENV=${GOARGS:+"-e=GOARGS=$GOARGS"}
-
 echo "Building container image ${IMAGE} ..."
-docker run --rm -i -v /var/run/docker.sock:/var/run/docker.sock "${EXTRA_ENV}" ${tmpimg} ${IMAGE} ${SERVICE} < ${DOCKERFILE}
+docker run --rm -i -v /var/run/docker.sock:/var/run/docker.sock \
+    ${GOARGS:+"-e=GOARGS=$GOARGS"} ${tmpimg} ${IMAGE} ${SERVICE} < ${DOCKERFILE}
 
 # remove temporary container
 docker rmi ${tmpimg}
