@@ -575,6 +575,14 @@ def compute_next_version(args):
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 
+def write_version(args):
+    version = args.release_version or compute_next_version(args)
+    if not os.path.exists(PACKAGE_DIR):
+        os.makedirs(PACKAGE_DIR)
+    with open(os.path.join(PACKAGE_DIR, "current.ver"), "w") as f:
+        f.write("Version={}".format(version))
+        f.flush()
+
 @required_args('signed')
 def package_clients(args):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
@@ -669,6 +677,7 @@ commands = {
     "test_python": test_python,
     "test_system": test_system,
     "test_system_archive": test_system_archive,
+    "write_version": write_version,
 }
 
 def reconstitute_command_line(executable, args, incomplete_commands):

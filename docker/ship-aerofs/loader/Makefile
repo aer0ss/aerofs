@@ -11,4 +11,7 @@ $(TAG): ../../../out.gradle/packages/current.ver
 	mkdir -p $(@D)
 	sed -e 's/.*=//' $< > $@
 
+../../../out.gradle/packages/current.ver:
+	../../../invoke write_version
+
 .PHONY: image

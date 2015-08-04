@@ -30,3 +30,6 @@ $(SYNC_DIR)/%: %
 $(VERSION_FILE): ../../out.gradle/packages/current.ver
 	mkdir -p $(@D)
 	cp $< $@
+
+../../out.gradle/packages/current.ver:
+	../../invoke write_version
