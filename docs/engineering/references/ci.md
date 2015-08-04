@@ -8,7 +8,7 @@ We run a continuous integration test system with TeamCity. A full suite of tests
 
 ## TeamCity
 
-The web interface is available at [https://ci.arrowfs.org](https://ci.arrowfs.org) (accessible on the VPN) or [https://192.168.128.197](https://192.168.128.197) on the LAN.
+The web interface is available at [https://libellule.arrowfs.org](https://libellule.arrowfs.org) (accessible on the VPN) or [https://192.168.128.197](https://192.168.128.197) on the LAN.
 
 Every employee has his/her own login to TeamCity. Jon Pile set this up, and he should probably be bothered if new accounts need to be created.
 
@@ -21,7 +21,7 @@ CI has two physical network adapters; one connects to the world, and the other c
 
 CI runs an instance of dnsmasq which is used as a DNS and DHCP server for the CI LAN. Boxes can be referred to by hostname on this network, which is nice.
 
-NB: make sure dnsmasq does NOT listen on the docker0 bridge interface or the containerized dns will fial to start
+NB: make sure dnsmasq does NOT listen on the docker0 bridge interface or the containerized dns will fail to start
 
 in /etc/dnsmasq.conf
 ```
@@ -42,23 +42,6 @@ Add `--dns 172.17.42.1` to the docker daemon opts in `/etc/default/docker`
 
 Make sure it is the first dns server and that there is at least one other
 server in case the host system uses a localhost resolver (e.g. dnsmasq).
-
-## Build Agents
-
-Our license with TeamCity allows us to use three build agents.
-
-One agent lives on the CI box, and is the default agent that ships with TeamCity. His name is `linux-physical-teamcity-bundled`. Only he can run the `Private Deployment Setup` step, to ensure that the appliance always lives in the same place.
-
-A second agent lives on a separate linux desktop on the CI network. His name is `linux-physical`. Only he can run the `Build and Unit Test` step, because historically, the main CI box was so overloaded that some tests would fail sporadically.
-
-There were once virtual agents, spawned from the `agent-vagrant` repo, but they were discontinued because some tests ran slowly on them.
-
-
-### Build Agent Disconnecting Flakiness
-
-N.B. this section is only relevant to the virtual agents, which are not in use as of May 2014. The information will stay in this doc in case the virtual agents become used in the future.
-
-Sometimes, one of the agents will freeze up and be unable to fulfill his duties as a build agent. Restarting him is sufficient to fix this. To remove the human element, a script called `monitor_agents.py` in the `misc-tools` repo is set to run every two minutes (see `/etc/crontab`). It unauthorizes disconnected agents, authorizes connected agents, and restarts `agent1` and/or `agent2` if they are not connected.
 
 ## SyncDET Actors
 
