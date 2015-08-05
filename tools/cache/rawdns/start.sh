@@ -7,6 +7,9 @@
 
 set -e
 
+# To print on stderr
+echoerr() { echo "$@" 1>&2; }
+
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
 if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] ; then
@@ -74,12 +77,12 @@ if docker-machine ls "$VM" &>/dev/null ; then
         echo "restarting docker daemon"
         docker-machine ssh $VM "sudo systemctl daemon-reload && sudo systemctl restart docker"
     else
-        echo "unsupported OS"
+        echoerr "unsupported OS"
         exit 1
     fi
 else
     # TODO: automatically adjust dns setting for raw docker env
-    echo 'Manually add "--dns 172.17.42.1" to the options of your docker daemon and restart it'
+    echoerr 'Manually add "--dns 172.17.42.1" to the options of your docker daemon and restart it'
     exit 1
 fi
 
@@ -87,7 +90,6 @@ fi
 if docker run --rm debian:sid ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns successfully configured"
 else
-    echo "invalid dns configuration"
+    echoerr "invalid dns configuration"
     exit 1
 fi
-
