@@ -87,7 +87,7 @@ Then, define a "ship.yml" file with the following content:
     
     # The following keys are mandatory only if the output includes one of "preloaded" and "bare"
     vm-image-name: coolapp-appliance
-    vm-disk-size: 102400
+    vm-disk-size: 51200
     vm-ram-size: 3072
     vm-cpus: 2
 
