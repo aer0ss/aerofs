@@ -1,20 +1,20 @@
-golang-builder
-==============
+gockerize
+=========
 
-Build static golang binaries and package them into docker containers
+Build static golang binaries and package them into minimal docker containers
 
 
 License
 -------
 
-BSD 2-Clause, see accompanying LICENSE file.
+BSD 3-Clause, see accompanying LICENSE file.
 
 
 Requirements
 ------------
 
-  bash
-  docker 1.5+
+  - bash
+  - docker 1.5+
 
 
 Usage

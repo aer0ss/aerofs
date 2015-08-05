@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+# All rights reserved.
+
 set -e
 
 [[ $# -ge 2 ]] && [[ $# -lt 6 ]] || {
@@ -29,18 +33,18 @@ else
 fi
 DOCKERFILE=${5:-/dev/null}
 
-BUILDER=aerofs/golang-builder
+BUILDER=aerofs/gockerize
 THIS_DIR="$(dirname "$0")"
 
-echo "Building ${BUILDER} ..."
+echo "Building $BUILDER ..."
 # build base builder container
-docker build -t ${BUILDER} "${THIS_DIR}"
+docker build -t $BUILDER "$THIS_DIR"
 
 tmpimg="${BUILDER}-$(echo "$IMAGE" | sed 's/\//./g')"
 echo "Building $tmpimg ..."
 
 # one cannot use a Dockerfile outside of the build context, hence the use of a tempfile
-tmpfile="${SRC_DIR}/.golang-builder.dockerfile"
+tmpfile="${SRC_DIR}/.gockerize.dockerfile"
 
 cat - > "$tmpfile" <<EOF
 FROM $BUILDER
@@ -48,14 +52,14 @@ COPY . /gopath/src/$DST_DIR
 EOF
 
 # build temporary container w/ build context
-docker build -t $tmpimg -f "$tmpfile" "$SRC_DIR"
+docker build -t "$tmpimg" -f "$tmpfile" "$SRC_DIR"
 
 rm -f "$tmpfile"
 
-echo "Building container image ${IMAGE} ..."
+echo "Building container image $IMAGE ..."
 docker run --rm -i -v /var/run/docker.sock:/var/run/docker.sock \
-    ${GOARGS:+"-e=GOARGS=$GOARGS"} ${tmpimg} ${IMAGE} ${SERVICE} < ${DOCKERFILE}
+    ${GOARGS:+"-e=GOARGS=$GOARGS"} "$tmpimg" "$IMAGE" "$SERVICE" < "$DOCKERFILE"
 
 # remove temporary container
-docker rmi ${tmpimg}
+docker rmi "$tmpimg"
 
