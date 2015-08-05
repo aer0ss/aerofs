@@ -87,6 +87,10 @@ class ReleaseForm(Form):
     release_version = TextField('Version', validators = [InputRequired()])
 
 class ContactForm(Form):
+    contact = SelectField(u'Contact', choices=[
+        ('SALES', 'Sales'),
+        ('SUPPORT', 'Support')
+    ], validators=[InputRequired()])
     subject = TextAreaField("Subject", validators=[InputRequired()])
     message = TextAreaField("Message", validators=[InputRequired()])
 

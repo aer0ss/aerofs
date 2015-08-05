@@ -9,15 +9,14 @@ from flask import current_app, render_template, url_for
 
 from . import appliance
 
-# TODO: extract these into external configuration
-SENDER_ADDR = "support@aerofs.com"
+SUPPORT_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
 SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = SENDER_ADDR
+    msg["From"] = SUPPORT_ADDR
     msg["To"] = email_address
 
     # Record the MIME types of both parts
@@ -110,7 +109,7 @@ def _get_mail_connection():
 def _send_email(email_address, msg):
     s = _get_mail_connection()
     try:
-        s.sendmail(SENDER_ADDR, [email_address], msg.as_string())
+        s.sendmail(SUPPORT_ADDR, [email_address], msg.as_string())
     finally:
         s.quit()
 
@@ -130,15 +129,16 @@ def send_password_reset_email(email_address, link):
     msg = _password_reset_email_for(email_address, link)
     _send_email(email_address, msg)
 
-def send_private_cloud_question_email(requester, subject, message):
+def send_private_cloud_question_email(requester, to_contact, subject, message):
+    to_addr = SALES_ADDR if 'sales' in to_contact.lower() else SUPPORT_ADDR
     text_body = message
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = requester
-    msg["To"] = SALES_ADDR
+    msg["To"] = to_addr
     part1 = MIMEText(text_body.encode("utf-8"), "plain", "utf-8")
     msg.attach(part1)
-    _send_email(SALES_ADDR, msg)
+    _send_email(to_addr, msg)
 
 def send_sales_notification(email_address, seats):
     msg = MIMEMultipart("alternative")
