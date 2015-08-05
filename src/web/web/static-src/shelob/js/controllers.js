@@ -366,7 +366,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                         // assign(url) will append url to the history chain. We use replace() so
                         // that a user can navigate from folder Foo to folder Bar, click to download
                         // a file, and then use the back button to return to Foo.
-                        $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
+                        $window.location.assign(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
                     }, function(response) {
                         // somehow failed to get token despite the fact that a request just succeeded
                         showErrorMessageUnsafe(getInternalErrorText());
