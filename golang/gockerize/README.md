@@ -20,7 +20,7 @@ Requirements
 Usage
 -----
 
-    build.sh <image> <package> [<source> [<mapping> [<Dockerfile>]]]
+    gockerize <image> <package> [<source> [<mapping> [<Dockerfile>]]]
 
 
 The default use case is to call the build script from the root directory
@@ -50,6 +50,9 @@ source layouts that deviate from golang's conventions and `<Dockerfile>` can
 point to a Dockerfile at a non-default location, including outside of the
 build context.
 
+The contents of the `GOARGS` environment variable are passed to the go build
+command inside the container. Among other things, this makes it easy to use
+custom build tags.
 
 Dependency resolution
 ---------------------
