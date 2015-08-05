@@ -13,7 +13,7 @@
 <div class="page-block">
     <p>
         Any settings changed through the AeroFS appliance management portal will not be changed in
-        backup appliances. If you have changed any appliance settings since the modification time
+        standby appliances. If you have changed any appliance settings since the modification time
         shown below, it is highly recommended to update appliance settings by uploading a current
         backup file below.
     </p>
