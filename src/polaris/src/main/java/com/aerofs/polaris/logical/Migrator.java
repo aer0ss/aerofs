@@ -123,7 +123,8 @@ public class Migrator implements Managed {
         });
     }
 
-    private void startStoreMigration(SID storeSID, UniqueID jobID, DID originator)
+    // package-private for testing purposes
+    void startStoreMigration(SID storeSID, UniqueID jobID, DID originator)
     {
         LOGGER.info("starting store migration for {}", storeSID);
         ListenableFuture<Void> future = executor.submit(() -> {
@@ -154,7 +155,8 @@ public class Migrator implements Managed {
         });
     }
 
-    private void startFolderMigration(UniqueID migratingFolder, OID destination, UniqueID jobID, DID originator)
+    // package-private for testing purposes
+    void startFolderMigration(UniqueID migratingFolder, OID destination, UniqueID jobID, DID originator)
     {
         LOGGER.info("starting cross-store migration from {} to {}", migratingFolder, destination);
         ListenableFuture<Void> future = executor.submit(() -> {
@@ -237,13 +239,13 @@ public class Migrator implements Managed {
 
     private List<Update> updateOIDs(UniqueID migrant, OID destination, UniqueID jobID, DID originator) {
         Queue<ChildMigrationState> migrationQueue = Queues.newArrayDeque();
+        Map<UniqueID, Long> versionMap = Maps.newHashMap();
         UniqueID newStore = dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
             dao.objects.setLocked(migrant, true);
             LogicalObject migrantRoot = getObject(dao, migrant);
             LogicalObject destinationRoot = getObject(dao, destination);
-            // N.B. the parent in this ChildMigrationState should never be used since we assume the migration root has already been migrated
-            migrationQueue.add(new ChildMigrationState(destinationRoot, new DeletableChild(migrantRoot.oid, migrantRoot.objectType, "", false)));
+            versionMap.put(destinationRoot.oid, destinationRoot.version);
 
             try (ResultIterator<DeletableChild> migrantChildren = dao.children.getChildren(migrant)) {
                 while (migrantChildren.hasNext()) {
@@ -252,6 +254,7 @@ public class Migrator implements Managed {
                     migrationQueue.add(new ChildMigrationState(migrantRoot, child));
                 }
             }
+
             return destinationRoot.store;
         });
 
@@ -267,9 +270,7 @@ public class Migrator implements Managed {
             return null;
         });
 
-        Map<UniqueID, Long> versionMap = Maps.newHashMap();
         Update newStoreUpdate = null;
-
         while (!migrationQueue.isEmpty()) {
             Update result = dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
@@ -376,7 +377,7 @@ public class Migrator implements Managed {
     private @Nullable Update migrateBatchOfObjectsWithNewOIDs(DAO dao, DID originator, UniqueID newStore, Queue<ChildMigrationState> searchQueue, Map<UniqueID, Long> versionMap, IDMap newOIDs)
     {
         Preconditions.checkArgument(!searchQueue.isEmpty(), "tried to move an empty queue of objects");
-        LOGGER.debug("performing batch cross store migration of objects for");
+        LOGGER.debug("performing batch cross store migration for job {}", newOIDs.jobID);
 
         int operationsDone = 0;
         long migratingToTimestamp = -1;

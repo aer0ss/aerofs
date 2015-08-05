@@ -438,7 +438,7 @@ public final class ObjectStore {
         }
 
         // parent must be unlocked so we don't insert an object that could miss migration
-        LockableLogicalObject parent = getUnlockedParent(dao, parentOid);
+        LogicalObject parent = getUnlockedParent(dao, parentOid);
         Preconditions.checkArgument(isFolder(parent.objectType), "cannot insert into %s", parent.objectType);
 
         // check for name conflicts within the parent
@@ -459,7 +459,7 @@ public final class ObjectStore {
         Preconditions.checkArgument(child != null, "%s does not exist", childOid);
 
         if(childObjectType == ObjectType.STORE) {
-            Preconditions.checkState(isInRootStore(dao, parentOid), "can only insert mount points into user root stores");
+            Preconditions.checkArgument(isInRootStore(dao, parentOid), "can only insert mount points into user root stores");
         }
 
         // attach the object to the requested parent
@@ -574,7 +574,7 @@ public final class ObjectStore {
 
     private static void changeToStore(DAO dao, OID folderOID) {
         // check that object exists
-        LogicalObject folder = getExistingObject(dao, folderOID);
+        LogicalObject folder = getUnlockedObject(dao, folderOID);
 
         // can only migrate normal folders in a user root
         // N.B. can't check the logicalObject's store value because we might be under another folder that just got migrated, and the changes haven't been propagated to this folder yet
@@ -632,9 +632,12 @@ public final class ObjectStore {
         }
     }
 
-    private static boolean isInRootStore(DAO dao, UniqueID oid)
-    {
-        if (Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid)) {
+    private static boolean isInRootStore(DAO dao, UniqueID oid) {
+        if (getExistingObject(dao, oid).locked) {
+            // encountering a locked object means we can't be sure of which store it will actually be in, as it could be part of an active migration
+            // N.B. this also means we don't allow sharing a folder that's part of an active migration (cross-store move)
+            return false;
+        } else if (Identifiers.isRootStore(oid) || Identifiers.isSharedFolder(oid)) {
             return Identifiers.isRootStore(oid);
         }
         UniqueID parentID = dao.children.getParent(oid);

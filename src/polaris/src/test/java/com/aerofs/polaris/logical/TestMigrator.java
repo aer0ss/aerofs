@@ -10,7 +10,6 @@ import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.DeletableChild;
-import com.aerofs.polaris.api.types.JobStatus;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.LogicalObjects;
@@ -112,39 +111,31 @@ public class TestMigrator {
         newFile(immigrantFolder, "migrant_file");
 
         // make the first call do nothing, as if the server had crashed
-        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
-        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).moveCrossStore(eq(immigrantFolder), any(OID.class), eq(DEVICE));
+        doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
         shareFolder(sharedFolder);
-
-        dbi.inTransaction((conn, status) -> {
-            Migrations migrations = conn.attach(Migrations.class);
-            assertFalse(migrations.activeMigrations().hasNext());
-            migrations.addStoreMigration(sharedFolder, SID.folderOID2convertedStoreSID(sharedFolder), UniqueID.generate(), DEVICE, JobStatus.RUNNING);
-
-            // do the equivalent of moveCrossStore
-            UniqueID migrationJob = UniqueID.generate();
-            migrations.addFolderMigration(immigrantFolder, migrationDestination, migrationJob, DEVICE, JobStatus.RUNNING);
-            migrations.addOidMapping(immigrantFolder, migrationDestination, migrationJob);
-            return null;
-        });
+        doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
+        moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes());
 
         migrator.start();
         migratorExecutor.shutdown();
         assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
 
-        LogicalObject nestedFile = dbi.inTransaction((conn, status) -> {
+        dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
             assertTrue("failed to delete migrated object", dao.children.getActiveReferenceCount(immigrantFolder) == 0);
-            assertTrue("failed to migrate object to new store", dao.children.getActiveChildNamed(migrationDestination, "migrant_file".getBytes()) != null);
-            return dao.objects.get(fileOID);
-        });
-        assertThat(nestedFile.store, equalTo(SID.folderOID2convertedStoreSID(sharedFolder)));
+            UniqueID migratedFolder = dao.children.getActiveChildNamed(migrationDestination, "migrant_folder".getBytes());
+            assertTrue("failed to migrate folder to new store", migratedFolder != null);
+            assertTrue("failed to migrate file to new store", dao.children.getActiveChildNamed(migratedFolder, "migrant_file".getBytes()) != null);
 
-        boolean hasActiveMigrations = dbi.inTransaction((conn, status) -> {
-            Migrations migrations = conn.attach(Migrations.class);
-            return migrations.activeMigrations().hasNext();
+            assertThat(dao.objects.get(fileOID).store, equalTo(SID.folderOID2convertedStoreSID(sharedFolder)));
+            return null;
         });
-        assertFalse("failed to clear all active migrations", hasActiveMigrations);
+
+        dbi.inTransaction((conn, status) -> {
+            Migrations migrations = conn.attach(Migrations.class);
+            assertFalse("failed to clear all active migrations", migrations.activeMigrations().hasNext());
+            return null;
+        });
     }
 
     @Test
@@ -311,6 +302,130 @@ public class TestMigrator {
             assertThat("did not mark root anchor as deleted", dao.mountPoints.getMountPointParent(rootStore, share1), nullValue());
             return null;
         });
+    }
+
+    // TODO(RD): this test replicates the db operations of the migrator, make it less fragile to changes in migrator code
+    // upon restarting a sharing migration, the tree traversal needs to be made both from the origin and destination folders
+    // otherwise, direct children of the new shared folder root and their children subtrees could be skipped by migration
+    @Test
+    public void shouldContinueSharingFromOriginAndDestination()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID sharedFolder = newFolder(rootStore, "shared_folder");
+        OID folder = newFolder(sharedFolder, "folder");
+        OID file = newFile(folder, "file");
+        OID folder2 = newFolder(sharedFolder, "folder2");
+
+        OID newAnchor = SID.folderOID2convertedAnchorOID(sharedFolder);
+        SID newStore = SID.folderOID2convertedStoreSID(sharedFolder);
+
+        // make the first call do nothing, as if the server had crashed
+        doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
+        shareFolder(sharedFolder);
+
+        // fake some work being done before crash
+        dbi.inTransaction(((conn, status) -> {
+            DAO dao = new DAO(conn);
+            dao.children.add(newAnchor, folder, "folder".getBytes(), false);
+            dao.children.remove(sharedFolder, folder);
+            dao.objects.changeStore(newStore, folder);
+            return null;
+        }));
+
+        migrator.start();
+        migratorExecutor.shutdown();
+        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+
+        dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            assertThat(dao.objects.get(file).store, equalTo(newStore));
+            assertThat(dao.objects.get(folder2).store, equalTo(newStore));
+            return null;
+        });
+
+        dbi.inTransaction((conn, status) -> {
+            Migrations migrations = conn.attach(Migrations.class);
+            assertFalse("failed to clear all active migrations", migrations.activeMigrations().hasNext());
+            return null;
+        });
+    }
+
+    // TODO(RD): this test replicates the db operations of the migrator, make it less fragile to changes in migrator code
+    @Test
+    public void shouldContinueInterruptedMigration()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        SID share2 = SID.generate();
+        OID migrationRoot = newFolder(share2, "migrant_folder");
+        // is the equivalent to immigrant_folder in rootstore
+        newFile(migrationRoot, "migrant_file");
+        OID folder = newFolder(migrationRoot, "folder");
+        newFile(folder, "nested_file");
+
+        // make the first call do nothing, as if the server had crashed
+        doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(migrationRoot), any(OID.class), any(UniqueID.class), eq(DEVICE));
+        UniqueID jobID = moveObject(share2, rootStore, migrationRoot, "migrant_folder".getBytes()).jobID;
+        assertTrue("failed to return a job id for migration", jobID != null);
+
+        // fake some work being done before server crash
+        dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            OID newFolderID = OID.generate();
+            UniqueID migratedRootFolder = dao.children.getActiveChildNamed(rootStore, "migrant_folder".getBytes());
+            dao.migrations.addOidMapping(folder, newFolderID, jobID);
+            dao.objects.add(rootStore, newFolderID, 1L);
+            dao.objectTypes.add(newFolderID, ObjectType.FOLDER);
+            dao.children.add(migratedRootFolder, newFolderID, "folder".getBytes(), false);
+
+            return null;
+        });
+
+        migrator.start();
+        migratorExecutor.shutdown();
+        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+
+        dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            assertTrue("failed to delete migrated object", dao.children.getActiveReferenceCount(migrationRoot) == 0);
+            UniqueID migratedRootFolder = dao.children.getActiveChildNamed(rootStore, "migrant_folder".getBytes());
+            assertTrue("failed to migrate file to new store", dao.children.getActiveChildNamed(migratedRootFolder, "migrant_file".getBytes()) != null);
+            UniqueID migratedFolder = dao.children.getActiveChildNamed(migratedRootFolder, "folder".getBytes());
+            assertTrue("failed to migrate folder to new store", migratedFolder != null);
+            assertTrue("failed to migrate nested file to new store", dao.children.getActiveChildNamed(migratedFolder, "nested_file".getBytes()) != null);
+            return null;
+        });
+
+        dbi.inTransaction((conn, status) -> {
+            Migrations migrations = conn.attach(Migrations.class);
+            assertFalse("failed to clear all active migrations", migrations.activeMigrations().hasNext());
+            return null;
+        });
+    }
+
+    @Test
+    public void shouldNotAllowNestedSharingDuringActiveMigration()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID sharedFolder = newFolder(rootStore, "shared_folder");
+        OID folder = newFolder(sharedFolder, "folder");
+        // ensure the second shareFolder call is performed before the migrator can do any work
+        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
+        shareFolder(sharedFolder);
+        try {
+            shareFolder(folder);
+            fail();
+        } catch (CallbackFailedException e) {
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+        }
+    }
+
+    private OperationResult moveObject(UniqueID parent, UniqueID newParent, UniqueID child, byte[] childName)
+    {
+        Operation op = new MoveChild(child, newParent, childName);
+        return this.objects.performTransform(USERID, DEVICE, parent, op);
     }
 
     private OID newFolder(UniqueID parent, String name) {
