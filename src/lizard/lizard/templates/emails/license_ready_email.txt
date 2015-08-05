@@ -8,4 +8,4 @@ Your license key and the appliance image are available for download from the Pri
 
 Helpful links:
 Implementation Video: {{ implementation_video_url }}
-FAQs: {{ faqs_url }}
+FAQs and implementation instructions: {{ faqs_url }}
