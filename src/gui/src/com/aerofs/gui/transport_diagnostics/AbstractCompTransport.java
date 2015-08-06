@@ -10,16 +10,15 @@ import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.ServerStatus;
 import com.google.common.base.Preconditions;
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.*;
 
 import javax.annotation.Nonnull;
 
@@ -149,7 +148,7 @@ public abstract class AbstractCompTransport extends Composite
     protected static class DevicesDecorator
     {
         protected Label _lblDevices;
-        protected List  _lstDevices;
+        protected TblDevices _tblDevices;
         protected Link  _lnkDevices;
 
         protected DevicesDecorator(Composite parent)
@@ -157,20 +156,83 @@ public abstract class AbstractCompTransport extends Composite
             _lblDevices = createLabel(parent, SWT.NONE);
             _lblDevices.setText(S.LBL_REACHABLE_DEVICES);
 
-            _lstDevices = new List(parent, SWT.BORDER);
+            _tblDevices = new TblDevices(parent);
 
             _lnkDevices = new Link(parent, SWT.NONE);
             _lnkDevices.setText(S.LNK_FIND_DEVICE_ID);
             _lnkDevices.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_DEVICE_ID_INFO));
 
             _lblDevices.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 2));
-            _lstDevices.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+            _tblDevices.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
             _lnkDevices.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
         }
 
-        public void setItems(String[] items)
+        public void setData(Object data)
         {
-            _lstDevices.setItems(items);
+            _tblDevices.setData(data);
+        }
+
+        protected static class TblDevices extends Composite
+        {
+            protected TableViewer _tableViewer;
+            public TblDevices(Composite parent)
+            {
+                super(parent, SWT.NONE);
+
+                _tableViewer = new TableViewer(this, SWT.BORDER);
+                _tableViewer.setContentProvider(new ArrayContentProvider());
+
+                Table table = _tableViewer.getTable();
+                table.setBackground(getDisplay().getSystemColor(SWT.COLOR_WHITE));
+                table.setLinesVisible(false);
+                table.setHeaderVisible(true);
+
+                TableViewerColumn colUser = new TableViewerColumn(_tableViewer, SWT.LEFT);
+                colUser.getColumn().setText(S.LBL_COL_USER_ID);
+                colUser.setLabelProvider(new ZephyrUserProvider());
+
+                TableViewerColumn colDeviceName = new TableViewerColumn(_tableViewer, SWT.LEFT);
+                colDeviceName.getColumn().setText(S.LBL_COL_DEVICE_NAME);
+                colDeviceName.setLabelProvider(new ZephyrDeviceProvider());
+
+                TableColumnLayout layout = new TableColumnLayout();
+                layout.setColumnData(colUser.getColumn(), new ColumnWeightData(1, true));
+                layout.setColumnData(colDeviceName.getColumn(), new ColumnWeightData(2, true));
+                setLayout(layout);
+            }
+
+            @Override
+            public void setData(Object data)
+            {
+                super.setData(data);
+
+                _tableViewer.setInput(data);
+            }
+
+        }
+
+        protected static class ZephyrUserProvider extends ColumnLabelProvider
+        {
+            @Override
+            public String getText(Object element)
+            {
+                Preconditions.checkArgument(element instanceof ZephyrDeviceWithName);
+                ZephyrDeviceWithName device = (ZephyrDeviceWithName) element;
+
+                return device.getEmail();
+            }
+        }
+
+        protected static class ZephyrDeviceProvider extends ColumnLabelProvider
+        {
+            @Override
+            public String getText(Object element)
+            {
+                Preconditions.checkArgument(element instanceof ZephyrDeviceWithName);
+                ZephyrDeviceWithName device = (ZephyrDeviceWithName) element;
+
+                return device.getDeviceName();
+            }
         }
     }
 }

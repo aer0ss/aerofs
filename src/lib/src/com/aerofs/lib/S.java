@@ -199,6 +199,8 @@ public class S
             LBL_REACHABLE_DEVICES    = "Reachable Computers:",
             LBL_COL_DEVICE_ID        = "Computer ID",
             LBL_COL_ADDRESS          = "IP Address",
+            LBL_COL_USER_ID          = "User ID",
+            LBL_COL_DEVICE_NAME      = "Device Name",
             TXT_COLLECTING_NETWORK_INFO = "Collecting network information.",
             LNK_FIND_DEVICE_ID       = "<a>How to find my Computer ID?</a>",
 

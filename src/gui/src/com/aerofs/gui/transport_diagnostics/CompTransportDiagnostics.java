@@ -5,7 +5,6 @@
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.base.Preconditions;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -34,8 +33,7 @@ public class CompTransportDiagnostics extends SashForm
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof TransportDiagnostics);
-
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnosticsWithDeviceName);
         super.setData(data);
 
         _compTransports.setData(data);

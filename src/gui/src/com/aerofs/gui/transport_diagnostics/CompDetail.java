@@ -5,7 +5,6 @@
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.transport_diagnostics.CompTransports.Transport;
-import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.base.Preconditions;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -39,7 +38,7 @@ public class CompDetail extends Group implements ISelectionChangedListener
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof TransportDiagnostics);
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnosticsWithDeviceName);
 
         super.setData(data);
 
@@ -47,9 +46,10 @@ public class CompDetail extends Group implements ISelectionChangedListener
             _compTCP.setData(null);
             _compZephyr.setData(null);
         } else {
-            TransportDiagnostics transportDiagnostics = (TransportDiagnostics) data;
-            _compTCP.setData(transportDiagnostics.hasTcpDiagnostics() ? transportDiagnostics.getTcpDiagnostics() : null);
-            _compZephyr.setData(transportDiagnostics.hasZephyrDiagnostics() ? transportDiagnostics.getZephyrDiagnostics() : null);
+            TransportDiagnosticsWithDeviceName td = (TransportDiagnosticsWithDeviceName) data;
+
+            _compTCP.setData(td.hasTcpDevicesWithName() ? td : null);
+            _compZephyr.setData(td.hasZephyrDevicesWithName() ? td : null);
         }
     }
 

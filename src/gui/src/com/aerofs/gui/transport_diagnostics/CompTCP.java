@@ -4,21 +4,13 @@
 
 package com.aerofs.gui.transport_diagnostics;
 
-import com.aerofs.base.BaseUtil;
-import com.aerofs.ids.DID;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
-import com.aerofs.proto.Diagnostics.TCPDevice;
-import com.aerofs.proto.Diagnostics.TCPDiagnostics;
 import com.google.common.base.Preconditions;
 import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -110,16 +102,15 @@ public class CompTCP extends AbstractCompTransport
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof TCPDiagnostics);
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnosticsWithDeviceName);
 
         super.setData(data);
 
         if (data != null) {
-            TCPDiagnostics d = (TCPDiagnostics) data;
-
+            TransportDiagnosticsWithDeviceName d = (TransportDiagnosticsWithDeviceName) data;
             _lblStatus.setText(L.product() + " is listening on IP Address "
                     + formatAddress(d.getListeningAddress()));
-            _tblDevices.setData(d.getReachableDevicesList());
+            _tblDevices.setData(d.getTcpDevicesWithName());
         }
     }
 
@@ -143,13 +134,18 @@ public class CompTCP extends AbstractCompTransport
             colAddress.getColumn().setText(S.LBL_COL_ADDRESS);
             colAddress.setLabelProvider(new TCPDeviceAddressProvider());
 
-            TableViewerColumn colDID = new TableViewerColumn(_tableViewer, SWT.LEFT);
-            colDID.getColumn().setText(S.LBL_COL_DEVICE_ID);
-            colDID.setLabelProvider(new TCPDeviceDIDProvider());
+            TableViewerColumn colUserID = new TableViewerColumn(_tableViewer, SWT.LEFT);
+            colUserID.getColumn().setText(S.LBL_COL_USER_ID);
+            colUserID.setLabelProvider(new TCPDeviceUserIDProvider());
+
+            TableViewerColumn colDeviceName = new TableViewerColumn(_tableViewer, SWT.LEFT);
+            colDeviceName.getColumn().setText(S.LBL_COL_DEVICE_NAME);
+            colDeviceName.setLabelProvider(new TCPDeviceNameProvider());
 
             TableColumnLayout layout = new TableColumnLayout();
             layout.setColumnData(colAddress.getColumn(), new ColumnWeightData(1, true));
-            layout.setColumnData(colDID.getColumn(), new ColumnWeightData(2, true));
+            layout.setColumnData(colUserID.getColumn(), new ColumnWeightData(2, true));
+            layout.setColumnData(colDeviceName.getColumn(), new ColumnWeightData(3, true));
             setLayout(layout);
         }
 
@@ -162,14 +158,15 @@ public class CompTCP extends AbstractCompTransport
         }
     }
 
-    protected static class TCPDeviceDIDProvider extends ColumnLabelProvider
+    protected static class TCPDeviceUserIDProvider extends ColumnLabelProvider
     {
         @Override
         public String getText(Object element)
         {
-            Preconditions.checkArgument(element instanceof TCPDevice);
+            Preconditions.checkArgument(element instanceof TCPDeviceWithName);
 
-            return new DID(BaseUtil.fromPB(((TCPDevice) element).getDid())).toStringFormal();
+            TCPDeviceWithName device = (TCPDeviceWithName) element;
+            return device.getEmail();
         }
     }
 
@@ -178,13 +175,22 @@ public class CompTCP extends AbstractCompTransport
         @Override
         public String getText(Object element)
         {
-            Preconditions.checkArgument(element instanceof TCPDevice);
+            Preconditions.checkArgument(element instanceof TCPDeviceWithName);
+            TCPDeviceWithName device = (TCPDeviceWithName) element;
 
-            TCPDevice device = (TCPDevice)element;
+            return device.getIpAddress();
+        }
+    }
 
-            Preconditions.checkArgument(device.getDeviceAddress().hasHost());
+    protected static class TCPDeviceNameProvider extends ColumnLabelProvider
+    {
+        @Override
+        public String getText(Object element)
+        {
+            Preconditions.checkArgument(element instanceof TCPDeviceWithName);
 
-            return device.getDeviceAddress().getHost();
+            TCPDeviceWithName device = (TCPDeviceWithName) element;
+            return device.getDeviceName();
         }
     }
 }

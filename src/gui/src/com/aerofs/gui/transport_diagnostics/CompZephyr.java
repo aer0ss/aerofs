@@ -4,12 +4,9 @@
 
 package com.aerofs.gui.transport_diagnostics;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
-import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.google.common.base.Preconditions;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
@@ -57,24 +54,18 @@ public class CompZephyr extends AbstractCompTransport
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof ZephyrDiagnostics);
-
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnosticsWithDeviceName);
         super.setData(data);
 
         if (data != null) {
-            ZephyrDiagnostics d = (ZephyrDiagnostics) data;
-
+            TransportDiagnosticsWithDeviceName td = (TransportDiagnosticsWithDeviceName) data;
             _decStatus.setStatus("Enabled");
-            _decZephyr.setStatus(formatServerStatus(d.getZephyrServer()));
+            _decZephyr.setStatus(formatServerStatus(td.getZephyrServer()));
 
-            String[] deviceIDs = new String[d.getReachableDevicesCount()];
-            for (int i = 0; i < deviceIDs.length; i++) {
-                deviceIDs[i] = new DID(BaseUtil.fromPB(d.getReachableDevices(i).getDid())).toStringFormal();
-            }
-            _decDevices.setItems(deviceIDs);
+            _decDevices.setData(td.getZephyrDevicesWithName());
 
-            if (d.getZephyrServer().hasReachabilityError()) {
-                l.error(d.getZephyrServer().getReachabilityError());
+            if (td.getZephyrServer().hasReachabilityError()) {
+                l.error(td.getZephyrServer().getReachabilityError());
             }
         }
     }

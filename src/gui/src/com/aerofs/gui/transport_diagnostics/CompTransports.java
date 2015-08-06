@@ -1,21 +1,14 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) Air Computing Inc., 2015.
  */
 
 package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.Images;
-import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
@@ -61,11 +54,16 @@ public class CompTransports extends Composite
     @Override
     public void setData(Object data)
     {
-        Preconditions.checkArgument(data == null || data instanceof TransportDiagnostics);
+        Preconditions.checkArgument(data == null || data instanceof TransportDiagnosticsWithDeviceName);
 
         super.setData(data);
 
-        _provider.setData((TransportDiagnostics) data);
+        if (data == null){
+            _provider.setData(null);
+        } else {
+            TransportDiagnosticsWithDeviceName td = (TransportDiagnosticsWithDeviceName) data;
+            _provider.setData(td.hasTransportDiagnostics() ? td : null);
+        }
         _tableViewer.refresh();
     }
 
@@ -99,10 +97,10 @@ public class CompTransports extends Composite
 
         public TransportInfoProvider()
         {
-
+            // noop
         }
 
-        public void setData(TransportDiagnostics reply)
+        public void setData(TransportDiagnosticsWithDeviceName reply)
         {
             if (_deviceCounts == null) {
                 _deviceCounts = Maps.newEnumMap(Transport.class);
@@ -111,16 +109,15 @@ public class CompTransports extends Composite
             if (reply == null) {
                 _deviceCounts.clear();
             } else {
-                if (reply.hasTcpDiagnostics()) {
-                    _deviceCounts.put(Transport.TCP,
-                            reply.getTcpDiagnostics().getReachableDevicesCount());
+                if (reply.hasTcpDevicesWithName()) {
+                    _deviceCounts.put(Transport.TCP, reply.getReachableTCPDevices());
                 } else {
                     _deviceCounts.remove(Transport.TCP);
                 }
 
-                if (reply.hasZephyrDiagnostics()) {
+                if (reply.hasZephyrDevicesWithName()) {
                     _deviceCounts.put(Transport.ZEPHYR,
-                            reply.getZephyrDiagnostics().getReachableDevicesCount());
+                            reply.getReachableZephyrDevices());
                 } else {
                     _deviceCounts.remove(Transport.ZEPHYR);
                 }
