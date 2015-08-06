@@ -34,7 +34,7 @@ fi
 DOCKERFILE=${5:-/dev/null}
 
 BUILDER=aerofs/gockerize
-THIS_DIR="$(dirname "$0")"
+THIS_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 echo "Building $BUILDER ..."
 # build base builder container
