@@ -13,13 +13,19 @@ VMDK="${BASENAME}.vmdk"
 echo "Creating VMDK image ${VMDK} ..."
 tar -xvf ${BASENAME}.ova
 mv ${BASENAME}-disk1.vmdk ${BASENAME}.vmdk
-rm -r ${BASENAME}.mf ${BASENAME}.ovf
+rm -f ${BASENAME}.mf ${BASENAME}.ovf
+
+# Build VHD.
+VHD="${BASENAME}.vhd"
+echo "Creating VHD image ${VHD} ..."
+qemu-img convert -f vmdk -O vpc "${VMDK}" "${VHD}"
 
 # Build QCow2.
 QCOW2="${BASENAME}.qcow2"
 echo "Creating QCOW2 image ${QCOW2} ..."
 qemu-img convert -f vmdk -O qcow2 "${VMDK}" "${QCOW2}"
 gzip "${QCOW2}"
+rm -f "${VMDK}"
 
 # Success!
 echo "Images successfully built."

@@ -701,17 +701,17 @@ def download_qcow():
 
     return redirect(appliance.qcow_url(version))
 
-@blueprint.route("/aerofs-appliance.vmdk", methods=["GET"])
-def download_vmdk():
+@blueprint.route("/aerofs-appliance.vhd", methods=["GET"])
+def download_vhd():
     version = appliance.latest_appliance_version()
 
     if not login.current_user.is_anonymous():
-        analytics_client.track(login.current_user.customer_id, 'Downloading VMDK', {
+        analytics_client.track(login.current_user.customer_id, 'Downloading VHD', {
             'email': markupsafe.escape(login.current_user.email),
             'version': version
         })
 
-    return redirect(appliance.vmdk_url(version))
+    return redirect(appliance.vhd_url(version))
 
 @blueprint.route("/appliance_version", methods=["GET"])
 def get_appliance_version():

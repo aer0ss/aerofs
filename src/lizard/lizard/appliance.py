@@ -12,8 +12,8 @@ def ova_url(version):
 def qcow_url(version):
     return "{}/aerofs-appliance-{}.qcow2.gz".format(_BUCKET_BASE, version)
 
-def vmdk_url(version):
-    return "{}/aerofs-appliance-{}.vmdk".format(_BUCKET_BASE, version)
+def vhd_url(version):
+    return "{}/aerofs-appliance-{}.vhd".format(_BUCKET_BASE, version)
 
 # A URL where a base release version number is stored on S3.  Only used if no
 # other version number is known; otherwise, the app tracks what it believes to
@@ -47,7 +47,7 @@ def qcow_present_for(version):
     r = requests.head(qcow)
     return r.ok
 
-def vmdk_present_for(version):
-    qcow = vmdk_url(version)
+def vhd_present_for(version):
+    qcow = vhd_url(version)
     r = requests.head(qcow)
     return r.ok

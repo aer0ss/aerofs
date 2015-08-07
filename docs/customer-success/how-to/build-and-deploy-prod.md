@@ -5,7 +5,7 @@ This process generates the following signed artifacts:
 1. On S3:
     - Signed Appliance OVA
     - Signed Appliance QCow2
-    - Signed Appliance VMDK
+    - Signed Appliance VHD
 2. On the docker registry:
     - Signed Docker Images
 
