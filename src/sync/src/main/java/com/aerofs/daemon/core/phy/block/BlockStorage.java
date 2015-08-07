@@ -225,7 +225,14 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
             throws SQLException
     {
         BlockState bs = _bsdb.getBlockState_(hash);
-        if (bs == BlockState.STORED || bs == BlockState.REFERENCED) return false;
+        if (bs == BlockState.STORED || bs == BlockState.REFERENCED) {
+            long storedLen = _bsdb.getBlockLength_(hash);
+            if (storedLen != length) {
+                throw new SQLException("hash collision " + hash.toHex()
+                        + " " + storedLen + " " + length);
+            }
+            return false;
+        }
         _bsdb.prePutBlock_(hash, length, t);
         return true;
     }
@@ -455,6 +462,7 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
                     try (InputStream in = f.newInputStream()) {
                         _bsb.putBlock(k, in, f.length());
                     }
+                    // FIXME: delay removal until last reader is closed
                     _uploadDir.newChild(c).deleteIgnoreError();
                 }
             } finally {
@@ -499,6 +507,7 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
 
         @Override
         public InputStream getBlock(ContentBlockHash key) throws IOException {
+            // FIXME: ensure that the file does not get removed while being read
             InjectableFile f = _uploadDir.newChild(key.toHex());
             return f.exists() ? f.newInputStream() : _bsb.getBlock(key);
         }
@@ -514,10 +523,11 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
         }
     };
 
-    public InputStream readChunks(ContentBlockHash hash) throws IOException
+    public InputStream readChunks(ContentBlockHash hash, long length) throws IOException
     {
         // TODO: in-memory refcount overlay to avoid overzealous block cleanup?
-        return new BlockInputStream(_overlay, hash);
+        // TODO: check that all non-last chunks are full-size?
+        return new BlockInputStream(_overlay, hash, length);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -640,7 +650,7 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
             try {
                 FileInfo info = _bsdb.getHistFileInfo_(index);
                 if (info == null) throw new ExInvalidRevisionIndex();
-                return new RevInputStream(readChunks(info._chunks), info._length, info._mtime);
+                return new RevInputStream(readChunks(info._chunks, info._length), info._length, info._mtime);
             } catch (SQLException e) {
                 l.warn("get rev stream fail", e);
                 throw e;

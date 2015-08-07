@@ -18,16 +18,18 @@ public class BlockInputStream extends InputStream
     private final IBlockStorageBackend _bsb;
     private final ContentBlockHash _hash;
     private final int _numChunks;
+    private final long _length;
 
     private int _chunkIndex;
     private long _pos;
 
     private InputStream _in;
 
-    public BlockInputStream(IBlockStorageBackend bsb, ContentBlockHash hash)
+    public BlockInputStream(IBlockStorageBackend bsb, ContentBlockHash hash, long length)
     {
         _bsb = bsb;
         _hash = hash;
+        _length = length;
         _numChunks = getNumBlocks(hash);
     }
 
@@ -54,6 +56,11 @@ public class BlockInputStream extends InputStream
                 ++_chunkIndex;
                 resetInputStream();
                 if (_chunkIndex >= _numChunks) break;
+                // all non-last blocks are expected to be full-sized
+                if (_pos != LibParam.FILE_BLOCK_SIZE * _chunkIndex) {
+                    throw new IOException("invalid block file: "
+                            + _chunkIndex + " " + _pos + "/" + _length);
+                }
             } else {
                 pos += read;
                 _pos += read;
@@ -61,7 +68,10 @@ public class BlockInputStream extends InputStream
         }
 
         int read = pos - off;
-        if (read == 0) return -1;
+        if (read == 0) {
+            if (_pos < _length) throw new IOException("unexpected EOF: " + _pos + "/" + _length);
+            return -1;
+        }
         return read;
     }
 
@@ -74,11 +84,11 @@ public class BlockInputStream extends InputStream
         int newChunkIndex = (int)(newPos / LibParam.FILE_BLOCK_SIZE);
         if (newChunkIndex != _chunkIndex) {
             _chunkIndex = newChunkIndex;
-            _pos = (long)_chunkIndex * LibParam.FILE_BLOCK_SIZE;
+            _pos = Math.min((long)_chunkIndex * LibParam.FILE_BLOCK_SIZE, _length);
             closeInputStream();
         }
         if (_in == null) resetInputStream();
-        if (_pos != newPos) {
+        if (_in != null && _pos != newPos) {
             long skipped = _in.skip(newPos - _pos);
             _pos += skipped;
         }

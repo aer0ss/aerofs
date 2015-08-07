@@ -28,7 +28,7 @@ import java.util.Arrays;
  * has access to the storage backend (and bucket/container) and that the encryption password is correct. If the chunk
  * doesn't exist yet it will be uploaded.
  *
- * Because the storage backend might be wrapped by arbitray proxy backends, this class cannot simply
+ * Because the storage backend might be wrapped by arbitrary proxy backends, this class cannot simply
  * be owned and initialized by the EncryptedBackend itself. Instead it needs to use the outermost
  * backend in the proxy chain. Doing this without creating a cyclic dependency in Guice requires
  * some creativity. The approach taken was to use multibind to add arbitrary (unordered) init_ tasks
@@ -93,7 +93,7 @@ public abstract class AbstractMagicChunk implements IBlockStorageInitable
     protected void downloadMagicChunk() throws IOException
     {
         byte[] bytes;
-        try (InputStream in = new BlockInputStream(_bsb, MAGIC_HASH)) {
+        try (InputStream in = new BlockInputStream(_bsb, MAGIC_HASH, MAGIC.length)) {
             bytes = ByteStreams.toByteArray(in);
         }
 

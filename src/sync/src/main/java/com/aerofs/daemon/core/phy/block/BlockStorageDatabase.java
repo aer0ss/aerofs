@@ -473,6 +473,23 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
+    private PreparedStatementWrapper _pswGetChunkLength = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_BlockCount, C_BlockCount_Hash + "=?",  C_BlockCount_Len));
+    public long getBlockLength_(ContentBlockHash chunk) throws SQLException {
+        PreparedStatementWrapper psw = _pswGetChunkLength;
+        try {
+            PreparedStatement ps = psw.get(c());
+            ps.setBytes(1, chunk.getBytes());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0;
+            }
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
     private PreparedStatement _psDeleteBlock;
     public void deleteBlock_(ContentBlockHash chunk, Trans t) throws SQLException
     {

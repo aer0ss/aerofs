@@ -35,7 +35,7 @@ public class FileChunker implements AutoCloseable
     // On Windows, we will close and reopen the file every time we read, to avoid holding
     // file locks (see comment below). But every time we open a file for reading, this may
     // trigger an anti-virus scan on the file, resulting in degraded performance. In the past,
-    // we used to do this on each 8 KB chunk, and if we're targetting a speed of 30 MB/s, this
+    // we used to do this on each 8 KB chunk, and if we're targeting a speed of 30 MB/s, this
     // means ~3840 open/close per second.
     //
     // In order to work around this problem, we now read several chunks at once and put them
@@ -99,8 +99,10 @@ public class FileChunker implements AutoCloseable
         // Open the stream if it has been closed (or if this is the first time)
         if (_is == null) {
             _is = _file.newInputStream();
-            if (_is.skip(_readPosition) != _readPosition) {
-                throw new ExUpdateInProgress("skip() fell short");
+            long p = _is.skip(_readPosition);
+            if (p != _readPosition) {
+                throw new ExUpdateInProgress("short skip: "
+                        + p + " " + _readPosition + "/" + _endPos);
             }
         }
 
@@ -112,7 +114,8 @@ public class FileChunker implements AutoCloseable
             byte[] buf = new byte[(int)Math.min(_chunkSize, _endPos - _readPosition)];
             int bytesCopied = readChunk(buf, _is);
             if (bytesCopied != buf.length) {
-                throw new ExUpdateInProgress("unexpected end of stream");
+                throw new ExUpdateInProgress("short read: "
+                        + bytesCopied + " " + _readPosition + "/" + _endPos);
             }
             _chunksQueue.add(buf);
             _readPosition += buf.length;

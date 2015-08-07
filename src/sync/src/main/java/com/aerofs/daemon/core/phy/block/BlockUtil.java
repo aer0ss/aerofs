@@ -10,12 +10,15 @@ import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.aerofs.lib.ContentBlockHash.UNIT_LENGTH;
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class BlockUtil
 {
     public static int getNumBlocks(ContentBlockHash hash)
     {
         byte[] bytes = hash.getBytes();
-        return bytes.length / ContentBlockHash.UNIT_LENGTH;
+        return bytes.length / UNIT_LENGTH;
     }
 
     public static boolean isOneBlock(ContentBlockHash hash)
@@ -30,8 +33,7 @@ public class BlockUtil
     public static ContentBlockHash getBlock(ContentBlockHash hash, int i)
     {
         return new ContentBlockHash(
-                Arrays.copyOfRange(hash.getBytes(), i * ContentBlockHash.UNIT_LENGTH, (i + 1) *
-                        ContentBlockHash.UNIT_LENGTH));
+                Arrays.copyOfRange(hash.getBytes(), i * UNIT_LENGTH, (i + 1) * UNIT_LENGTH));
     }
 
     /**
@@ -46,9 +48,17 @@ public class BlockUtil
         List<ContentBlockHash> list = Lists.newArrayListWithCapacity(numBlocks);
         for (int i = 0; i < numBlocks; ++i) {
             list.add(new ContentBlockHash(
-                    Arrays.copyOfRange(bytes, i * ContentBlockHash.UNIT_LENGTH, (i + 1) *
-                            ContentBlockHash.UNIT_LENGTH)));
+                    Arrays.copyOfRange(bytes, i * UNIT_LENGTH, (i + 1) * UNIT_LENGTH)));
         }
         return list;
+    }
+
+    public static ContentBlockHash concat(ContentBlockHash... h) {
+        byte[] c = new byte[h.length * UNIT_LENGTH];
+        for (int i = 0; i < h.length; ++i) {
+            checkArgument(isOneBlock(h[i]));
+            System.arraycopy(h[i].getBytes(), 0, c, i * UNIT_LENGTH, UNIT_LENGTH);
+        }
+        return new ContentBlockHash(c);
     }
 }

@@ -129,7 +129,7 @@ class BlockFile implements IPhysicalFile
         try {
             FileInfo info = info_();
             if (!FileInfo.exists(info)) throw new ExFileNotFound(_path);
-            return _s.readChunks(info._chunks);
+            return _s.readChunks(info._chunks, info._length);
         } catch (SQLException e) {
             throw new IOException(e);
         }
