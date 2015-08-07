@@ -60,5 +60,18 @@ ivate IP address.
 3. Push the changes to 'vpn.hosts' file to git
 
 ####Poplulate Engineers' Public Keys
-        ansible-playbook --private-key /repos/<key_name> -l share.aerofs.com keys.yml
+
+```
+ansible-playbook --private-key /repos/<key_name> -l share.aerofs.com keys.yml
+```
+        
 where <key_name> is the name of the key file you selected in part 1, step 18.
+
+**Note:** If you have `ssh-agent` and it doesn't work inside opshell, exit out of the container
+ (CTRL+D) and do the following:
+
+```
+unset SSH_AUTH_SOCK
+opshell\run 
+ansible-playbook --private-key /repos/<key_name> -l share.aerofs.com keys.yml
+```
