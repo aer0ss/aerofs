@@ -65,12 +65,11 @@ def _license_available_email_for(admin, company):
     # We can't use url_for() here because it's not part of this server instance
     # (this email is sent from internal app - links would point to the internal
     # app, rather than the user-facing one)
-    dashboard_url = "https://privatecloud.aerofs.com/dashboard"
     template_args = {
             "admin": admin,
-            "dashboard_url": dashboard_url,
-            "implementation_video_url": "https://www.youtube.com/watch?v=pVqpobLdoHk",
+            "dashboard_url": "https://privatecloud.aerofs.com/dashboard",
             "faqs_url": "https://support.aerofs.com/hc/en-us/articles/204592794",
+            "contact_url": "https://support.aerofs.com/hc/en-us/articles/201440860"
     }
     text_body = render_template("emails/license_ready_email.txt", **template_args)
     html_body = render_template("emails/license_ready_email.html", **template_args)

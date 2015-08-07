@@ -114,8 +114,8 @@ def signup_request_page():
             record = models.UnboundSignup()
             record.email=form.email.data
             record.signup_code=signup_code
-            record.first_name = form.first_name.data
-            record.last_name = form.last_name.data
+            record.first_name = form.first_name.data.capitalize()
+            record.last_name = form.last_name.data.capitalize()
             record.company_name = form.company_name.data
             record.phone_number = form.phone_number.data
             record.job_title = form.job_title.data

@@ -1,11 +1,16 @@
-{{ admin.first_name }} -
+{{ admin.first_name }},
 
-Congratulations, in this email you are receiving access to your AeroFS Private Cloud. The implementation is a 4 step process and should take less than 10 minutes.
-
-Your license key and the appliance image are available for download from the Private Cloud Dashboard:
+In this email you are receiving access to your AeroFS Private Cloud license. Your license and the appliance image are available for download your the Private Cloud Dashboard.
 
 {{ dashboard_url }}
 
-Helpful links:
-Implementation Video: {{ implementation_video_url }}
-FAQs and implementation instructions: {{ faqs_url }}
+If you have any questions about setting up the service, like how to launch the AeroFS appliance in your hypervisor, you can go to our support site which contains some helpful walkthroughs and answers to frequently asked questions.
+
+{{ faqs_url }}
+
+If you can’t find the answer to your question there, feel free to contact our support team.
+
+{{ contact_url }}
+
+Happy Syncing,
+The AeroFS Team
