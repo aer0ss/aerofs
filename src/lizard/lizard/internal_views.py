@@ -143,23 +143,29 @@ def all_accounts():
 @blueprint.route("/paying_accounts", methods=["GET"])
 def paying_accounts():
     now = datetime.datetime.today()
-    # This is possibly inefficient because group by is hard to understand/map
-    # to sqlalchemy and this is internal anyway
-    # Pick out licenses that are still valid and for paying accounts
+    # This is possibly inefficient because group by is hard to understand/map to sqlalchemy and this
+    # is internal anyway.
+    # Pick out licenses that are still valid and for paying accounts.
     licenses = models.License.query.filter(models.License.state == models.License.LicenseState.FILLED).\
                                     filter(models.License.expiry_date > now).\
                                     filter(models.License.is_trial == False)
-    # Collect the matching customers (those folks with currently-valid
-    # licenses).  Since a customer may have multiple currently-valid licenses,
-    # (say, bought one year at 200 seats, then upgraded to 400 seats later that
-    # year), uniquify the customer list.
+    # Collect the matching customers (those folks with currently-valid licenses). Since a customer
+    # may have multiple currently-valid licenses, (say, bought one year at 200 seats, then upgraded
+    # to 400 seats later that year), uniquify the customer list.
     customers = list(set([l.customer for l in licenses]))
     rows = []
     total_paid_seats = 0
     for c in customers:
+        # Skip aerofs.com emails.
+        aerofs_internal = False
+        for a in c.admins:
+            if a.email.endswith("@aerofs.com"):
+                aerofs_internal = True
+                break
+        if aerofs_internal: continue
         # For each customer, we're only really interested in the most-recently-issued license
         l = models.License.query.\
-                filter(models.License.customer_id==c.id).\
+                filter(models.License.customer_id == c.id).\
                 order_by(models.License.create_date.desc()).\
                 first()
         # To handle the case where the customer paid us at one point but no longer does (because of
