@@ -155,7 +155,6 @@ $(DEST)/shadowfax.js: $(SRC)/shadowfax/app.js \
 	cat $^ > $@
 
 $(DEST)/strider.js: $(SRC)/strider/app.js \
-	$(SRC)/shadowfax/pagination.js \
 	$(SRC)/strider/controllers.js \
 	$(SRC)/strider/directives.js
 	cat $^ > $@
