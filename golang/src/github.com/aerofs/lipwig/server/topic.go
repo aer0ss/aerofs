@@ -19,10 +19,14 @@ type Topic interface {
 	// Subscribe adds a connection to the set of subscribers.
 	// The presence flag indicates whether the connection is interested in
 	// receiving presence events about other subscribers.
-	Subscribe(c Connection, presence bool)
+	// It returns true if a new subscription was made, or false if the
+	// connection was already subscribed to the topic.
+	Subscribe(c Connection, presence bool) bool
 
 	// Unsubscribe removes a connection from the set of subscribers.
-	Unsubscribe(c Connection)
+	// It returns true if the connection was unsubscribed, or false it it
+	// wasn't subscribed to the topic.
+	Unsubscribe(c Connection) bool
 
 	// ForAll executes v once for every subscribers.
 	ForAll(v TopicVisitor)
@@ -52,19 +56,25 @@ func (t *topic) Name() string {
 	return t.name
 }
 
-func (t *topic) Subscribe(c Connection, presence bool) {
+func (t *topic) Subscribe(c Connection, presence bool) bool {
 	t.l.Lock()
-	t.c[c] = presence
+	_, subscribed := t.c[c]
+	if !subscribed {
+		t.c[c] = presence
+	}
 	t.l.Unlock()
+	return !subscribed
 }
 
-func (t *topic) Unsubscribe(c Connection) {
+func (t *topic) Unsubscribe(c Connection) bool {
 	t.l.Lock()
+	_, subscribed := t.c[c]
 	delete(t.c, c)
 	t.l.Unlock()
 	if len(t.c) == 0 {
 		t.tm.RemoveTopic(t.name)
 	}
+	return subscribed
 }
 
 func (t *topic) ForAll(v TopicVisitor) {

@@ -8,6 +8,8 @@ public class SSMPResponse {
     public static final int UNAUTHORIZED = 401;
     public static final int NOT_FOUND = 404;
     public static final int NOT_ALLOWED = 405;
+    public static final int CONFLICT = 409;
+    public static final int NOT_IMPLEMENTED = 501;
 
     public final int code;
     public final @Nullable String payload;

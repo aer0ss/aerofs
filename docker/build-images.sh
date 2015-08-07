@@ -18,7 +18,7 @@ DIRS="
     data-container
     enforcer
     ../src/havre
-    ../golang/src/aerofs.com/lipwig
+    ../golang/src/github.com/aerofs/lipwig
     logrotator
     maintenance-nginx
     ../src/maintenance-web

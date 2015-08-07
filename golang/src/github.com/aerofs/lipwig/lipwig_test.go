@@ -4,13 +4,14 @@
 package main
 
 import (
-	"aerofs.com/lipwig/client"
-	"aerofs.com/lipwig/server"
-	"aerofs.com/lipwig/ssmp"
+	"github.com/aerofs/lipwig/client"
+	"github.com/aerofs/lipwig/server"
+	"github.com/aerofs/lipwig/ssmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 )
@@ -21,25 +22,21 @@ func (a *test_auth) Auth(c net.Conn, user, scheme, cred []byte) bool {
 	return !ssmp.Equal(user, "reject")
 }
 
-type EventDiscarder struct{}
-
-func (d *EventDiscarder) HandleEvent(_ client.Event) {}
-
-type ExpectedEvents struct {
-	t        *testing.T
-	expected chan client.Event
+func (a *test_auth) Unauthorized() []byte {
+	return []byte("401\n")
 }
 
-func (q *ExpectedEvents) HandleEvent(ev client.Event) {
-	select {
-	case expected := <-q.expected:
-		ok := assert.Equal(q.t, expected.Name, ev.Name)
-		ok = assert.Equal(q.t, expected.From, ev.From) && ok
-		ok = assert.Equal(q.t, expected.To, ev.To) && ok
-		ok = assert.Equal(q.t, expected.Payload, ev.Payload) && ok
-	case _ = <-time.After(5 * time.Second):
-		assert.Fail(q.t, "unexpected event")
-	}
+type EventDiscarder struct{}
+
+func (d *EventDiscarder) HandleEvent(_ client.Event) {
+}
+
+type EventQueue struct {
+	q chan client.Event
+}
+
+func (q *EventQueue) HandleEvent(ev client.Event) {
+	q.q <- ev
 }
 
 type TestClient struct {
@@ -71,8 +68,8 @@ func NewClientWithHandler(h client.EventHandler) TestClient {
 }
 
 func NewClient() TestClient {
-	return NewClientWithHandler(&ExpectedEvents{
-		expected: make(chan client.Event, 10),
+	return NewClientWithHandler(&EventQueue{
+		q: make(chan client.Event, 20),
 	})
 }
 
@@ -86,8 +83,8 @@ func NewLoggedInClientWithHandler(user string, h client.EventHandler) TestClient
 }
 
 func NewLoggedInClient(user string) TestClient {
-	return NewLoggedInClientWithHandler(user, &ExpectedEvents{
-		expected: make(chan client.Event, 10),
+	return NewLoggedInClientWithHandler(user, &EventQueue{
+		q: make(chan client.Event, 20),
 	})
 }
 
@@ -99,18 +96,30 @@ func u(hack ...interface{}) []interface{} {
 	return hack
 }
 
+func (c TestClient) expect(t *testing.T, events ...client.Event) *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		q := c.h.(*EventQueue)
+		for _, expected := range events {
+			select {
+			case ev := <-q.q:
+				assert.Equal(t, expected.Name, ev.Name)
+				assert.Equal(t, expected.From, ev.From)
+				assert.Equal(t, expected.To, ev.To)
+				assert.Equal(t, expected.Payload, ev.Payload)
+			case _ = <-time.After(5 * time.Second):
+				assert.Fail(t, "timed out waiting for event")
+			}
+		}
+		wg.Done()
+	}()
+	return &wg
+}
+
 func expect(t *testing.T, code int, hack []interface{}) {
 	require.Nil(t, hack[1])
 	require.Equal(t, code, hack[0].(client.Response).Code)
-}
-
-func (c TestClient) expect(t *testing.T, expected client.Event) {
-	e, ok := c.h.(*ExpectedEvents)
-	if !ok {
-		panic("...")
-	}
-	e.t = t
-	e.expected <- expected
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,13 +161,15 @@ func TestClient_should_unicast_self(t *testing.T) {
 	c := NewLoggedInClient("foo")
 	defer c.Close()
 
-	c.expect(t, client.Event{
+	w := c.expect(t, client.Event{
 		Name:    []byte(ssmp.UCAST),
 		From:    []byte("foo"),
+		To:      []byte("foo"),
 		Payload: []byte("hello"),
 	})
 
 	expect(t, ssmp.CodeOk, u(c.Ucast("foo", "hello")))
+	w.Wait()
 }
 
 func TestClient_should_unicast_other(t *testing.T) {
@@ -168,21 +179,25 @@ func TestClient_should_unicast_other(t *testing.T) {
 	bar := NewLoggedInClient("bar")
 	defer bar.Close()
 
-	bar.expect(t, client.Event{
+	w := bar.expect(t, client.Event{
 		Name:    []byte(ssmp.UCAST),
 		From:    []byte("foo"),
+		To:      []byte("bar"),
 		Payload: []byte("hello"),
 	})
 
 	expect(t, ssmp.CodeOk, u(foo.Ucast("bar", "hello")))
+	w.Wait()
 
-	foo.expect(t, client.Event{
+	w = foo.expect(t, client.Event{
 		Name:    []byte(ssmp.UCAST),
 		From:    []byte("bar"),
+		To:      []byte("foo"),
 		Payload: []byte("world"),
 	})
 
 	expect(t, ssmp.CodeOk, u(bar.Ucast("foo", "world")))
+	w.Wait()
 }
 
 func TestClient_should_multicast(t *testing.T) {
@@ -195,21 +210,23 @@ func TestClient_should_multicast(t *testing.T) {
 	expect(t, ssmp.CodeOk, u(foo.Subscribe("chat")))
 	expect(t, ssmp.CodeOk, u(bar.Subscribe("chat")))
 
-	bar.expect(t, client.Event{
+	w := bar.expect(t, client.Event{
 		Name:    []byte(ssmp.MCAST),
 		From:    []byte("foo"),
 		To:      []byte("chat"),
 		Payload: []byte("hello"),
 	})
-	foo.expect(t, client.Event{
+	expect(t, ssmp.CodeOk, u(foo.Mcast("chat", "hello")))
+	w.Wait()
+
+	w = foo.expect(t, client.Event{
 		Name:    []byte(ssmp.MCAST),
 		From:    []byte("bar"),
 		To:      []byte("chat"),
 		Payload: []byte("world"),
 	})
-
-	expect(t, ssmp.CodeOk, u(foo.Mcast("chat", "hello")))
 	expect(t, ssmp.CodeOk, u(bar.Mcast("chat", "world")))
+	w.Wait()
 }
 
 func TestClient_should_get_presence(t *testing.T) {
@@ -219,28 +236,33 @@ func TestClient_should_get_presence(t *testing.T) {
 	bar := NewLoggedInClient("bar")
 	defer bar.Close()
 
-	foo.expect(t, client.Event{
-		Name: []byte(ssmp.SUBSCRIBE),
-		From: []byte("bar"),
-		To:   []byte("chat"),
+	w1 := foo.expect(t, client.Event{
+		Name:    []byte(ssmp.SUBSCRIBE),
+		From:    []byte("bar"),
+		To:      []byte("chat"),
+		Payload: []byte("PRESENCE"),
 	})
 
-	bar.expect(t, client.Event{
-		Name: []byte(ssmp.SUBSCRIBE),
-		From: []byte("foo"),
-		To:   []byte("chat"),
+	w2 := bar.expect(t, client.Event{
+		Name:    []byte(ssmp.SUBSCRIBE),
+		From:    []byte("foo"),
+		To:      []byte("chat"),
+		Payload: []byte("PRESENCE"),
 	})
 
 	expect(t, ssmp.CodeOk, u(foo.SubscribeWithPresence("chat")))
 	expect(t, ssmp.CodeOk, u(bar.SubscribeWithPresence("chat")))
 
-	bar.expect(t, client.Event{
+	w1.Wait()
+	w2.Wait()
+
+	w1 = bar.expect(t, client.Event{
 		Name: []byte(ssmp.UNSUBSCRIBE),
 		From: []byte("foo"),
 		To:   []byte("chat"),
 	})
-
 	expect(t, ssmp.CodeOk, u(foo.Unsubscribe("chat")))
+	w1.Wait()
 }
 
 func TestClient_should_broadcast(t *testing.T) {
@@ -261,32 +283,29 @@ func TestClient_should_broadcast(t *testing.T) {
 	expect(t, ssmp.CodeOk, u(bar.Subscribe("bar:baz")))
 	expect(t, ssmp.CodeOk, u(baz.Subscribe("bar:baz")))
 
-	foo.expect(t, client.Event{
+	w1 := foo.expect(t, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("bar"),
 		Payload: []byte("bart"),
-	})
-	foo.expect(t, client.Event{
+	}, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("baz"),
 		Payload: []byte("baza"),
 	})
-	bar.expect(t, client.Event{
+	w2 := bar.expect(t, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("foo"),
 		Payload: []byte("fool"),
-	})
-	bar.expect(t, client.Event{
+	}, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("baz"),
 		Payload: []byte("baza"),
 	})
-	baz.expect(t, client.Event{
+	w3 := baz.expect(t, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("foo"),
 		Payload: []byte("fool"),
-	})
-	baz.expect(t, client.Event{
+	}, client.Event{
 		Name:    []byte(ssmp.BCAST),
 		From:    []byte("bar"),
 		Payload: []byte("bart"),
@@ -295,6 +314,10 @@ func TestClient_should_broadcast(t *testing.T) {
 	expect(t, ssmp.CodeOk, u(foo.Bcast("fool")))
 	expect(t, ssmp.CodeOk, u(bar.Bcast("bart")))
 	expect(t, ssmp.CodeOk, u(baz.Bcast("baza")))
+
+	w1.Wait()
+	w2.Wait()
+	w3.Wait()
 }
 
 func BenchmarkUCAST_self(b *testing.B) {
@@ -305,6 +328,19 @@ func BenchmarkUCAST_self(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		foo.Ucast("foo", "hello world")
 	}
+	b.StopTimer()
+}
+
+func BenchmarkParallelUCAST_self(b *testing.B) {
+	defer NewServer().Start().Stop()
+	foo := NewDiscardingLoggedInClient("foo")
+	defer foo.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			foo.Ucast("foo", "hello world")
+		}
+	})
 	b.StopTimer()
 }
 

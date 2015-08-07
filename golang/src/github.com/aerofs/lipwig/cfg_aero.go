@@ -11,10 +11,12 @@ import (
 	"fmt"
 )
 
-func tlsConfig() *tls.Config {
+func initConfig() {
 	fmt.Println("waiting for deps")
 	service.ServiceBarrier()
-
 	secret = "/data/deployment_secret"
+}
+
+func tlsConfig() *tls.Config {
 	return service.NewConfig("lipwig")
 }

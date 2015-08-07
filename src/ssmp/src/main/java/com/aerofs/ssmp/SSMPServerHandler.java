@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -28,6 +33,8 @@ public class SSMPServerHandler extends SimpleChannelHandler {
 
     public interface Authenticator {
         boolean authenticate(SSMPIdentifier id, SSMPIdentifier scheme, String cred);
+
+        ChannelBuffer unauthorized();
     }
 
     public static class IdAddress extends SocketAddress {
@@ -63,10 +70,10 @@ public class SSMPServerHandler extends SimpleChannelHandler {
             "200\n".getBytes(StandardCharsets.US_ASCII));
     private static final ChannelBuffer BAD_REQUEST = ChannelBuffers.wrappedBuffer(
             "400\n".getBytes(StandardCharsets.US_ASCII));
-    private static final ChannelBuffer UNAUTHORIZED = ChannelBuffers.wrappedBuffer(
-            "401\n".getBytes(StandardCharsets.US_ASCII));
     private static final ChannelBuffer NOT_ALLOWED = ChannelBuffers.wrappedBuffer(
             "405\n".getBytes(StandardCharsets.US_ASCII));
+    private static final ChannelBuffer NOT_IMPLEMENTED = ChannelBuffers.wrappedBuffer(
+            "501\n".getBytes(StandardCharsets.US_ASCII));
 
     private static final ChannelBuffer PING = ChannelBuffers.wrappedBuffer(
             "000 . PING\n".getBytes(StandardCharsets.US_ASCII));
@@ -131,7 +138,7 @@ public class SSMPServerHandler extends SimpleChannelHandler {
 
             if (o instanceof ChannelFuture) {
                 if (type != SSMPRequest.Type.LOGIN) {
-                    sendDownstream(ctx, UNAUTHORIZED);
+                    sendDownstream(ctx, BAD_REQUEST);
                     ctx.getChannel().close();
                     return;
                 }
@@ -147,20 +154,19 @@ public class SSMPServerHandler extends SimpleChannelHandler {
                     ((ChannelFuture)o).setSuccess();
                     sendDownstream(ctx, OK);
                 } else {
-                    sendDownstream(ctx, UNAUTHORIZED);
+                    sendDownstream(ctx, _auth.unauthorized());
+                    ctx.getChannel().close();
                 }
                 return;
             }
 
-            ChannelData d = (ChannelData)o;
-
-            if (type == SSMPRequest.Type.LOGIN) {
-                sendDownstream(ctx, NOT_ALLOWED);
-                ctx.getChannel().close();
+            if (type == null) {
+                sendDownstream(ctx, NOT_IMPLEMENTED);
                 return;
-            }
-
-            if (type == SSMPRequest.Type.PING) {
+            } else if (type == SSMPRequest.Type.LOGIN) {
+                sendDownstream(ctx, NOT_ALLOWED);
+                return;
+            } else if (type == SSMPRequest.Type.PING) {
                 L.debug("recv ping");
                 sendDownstream(ctx, PONG);
                 return;
@@ -168,6 +174,8 @@ public class SSMPServerHandler extends SimpleChannelHandler {
                 L.debug("recv pong");
                 return;
             }
+
+            ChannelData d = (ChannelData)o;
 
             SSMPIdentifier to = null;
             if ((type._fields & SSMPRequest.FIELD_ID) != 0) {
@@ -203,10 +211,9 @@ public class SSMPServerHandler extends SimpleChannelHandler {
             }
 
             int n = r.code;
-            for (int i = 0; i < 3; ++i) {
-                b.writeByte('0' + (byte) (n % 10));
-                n = n / 10;
-            }
+            b.writeByte('0' + (byte)(n / 100));
+            b.writeByte('0' + (byte)(n / 10 % 10));
+            b.writeByte('0' + (byte)(n % 10));
             if (r.payload != null && !r.payload.isEmpty()) {
                 b.writeByte(' ');
                 b.writeBytes(r.payload.getBytes(StandardCharsets.UTF_8));

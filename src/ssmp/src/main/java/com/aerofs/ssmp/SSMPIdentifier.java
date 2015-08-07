@@ -1,5 +1,9 @@
-package com.aerofs.ssmp;
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
 
+package com.aerofs.ssmp;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

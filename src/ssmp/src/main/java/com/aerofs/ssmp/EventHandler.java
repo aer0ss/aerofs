@@ -1,6 +1,9 @@
-package com.aerofs.ssmp;
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
 
-import com.aerofs.ssmp.SSMPEvent;
+package com.aerofs.ssmp;
 
 public interface EventHandler {
     void eventReceived(SSMPEvent e);

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import javax.annotation.Nullable;
@@ -9,11 +14,12 @@ public class SSMPEvent {
     final static int NO_FIELD = 0;
     final static int FIELD_TO = 1;
     final static int FIELD_PAYLOAD = 2;
+    final static int FIELD_OPTION = 6;
 
     public enum Type {
-        SUBSCRIBE("SUBSCRIBE", FIELD_TO),
+        SUBSCRIBE("SUBSCRIBE", FIELD_TO | FIELD_OPTION),
         UNSUBSCRIBE("UNSUBSCRIBE", FIELD_TO),
-        UCAST("UCAST", FIELD_PAYLOAD),
+        UCAST("UCAST", FIELD_TO | FIELD_PAYLOAD),
         MCAST("MCAST", FIELD_TO | FIELD_PAYLOAD),
         BCAST("BCAST", FIELD_PAYLOAD),
         PING("PING", NO_FIELD),

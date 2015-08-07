@@ -4,8 +4,8 @@
 package client
 
 import (
-	"aerofs.com/lipwig/ssmp"
 	"fmt"
+	"github.com/aerofs/lipwig/ssmp"
 )
 
 // Event represents a decoded SSMP server-sent event.
@@ -22,14 +22,15 @@ type Event struct {
 const (
 	fieldTo = 1 << iota
 	fieldPayload
+	fieldOption
 
 	noFields = -1
 )
 
 var events map[string]int = map[string]int{
-	ssmp.SUBSCRIBE:   fieldTo,
+	ssmp.SUBSCRIBE:   fieldTo | fieldOption,
 	ssmp.UNSUBSCRIBE: fieldTo,
-	ssmp.UCAST:       fieldPayload,
+	ssmp.UCAST:       fieldTo | fieldPayload,
 	ssmp.MCAST:       fieldTo | fieldPayload,
 	ssmp.BCAST:       fieldPayload,
 	ssmp.PING:        noFields,
@@ -67,7 +68,13 @@ func ParseEvent(s []byte) (Event, error) {
 		}
 		e.To = to
 	}
-	if (fields & fieldPayload) != 0 {
+	if (fields & fieldOption) != 0 {
+		payload, err := ssmp.OptionField(cmd)
+		if err != nil {
+			return e, ErrInvalidEvent
+		}
+		e.Payload = payload
+	} else if (fields & fieldPayload) != 0 {
 		payload, err := ssmp.PayloadField(cmd)
 		if err != nil {
 			return e, ErrInvalidEvent

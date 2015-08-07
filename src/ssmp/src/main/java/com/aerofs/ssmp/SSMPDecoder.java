@@ -1,7 +1,13 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 public class SSMPDecoder {
@@ -44,11 +50,9 @@ public class SSMPDecoder {
         if (t == null) throw new IllegalArgumentException();
         return t;
     }
-    public static SSMPRequest.Type readRequestType(ChannelBuffer b) {
+    public static @Nullable SSMPRequest.Type readRequestType(ChannelBuffer b) {
         byte[] verb = read(b, VERB);
-        SSMPRequest.Type t = SSMPRequest.Type.byName(verb);
-        if (t == null) throw new IllegalArgumentException();
-        return t;
+        return SSMPRequest.Type.byName(verb);
     }
 
     public static byte[] readPayloadBytes(ChannelBuffer b) {

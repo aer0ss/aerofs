@@ -4,9 +4,9 @@
 package server
 
 import (
-	"aerofs.com/lipwig/ssmp"
 	"bufio"
 	"fmt"
+	"github.com/aerofs/lipwig/ssmp"
 	"io"
 	"net"
 	"sync"
@@ -103,7 +103,6 @@ func NewConnection(c net.Conn, a Authenticator, d Dispatcher) (Connection, error
 	}
 	cred := cmd.Trailing()
 	if !a.Auth(c, user, scheme, cred) {
-		fmt.Println("failed login for", user, "with", scheme)
 		return nil, ErrUnauthorized
 	}
 	cc := &connection{
@@ -168,8 +167,6 @@ func (c *connection) readLoop(d Dispatcher) {
 			break
 		}
 		idle = false
-		// strip LF delimiter
-		l = l[0 : len(l)-1]
 		d.Dispatch(c, l)
 	}
 }

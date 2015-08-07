@@ -4,10 +4,10 @@
 package client
 
 import (
-	"aerofs.com/lipwig/ssmp"
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/aerofs/lipwig/ssmp"
 	"io"
 	"net"
 	"strings"
@@ -194,7 +194,7 @@ func (c *client) request(cmd string, to string, payload string) (Response, error
 	buf.WriteString(cmd)
 	if len(to) > 0 {
 		buf.WriteByte(' ')
-		buf.WriteString(string(to))
+		buf.WriteString(to)
 	}
 	if len(payload) > 0 {
 		buf.WriteByte(' ')

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import com.aerofs.ssmp.SSMPServerHandler.Authenticator;
@@ -40,6 +45,7 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
         Connection(Channel c) {
             this.c = c;
             this.id = ((ChannelData)c.getAttachment()).id;
+            c.getCloseFuture().addListener(future -> close());
         }
 
         void close() {
@@ -47,7 +53,7 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             for (Topic t : sub.values()) {
                 t.remove(id, this);
             }
-            c.close();
+            if (c.isConnected()) c.close();
         }
     }
 
@@ -72,10 +78,10 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             _server = server;
         }
 
-        void add(SSMPIdentifier id, Connection c, boolean presence) {
+        boolean add(SSMPIdentifier id, Connection c, boolean presence) {
             _l.writeLock().lock();
             try {
-                sub.put(id, new Subscription(c, presence));
+                return sub.putIfAbsent(id, new Subscription(c, presence)) == null;
             } finally {
                 _l.writeLock().unlock();
             }
@@ -86,7 +92,7 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             try {
                 sub.remove(id);
                 if (sub.isEmpty()) {
-                    _server._topics.remove(_id);
+                    _server._topics.remove(_id, c);
                 }
             } finally {
                 _l.writeLock().unlock();
@@ -145,7 +151,8 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
-        requestReceived(ctx.getChannel(), ((IdAddress)me.getRemoteAddress()).id, (SSMPRequest)me.getMessage());
+        requestReceived(ctx.getChannel(), ((IdAddress)me.getRemoteAddress()).id,
+                (SSMPRequest)me.getMessage());
     }
 
     private Topic getOrCreate(SSMPIdentifier topic) {
@@ -164,17 +171,22 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             Topic t = getOrCreate(r.to);
             Connection c = _clients.get(from);
             boolean presence = Arrays.equals(r.payload, SubscriptionFlag.PRESENCE._s);
-            t.add(from, c, presence);
+            if (!t.add(from, c, presence)) {
+                channel.write(new SSMPResponse(SSMPResponse.CONFLICT, null));
+                break;
+            }
             c.sub.put(r.to, t);
 
             channel.write(new SSMPResponse(SSMPResponse.OK, null));
             t.forEach((id, s) -> {
                 if (id.equals(from)) return;
                 if (s.presence) {
-                    s.c.c.write(new SSMPEvent(from, Type.SUBSCRIBE, r.to, null));
+                    s.c.c.write(new SSMPEvent(from, Type.SUBSCRIBE, r.to,
+                            presence ? SubscriptionFlag.PRESENCE.name() : null));
                 }
                 if (presence) {
-                    channel.write(new SSMPEvent(s.c.id, Type.SUBSCRIBE, r.to, null));
+                    channel.write(new SSMPEvent(s.c.id, Type.SUBSCRIBE, r.to,
+                            s.presence ? SubscriptionFlag.PRESENCE.name() : null));
                 }
             });
             break;
@@ -186,6 +198,10 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             }
             Connection c = _clients.get(from);
             Topic t = c.sub.remove(r.to);
+            if (t == null) {
+                channel.write(new SSMPResponse(SSMPResponse.NOT_FOUND, null));
+                break;
+            }
             t.sub.remove(from, c);
             channel.write(new SSMPResponse(SSMPResponse.OK, null));
             t.forEach((id, s) -> {
@@ -201,19 +217,19 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
                 channel.write(new SSMPResponse(SSMPResponse.NOT_FOUND, null));
                 return;
             }
-            c.c.write(new SSMPEvent(from, Type.UCAST, null, new String(r.payload, StandardCharsets.UTF_8)));
+            c.c.write(new SSMPEvent(from, Type.UCAST, r.to,
+                    new String(r.payload, StandardCharsets.UTF_8)));
             channel.write(new SSMPResponse(SSMPResponse.OK, null));
             break;
         }
         case MCAST: {
             Topic t = _topics.get(r.to);
-            if (t == null) {
-                channel.write(new SSMPResponse(SSMPResponse.NOT_FOUND, null));
-                return;
+            if (t != null) {
+                t.forEach((id, s) -> {
+                    s.c.c.write(new SSMPEvent(from, Type.MCAST, r.to,
+                            new String(r.payload, StandardCharsets.UTF_8)));
+                });
             }
-            t.forEach((id, s) -> {
-                s.c.c.write(new SSMPEvent(from, Type.MCAST, r.to, new String(r.payload, StandardCharsets.UTF_8)));
-            });
             channel.write(new SSMPResponse(SSMPResponse.OK, null));
             break;
         }
@@ -227,7 +243,8 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             for (Topic t : c.sub.values()) {
                 t.forEach((id, s) -> {
                     if (id.equals(from) || !ids.add(id)) return;
-                    s.c.c.write(new SSMPEvent(from, Type.BCAST, null, new String(r.payload, StandardCharsets.UTF_8)));
+                    s.c.c.write(new SSMPEvent(from, Type.BCAST, null,
+                            new String(r.payload, StandardCharsets.UTF_8)));
                 });
             }
             channel.write(new SSMPResponse(SSMPResponse.OK, null));
@@ -238,7 +255,7 @@ public class SSMPServer extends SimpleChannelUpstreamHandler {
             channel.close();
             break;
         default:
-            channel.write(new SSMPResponse(SSMPResponse.NOT_ALLOWED, null));
+            channel.write(new SSMPResponse(SSMPResponse.NOT_IMPLEMENTED, null));
             break;
         }
     }

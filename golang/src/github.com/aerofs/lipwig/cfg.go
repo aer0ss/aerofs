@@ -16,6 +16,19 @@ import (
 	"os"
 )
 
+var hostname string
+var cacertFile string
+var certFile string
+var keyFile string
+
+func initConfig() {
+	flag.StringVar(&secret, "secret", "", "Path to shared secret")
+	flag.StringVar(&hostname, "host", "", "TLS hostname")
+	flag.StringVar(&cacertFile, "cacert", "", "Path to CA certificate")
+	flag.StringVar(&certFile, "cert", "", "Path to server certificate")
+	flag.StringVar(&keyFile, "key", "", "Path to server private key")
+}
+
 var errInvalidCert = fmt.Errorf("invalid cert")
 
 func certFromFile(file string) (*x509.Certificate, error) {

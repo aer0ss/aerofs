@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import com.aerofs.ssmp.SSMPEvent.Type;
@@ -17,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.ssmp.SSMPDecoder.*;
+import static com.aerofs.ssmp.SSMPEvent.*;
 
 public class SSMPClientHandler extends SimpleChannelHandler {
     private final static Logger L = LoggerFactory.getLogger(SSMPClientHandler.class);
@@ -91,13 +97,15 @@ public class SSMPClientHandler extends SimpleChannelHandler {
             }
 
             SSMPIdentifier to = null;
-            if ((type._fields & SSMPEvent.FIELD_TO) != 0) {
+            if ((type._fields & FIELD_TO) != 0) {
                 to = readIdentifier(b);
             }
             String payload = null;
-            if ((type._fields & SSMPEvent.FIELD_PAYLOAD) != 0) {
+            if ((type._fields & FIELD_PAYLOAD) != 0) {
                 payload = readPayload(b);
-                if (payload.isEmpty()) throw new IllegalArgumentException();
+                if (payload.isEmpty() && (type._fields & FIELD_OPTION) == FIELD_PAYLOAD) {
+                    throw new IllegalArgumentException();
+                }
             }
             L.debug("recv event {} {} {} {}", from, type, to, payload);
             _handler.eventReceived(new SSMPEvent(from, type, to, payload));

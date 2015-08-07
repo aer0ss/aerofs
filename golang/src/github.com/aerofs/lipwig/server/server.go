@@ -4,8 +4,8 @@
 package server
 
 import (
-	"aerofs.com/lipwig/ssmp"
 	"fmt"
+	"github.com/aerofs/lipwig/ssmp"
 	"net"
 	"sync"
 )
@@ -111,8 +111,8 @@ func (s *server) connect(c net.Conn) {
 	if err != nil {
 		fmt.Println("connect rejected:", err)
 		if err == ErrUnauthorized {
-			c.Write(respUnauthorized)
-		} else {
+			c.Write(s.auth.Unauthorized())
+		} else if err == ErrInvalidLogin {
 			c.Write(respBadRequest)
 		}
 		c.Close()

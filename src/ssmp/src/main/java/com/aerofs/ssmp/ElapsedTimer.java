@@ -1,5 +1,6 @@
 /*
- * Copyright (c) Air Computing Inc., 2013.
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
  */
 
 package com.aerofs.ssmp;

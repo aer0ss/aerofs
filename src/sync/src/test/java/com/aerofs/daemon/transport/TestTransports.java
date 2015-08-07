@@ -17,12 +17,16 @@ import com.aerofs.defects.MockDefects;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.ssmp.SSMPIdentifier;
 import com.aerofs.ssmp.SSMPServer;
+import com.aerofs.ssmp.SSMPServerHandler.Authenticator;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
@@ -42,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
@@ -130,7 +135,17 @@ public final class TestTransports
         ssmp = new SSMPServer(new InetSocketAddress("localhost", 0), timer,
                 new NioServerSocketChannelFactory(),
                 new ServerSSLEngineFactory(key, cacert)::newSslHandler,
-                (id, scheme, cred) -> true);
+                new Authenticator() {
+                    @Override
+                    public boolean authenticate(SSMPIdentifier id, SSMPIdentifier scheme, String cred) {
+                        return true;
+                    }
+
+                    @Override
+                    public ChannelBuffer unauthorized() {
+                        return ChannelBuffers.wrappedBuffer("401\n".getBytes(StandardCharsets.US_ASCII));
+                    }
+                });
         ssmp.start();
 
         InetSocketAddress ssmpAddress = new InetSocketAddress("localhost", ssmp.getListeningPort());

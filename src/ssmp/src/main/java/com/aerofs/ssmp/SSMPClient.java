@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2015, Air Computing Inc. <oss@aerofs.com>
+ * All rights reserved.
+ */
+
 package com.aerofs.ssmp;
 
 import com.google.common.util.concurrent.*;
@@ -89,7 +94,7 @@ public class SSMPClient {
 
     public void disconnect() {
         Channel c = _channel.get();
-        if (c != null) c.close();
+        if (c != null) c.close().awaitUninterruptibly();
     }
 
     static class Message {
