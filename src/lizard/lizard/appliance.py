@@ -13,7 +13,7 @@ def qcow_url(version):
     return "{}/aerofs-appliance-{}.qcow2.gz".format(_BUCKET_BASE, version)
 
 def vhd_url(version):
-    return "{}/aerofs-appliance-{}.vhd".format(_BUCKET_BASE, version)
+    return "{}/aerofs-appliance-{}.vhd.gz".format(_BUCKET_BASE, version)
 
 # A URL where a base release version number is stored on S3.  Only used if no
 # other version number is known; otherwise, the app tracks what it believes to

@@ -19,6 +19,7 @@ rm -f ${BASENAME}.mf ${BASENAME}.ovf
 VHD="${BASENAME}.vhd"
 echo "Creating VHD image ${VHD} ..."
 qemu-img convert -f vmdk -O vpc "${VMDK}" "${VHD}"
+gzip "${VHD}"
 
 # Build QCow2.
 QCOW2="${BASENAME}.qcow2"
