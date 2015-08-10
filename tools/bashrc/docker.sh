@@ -99,6 +99,21 @@ function dk-ip()
         return 1
     fi
 }
+function dk-ps()
+{
+    if [[ $# -eq 0 ]]
+    then
+        if [[ "$(docker ps | wc -l)" -eq "1" ]]
+        then
+            echo "No running container."
+        else
+            docker stats $(docker ps | tail -n+2 | awk -F' ' '{print $NF}')
+        fi
+    else
+        echo "dk-ps takes no arguments"
+        return 1
+    fi
+}
 function dk-reconfig()
 {
     if [[ $# -eq 0 ]]

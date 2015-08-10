@@ -18,6 +18,7 @@ Commands:
     dk-env        export DOCKER_HOST, DOCKER_CERT_PATH, and DOCKER_TLS_VERIFY into the environment
     dk-reconfig   identical to dk-create but it skips image building
     dk-halt       stop all appliance containers
+    dk-ps         displays stats about the running containers
     dk-start      start halted appliance containers
     dk-restart    restart all appliance containers
     dk-destroy    stop and remove all appliance containers
@@ -37,6 +38,7 @@ Follow these steps to start developing and testing an AeroFS service 'foo' from 
     $ dk-reload foo               # reload the container 'foo' using the newly built image (see docker/crane.yml for container names)
     $ dk-exec foo ps aux          # list all running processes in the container 'foo'
     $ dk-crane status             # list container status
+    $ dk-ps                       # display stats about all running containers
     $ dk-halt                     # stop the entire appliance. Use dk-start to restart it
     $ dk-destroy-vm               # wipe the docker-machine VM, if you're running out of disk space
 
