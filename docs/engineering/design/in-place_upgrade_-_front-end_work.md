@@ -3,14 +3,20 @@
 This document describes the work to be done on front-end for shipping live upgrade. This is a document I used for my own work, but should be readable for any developer who would like to help or take over. 
 Start: July 16 2015. author: John
 
-
 ## In-Place Upgrade
 
-Today if an admin wants to upgrade her appliance, she needs to make a backup of the current appliance, launch a new VM, restore the new backup to the new VM, optionally update the DNS record to point to the new appliance IP, the last step being not under control and difficult to achieve if dependent on the company processes. 
+Today if an admin wants to upgrade her appliance, she needs to:
 
-This has two effects. First, it makes the upgrade process more difficult, going against our simplicity mantra. Second, and as a result of the first point, admins have been reluctant to upgrade, which slows down the adoption of new features or bug fixes.
+1. take note of the network configuration of the current appliance
+2. save a backup file of the current appliance
+3. put the old appliance into maintenance mode
+4. launch a new VM
+6. upload the backup file to the new VM
+7. make sure the DNS record to point to the new appliance IP and update if necessary. 
 
-Making upgrade easier helps carry our value 'Customers First'.
+The upgrade process is cumbersome, making our product more painful, and slowing down the adoption of new features and bug fixes. 
+
+To stay true with our 'Customers First' principle, we are using Docker to make the upgrade process a breeze. 
 
 
 ## Experience
@@ -21,8 +27,8 @@ Making upgrade easier helps carry our value 'Customers First'.
 
 To upgrade, admins:
 
-* go to their admin interface (internally named as Bunker)
-* click on the 'upgrade' link in the left panel - _option: provide information about the new version in the homepage interface. discuss security and privacy implications_
+* go to 'Manage appliance' on the Web (internal code name: Bunker)
+* click on the 'Upgrade' link in the left panel - _option: provide information about the new version in the homepage interface. discuss security and privacy implications_
 
 ### Upgrade Page
 
@@ -31,7 +37,7 @@ To upgrade, admins:
 
 * If new version is found: 
   * provides a button to start the upgrade. See next section.
-  * provides an option to set up their own private repository so they don't need to rely on us. by default, the upgrade process pulls the docker image to our own registry. Some customers like Bloomberg might not want to do this. They prefer to download the new containers in a airtight environment. In that case, they need to provide a private registry url. 
+  * provides an option to download the container on their own private repository. Some customers like Bloomberg might want to do this. They prefer to download the new containers in a airtight environment. In that case, they need to provide a private registry url.
  
 *  If no version is found:
   * provides a message that says no new version was found
@@ -44,7 +50,7 @@ To upgrade, admins:
 
 *  When admin pushes on the 'download upgrade' button:
 
-	* a progress bar starts. 
+	* a progress bar starts. the new containers are donwloaded. 
 	* Once the download is completed, message the download is complete.
 	* A 'switch to new version' button appears, with a message explaining there will be a short downtime. _can we provide a time estimate?_ .
 	
