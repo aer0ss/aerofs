@@ -106,11 +106,11 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
 
         for (SIndex sidxWithAnchor : sidxs) {
             final Path path = deleteAnchorIfNeeded_(sidxWithAnchor, sid, t);
+            _lod.removeLeaveCommandsFromQueue_(sid, t);
 
             if (path == null) continue;
 
-            t.addListener_(new AbstractTransListener()
-            {
+            t.addListener_(new AbstractTransListener() {
                 @Override
                 public void committed_()
                 {

@@ -34,8 +34,6 @@ import com.aerofs.daemon.core.fs.HdDeleteObject;
 import com.aerofs.daemon.core.fs.HdGetAttr;
 import com.aerofs.daemon.core.fs.HdGetChildrenAttr;
 import com.aerofs.daemon.core.fs.HdImportFile;
-import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
-import com.aerofs.daemon.core.fs.HdLeaveSharedFolder;
 import com.aerofs.daemon.core.fs.HdListNonRepresentableObjects;
 import com.aerofs.daemon.core.fs.HdListUserRoots;
 import com.aerofs.daemon.core.fs.HdMoveObject;
@@ -58,8 +56,6 @@ import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.admin.EIInvalidateDeviceNameCache;
 import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
-import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
-import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.admin.EIListRevChildren;
@@ -92,8 +88,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject HdMoveObject _hdMoveObject;
     @Inject HdDeleteObject _hddo;
     @Inject HdDeleteBranch _hddb;
-    @Inject HdJoinSharedFolder _hdJoinSharedFolder;
-    @Inject HdLeaveSharedFolder _hdLeaveSharedFolder;
     @Inject HdListSharedFolders _hdListSharedFolders;
     @Inject HdListUserRoots _hdListUserRoots;
     @Inject HdListSharedFolderInvitations _hdListSharedFolderInvitations;
@@ -151,8 +145,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIDumpDiagnostics.class, _hdDumpDiagnostics)
                 .setHandler_(EICreateUrl.class, _hdCreateUrl)
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
-                .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
-                .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)
                 .setHandler_(EIListSharedFolders.class, _hdListSharedFolders)
                 .setHandler_(EIListUserRoots.class, _hdListUserRoots)
                 .setHandler_(EIListSharedFolderInvitations.class, _hdListSharedFolderInvitations)
