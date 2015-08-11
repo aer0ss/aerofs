@@ -5,11 +5,8 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
-import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
-import com.aerofs.daemon.core.fs.HdLeaveSharedFolder;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
@@ -21,10 +18,7 @@ import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreHierarchy;
-import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
-import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
 
@@ -58,17 +52,5 @@ public class SingleuserModule extends AbstractModule
                 .to(SingleUserLinkedAndAdmittedSharedFolders.class);
 
         multibind(binder(), ICoreEventHandlerRegistrar.class, SingleuserEventHandlerRegistar.class);
-    }
-
-    private class SingleuserEventHandlerRegistar implements ICoreEventHandlerRegistrar {
-        @Inject HdJoinSharedFolder _hdJoinSharedFolder;
-        @Inject HdLeaveSharedFolder _hdLeaveSharedFolder;
-
-        @Override
-        public void registerHandlers_(CoreEventDispatcher disp) {
-            disp
-                    .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
-                    .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder);
-        }
     }
 }
