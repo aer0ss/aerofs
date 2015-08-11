@@ -46,6 +46,7 @@ import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
@@ -249,8 +250,18 @@ public class MetaChangeSubmitter implements Submitter
         String body = resp.getContent().toString(BaseUtil.CHARSET_UTF);
         switch (statusCode) {
         case 200: {
-            BatchResult r = GsonUtil.GSON.fromJson(body, BatchResult.class);
-            if (r.results.size() > batch.operations.size()) throw new ExProtocolError();
+            BatchResult r = null;
+            try {
+                r = GsonUtil.GSON.fromJson(body, BatchResult.class);
+            } catch (JsonSyntaxException e) {
+                l.warn("invalid json", e.getMessage());
+            }
+            if (r == null || r.results == null) {
+                throw new ExProtocolError("invalid reply: "+ r + " " + body);
+            }
+            if (r.results.size() > batch.operations.size()) {
+                throw new ExProtocolError("invalid result size");
+            }
 
             long ack = 0L;
             SIndex sidx = null;

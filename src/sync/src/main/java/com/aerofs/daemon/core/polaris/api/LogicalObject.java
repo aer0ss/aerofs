@@ -8,6 +8,7 @@ import com.aerofs.ids.UniqueID;
 
 public class LogicalObject
 {
+    //unused: UniqueID store;
     public UniqueID oid;
     //unused: ObjectType objectType;
     public Long version;
