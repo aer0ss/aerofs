@@ -339,9 +339,11 @@ containers:
         - "80:80"
         - "443:443"
       link:
-        # nginx doesn't talk to bunker. added the dep anyway so nginx starts after bunker
-        # -- needed for appliance readiness detection via HTTP.
+        # nginx doesn't talk to bunker, nor does it talk to web. added the dep
+        # anyway so nginx starts after bunker and web -- needed for appliance
+        # readiness detection via HTTP.
         - maintenance-bunker:bunker.service
+        - maintenance-web:web.service
         - ca-server:ca.service
         - config:config.service
       volumes-from:
@@ -366,6 +368,13 @@ containers:
         - ntp:ntp.service
         # For db backup
         - mysql:mysql.service
+
+  maintenance-web:
+    image: aerofs/maintenance-web
+    run:
+      detach: true
+      volumes-from:
+        - data
 
 # Only root services are defined here. Always use 'crane -d all'.
 groups:

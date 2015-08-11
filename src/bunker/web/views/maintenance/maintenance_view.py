@@ -107,28 +107,12 @@ def maintenance_redirect(request):
     """
     if not is_configuration_initialized(request.registry.settings):
         redirect = 'setup'
-    elif is_maintenance_mode(request.registry.settings):
-        # The status page is inaccessible during maintenance
-        redirect = 'maintenance_mode'
     else:
         r = requests.get('http://config.service:5434/is_license_valid')
         r.raise_for_status()
         redirect = 'license_expired' if r.text.strip() == '0' else 'maintenance_home'
 
     return HTTPFound(location=request.route_path(redirect))
-
-
-@view_config(
-    route_name='maintenance_mode',
-    permission=NO_PERMISSION_REQUIRED,
-    renderer='maintenance_mode.mako'
-)
-def maintenance_mode(request):
-    # Return status 503 Service Unavailable
-    request.response.status = 503
-    return {
-        'support_email': get_conf(request)['base.www.support_email_address']
-    }
 
 
 @view_config(

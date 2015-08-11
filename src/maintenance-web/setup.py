@@ -5,13 +5,12 @@ from setuptools import setup
 packages = [
         "web",
         "web.views",
-        "web.views.error",
         "web.views.maintenance",
         ]
 
-setup(name='aerofs-bunker',
+setup(name='aerofs-maintenance',
       version='0.0.1',
-      description='AeroFS Appliance Management Interface',
+      description='AeroFS Maintenance Panel',
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pylons",
@@ -21,7 +20,7 @@ setup(name='aerofs-bunker',
       author='AeroFS Team',
       author_email='team@aerofs.com',
       url='https://www.aerofs.com',
-      keywords='bunker maintenance pyramid pylons',
+      keywords='maintenance pyramid pylons',
       packages=packages,
       include_package_data=True,
       zip_safe=False,

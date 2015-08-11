@@ -10,25 +10,26 @@ DIRS="
     base/jre8-and-mysql-client
     base/python2.7
 
-    ../golang/src/aerofs.com/auditor 
-    ../src/bunker 
+    ../golang/src/aerofs.com/auditor
+    ../src/bunker
     ../golang/src/aerofs.com/ca-server
-    ../packaging/config 
-    ../golang/src/aerofs.com/charlie 
-    data-container 
-    enforcer 
-    ../src/havre 
+    ../packaging/config
+    ../golang/src/aerofs.com/charlie
+    data-container
+    enforcer
+    ../src/havre
     ../golang/src/aerofs.com/lipwig
     logrotator
-    maintenance-nginx 
-    mysql 
-    nginx 
-    ntp 
-    postfix 
-    ../src/polaris 
-    redis 
-    ../packaging/repackaging 
-    ../packaging/sanity 
+    maintenance-nginx
+    ../src/maintenance-web
+    mysql
+    nginx
+    ntp
+    postfix
+    ../src/polaris
+    redis
+    ../packaging/repackaging
+    ../packaging/sanity
     ../src/sparta
     ../src/spsv
     ../golang/src/aerofs.com/ts-probe
