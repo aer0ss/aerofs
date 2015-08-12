@@ -7,6 +7,7 @@ removed first. Sigh, users are capricious.
 import os
 from lib import ritual
 import lib.files
+from lib.app import aerofs_proc
 from syncdet.case.assertion import assertTrue
 from common import TAG_FILE_NAME
 
@@ -16,8 +17,12 @@ def main():
     tag = os.path.join(folder, TAG_FILE_NAME)
     folder_under_tag = os.path.join(tag, "folder under tag")
 
+    aerofs_proc.stop_all()
+
     # create objects. the tag is created as a non empty directory
     os.makedirs(folder_under_tag)
+
+    aerofs_proc.run_ui()
 
     # share the folder
     r = ritual.connect()
