@@ -1,4 +1,5 @@
 import logging
+from aerofs_common.configuration import Configuration
 from pyramid.config import Configurator
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid_beaker import session_factory_from_settings
@@ -12,6 +13,9 @@ def main(global_config, **settings):
     """
     This function returns a Pyramid WSGI application.
     """
+
+    configuration = Configuration(settings['deployment.config_server_uri'], service_name='maintenance-web')
+    settings.update(configuration.server_properties())
 
     # Import template directories from views
     for view in views.__all__:

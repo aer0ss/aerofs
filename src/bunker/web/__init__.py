@@ -1,6 +1,7 @@
 import base64
 import logging
 import os
+from aerofs_common.configuration import Configuration
 from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
@@ -16,6 +17,9 @@ def main(global_config, **settings):
     """
     This function returns a Pyramid WSGI application.
     """
+
+    configuration = Configuration(settings['deployment.config_server_uri'], service_name='maintenance-web')
+    settings.update(configuration.server_properties())
 
     _initialize_session_keys(settings)
 

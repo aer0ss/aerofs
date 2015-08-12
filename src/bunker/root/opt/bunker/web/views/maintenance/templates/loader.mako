@@ -9,13 +9,13 @@
             $.get("${request.route_path('json-get-boot')}")
             .done(function(resp) {
                 var bootID = resp['id'];
-                console.log("reboot to /" + target + ". previous boot id: " + bootID);
+                console.log("Reboot to /" + target + ". previous boot id: " + bootID);
                 $.post("/json-boot/" + target)
                 .done(function() {
                     waitForReboot(bootID, onSuccess);
                 }).fail(function(xhr, textStatus, errorThrown) {
                     ## Ignore errors as the server might be killed before replying
-                    console.log("ignore json-boot failure: " + xhr.status + " " + textStatus + " " + errorThrown);
+                    console.log("Ignore json-boot failure: " + xhr.status + " " + textStatus + " " + errorThrown);
                     waitForReboot(bootID, onSuccess);
                 });
 
@@ -25,18 +25,21 @@
         }
 
         function waitForReboot(oldBootID, onSuccess) {
-            console.log('wait for reboot to finish');
+            console.log('Wait for reboot to finish');
             var interval = window.setInterval(function() {
                 $.get("${request.route_path('json-get-boot')}")
                 .done(function(resp) {
                     var bootID = resp['id'];
-                    console.log("boot id: " + bootID);
+                    console.log("Boot id: " + bootID);
+
+                    ## Track old vs new boot ID. Used to avoid race conditions where we check
+                    ## system state before the box manages to go offline.
                     if (oldBootID != bootID) {
                         window.clearInterval(interval);
                         if (onSuccess) onSuccess();
                     }
                 }).fail(function(xhr, textStatus, errorThrown) {
-                    console.log("ignore GET boot failure: " + xhr.status + " " + textStatus + " " + errorThrown);
+                    console.log("Ignore GET boot failure: " + xhr.status + " " + textStatus + " " + errorThrown);
                 });
             }, 1000);
         }

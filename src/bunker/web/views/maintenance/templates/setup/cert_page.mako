@@ -1,12 +1,11 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="setup_common.mako"/>
 
-<h4>Browser certificate:</h4>
+<h4>Browser certificate</h4>
 
 <form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
     <div class="row">
-
         <div class="col-sm-12">
             <label class="radio">
                 <input type='radio' id="cert-option-existing" name='cert.option'

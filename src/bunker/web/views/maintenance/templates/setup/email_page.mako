@@ -15,7 +15,7 @@
     local.verification_code = str(random.randint(1000, 9999))
 %>
 
-<h4>Email server:</h4>
+<h4>Email server</h4>
 
 <form method="post" role="form" onsubmit="submitForm(); return false;">
     <div class="row form-group">
@@ -195,8 +195,7 @@
             </div>
             <div class="modal-footer">
                 <a href="#" class="btn btn-primary" id="continue-btn"
-                    onclick="gotoNextPage(); return false;">
-                    Continue</a>
+                    onclick="gotoNextPage(); return false;">Continue</a>
             </div>
         </div>
     </div>

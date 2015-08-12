@@ -18,10 +18,6 @@ def set_configuration_initialized(request):
     maintenance_util.set_configuration_initialized()
     return {}
 
-####################
-# Below are proxies to other services. Necessary as the other services have no authentication.
-#
-
 
 @view_config(
     route_name='json-get-boot',

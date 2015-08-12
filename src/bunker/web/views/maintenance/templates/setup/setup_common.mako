@@ -25,12 +25,29 @@
         class='btn btn-primary pull-right'>
         Next ></button>
 </%def>
+<%def name="render_finish_button()">
+    <button
+        type="submit"
+        id='${_next_button_id()}'
+        class='btn btn-primary pull-right'>
+        Finish</button>
+</%def>
 
 <%def name="render_next_prev_buttons()">
     <div class="row next-prev">
         <div class="col-sm-12">
         <hr/>
             ${render_next_button()}
+            ${render_previous_button()}
+        </div>
+    </div>
+</%def>
+
+<%def name="render_finish_prev_buttons()">
+    <div class="row next-prev">
+        <div class="col-sm-12">
+        <hr/>
+            ${render_finish_button()}
             ${render_previous_button()}
         </div>
     </div>

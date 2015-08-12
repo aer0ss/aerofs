@@ -5,7 +5,7 @@
 <form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${csrf.token_input()}
 
-    <h4>This appliance's hostname:</h4>
+    <h4>This appliance's hostname</h4>
     ## current_config is a template parameter
     <div class="form-group">
         <input class="form-control" id="base-host-unified" name="base.host.unified" type="text"/>
@@ -62,8 +62,7 @@
     <p>The following ports need to be open for AeroFS desktop clients and Team
         Servers to connect to the appliance:</p>
     <ul>
-        ## N.B. REMEMBER TO UPDATE https://support.aerofs.com/hc/en-us/articles/204592794 as well
-        <li>TCP ports: 80, 443, 3478, 4433, 5222, 8084, 8484, 8888, and 29438.</li>
+        <li>TCP ports: 3478, 4433, 5222, 8084, 8888, and 29438.</li>
     </ul>
 
     <p>Your firewall or VPN may require configuration to unblock these ports for

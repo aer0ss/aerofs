@@ -19,7 +19,7 @@
         <input type="hidden" name="${url_param_next}" value="${next}">
 
         <input id="license-file" name="${url_param_license}" type="file" style="display: none">
-        <div class="row" style="margin-top: 80px; margin-bottom: 100px;">
+        <div class="row" style="margin-top: 40px; margin-bottom: 40px;">
             <div class="col-sm-6 col-sm-offset-3">
                 <p>
                     <button type="button" id='license-btn' class="btn btn-large btn-primary
@@ -44,12 +44,12 @@
 
     <div>
         %if is_initialized:
-            <p>Download your license file at
-                <a href="https://privatecloud.aerofs.com" target="_blank">privatecloud.aerofs.com</a>.
+            <p>Download your license file via your
+                <a href="https://privatecloud.aerofs.com" target="_blank">Private Cloud Dashboard</a>.
             </p>
         %else:
             <p>You should have received a license with this appliance. If not,
-                please <a href="https://privatecloud.aerofs.com/request_signup" target="_blank">
+                please <a href="https://privatecloud.aerofs.com/" target="_blank">
                 request a license</a>.</p>
             <p><a href="https://support.aerofs.com/hc/en-us/articles/204951110" target="_blank">
                 What happens if the license expires?</a></p>
@@ -57,10 +57,33 @@
     </div>
 </div>
 
+<%block name="custom_banner_display">
+    <div style="display:none; background:#EEE;" id="flash-msg-info" class="alert alert-block">
+        <span id="flash-msg-info-body">
+            You are using an insecure interface. It is recommended that you use our
+            <a id="secure-link" href="">secure site</a>. Browser warnings may appear if this is a
+            new installation and you have not yet configured a pubicly signed certificate and key.
+        </span>
+    <br/>
+    </div>
+</%block>
+
 <%block name="scripts">
     <script>
         $(document).ready(function() {
             $('#license-file').change(onLicenseFileChange);
+
+            if (location.port == 8484) {
+                ## Can't use config, as it might not have been initialized.
+                var secure = "https://" + window.location.hostname + ":8585";
+
+                var mngLink = document.getElementById("secure-link");
+                if (mngLink != null) {
+                    mngLink.setAttribute("href", secure);
+                }
+
+                $('#flash-msg-info').show();
+            }
         });
 
         function onLicenseFileChange() {

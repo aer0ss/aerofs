@@ -10,13 +10,12 @@
     from web.util import str2bool
 %>
 
-## N.B. maintenance_layout.mako uses the same layout
 <div class="row">
     ## Navigation bar
     ## Gets subsumed by top menu on mobile
     <div class="col-sm-3 hidden-xs">
         %if is_admin(request):
-            ${render_navigation_for_admin("left")}
+            ${render_navigation_for_admin()}
         %else:
             ${render_navigation_for_nonadmin()}
         %endif
@@ -45,7 +44,7 @@
                 <li class="divider"></li>
                 ## Navigation bar
                 %if is_admin(request):
-                    ${render_navigation_for_admin("drop")}
+                    ${render_navigation_for_admin()}
                 %else:
                     ${render_navigation_for_nonadmin()}
                 %endif
@@ -176,7 +175,7 @@
     </ul>
 </%def>
 
-<%def name="render_navigation_for_admin(id_postfix)">
+<%def name="render_navigation_for_admin()">
     <ul class="nav nav-list left-nav">
         <li class="nav-header">My AeroFS</li>
         <ul>
@@ -191,7 +190,10 @@
         <ul>
             ## N.B. the href here is populated by JavaScript on page load. Not the cleanest, but
             ## it's the best solution we have given the docker architecture.
-            <li><a id="mng-link-${id_postfix}">Manage appliance</a></li>
+            <%
+                mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + ':8585'
+            %>
+            <li><a href="${mng_url}">Manage appliance</a></li>
             <li><a href="${request.route_path('download_sccm')}">Enterprise deployment</a></li>
         </ul>
     </ul>
@@ -267,23 +269,3 @@
         });
     </script>
 </%block>
-
-<script type="text/javascript">
-    $(window).load(function()
-    {
-        var bunker = "http://" + window.location.hostname + ":8484";
-
-        ## Set href in 'Manage Appliance' link. Do this on page load instead of in real-time
-        ## for better browser experience.
-
-        var mngLinkLeft = document.getElementById("mng-link-left");
-        if (mngLinkLeft != null) {
-            mngLinkLeft.setAttribute("href", bunker);
-        }
-
-        var mngLinkDrop = document.getElementById("mng-link-drop");
-        if (mngLinkDrop != null) {
-            mngLinkDrop.setAttribute("href", bunker);
-        }
-    })
-</script>

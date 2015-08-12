@@ -16,7 +16,7 @@ def select_new_appliance(e, wait):
 
 
 def set_hostname(e, wait, hostname):
-    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 1 of 3'))
+    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 1 of 5'))
 
     # Fill hostname
     e.get_and_clear('#base-host-unified').send_keys(hostname)
@@ -29,7 +29,7 @@ def set_hostname(e, wait, hostname):
 
 
 def set_browser_cert(e, wait, cert, key):
-    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 2 of 3'))
+    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 2 of 5'))
 
     # Select Upload new cert
     e.get('#cert-option-new').click()
@@ -48,7 +48,7 @@ def set_browser_cert(e, wait, cert, key):
 
 
 def set_email(e, wait, email_host, email_port, admin_email):
-    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 3 of 3'))
+    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 3 of 5'))
 
     # Set remote mail relay
     e.get('input[value="remote"]').click()
@@ -84,14 +84,22 @@ def _click_next(e):
     e.get('#next-btn').click()
 
 
-def apply_config(e, wait):
-    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Please wait'))
+def reboot_system(e, wait):
+    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 4 of 5'))
 
-    # Click "Apply"
     e.get('.btn-primary').click()
-    print "The next step may take a while but should be less than five minutes:"
+    print "Rebooting system..."
 
-    # Wait for Apply Click "Create First User"
+    wait.until_display('#success-modal', timeout=10 * 60)
+    e.get('#success-modal .btn-primary').click()
+
+
+def repackage_installers(e, wait):
+    wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 5 of 5'))
+
+    e.get('.btn-primary').click()
+    print "Repackaging installers..."
+
     wait.until_display('#success-modal', timeout=10 * 60)
     e.get('#success-modal .btn-primary').click()
 
@@ -121,7 +129,7 @@ def run_all(d, wait, e, hostname, create_first_user):
     with open('/setup.yml') as f:
         y = yaml.load(f)
 
-    url = "http://" + hostname
+    url = "http://" + hostname + ':8484'
     print "Interacting with {}...".format(url)
     d.get(url)
 
@@ -131,7 +139,8 @@ def run_all(d, wait, e, hostname, create_first_user):
     set_hostname(e, wait, hostname)
     set_browser_cert(e, wait, y['browser-cert'], y['browser-key'])
     set_email(e, wait, y['email-host'], y['email-port'], y['admin-email'])
-    apply_config(e, wait)
+    reboot_system(e, wait)
+    repackage_installers(e, wait)
 
     # Create first admin account
     if create_first_user:

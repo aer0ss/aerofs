@@ -4,24 +4,18 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="progress_modal" file="../progress_modal.mako"/>
 
-## N.B. When adding or removing content, adjust the modals' "top" style
-## to match the content's position.
+<h4>Repackage installers</h4>
 
-<p>Your changes will be applied to various AeroFS system components.
-    This might take a short while.</p>
-<hr />
+<p>Custom desktop installer packages specific to your installation will be
+   generated. This might take a short while.</p>
 
-${common.render_previous_button()}
-<button
-    onclick='apply(); return false;' id="finish-btn"
-    class='btn btn-primary pull-right'>Apply and Finish</button>
+<form method="POST" role="form" onsubmit="submitForm(); return false;">
+    ${common.render_finish_prev_buttons()}
+</form>
 
 <%progress_modal:html>
-    <span id="count-down-text">Please wait for about
-        <strong><span id="count-down-number"></span></strong>
-        seconds while the system initializes services and customizes desktop
-        clients...</span>
-        <span id="be-patient-text">It should be done very shortly...</span>
+    <span id="be-patient-text">Please wait while the system customizes your
+    desktop client installers...</span>
 </%progress_modal:html>
 
 <div id="success-modal" class="modal" tabindex="-1" role="dialog">
@@ -36,21 +30,15 @@ ${common.render_previous_button()}
                 %if first_user_created:
                     <p>System configuration is complete.</p>
                 %else:
-                    <p>Next, you will create the system's first user.</p>
-                    <p>Your browser may warn about the certificate if you chose a self-signed certificate
-                        in the previous step.</p>
+                    <p>You may now create the system's first user.</p>
                 %endif
 
             </div>
             <div class="modal-footer">
-
                 <%
-                    # Redirect user to the set hostname rather than the hostname derived from the current URL which can be an IP
-                    # address. This is useful to suppress browser warnings if the CNAME of the browser certificate doesn't match
-                    # the IP address.
-                    home_url = 'https://' + current_config['base.host.unified']
-                    # Use the SMTP verification email as the default first user email
-                    email = current_config['last_smtp_verification_email']
+                    home_url = 'https://' + str(current_config['base.host.unified'])
+                    # Use the SMTP verification email as the default first user email.
+                    email = str(current_config['last_smtp_verification_email'])
                 %>
 
                 %if first_user_created:
@@ -66,7 +54,6 @@ ${common.render_previous_button()}
 
 <%def name="scripts()">
     <%progress_modal:scripts/>
-    ## spinner support is required by progress_modal
     <%spinner:scripts/>
     <%loader:scripts/>
 
@@ -75,46 +62,17 @@ ${common.render_previous_button()}
             initializeProgressModal();
             ## Disalbe esaping from all modals
             disableEscapingFromModal($('div.modal'));
-            initializeModals();
         });
 
-        function initializeModals() {
-            var countDownInterval;
-            $('#finish-btn').on('click', function() {
-                ## Start countdown
-                var countDown = 90;
-                printCountDown();
-                countDownInterval = window.setInterval(function() {
-                    countDown--;
-                    printCountDown();
-                }, 1000);
-
-                function printCountDown() {
-                    if (countDown > 0) {
-                        ## Show "please wait for <N> secs" message
-                        $('#count-down-text').show();
-                        $('#be-patient-text').hide();
-                        $('#count-down-number').text(countDown);
-                    } else {
-                        ## Show "it should be done shortly" message
-                        $('#count-down-text').hide();
-                        $('#be-patient-text').show();
-                    }
-                }
-            });
-            $('#${progress_modal.id()}').on('hidden.bs.modal', function() {
-                ## Stop countdown
-                window.clearInterval(countDownInterval);
-            });
+        function resume() {
+            ${common.trackInitialTrialSetup('Wait for services')}
+            $('#${progress_modal.id()}').modal('show');
+            waitForServicesReady();
         }
 
-        function apply() {
-            ${common.trackInitialTrialSetup('Clicked Apply Button')}
 
-            ## Show the progress modal
-            $('#${progress_modal.id()}').modal('show');
-
-            reboot('default', waitForServicesReady, onFailure);
+        function submitForm() {
+            resume();
         }
 
         function waitForServicesReady() {
@@ -219,7 +177,6 @@ ${common.render_previous_button()}
 
             }).fail(onFailure);
         }
-
 
         function onFailure(xhr) {
             console.log('failed');

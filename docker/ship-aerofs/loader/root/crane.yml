@@ -62,28 +62,29 @@ containers:
         - "80:80"
         - "443:443"
         - "4433:4433"
+        - "8484:8484"
+        - "8585:8585"
       volumes-from:
         - data
       link:
-        - ca-server:ca.service
-        - config:config.service
-        - web:web.service
-        - repackaging:repackaging.service
-        - charlie:charlie.service
-        - sp:sp.service
-        - havre:havre.service
-        - sparta:sparta.service
         - auditor:auditor.service
+        - bunker:bunker.service
+        - ca-server:ca.service
+        - charlie:charlie.service
+        - config:config.service
+        - havre:havre.service
         - openid:openid.service
         - polaris:polaris.service
+        - repackaging:repackaging.service
+        - sp:sp.service
         - status:status.service
+        - sparta:sparta.service
+        - web:web.service
 
   bunker:
     image: aerofs/bunker
     run:
       detach: true
-      publish:
-        - "8484:8484"
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
@@ -338,14 +339,13 @@ containers:
       publish:
         - "80:80"
         - "443:443"
+        - "8484:8484"
+        - "8585:8585"
       link:
-        # nginx doesn't talk to bunker, nor does it talk to web. added the dep
-        # anyway so nginx starts after bunker and web -- needed for appliance
-        # readiness detection via HTTP.
-        - maintenance-bunker:bunker.service
-        - maintenance-web:web.service
         - ca-server:ca.service
         - config:config.service
+        - maintenance-bunker:bunker.service
+        - maintenance-web:web.service
       volumes-from:
         - data
 
@@ -353,8 +353,6 @@ containers:
     image: aerofs/bunker
     run:
       detach: true
-      publish:
-        - "8484:8484"
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
@@ -375,6 +373,8 @@ containers:
       detach: true
       volumes-from:
         - data
+      link:
+        - config:config.service
 
 # Only root services are defined here. Always use 'crane -d all'.
 groups:
