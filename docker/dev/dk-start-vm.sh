@@ -21,7 +21,8 @@ then
         # FIXME: docker machine 0.4+ use tmpfs for / ?!?!?!?!
         # this means change to most of /etc, and crucially to docker daemon
         # config, are lost on reboot
-        tools/cache/start.sh
+        THIS_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
+        $THIS_DIR/../../tools/cache/start.sh
 
         # XXX
         # Only on Linux, we need to manually create a home folder mount for the current user.
