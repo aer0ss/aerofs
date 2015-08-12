@@ -20,6 +20,8 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper class to create a seed file
@@ -92,19 +94,21 @@ public class SeedCreator
         case DIR:
             if (oid.isTrash()) return;
             if (!oid.isRoot()) sdb.setOID_(path, true, oid);
-            IDBIterator<TypeNameOID> it = _mdbw.getTypedChildren_(sidx, oid);
-            try {
+            List<TypeNameOID> children = new ArrayList<>();
+            try (IDBIterator<TypeNameOID> it = _mdbw.getTypedChildren_(sidx, oid)) {
                 while (it.next_()) {
                     TypeNameOID tno = it.get_();
-                    populateImpl_(sidx, tno._oid, tno._type,
-                            path.isEmpty() ? tno._name : Util.join(path, tno._name), sdb);
+                    if (tno._type == Type.FILE) {
+                        sdb.setOID_(path.isEmpty() ? tno._name : Util.join(path, tno._name), false, tno._oid);
+                    } else {
+                        children.add(tno);
+                    }
                 }
-            } finally {
-                it.close_();
             }
-            break;
-        case FILE:
-            sdb.setOID_(path, false, oid);
+            for (TypeNameOID tno : children) {
+                populateImpl_(sidx, tno._oid, tno._type,
+                        path.isEmpty() ? tno._name : Util.join(path, tno._name), sdb);
+            }
             break;
         default:
             throw new AssertionError();
