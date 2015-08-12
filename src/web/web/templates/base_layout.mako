@@ -141,6 +141,7 @@
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                     <span id="flash-msg-error-body"></span>
                 </div>
+                <%block name="custom_banner_display"/>
             </div>
             </div>
         </div>

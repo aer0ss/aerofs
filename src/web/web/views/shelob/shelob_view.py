@@ -28,7 +28,7 @@ def get_new_shelob_token(request):
         request_method='GET',
 )
 def files(request):
-    return { 'splash': show_welcome_image_and_set_cookie(request) }
+    return {'splash': show_welcome_image_and_set_cookie(request)}
 
 
 # map of userid -> access_token

@@ -25,6 +25,7 @@
                 ('backup_and_upgrade', _("Backup and upgrade")),
                 ('setup', _("Setup")),
                 ('toggle_maintenance_mode', _("System maintenance")),
+                ('customization', _("Customization")),
             ]
 
             if not is_maintenance_mode(None):

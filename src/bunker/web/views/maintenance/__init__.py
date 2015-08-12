@@ -57,6 +57,7 @@ routes = [
     'json_upload_externalproperties',
     'autocomplete',
     'json_upload_additional_users',
+    'customization',
 
     'maintenance_mode',
     'license_expired',

@@ -116,6 +116,17 @@
         </li>
 </%block>
 
+<%block name="custom_banner_display">
+    <%
+        banner_text = request.registry.settings.get('customization.banner_text')
+    %>
+    %if banner_text:
+        <div id="flash-msg-info" class="alert alert-block" style="background:#EEE">
+            <span id="flash-msg-info-body">${ banner_text | n}</span>
+        </div>
+    %endif
+</%block>
+
 <%def name="home_url()">
     ${request.route_path('dashboard_home')}
 </%def>
