@@ -7,6 +7,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.Constants;
+import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.acl.Access;
@@ -33,6 +34,7 @@ import java.util.Random;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -559,6 +561,47 @@ public final class TestObjectResource {
 
         PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "folder2")
                 .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+    }
+
+    @Test
+    public void shouldBeAbleToMoveAnchors()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
+        OID sf = PolarisHelpers.newFolder(AUTHENTICATED, folder, "shared_folder");
+        OID anchor = SID.folderOID2convertedAnchorOID(sf);
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sf).jobID, 5);
+
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, folder, rootStore, anchor, "shared_folder");
+    }
+
+    @Test
+    public void shouldDisallowCyclicalMove()
+            throws Exception
+    {
+        SID share = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, share, "folder1");
+        OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
+
+        PolarisHelpers.moveObject(AUTHENTICATED, share, folder2, folder1, "folder1")
+                .assertThat().statusCode(SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void shouldDisallowCyclicalMoveAcrossStores()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder1");
+        OID sf = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "shared_folder");
+        OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, sf, "folder2");
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sf).jobID, 5);
+
+        PolarisHelpers.moveObject(AUTHENTICATED, rootStore, folder2, folder1, "folder1")
+                .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

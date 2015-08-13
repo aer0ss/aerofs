@@ -120,10 +120,8 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static OID removeFileOrFolder(RequestSpecification authenticated, UniqueID parent, OID child) {
-        OID folder = OID.generate();
+    public static void removeFileOrFolder(RequestSpecification authenticated, UniqueID parent, OID child) {
         removeObject(authenticated, parent, child).assertThat().statusCode(SC_OK);
-        return folder;
     }
 
     public static ValidatableResponse removeObject(RequestSpecification authenticated, UniqueID parent, OID child) {
@@ -136,10 +134,8 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static OID moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
-        OID folder = OID.generate();
+    public static void moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
         moveObject(authenticated, currentParent, newParent, child, newChildName).assertThat().statusCode(SC_OK);
-        return folder;
     }
 
     public static ValidatableResponse moveObject(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
