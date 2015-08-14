@@ -18,6 +18,8 @@ import java.sql.SQLException;
 public interface ContentProvider {
     KIndex pickBranch(SOID soid) throws SQLException, ExNotFound, ExUpdateInProgress;
 
+    boolean hasUnacknowledgedLocalChange(SOID soid) throws SQLException;
+
     SendableContent content(SOKID k) throws SQLException, ExNotFound;
 
     IPhysicalFile fileWithMatchingContent(SOID soid, ContentHash h) throws SQLException, ExNotFound;

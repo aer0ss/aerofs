@@ -56,6 +56,14 @@ public class DaemonContentProvider implements ContentProvider {
     }
 
     @Override
+    public boolean hasUnacknowledgedLocalChange(SOID soid) throws SQLException {
+        OA oa = _ds.getOANullable_(soid);
+        // local changes are irrelevant if there is a conflict branch
+        if (oa != null && oa.cas().size() > 1) return false;
+        return _ccdb.hasChange_(soid.sidx(), soid.oid());
+    }
+
+    @Override
     public KIndex pickBranch(SOID soid) throws SQLException, ExNotFound, ExUpdateInProgress {
         OA oa = _ds.getOANullable_(soid);
         if (oa == null || oa.cas().isEmpty()) throw new ExNotFound();

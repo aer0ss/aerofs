@@ -10,6 +10,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.RPC;
@@ -158,8 +159,15 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
 
         Long lcv = _cvdb.getVersion_(sidx, oid);
         if (lcv == null || lcv < rcv) {
-            l.debug("{} {} r {} >= {} l", msg.did(), soid, rcv, lcv);
-            throw new ExNoComponentWithSpecifiedVersion();
+            // avoid sending a permanent error if case the remote peer is racing against a
+            // response from polaris
+            if (_provider.hasUnacknowledgedLocalChange(soid)) {
+                l.debug("{} {} r {} local change in progress", msg.did(), soid, rcv);
+                throw new ExUpdateInProgress();
+            } else {
+                l.debug("{} {} r {} >= {} l", msg.did(), soid, rcv, lcv);
+                throw new ExNoComponentWithSpecifiedVersion();
+            }
         }
 
         KIndex kidx = _provider.pickBranch(soid);
