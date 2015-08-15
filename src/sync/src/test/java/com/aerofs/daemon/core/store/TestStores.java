@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.SyncSchema;
@@ -34,6 +35,8 @@ public class TestStores extends AbstractTest
     @Mock Store store;
     @Mock Store parentStore;
     @Mock Store extraStore;
+    @Mock EffectiveUserList effectiveUserList;
+
 
     IStoreDatabase sdb;
     Stores ss;
@@ -55,7 +58,7 @@ public class TestStores extends AbstractTest
 
         sh = new StoreHierarchy(sdb);
         Store.Factory factStore = mock(Store.Factory.class);
-        ss = new Stores(sh, sm, factStore, sidx2s, sdo);
+        ss = new Stores(sh, sm, factStore, sidx2s, sdo, effectiveUserList);
 
         when(sidx2s.get_(sidx)).thenReturn(store);
         when(factStore.create_(sidx)).thenReturn(store);

@@ -4,15 +4,23 @@
 
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.daemon.core.acl.EffectiveUserList;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.store.StoreHierarchy.StoreCreationListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
 
 import javax.inject.Inject;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.Callable;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /*
  * There should be one instance of this class.
@@ -24,6 +32,7 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
     private final SIDMap _sm;
     private final Store.Factory _factStore;
     private final MapSIndex2Store _sidx2s;
+    private final EffectiveUserList _effectiveUserList;
 
     @Inject
     public Stores(
@@ -31,12 +40,13 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
             SIDMap sm,
             Store.Factory factStore,
             MapSIndex2Store sidx2s,
-            StoreDeletionOperators sdo)
+            StoreDeletionOperators sdo, EffectiveUserList effectiveUserList)
     {
         _sh = sh;
         _sm = sm;
         _factStore = factStore;
         _sidx2s = sidx2s;
+        _effectiveUserList = effectiveUserList;
 
         _sh.setListener_(this);
         sdo.addImmediate_(this);
@@ -90,6 +100,8 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
         Store s = _factStore.create_(sidx);
         _sidx2s.add_(s);
 
+        _effectiveUserList.storeAdded_(sidx);
+
         s.postCreate_();
     }
 
@@ -97,11 +109,10 @@ public class Stores implements IStoreDeletionOperator, StoreCreationListener
      * Notify Devices and affected Store instances that this store is going to be deleted;
      * then remove it from the maps.
      */
-    private void notifyDeletion_(SIndex sidx)
+    private void notifyDeletion_(SIndex sidx) throws SQLException
     {
-
+        _effectiveUserList.storeRemoved_(sidx);
         _sidx2s.get_(sidx).preDelete_();
-
         _sidx2s.delete_(sidx);
         _sm.delete_(sidx);
     }

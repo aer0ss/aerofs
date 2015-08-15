@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.polaris;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.protocol.NewUpdatesSender;
@@ -112,7 +113,7 @@ public class InMemoryDS
                         mock(NewUpdatesSender.class), mock(Devices.class),
                         mock(IPulledDeviceDatabase.class), mock(PauseSync.class));
 
-        stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo);
+        stores = new Stores(sh, sm, factStore, new MapSIndex2Store(), sdo, mock(EffectiveUserList.class));
 
         ds.inject_(mdb, new MapAlias2Target(new AliasDatabase(dbcw)), tm, sm, sm, sdo, resolver);
     }

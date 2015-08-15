@@ -4,11 +4,10 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
-import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.acl.ACLFilter;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.ids.UserID;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
@@ -25,11 +24,13 @@ public class MultiuserACLFilter extends ACLFilter
      * reads, which conveniently ensures a reset on startup.
      */
     private long _epoch = 0;
+    private final UsersShard _userList;
 
     @Inject
-    public MultiuserACLFilter(IACLDatabase adb)
+    public MultiuserACLFilter(IACLDatabase adb, UsersShard userList)
     {
         super(adb);
+        this._userList = userList;
     }
 
     @Override
@@ -48,12 +49,19 @@ public class MultiuserACLFilter extends ACLFilter
     @Override
     public boolean shouldKeep_(Set<UserID> users)
     {
-        // don't filter anything if the list of users is empty
-        // single member -> store created on TS -> should not be filtered out
-        if (Cfg.usersInShard().isEmpty() || users.size() == 1) return true;
+        // All stores have at least 1 member: the TS user.
+        // All stores created by a regular user have at least 1 regular user member with OWNER access.
+        // Therefore, the only stores that have a single member are external stores created on a linked TS.
+        // Per-user sharding should not mess with these.
+        if (users.size() == 1 || !_userList.isSharded()) {
+            return true;
+        }
 
-        for (UserID user : Cfg.usersInShard()) {
-            if (users.contains(user)) return true;
+        // The CSV file is the list of users given by the admin and if given, it
+        // should exist in rtroot.
+        // Resulting user set is the union set of the two.
+        for (UserID user : users) {
+            if (_userList.contains(user)) return true;
         }
         return false;
     }

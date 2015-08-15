@@ -5,15 +5,8 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.daemon.core.phy.PrefixOutputStream;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.MDID;
-import com.aerofs.ids.OID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.daemon.core.CoreEventDispatcher;
@@ -38,6 +31,7 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -53,6 +47,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.util.EntityTagUtil;
 import com.aerofs.havre.Havre;
+import com.aerofs.ids.*;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -142,6 +137,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
 
 /**
  * Base class for tests exercising the public REST API

@@ -17,7 +17,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -26,8 +25,6 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -243,30 +240,6 @@ public class Cfg
         return _baseCfg.ver();
     }
 
-    private static List<UserID> _usersInShard;
-
-    public static List<UserID> usersInShard()
-    {
-        if (_usersInShard != null) return _usersInShard;
-        try {
-            List<UserID> l = Lists.newArrayList();
-            Scanner s = new Scanner(new File(Util.join(absRTRoot(), "users.csv")));
-            s.useDelimiter(",");
-            try {
-                while (s.hasNext()) {
-                    try {
-                        l.add(UserID.fromExternal(s.next()));
-                    } catch (ExInvalidID e) {}
-                }
-            } finally {
-                s.close();
-            }
-            _usersInShard = l;
-        } catch (FileNotFoundException e) {
-            _usersInShard = Collections.emptyList();
-        }
-        return _usersInShard;
-    }
 
     public static String absRTRoot()
     {
