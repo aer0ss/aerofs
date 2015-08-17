@@ -161,6 +161,7 @@ public class DevicesResource extends AbstractSpartaResource
                     .entity(new com.aerofs.rest.api.DeviceStatus(online, lastSeen))
                     .build();
         } catch (Exception e) {
+            l.error("Error getting device status: {}", e);
             return Response.status(Status.SERVICE_UNAVAILABLE).build();
         }
     }
