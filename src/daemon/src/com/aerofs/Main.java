@@ -73,7 +73,6 @@ public class Main
         //
         // INITIALIZE MAJOR COMPONENTS HERE!!!!!
         //
-        ProgramInformation.init_(prog);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
