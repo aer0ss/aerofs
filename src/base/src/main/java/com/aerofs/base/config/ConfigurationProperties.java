@@ -20,6 +20,11 @@ public class ConfigurationProperties
         _properties = new BaseProperties(properties);
     }
 
+    public static String getBaseHost()
+    {
+        return _properties.getStringProperty("base.host.unified", "aerofs.com");
+    }
+
     public static InetSocketAddress getAddressProperty(String key, InetSocketAddress defaultValue)
     {
         return _properties.getAddressProperty(key, defaultValue);

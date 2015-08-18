@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBaseHost;
 
 /**
  * Auto-reconnecting SSMP client with more granular event dispatching
@@ -167,6 +168,6 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
     public static InetSocketAddress getServerAddressFromConfiguration()
     {
         return getAddressProperty("base.ssmp.address",
-                InetSocketAddress.createUnresolved("aerofs.com", 29438));
+                InetSocketAddress.createUnresolved(getBaseHost(), 29438));
     }
 }
