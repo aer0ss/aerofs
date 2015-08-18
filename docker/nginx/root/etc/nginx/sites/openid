@@ -1,4 +1,5 @@
     location /identity {
+        rewrite /identity(.*) /$1 break;
         # proxies to Tomcat, the container for the identity servlet.
         proxy_pass http://openid.service:8080;
         client_max_body_size 4096m;
