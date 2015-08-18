@@ -1,14 +1,12 @@
 package com.aerofs.gui;
 
 import com.aerofs.LaunchArgs;
-import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.InitErrors;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgVer;
@@ -26,12 +24,9 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
-import org.slf4j.Logger;
 
 public class GUIProgram implements IProgram
 {
-    private static final Logger l = Loggers.getLogger(GUIProgram.class);
-
     private static final String WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE =
             L.product() +
                     " cannot launch because the Microsoft Visual " +
@@ -44,6 +39,11 @@ public class GUIProgram implements IProgram
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
+        if (InitErrors.hasErrorMessages()) {
+            showInitErrors(InitErrors.getTitle(), InitErrors.getDescription());
+            ExitCode.CONFIGURATION_INIT.exit();
+        }
+
         try {
             Util.initDriver("gc", rtRoot); // "gc" is the log file that aerofsd will write to
         } catch (UnsatisfiedLinkError linkError) {
@@ -68,11 +68,6 @@ public class GUIProgram implements IProgram
             if (arg.startsWith("-X")) {
                launchArgs.addArg(arg);
             }
-        }
-
-        if (InitErrors.hasErrorMessages()) {
-            showInitErrors(InitErrors.getTitle(), InitErrors.getDescription());
-            ExitCode.CONFIGURATION_INIT.exit();
         }
 
         // TODO (AT): really need to tidy up our launch sequence

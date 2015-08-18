@@ -62,8 +62,19 @@ public class Main
         MainUtil.initializeConfigurationSystem(appRoot, rtRoot);
 
         if (InitErrors.hasErrorMessages()) {
-            // GUIProgram will handle main errors itself
-            if (!prog.equals(LibParam.GUI_NAME)) {
+            // N.B. this block does not return once entered.
+            if (prog.equals(LibParam.GUI_NAME)) {
+                try {
+                    // N.B. GUIProgram will call exit in this case so this call returns only on
+                    // exceptions.
+                    launchProgram(rtRoot, prog, appArgs.toArray(new String[0]));
+                } catch (Throwable e) {
+                    String message = "failed in main(): " + Util.e(e);
+                    System.err.println(message);
+                    l.error("{}", message, e);
+                    ExitCode.FAIL_TO_LAUNCH.exit();
+                }
+            } else {
                 System.err.println(InitErrors.getTitle() + "\n\n" +
                         InitErrors.getDescription());
                 ExitCode.CONFIGURATION_INIT.exit();
@@ -116,7 +127,7 @@ public class Main
             }
         }
 
-        if (Cfg.inited()) l.warn("{} {}", Cfg.user(), Cfg.did().toStringFormal());
+        if (Cfg.inited()) l.info("{} {}", Cfg.user(), Cfg.did().toStringFormal());
     }
 
     private static void launchProgram(String rtRoot, String prog, String ... progArgs)
