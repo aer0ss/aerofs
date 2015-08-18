@@ -32,6 +32,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 
+import java.util.Collections;
 import java.util.List;
 
 public class DlgTransportDiagnostics extends AeroFSDialog
@@ -206,6 +207,8 @@ public class DlgTransportDiagnostics extends AeroFSDialog
                 }
             }
 
+            Collections.sort(_td.getTcpDevicesWithName());
+
             //Add Zephyr Devices. Don't need to check if there is an owner and device name because
             //only zephyr devices that is in the organization will be returned.
             for (int i = 0; i < zephyrDids.size(); i++){
@@ -216,6 +219,8 @@ public class DlgTransportDiagnostics extends AeroFSDialog
                         di.getDeviceName(),
                         di.getOwner().getUserEmail()));
             }
+
+            Collections.sort(_td.getZephyrDevicesWithName());
 
         }
 

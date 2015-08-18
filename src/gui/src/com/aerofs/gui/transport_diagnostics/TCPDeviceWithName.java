@@ -4,6 +4,8 @@
 
 package com.aerofs.gui.transport_diagnostics;
 
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.S;
 import com.google.protobuf.ByteString;
 
 /**
@@ -11,7 +13,7 @@ import com.google.protobuf.ByteString;
  * for Network Diagnostic troubleshooting.
  */
 
-public class TCPDeviceWithName {
+public class TCPDeviceWithName implements Comparable<TCPDeviceWithName>{
     private ByteString _did;
     private String _ipAddress;
     private String _deviceName;
@@ -21,7 +23,7 @@ public class TCPDeviceWithName {
         _did = did;
         _ipAddress = ipAddress;
         _deviceName = deviceName;
-        _email = email;
+        _email = checkIdForTeamServer(email);
     }
 
     public ByteString getDid(){
@@ -38,6 +40,27 @@ public class TCPDeviceWithName {
 
     public String getEmail() {
         return _email;
+    }
+
+    private String checkIdForTeamServer(String id){
+        if (UserID.fromInternal(id).isTeamServerID()){
+            return S.TEAM_SERVER_USER_ID;
+        }
+        return id;
+    }
+
+    /*
+        Used for sorting TCP devices under Network Diagnostics. It will sort the devices
+        alphabetically by user id then by device name.
+     */
+    @Override
+    public int compareTo(TCPDeviceWithName device) {
+        int i = this.getEmail().compareToIgnoreCase(device.getEmail());
+        if (i == 0) {
+            i = this.getDeviceName().compareToIgnoreCase(device.getDeviceName());
+        }
+
+        return i;
     }
 
 }

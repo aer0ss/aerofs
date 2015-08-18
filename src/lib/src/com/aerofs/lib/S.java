@@ -204,6 +204,8 @@ public class S
             TXT_COLLECTING_NETWORK_INFO = "Collecting network information.",
             LNK_FIND_DEVICE_ID       = "<a>How to find my Computer ID?</a>",
 
+            TEAM_SERVER_USER_ID = "Team Server",
+
             URL_TRANSPORTS_INFO      = "https://support.aerofs.com/hc/en-us/articles/201439324",
             URL_DEVICE_ID_INFO       = "https://support.aerofs.com/hc/en-us/articles/204592774",
 
