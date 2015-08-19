@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+# This whole script is one massive hack, use at your own discretion.
+#
+# Considerations:
+#   - ____make sure____ you have created your first user! otherwise a generated user will be the admin of your local prod.
+#   - running this script takes 1-5 minutes depending on # of users.
+#   - make sure the license limit > total number of users in your local prod.
+#   - the script is reads from /usr/share/dict/words. This file should be available on both linux and OS X
+#
+set -eu
+
+function usage() {
+    echo "Usage: $(basename $0) [USERS] [LIMIT]"
+    echo "  USERS: number of users to create. Default 300."
+    echo "  LIMIT: number of users allowed by the license. Default 1000."
+    exit 1
+}
+
+function setup() {
+    if ! docker ps | grep -q config ; then
+        echo "Unable to setup the fixture because the config service is not running."
+        echo "  try running \`dk-halt && dk-start\`."
+        exit 2
+    fi
+
+    # HACK ALERT !!!
+    echo "Setting up..."
+    docker exec config sed -i "s/open_signup=.*$/open_signup=true/g" "/opt/config/templates/server.tmplt"
+    # N.B. license_seats will be absent on first run so this line will do no-op.
+    # In subsequent runs of this script, we'll strip output from previous runs before adding a new line.
+    docker exec config sed -i "s/license_seats=.*$//g" "/opt/config/properties/external.properties"
+    docker exec config sh -c '/bin/echo "license_seats=1000" >> /opt/config/templates/server.tmplt'
+
+    # we really just need to restart sp here
+    echo "Restarting containers..."
+    "$(dirname $0)/../docker/dev/dk-reload.sh" sp
+
+    # sigh race
+    sleep 20
+}
+
+function gen_users() {
+    echo "Generating users..."
+
+    # making sure gnu sort is installed
+    if uname | grep -q Darwin ; then
+        which -s gsort || brew install coreutils
+        local readonly SORT="gsort"
+    else
+        local readonly SORT="sort"
+    fi
+
+    local i=1
+    # this is sorting by word's hash, which gives a random appearance despite being deterministic and predictable.
+    for word in $(cat "/usr/share/dict/words" | ${SORT} -R | head -n "$1")
+    do
+        USER="$word@127.0.0.1"
+        NAME="$(echo ${word:0:1} | tr '[a-z]' '[A-Z]')${word:1}"
+        echo "Creating user $i: $NAME $USER"
+        "$(dirname $0)/signup.sh" -u "${USER}" -f "${NAME}" >& /dev/null
+        i=$(( i + 1 ))
+    done
+}
+
+if [ $# -gt 2 ] ; then
+    usage
+elif [ $# -gt 0 ] ; then
+    if [ "$1" = "help" ] || [ "$1" == "-h" ] || [ "$1" == "?" ] ; then
+        usage
+    fi
+fi
+
+readonly USERS=${1:-300}
+readonly LIMIT=${2:-1000}
+
+setup "${LIMIT}"
+gen_users "${USERS}"
