@@ -4,13 +4,18 @@
 
 package com.aerofs.lib.cfg;
 
+import static com.aerofs.base.config.ConfigurationProperties.*;
+
 import com.aerofs.base.Lazy;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
+import org.slf4j.Logger;
 
 public class CfgEnabledTransports
 {
     private Lazy<Boolean> _tcpEnabled =
-            new Lazy<>(() -> CfgUtils.disabledByFile(BaseCfg.getInstance().absRTRoot(), LibParam.NOTCP));
+            new Lazy<>(() -> CfgUtils.disabledByFile(BaseCfg.getInstance().absRTRoot(), LibParam.NOTCP)
+                    && getBooleanProperty( "base.lansync.enabled", true));
     private Lazy<Boolean> _zephrEnabled =
             new Lazy<>(() -> CfgUtils.disabledByFile(BaseCfg.getInstance().absRTRoot(), LibParam.NOZEPHYR));
 

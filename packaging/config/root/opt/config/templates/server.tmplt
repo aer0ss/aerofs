@@ -109,5 +109,4 @@ sp.max.membership.sharedfolder=150
 sp.max.membership.group=150
 
 base.bifrost.internal.host=sparta.service
-
 customization.banner_text={{ customization_banner_text }}

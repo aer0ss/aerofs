@@ -11,7 +11,7 @@
 <div class="page-block footnote">
     %if possible_backup:
         Is this a backup appliance?
-        <a href="${request.route_path('sync_settings')}">Update appliance settings here.</a>
+        <a href="${request.route_path('restore_settings')}">Update appliance settings here.</a>
         <br/>
     %endif
 

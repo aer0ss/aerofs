@@ -81,6 +81,7 @@ public class TestBaseProperties
     @Test
     public void shouldHandleBooleanProperties()
     {
+        assertTrue(     _properties.getBooleanProperty("True", true));
         assertTrue(     _properties.getBooleanProperty("true1", false));
         assertTrue(     _properties.getBooleanProperty("true2", false));
         assertTrue(     _properties.getBooleanProperty("true3", false));

@@ -1,112 +1,115 @@
-<%namespace name="bootstrap" file="bootstrap.mako"/>
-<%namespace name="spinner" file="spinner.mako"/>
-<%namespace name="csrf" file="csrf.mako"/>
-<%namespace name="progress_modal" file="progress_modal.mako"/>
-
 <%inherit file="maintenance_layout.mako"/>
-<%! page_title = "Sync Settings" %>
+<%! page_title = "LAN Sync Setting" %>
 
-<h2>
-    Sync Appliance Settings From Backup
-</h2>
+<%namespace name="csrf" file="csrf.mako"/>
+<%namespace name="loader" file="loader.mako"/>
+<%namespace name="spinner" file="spinner.mako"/>
+<%namespace name="progress_modal" file="progress_modal.mako"/>
+<%namespace name="modal" file="modal.mako"/>
+
+<h2>Sync Settings</h2>
+
+<p class="page-block">For improved auditability services, disable LAN sync and
+use only relay sync. The default sync setting is to use both LAN and relay sync
+between clients.</p>
 
 <div class="page-block">
-    <p>
-        Any settings changed through the AeroFS appliance management portal will not be changed in
-        standby appliances. If you have changed any appliance settings since the modification time
-        shown below, it is highly recommended to update appliance settings by uploading a current
-        backup file below.
-    </p>
-
-    <p>
-        %if modification_time:
-            This appliance's last modification time is <code><span id="modification-time"></span></code>.
-        %else:
-            We have no record of this appliance's last modification time.
-        %endif
-    </p>
+    ${sync_options_form()}
 </div>
 
-<hr/>
+<%def name="sync_options_form()">
+    <form method="POST" onsubmit="warning(); return false;">
+        ${csrf.token_input()}
+        <label class="radio">
+            <input type="radio" name="enable-lansync" id="lansync-disabled" value="false"
+                %if not is_lansync_enabled:
+                    checked
+                %endif
+            >
+            Relay sync
+        </label>
 
-<form role="form" method="post" action="javascript:void(0);">
-    ${csrf.token_input()}
-    <div class="form-group">
-        <input id="backup-file" name="backup-file" type="file" style="display: none">
-        <button type="button" class="btn btn-primary"
-                onclick="$('#backup-file').click(); return false;">
-                Sync Settings
-        </button>
-        <div class="help-block">
-            Backup files are in the format of <em>${example_backup_download_file_name}</em>
+        <label class="radio">
+            <input type="radio" name="enable-lansync" value="true"
+                %if is_lansync_enabled:
+                    checked
+                %endif
+            >
+            LAN and relay sync
+        </label>
+
+        <div class="row">
+            <div class="col-sm-6">
+                <button id="save-btn" class="btn btn-primary">Save</button>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
+</%def>
 
 <%progress_modal:html>
-    The system is syncing settings from the backup file...
+    Configuring your sync settings...
 </%progress_modal:html>
 
-<%block name="scripts">
-    ## spinner support is required by progress_modal
-    <%progress_modal:scripts/>
-    <%spinner:scripts/>
-    <%bootstrap:scripts/>
+<%modal:modal>
+    <%def name="id()">disable-lan-sync-modal</%def>
+    <%def name="title()">Disabling LAN sync...</%def>
+    <%def name="error()"></%def>
 
+    <p><strong>Is not recommended</strong>:
+        Disabling LAN sync drastically increases load on your appliance and decreases network performance. </p>
+
+    <%def name="footer()">
+        <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+        <a href="#" class="btn btn-primary"
+            onclick="submitForm(); return false;">
+            Disable LAN sync. Proceed.</a>
+    </%def>
+</%modal:modal>
+
+<%block name="scripts">
+    <%loader:scripts/>
+    <%spinner:scripts/>
+    <%progress_modal:scripts/>
     <script>
         $(document).ready(function() {
             initializeProgressModal();
-            populateModificationTime("${modification_time}");
-            $('#backup-file').change(onBackupFileChange);
         });
 
-        function populateModificationTime(isoformatUTC) {
-            var modificationTimeDiv = $('#modification-time')[0];
-            if (modificationTimeDiv) {
-                var localTime = datetimeFromUTC(isoformatUTC);
-                modificationTimeDiv.innerHTML = localTime.toLocaleTimeString() + " " + localTime.toLocaleDateString();
-            }
-        }
-
-        function datetimeFromUTC(isoformatUTC) {
-            var utcTime = new Date(isoformatUTC);
-            return new Date(utcTime.getTime() + utcTime.getTimezoneOffset());
-        }
-
-        function onBackupFileChange() {
-            var hasFile = $('#backup-file').val() != "";
-            ## Do nothing if the user doesn't provide a valid file.
-            if (hasFile) uploadAndRestoreFromBackup();
-        }
-
-        function uploadAndRestoreFromBackup() {
-            console.log("upload backup file");
+        function submitForm() {
             var $progress = $('#${progress_modal.id()}');
             $progress.modal('show');
 
-            $.ajax({
-                url: "${request.route_path('json_upload_backup')}",
-                type: "POST",
-                ## See http://digipiph.com/blog/submitting-multipartform-data-using-jquery-and-ajax
-                data: new FormData($('form')[0]),
-                contentType: false,
-                processData: false
-            })
-            .done(updateFromBackup)
+            $.post("${request.route_path('json_set_sync_settings')}",
+                    $('form').serialize())
+            .done(restartServices)
             .fail(function(xhr) {
-                showAndTrackErrorMessageFromResponse(xhr);
+                showErrorMessageFromResponse(xhr);
                 $progress.modal('hide');
             });
         }
 
-        function updateFromBackup() {
+        function restartServices() {
             var $progress = $('#${progress_modal.id()}');
-            runBootstrapTask('update-properties-from-backup', function() {
-                showSuccessMessage("Successfully updated properties");
+            reboot('current', function() {
                 $progress.modal('hide');
-            }, function() {
+                showSuccessMessage('New configuration is saved. Your desktop clients will need to be restarted for this change to take effect.');
+            }, function(xhr) {
                 $progress.modal('hide');
+                showErrorMessageFromResponse(xhr);
             });
+        }
+
+        function warning() {
+            if (document.getElementById('lansync-disabled').checked){
+                $('#disable-lan-sync-modal').modal('show');
+            }
+            else{
+                submitForm();
+            }
+        }
+
+        function hideWarning() {
+            hideAllMessages();
         }
 
     </script>
