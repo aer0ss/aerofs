@@ -233,7 +233,7 @@ class Multicast implements IMaxcast, ILinkStateListener
 
                 // ignore messages from myself
                 DID did = new DID(BaseUtil.fromPB(h.getTcpMulticastDeviceId()));
-                l.info("mc recv {} {}", did, h.getType());
+                l.debug("mc recv {} {}", did, h.getType());
                 if (did.equals(localdid)) continue;
 
                 if (h.getType() == Type.DATAGRAM) {

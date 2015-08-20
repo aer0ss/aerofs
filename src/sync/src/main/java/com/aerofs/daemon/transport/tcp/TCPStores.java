@@ -8,7 +8,6 @@ import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.transport.lib.IDevicePresenceListener;
 import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.PresenceService;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBTCPPong;
@@ -91,11 +90,18 @@ class TCPStores implements IPresenceSource, IDevicePresenceListener
     {
         if (_filterSeq == FILTER_SEQ_INVALID) return null;
 
+        int port;
+        try {
+            port = _tcp.getListeningPort();
+        } catch (Exception e) {
+            return null;
+        }
+
         PBTPHeader.Builder bd = PBTPHeader.newBuilder()
             .setType(Type.TCP_PONG)
             .setTcpPong(PBTCPPong
                     .newBuilder()
-                    .setUnicastListeningPort(_tcp.getListeningPort())
+                    .setUnicastListeningPort(port)
                     .setFilter(PBTCPStoresFilter
                             .newBuilder()
                             .setFilter(_filter.toPB())
@@ -306,10 +312,13 @@ class TCPStores implements IPresenceSource, IDevicePresenceListener
             _filterSeq = (int) (Math.random() * Integer.MAX_VALUE);
         }
 
+        PBTPHeader pong = newPongMessage(true);
+        if (pong == null) return;
+
         try {
-            _multicast.sendControlMessage(newPongMessage(true));
+            _multicast.sendControlMessage(pong);
         } catch (Exception e) {
-            l.error("mc pong: " + Util.e(e));
+            l.error("mc pong:", e);
         }
     }
 
