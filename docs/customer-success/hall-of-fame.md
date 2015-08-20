@@ -73,3 +73,10 @@ May 21, 2015
 
 Apr 25, 2015
 [Jiayuan Chen, Georgia Tech](https://aerofs.zendesk.com/agent/tickets/15926)
+
+> I had an incident pop up late in the day, Matt and Suthan had me fixed and back
+> online very quickly. They have been great to work with and we were very
+> satisfied.
+
+Aug 20, 2015
+[Wayne Creech, Verizon](https://aerofs.zendesk.com/agent/tickets/17171)
