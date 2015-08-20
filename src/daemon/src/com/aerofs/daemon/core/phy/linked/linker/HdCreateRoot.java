@@ -80,7 +80,7 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
                 l.error("link rollback failed: {} {}", Util.e(ex), Util.e(e));
                 throw ex;
             }
-                throw e;
+            throw e;
         }
         ev.setResult(sid);
 

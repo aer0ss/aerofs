@@ -5,22 +5,15 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.core.acl.EffectiveUserList;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.store.StoreHierarchy.StoreCreationListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
 
 import javax.inject.Inject;
 import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.Callable;
-
-import static com.google.common.base.Preconditions.checkState;
 
 /*
  * There should be one instance of this class.
