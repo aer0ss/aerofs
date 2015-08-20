@@ -315,11 +315,29 @@ public class LinkedStorage implements IPhysicalStorage
         l.info("staging phy root {} -> {}", root, staging);
 
         String[] children = root.list();
-        if (children != null) {
+        if (children != null && children.length > 0) {
             for (String child : children) {
                 _factFile.create(root, child)
                         .moveInSameFileSystem(_factFile.create(staging, child));
             }
+
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void aborted_()
+                {
+                    for (String child : children) {
+                        try {
+                            _factFile.create(staging, child)
+                                    .moveInSameFileSystem(_factFile.create(root, child));
+                        } catch (IOException e) {
+                            l.error("db/fs inconsistent: failed to rollback move", e);
+                            newMetric("linked.rollback")
+                                    .setException(e)
+                                    .sendAsync();
+                        }
+                    }
+                }
+            });
         }
 
         return staging.getAbsolutePath();
