@@ -58,9 +58,7 @@ public class VersionResource
     public VersionResource(Injector injector)
     {
         _users = L.isMultiuser() ? injector.getInstance(EffectiveUserList.class) : null;
-
     }
-
 
     @GET
     public Response getHighestSupportedVersion()

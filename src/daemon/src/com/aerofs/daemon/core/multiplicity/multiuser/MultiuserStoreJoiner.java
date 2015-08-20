@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
-import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
