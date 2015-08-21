@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.quota;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -55,7 +56,7 @@ public class TestQuotaEnforcement extends AbstractTest
     @Mock MapSIndex2Store sidx2s;
     @Mock CoreScheduler sched;
     @Mock StoreHierarchy stores;
-    @Mock StoreUsageCache usage;
+    @Mock DirectoryService ds;
     @Mock TokenManager tokenManager;
     @Mock TransManager tm;
     @Mock InjectableSPBlockingClientFactory factSP;
@@ -131,7 +132,7 @@ public class TestQuotaEnforcement extends AbstractTest
             throws Exception
     {
         for (SIndex sidx : sidxs) {
-            when(usage.getBytesUsed_(sidx)).thenReturn(mockBytesUsed(sidx));
+            when(ds.getBytesUsed_(sidx)).thenReturn(mockBytesUsed(sidx));
         }
         quota.start_();
 

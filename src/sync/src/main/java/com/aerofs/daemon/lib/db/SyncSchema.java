@@ -26,6 +26,7 @@ public class SyncSchema implements ISchema
             C_STORE_LTS_REMOTE = "s_rts",       // long: polaris logical timestamp
             // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
             // C_STORE_DIDS    = "s_d",     // concatenated DIDs
+            C_STORE_USAGE   = "s_u",        // sum of content size, in bytes
 
             // Store Hierarchy. See IStores' class-level comments for details.
             // parents.
@@ -143,7 +144,8 @@ public class SyncSchema implements ISchema
                 "create table " + T_STORE + "(" +
                         C_STORE_SIDX + " integer primary key," +
                         C_STORE_NAME + dbcw.nameType() + "," +
-                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null" +
+                        C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null," +
+                        C_STORE_USAGE + " integer not null default 0" +
                         ")" + dbcw.charSet());
 
         s.executeUpdate(

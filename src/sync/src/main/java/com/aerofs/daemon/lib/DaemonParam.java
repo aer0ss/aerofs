@@ -75,7 +75,7 @@ public class DaemonParam
     // i.e. send at most 4 progress notifications per transfer per second
     public static final int NOTIFY_THRESHOLD = 250;
 
-    public static final long CHECK_QUOTA_INTERVAL = 1 * C.MIN;
+    public static final long CHECK_QUOTA_INTERVAL = 10 * C.MIN;
 
     // re-hashing large prefixes synchronously would introduce large delays in RPCs.
     // These delays would lead the transport to abort transfers before it actually

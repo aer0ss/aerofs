@@ -276,6 +276,11 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Override
     public void deleteCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
+        // update store usage
+        OA oa = getOANullableNoFilter_(soid);
+        CA ca = oa.casNoExpulsionCheck().get(kidx);
+        _mdb.setBytesUsed_(soid.sidx(), _mdb.getBytesUsed_(soid.sidx()) - ca.length(), t);
+
         _mdb.deleteCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
@@ -506,6 +511,13 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 
         // Mtime since the 1970 epoch must not be negative
         assert mtime >= 0 : Joiner.on(' ').join(sokid, oa, mtime);
+
+        // update store usage
+        CA ca = oa.ca(sokid.kidx());
+        long diff = len - ca.length();
+        if (diff != 0) {
+            _mdb.setBytesUsed_(sokid.sidx(), _mdb.getBytesUsed_(sokid.sidx()) + diff, t);
+        }
 
         _mdb.setCA_(sokid.soid(), sokid.kidx(), len, mtime, h, t);
 

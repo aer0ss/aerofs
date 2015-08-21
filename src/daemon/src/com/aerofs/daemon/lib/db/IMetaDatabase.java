@@ -99,4 +99,6 @@ public interface IMetaDatabase
      * Return the total size of all the content branches in the given store.
      */
     long getBytesUsed_(@Nullable SIndex sidx) throws SQLException;
+
+    void setBytesUsed_(SIndex sidx, long l, Trans t) throws SQLException;
 }

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -699,27 +698,29 @@ public class MetaDatabase extends AbstractDatabase
                 ImmutableMap.of(T_OA, C_OA_SIDX, T_CA, C_CA_SIDX), sidx, c(), t);
     }
 
-    private PreparedStatement _psGetBytesUsed;
+    private PreparedStatementWrapper _pswGetBytesUsed = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_USAGE));
     @Override
     public long getBytesUsed_(SIndex sidx) throws SQLException
     {
-        try {
-            if (_psGetBytesUsed == null) _psGetBytesUsed = c()
-                    .prepareStatement("select sum(" + C_CA_LENGTH + ") from "
-                            + T_CA + " where " + C_CA_SIDX + "=?");
-
-            _psGetBytesUsed.setInt(1, sidx.getInt());
-
-            try (ResultSet rs = _psGetBytesUsed.executeQuery()) {
-                checkState(rs.next());
-                long ret = rs.getLong(1);
-                checkState(!rs.next());
-                return ret;
+        return exec(_pswGetBytesUsed, ps -> {
+            ps.setInt(1, sidx.getInt());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0;
             }
-        } catch (SQLException e) {
-            DBUtil.close(_psGetBytesUsed);
-            _psGetBytesUsed = null;
-            throw e;
-        }
+        });
+    }
+
+    private PreparedStatementWrapper _pswSetBytesUsed = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_USAGE));
+    @Override
+    public void setBytesUsed_(SIndex sidx, long total, Trans t) throws SQLException
+    {
+        exec(_pswSetBytesUsed, ps -> {
+            ps.setLong(1, total);
+            ps.setInt(2, sidx.getInt());
+            ps.executeUpdate();
+            return null;
+        });
     }
 }

@@ -94,7 +94,8 @@ public class DaemonPostUpdateTasks
             DPUTRemoveBackupTicks.class,
             DPUTCleanupPrefixes.class,
             DPUTFixOSXFID.class,
-            DPUTMigrateStorageConfig.class
+            DPUTMigrateStorageConfig.class,
+            DPUTAddStoreUsageColumn.class
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
 
             // only uncomment when rolling out Polaris to keep maximum flexibility

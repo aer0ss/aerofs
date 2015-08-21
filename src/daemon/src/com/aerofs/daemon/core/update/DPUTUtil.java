@@ -27,11 +27,8 @@ public class DPUTUtil
     {
         Connection c = dbcw.getConnection();
         assert !c.getAutoCommit();
-        Statement s = c.createStatement();
-        try {
+        try (Statement s = c.createStatement()) {
             op.run_(s);
-        } finally {
-            s.close();
         }
 
         c.commit();
