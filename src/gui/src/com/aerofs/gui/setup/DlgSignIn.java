@@ -15,16 +15,12 @@ import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
-import com.aerofs.gui.AeroFSTitleAreaDialog;
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
+import com.aerofs.gui.*;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.Images;
 import com.aerofs.gui.singleuser.SingleUserDlgSecondFactor;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.S;
@@ -37,27 +33,13 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -68,10 +50,7 @@ import java.util.List;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.GUIUtil.getNewText;
-import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
-import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
-import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
-import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
+import static org.eclipse.jface.dialogs.IDialogConstants.*;
 
 public class DlgSignIn extends AeroFSTitleAreaDialog
 {
@@ -86,6 +65,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());
         _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
+        _displayUserPassLogin = LibParam.OpenId.displayUserPassLogin();
     }
 
     @Override
@@ -116,13 +96,17 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         if (_showOpenIdDialog) {
             createOpenIdComposite(area)
                     .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
+        }
 
+        if(_showOpenIdDialog && _displayUserPassLogin) {
             createDivider(area, "OR")
                     .setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         }
 
-        createCredentialComposite(area)
-                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        if(_displayUserPassLogin || !_showOpenIdDialog) {
+            createCredentialComposite(area)
+                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        }
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;
@@ -497,6 +481,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     Control         _defaultControl;
 
     private boolean _showOpenIdDialog;
+
+    private boolean _displayUserPassLogin;
 
     private CompSpin _compSpin;
     private Label _lblStatus;

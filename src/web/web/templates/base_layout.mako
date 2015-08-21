@@ -154,9 +154,8 @@
         ## this element has the same or larger height as the footer, and it
         ## ensures that the footer never overlaps the content
         <div id="footer-push"></div>
+        <%block name="footer"/>
     </div>
-
-    <%block name="footer"/>
 
     <%
         from web.util import get_last_flash_message_and_empty_queue

@@ -29,15 +29,14 @@ public class CLISetup
     private boolean _isUnattendedSetup;
 
     private SetupModel _model = null;
+    private boolean _displayUserPassLogin = true;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
         String defaultRootAnchor = Setup.getDefaultAnchorRoot();
         String defaultDeviceName = Setup.getDefaultDeviceName();
 
-        _model = new SetupModel(rtRoot)
-                .setSignInActor(LibParam.OpenId.enabled() ?
-                        new OpenIdCLIActor(cli) : new CredentialActor());
+        _model = new SetupModel(rtRoot);
 
         _model._localOptions._rootAnchorPath = defaultRootAnchor;
         _model.setDeviceName(defaultDeviceName);
@@ -56,6 +55,8 @@ public class CLISetup
         }
 
         cli.show(MessageType.INFO, "Welcome to " + L.product() + ".");
+
+        setupSignInActor(cli);
 
         if (L.isMultiuser()) {
             _model.setInstallActor(new InstallActor.MultiUser());
@@ -161,14 +162,14 @@ public class CLISetup
     private void getUser(CLI cli)
             throws ExNoConsole
     {
-        if (!LibParam.OpenId.enabled()) {
+        if (_displayUserPassLogin) {
             _model.setUserID(cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
         }
     }
 
     private void getPassword(CLI cli) throws Exception
     {
-        if (LibParam.OpenId.enabled() == false) {
+        if (_displayUserPassLogin) {
             cli.show(MessageType.INFO, "If you forgot your password, go to\n" +
                     WWW.PASSWORD_RESET_REQUEST_URL + " to reset it.");
             _model.setPassword(String.valueOf(
@@ -286,5 +287,28 @@ public class CLISetup
                 return passwd;
             }
         }
+    }
+
+    // If both display_user_pass_login and openid_enabled are true,
+    // ask the user which method they would like to authenticate with.
+    private void setupSignInActor(CLI cli) throws Exception
+    {
+        if(LibParam.OpenId.enabled() && LibParam.OpenId.displayUserPassLogin()) {
+            if(useOpenIdToLogin(cli)) {
+                _model.setSignInActor(new OpenIdCLIActor(cli));
+                _displayUserPassLogin = false;
+            } else {
+                _model.setSignInActor(new CredentialActor());
+            }
+        } else if(LibParam.OpenId.enabled()) {
+            _model.setSignInActor(new OpenIdCLIActor(cli));
+            _displayUserPassLogin = false;
+        } else {
+            _model.setSignInActor(new CredentialActor());
+        }
+    }
+
+    private boolean useOpenIdToLogin(CLI cli) throws ExNoConsole {
+        return cli.ask(MessageType.INFO, "Log in with OpenID?");
     }
 }

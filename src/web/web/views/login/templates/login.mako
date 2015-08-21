@@ -5,24 +5,26 @@
     <div class="col-sm-6 col-sm-offset-3 login">
         <h1>Sign In to AeroFS</h1>
         %if openid_enabled:
-        <div class="openid-login">
-            <div class="col-sm-12">
-                <a class="btn btn-primary btn-large" href="${openid_url}">Sign in with ${openid_service_identifier}</a>
+            <div class="openid-login">
+                <div class="col-sm-12">
+                    <a class="btn btn-primary btn-large" href="${openid_url}">Sign in with ${openid_service_identifier}</a>
+                </div>
+                %if display_user_pass_login:
+                    <div class="col-sm-12 text-center login-divider">
+                        <span>
+                            OR
+                        </span>
+                    </div>
+                    <div class="col-sm-12 text-center">
+                        <h3>${openid_service_external_hint}</h3>
+                    </div>
+                %endif
             </div>
-            <div class="col-sm-12 text-center login-divider">
-                <span>
-                    OR
-                </span>
-            </div>
-            <div class="col-sm-12 text-center">
-                <h3>${openid_service_external_hint}</h3>
-            </div>
-        </div>
         %endif
 
             ## N.B. signup.mock manually creates this form. Make sure the fields there
             ## are consistent with the fields here.
-
+        %if display_user_pass_login or not openid_enabled:
             <form id="signin_form" class="form-horizontal" role="form" method="post">
                 ${self.csrf.token_input()}
                 <div class="form-group">
@@ -59,6 +61,7 @@
             <div class="row">
                 <div class="col-sm-12"><a href="${request.route_path('request_password_reset')}">Forgot your password?</a></div>
             </div>
+        %endif
     </div>
 </div>
 

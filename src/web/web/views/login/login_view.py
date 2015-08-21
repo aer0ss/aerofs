@@ -8,7 +8,7 @@ from aerofs_common.exception import ExceptionReply
 
 from aerofs_sp.gen.common_pb2 import PBException
 import requests
-from web.util import flash_error, get_rpc_stub
+from web.util import flash_error, get_rpc_stub, str2bool
 
 from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, \
         log_in_user, resolve_next_url
@@ -100,7 +100,12 @@ def login_view(request):
                                   url.urlencode({URL_PARAM_NEXT: next_url}))
     identifier = settings.get('identity_service_identifier', 'OpenID')
     external_hint = 'AeroFS user with no {} account?'.format(identifier)
-
+    display_user_pass_login = settings.get('lib.display_user_pass_login', True)
+    if display_user_pass_login:
+        display_user_pass_login = str2bool(display_user_pass_login)
+    else:
+        # default to True if config returns a empty string.
+        display_user_pass_login = True
     login = request.params.get(URL_PARAM_EMAIL)
     if not login: login = ''
 
@@ -112,6 +117,7 @@ def login_view(request):
         'openid_url': openid_url,
         'openid_service_identifier': identifier,
         'openid_service_external_hint': external_hint,
+        'display_user_pass_login': display_user_pass_login,
         'login': login,
     }
 
