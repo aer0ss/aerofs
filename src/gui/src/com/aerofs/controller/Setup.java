@@ -97,7 +97,7 @@ public class Setup
 
             preSetup(rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig,
+            setupSingleUserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig,
                     client, apiAccess);
 
             UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
@@ -153,10 +153,13 @@ public class Setup
     /**
      * @param sp must have been signed in
      */
-    private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, BackendConfig backendConfig, SPBlockingClient sp,
-            boolean apiAccess)
-            throws Exception
+    private void setupSingleUserImpl(UserID userID,
+                                     String rootAnchorPath,
+                                     String deviceName,
+                                     StorageType storageType,
+                                     BackendConfig backendConfig,
+                                     SPBlockingClient sp,
+                                     boolean apiAccess) throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
 

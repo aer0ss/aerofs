@@ -222,22 +222,41 @@ public abstract class BaseSecUtil
         }
     }
 
+    /**
+     * Write the private key to a new file with the given name.
+     *
+     * If the file already exists, we attempt to delete it. This can happen if an installation
+     * fails after getting certified but before really really finishing setup. Let's be paranoid since
+     * this problem is hard to recover from elsewhere. Also clean up if we fail exporting the private key.
+     */
     public static void writePrivateKey(PrivateKey privKey, String filename)
             throws IOException, GeneralSecurityException {
-        File file = new File(filename);
-        try (OutputStream out = new FileOutputStream(file)) {
-            out.write(exportPrivateKey(privKey).getBytes(StandardCharsets.UTF_8));
+
+        // Dear Java, it sure is annoying how a 'catch' is outside the lexical scope of the 'try'. Love, jP.
+        File keyFile = null;
+        try {
+            keyFile = new File(filename);
+            if (keyFile.exists()) keyFile.delete();
+
+            try (OutputStream out = new FileOutputStream(keyFile)) {
+                out.write(exportPrivateKey(privKey).getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Throwable t) {
+            // clean up if there was an unexpected problem
+            if (keyFile != null) keyFile.delete();
+            throw t;
         }
+
         try {
             Files.setPosixFilePermissions(Paths.get(filename),
                     ImmutableSet.of(PosixFilePermission.OWNER_READ));
         } catch (UnsupportedOperationException e) {
             // fallback to old permission API for non-Posix systems
             // TODO: on windows we should try to use DACL to keep other users away
-            file.setReadable(false, false);   // chmod a-r
-            file.setWritable(false, false);   // chmod a-w
-            file.setExecutable(false, false); // chmod a-x
-            file.setReadable(true, true);     // chmod u+r
+            keyFile.setReadable(false, false);   // chmod a-r
+            keyFile.setWritable(false, false);   // chmod a-w
+            keyFile.setExecutable(false, false); // chmod a-x
+            keyFile.setReadable(true, true);     // chmod u+r
         }
     }
 
