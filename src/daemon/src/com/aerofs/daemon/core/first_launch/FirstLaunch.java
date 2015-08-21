@@ -7,7 +7,10 @@ package com.aerofs.daemon.core.first_launch;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.acl.ACLFilter;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
@@ -16,12 +19,14 @@ import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableMap;
@@ -29,6 +34,8 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.aerofs.lib.cfg.CfgDatabase.FIRST_START;
@@ -56,6 +63,8 @@ public class FirstLaunch
     private final ILinker _linker;
     private final CoreQueue _q;
     private final StoreCreator _sc;
+    private final LocalACL _lacl;
+    private final ACLFilter _filter;
     private final IMapSID2SIndex _sid2sidx;
     private final TransManager _tm;
 
@@ -65,12 +74,13 @@ public class FirstLaunch
      */
     public static class AccessibleStores
     {
-        private ImmutableMap<SID, Boolean> _accessibleStores;
+        private ImmutableMap<SID, PBStoreACL> _accessibleStores;
 
         public boolean contains(SID sid)
         {
-            Boolean ext = _accessibleStores.get(sid);
-            return ext != null && !ext;
+            // the external flag is meaningless on TS
+            PBStoreACL acl = _accessibleStores.get(sid);
+            return acl != null && (L.isMultiuser() || !acl.getExternal());
         }
 
         void onFirstLaunchCompletion_()
@@ -82,7 +92,8 @@ public class FirstLaunch
     @Inject
     public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreQueue q, AccessibleStores as,
             ScanProgressReporter spr, CfgAbsRoots absRoots, CfgStorageType storageType,
-            CfgRootSID rootSID, StoreCreator sc, IMapSID2SIndex sid2sidx, TransManager tm)
+            CfgRootSID rootSID, StoreCreator sc, IMapSID2SIndex sid2sidx, TransManager tm,
+            LocalACL lacl, ACLFilter filter)
     {
         _as = as;
         _spr = spr;
@@ -95,6 +106,8 @@ public class FirstLaunch
         _sid2sidx = sid2sidx;
         _sc = sc;
         _tm = tm;
+        _lacl = lacl;
+        _filter = filter;
     }
 
     /**
@@ -193,14 +206,33 @@ public class FirstLaunch
 
     private void restoreRoot_(SID sid, String absPath, Trans t) throws Exception
     {
+        PBStoreACL acl = _as._accessibleStores.get(sid);
         if (!SharedFolderTagFileAndIcon.isStoreRoot(sid, absPath)
                 || _cfgAbsRoots.getNullable(sid) != null
-                || _as._accessibleStores.get(sid) == null) {
+                || acl == null) {
+            return;
+        }
+        Map<UserID, Permissions> perms = new HashMap<>();
+        acl.getSubjectPermissionsList().forEach(pb -> {
+            try {
+                perms.put(UserID.fromExternal(pb.getSubject()),
+                        Permissions.fromPB(pb.getPermissions()));
+            } catch (Exception e) {
+                l.warn("invalid ACL entry", e);
+            }
+        });
+        // honor acl filter
+        if (!_filter.shouldKeep_(perms.keySet())) {
+            l.info("skip restore {} {}", sid, absPath);
             return;
         }
         l.info("restore ext root {} {}", sid, absPath);
+        SIndex sidx = _sid2sidx.getAbsent_(sid, t);
+        // set ACLs before restoring root for consistency with auto-join
+        // crucially, failing to do that would break EffectiveUserList
+        _lacl.set_(sidx, perms, t);
         _linker.restoreRoot_(sid, absPath, t);
-        _sc.createRootStore_(sid, "", t);
+        _sc.createRootStore_(sid, acl.getName(), t);
     }
 
     private void fetchAccessibleStores_()
@@ -208,10 +240,9 @@ public class FirstLaunch
         try {
             SPBlockingClient sp = newMutualAuthClientFactory().create()
                     .signInRemote();
-            ImmutableMap.Builder<SID, Boolean> stores = ImmutableMap.builder();
+            ImmutableMap.Builder<SID, PBStoreACL> stores = ImmutableMap.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
-                // the external flag is meaningless on TS
-                stores.put(new SID(BaseUtil.fromPB(sacl.getStoreId())), sacl.getExternal() && !L.isMultiuser());
+                stores.put(new SID(BaseUtil.fromPB(sacl.getStoreId())), sacl);
             }
             _as._accessibleStores = stores.build();
         } catch (Exception e) {

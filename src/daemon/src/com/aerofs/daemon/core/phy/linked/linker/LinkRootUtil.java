@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.store.StoreCreator;
@@ -61,6 +62,7 @@ class LinkRootUtil
 
     SIndex linkRoot(InjectableFile f, SID sid) throws Exception
     {
+        if (sid.isUserRoot()) throw new ExBadArgs();
         try (Trans t = _tm.begin_()) {
             // If creating store, must link before creating store. This prevents creation of a
             // conflicting root in TS (FlatLinkedStorage creates new root by default on every

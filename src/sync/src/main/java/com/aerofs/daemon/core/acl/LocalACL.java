@@ -119,7 +119,7 @@ public class LocalACL
     /**
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
-    void set_(SIndex sidx, Map<UserID, Permissions> subject2role, Trans t)
+    public void set_(SIndex sidx, Map<UserID, Permissions> subject2role, Trans t)
             throws SQLException
     {
         _adb.set_(sidx, subject2role, t);
