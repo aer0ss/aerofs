@@ -19,6 +19,7 @@ public class TestBaseSecUtil {
     public void shouldRemovePrivKeyOnFailure() throws Exception
     {
         PrivateKey privateKey = new PrivateKey() {
+            static final long serialVersionUID = 0L;
             @Override
             public String getAlgorithm() {
                 throw new UnsupportedOperationException("this is a poisoned key");
