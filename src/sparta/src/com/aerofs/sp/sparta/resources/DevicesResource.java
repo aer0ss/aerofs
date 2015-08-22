@@ -142,8 +142,8 @@ public class DevicesResource extends AbstractSpartaResource
         validateAuth(token, Scope.READ_USER, d.getOwner());
 
         try {
-            HttpURLConnection conn = (HttpURLConnection)(new URL("http://charlie.service:8701"))
-                    .openConnection();
+            HttpURLConnection conn = (HttpURLConnection)(
+                    new URL("http://charlie.service:8701/checkin/" + d.id().toStringFormal())).openConnection();
             conn.addRequestProperty(HttpHeaders.AUTHORIZATION, getHeaderValue("sparta", getSecret()));
             conn.setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(5L, TimeUnit.SECONDS));
             conn.connect();
