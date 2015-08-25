@@ -26,7 +26,7 @@ clients.</p>
                     checked
                 %endif
             >
-            Relay sync
+            Use only relay sync
         </label>
 
         <label class="radio">
@@ -35,7 +35,7 @@ clients.</p>
                     checked
                 %endif
             >
-            LAN and relay sync
+            Use both LAN and relay sync
         </label>
 
         <div class="row">
