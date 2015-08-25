@@ -1,5 +1,5 @@
 <%inherit file="maintenance_layout.mako"/>
-<%! page_title = "LAN Sync Setting" %>
+<%! page_title = "Sync Settings" %>
 
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="loader" file="loader.mako"/>
@@ -9,9 +9,9 @@
 
 <h2>Sync Settings</h2>
 
-<p class="page-block">For improved auditability services, disable LAN sync and
-use only relay sync. The default sync setting is to use both LAN and relay sync
-between clients.</p>
+<p class="page-block">For improved auditing, disable LAN sync and use only
+relay sync. The default sync setting is to use both LAN and relay sync between
+clients.</p>
 
 <div class="page-block">
     ${sync_options_form()}
