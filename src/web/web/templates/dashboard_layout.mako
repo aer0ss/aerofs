@@ -117,11 +117,12 @@
 
 <%block name="custom_banner_display">
     <%
+        from web.util import escape_html_except_anchors
         banner_text = request.registry.settings.get('customization.banner_text')
     %>
     %if banner_text:
         <div id="flash-msg-info" class="alert alert-block" style="background:#EEE">
-            <span id="flash-msg-info-body">${ banner_text | n}</span>
+            <span id="flash-msg-info-body">${ banner_text | n,escape_html_except_anchors }</span>
         </div>
     %endif
 </%block>

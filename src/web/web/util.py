@@ -1,8 +1,10 @@
 """
 Helper functions for AeroFS website
 """
+from HTMLParser import HTMLParser
 import re
 import logging
+import markupsafe
 import smtplib
 from email.mime.text import MIMEText
 
@@ -208,3 +210,52 @@ def add_routes(config, routes):
 def get_settings_nonempty(settings, key, default=None):
     str_value = settings.get(key, '')
     return str_value if str_value != '' else default
+
+
+class CustomizableHTMLParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.buf = []
+
+    def handle_starttag(self, tag, attrs):
+        if self.is_tag_supported(tag):
+            self.buf.append(self.format_start_tag(tag, attrs))
+        else:
+            self.buf.append(markupsafe.escape(self.format_start_tag(tag, attrs)))
+
+    def handle_endtag(self, tag):
+        if self.is_tag_supported(tag):
+            self.buf.append(self.format_end_tag(tag))
+        else:
+            self.buf.append(markupsafe.escape(self.format_end_tag(tag)))
+
+    def handle_data(self, data):
+        self.buf.append(data)
+
+    def is_tag_supported(self, tag):
+        return tag in self.get_supported_tags()
+
+    def get_supported_tags(self):
+        return []
+
+    def format_start_tag(self, tag, attrs):
+        return "<{}{}{}>".format(tag, ' ' if len(attrs) > 0 else '', self.format_attrs_list(attrs))
+
+    def format_attrs_list(self, attrs):
+        return " ".join(map(lambda p: "{}='{}'".format(p[0], p[1]), attrs))
+
+    def format_end_tag(self, tag):
+        return "</{}>".format(tag)
+
+    def get_result(self):
+        return " ".join(self.buf)
+
+
+class CustomHTMLParser(CustomizableHTMLParser):
+    def get_supported_tags(self):
+        return {'a'}
+
+def escape_html_except_anchors(text):
+    parser = CustomHTMLParser()
+    parser.feed(text)
+    return parser.get_result()
