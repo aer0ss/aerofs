@@ -19,6 +19,7 @@ from maintenance_util import write_pem_to_file, \
     is_configuration_initialized, is_key_formatted_correctly, \
     get_conf_client, get_conf, is_ipv4_address, is_ipv6_address, \
     is_hostname_resolvable, is_hostname_xmpp_compatible, save_file_to_path
+from pyramid.httpexceptions import HTTPNotFound
 
 log = logging.getLogger(__name__)
 
@@ -54,25 +55,34 @@ _SMTP_VERIFICATION_SMTP_CERT = "email_sender_public_cert"
 )
 def setup(request):
     conf = get_conf(request)
-    page = request.params.get('page')
-    page = int(page) if page else 0
-
+    page = parse_page_number(request, [0,5])
     return {
-        'page': page,
-        'current_config': conf,
-        'is_configuration_initialized': is_configuration_initialized(request.registry.settings),
-        'enable_data_collection': _is_data_collection_enabled(conf),
-        'restored_from_backup': _is_restored_from_backup(conf),
-        # The following parameter is used by license_page.mako
-        'is_license_present_and_valid': is_license_present_and_valid(conf),
-        # The following parameter is used by create_or_restore.mako
-        'example_backup_download_file_name': example_backup_download_file_name(),
-        # The following parameter is used by email_page.mako
-        'default_support_email': _get_default_support_email(conf['base.host.unified']),
-        # The following parameter is used by already_restored_page.mako.
-        # TODO (WW) This really smells. Refactor setup.mako.
-        'get_already_restored_html_message': _get_already_restored_html_message(request)
-    }
+            'page': page,
+            'current_config': conf,
+            'is_configuration_initialized': is_configuration_initialized(request.registry.settings),
+            'enable_data_collection': _is_data_collection_enabled(conf),
+            'restored_from_backup': _is_restored_from_backup(conf),
+            # The following parameter is used by license_page.mako
+            'is_license_present_and_valid': is_license_present_and_valid(conf),
+            # The following parameter is used by create_or_restore.mako
+            'example_backup_download_file_name': example_backup_download_file_name(),
+            # The following parameter is used by email_page.mako
+            'default_support_email': _get_default_support_email(conf['base.host.unified']),
+            # The following parameter is used by already_restored_page.mako.
+            # TODO (WW) This really smells. Refactor setup.mako.
+            'get_already_restored_html_message': _get_already_restored_html_message(request)
+            }
+
+
+def parse_page_number(request, valid_range):
+    page = request.params.get('page')
+    try: page = int(page)
+    except:
+        raise HTTPNotFound()
+    if page >= valid_range[0] and page <= valid_range[1]:
+        return page
+    else:
+        raise HTTPNotFound()
 
 
 def _get_default_support_email(hostname):
