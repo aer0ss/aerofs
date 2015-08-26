@@ -98,7 +98,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
                 .map(ll -> ll.stream()
                                 .map(l -> l.toJson().toString())
                                 .collect(Collectors.joining(","))
-        ).collect(Collectors.joining(",", "[", "]"));
+        ).filter(s -> !s.isEmpty()).collect(Collectors.joining(",", "[", "]"));
     }
 
     private void requestLocations(DID did) {
