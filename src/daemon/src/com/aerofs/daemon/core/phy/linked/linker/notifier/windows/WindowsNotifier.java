@@ -50,7 +50,7 @@ public class WindowsNotifier implements INotifier, IWin32NotifyListener
     @Override
     public int addRootWatch_(LinkerRoot root) throws JNotifyException
     {
-        int id = _jn.win32_addWatch(root.absRootAnchor(),
+        int id = _jn.win32_addWatch("\\\\?\\" + root.absRootAnchor(),
                 JNotify_win32.FILE_NOTIFY_CHANGE_FILE_NAME |
                         JNotify_win32.FILE_NOTIFY_CHANGE_DIR_NAME |
                         JNotify_win32.FILE_NOTIFY_CHANGE_ATTRIBUTES |
