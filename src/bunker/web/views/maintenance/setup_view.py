@@ -75,8 +75,9 @@ def setup(request):
 
 
 def parse_page_number(request, valid_range):
+    # NB: the first setup request comes WITHOUT an explicit page number, hence the default value
     page = request.params.get('page')
-    try: page = int(page)
+    try: page = int(page) if page else valid_range[0]
     except:
         raise HTTPNotFound()
     if page >= valid_range[0] and page <= valid_range[1]:
