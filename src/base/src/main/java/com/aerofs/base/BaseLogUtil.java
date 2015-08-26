@@ -4,6 +4,8 @@
 
 package com.aerofs.base;
 
+import java.util.Arrays;
+
 public class BaseLogUtil
 {
     /**
@@ -23,6 +25,19 @@ public class BaseLogUtil
             t = t.getCause();
         } while (t != null);
 
+        return throwable;
+    }
+
+    public static <T extends Throwable> T trim(T throwable, int n) {
+        Throwable t = throwable;
+        do {
+            StackTraceElement[] st = t.getStackTrace();
+            if (n > 0 && st.length > n) {
+                st[n - 1] = new StackTraceElement(".", ".", null, -1);
+            }
+            t.setStackTrace(Arrays.copyOf(st, Math.min(n, st.length)));
+            t = t.getCause();
+        } while (t != null);
         return throwable;
     }
 

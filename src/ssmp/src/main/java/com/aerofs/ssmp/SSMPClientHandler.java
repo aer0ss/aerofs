@@ -10,6 +10,7 @@ import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -57,7 +58,9 @@ public class SSMPClientHandler extends SimpleChannelHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        L.warn("uncaught exception", e.getCause());
+        if (!(e instanceof ClosedChannelException)) {
+            L.warn("uncaught exception {}", e.getCause());
+        }
         ctx.getChannel().close();
     }
 

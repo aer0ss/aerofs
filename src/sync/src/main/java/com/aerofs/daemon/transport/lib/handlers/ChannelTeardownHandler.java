@@ -4,7 +4,9 @@
 
 package com.aerofs.daemon.transport.lib.handlers;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.transport.lib.ChannelData;
 import com.aerofs.ids.DID;
 import com.aerofs.base.net.CoreProtocolHandlers.ExBadMagicHeader;
@@ -15,9 +17,7 @@ import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.log.LogUtil;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -114,13 +114,15 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
         l.warn("{} closing {} because of uncaught err",
                 did,
                 TransportUtil.hexify(channel),
-                LogUtil.suppress(
+                BaseLogUtil.trim(BaseLogUtil.suppress(
                         cause,
                         ExBadMagicHeader.class,
+                        ExTimeout.class,
+                        ExHandshakeFailed.class,
                         UnresolvedAddressException.class,
                         IOException.class,
                         SSLException.class,
-                        SSLHandshakeException.class));
+                        SSLHandshakeException.class), 5));
 
         channel.close();
     }

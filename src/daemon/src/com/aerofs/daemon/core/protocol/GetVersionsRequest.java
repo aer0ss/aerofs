@@ -241,7 +241,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
             return;
         }
 
-        l.info("{} receive gv request for {} {}", from, sidx, requestBlock.getFromBase());
+        l.debug("{} receive gv request for {} {}", from, sidx, requestBlock.getFromBase());
 
         Util.checkMatchingSizes(
                 requestBlock.getDeviceIdCount(),
@@ -287,7 +287,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         LegacyStore s = (LegacyStore)_sidx2s.getThrows_(sidx);
         SenderFilterAndIndex sfi = s.iface(SenderFilters.class).get_(from, fromBase);
 
-        l.info("{} issue gv response for {} l {} r {} fs {}", from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
+        l.debug("{} issue gv response for {} l {} r {} fs {}", from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
 
         ////////
         // write the header
