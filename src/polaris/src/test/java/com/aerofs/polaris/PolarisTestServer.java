@@ -118,6 +118,7 @@ public final class PolarisTestServer extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         try {
+            CONFIGURATION.getLogging().setLevel("WARN");
             server.runWithConfiguration(CONFIGURATION);
         } catch (Throwable t) {
             MetricRegistries.unregisterMetrics();

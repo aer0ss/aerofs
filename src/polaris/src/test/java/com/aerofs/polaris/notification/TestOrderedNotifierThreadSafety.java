@@ -53,7 +53,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 public final class TestOrderedNotifierThreadSafety {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(TestOrderedNotifierThreadSafety.class);
 
     private static final int NUM_TRANSFORM_THREADS = 10;
@@ -81,7 +80,7 @@ public final class TestOrderedNotifierThreadSafety {
         console.setEnabled(true);
 
         LoggingConfiguration logging = new LoggingConfiguration();
-        logging.setLevel(Level.ALL.toString());
+        logging.setLevel(Level.INFO.toString());
         logging.setFile(file);
         logging.setConsole(console);
 

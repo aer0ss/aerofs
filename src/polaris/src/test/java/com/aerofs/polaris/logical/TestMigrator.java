@@ -5,6 +5,7 @@ import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
+import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
@@ -40,6 +41,9 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class TestMigrator {
+    static {
+        LoggerSetup.init();
+    }
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();

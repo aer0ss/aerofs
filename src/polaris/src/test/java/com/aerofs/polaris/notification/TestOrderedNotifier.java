@@ -42,7 +42,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public final class TestOrderedNotifier {
-
     private UpdatePublisher publisher = Mockito.mock(UpdatePublisher.class);
     private BasicDataSource dataSource;
     private DBI dbi;
@@ -61,7 +60,7 @@ public final class TestOrderedNotifier {
         console.setEnabled(true);
 
         LoggingConfiguration logging = new LoggingConfiguration();
-        logging.setLevel(Level.ALL.toString());
+        logging.setLevel(Level.INFO.toString());
         logging.setFile(file);
         logging.setConsole(console);
 
