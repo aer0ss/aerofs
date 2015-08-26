@@ -63,7 +63,6 @@ containers:
         - "443:443"
         - "4433:4433"
         - "8484:8484"
-        - "8585:8585"
       volumes-from:
         - data
       link:
@@ -340,7 +339,6 @@ containers:
         - "80:80"
         - "443:443"
         - "8484:8484"
-        - "8585:8585"
       link:
         - ca-server:ca.service
         - config:config.service

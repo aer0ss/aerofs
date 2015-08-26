@@ -1,0 +1,9 @@
+location /admin/ {
+    proxy_pass http://bunker.service:8484;
+
+    proxy_cache off;
+    proxy_buffering off;
+    proxy_request_buffering off;
+
+    client_max_body_size 4096M;
+}

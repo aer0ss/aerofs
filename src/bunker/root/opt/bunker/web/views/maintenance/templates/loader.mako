@@ -10,7 +10,7 @@
             .done(function(resp) {
                 var bootID = resp['id'];
                 console.log("Reboot to /" + target + ". previous boot id: " + bootID);
-                $.post("/json-boot/" + target)
+                $.post("${request.route_path('json-boot', target='')}" + target)
                 .done(function() {
                     waitForReboot(bootID, onSuccess);
                 }).fail(function(xhr, textStatus, errorThrown) {

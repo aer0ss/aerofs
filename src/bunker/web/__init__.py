@@ -49,11 +49,11 @@ def main(global_config, **settings):
     config.add_translation_dirs('locale')
 
     # Static views
-    config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
+    config.add_static_view('admin/' + settings['static.prefix'], 'static', cache_max_age=3600)
 
     # Import routes from views
     for view in views.__all__:
-        config.include('{}.{}'.format(views.__name__, view))
+        config.include('{}.{}'.format(views.__name__, view), route_prefix='/admin')
 
     config.scan()
 

@@ -75,7 +75,7 @@
 
             if (location.port == 8484) {
                 ## Can't use config, as it might not have been initialized.
-                var secure = "https://" + window.location.hostname + ":8585";
+                var secure = "https://" + window.location.hostname + "/admin";
 
                 var mngLink = document.getElementById("secure-link");
                 if (mngLink != null) {

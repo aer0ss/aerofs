@@ -192,7 +192,7 @@
             ## N.B. the href here is populated by JavaScript on page load. Not the cleanest, but
             ## it's the best solution we have given the docker architecture.
             <%
-                mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + ':8585'
+                mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
             %>
             <li><a href="${mng_url}">Manage appliance</a></li>
             <li><a href="${request.route_path('download_sccm')}">Enterprise deployment</a></li>

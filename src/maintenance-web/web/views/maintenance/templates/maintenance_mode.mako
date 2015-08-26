@@ -6,7 +6,7 @@
     <p>Your AeroFS adminstrators are performing maintenance.</p>
 
     <%
-        mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + ':8585'
+        mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
     %>
 
     <p><font size="-4">Administrators please visit your
