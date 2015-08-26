@@ -22,8 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -81,22 +79,16 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     {
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
                 any(OIDGenerator.class), any(Trans.class)))
-                .then(new Answer<Result>()
-                {
-                    @Override
-                    public Result answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        PathCombo pc = (PathCombo) invocation.getArguments()[0];
+                .then(invocation -> {
+                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
 
-                        // pc might be null when the test code redefines mightCreate()'s mocking
-                        // behavior.
-                        if (pc == null) return null;
+                    // pc might be null when the test code redefines mightCreate()'s mocking
+                    // behavior.
+                    if (pc == null) return null;
 
-                        String path = pc._absPath;
-                        return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
-                                Result.FILE;
-                    }
+                    String path = pc._absPath;
+                    return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
+                            Result.FILE;
                 });
     }
 
@@ -109,7 +101,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
         for (String p : paths) mockPhysicalDir(p);
 
-        factSS.create_(root, paths, false).scan_();
+        fullScan(paths, false);
 
         verify(factFile.create(p1)).list();
         verify(factFile.create(p2)).list();
@@ -178,7 +170,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Test
     public void shouldNotRecurseResuriveFlagIsFalse() throws Exception
     {
-        factSS.create_(root, Collections.singleton(pRoot), false).scan_();
+        fullScan(Collections.singleton(pRoot), false);
 
         InjectableFile f = factFile.create(Util.join(pRoot, "d2"));
         verify(f, never()).list();
@@ -189,27 +181,21 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     {
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
                 any(OIDGenerator.class), any(Trans.class)))
-            .then(new Answer<Result>()
-            {
-                @Override
-                public Result answer(InvocationOnMock invocation)
-                        throws Throwable
-                {
-                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
+            .then(invocation -> {
+                PathCombo pc = (PathCombo) invocation.getArguments()[0];
 
-                    if (pc._path.equals(new Path(rootSID, "d2"))) {
-                        return Result.NEW_OR_REPLACED_FOLDER;
-                    } else {
-                        InjectableFile f = factFile.create(pc._absPath);
-                        return f.isDirectory() ? Result.EXISTING_FOLDER : Result.FILE;
-                    }
+                if (pc._path.equals(new Path(rootSID, "d2"))) {
+                    return Result.NEW_OR_REPLACED_FOLDER;
+                } else {
+                    InjectableFile f = factFile.create(pc._absPath);
+                    return f.isDirectory() ? Result.EXISTING_FOLDER : Result.FILE;
                 }
             });
 
         InjectableFile f = factFile.create(Util.join(pRoot, "d2"));
         when(f.isDirectory()).thenReturn(true);
         when(f.canRead()).thenReturn(true);
-        factSS.create_(root, Collections.singleton(pRoot), false).scan_();
+        fullScan(Collections.singleton(pRoot), false);
 
         verify(f).list();
     }
@@ -229,7 +215,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
         for (String s : paths) { mockPhysicalDir(s); }
 
-        factSS.create_(root, paths, true).scan_();
+        fullScan(paths, true);
         verify(h, times(5)).hold_(any(SOID.class));
     }
 
@@ -246,20 +232,14 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
                 any(OIDGenerator.class), any(Trans.class)))
-            .then(new Answer<Result>()
-            {
-                @Override
-                public Result answer(InvocationOnMock invocation)
-                        throws Throwable
-                {
-                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
+            .then(invocation -> {
+                PathCombo pc = (PathCombo) invocation.getArguments()[0];
 
-                    if (pc._path.equals(new Path(rootSID, "d2"))) {
-                        return Result.NEW_OR_REPLACED_FOLDER;
-                    } else {
-                        InjectableFile f = factFile.create(pc._absPath);
-                        return f.isDirectory() ? Result.EXISTING_FOLDER : Result.FILE;
-                    }
+                if (pc._path.equals(new Path(rootSID, "d2"))) {
+                    return Result.NEW_OR_REPLACED_FOLDER;
+                } else {
+                    InjectableFile f = factFile.create(pc._absPath);
+                    return f.isDirectory() ? Result.EXISTING_FOLDER : Result.FILE;
                 }
             });
 
@@ -267,7 +247,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
         for (String s : paths) { mockPhysicalDir(s); }
 
-        factSS.create_(root, paths, false).scan_();
+        fullScan(paths, false);
         verify(h, times(5)).hold_(any(SOID.class));
     }
 
@@ -277,7 +257,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         mockPhysicalDir(pRoot);
         mockPhysicalDir(Util.join(pRoot, "d2"));
 
-        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+        fullScan(Collections.singleton(pRoot), true);
 
         // TODO: do not hard-code the expected number of logical objects
         verify(h, times(5)).hold_(any(SOID.class));
@@ -307,7 +287,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         when(filter.shouldIgnoreChilren_(any(PathCombo.class), oaFor(d2)))
                 .thenReturn(true);
 
-        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+        fullScan(Collections.singleton(pRoot), true);
 
         verify(h).hold_(soidFor("f1"));
         verify(h).hold_(soidFor("d2"));
@@ -326,7 +306,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         when(rh.isNonRepresentable_(oaFor("d2")))
                 .thenReturn(true);
 
-        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+        fullScan(Collections.singleton(pRoot), true);
 
         verify(h).hold_(soidFor("f1"));
         verify(h, never()).hold_(soidFor("d2"));
@@ -346,7 +326,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         when(rh.isNonRepresentable_(oaFor("d2")))
                 .thenReturn(true);
 
-        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+        fullScan(Collections.singleton(pRoot), true);
 
         verify(h).hold_(soidFor("f1"));
         verify(h, never()).hold_(soidFor("d2"));
@@ -382,5 +362,10 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
             }
         });
+    }
+
+    private void fullScan(Set<String> absPaths, boolean recursive) throws Exception {
+        ScanSession ss = factSS.create_(root, absPaths, recursive);
+        do {} while (!ss.scan_());
     }
 }

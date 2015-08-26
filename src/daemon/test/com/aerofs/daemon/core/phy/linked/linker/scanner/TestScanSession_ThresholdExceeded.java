@@ -17,8 +17,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Set;
 
@@ -72,22 +70,16 @@ public class TestScanSession_ThresholdExceeded extends AbstractTestScanSession
     {
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
                 any(OIDGenerator.class), any(Trans.class)))
-                .then(new Answer<Result>()
-                {
-                    @Override
-                    public Result answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        PathCombo pc = (PathCombo) invocation.getArguments()[0];
+                .then(invocation -> {
+                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
 
-                        // pc might be null when the test code redefines
-                        // mightCreate()'s mocking behavior.
-                        if (pc == null) return null;
+                    // pc might be null when the test code redefines
+                    // mightCreate()'s mocking behavior.
+                    if (pc == null) return null;
 
-                        String path = pc._absPath;
-                        return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
-                                Result.FILE;
-                    }
+                    String path = pc._absPath;
+                    return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
+                            Result.FILE;
                 });
     }
 
@@ -106,5 +98,4 @@ public class TestScanSession_ThresholdExceeded extends AbstractTestScanSession
         assertTrue(ss.scan_());
         verify(h, times(2)).hold_(any(SOID.class)); // hold both f.1.1 and f.2.1
     }
-
 }
