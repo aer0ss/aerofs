@@ -33,7 +33,7 @@
 </div>
 
 <%def name="device_authorization_options_form()">
-    <form method="POST" onsubmit="submitDeviceForm(); return false;">
+    <form id="device-form" method="POST" onsubmit="submitDeviceForm(); return false;">
         ${csrf.token_input()}
 
         <label class="checkbox">
@@ -130,7 +130,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
 </div>
 
 <%def name="mdm_options_form()">
-    <form method="POST" onsubmit="submitMDMForm(); return false;">
+    <form id="mdm-form" method="POST" onsubmit="submitMDMForm(); return false;">
         ${csrf.token_input()}
 
         <label class="checkbox">
@@ -197,7 +197,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_device_authorization')}",
-                    $('form').serialize())
+                    $('#device-form').serialize())
             .done(restartDeviceServices)
             .fail(function(xhr) {
                 showErrorMessageFromResponse(xhr);
@@ -210,7 +210,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_mobile_device_management')}",
-                    $('form').serialize())
+                    $('#mdm-form').serialize())
             .done(restartMDMServices)
             .fail(function(xhr) {
                 showErrorMessageFromResponse(xhr);
