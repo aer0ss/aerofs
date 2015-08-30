@@ -22,12 +22,8 @@ import static com.aerofs.ssmp.SSMPDecoder.*;
 import static com.aerofs.ssmp.SSMPDecoder.readIdentifier;
 import static com.aerofs.ssmp.SSMPDecoder.readPayload;
 
-/**
- * down: SSMPResponse / SSMPEvent -> ChannelBuffer
- * up  : ChannelBuffer -> SSMPRequest
- */
-public class SSMPServerHandler extends SimpleChannelHandler {
-    private final static Logger L = LoggerFactory.getLogger(SSMPServerHandler.class);
+public class SSMPServerCodec extends SimpleChannelHandler {
+    private final static Logger L = LoggerFactory.getLogger(SSMPServerCodec.class);
 
     private final Authenticator _auth;
 
@@ -53,7 +49,7 @@ public class SSMPServerHandler extends SimpleChannelHandler {
         }
     }
 
-    public SSMPServerHandler(Authenticator auth) {
+    public SSMPServerCodec(Authenticator auth) {
         _auth = auth;
     }
 

@@ -10,43 +10,19 @@ import (
 	"sync"
 )
 
-// A ConnectionManager manages a set of Connection.
-// All methods are safe to call from multiple goroutines simultaneously.
-type ConnectionManager interface {
-	GetConnection(user []byte) Connection
-	RemoveConnection(c Connection)
-}
-
 // A Dispatcher parses incoming requests and reacts to them appropriately.
 // All methods are safe to call from multiple goroutines simultaneously.
-type Dispatcher interface {
-	ConnectionManager
-
-	// Dispatch parses req, reacts appropriately and sends a response to c.
-	Dispatch(c Connection, req []byte)
-}
-
-// A TopicManager manages a set of Topic.
-// All methods are safe to call from multiple goroutines simultaneously.
-type TopicManager interface {
-	GetTopic(name []byte) Topic
-	GetOrCreateTopic(name []byte) Topic
-	RemoveTopic(name string)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type dispatcher struct {
-	topics      TopicManager
-	connections ConnectionManager
+type Dispatcher struct {
+	topics      *TopicManager
+	connections *ConnectionManager
 	handlers    map[string]handler
 
 	bufPool sync.Pool
 }
 
 // NewDispatcher creates a SSMP dispatcher using the given TopicManager and ConnectionManager.
-func NewDispatcher(topics TopicManager, connections ConnectionManager) Dispatcher {
-	return &dispatcher{
+func NewDispatcher(topics *TopicManager, connections *ConnectionManager) *Dispatcher {
+	return &Dispatcher{
 		topics:      topics,
 		connections: connections,
 		handlers: map[string]handler{
@@ -67,7 +43,8 @@ func NewDispatcher(topics TopicManager, connections ConnectionManager) Dispatche
 	}
 }
 
-func (d *dispatcher) Dispatch(c Connection, s []byte) {
+// Dispatch parses req, reacts appropriately and sends a response to c.
+func (d *Dispatcher) Dispatch(c *Connection, s []byte) {
 	// strip LF delim for command parser but keep it for forwarding
 	cmd := ssmp.NewCommand(s[0 : len(s)-1])
 	verb, err := ssmp.VerbField(cmd)
@@ -113,27 +90,27 @@ func (d *dispatcher) Dispatch(c Connection, s []byte) {
 	h.h(c, to, payload, s, d)
 }
 
-func (d *dispatcher) GetConnection(user []byte) Connection {
+func (d *Dispatcher) GetConnection(user []byte) *Connection {
 	return d.connections.GetConnection(user)
 }
 
-func (d *dispatcher) RemoveConnection(c Connection) {
+func (d *Dispatcher) RemoveConnection(c *Connection) {
 	d.connections.RemoveConnection(c)
 }
 
-func (d *dispatcher) buffer() *bytes.Buffer {
+func (d *Dispatcher) buffer() *bytes.Buffer {
 	buf := d.bufPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	return buf
 }
 
-func (d *dispatcher) release(b *bytes.Buffer) {
+func (d *Dispatcher) release(b *bytes.Buffer) {
 	d.bufPool.Put(b)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type handlerFunc func(Connection, []byte, []byte, []byte, *dispatcher)
+type handlerFunc func(*Connection, []byte, []byte, []byte, *Dispatcher)
 
 const (
 	fieldTo      = 1
@@ -150,8 +127,8 @@ func h(h handlerFunc, f int32) handler {
 	return handler{f: f, h: h}
 }
 
-func onSubscribe(c Connection, n, option, s []byte, d *dispatcher) {
-	from := c.User()
+func onSubscribe(c *Connection, n, option, s []byte, d *Dispatcher) {
+	from := c.User
 	if from == ssmp.Anonymous {
 		c.Write(respNotAllowed)
 		return
@@ -187,7 +164,7 @@ func onSubscribe(c Connection, n, option, s []byte, d *dispatcher) {
 		buf2 = d.buffer()
 	}
 
-	t.ForAll(func(cc Connection, wantsPresence bool) {
+	t.ForAll(func(cc *Connection, wantsPresence bool) {
 		if c == cc {
 			return
 		}
@@ -196,7 +173,7 @@ func onSubscribe(c Connection, n, option, s []byte, d *dispatcher) {
 		}
 		if presence {
 			buf2.WriteString(respEvent)
-			buf2.WriteString(cc.User())
+			buf2.WriteString(cc.User)
 			buf2.Write(batch)
 			if wantsPresence {
 				buf2.WriteString(" PRESENCE\n")
@@ -218,8 +195,8 @@ func onSubscribe(c Connection, n, option, s []byte, d *dispatcher) {
 	}
 }
 
-func onUnsubscribe(c Connection, n, _, s []byte, d *dispatcher) {
-	from := c.User()
+func onUnsubscribe(c *Connection, n, _, s []byte, d *Dispatcher) {
+	from := c.User
 	if from == ssmp.Anonymous {
 		c.Write(respNotAllowed)
 		return
@@ -237,7 +214,7 @@ func onUnsubscribe(c Connection, n, _, s []byte, d *dispatcher) {
 	buf.WriteByte(' ')
 	buf.Write(s)
 	event := buf.Bytes()
-	t.ForAll(func(cc Connection, wantsPresence bool) {
+	t.ForAll(func(cc *Connection, wantsPresence bool) {
 		if wantsPresence {
 			cc.Write(event)
 		}
@@ -246,8 +223,8 @@ func onUnsubscribe(c Connection, n, _, s []byte, d *dispatcher) {
 	c.Write(respOk)
 }
 
-func onBcast(c Connection, _, _, s []byte, d *dispatcher) {
-	from := c.User()
+func onBcast(c *Connection, _, _, s []byte, d *Dispatcher) {
+	from := c.User
 	if from == ssmp.Anonymous {
 		c.Write(respNotAllowed)
 		return
@@ -263,8 +240,8 @@ func onBcast(c Connection, _, _, s []byte, d *dispatcher) {
 	c.Write(respOk)
 }
 
-func onUcast(c Connection, u, _, s []byte, d *dispatcher) {
-	from := c.User()
+func onUcast(c *Connection, u, _, s []byte, d *Dispatcher) {
+	from := c.User
 	cc := d.connections.GetConnection(u)
 	if cc == nil {
 		c.Write(respNotFound)
@@ -281,8 +258,8 @@ func onUcast(c Connection, u, _, s []byte, d *dispatcher) {
 	}
 }
 
-func onMcast(c Connection, n, _, s []byte, d *dispatcher) {
-	from := c.User()
+func onMcast(c *Connection, n, _, s []byte, d *Dispatcher) {
+	from := c.User
 	t := d.topics.GetTopic(n)
 	if t != nil {
 		buf := d.buffer()
@@ -292,7 +269,7 @@ func onMcast(c Connection, n, _, s []byte, d *dispatcher) {
 		buf.WriteByte(' ')
 		buf.Write(s)
 		msg := buf.Bytes()
-		t.ForAll(func(cc Connection, _ bool) {
+		t.ForAll(func(cc *Connection, _ bool) {
 			if c != cc {
 				cc.Write(msg)
 			}
@@ -304,15 +281,15 @@ func onMcast(c Connection, n, _, s []byte, d *dispatcher) {
 
 var pong []byte = []byte(respEvent + ". " + ssmp.PONG + "\n")
 
-func onPing(c Connection, _, _, _ []byte, _ *dispatcher) {
+func onPing(c *Connection, _, _, _ []byte, _ *Dispatcher) {
 	c.Write(pong)
 }
 
-func onPong(c Connection, _, _, _ []byte, _ *dispatcher) {
+func onPong(c *Connection, _, _, _ []byte, _ *Dispatcher) {
 	// nothing to see here...
 }
 
-func onClose(c Connection, _, _, _ []byte, _ *dispatcher) {
+func onClose(c *Connection, _, _, _ []byte, _ *Dispatcher) {
 	c.Write(respOk)
 	c.Close()
 }

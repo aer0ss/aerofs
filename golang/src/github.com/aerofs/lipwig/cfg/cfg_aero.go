@@ -3,7 +3,7 @@
 
 // +build aero
 
-package main
+package cfg
 
 import (
 	"aerofs.com/service"
@@ -11,12 +11,13 @@ import (
 	"fmt"
 )
 
-func initConfig() {
+var Secret string = "/data/deployment_secret"
+
+func InitConfig() {
 	fmt.Println("waiting for deps")
 	service.ServiceBarrier()
-	secret = "/data/deployment_secret"
 }
 
-func tlsConfig() *tls.Config {
+func TLSConfig() *tls.Config {
 	return service.NewConfig("lipwig")
 }

@@ -99,27 +99,26 @@ type client struct {
 	h  atomic.Value
 	wg sync.WaitGroup
 
-	bufPool sync.Pool
-
 	responses chan Response
 }
 
-type discardHandler struct{}
+type DiscardHandler struct{}
 
-func (h *discardHandler) HandleEvent(_ Event) {}
+func (h *DiscardHandler) HandleEvent(_ Event) {}
 
-var discard discardHandler
+var Discard = &DiscardHandler{}
+
+var bufPool *sync.Pool = &sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
 
 // NewClient creates a new SSMP client using the given network connection
 // and event handler.
 func NewClient(c net.Conn, h EventHandler) Client {
 	cc := &client{
-		c: c,
-		bufPool: sync.Pool{
-			New: func() interface{} {
-				return new(bytes.Buffer)
-			},
-		},
+		c:         c,
 		responses: make(chan Response),
 	}
 	cc.SetEventHandler(h)
@@ -141,7 +140,7 @@ func (c *client) EventHandler() EventHandler {
 func (c *client) SetEventHandler(h EventHandler) {
 	if h == nil {
 		// Value doesn't accept nil
-		c.h.Store(&discard)
+		c.h.Store(Discard)
 	} else {
 		c.h.Store(h)
 	}
@@ -189,7 +188,7 @@ func (c *client) request(cmd string, to string, payload string) (Response, error
 			return r, ErrInvalidPayload
 		}
 	}
-	buf := c.bufPool.Get().(*bytes.Buffer)
+	buf := bufPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	buf.WriteString(cmd)
 	if len(to) > 0 {
@@ -205,7 +204,7 @@ func (c *client) request(cmd string, to string, payload string) (Response, error
 		return r, ErrRequestTooLarge
 	}
 	_, err := c.c.Write(buf.Bytes())
-	c.bufPool.Put(buf)
+	bufPool.Put(buf)
 	if err != nil {
 		c.c.Close()
 		return r, err

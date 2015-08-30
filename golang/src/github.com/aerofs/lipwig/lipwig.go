@@ -8,19 +8,18 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/aerofs/lipwig/cfg"
 	"github.com/aerofs/lipwig/server"
 	"io/ioutil"
 	"net"
 )
-
-var secret string
 
 func main() {
 	var address string
 	var insecure bool
 	var openLogin bool
 
-	initConfig()
+	cfg.InitConfig()
 
 	flag.StringVar(&address, "listen", "0.0.0.0:8787", "Listening address")
 	flag.BoolVar(&insecure, "insecure", false, "Disable TLS")
@@ -36,8 +35,8 @@ func main() {
 		auth.Schemes["open"] = func(_ net.Conn, _, _, _ []byte) bool { return true }
 	}
 
-	if len(secret) > 0 {
-		b, err := ioutil.ReadFile(secret)
+	if len(cfg.Secret) > 0 {
+		b, err := ioutil.ReadFile(cfg.Secret)
 		if err != nil {
 			panic(err)
 		}
@@ -48,13 +47,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	var tlsCfg *tls.Config = nil
 	if insecure {
 		fmt.Println("WARN: TLS is disabled")
 	} else {
-		l = tls.NewListener(l, tlsConfig())
+		tlsCfg = cfg.TLSConfig()
 		auth.Schemes["cert"] = server.CertAuth
 	}
-	s := server.NewServer(l, auth)
+	s := server.NewServer(l, auth, tlsCfg)
 	fmt.Println("lipwig serving at", s.ListeningPort())
 	err = s.Serve()
 	if err != nil {

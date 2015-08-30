@@ -21,4 +21,9 @@ public class SSMPResponse {
         this.code = code;
         this.payload = payload;
     }
+
+    @Override
+    public String toString() {
+        return Integer.toString(code) + " " + payload;
+    }
 }

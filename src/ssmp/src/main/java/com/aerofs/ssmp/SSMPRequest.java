@@ -5,11 +5,11 @@
 
 package com.aerofs.ssmp;
 
+import com.google.common.collect.ImmutableMap;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SSMPRequest {
     final static int NO_FIELD = 0;
@@ -32,15 +32,15 @@ public class SSMPRequest {
         final byte[] _s;
         final int _fields;
 
-        private final static Map<String, Type> _m;
+        private final static ImmutableMap<String, Type> _m;
         static {
-            _m = new ConcurrentHashMap<>();
+            ImmutableMap.Builder<String, Type> b = ImmutableMap.builder();
             for (Type t : values()) {
-                _m.put(t.name(), t);
+                b.put(t.name(), t);
             }
+            _m = b.build();
         }
 
-        // TODO: use trie instead?
         static Type byName(byte[] n) {
             return _m.get(new String(n, StandardCharsets.US_ASCII));
         }
@@ -89,14 +89,14 @@ public class SSMPRequest {
 
     @Override
     public String toString() {
-        return "[" + type + " " + to + " "
-                + (payload != null ? new String(payload, StandardCharsets.UTF_8) : null)
-                + "]";
+        return type + " " + to + " "
+                + (payload != null ? new String(payload, StandardCharsets.UTF_8) : null);
     }
 
     public static SSMPRequest login(@Nonnull SSMPIdentifier id, @Nonnull SSMPIdentifier scheme,
                                     @Nonnull String cred) {
-        return new SSMPRequest(Type.LOGIN, id, (scheme + " " + cred).getBytes(StandardCharsets.UTF_8));
+        return new SSMPRequest(Type.LOGIN, id, (scheme + (cred.isEmpty() ? cred : " " + cred))
+                .getBytes(StandardCharsets.UTF_8));
     }
 
     public static SSMPRequest subscribe(@Nonnull SSMPIdentifier topic, SubscriptionFlag flag) {

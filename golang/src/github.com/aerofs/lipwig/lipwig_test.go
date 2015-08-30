@@ -26,11 +26,6 @@ func (a *test_auth) Unauthorized() []byte {
 	return []byte("401\n")
 }
 
-type EventDiscarder struct{}
-
-func (d *EventDiscarder) HandleEvent(_ client.Event) {
-}
-
 type EventQueue struct {
 	q chan client.Event
 }
@@ -51,7 +46,7 @@ func NewServer() server.Server {
 	if err != nil {
 		panic(err)
 	}
-	s := server.NewServer(l, &test_auth{})
+	s := server.NewServer(l, &test_auth{}, nil)
 	ENDPOINT = "127.0.0.1:" + strconv.Itoa(s.ListeningPort())
 	return s
 }
@@ -89,7 +84,7 @@ func NewLoggedInClient(user string) TestClient {
 }
 
 func NewDiscardingLoggedInClient(user string) TestClient {
-	return NewLoggedInClientWithHandler(user, &EventDiscarder{})
+	return NewLoggedInClientWithHandler(user, client.Discard)
 }
 
 func u(hack ...interface{}) []interface{} {
@@ -373,5 +368,4 @@ func BenchmarkPRESENCE_100(b *testing.B) {
 		c[i%len(c)].SubscribeWithPresence("topic")
 	}
 	b.StopTimer()
-
 }

@@ -9,7 +9,7 @@ Key design goals:
   - Text-based, for easy debugging
   - Interleave request/responses and server events on a single connection
   - Simple enough that a complete and efficient client or server can be
-    written in pretty much any programming language in a few hours
+    written in pretty much any programming language within a few hours
 
 
 History
@@ -51,12 +51,12 @@ used between two messages.
 Grammar
 -------
 
-Using the same augmented BNF format as [RFC 2616](http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html)
+Using the augmented BNF format specified in [Section 2.1 of RFC 2616](http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html)
 
 ```
 message     = ( request | response | event ) LF
 
-request     = "LOGIN" SP id SP scheme [ SP payload ]
+request     = "LOGIN" SP id SP id [ SP payload ]
             | "CLOSE"
             | "PING"
             | "PONG"
@@ -73,11 +73,6 @@ forwardable = "SUBSCRIBE" SP id [ SP "PRESENCE" ]
             | "BCAST" SP payload
             | compat
 
-scheme      = "cert"
-            | "secret"
-            | "open"
-            | id
-
 compat      = verb [ SP id ] [ SP payload ]
 
 code        = 3DIGIT
@@ -85,11 +80,8 @@ verb        = 1*UPALPHA
 id          = 1*ID
 payload     = 1*PAYLOAD
 
-ID          = UPALPHA
-            | LOALPHA
-            | DIGIT
+ID          = UPALPHA | LOALPHA | DIGIT
             | "." | ":" | "@" | "/" | "_" | "-" | "+" | "=" | "~"
-
 PAYLOAD     = <any 8-bit value, except US-ASCII LF>
 UPALPHA     = <any US-ASCII uppercase letter "A".."Z">
 LOALPHA     = <any US-ASCII lowercase letter "a".."z">
@@ -128,7 +120,7 @@ If the authentication is successful, the server MUST send a `200` response
 with no payload.
 
 If no request is received after a reasonable period of time, typically a few
-seconds, the server MUST close the connection, without sending any response.
+seconds, the server MUST close the connection without sending any response.
 
 If the first request is not a `LOGIN` the server MUST send a `400` response
 and immediately close the connection.
@@ -169,13 +161,14 @@ client certificates.
 
 The `scheme` value for certificate authentication is `cert`.
 
-When a connection is made with a client certificate, `LOGIN` SHOULD succeed for
-any `id` matching either the Common Name or one of the Subject Alternative Names
-specified in the certificate.
+When a connection is made with a client certificate, `LOGIN` MUST succeed for
+any `identifier` matching either the Common Name or one of the Subject Alternative
+Names specified in the client certificate.
 
 To accommodate multiple connections being opened using the same certificate,
-servers MAY accept identifiers consisting of a valid CN or altName followed by
-a forward slash (`/`) and a sequence of one or more `ID` characters.
+servers MAY accept identifiers consisting of a valid Common Name or Subject
+Alternative Name followed by a forward slash (`/`) and a sequence of one or
+more `ID` characters.
 
 #### Shared secret
 
@@ -312,7 +305,7 @@ Send message to a single peer.
 
     UCAST <to> <payload>
 
-If no peer with the requested identifier are currently connected, the server
+If no peer with the requested identifier is currently connected, the server
 MUST send a `404` response.
 
 Otherwise it MUST forward the message to the given peer:

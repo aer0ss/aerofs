@@ -9,54 +9,21 @@ import (
 	"github.com/aerofs/lipwig/ssmp"
 	"io"
 	"net"
-	"sync"
 	"sync/atomic"
 	"time"
 )
 
 // Connection represents an open client connection to an SSMP server after
 // a successful LOGIN.
-type Connection interface {
-	// User returns the identifier of the logged in user.
-	User() string
-
-	// Subscribe adds a Topic to the list of subscriptions for the connection.
-	// This method is not safe to call from multiple goroutines simultaneously.
-	// It should only be called from the connection's read goroutine.
-	Subscribe(t Topic)
-
-	// Unsubscribe removes a topic from the list of subscriptions for the connection.
-	// This method is not safe to call from multiple goroutines simultaneously.
-	// It should only be called from the connection's read goroutine.
-	Unsubscribe(n []byte)
-
-	// Broadcast sends an identical payload to all users sharing at least one topic.
-	// This method is not safe to call from multiple goroutines simultaneously.
-	// It should only be called from the connection's read goroutine.
-	Broadcast(payload []byte)
-
-	// Write writes an arbitrary payload to the underlying network connection.
-	// The payload MUST be a valid encoding of a SSMP response or event.
-	// This method us safe to call from multiple goroutines simultaneously.
-	Write(payload []byte) error
-
-	// Close unsubscribes from all topics and closes the underlying network connection.
-	// This method us safe to call from multiple goroutines simultaneously.
-	Close()
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type connection struct {
+type Connection struct {
 	c net.Conn
 	r *bufio.Reader
 
+	User string
+
+	sub map[string]*Topic
+
 	closed int32
-	l      sync.Mutex
-
-	user string
-
-	sub map[string]Topic
 }
 
 var (
@@ -78,7 +45,7 @@ var (
 // request.
 // errUnauthorized is returned if the authenticator doesn't accept the provided
 // credentials.
-func NewConnection(c net.Conn, a Authenticator, d Dispatcher) (Connection, error) {
+func NewConnection(c net.Conn, a Authenticator, d *Dispatcher) (*Connection, error) {
 	r := bufio.NewReaderSize(c, 1024)
 	c.SetReadDeadline(time.Now().Add(10 * time.Second))
 	l, err := r.ReadSlice('\n')
@@ -105,33 +72,42 @@ func NewConnection(c net.Conn, a Authenticator, d Dispatcher) (Connection, error
 	if !a.Auth(c, user, scheme, cred) {
 		return nil, ErrUnauthorized
 	}
-	cc := &connection{
+	cc := &Connection{
 		c:    c,
 		r:    r,
-		user: string(user),
+		User: string(user),
 	}
 	go cc.readLoop(d)
 	cc.Write(respOk)
 	return cc, nil
 }
 
-func (c *connection) Subscribe(t Topic) {
+// Subscribe adds a Topic to the list of subscriptions for the connection.
+// This method is not safe to call from multiple goroutines simultaneously.
+// It should only be called from the connection's read goroutine.
+func (c *Connection) Subscribe(t *Topic) {
 	if c.sub == nil {
-		c.sub = make(map[string]Topic)
+		c.sub = make(map[string]*Topic)
 	}
-	c.sub[t.Name()] = t
+	c.sub[t.Name] = t
 }
 
-func (c *connection) Unsubscribe(n []byte) {
+// Unsubscribe removes a topic from the list of subscriptions for the connection.
+// This method is not safe to call from multiple goroutines simultaneously.
+// It should only be called from the connection's read goroutine.
+func (c *Connection) Unsubscribe(n []byte) {
 	if c.sub != nil {
 		delete(c.sub, string(n))
 	}
 }
 
-func (c *connection) Broadcast(payload []byte) {
-	v := make(map[Connection]bool)
+// Broadcast sends an identical payload to all users sharing at least one topic.
+// This method is not safe to call from multiple goroutines simultaneously.
+// It should only be called from the connection's read goroutine.
+func (c *Connection) Broadcast(payload []byte) {
+	v := make(map[*Connection]bool)
 	for _, t := range c.sub {
-		t.ForAll(func(cc Connection, _ bool) {
+		t.ForAll(func(cc *Connection, _ bool) {
 			if cc != c && !v[cc] {
 				v[cc] = true
 				cc.Write(payload)
@@ -142,7 +118,7 @@ func (c *connection) Broadcast(payload []byte) {
 
 var ping []byte = []byte(respEvent + ". " + ssmp.PING + "\n")
 
-func (c *connection) readLoop(d Dispatcher) {
+func (c *Connection) readLoop(d *Dispatcher) {
 	defer d.RemoveConnection(c)
 	idle := false
 	for {
@@ -161,7 +137,7 @@ func (c *connection) readLoop(d Dispatcher) {
 				continue
 			}
 			if err != io.EOF {
-				fmt.Println("read failed", c.user, err)
+				fmt.Println("read failed", c.User, err)
 			}
 			c.Close()
 			break
@@ -171,32 +147,34 @@ func (c *connection) readLoop(d Dispatcher) {
 	}
 }
 
-func (c *connection) User() string {
-	return c.user
-}
-
-func (c *connection) isClosed() bool {
+func (c *Connection) isClosed() bool {
 	return atomic.LoadInt32(&c.closed) != 0
 }
 
-func (c *connection) Write(payload []byte) error {
+// Write writes an arbitrary payload to the underlying network connection.
+// The payload MUST be a valid encoding of a SSMP response or event.
+// This method us safe to call from multiple goroutines simultaneously.
+func (c *Connection) Write(payload []byte) error {
 	if c.isClosed() {
-		return fmt.Errorf("connection closed", c.user)
+		return fmt.Errorf("connection closed", c.User)
 	}
-	var err error
-	if payload[len(payload)-1] != '\n' {
+	n := len(payload)
+	if n < 2 || n > 1024 {
+		return fmt.Errorf("invalid message size:", n)
+	}
+	if payload[n-1] != '\n' {
 		return fmt.Errorf("missing message delimiter")
 	}
-	c.l.Lock()
-	_, err = c.c.Write(payload)
-	if err != nil {
+	if _, err := c.c.Write(payload); err != nil {
 		c.c.Close()
+		return err
 	}
-	c.l.Unlock()
-	return err
+	return nil
 }
 
-func (c *connection) Close() {
+// Close unsubscribes from all topics and closes the underlying network connection.
+// This method us safe to call from multiple goroutines simultaneously.
+func (c *Connection) Close() {
 	if !atomic.CompareAndSwapInt32(&c.closed, 0, 1) {
 		return
 	}

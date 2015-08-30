@@ -19,7 +19,7 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.ssmp.SSMPIdentifier;
 import com.aerofs.ssmp.SSMPServer;
-import com.aerofs.ssmp.SSMPServerHandler.Authenticator;
+import com.aerofs.ssmp.SSMPServerCodec.Authenticator;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;

@@ -24,15 +24,15 @@ import java.util.concurrent.TimeUnit;
 import static com.aerofs.ssmp.SSMPDecoder.*;
 import static com.aerofs.ssmp.SSMPEvent.*;
 
-public class SSMPClientHandler extends SimpleChannelHandler {
-    private final static Logger L = LoggerFactory.getLogger(SSMPClientHandler.class);
+public class SSMPClientCodec extends SimpleChannelHandler {
+    private final static Logger L = LoggerFactory.getLogger(SSMPClientCodec.class);
 
     private final EventHandler _handler;
 
     private final ElapsedTimer _timer = new ElapsedTimer();
     private final Queue<SettableFuture<SSMPResponse>> _responses = new ConcurrentLinkedQueue<>();
 
-    public SSMPClientHandler(EventHandler handler) {
+    public SSMPClientCodec(EventHandler handler) {
         _handler = handler;
     }
 

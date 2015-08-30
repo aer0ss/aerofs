@@ -51,7 +51,7 @@ public class SSMPClient {
                 sslHandlerFactory.newSslHandler(),
                 new LineBasedFrameDecoder(1024, true, true),
                 new IdleStateHandler(timer, 30, 0, 0, TimeUnit.SECONDS),
-                new SSMPClientHandler(handler)
+                new SSMPClientCodec(handler)
         ));
     }
 

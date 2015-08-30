@@ -3,7 +3,7 @@
 
 // +build !aero
 
-package main
+package cfg
 
 import (
 	"crypto"
@@ -21,8 +21,10 @@ var cacertFile string
 var certFile string
 var keyFile string
 
-func initConfig() {
-	flag.StringVar(&secret, "secret", "", "Path to shared secret")
+var Secret string
+
+func InitConfig() {
+	flag.StringVar(&Secret, "secret", "", "Path to shared secret")
 	flag.StringVar(&hostname, "host", "", "TLS hostname")
 	flag.StringVar(&cacertFile, "cacert", "", "Path to CA certificate")
 	flag.StringVar(&certFile, "cert", "", "Path to server certificate")
@@ -44,37 +46,42 @@ func certFromFile(file string) (*x509.Certificate, error) {
 }
 
 // NB: uses global variables initialized from command line flags
-func tlsConfig() *tls.Config {
+func TLSConfig() *tls.Config {
 	if len(hostname) == 0 || len(cacertFile) == 0 ||
 		len(certFile) == 0 || len(keyFile) == 0 {
 		flag.Usage()
 		os.Exit(1)
 	}
+	tls, err := LoadTLSConfig(keyFile, certFile, cacertFile)
+	if err != nil {
+		flag.Usage()
+		os.Exit(1)
+	}
+	tls.ServerName = hostname
+	return tls
+}
+
+func LoadTLSConfig(keyFile, certFile, cacertFile string) (*tls.Config, error) {
 	cacert, err := certFromFile(cacertFile)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 	x509, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
-
-	return NewTLSConfig(hostname, cert.PrivateKey, x509, cacert)
+	return NewTLSConfig(cert.PrivateKey, x509, cacert), nil
 }
 
-func NewTLSConfig(host string, key crypto.PrivateKey, cert *x509.Certificate, cacert *x509.Certificate) *tls.Config {
+func NewTLSConfig(key crypto.PrivateKey, cert *x509.Certificate, cacert *x509.Certificate) *tls.Config {
 	roots := x509.NewCertPool()
 	roots.AddCert(cacert)
 	// lock down TLS config to 1.2 or higher and safest available ciphersuites
 	return &tls.Config{
-		ServerName: host,
 		MinVersion: tls.VersionTLS12,
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -84,6 +91,7 @@ func NewTLSConfig(host string, key crypto.PrivateKey, cert *x509.Certificate, ca
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
 		},
+		RootCAs: roots,
 		Certificates: []tls.Certificate{
 			tls.Certificate{
 				Certificate: [][]byte{

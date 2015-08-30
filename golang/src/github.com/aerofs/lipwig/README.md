@@ -1,12 +1,11 @@
 Lipwig
 ======
 
-All hail the new Postmaster General!
+<img src="lipwig.png" alt="going postal" width="600px" />
 
 Lipwig is the reference implementation of [SSMP](https://github.com/aerofs/ssmp),
 the Stupid-Simple Messaging Protocol, which aims to be a minimalist alternative
 to XMPP, STOMP and similar protocols.
-
 
 License
 -------
@@ -21,7 +20,7 @@ Required:
   - [Go](https://golang.org) 1.4+
 
 Optional:
-  - [golang-builder](https://github.com/aerofs/golang-builder)
+  - [gockerize](https://github.com/aerofs/gockerize)
     to build a minimal docker container
 
 
@@ -59,4 +58,16 @@ Usage of ./lipwig:
   -open=false               Enable open login
   -secret=""                Path to shared secret
 ```
+
+
+Performance
+-----------
+
+Although correctness and simplicity are the primary concerns in a reference
+implementation, lipwig is designed to scale. The amount of memory per active
+connection is very low (a few kilobytes) and given enough network bandwidth
+the server can handle upwards of 1 million messages per second on a laptop.
+
+Don't take our word for it: run [ssmperf](https://github.com/aerofs/ssmperf)
+on your own machine and see for yourself.
 

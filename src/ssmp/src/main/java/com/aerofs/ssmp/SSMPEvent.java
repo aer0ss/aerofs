@@ -5,10 +5,11 @@
 
 package com.aerofs.ssmp;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SSMPEvent {
     final static int NO_FIELD = 0;
@@ -29,15 +30,15 @@ public class SSMPEvent {
         final byte[] _s;
         final int _fields;
 
-        private final static Map<String, Type> _m;
+        private final static ImmutableMap<String, Type> _m;
         static {
-            _m = new ConcurrentHashMap<>();
+            ImmutableMap.Builder<String, Type> b = ImmutableMap.builder();
             for (Type t : values()) {
-                _m.put(t.name(), t);
+                b.put(t.name(), t);
             }
+            _m = b.build();
         }
 
-        // TODO: use trie instead?
         static Type byName(byte[] n) {
             return _m.get(new String(n, StandardCharsets.US_ASCII));
         }
@@ -58,5 +59,10 @@ public class SSMPEvent {
         this.type = type;
         this.to = to;
         this.payload = payload;
+    }
+
+    @Override
+    public String toString() {
+        return Joiner.on(" ").join(from, type, to, payload);
     }
 }
