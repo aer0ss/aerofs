@@ -464,8 +464,7 @@ public final class ObjectStore {
             child = dao.objects.get(childOid);
             childObjectType = storedChildObjectType;
         } else {
-            Preconditions.checkArgument(childObjectType == ObjectType.FOLDER || childObjectType == ObjectType.FILE, "new child object %s can not be created, as it is not a folder or file", childOid);
-            child = newObject(dao, parent.store, childOid, childObjectType);
+            child = newObject(dao, childObjectType == ObjectType.STORE ? childOid : parent.store, childOid, childObjectType);
         }
 
         // by this point the child object should exist

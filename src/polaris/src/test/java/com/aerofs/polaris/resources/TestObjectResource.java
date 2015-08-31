@@ -604,6 +604,16 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
+    @Test
+    public void shouldAllowInsertionOfStoreRootWithoutShare()
+            throws Exception
+    {
+        // this happens when another user creates an external root and invites users to it
+        SID rootStore = SID.rootSID(USERID);
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, SID.generate(), "sharedfolder", ObjectType.STORE)
+                .assertThat().statusCode(SC_OK);
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);
