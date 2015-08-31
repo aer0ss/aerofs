@@ -169,16 +169,18 @@ public class ContentSender
         OngoingTransfer ul = new OngoingTransfer(_sched, _ulstate, ep, c.sokid.soid(), c.length);
         checkState(_ongoing.add(ul));
         try {
+            ContentHash h;
             c.pf.prepareForAccessWithoutCoreLock_();
             TCB tcb = tk.pseudoPause_("snd-" + c.sokid);
             try {
-                return sendBig(ep, c, os, prefixLen, ul, md);
+                h = sendBig(ep, c, os, prefixLen, ul, md);
             } finally {
                 tcb.pseudoResumed_();
-                // IMPORTANT: mark transfer as done to avoid race between any scheduled progress
-                // notification and the end notification
-                ul.done_(End.SUCCESS);
             }
+            // IMPORTANT: mark transfer as done to avoid race between any scheduled progress
+            // notification and the end notification
+            ul.done_(End.SUCCESS);
+            return h;
         } catch (Exception e) {
             ul.done_(End.FAILURE);
             throw e;

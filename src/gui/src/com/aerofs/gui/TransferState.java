@@ -1,6 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -12,6 +13,7 @@ import com.aerofs.ui.UI;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +29,8 @@ import java.util.List;
  */
 public class TransferState
 {
+    private final Logger l = Loggers.getLogger(TransferState.class);
+
     private final Table<SOCID, DID, PBTransferEvent> _states;
     private final List<ITransferStateChangedListener> _listeners;
 
@@ -39,27 +43,13 @@ public class TransferState
             @Override
             public void onNotificationReceived(final PBNotification pb)
             {
-                UI.get().asyncExec(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        updateTransfers(pb);
-                    }
-                });
+                UI.get().asyncExec(() -> updateTransfers(pb));
             }
 
             @Override
             public void onNotificationChannelBroken()
             {
-                UI.get().asyncExec(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        clearTransfers();
-                    }
-                });
+                UI.get().asyncExec(() -> clearTransfers());
             }
         });
     }
@@ -78,6 +68,7 @@ public class TransferState
 
     private synchronized void clearTransfers()
     {
+        l.debug("clear transfers");
         _states.clear();
         notifyListeners();
     }
@@ -86,6 +77,9 @@ public class TransferState
     {
         SOCID socid = new SOCID(pb.getSocid());
         DID did = new DID(BaseUtil.fromPB(pb.getDeviceId()));
+
+        l.debug("update transfer: {} {} {} {}/{}",
+                socid, pb.getUpload() ? "to" : "from", did, pb.getDone(), pb.getTotal());
 
         if (pb.getDone() == pb.getTotal()) {
             _states.remove(socid, did);

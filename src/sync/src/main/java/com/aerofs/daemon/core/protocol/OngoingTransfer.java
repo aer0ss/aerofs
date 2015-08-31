@@ -58,8 +58,8 @@ public final class OngoingTransfer extends AbstractEBSelfHandling {
     @Override
     public void handle_() {
         if (_done) return;
-        _state.progress_(_socid, _ep, _totalFileLength - _remaining, _totalFileLength);
         _scheduled = false;
+        _state.progress_(_socid, _ep, _totalFileLength - _remaining, _totalFileLength);
     }
 
     public SOID soid() {
