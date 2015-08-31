@@ -156,11 +156,27 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     private void applyInsert_(SIndex sidx, OID oidChild, OID oidParent, String name, OA.Type type,
                               Trans t) throws Exception {
-        // TODO: migration?
         OA oa = _ds.getOANullable_(new SOID(sidx, oidChild));
         if (oa != null) {
-            checkState(oa.type() == type, "%s<%s>/<%s>", sidx, oidParent, oidChild);
-            l.info("ignore insert for existing object {} {} {}", sidx, oidParent, oidChild);
+            OA parent = _ds.getOANullable_(new SOID(sidx, oidParent));
+            if (parent == null) {
+                l.warn("invalid insert {}{} {}/{} {}", sidx, oidChild, oidParent, name, type);
+                throw new ExProtocolError();
+            } else if (oa.type() != type) {
+                l.warn("spurious insert {}{} {}/{} {}", sidx, oidChild, oidParent, name, type);
+                // FIXME(phoenix): handle the unlikely event of a random OID collision
+                //  -> ensure local object is not known remotely (no version)
+                //  -> assign a new random OID to the local object
+                throw new ExProtocolError();
+            } else if (oa.parent().equals(oidParent) && oa.name().equals(name)) {
+                l.info("nop insert {}{} {}/name", sidx, oidParent, oidChild, name);
+                return;
+            } else if (_ds.isDeleted_(oa)) {
+                l.info("restoring {}{} {}/{}", sidx, oidChild, parent.soid(), name);
+            } else {
+                l.info("move insert {}{} {}/name", sidx, oidParent, oidChild, name);
+            }
+            applyMove_(parent, oa, name, t);
             return;
         }
         _ds.createOA_(type, sidx, oidChild, oidParent, name, t);
