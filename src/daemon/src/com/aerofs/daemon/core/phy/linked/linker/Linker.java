@@ -36,6 +36,8 @@ public class Linker implements ILinker, IListener
     private final INotifier _notifier;
     private final LinkerRootMap _lrm;
 
+    private boolean _initialized;
+
     /**
      * @return whether the name indicate an internal file/folder and should therefore be ignored
      *
@@ -71,6 +73,14 @@ public class Linker implements ILinker, IListener
         for (SID sid : _lrm.init_()) {
             _sched.schedule(new EIUnlinkRoot(sid), 0);
         }
+        _initialized = true;
+
+        // avoid duplicate scan on first launch
+        if (Cfg.db().getBoolean(FIRST_START)) return;
+
+        // use a single event instead of one per store to avoid filling up the core queue
+        // when there are many roots (e.g. on a linked TS)
+        fullScan_();
     }
 
     @Override
@@ -106,8 +116,8 @@ public class Linker implements ILinker, IListener
         l.info("add root watch {}", root);
         root._watchId = _notifier.addRootWatch_(root);
 
-        // avoid duplicate scans on first launch
-        if (Cfg.db().getBoolean(FIRST_START)) return;
+        // avoid duplicate scan on startup
+        if (!_initialized) return;
 
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
