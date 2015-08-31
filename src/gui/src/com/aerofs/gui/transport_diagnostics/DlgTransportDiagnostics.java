@@ -184,7 +184,6 @@ public class DlgTransportDiagnostics extends AeroFSDialog
             _td.getTransportDiagnostics().getZephyrDiagnostics().getReachableDevicesList().forEach(device -> zephyrDids.add(device.getDid()));
             dids.addAll(tcpDids);
             dids.addAll(zephyrDids);
-
             //Get device info with list of DIDs
             Sp.GetDeviceInfoReply reply = _spClient.getDeviceInfo(dids);
 

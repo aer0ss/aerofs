@@ -3516,17 +3516,21 @@ public class SPService implements ISPService
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {
             Device device = _factDevice.create(did);
-            User owner = device.getOwner();
 
             // If there is a permission error or the device does not exist, simply provide an empty
             // device info object.
-            if (device.exists() && sharedUsers.contains(owner.id())) {
-                builder.addDeviceInfo(GetDeviceInfoReply.PBDeviceInfo.newBuilder()
-                    .setDeviceName(device.getName())
-                    .setOwner(PBUser.newBuilder()
-                        .setUserEmail(owner.id().getString())
-                        .setFirstName(owner.getFullName()._first)
-                        .setLastName(owner.getFullName()._last)));
+            if (device.exists()) {
+                User owner = device.getOwner();
+                if (sharedUsers.contains(owner.id())) {
+                    builder.addDeviceInfo(GetDeviceInfoReply.PBDeviceInfo.newBuilder()
+                            .setDeviceName(device.getName())
+                            .setOwner(PBUser.newBuilder()
+                                    .setUserEmail(owner.id().getString())
+                                    .setFirstName(owner.getFullName()._first)
+                                    .setLastName(owner.getFullName()._last)));
+                } else {
+                    builder.addDeviceInfo(EMPTY_DEVICE_INFO);
+                }
             } else {
                 builder.addDeviceInfo(EMPTY_DEVICE_INFO);
             }

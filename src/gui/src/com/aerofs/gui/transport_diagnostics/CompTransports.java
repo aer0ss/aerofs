@@ -109,13 +109,13 @@ public class CompTransports extends Composite
             if (reply == null) {
                 _deviceCounts.clear();
             } else {
-                if (reply.hasTcpDevicesWithName()) {
+                if (reply.hasTcpDiagnostics()) {
                     _deviceCounts.put(Transport.TCP, reply.getReachableTCPDevices());
                 } else {
                     _deviceCounts.remove(Transport.TCP);
                 }
 
-                if (reply.hasZephyrDevicesWithName()) {
+                if (reply.hasZephyrDiagnostics()) {
                     _deviceCounts.put(Transport.ZEPHYR,
                             reply.getReachableZephyrDevices());
                 } else {

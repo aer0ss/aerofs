@@ -147,4 +147,18 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
         verifyShouldSucceedWhenUsersShareFiles(deviceInfoList.get(0));
         verifyShouldNotSucceedWhenUsersDoNotShareFiles(deviceInfoList.get(1));
     }
+
+    @Test
+    public void shouldReturnSameNumberOfDevicesWithInvalidDids()
+        throws Exception
+    {
+        LinkedList<ByteString> dids = new LinkedList<ByteString>();
+        dids.add(BaseUtil.toPB(_deviceB01.id()));
+        dids.add(BaseUtil.toPB(new DID(UniqueID.generate())));
+        GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
+
+        assertEquals(reply.getDeviceInfoCount(), 2);
+    }
+
+
 }

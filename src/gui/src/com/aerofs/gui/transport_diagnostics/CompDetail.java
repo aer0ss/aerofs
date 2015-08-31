@@ -48,8 +48,8 @@ public class CompDetail extends Group implements ISelectionChangedListener
         } else {
             TransportDiagnosticsWithDeviceName td = (TransportDiagnosticsWithDeviceName) data;
 
-            _compTCP.setData(td.hasTcpDevicesWithName() ? td : null);
-            _compZephyr.setData(td.hasZephyrDevicesWithName() ? td : null);
+            _compTCP.setData(td.hasTcpDiagnostics() ? td : null);
+            _compZephyr.setData(td.hasZephyrDiagnostics() ? td : null);
         }
     }
 

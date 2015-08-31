@@ -32,7 +32,7 @@ public class TransportDiagnosticsWithDeviceName {
     }
 
     protected boolean hasTransportDiagnostics() {
-        return _transportDiagnostics != null || _tcpDevicesWithName.isEmpty();
+        return _transportDiagnostics != null;
     }
 
     protected void addToTCPDeviceList(TCPDeviceWithName tcpDeviceWithName){
@@ -44,8 +44,8 @@ public class TransportDiagnosticsWithDeviceName {
         return _tcpDevicesWithName;
     }
 
-    protected boolean hasTcpDevicesWithName(){
-        return _tcpDevicesWithName != null || !_tcpDevicesWithName.isEmpty();
+    protected boolean hasTcpDiagnostics(){
+        return hasTransportDiagnostics() && _transportDiagnostics.hasTcpDiagnostics();
     }
 
 
@@ -61,8 +61,8 @@ public class TransportDiagnosticsWithDeviceName {
         return _listeningAddress;
     }
 
-    protected boolean hasZephyrDevicesWithName(){
-        return _zephyrDevicesWithName != null || !_zephyrDevicesWithName.isEmpty();
+    protected boolean hasZephyrDiagnostics(){
+        return hasTransportDiagnostics() && _transportDiagnostics.hasZephyrDiagnostics();
     }
 
     protected void setListeningAddress(Diagnostics.PBInetSocketAddress listeningAddress){
