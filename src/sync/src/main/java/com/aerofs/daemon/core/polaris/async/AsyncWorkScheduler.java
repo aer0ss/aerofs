@@ -86,13 +86,9 @@ public class AsyncWorkScheduler implements AsyncTaskCallback
      */
     public void start_()
     {
-        if ((_state & STOPPED) != 0) {
-            l.info("{} start", _name);
-            _state &= ~STOPPED;
-            schedule_();
-        } else {
-            l.debug("{} already started", _name);
-        }
+        l.info("{} start", _name);
+        _state &= ~STOPPED;
+        schedule_();
     }
 
     /**
@@ -107,11 +103,10 @@ public class AsyncWorkScheduler implements AsyncTaskCallback
     {
         if ((_state & STOPPED) != 0) {
             l.info("{} stopped", _name);
-        } else if (_state == IDLE) {
-            l.info("{} imm sched", _name);
-            _state = SCHEDULED;
-            _sched.schedule_(_ev);
-        } else if (_state == SCHEDULED) {
+        } else if ((_state & INFLIGHT) != 0) {
+            l.info("{} delayed resched {}", _name, _state);
+            _state |= SCHEDULED;
+        } else if ((_state & SCHEDULED) != 0) {
             if (_delay > 0) {
                 l.info("{} fast resched {}", _name, _delay);
                 _ev.cancel_();
@@ -121,9 +116,10 @@ public class AsyncWorkScheduler implements AsyncTaskCallback
                 l.debug("{} already sched", _name);
             }
         } else {
-            checkState((_state & INFLIGHT) != 0);
-            l.info("{} delayed resched {}", _name, _state);
-            _state |= SCHEDULED;
+            checkState(_state == IDLE);
+            l.info("{} imm sched", _name);
+            _state = SCHEDULED;
+            _sched.schedule_(_ev);
         }
     }
 
