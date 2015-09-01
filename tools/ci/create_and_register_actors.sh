@@ -19,10 +19,10 @@ vagrant destroy --force
 vagrant up
 bottom=0
 top=$(($CLIENT_COUNT - 1))
+popd
 if [[ $top -ge $bottom ]]; then
     printf "aerofsbuild-vagrant-%i " $(seq $bottom $top) | "$ACTOR_POOL_DIR"/register.py --os l --vm y --isolated n
 fi
-popd
 
 # Windows actors
 pushd "$VAGRANT_BASE_DIR"/syncdet_win
@@ -30,10 +30,10 @@ vagrant destroy --force
 vagrant up
 bottom=0
 top=$(($WCLIENT_COUNT - 1))
+popd
 if [[ $top -ge $bottom ]]; then
     printf "aerofsbuild-win7-vagrant-%i " $(seq $bottom $top) | "$ACTOR_POOL_DIR"/register.py --os w --vm y --isolated n
 fi
-popd
 
 # OSX actors
 echo osx-1 | "$ACTOR_POOL_DIR"/register.py --os o --vm n --isolated n
