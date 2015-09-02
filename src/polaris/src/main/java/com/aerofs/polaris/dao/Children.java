@@ -38,6 +38,7 @@ public interface Children {
     @SqlQuery("select count(child_oid) from children where parent_oid = :parent_oid and child_oid = :child_oid")
     boolean isChild(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 
+    // this method should not be used to find parents of mount points, use MountPoints.java instead
     @Nullable
     @RegisterMapper(OneColumnUniqueIDMapper.class)
     @SqlQuery("select parent_oid from children where child_oid = :child_oid")
@@ -58,6 +59,7 @@ public interface Children {
     @SqlUpdate("update children set deleted = :deleted where child_oid = :child_oid")
     int setDeleted(@Bind("child_oid") UniqueID child, @Bind("deleted") boolean deleted);
 
+    // this method should not be used when checking if a mount point has been deleted, as they're completely removed from the children table upon deletion
     @SqlQuery("select deleted from children where parent_oid = :parent_oid and child_oid = :child_oid")
     boolean isDeleted(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 

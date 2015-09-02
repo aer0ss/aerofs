@@ -259,13 +259,14 @@ public class TestMigrator {
             assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
         }
 
+        // TODO (RD) new reinsertion scheme
         // can't reinsert a deleted locked object
-        try {
-            objects.performTransform(USERID, DEVICE, unlockedFolder, new InsertChild(deletedLockedFile, null, "deleted"));
-            fail();
-        } catch (CallbackFailedException e) {
-            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
-        }
+//        try {
+//            objects.performTransform(USERID, DEVICE, unlockedFolder, new InsertChild(deletedLockedFile, null, "deleted"));
+//            fail();
+//        } catch (CallbackFailedException e) {
+//            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+//        }
 
         // can't delete a locked object
         try {

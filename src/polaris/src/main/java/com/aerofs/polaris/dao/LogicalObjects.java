@@ -3,6 +3,7 @@ package com.aerofs.polaris.dao;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.types.LockableLogicalObject;
+import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -39,6 +40,11 @@ public interface LogicalObjects {
     @Nullable
     @SqlQuery("select store_oid, objects.oid, version, object_type, locked from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid and version = :version")
     LockableLogicalObject get(@Bind("oid") UniqueID oid, @Bind("version") long version);
+
+    @Nullable
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
+    @SqlQuery("select store_oid from objects where oid = :oid")
+    UniqueID getStore(@Bind("oid") UniqueID oid);
 
     @SuppressWarnings("unused")
     void close();

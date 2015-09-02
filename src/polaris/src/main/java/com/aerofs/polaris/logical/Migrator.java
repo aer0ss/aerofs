@@ -6,9 +6,7 @@ import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.api.types.*;
 import com.aerofs.polaris.dao.Atomic;
-import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.Migrations;
-import com.aerofs.polaris.dao.Transforms;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -196,7 +194,7 @@ public class Migrator implements Managed {
                 while (oldChildren.hasNext()) {
                     DeletableChild child = oldChildren.next();
                     dao.objects.setLocked(child.oid, true);
-                    migrationQueue.add(new ChildMigrationState(oldFolder, child));
+                    migrationQueue.add(new ChildMigrationState(oldFolder.oid, child));
                 }
             }
 
@@ -207,7 +205,7 @@ public class Migrator implements Managed {
                 while (rootChildren.hasNext()) {
                     DeletableChild child = rootChildren.next();
                     dao.objects.setLocked(child.oid, true);
-                    migrationQueue.add(new ChildMigrationState(storeRoot, child));
+                    migrationQueue.add(new ChildMigrationState(storeRoot.oid, child));
                 }
             }
             return null;
@@ -251,7 +249,7 @@ public class Migrator implements Managed {
                 while (migrantChildren.hasNext()) {
                     DeletableChild child = migrantChildren.next();
                     dao.objects.setLocked(child.oid, true);
-                    migrationQueue.add(new ChildMigrationState(migrantRoot, child));
+                    migrationQueue.add(new ChildMigrationState(migrantRoot.oid, child));
                 }
             }
 
@@ -325,11 +323,11 @@ public class Migrator implements Managed {
             LogicalObject migratingObject = getObject(dao, migrating.child.oid);
 
             if (!migratingObject.store.equals(newStore)) {
-                UniqueID newParent = migrating.parent.oid;
+                UniqueID newParent = migrating.parent;
                 long newParentVersion;
                 LOGGER.trace("migrating object {} to store {}", migratingObject.oid, newStore);
 
-                if (migrating.parent.oid.equals(convertedFolderOID)) {
+                if (migrating.parent.equals(convertedFolderOID)) {
                     // need to move the object from the old folder to the new store root
                     dao.children.add(newStore, migratingObject.oid, migrating.child.name, migrating.child.deleted);
                     dao.children.remove(convertedFolderOID, migratingObject.oid);
@@ -356,7 +354,7 @@ public class Migrator implements Managed {
                     while (children.hasNext()) {
                         DeletableChild child = children.next();
                         dao.objects.setLocked(child.oid, true);
-                        searchQueue.add(new ChildMigrationState(migratingObject, child));
+                        searchQueue.add(new ChildMigrationState(migratingObject.oid, child));
                     }
                 }
             }
@@ -386,9 +384,9 @@ public class Migrator implements Managed {
             ChildMigrationState migrating = searchQueue.remove();
             LogicalObject migratingObject = getObject(dao, migrating.child.oid);
 
-            if (!newOIDs.containsKey(migrating.child.oid)) {
+            if (!newOIDs.containsKey(migratingObject.oid)) {
                 LOGGER.trace("migrating object {}", migratingObject.oid);
-                UniqueID newParent = newOIDs.get(migrating.parent.oid);
+                UniqueID newParent = newOIDs.get(migrating.parent);
                 long newParentVersion = versionMap.get(newParent);
                 OID newOID = OID.generate();
 
@@ -397,6 +395,7 @@ public class Migrator implements Managed {
                 dao.objectTypes.add(newOID, migratingObject.objectType == ObjectType.STORE ? ObjectType.FOLDER : migratingObject.objectType);
                 dao.children.add(newParent, newOID, migrating.child.name, migrating.child.deleted);
 
+                // TODO(RD): atomic operations?
                 migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, newOID, migrating.child.name, System.currentTimeMillis(), null);
                 if (migrating.child.deleted) {
                     migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, newOID, null, System.currentTimeMillis(), null);
@@ -419,7 +418,7 @@ public class Migrator implements Managed {
                     while (children.hasNext()) {
                         DeletableChild child = children.next();
                         dao.objects.setLocked(child.oid, true);
-                        searchQueue.add(new ChildMigrationState(migratingObject, child));
+                        searchQueue.add(new ChildMigrationState(migratingObject.oid, child));
                     }
                 }
             }
@@ -447,10 +446,10 @@ public class Migrator implements Managed {
 
     private static class ChildMigrationState
     {
-        final LogicalObject parent;
+        final UniqueID parent;
         final DeletableChild child;
 
-        public ChildMigrationState(LogicalObject parent, DeletableChild child)
+        public ChildMigrationState(UniqueID parent, DeletableChild child)
         {
             this.parent = parent;
             this.child = child;

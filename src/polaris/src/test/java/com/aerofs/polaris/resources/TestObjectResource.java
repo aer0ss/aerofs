@@ -7,7 +7,6 @@ import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.acl.Access;
@@ -188,44 +187,8 @@ public final class TestObjectResource {
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
     }
 
-    @Test
-    public void shouldAllowUpdateToADeletedObject() throws Exception {
-        // construct store -> filename
-        SID store = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "filename");
-        byte[] hash = PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF");
-
-        // create a fake hash for the initial file
-        byte[] initialHash = new byte[32];
-        Random random = new Random();
-        random.nextBytes(initialHash);
-
-        // update the initial content for the file
-        PolarisHelpers
-                .newContent(AUTHENTICATED, file, 0, initialHash, 100, 1024)
-                .and()
-                .assertThat().statusCode(SC_OK); // why is version 0?
-
-        // now, delete the file
-        PolarisHelpers
-                .removeObject(AUTHENTICATED, store, file)
-                .and()
-                .assertThat().statusCode(SC_OK);
-
-        // remove any notifications as a result of the setup actions
-        reset(polaris.getNotifier());
-
-        // verify that I can still update it
-        PolarisHelpers
-                .newContent(AUTHENTICATED, file, 1, hash, 102, 1025)
-                .and()
-                .assertThat().statusCode(SC_OK);
-
-        checkTreeState(store, "tree/shouldAllowUpdateToADeletedObject.json");
-        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class)); // <--- FIXME (AG): oh dear...this is bad, no?
-    }
-
-    @Test
+    //@Test
+    // TODO(RD) update to however restores work
     public void canRestoreDeletedObject() throws Exception {
         SID store = SID.generate();
         OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
@@ -514,7 +477,7 @@ public final class TestObjectResource {
                 .assertThat().statusCode(HttpStatus.SC_CONFLICT);
 
         PolarisHelpers.moveObject(AUTHENTICATED, sharedFolder, rootStore, sharedFile, "shared_file")
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     @Test
@@ -611,6 +574,62 @@ public final class TestObjectResource {
         // this happens when another user creates an external root and invites users to it
         SID rootStore = SID.rootSID(USERID);
         PolarisHelpers.newObject(AUTHENTICATED, rootStore, SID.generate(), "sharedfolder", ObjectType.STORE)
+                .assertThat().statusCode(SC_OK);
+    }
+
+    @Test
+    public void shouldNotAllowOperationsOnDeletedObject()
+            throws Exception
+    {
+        // it is not permitted to rename, or move an explicitly deleted object
+        SID store = SID.generate();
+        OID otherparent = PolarisHelpers.newFolder(AUTHENTICATED, store, "parent");
+        OID deletedFile = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deletedFile);
+
+        PolarisHelpers.moveObject(AUTHENTICATED, store, store, deletedFile, "new name")
+                .assertThat().statusCode(SC_BAD_REQUEST);
+        PolarisHelpers.moveObject(AUTHENTICATED, store, otherparent, deletedFile, "file")
+                .assertThat().statusCode(SC_BAD_REQUEST);
+
+        PolarisHelpers.newContent(AUTHENTICATED, deletedFile, 0, PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF"), 1024, 100)
+                .assertThat().statusCode(SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void shouldAllowOperationsOnImplicitlyDeletedObjects()
+            throws Exception
+    {
+        SID store = SID.generate();
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder_1");
+        OID file1 = PolarisHelpers.newFile(AUTHENTICATED, folder1, "file1");
+        OID file2 = PolarisHelpers.newFile(AUTHENTICATED, folder1, "file2");
+
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, folder1);
+
+        reset(polaris.getNotifier());
+
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, folder1, folder1, file1, "new name");
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, folder1, file1);
+
+        PolarisHelpers.newFileContent(AUTHENTICATED, file2, 0, PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF"), 1024, 100);
+
+        // as should updates
+        verify(polaris.getNotifier(), times(3)).notifyStoreUpdated(eq(store), any(Long.class));
+    }
+
+    @Test
+    public void shouldBeAbleToReinsertAnchor()
+            throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID);
+        SID store = SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, store, "sharedfolder", ObjectType.STORE)
+                .assertThat().statusCode(SC_OK);
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, rootStore, SID.storeSID2anchorOID(store));
+
+        // reinserting it, as if upon rejoining the store
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, store, "sharedfolder", ObjectType.STORE)
                 .assertThat().statusCode(SC_OK);
     }
 

@@ -249,7 +249,11 @@ public final class ObjectStore {
         if (Identifiers.isSharedFolder(oid) || Identifiers.isRootStore(oid)) {
             return oid;
         } else {
-            return getExistingObject(dao, oid).store;
+            UniqueID store = dao.objects.getStore(oid);
+            if (store == null) {
+                throw new NotFoundException(oid);
+            }
+            return store;
         }
     }
 
@@ -309,6 +313,7 @@ public final class ObjectStore {
      *     <li>Removal</li>
      *     <li>Move</li>
      *     <li>Content modification</li>
+     *     <li>Sharing Operation</li>
      * </ul>
      * Note that a high-level transformation may result in multiple primitive transformations.
      *
@@ -334,7 +339,7 @@ public final class ObjectStore {
         switch (operation.type) {
             case INSERT_CHILD: {
                 InsertChild ic = (InsertChild) operation;
-                updated.add(insertChild(dao, device, oid, ic.child, ic.childObjectType, ic.childName, false, null));
+                updated.add(insertChild(dao, device, oid, ic.child, ic.childObjectType, ic.childName));
                 break;
             }
             case MOVE_CHILD: {
@@ -344,13 +349,10 @@ public final class ObjectStore {
                 } else {
                     LogicalObject newParent = getParent(dao, mc.newParent);
                     if (getStore(dao, oid).equals(newParent.store)) {
-                        Atomic atomic = new Atomic(2);
-                        // TODO (RD) make a single move operation since both insert and remove child have extra code in them at this point specifically for move ops
-                        updated.add(insertChild(dao, device, mc.newParent, mc.child, null, mc.newChildName, true, atomic));
-                        updated.add(removeChild(dao, device, oid, mc.child, atomic));
+                        updated.addAll(moveChild(dao, device, oid, mc.newParent, mc.child, mc.newChildName));
                     } else if (dao.objectTypes.get(mc.child) == ObjectType.FILE) {
                         updated.add(migrateObject(dao, device, mc.newParent, OID.generate(), mc.child, mc.newChildName));
-                        updated.add(removeChild(dao, device, oid, mc.child, null));
+                        updated.add(removeChild(dao, device, oid, mc.child));
                     } else {
                         OID newOid = OID.generate();
                         updated.add(migrateObject(dao, device, mc.newParent, newOid, mc.child, mc.newChildName));
@@ -361,7 +363,7 @@ public final class ObjectStore {
             }
             case REMOVE_CHILD: {
                 RemoveChild rc = (RemoveChild) operation;
-                updated.add(removeChild(dao, device, oid, rc.child, null));
+                updated.add(removeChild(dao, device, oid, rc.child));
                 break;
             }
             case UPDATE_CONTENT: {
@@ -391,8 +393,7 @@ public final class ObjectStore {
             if (Identifiers.isMountPoint(target)) {
                 UniqueID rootStore = getStore(dao, subtreeRoot);
                 if (!Identifiers.isRootStore(rootStore)) {
-                    // because we don't allow nested sharing
-                    // subtreeRoot must be in root store if child is under it and across store boundaries
+                    // only subtree roots in the root store can contain an anchor (and thus cross store boundaries)
                     return false;
                 }
                 target = dao.mountPoints.getMountPointParent(rootStore, target);
@@ -409,44 +410,24 @@ public final class ObjectStore {
         return target.equals(subtreeRoot);
     }
 
-    /*
-     * @return whether this operation would do any work (is not a no-op)
-     */
-    private static boolean checkInsertChildOperation(DAO dao, @Nullable UniqueID currentParent, UniqueID parentOid, UniqueID childOid, byte[] childName, boolean allowReinsert) throws ParentConflictException
+    private static Updated insertChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName) throws ParentConflictException, NotFoundException, NameConflictException
     {
-        if (currentParent != null) {
-            if (Arrays.equals(dao.children.getActiveChildName(parentOid, childOid), childName)) {
-                // child already exists under the parent with the same name
-                return false;
-            } else if (isInSubtree(dao, childOid, parentOid)) {
-                // do not allow an insert operation that would cause a cycle in the parent/child tree
-                throw new IllegalArgumentException(String.format("cannot move complete move op, destination %s is under moving object %s", parentOid, childOid));
-            } else if (dao.children.isDeleted(currentParent, childOid)) {
-                // reinserting a deleted object into the store, can't reinsert locked objects though
-                Preconditions.checkArgument(getUnlockedObject(dao, childOid).store.equals(getExistingObject(dao, parentOid).store), "cannot restore a deleted object to a different store");
-                dao.children.remove(currentParent, childOid);
-                return true;
-            } else if (!allowReinsert) {
-                // stop reinsertion of non-deleted objects
-                throw new ParentConflictException(childOid, parentOid, currentParent);
-            }
-        }
-        return true;
-    }
-
-    private static Updated insertChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable ObjectType childObjectType, byte[] childName, boolean allowReinsert, @Nullable Atomic atomic) throws ParentConflictException, NotFoundException, NameConflictException {
-        // parentOid is also guaranteed to be part of the root store if the store contains a mountpoint
-        // otherwise would be a cross-store migration
+        // parentOid is also guaranteed to be part of the root store if the store contains a mountpoint, otherwise would be a cross-store migration
         UniqueID currentParentOid = Identifiers.isMountPoint(childOid) ? dao.mountPoints.getMountPointParent(getStore(dao, parentOid), childOid) : dao.children.getParent(childOid);
         // check if this operation would be a no-op
-        if (!checkInsertChildOperation(dao, currentParentOid, parentOid, childOid, childName, allowReinsert)) {
+        if (parentOid.equals(currentParentOid)) {
+            if (!Arrays.equals(dao.children.getActiveChildName(parentOid, childOid), childName)) {
+                throw new NameConflictException(parentOid, childName, getExistingObject(dao, childOid));
+            }
             LogicalObject parent = dao.objects.get(parentOid);
             Preconditions.checkState(parent != null, "current parent with oid %s could not be found", parentOid);
-
             LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.INSERT_CHILD, childOid);
             Preconditions.checkState(matchingTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, currentParentOid);
             return new Updated(matchingTransform, parent);
+        } else if (currentParentOid != null) {
+            // currentParentOid will be non-null for deleted files and folders (but not anchors) as well as objects under another parent, so no re-insertions of deleted objects
+            throw new ParentConflictException(childOid, parentOid, currentParentOid);
         }
 
         // parent must be unlocked so we don't insert an object that could miss migration
@@ -472,14 +453,10 @@ public final class ObjectStore {
 
         if(childObjectType == ObjectType.STORE) {
             Preconditions.checkArgument(isInRootStore(dao, parentOid), "can only insert mount points into user root stores");
-            if (currentParentOid != null) {
-                // reinserting a mount point, need to delete its db entry first
-                dao.mountPoints.remove(parent.store, childOid);
-            }
         }
 
         // attach the object to the requested parent
-        long transformTimestamp = attachChild(dao, device, parent, child, childName, atomic);
+        long transformTimestamp = attachChild(dao, device, parent, child, childName, null);
 
         LOGGER.info("insert {} into {}", childOid, parentOid);
 
@@ -495,8 +472,8 @@ public final class ObjectStore {
         // strictly for rename operations the parent doesn't need to be unlocked, but to keep child names consistent across a migration don't change the name of a locked child
         getUnlockedObject(dao, childOid);
 
-        // the child we're removing is actually the child of this object
-        Preconditions.checkArgument(dao.children.isChild(parentOid, childOid), "%s is not a child of %s", childOid, parentOid);
+        // the child we're renaming is the child of this object and not deleted
+        Preconditions.checkArgument(dao.children.isChild(parentOid, childOid) && !dao.children.isDeleted(parentOid, childOid), "%s is not an active child of %s", childOid, parentOid);
 
         // get the current child name (informational)
         byte[] currentChildName = dao.children.getActiveChildName(parentOid, childOid);
@@ -519,28 +496,80 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
     }
 
-    private static Updated removeChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid, @Nullable Atomic atomic) throws NotFoundException {
+    private static List<Updated> moveChild(DAO dao, DID device, UniqueID oldParentOid, UniqueID newParentOid, UniqueID childOid, byte[] childName)
+    {
+        UniqueID currentParentOid = Identifiers.isMountPoint(childOid) ? dao.mountPoints.getMountPointParent(getStore(dao, oldParentOid), childOid) : dao.children.getParent(childOid);
+        // check if this operation would be a no-op
+        if (newParentOid.equals(currentParentOid) && Arrays.equals(childName, dao.children.getActiveChildName(newParentOid, childOid))) {
+            LogicalObject newParent = getExistingObject(dao, newParentOid);
+            LOGGER.info("child {} already exists under parent {}, possible movechild no-op", childOid, newParentOid);
+            long insertTransform = dao.transforms.getLatestMatchingTransformTimestamp(newParent.store, newParentOid, TransformType.INSERT_CHILD, childOid);
+            Preconditions.checkState(insertTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, newParentOid);
+
+            LogicalObject oldParent = getExistingObject(dao, oldParentOid);
+            LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, oldParentOid);
+            long removeTransform = dao.transforms.getLatestMatchingTransformTimestamp(oldParent.store, oldParentOid, TransformType.REMOVE_CHILD, childOid);
+            Preconditions.checkState(removeTransform != 0L, "could not find transform removing %s as a child of %s", childOid, oldParentOid);
+            Preconditions.checkState(insertTransform < removeTransform, "could not find two transforms to match a move no-op");
+            return Lists.newArrayList(new Updated(insertTransform, newParent), new Updated(removeTransform, oldParent));
+        }
+
+        Preconditions.checkArgument(oldParentOid.equals(currentParentOid) && !dao.children.isDeleted(oldParentOid, childOid), "%s is not an active child of %s", childOid, oldParentOid);
+        Preconditions.checkArgument(!isInSubtree(dao, childOid, newParentOid), "cannot complete move op, destination %s is under moving object %s", newParentOid, childOid);
+
+        // get both parents and child, must all be unlocked to keep migration queue consistent
+        LogicalObject oldParent = getUnlockedParent(dao, oldParentOid);
+        LogicalObject newParent = getUnlockedParent(dao, newParentOid);
+        LogicalObject child = getUnlockedObject(dao, childOid);
+
+        Preconditions.checkArgument(isFolder(newParent.objectType), "cannot insert into %s", newParent.objectType);
+
+        // check for name conflicts within the parent
+        checkForNameConflicts(dao, newParentOid, childName);
+
+        if(child.objectType == ObjectType.STORE) {
+            Preconditions.checkArgument(isInRootStore(dao, newParentOid), "can only move mount points in user root stores");
+            // need to remove the db row to remove conflicts
+            dao.mountPoints.remove(oldParent.store, childOid);
+        }
+
+        Atomic atomic = new Atomic(2);
+        List<Updated> updates = Lists.newArrayListWithCapacity(2);
+
+        long transformTimestamp = attachChild(dao, device, newParent, child, childName, atomic);
+        LOGGER.info("insert {} into {} as part of move", childOid, newParentOid);
+        updates.add(new Updated(transformTimestamp, getExistingObject(dao, newParentOid)));
+
+        transformTimestamp = detachChild(dao, device, oldParent, child, atomic);
+        LOGGER.info("remove {} from {} as part of move", childOid, oldParentOid);
+        updates.add(new Updated(transformTimestamp, getExistingObject(dao, oldParentOid)));
+
+        return updates;
+    }
+
+    private static Updated removeChild(DAO dao, DID device, UniqueID parentOid, UniqueID childOid) throws NotFoundException {
         Preconditions.checkArgument(!Identifiers.isRootStore(childOid), "cannot remove root store %s", childOid);
 
         // get the parent
         LogicalObject parent = getUnlockedParent(dao, parentOid);
 
-        // the child we're removing exists and isn't locked (can't remove objects that are already in migration queue)
-        LogicalObject child = getUnlockedObject(dao, childOid);
-
-        if (dao.children.isDeleted(parentOid, childOid) || !dao.children.isChild(parentOid, childOid)) {
+        if (dao.children.isDeleted(parentOid, childOid)) {
             LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
-            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.REMOVE_CHILD, child.oid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.REMOVE_CHILD, childOid);
             Preconditions.checkArgument(matchingTransform != 0L, "%s is not a child of %s", childOid, parentOid);
             return new Updated(matchingTransform, parent);
         }
+
+        // the child we're removing exists and isn't locked (can't remove objects that are already in migration queue)
+        LogicalObject child = getUnlockedObject(dao, childOid);
+
         // the child we're removing is actually the child of this object
         byte[] childName = dao.children.getActiveChildName(parentOid, childOid);
 
         Preconditions.checkArgument(childName != null, "child %s not found under parent %s", childOid, parentOid);
 
         // detach the child from its parent
-        long transformTimestamp = detachChild(dao, device, parent, child, atomic);
+        long transformTimestamp = detachChild(dao, device, parent, child, null);
 
         LOGGER.info("remove {} from {}", childOid, parentOid);
 
@@ -551,12 +580,12 @@ public final class ObjectStore {
     private static Updated migrateObject(DAO dao, DID device, UniqueID parentOid, UniqueID newOid, UniqueID migrantOid, byte[] name)
     {
         LogicalObject migrant = getExistingObject(dao, migrantOid);
-        Preconditions.checkArgument(!Identifiers.isRootStore(migrant.oid), "can't migrate root store");
+        Preconditions.checkArgument(!Identifiers.isRootStore(migrantOid), "can't migrate root store");
         Preconditions.checkArgument(!isInSubtree(dao, migrantOid, parentOid));
-        Updated update = insertChild(dao, device, parentOid, newOid, migrant.objectType, name, true, null);
+        Updated update = insertChild(dao, device, parentOid, newOid, migrant.objectType, name);
         if (migrant.objectType == ObjectType.FILE && migrant.version > Constants.INITIAL_OBJECT_VERSION) {
-            Content currentContent = dao.objectProperties.getLatest(migrant.oid);
-            Preconditions.checkState(currentContent != null, "could not find latest content for file %s", migrant.oid);
+            Content currentContent = dao.objectProperties.getLatest(migrantOid);
+            Preconditions.checkState(currentContent != null, "could not find latest content for file %s", migrantOid);
             update = makeContent(dao, device, newOid, currentContent.version, currentContent.hash, currentContent.size, currentContent.mtime);
         }
         return update;
@@ -577,6 +606,11 @@ public final class ObjectStore {
             Preconditions.checkState(matchingTransform != 0L, "could not find transform updating content of %s", oid);
             return new Updated(matchingTransform, object);
         }
+
+        // cannot update deleted files
+        UniqueID parent = dao.children.getParent(oid);
+        Preconditions.checkState(parent != null, "could not find parent of file %s", oid);
+        Preconditions.checkArgument(!dao.children.isDeleted(parent, oid), "cannot updated deleted file %s", oid);
 
         // check that we're at the right version
         if (deviceVersion != object.version) {
