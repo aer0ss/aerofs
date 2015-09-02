@@ -15,7 +15,10 @@ end
 
 name = %x( whoami ).strip()
 host_base = "#{name}-win7-vagrant-"
-ssh_key = %x(cat ~/.ssh/id_rsa.pub).strip()
+
+local_key = %x(cat ~/.ssh/id_rsa.pub).strip()
+# FIXME: this file should either be in the main repo or accessible through HTTP
+agent_key = %x(cat ~/agents-build-kit/agents2actors.pub).strip()
 
 # vagrant up configuration
 Vagrant.configure("2") do |config|
@@ -49,7 +52,8 @@ Vagrant.configure("2") do |config|
           config_a.vm.network :forwarded_port, guest: 5985, host: 5985 + index
 
           config_a.vm.provision :shell, :inline => 'C:\cygwin\bin\bash.exe -c "/usr/bin/pip install protobuf==2.6.1" '
-          config_a.vm.provision :shell, :inline => "C:\\cygwin\\bin\\bash.exe -c \"echo #{ssh_key} | /bin/tee -a /home/aerofstest/.ssh/authorized_keys\" "
+          config_a.vm.provision :shell, :inline => "C:\\cygwin\\bin\\bash.exe -c \"echo #{local_key} | /bin/tee -a /home/aerofstest/.ssh/authorized_keys\" "
+          config_a.vm.provision :shell, :inline => "C:\\cygwin\\bin\\bash.exe -c \"echo #{agent_key} | /bin/tee -a /home/aerofstest/.ssh/authorized_keys\" "
           # Ensure the route through the host machine has a lower metric than
           # the route assigned by DHCP
           ( config_a.vm.provision :shell,
