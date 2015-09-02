@@ -48,7 +48,7 @@ Vagrant.configure("2") do |config|
           config_a.vm.network :forwarded_port, guest: 3389, host: 3389 + index
           config_a.vm.network :forwarded_port, guest: 5985, host: 5985 + index
 
-          config_a.vm.provision :shell, :inline => 'C:\cygwin\bin\bash.exe -c "/usr/bin/pip install --upgrade protobuf" '
+          config_a.vm.provision :shell, :inline => 'C:\cygwin\bin\bash.exe -c "/usr/bin/pip install protobuf==2.6.1" '
           config_a.vm.provision :shell, :inline => "C:\\cygwin\\bin\\bash.exe -c \"echo #{ssh_key} | /bin/tee -a /home/aerofstest/.ssh/authorized_keys\" "
           # Ensure the route through the host machine has a lower metric than
           # the route assigned by DHCP
