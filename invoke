@@ -610,6 +610,7 @@ def _syncdet(args, case=None, scenario=None, extra_args=None):
     else:
         raise ValueError(colored("You must specify either a case or scenario to _syncdet", Colors.RED))
     extra_args_internal = ["--team-city"] if args.team_city else []
+    extra_args_internal.extend(["--purge-log"])
     extra_args_internal.extend(extra_args or [])
     extra_args_internal.extend(args.syncdet_extra_args or [])
     #additional_case_args=
