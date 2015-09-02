@@ -1,5 +1,6 @@
 # Exchange Plugin
     v0.1 2015/09/01 AT initial design
+    v0.2 2015/09/02 AT added size threshold under configuration.
 
 ## Motivation
 See [requirements](../requirements/exchange-plugin.md).
@@ -15,6 +16,9 @@ The Transport Agent requires the following configuration properties to operate:
 - token: an access token to use when talking to the REST API endpoint. The
   access token should be associated with an user and the Transport Agent will
   upload content to that user's root folder.
+- threshold: attachments whose content size is below the threshold will not be
+  replaced with a link. This value default to 0 which means all attachments
+  will be replaced with links unless configured otherwise.
 
 ### Persistence
 When an e-mail with attachment is processed, the plugin creates the following:

@@ -1,6 +1,7 @@
 # Exchange Plugin
     v0.1 2015/08/13 AT initial draft.
-    v0.2 2015/09/01 AT updated functional spec and added a MVP milestone.
+    v0.2 2015/09/01 AT updated functional spec.
+    v0.3 2015/09/02 AT added size threshold.
 
 ## Problem
 From conversations with our customers, we have learned that managing e-mail
@@ -57,6 +58,8 @@ endpoint.
   attachments without deleting the e-mails. In which case, the e-mail and the
   links will remain, and the user will see a helpful error message if they
   click on such links.
+- The system admins should be able to set a threshold so that only attachments
+  whose size exceeds the threshold will be replaced with links.
 
 ## Technical Requirements
 Guide lines: an extensive test suite is an overkill for a MVP. We should have a

@@ -1,5 +1,6 @@
 # Exchange Plugin Milestones
     v0.1 2015/09/02 AT initial draft and milestone for MVP.
+    v0.2 2015/09/02 AT added size threshold to MVP.
 
 ## Milestones
 ### MVP
@@ -10,6 +11,7 @@ The Transport Agent needs to:
 - read the configuration values from the Windows Registry.
 - filter incoming, outgoing, and internal e-mails and replace attachments with
   links to download the attachment content from an AeroFS REST API endpoint.
+- only replace attachments whose content exceeds the configured threshold.
 - a way to log the Transport Agent's activities and errors.
 - a way to manually retrieve the Transport Agent's logs.
 
