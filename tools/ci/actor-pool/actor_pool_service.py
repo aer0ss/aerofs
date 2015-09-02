@@ -58,8 +58,9 @@ def db_execute(querys, queryp):
 
 def list_actors():
     with dblock:
-        addresses = db_execute("SELECT addr FROM actor", []).fetchall()
-        return json.jsonify(message="OK", actors=addresses), 200
+        fetched = db_execute("SELECT addr FROM actor", []).fetchall()
+        addresses = [t[0] for t in fetched]
+    return json.jsonify(actors=addresses), 200
 
 
 def acquire_actors():
@@ -152,7 +153,7 @@ def application():
     finally:
         return content, status
 
-@app.route('/acquire', method=['POST'])
+@app.route('/acquire', methods=['POST'])
 def acquire_actor():
     status = 500
     content = json.jsonify(error='Internal Server Error')

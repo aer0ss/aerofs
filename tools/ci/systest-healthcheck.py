@@ -23,7 +23,7 @@ if __name__ == "__main__":
     assert len(addresses) > 0
 
     print "check actors..."
-    for addr in addresses
+    for addr in addresses:
         print " > check actor @ {}".format(addr)
         assert os.system("ssh -o ConnectTimeout=5 aerofstest@{} exit".format(addr)) == 0
 
