@@ -35,6 +35,10 @@ func CreateDatabaseIfNeeded(url, database string) {
 	}
 }
 
+/**
+ * CreateConnection returns a DB instance using the given mysql url and database name.
+ * Migrations from /migration are applied automatically as needed.
+ */
 func CreateConnection(url, database string) *sql.DB {
 	CreateDatabaseIfNeeded(url, database)
 	db, err := sql.Open("mysql", url+database)
@@ -132,6 +136,10 @@ func migrate(db *sql.DB) {
 }
 
 func applyMigration(db *sql.DB, name string, m []byte) error {
+
+	// First we remove comment lines; then we re-split it by semicolons and execute each as a statement.
+
+	m = removeCommentLines(m)
 	return Transact(db, func(tx *sql.Tx) error {
 		for _, stmt := range bytes.Split(m, []byte{';'}) {
 			stmt = bytes.TrimSpace(stmt)
@@ -145,4 +153,16 @@ func applyMigration(db *sql.DB, name string, m []byte) error {
 		_, err := tx.Exec("INSERT INTO schema_migrations(name) VALUES(?)", name)
 		return err
 	})
+}
+
+/** Strip lines that begin with '--'; if those lines contain semicolons, the other split will get confused.
+ */
+func removeCommentLines(m []byte) []byte {
+	retval := make([]byte, 0)
+	for _, line := range bytes.Split(m, []byte{'\n'}) {
+		if len(line) < 2 || line[0] != '-' || line[1] != '-' {
+			retval = append(retval, line...)
+		}
+	}
+	return retval
 }
