@@ -25,5 +25,5 @@ if __name__ == "__main__":
     print "check actors..."
     for addr in addresses:
         print " > check actor @ {}".format(addr)
-        assert os.system("ssh -o ConnectTimeout=5 aerofstest@{} exit".format(addr)) == 0
+        assert os.system("ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no aerofstest@{} exit".format(addr)) == 0
 
