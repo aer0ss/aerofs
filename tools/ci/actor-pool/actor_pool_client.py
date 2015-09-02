@@ -27,23 +27,23 @@ if __name__ == "__main__":
     print r.status_code
     print r.json()
 
-    # GET test
+    # Acquire test
     print 'GETting...'
     a1 = {'os': 'l'} # any linux actor
     a2 = {'isolated': True} # any isolated actor
     a3 = {'os': 'w', 'isolated': True, 'vm': False} # physical, isolated, windows
     actors = [a1, a3]
-    r = requests.get(url,
+    r = requests.post('{}/acquire'.format(url),
                      data=json.dumps(actors),
                      headers=headers)
     print r.status_code
     addresses = r.json()
     print addresses
 
-    # Return test
+    # Release test
     addresses = [u'192.168.2.3', u'192.168.2.1']
     print 'returning the actors...'
-    r = requests.post('{}/return'.format(url),
+    r = requests.post('{}/release'.format(url),
                       data=json.dumps(addresses),
                       headers=headers)
     print r.status_code

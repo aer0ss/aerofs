@@ -24,7 +24,7 @@ if __name__ == "__main__":
         print 'It looks like there are no actors to free! Exiting happily.'
         sys.exit(0)
 
-    r = requests.post('{}/return'.format(POOL_URL),
+    r = requests.post('{}/release'.format(POOL_URL),
                       data=json.dumps(addresses),
                       headers=JSON_HEADERS)
 

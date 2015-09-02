@@ -56,7 +56,13 @@ def db_execute(querys, queryp):
         db.close()
 
 
-def get_actors():
+def list_actors():
+    with dblock:
+        addresses = db_execute("SELECT addr FROM actor", []).fetchall()
+        return json.jsonify(message="OK", actors=addresses), 200
+
+
+def acquire_actors():
     actors = request.get_json()["actors"]
     build_id = request.get_json()["build_id"]
     l.info("GET data: {}".format(request.get_json()))
@@ -137,7 +143,7 @@ def application():
     content = json.jsonify(error='Internal Server Failure')
     try:
         if request.method == 'GET':
-            content, status = get_actors()
+            content, status = list_actors()
         elif request.method == 'POST':
             content, status = register_actors()
     except Exception as e:
@@ -146,9 +152,20 @@ def application():
     finally:
         return content, status
 
+@app.route('/acquire', method=['POST'])
+def acquire_actor():
+    status = 500
+    content = json.jsonify(error='Internal Server Error')
+    try:
+        content, status = acquire_actors()
+    except Exception as e:
+        l.error(e)
+        content, status = json.jsonify(error=e.message), 500
+    finally:
+        return content, status
 
-@app.route('/return', methods=['POST'])
-def return_actor():
+@app.route('/release', methods=['POST'])
+def release_actor():
     status = 500
     content = json.jsonify(error='Internal Server Failure')
     try:

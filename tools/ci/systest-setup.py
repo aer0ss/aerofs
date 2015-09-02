@@ -161,7 +161,8 @@ def get_addresses_from_pool_service(actor_data, build_id):
                 raise ValueError('"isolated" must be true or false')
         actors.append(d)
     raw_params = {'actors': actors, 'build_id': build_id}
-    r = requests.get(POOL_URL, data=json.dumps(raw_params), headers=JSON_HEADERS)
+    r = requests.post('{}/acquire'.format(POOL_URL),
+            data=json.dumps(raw_params), headers=JSON_HEADERS)
     response = r.json()
     if r.status_code != 200:
         raise ActorPoolServiceException('[{}] {}'.format(r.status_code, response.get('error')))
