@@ -44,7 +44,7 @@ if [[ $top -ge $bottom ]]; then
     # pool inside the VM itself, allowing the actor pool to determine the public IP of the actor...
     for i in $(seq $bottom $top) ; do
         # NB: use the hostonly ip to ssh as this one is guaranteed to be static
-        ip=$(ssh aerofstest@192.168.50.$(( 100 + i)) ipconfig | grep -F "IPv4 Address" | grep -F " : ${bridge_ip}." | cut -d':' -f2)
+        ip=$(ssh aerofstest@192.168.50.$(( 110 + i)) ipconfig | grep -F "IPv4 Address" | grep -F " : ${bridge_ip}." | cut -d':' -f2)
         register="${register:+$register }$ip"
     done
     echo $register | "$ACTOR_POOL_DIR"/register.py --os w --vm y --isolated n

@@ -34,7 +34,7 @@ Vagrant.configure("2") do |config|
 
           # Configure base box parameters
           config_a.vm.box = "trim7"
-          config_a.vm.box_url = "http://ci.arrowfs.org/trim7.box"
+          config_a.vm.box_url = "http://vagrant.arrowfs.org/trim7.box"
           config_a.vm.guest = :windows
           config_a.vm.hostname = host
 
