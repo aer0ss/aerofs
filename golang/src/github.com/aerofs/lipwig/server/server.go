@@ -7,30 +7,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/aerofs/lipwig/ssmp"
+	"io"
 	"net"
 	"sync"
 )
-
-type Server interface {
-	// Serve accept connections in the calling goroutine and only returns
-	// in case of error.
-	Serve() error
-
-	// Start accepts connection in new goroutine and returns the Server
-	// This allows the following terse idiom:
-	//		defer s.Start().Stop()
-	Start() Server
-
-	// ListeningPort returns the TCP port to which the underlying Listener is
-	// bound.
-	// Only use this method if the Server was constructed from a TCP Listener,
-	// otherwise it will result in a panic.
-	ListeningPort() int
-
-	// Stop stops the goroutine spawned by Start.
-	// Do not use for servers started with Serve.
-	Stop()
-}
 
 // A ConnectionManager manages a set of Connection.
 // All methods are safe to call from multiple goroutines simultaneously.
@@ -50,7 +30,7 @@ type TopicManager struct {
 ////////////////////////////////////////////////////////////////////////////////
 
 // server implements Server, ConnectionManager and TopicManager
-type server struct {
+type Server struct {
 	ConnectionManager
 	TopicManager
 
@@ -64,10 +44,10 @@ type server struct {
 	dispatcher *Dispatcher
 }
 
-// NewServer creates a new SSMP server from an arbitrary network Listener
-// and an Authenticator.
-func NewServer(l net.Listener, auth Authenticator, cfg *tls.Config) Server {
-	s := &server{
+// NewServer creates a new SSMP server from a TCP Listener, an Authenticator
+// and a TLS configuration.
+func NewServer(l net.Listener, auth Authenticator, cfg *tls.Config) *Server {
+	s := &Server{
 		l:    l.(*net.TCPListener),
 		cfg:  cfg,
 		auth: auth,
@@ -83,37 +63,56 @@ func NewServer(l net.Listener, auth Authenticator, cfg *tls.Config) Server {
 	return s
 }
 
-func (s *server) Serve() error {
+// Serve accept connections in the calling goroutine and only returns
+// in case of error.
+func (s *Server) Serve() error {
 	s.w.Add(1)
 	return s.serve()
 }
 
-func (s *server) Start() Server {
+// Start accepts connection in a new goroutine and returns the Server
+// This allows the following terse idiom:
+//		defer s.Start().Stop()
+func (s *Server) Start() *Server {
 	s.w.Add(1)
 	go s.serve()
 	return s
 }
 
-func (s *server) ListeningPort() int {
+// ListeningPort returns the TCP port to which the underlying Listener is bound.
+func (s *Server) ListeningPort() int {
 	return s.l.Addr().(*net.TCPAddr).Port
 }
 
-func (s *server) Stop() {
+// Stop stops accepting new connections and immediately closes all existing
+// connections. Serve
+func (s *Server) Stop() {
 	s.l.Close()
 	s.connection.Lock()
 	for _, c := range s.connections {
 		c.Close()
 	}
-	s.connection.Unlock()
-	s.topic.Lock()
 	for c := range s.anonymous {
 		c.Close()
 	}
-	s.topic.Unlock()
+	s.connection.Unlock()
 	s.w.Wait()
 }
 
-func (s *server) serve() error {
+// DumpStats writes some internal stats to the given Writer.
+func (s *Server) DumpStats(w io.Writer) {
+	io.WriteString(w, "------- server stats -------\n")
+	s.connection.Lock()
+	fmt.Fprintf(w, "%5d named connections\n", len(s.connections))
+	fmt.Fprintf(w, "%5d anonymous connections\n", len(s.anonymous))
+	s.connection.Unlock()
+	s.topic.Lock()
+	fmt.Fprintf(w, "%5d active topics\n", len(s.topics))
+	s.topic.Unlock()
+	io.WriteString(w, "----------------------------\n")
+}
+
+func (s *Server) serve() error {
 	defer s.w.Done()
 	for {
 		c, err := s.l.AcceptTCP()
@@ -125,7 +124,7 @@ func (s *server) serve() error {
 	}
 }
 
-func (s *server) configure(c *net.TCPConn) net.Conn {
+func (s *Server) configure(c *net.TCPConn) net.Conn {
 	c.SetNoDelay(true)
 	if s.cfg == nil {
 		return c
@@ -133,7 +132,7 @@ func (s *server) configure(c *net.TCPConn) net.Conn {
 	return tls.Server(c, s.cfg)
 }
 
-func (s *server) connect(c net.Conn) {
+func (s *Server) connect(c net.Conn) {
 	cc, err := NewConnection(c, s.auth, s.dispatcher)
 	if err != nil {
 		fmt.Println("connect rejected:", err)

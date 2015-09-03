@@ -55,6 +55,7 @@ func main() {
 		auth.Schemes["cert"] = server.CertAuth
 	}
 	s := server.NewServer(l, auth, tlsCfg)
+	SetupSignalHandler(s)
 	fmt.Println("lipwig serving at", s.ListeningPort())
 	err = s.Serve()
 	if err != nil {
