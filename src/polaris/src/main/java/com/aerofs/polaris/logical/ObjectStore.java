@@ -696,7 +696,7 @@ public final class ObjectStore {
     private static void checkForNameConflicts(DAO dao, UniqueID parentOid, byte[] childName) throws NotFoundException, NameConflictException {
         UniqueID childOid = dao.children.getActiveChildNamed(parentOid, childName);
         if (childOid != null) {
-            throw new NameConflictException(parentOid, childName, childOid));
+            throw new NameConflictException(parentOid, childName, childOid);
         }
     }
 
