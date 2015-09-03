@@ -23,8 +23,7 @@
         deletion_group()
         expulsion_group()
         multiroot_group()
-        # TODO: enable when the last 2 tests pass w/ polaris
-        #meta_conflict_group()
+        meta_conflict_group()
         sharing_group()
         acl_group()
         aliasing_group()

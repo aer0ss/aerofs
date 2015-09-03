@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase.BufferedChange;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteChild;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
@@ -471,13 +472,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t)
             throws Exception {
-        MetaBufferDatabase.BufferedChange c;
+        BufferedChange c;
         while ((c = _mbdb.getBufferedChange_(sidx, timestamp)) != null) {
-            applyBufferedChange_(sidx, c, t);
+            applyBufferedChange_(sidx, c, timestamp, t);
         }
     }
 
-    private void applyBufferedChange_(SIndex sidx, MetaBufferDatabase.BufferedChange c, Trans t) throws Exception {
+    private void applyBufferedChange_(SIndex sidx, BufferedChange c, long timestamp, Trans t)
+            throws Exception {
         RemoteLink lnk = _rpdb.getParent_(sidx, c.oid);
         OA oaChild = _ds.getOANullable_(new SOID(sidx, c.oid));
 
@@ -499,7 +501,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             l.info("apply parent {}{}", sidx, lnk.parent);
             checkState(_mbdb.isBuffered_(new SOID(sidx, lnk.parent)));
             // TODO(phoenix): watch for cycles
-            applyBufferedChange_(sidx, new MetaBufferDatabase.BufferedChange(lnk.parent, OA.Type.DIR), t);
+            applyBufferedChange_(sidx, new BufferedChange(lnk.parent, OA.Type.DIR), timestamp, t);
             oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
         }
 
@@ -520,8 +522,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 // no need to insert the child
                 return;
             } else {
-                Long cv = clnk != null ? clnk.logicalTimestamp : null;
-                name = resolveNameConflict_(sidx, lnk, oaConflict, cv, t);
+                name = resolveNameConflict_(sidx, lnk, oaConflict, timestamp, t);
             }
         }
 
@@ -533,11 +534,16 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
     }
 
-    private String resolveNameConflict_(SIndex sidx, RemoteLink lnk, OA oaConflict, Long cv, Trans t)
-            throws Exception {
+    private String resolveNameConflict_(SIndex sidx, RemoteLink lnk, OA oaConflict, long timestamp,
+                                        Trans t) throws Exception {
         String targetName = nextNonConflictingName_(sidx, lnk.parent, lnk.name);
 
-        if (cv != null && cv >= lnk.logicalTimestamp) {
+        RemoteLink clnk = _rpdb.getParent_(sidx, oaConflict.soid().oid());
+        // If a buffered object conflict with an object known to have been updated after the
+        // buffer merge window we can safely leave the conflicting object unchanged and instead
+        // issue a non-conflicting name to the remote object as it is guaranteed to be updated
+        // at some point in the future
+        if (clnk != null && clnk.logicalTimestamp > timestamp) {
             l.info("rename remote {}", targetName);
             return targetName;
         }
@@ -551,7 +557,6 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _expulsion.objectMoved_(pConflict, oaConflict.soid(), PhysicalOp.APPLY, t);
 
         _mcdb.insertChange_(sidx, oaConflict.soid().oid(), lnk.parent, targetName, t);
-
         return lnk.name;
     }
 

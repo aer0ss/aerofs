@@ -42,6 +42,8 @@ spec = meta_meta_spec(
         "bar": "fool"
     }, {
         "foo": "bart"
+    }, {
+        # polaris: delete always wins
     }],
     # operations done in a network partition on different actors
     ops=[op1, op2])

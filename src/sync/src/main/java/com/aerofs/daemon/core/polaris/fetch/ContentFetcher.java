@@ -96,6 +96,7 @@ public class ContentFetcher
 
     public void online_(DID did)
     {
+        l.debug("online {}", did);
         _devices.add(did);
         if (_devices.size() == 1) {
             start_();
@@ -104,6 +105,7 @@ public class ContentFetcher
 
     public void offline_(DID did)
     {
+        l.debug("offline {}", did);
         _devices.remove(did);
     }
 
@@ -136,7 +138,10 @@ public class ContentFetcher
 
     private void start_()
     {
-        if (_it.started_() || _scheduled) return;
+        if (_it.started_() || _scheduled) {
+            l.debug("already started {} {}", _it.started_(), _scheduled);
+            return;
+        }
 
         l.info("{} start content fetch", _sidx);
         _totalDownloads = 0;
@@ -160,7 +165,8 @@ public class ContentFetcher
     private void fetch_() throws SQLException
     {
         if (_devices.isEmpty()) {
-            l.debug("{} nodev {}", _sidx);
+            l.debug("{} nodev", _sidx);
+            _it.reset_();
             return;
         }
         boolean retry;
@@ -201,6 +207,7 @@ public class ContentFetcher
             }
         }
 
+        _it.reset_();
         l.info("{} end content fetch", _sidx);
         return false;
     }

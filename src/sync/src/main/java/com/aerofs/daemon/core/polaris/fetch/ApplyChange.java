@@ -234,7 +234,10 @@ public class ApplyChange
             throws Exception
     {
         RemoteLink lnk = _rpdb.getParent_(parent.sidx(), oidChild);
-        if (lnk == null) throw new ExProtocolError();
+        if (lnk == null) {
+            l.warn("ignore rename for deleted {} {}/{}", oidChild, parent, name);
+            return;
+        }
 
         _rpdb.updateParent_(parent.sidx(), oidChild, parent.oid(), name, logicalTimestamp, t);
 

@@ -22,6 +22,7 @@ import static com.aerofs.daemon.core.polaris.InMemoryDS.*;
 import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
 import static org.junit.Assert.*;
 
+// TODO: more name conflict tests
 public class TestApplyChange extends AbstractTestApplyChange
 {
     private void addMetaChange(SIndex sidx) throws SQLException {

@@ -41,6 +41,12 @@ spec = meta_meta_spec(
     }, {
         "baz": "fool",
         "foo": "bart"
+    }, {
+        "baz": "fool",
+        "baz (2)": "bart"
+    }, {
+        "baz (2)": "fool",
+        "baz": "bart"
     }],
     # operations done in a network partition on different actors
     ops=[op1, op2])
