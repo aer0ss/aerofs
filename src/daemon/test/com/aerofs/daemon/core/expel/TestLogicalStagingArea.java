@@ -52,7 +52,6 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -340,7 +339,7 @@ public class TestLogicalStagingArea extends AbstractTest
         lsa.ensureClean_(ds.resolve_(oa), t);
 
         verifyFolderCleanup("foo");
-        assertStagingDatabaseContains("foo");
+        assertStagingDatabaseContains();
     }
 
     @Test

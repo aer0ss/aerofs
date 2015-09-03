@@ -82,8 +82,7 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
             PreparedStatement ps = _pswRemove.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
-            int n = ps.executeUpdate();
-            checkState(n == 1);
+            ps.executeUpdate();
         } catch (SQLException e) {
             _pswRemove.close();
             throw detectCorruption(e);
