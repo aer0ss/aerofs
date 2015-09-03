@@ -10,5 +10,7 @@ public enum OperationType {
 
     UPDATE_CONTENT,
 
-    SHARE,;
+    SHARE,
+
+    RESTORE,;
 }

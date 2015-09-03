@@ -134,6 +134,20 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
+    public static void restoreFileOrFolder(RequestSpecification authenticated, OID object) {
+        restoreObject(authenticated, object).assertThat().statusCode(SC_OK);
+    }
+
+    public static ValidatableResponse restoreObject(RequestSpecification authenticated, OID object) {
+        return given()
+                .spec(authenticated)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Restore())
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(object))
+                .then();
+    }
+
     public static void moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
         moveObject(authenticated, currentParent, newParent, child, newChildName).assertThat().statusCode(SC_OK);
     }

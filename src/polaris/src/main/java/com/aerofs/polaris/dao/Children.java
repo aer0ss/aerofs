@@ -35,8 +35,8 @@ public interface Children {
     @SqlQuery("select count(child_oid) from children where child_oid = :child_oid and deleted = 0")
     int getActiveReferenceCount(@Bind("child_oid") UniqueID child);
 
-    @SqlQuery("select count(child_oid) from children where parent_oid = :parent_oid and child_oid = :child_oid")
-    boolean isChild(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
+    @SqlQuery("select count(child_oid) from children where parent_oid = :parent_oid and child_oid = :child_oid and deleted = 0")
+    boolean isActiveChild(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 
     // this method should not be used to find parents of mount points, use MountPoints.java instead
     @Nullable
@@ -52,6 +52,10 @@ public interface Children {
     @Nullable
     @SqlQuery("select child_name from children where parent_oid = :parent_oid and child_oid = :child_oid and deleted = 0")
     byte[] getActiveChildName(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
+
+    @Nullable
+    @SqlQuery("select child_name from children where parent_oid = :parent_oid and child_oid = :child_oid")
+    byte[] getChildName(@Bind("parent_oid") UniqueID parent, @Bind("child_oid") UniqueID child);
 
     @SqlQuery("select child_oid, child_name, object_type, deleted from children inner join object_types on (children.child_oid = object_types.oid) where children.parent_oid = :parent_oid")
     ResultIterator<DeletableChild> getChildren(@Bind("parent_oid") UniqueID parent);

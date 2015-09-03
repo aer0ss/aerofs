@@ -15,6 +15,7 @@ import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.InsertChild;
 import com.aerofs.polaris.api.operation.OperationResult;
+import com.aerofs.polaris.api.operation.Restore;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,9 +34,7 @@ import java.util.Random;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_CONFLICT;
-import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Matchers.any;
@@ -187,8 +186,7 @@ public final class TestObjectResource {
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
     }
 
-    //@Test
-    // TODO(RD) update to however restores work
+    @Test
     public void canRestoreDeletedObject() throws Exception {
         SID store = SID.generate();
         OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
@@ -199,13 +197,27 @@ public final class TestObjectResource {
         given()
                 .spec(AUTHENTICATED)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(deleted_file, null, "file"))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Restore())
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(store))
+                .when().post(PolarisTestServer.getObjectURL(deleted_file))
                 .then().assertThat().statusCode(SC_OK);
 
         checkTreeState(store, "tree/shouldAllowReinsertionOfDeletedObject.json");
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), any(Long.class));
+    }
+
+    @Test
+    public void cannotRestoreNonDeletedObject() throws Exception {
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+
+        // can't restore a file that's not been deleted
+        PolarisHelpers.restoreObject(AUTHENTICATED, file)
+                .assertThat().statusCode(SC_BAD_REQUEST);
+
+        // can't restore a nonexistent object
+        PolarisHelpers.restoreObject(AUTHENTICATED, OID.generate())
+                .assertThat().statusCode(SC_NOT_FOUND);
     }
 
     @Test
@@ -585,7 +597,9 @@ public final class TestObjectResource {
         SID store = SID.generate();
         OID otherparent = PolarisHelpers.newFolder(AUTHENTICATED, store, "parent");
         OID deletedFile = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+        OID deletedFolder = PolarisHelpers.newFolder(AUTHENTICATED, store, "folder");
         PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deletedFile);
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deletedFolder);
 
         PolarisHelpers.moveObject(AUTHENTICATED, store, store, deletedFile, "new name")
                 .assertThat().statusCode(SC_BAD_REQUEST);
@@ -593,6 +607,9 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_BAD_REQUEST);
 
         PolarisHelpers.newContent(AUTHENTICATED, deletedFile, 0, PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF"), 1024, 100)
+                .assertThat().statusCode(SC_BAD_REQUEST);
+
+        PolarisHelpers.shareObject(AUTHENTICATED, deletedFolder)
                 .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
