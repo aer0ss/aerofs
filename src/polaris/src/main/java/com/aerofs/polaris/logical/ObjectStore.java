@@ -446,7 +446,7 @@ public final class ObjectStore {
         // check if this operation would be a no-op
         if (parentOid.equals(currentParentOid)) {
             if (!Arrays.equals(dao.children.getActiveChildName(parentOid, childOid), childName)) {
-                throw new NameConflictException(parentOid, childName, getExistingObject(dao, childOid));
+                throw new NameConflictException(parentOid, childName, childOid);
             }
             LogicalObject parent = dao.objects.get(parentOid);
             Preconditions.checkState(parent != null, "current parent with oid %s could not be found", parentOid);
@@ -696,7 +696,7 @@ public final class ObjectStore {
     private static void checkForNameConflicts(DAO dao, UniqueID parentOid, byte[] childName) throws NotFoundException, NameConflictException {
         UniqueID childOid = dao.children.getActiveChildNamed(parentOid, childName);
         if (childOid != null) {
-            throw new NameConflictException(parentOid, childName, getExistingObject(dao, childOid));
+            throw new NameConflictException(parentOid, childName, childOid));
         }
     }
 

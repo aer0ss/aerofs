@@ -14,9 +14,9 @@ public final class NameConflictException extends PolarisException {
 
     private final UniqueID parent;
     private final String childName;
-    private final LogicalObject conflictingObject;
+    private final UniqueID conflictingObject;
 
-    public NameConflictException(UniqueID parent, byte[] childName, LogicalObject conflictingObject) {
+    public NameConflictException(UniqueID parent, byte[] childName, UniqueID conflictingObject) {
         super(PolarisError.NAME_CONFLICT);
         this.parent = parent;
         this.childName = PolarisUtilities.stringFromUTF8Bytes(childName);
@@ -32,6 +32,6 @@ public final class NameConflictException extends PolarisException {
     protected void addErrorFields(Map<String, Object> errorFields) {
         errorFields.put("parent", parent);
         errorFields.put("child_name", childName);
-        errorFields.put("conflicting_object", conflictingObject);
+        errorFields.put("conflicting_object", conflictingObject.toStringFormal());
     }
 }

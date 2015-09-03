@@ -24,6 +24,6 @@ public class ObjectLockedException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("oid", oid);
+        errorFields.put("oid", oid.toStringFormal());
     }
 }

@@ -29,7 +29,7 @@ public final class VersionConflictException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("oid", oid);
+        errorFields.put("oid", oid.toStringFormal());
         errorFields.put("actual_version", actualVersion);
         errorFields.put("expected_version", expectedVersion);
     }
