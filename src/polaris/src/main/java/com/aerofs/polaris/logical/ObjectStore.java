@@ -452,6 +452,10 @@ public final class ObjectStore {
             Preconditions.checkState(parent != null, "current parent with oid %s could not be found", parentOid);
             LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.INSERT_CHILD, childOid);
+            if (matchingTransform == 0L && Identifiers.isMountPoint(childOid)) {
+                // could also be the result of a share operation
+                matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, SID.anchorOID2folderOID(new OID(childOid)), TransformType.SHARE);
+            }
             Preconditions.checkState(matchingTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, parentOid);
             return new Updated(matchingTransform, parent);
         } else if (currentParentOid != null) {

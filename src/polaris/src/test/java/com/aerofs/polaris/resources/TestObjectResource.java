@@ -449,6 +449,15 @@ public final class TestObjectResource {
 
         PolarisHelpers.removeObject(AUTHENTICATED, folder, renamedFile)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(8));
+
+        // transform 9
+        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, SID.rootSID(USERID), "sharedfolder");
+        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), sharedFolder, "sharedfolder", ObjectType.FOLDER)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(9));
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
+        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), SID.folderOID2convertedAnchorOID(sharedFolder), "sharedfolder", ObjectType.STORE)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(10));
     }
 
     @Test
