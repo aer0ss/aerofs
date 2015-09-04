@@ -4,6 +4,9 @@ import time
 from aerofs_common import param
 from lib import files, ritual
 from lib.network_partition import GlobalNetworkPartition
+from lib.app.cfg import get_cfg
+from syncdet.case import sync
+from syncdet.case.sync import sync_ng
 
 
 class BaseTest(object):
@@ -17,13 +20,22 @@ class BaseTest(object):
     def _test_file_path(self):
         return os.path.join(files.instance_unique_path(), "test")
 
-    def _wait_for_n_conflicts(self, branch_count):
+    def _wait_for_n_conflicts(self, barrier, branch_count):
         path = self._test_file_path()
-        while True:
-            conflicts = self._r().list_conflicts()
-            if path in conflicts and conflicts[path] == branch_count:
-                break
-            time.sleep(param.POLLING_INTERVAL)
+        if get_cfg().usePolaris():
+            sync_ng(barrier,
+                    # expect:
+                    # - no conflict branch for first daemon submitting change to polaris
+                    # - exactly one branch for all other daemons
+                    validator=lambda votes: sum(votes.itervalues()) == branch_count,
+                    vote=lambda: 1 if len(self._r().get_object_attributes(path).object_attributes.branch) > 1 else None)
+        else:
+            while True:
+                conflicts = self._r().list_conflicts()
+                if path in conflicts and conflicts[path] == branch_count:
+                    break
+                time.sleep(param.POLLING_INTERVAL)
+            sync(barrier)
 
     def _wait_for_no_conflicts(self):
         path = self._test_file_path()

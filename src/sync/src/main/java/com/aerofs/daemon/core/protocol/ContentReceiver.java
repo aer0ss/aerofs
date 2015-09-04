@@ -42,7 +42,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.aerofs.defects.Defects.newMetric;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ContentReceiver

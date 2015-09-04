@@ -45,8 +45,7 @@ class LargeFileSeeder(BaseTest):
         os.rename(temp_path, self._test_file_path())
 
         sync(1)
-        self._wait_for_n_conflicts(_expected_conflicts)
-        sync(2)
+        self._wait_for_n_conflicts(barrier=2, branch_count=_expected_conflicts)
 
 
 class MidDownloadFileWriter(BaseTest):
@@ -71,15 +70,14 @@ class MidDownloadFileWriter(BaseTest):
 
         # Signal that the conflict file has been created
         sync(1)
-        self._wait_for_n_conflicts(_expected_conflicts)
-        sync(2)
+        self._wait_for_n_conflicts(barrier=2, branch_count=_expected_conflicts)
 
 class Receiver(BaseTest):
     def run(self):
-        with NetworkPartition():
-            for i in range(3): sync(i)
+        sync(0)
+        sync(1)
 
-        self._wait_for_n_conflicts(_expected_conflicts)
+        self._wait_for_n_conflicts(barrier=2, branch_count=_expected_conflicts)
 
 # Seed with a large file to ensure the download is interrupted by a local write
 seeder = LargeFileSeeder(30 * 1024 * 1024)

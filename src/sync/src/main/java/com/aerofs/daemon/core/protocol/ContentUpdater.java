@@ -69,6 +69,9 @@ public class ContentUpdater {
     public void processContentResponse_(SOID soid, ReceivedContent content, ResponseStream rs,
                                         CausalityResult cr, Token tk) throws Exception {
         // This is the branch to which the update should be applied
+        // FIXME: the target branch should be determined once the download is complete
+        // and the content hash should be used instead of the kidx to distinguish prefixes
+        // NB: this will have to wait until phoenix is shipped and legacy is burned
         SOKID targetBranch = new SOKID(soid, cr._kidx);
 
         IPhysicalPrefix prefix = null;

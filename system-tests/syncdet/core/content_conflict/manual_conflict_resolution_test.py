@@ -4,7 +4,8 @@ from syncdet import case
 from syncdet.case import sync
 
 import common
-from lib import files, ritual
+from lib import files
+from lib.app.cfg import get_cfg
 
 
 class ManualConflictResolutionTest(common.BaseTest):
@@ -33,14 +34,14 @@ class ManualConflictResolutionTest(common.BaseTest):
         self._create_conflict()
 
         # Wait for everyone else's conflicts to arrive
-        self._wait_for_n_conflicts(branch_count=case.actor_count() - 1)
-
-        # Wait for everyone to receive our conflicts
-        sync.sync(1)
+        self._wait_for_n_conflicts(barrier=1, branch_count=case.actor_count() - 1)
 
         # Everyone is at the same state right now. Resolve the conflict
-        for i in xrange(1, case.actor_count()):
-            self._r().delete_conflict(self._test_file_path(), i)
+        if get_cfg().usePolaris():
+            self.resolve_polaris()
+        else:
+            for i in xrange(1, case.actor_count()):
+                self._r().delete_conflict(self._test_file_path(), i)
         sync.sync(2)
 
     def spectator(self):
@@ -52,13 +53,20 @@ class ManualConflictResolutionTest(common.BaseTest):
         self._create_conflict()
 
         # Wait for everyone else's conflicts to arrive
-        self._wait_for_n_conflicts(branch_count=case.actor_count() - 1)
+        self._wait_for_n_conflicts(barrier=1, branch_count=case.actor_count() - 1)
 
-        # Wait for everyone to receive our conflicts
-        sync.sync(1)
+        if get_cfg().usePolaris():
+            self.resolve_polaris()
+        else:
+            # Wait for the conflict resolutions to be propagated to us
+            self._wait_for_no_conflicts()
 
         # Wait for the resolver to resolve the conflicts
         sync.sync(2)
 
-        # Wait for the conflict resolutions to be propagated to us
-        self._wait_for_no_conflicts()
+    def resolve_polaris(self):
+        n = len(self._r().get_object_attributes(self._test_file_path()).object_attributes.branch)
+        if n <= 1:
+            return
+        for i in range(n-1):
+            self._r().delete_conflict(self._test_file_path(), i+1)

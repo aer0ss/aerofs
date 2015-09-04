@@ -88,6 +88,12 @@ class BaseCfg(object):
         """ @return the uuid representation of the AeroFS device ID for the local actor """
         return uuid.UUID(self._conf_db().device_id)
 
+    def has_flag(self, f):
+        return os.path.exists(os.path.join(self.get_rtroot(), f))
+
+    def usePolaris(self):
+        return self.has_flag("polaris")
+
 
 #####          #####
 ### Linux Config ###
