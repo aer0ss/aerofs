@@ -11,11 +11,7 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.DownstreamMessageEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -23,8 +19,6 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
-import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
-import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -37,7 +31,7 @@ import java.util.Queue;
  * Sits on top of an HttpClientCodec, sends appropriate HTTP request for each VerifyTokenRequest,
  * decodes the response body using Gson and forwards the decoded response to a future.
  */
-public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
+public class OAuthVerificationHandler<T> extends SimpleChannelHandler
 {
     private final static Logger l = Loggers.getLogger(OAuthVerificationHandler.class);
 
@@ -83,13 +77,6 @@ public class OAuthVerificationHandler<T> extends IdleStateAwareChannelHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
         l.warn("ex ", BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
-        ctx.getChannel().close();
-    }
-
-    @Override
-    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
-    {
-        l.info("timeout");
         ctx.getChannel().close();
     }
 

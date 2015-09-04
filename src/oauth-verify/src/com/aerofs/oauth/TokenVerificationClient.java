@@ -12,11 +12,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -31,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Direct asynchronous verification of OAuth tokens
  */
-public class TokenVerificationClient
+public class TokenVerificationClient extends IdleStateAwareChannelHandler
 {
     private final static Logger l = Loggers.getLogger(TokenVerificationClient.class);
 
@@ -39,7 +42,8 @@ public class TokenVerificationClient
     private final ClientBootstrap _bootstrap;
     private final SSLEngineFactory _sslEngineFactory;
 
-    private volatile Channel _channel;
+    private Channel _channel;
+    private long _lastWrite;
 
     private static class ClientSSLEngineFactory extends SSLEngineFactory
     {
@@ -69,7 +73,8 @@ public class TokenVerificationClient
                     new HttpChunkAggregator(2 * C.KB),
                     new IdleStateHandler(timer, 0, 0, 5, TimeUnit.SECONDS),
                     new OAuthVerificationHandler<>(_endpoint,
-                            VerifyTokenResponse.class)
+                            VerifyTokenResponse.class),
+                    this
             );
             if (_endpoint.getScheme().equals("https")) {
                 p.addFirst("ssl", _sslEngineFactory.newSslHandler());
@@ -149,6 +154,7 @@ public class TokenVerificationClient
     private void write(final VerifyTokenRequest<VerifyTokenResponse> req)
     {
         l.info("write {}", req);
+        _lastWrite = System.nanoTime();
         _channel.write(req).addListener(cf -> {
             if (!cf.isSuccess()) {
                 l.warn("failed to write");
@@ -156,5 +162,22 @@ public class TokenVerificationClient
                 cf.getChannel().close();
             }
         });
+    }
+
+    @Override
+    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
+    {
+        synchronized (this) {
+            // IdleStateHandler only resets timer on writeComplete
+            // this leaves a window for a write to be enqueued right before the idle timeout fires
+            if (System.nanoTime() < _lastWrite + TimeUnit.NANOSECONDS.convert(5, TimeUnit.SECONDS)) {
+                return;
+            }
+            if (_channel == ctx.getChannel()) {
+                _channel = null;
+            }
+        }
+        l.info("timeout");
+        ctx.getChannel().close();
     }
 }

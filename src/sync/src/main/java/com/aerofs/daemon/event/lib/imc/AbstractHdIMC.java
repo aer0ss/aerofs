@@ -1,6 +1,8 @@
 package com.aerofs.daemon.event.lib.imc;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.IEBIMC;
@@ -17,7 +19,7 @@ public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E
             handleThrows_(ev);
             ev.okay();
         } catch (Exception e) {
-            l.warn("{} failed: ", getClass(), e);
+            l.warn("{} failed: ", getClass(), BaseLogUtil.suppress(e, ExNotFound.class));
             ev.error(e);
         }
     }

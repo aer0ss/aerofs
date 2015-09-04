@@ -12,7 +12,6 @@ from syncdet.case.assertion import assertFalse
 from syncdet.case import sync
 
 from lib import files, ritual
-from lib.network_partition import GlobalNetworkPartition
 
 
 def _subdir_path():
@@ -20,15 +19,13 @@ def _subdir_path():
 
 def deleter():
     r = ritual.connect()
-    with GlobalNetworkPartition(r):
-        os.makedirs(_subdir_path())
+    os.makedirs(_subdir_path())
 
-        # Create a shared folder, then delete it from the file system,
-        # not ritual's expulsion
-        r.share_folder(files.instance_unique_path())
+    # Create a shared folder, then delete it from the file system,
+    # not ritual's expulsion
+    r.share_folder(files.instance_unique_path())
 
-    # wait until the shared folder has been received
-    sync.sync(0)
+    sync.sync("shared")
 
     rm_rf(files.instance_unique_path())
 
@@ -37,10 +34,8 @@ def deleter():
 
 def receiver():
     # Wait for the shared folder and subdir, then signal receipt
-    r = ritual.connect()
-    with GlobalNetworkPartition(r): pass
     files.wait_dir(_subdir_path())
-    sync.sync(0)
+    sync.sync("shared")
 
     files.wait_path_to_disappear(files.instance_unique_path())
 

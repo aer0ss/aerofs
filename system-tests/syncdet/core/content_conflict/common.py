@@ -5,8 +5,7 @@ from aerofs_common import param
 from lib import files, ritual
 from lib.network_partition import GlobalNetworkPartition
 from lib.app.cfg import get_cfg
-from syncdet.case import sync
-from syncdet.case.sync import sync_ng
+from syncdet.case.sync import sync, sync_ng
 
 
 class BaseTest(object):
