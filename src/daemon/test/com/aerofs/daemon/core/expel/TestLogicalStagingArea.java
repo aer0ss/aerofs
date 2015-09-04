@@ -339,7 +339,7 @@ public class TestLogicalStagingArea extends AbstractTest
         lsa.ensureClean_(ds.resolve_(oa), t);
 
         verifyFolderCleanup("foo");
-        assertStagingDatabaseContains();
+        assertStagingDatabaseContains("foo");
     }
 
     @Test

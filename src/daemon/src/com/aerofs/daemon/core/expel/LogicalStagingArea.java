@@ -130,7 +130,6 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         if (historyPath == null) return;
 
         cleanupObject_(_ds.getOA_(soid), historyPath, t);
-        _sadb.removeEntry_(soid, t);
     }
 
     /**

@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.expel;
 
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
+import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
@@ -42,12 +42,13 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final RemoteContentDatabase _rcdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
+    private final LogicalStagingAreaDatabase _sadb;
 
     @Inject
     public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
-            CfgUsePolaris usePolaris, RemoteContentDatabase rcdb)
+            CfgUsePolaris usePolaris, RemoteContentDatabase rcdb, LogicalStagingAreaDatabase sadb)
     {
         _sc = sc;
         _imd = imd;
@@ -59,6 +60,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _sidx2s = sidx2s;
         _usePolaris = usePolaris;
         _rcdb = rcdb;
+        _sadb = sadb;
     }
 
     @Override
@@ -73,7 +75,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 
         // FIXME: ugh! nasty immigration business down here
         // unfortunately it is far from trivial to refactor
-        _ds.walk_(soidRoot, p, new ObjectWalkerAdapter<ResolvedPath>() {
+        _ds.walk_(soidRoot, p, new IObjectWalker<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
                     throws Exception {
@@ -112,6 +114,14 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                     assert false;
                     return null;
                 }
+            }
+
+            @Override
+            public void postfixWalk_(ResolvedPath parentPath, OA oa) throws SQLException {
+                // remove SA entry to prevent future cleanup of admitted subtree
+                // NB: only delete the SA entry in the postfixWalk, after the subtree is cleaned or
+                // the prefixWalk_ will not clean children correctly
+                _sadb.removeEntry_(oa.soid(), t);
             }
         });
     }
