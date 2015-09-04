@@ -60,7 +60,7 @@ def login_submit(request):
 
     if not set_license_file_and_attach_shasum_to_session(request, license_bytes):
         flash_error(request, "The license is incorrect.")
-        return HTTPFound(location=request.route_path('login'))
+        return HTTPFound(location=request.route_path('redirect'))
 
     headers = remember(request, 'fakeuser')
     return redirect_to_next_page(request, headers, False, False, _DEFAULT_NEXT)
