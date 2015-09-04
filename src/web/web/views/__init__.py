@@ -13,7 +13,6 @@ __all__ = [
     'password_reset',
     'unsubscribe',
     'accept',
-    'payment',
     'error',
     'settings',
     'shelob',

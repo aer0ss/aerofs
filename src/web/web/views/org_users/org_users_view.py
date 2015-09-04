@@ -12,7 +12,6 @@ from web.oauth import get_privileged_bifrost_client
 from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled
 from web.auth import is_admin
-from web.views.payment import stripe_util
 from web.views.org_groups.org_groups_view import json_list_org_groups
 
 # URL param keys
@@ -166,14 +165,9 @@ def json_invite_user(request):
             PBException.EMPTY_EMAIL_ADDRESS:
                 _("The email address can't be empty."),
             PBException.ALREADY_INVITED:
-                _("The user has already been invited to your organization."),
-            PBException.NO_STRIPE_CUSTOMER_ID:
-                _("Payment is required to invite more users. You can enable payment by going to your organization's Settings.") if is_admin(request) else
-                _("Payment is required to invite more users. Please ask your organization admin to enable payments.")
+                _("The user has already been invited to your organization.")
         }
     )
-
-    stripe_util.update_stripe_subscription(reply.stripe_data)
 
     return {
         "locally_managed": reply.locally_managed
@@ -188,8 +182,7 @@ def json_invite_user(request):
 def json_delete_org_invitation(request):
     user = request.json_body[URL_PARAM_USER]
     sp = get_rpc_stub(request)
-    stripe_data = sp.delete_organization_invitation_for_user(user).stripe_data
-    stripe_util.update_stripe_subscription(stripe_data)
+    sp.delete_organization_invitation_for_user(user)
     return HTTPOk()
 
 @view_config(
@@ -231,8 +224,7 @@ def json_deactivate_user(request):
         bifrost_client.flash_on_error(request, r)
 
     sp = get_rpc_stub(request)
-    stripe_data = sp.deactivate_user(user, erase_devices).stripe_data
-    stripe_util.update_stripe_subscription(stripe_data)
+    sp.deactivate_user(user, erase_devices)
     return HTTPOk()
 
 @view_config(

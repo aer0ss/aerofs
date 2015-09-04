@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 // FIXME (RD): plenty of optimizations to be made/were made and misled, leave until they're relevant
-// FIXME (AG): stripe notifications
 
 /**
  * Naive implementation of an ordered notification system.

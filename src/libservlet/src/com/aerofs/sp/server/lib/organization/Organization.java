@@ -11,10 +11,9 @@ import com.aerofs.ids.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.GroupDatabase;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -169,12 +168,6 @@ public class Organization
         _f._odb.setContactPhone(_id, contactPhone);
     }
 
-    public void setStripeCustomerID(@Nonnull String stripeCustomerID)
-            throws SQLException
-    {
-        _f._odb.setStripeCustomerID(_id, stripeCustomerID);
-    }
-
     /**
      * @param quota New quota value in bytes, or null to remove quota
      */
@@ -189,12 +182,6 @@ public class Organization
     public @Nullable Long getQuotaPerUser() throws SQLException, ExNotFound
     {
         return _f._odb.getQuotaPerUser(_id);
-    }
-
-    public void deleteStripeCustomerID()
-            throws SQLException
-    {
-        _f._odb.setStripeCustomerID(_id, null);
     }
 
     @Override
@@ -324,18 +311,6 @@ public class Organization
             builder.add(_f._factSharedFolder.create(sid));
         }
         return builder.build();
-    }
-
-    /**
-     * Gets the Stripe Customer ID used to make Stripe API calls
-     *
-     * @return null if the organization doesn't have a Stripe Customer ID
-     * @throws ExNotFound if the organization doesn't exist
-     */
-    @Nullable
-    public StripeCustomerID getStripeCustomerIDNullable() throws SQLException, ExNotFound
-    {
-        return _f._odb.getStripeCustomerIDNullable(_id);
     }
 
     /**

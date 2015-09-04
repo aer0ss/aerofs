@@ -12,10 +12,6 @@ class TestBase(unittest.TestCase):
         Derived test classes should call this method at the beginning of
         setUp()
         """
-        # Set these environmental variables so stripe_util can be loaded.
-        os.environ['STRIPE_PUBLISHABLE_KEY'] = ''
-        os.environ['STRIPE_SECRET_KEY'] = ''
-
         self.config = testing.setUp()
 
         # Use a real stub to verify that the callers (i.e. systems under test)

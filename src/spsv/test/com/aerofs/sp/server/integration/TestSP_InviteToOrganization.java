@@ -6,7 +6,6 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
@@ -15,9 +14,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

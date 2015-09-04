@@ -1,8 +1,6 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "Organization Settings" %>
 
-<%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
-
 <h2>Organization settings</h2>
 
 <form id="org-settings" class="page-block form-horizontal" action="${request.route_path('org_settings')}" method="post" role="form">
@@ -95,10 +93,6 @@
 </form>
 
 <%block name="scripts">
-    %if not has_customer_id:
-        <%credit_card_modal:javascript/>
-    %endif
-
     <script>
         $(document).ready(function() {
             $('#organization_name').focus();
@@ -110,22 +104,11 @@
                 $("#update-button").prop("disabled", true);
                 return true;
             });
-
-            %if not has_customer_id and upgrade:
-                upgrade();
-            %endif
         });
 
         function updateQuotaUI() {
             var enableQuota = ($('#enable_quota').is(':checked'));
             $('#quota').prop('disabled', !enableQuota);
-        }
-
-        function upgrade() {
-            inputCreditCardInfoAndCreateStripeCustomer(function() {
-                ## Don't use "location.href =". It's not supported by old Firefox.
-                window.location.assign("${request.route_path('start_subscription_done')}");
-            });
         }
     </script>
 </%block>

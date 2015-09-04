@@ -6,8 +6,6 @@ from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 
 from web.util import flash_error, flash_success, get_rpc_stub, str2bool
-from web.views.payment.stripe_util \
-    import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
 # URL param keys
 URL_PARAM_USER = 'user'
@@ -29,18 +27,6 @@ def decode_store_id(encoded_sid):
 
 
 @view_config(
-    route_name='start_subscription',
-    renderer='org_settings.mako',
-    permission='admin'
-)
-def start_subscription(request):
-    ret = org_settings(request)
-    # The page respects this flag only if not has_customer_id
-    ret['upgrade'] = True
-    return ret
-
-
-@view_config(
     route_name='org_settings',
     renderer='org_settings.mako',
     permission='admin',
@@ -56,15 +42,9 @@ def org_settings(request):
     quota_enabled = quota_reply.HasField('quota')
     quota = _bytes2gb(quota_reply.quota) if quota_enabled else None
 
-    # Show billing links only if the user has a Stripe customer ID
-    stripe_data = sp.get_stripe_data().stripe_data
-
     return {
         'organization_name': reply.organization_name,
         'tfa_level': reply.level,
-        'has_customer_id': stripe_data.customer_id,
-        'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
-        'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
         'show_quota_options': show_quota,
         'quota_enabled': quota_enabled,
         'quota': quota

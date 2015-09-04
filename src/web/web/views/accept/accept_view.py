@@ -7,7 +7,6 @@ from aerofs_sp.gen.common_pb2 import PBException
 from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import flash_success, get_rpc_stub, is_team_server_user_id
-from web.views.payment import stripe_util
 from web.views.shared_folders.shared_folders_view import _decode_store_id
 
 
@@ -93,9 +92,6 @@ def accept_team_invitation(request):
         PBException.NO_ADMIN_OR_OWNER: _("no admin for the organization")
     })
 
-    # downgrade subscription for the user's previous org
-    stripe_util.update_stripe_subscription(reply.stripe_data)
-
     return HTTPOk()
 
 @view_config(
@@ -107,8 +103,7 @@ def accept_team_invitation(request):
 def ignore_team_invitation(request):
     org_id = int(request.params[URL_PARAM_ORG_ID])
     sp = get_rpc_stub(request)
-    stripe_data = sp.delete_organization_invitation(org_id).stripe_data
-    stripe_util.update_stripe_subscription(stripe_data)
+    sp.delete_organization_invitation(org_id)
 
 @view_config(
     route_name = 'json.accept_folder_invitation',

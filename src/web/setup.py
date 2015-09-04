@@ -14,7 +14,6 @@ packages = [
     "web.views.settings",
     "web.views.shelob",
     "web.views.password_reset",
-    "web.views.payment",
     "web.views.shared_folders",
     "web.views.signup",
     "web.views.org_users",

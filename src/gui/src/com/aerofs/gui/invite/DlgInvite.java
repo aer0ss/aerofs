@@ -4,21 +4,15 @@
 
 package com.aerofs.gui.invite;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.defects.Defects;
-import com.aerofs.gui.AeroFSDialog;
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
+import com.aerofs.gui.*;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
@@ -29,12 +23,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.lib.Util.isValidEmailAddress;
@@ -174,11 +163,7 @@ public class DlgInvite extends AeroFSDialog
                                     new ErrorMessage(ExAlreadyExist.class, "The user is " +
                                             "already a member of your organization."),
                                     new ErrorMessage(ExAlreadyInvited.class, "The user is " +
-                                            "already invited to join your organization."),
-                                    new ErrorMessage(ExNoStripeCustomerID.class, "Payment is " +
-                                            "required to invite more users. Please ask your " +
-                                            "administrator to visit " + WWW.ORG_SETTINGS_URL +
-                                            "and enable payment."));
+                                            "already invited to join your organization."));
 
                             setStatus("");
                             setInProgress(false);

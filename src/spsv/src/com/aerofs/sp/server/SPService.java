@@ -13,22 +13,14 @@ import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.analytics.AnalyticsEvents.SignUpEvent;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExCannotResetPassword;
-import com.aerofs.base.ex.ExMemberLimitExceeded;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExNotLocallyManaged;
-import com.aerofs.base.ex.ExRateLimitExceeded;
-import com.aerofs.base.ex.ExSecondFactorRequired;
-import com.aerofs.base.ex.ExSecondFactorSetupRequired;
-import com.aerofs.base.ex.ExWrongOrganization;
-import com.aerofs.base.ex.Exceptions;
-import com.aerofs.base.id.*;
-import com.aerofs.ids.*;
+import com.aerofs.base.ex.*;
+import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.RestObject;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
@@ -36,84 +28,24 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common.PBException;
-import com.aerofs.proto.Common.PBFolderInvitation;
-import com.aerofs.proto.Common.PBPermissions;
-import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.proto.Common.*;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.proto.Sp.SearchOrganizationUsersReply;
-import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
-import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
-import com.aerofs.proto.Sp.AuthorizeAPIClientReply;
+import com.aerofs.proto.Sp.*;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
-import com.aerofs.proto.Sp.CheckQuotaReply;
 import com.aerofs.proto.Sp.CheckQuotaReply.PBStoreShouldCollect;
-import com.aerofs.proto.Sp.CreateGroupReply;
-import com.aerofs.proto.Sp.CreateUrlReply;
-import com.aerofs.proto.Sp.DeactivateUserReply;
-import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
-import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
-import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
-import com.aerofs.proto.Sp.GetBackupCodesReply;
-import com.aerofs.proto.Sp.GetCRLReply;
-import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
-import com.aerofs.proto.Sp.GetDeviceInfoReply;
-import com.aerofs.proto.Sp.GetOrgPreferencesReply;
-import com.aerofs.proto.Sp.GetOrganizationIDReply;
-import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
-import com.aerofs.proto.Sp.GetQuotaReply;
-import com.aerofs.proto.Sp.GetStripeDataReply;
-import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
-import com.aerofs.proto.Sp.GetTwoFactorSetupEnforcementReply;
-import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
-import com.aerofs.proto.Sp.GetUrlInfoReply;
-import com.aerofs.proto.Sp.GetUserCRLReply;
-import com.aerofs.proto.Sp.GetUserPreferencesReply;
-import com.aerofs.proto.Sp.GetUserSettingsTokenReply;
-import com.aerofs.proto.Sp.ISPService;
-import com.aerofs.proto.Sp.InviteToOrganizationReply;
-import com.aerofs.proto.Sp.ListGroupMembersReply;
-import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply;
 import com.aerofs.proto.Sp.ListGroupStatusInSharedFolderReply.PBUserAndState;
-import com.aerofs.proto.Sp.ListGroupsReply;
-import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
-import com.aerofs.proto.Sp.ListOrganizationMembersReply;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
-import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
-import com.aerofs.proto.Sp.ListSharedFoldersReply;
-import com.aerofs.proto.Sp.ListUrlsForStoreReply;
-import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
-import com.aerofs.proto.Sp.ListWhitelistedUsersReply;
-import com.aerofs.proto.Sp.MobileAccessCode;
-import com.aerofs.proto.Sp.OpenIdSessionAttributes;
-import com.aerofs.proto.Sp.OpenIdSessionNonces;
-import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.proto.Sp.PBGroup;
-import com.aerofs.proto.Sp.PBRestObjectUrl;
-import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBGroupPermissions;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserPermissionsAndState;
-import com.aerofs.proto.Sp.PBStripeData;
-import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
-import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceCall.Interface;
-import com.aerofs.proto.Sp.RegisterDeviceReply;
-import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
-import com.aerofs.proto.Sp.SetupTwoFactorReply;
-import com.aerofs.proto.Sp.SignInUserReply;
-import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
@@ -131,33 +63,21 @@ import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
 import com.aerofs.sp.server.LdapGroupSynchronizer.AffectedUsersAndError;
-import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.authorization.DeviceAuthClient;
 import com.aerofs.sp.server.authorization.DeviceAuthEndpoint;
 import com.aerofs.sp.server.authorization.DeviceAuthParam;
-import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
-import com.aerofs.sp.server.email.Email;
-import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.email.RequestToSignUpEmailer;
-import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
-import com.aerofs.sp.server.email.TwoFactorEmailer;
+import com.aerofs.sp.server.email.*;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedFolders;
-import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
-import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
-import com.aerofs.sp.server.lib.sf.SharedFolder.Factory;
-import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
-import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.group.Group;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedFolders;
+import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
@@ -165,6 +85,11 @@ import com.aerofs.sp.server.lib.session.ISession;
 import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
 import com.aerofs.sp.server.lib.session.RequestRemoteAddress;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
+import com.aerofs.sp.server.lib.sf.SharedFolder.Factory;
+import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
+import com.aerofs.sp.server.lib.sf.SharedFolder.UserPermissionsAndState;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -175,13 +100,9 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sp.server.settings.token.UserSettingsToken;
 import com.aerofs.sp.server.sharing_rules.ISharingRules;
 import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
+import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.ssmp.SSMPConnection;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
@@ -198,12 +119,8 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -265,7 +182,6 @@ public class SPService implements ISPService
     private final IdentitySessionManager _identitySessionManager;
     private final Authenticator _authenticator;
     private final LdapGroupSynchronizer _ldapGroupSynchronizer;
-    private ScheduledExecutorService _scheduledExecutor;
 
     private final InvitationHelper _invitationHelper;
 
@@ -378,7 +294,7 @@ public class SPService implements ISPService
 
         _rateLimiter = rateLimiter;
 
-        _scheduledExecutor = scheduledExecutor;
+        ScheduledExecutorService _scheduledExecutor = scheduledExecutor;
         startPeriodicSyncing(_scheduledExecutor, () -> {
             try {
                 syncGroupsWithLDAPImpl(null);
@@ -1194,31 +1110,15 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setStripeCustomerID(String stripeCustomerId)
-            throws Exception
+    public ListenableFuture<Void> setStripeCustomerID(String stripeCustomerId) throws Exception
     {
-        if (Strings.isNullOrEmpty(stripeCustomerId)) throw new ExBadArgs();
-
-        _sqlTrans.begin();
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        user.throwIfNotAdmin();
-        user.getOrganization().setStripeCustomerID(stripeCustomerId);
-        _sqlTrans.commit();
-
-        return createVoidReply();
+        throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
 
     @Override
-    public ListenableFuture<Void> deleteStripeCustomerID()
-            throws Exception
+    public ListenableFuture<Void> deleteStripeCustomerID() throws Exception
     {
-        _sqlTrans.begin();
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        user.throwIfNotAdmin();
-        user.getOrganization().deleteStripeCustomerID();
-        _sqlTrans.commit();
-
-        return createVoidReply();
+        throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
 
     private static void throwIfNotOwner(User user, Device device)
@@ -1916,6 +1816,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
+        // FIXME: note the intellij suggestion here. What if password _is_ null? Throw something?
         link.validatePassword(password.toByteArray());
         _sqlTrans.commit();
         return createVoidReply();
@@ -2356,8 +2257,6 @@ public class SPService implements ISPService
         }
 
         PBStripeData sd = getStripeData(org);
-        throwIfPaymentRequiredAndNoCustomerID(sd);
-
         boolean locallyManaged = _authenticator.isLocallyManaged(invitee.id());
 
         _sqlTrans.commit();
@@ -2396,6 +2295,9 @@ public class SPService implements ISPService
         return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
     }
 
+    /**
+     *  TODO: Is there any real use of this method? Private Cloud shouldn't allow org migration.
+     */
     @Override
     public ListenableFuture<AcceptOrganizationInvitationReply> acceptOrganizationInvitation(Integer orgID)
             throws Exception
@@ -2416,8 +2318,7 @@ public class SPService implements ISPService
         // TODO (WW) this comment points to poor naming (or cohesion) in setOrganization
         Collection<UserID> users = accepter.setOrganization(orgNew, AuthorizationLevel.USER);
 
-        // TODO (RD) this doesn't seem to do anything
-        // retrieve the stripe data for the old organization _after_ the user moves out.
+        // retrieve the org size for the old organization _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
 
         _aclPublisher.publish_(users);
@@ -2582,48 +2483,23 @@ public class SPService implements ISPService
 
     /**
      * Return a StripeData object for the specified org based on its organization size
+     * NOTE: leaving this as-is to avoid proto nonsense. StripeData is just a container for org size; customer id
+     * has been removed. Any code that refers to it must be dead code.
      */
     private PBStripeData getStripeData(Organization org)
             throws SQLException, ExNotFound
     {
-        PBStripeData.Builder builder = PBStripeData.newBuilder()
-                .setQuantity(org.countOrganizationInvitations() + org.countUsers());
-
-        StripeCustomerID scid = org.getStripeCustomerIDNullable();
-        if (scid != null) builder.setCustomerId(scid.getString());
-
-        return builder.build();
+        return PBStripeData.newBuilder()
+                .setQuantity(org.countOrganizationInvitations() + org.countUsers())
+                .build();
     }
 
-    /**
-     * Throw if the PBStripeData object indicates a paid plan but doesn't have a Stripe customer ID.
-     */
-    private void throwIfPaymentRequiredAndNoCustomerID(PBStripeData sd)
-            throws ExNoStripeCustomerID
-    {
-        if (!ENABLE_PAYMENT) return;
-
-        if (sd.getQuantity() > _maxFreeMembersPerOrg && !sd.hasCustomerId()) {
-            throw new ExNoStripeCustomerID();
-        }
-    }
-
+    /** NOTE: external use of this PB method appears to be removed everywhere. */
     @Override
     public ListenableFuture<GetStripeDataReply> getStripeData()
-            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired,
-            ExSecondFactorSetupRequired
+            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired, ExSecondFactorSetupRequired
     {
-        _sqlTrans.begin();
-
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        user.throwIfNotAdmin();
-
-        GetStripeDataReply.Builder builder = GetStripeDataReply.newBuilder()
-                .setStripeData(getStripeData(user.getOrganization()));
-
-        _sqlTrans.commit();
-
-        return createReply(builder.build());
+        throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
 
     @Override
@@ -3743,10 +3619,11 @@ public class SPService implements ISPService
             emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, admin,
                     newMember, updates._folders));
         }
-        // since adding members to a group can send out org invites, we make sure they haven't
-        // exceeded the free org size limit
-        PBStripeData sd = getStripeData(org);
-        throwIfPaymentRequiredAndNoCustomerID(sd);
+        // FIXME: this comment was here before:
+            // since adding members to a group can send out org invites, we make sure they haven't
+            // exceeded the free org size limit
+        // Now I'm confused. Are we not checking that they are within the limit of their license?
+        // The "free org size limit" mentioned is ... 3. That is old old hybrid code. Do we need a license check here?
 
         _aclPublisher.publish_(needsACLUpdate.build());
 

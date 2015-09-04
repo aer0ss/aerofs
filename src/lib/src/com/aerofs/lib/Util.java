@@ -74,7 +74,6 @@ public abstract class Util
                         .put(Type.NOT_DIR, ExNotDir.class)
                         .put(Type.NOT_FILE, ExNotFile.class)
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
-                        .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
 
                         // exception used by shared folder rules

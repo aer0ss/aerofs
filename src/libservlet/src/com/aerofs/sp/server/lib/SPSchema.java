@@ -26,7 +26,6 @@ public final class SPSchema
             C_O_ID                          = "o_id",
             C_O_NAME                        = "o_name",
             C_O_CONTACT_PHONE               = "o_contact_phone",
-            C_O_STRIPE_CUSTOMER_ID          = "o_stripe_customer_id",
             C_O_QUOTA_PER_USER              = "o_quota_per_user",
             C_O_TWO_FACTOR_ENFORCEMENT_LEVEL= "o_two_factor_enforcement_level",
 
