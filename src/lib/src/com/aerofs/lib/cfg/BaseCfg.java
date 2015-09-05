@@ -4,6 +4,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.StorageType;
@@ -35,6 +36,7 @@ public class BaseCfg {
     private X509Certificate _cacert;
     private boolean _inited;
     private @Nullable StorageType _storageType;
+    private SID _rootSID;
 
     private PrivateKey _privKey;
 
@@ -74,6 +76,7 @@ public class BaseCfg {
         _user = UserID.fromInternal(store.get(USER_ID));
         _did = new DID(store.get(DEVICE_ID));
         _timeout = store.getLong(TIMEOUT);
+        _rootSID = SID.rootSID(_user);
 
         // We want to keep the user-specified path in the DB, but we need the canonical path to
         // watch for filesystem changes on OSX.
@@ -176,5 +179,10 @@ public class BaseCfg {
     public void setPrivateKey(PrivateKey privateKey)
     {
         _privKey = privateKey;
+    }
+
+    protected SID rootSID()
+    {
+        return _rootSID;
     }
 }

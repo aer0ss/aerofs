@@ -10,6 +10,6 @@ public class CfgRootSID
 {
     public SID get()
     {
-        return Cfg.rootSID();
+        return BaseCfg.getInstance().rootSID();
     }
 }

@@ -66,7 +66,6 @@ public class Cfg
 
     private static BaseCfg _baseCfg;
 
-    private static SID _rootSID;
     private static boolean _useDM;
     private static boolean _useAutoUpdate;
     private static boolean _useXFF;
@@ -106,19 +105,18 @@ public class Cfg
         initDB_();
         _db.reload();
         _baseCfg.initializeValuesFromConfigStore(_db);
-        _rootSID = SID.rootSID(_baseCfg.user());
         // We want to keep the user-specified path in the DB, but we need the canonical path to
         // watch for filesystem changes on OSX.
         File rootAnchor = new File(_db.get(ROOT));
         assert rootAnchor.isAbsolute();
-        _absDefaultAuxRoot = absAuxRootForPath(_baseCfg.absDefaultRootAnchor(), _rootSID);
+        _absDefaultAuxRoot = absAuxRootForPath(_baseCfg.absDefaultRootAnchor(), _baseCfg.rootSID());
 
         if (_baseCfg.storageType() == StorageType.LINKED && !L.isMultiuser()) {
             // upgrade schema if needed
             // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
             // DPUT are run so this is not a viable option...
-            if (_rdb.getRootNullable(_rootSID) == null) {
-                _rdb.addRoot(_rootSID, _baseCfg.absDefaultRootAnchor());
+            if (_rdb.getRootNullable(_baseCfg.rootSID()) == null) {
+                _rdb.addRoot(_baseCfg.rootSID(), _baseCfg.absDefaultRootAnchor());
             }
         }
 
@@ -288,7 +286,7 @@ public class Cfg
      */
     public static SID rootSID()
     {
-        return _rootSID;
+        return _baseCfg.rootSID();
     }
 
     public static StorageType defaultStorageType()
