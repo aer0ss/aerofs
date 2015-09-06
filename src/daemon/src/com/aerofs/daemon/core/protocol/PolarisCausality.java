@@ -103,6 +103,11 @@ public class PolarisCausality implements Causality {
             throws SQLException, IOException, ExNotFound, ExAborted {
         Long rcv = content.vRemote.unwrapCentral();
         Long lcv = _cvdb.getVersion_(k.sidx(), k.oid());
+
+        if (k.kidx().isMaster() && _ccdb.hasChange_(k.sidx(), k.oid())) {
+            // TODO: immediately create a conflict branch instead of aborting the dl
+            throw new ExAborted(k + " changed locally");
+        }
         if (lcv != null && rcv < lcv) throw new ExAborted(k + " version changed");
 
         l.debug("{} version {} -> {}", k, lcv, rcv);
