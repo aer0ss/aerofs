@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Ensure we're using the apt-cacher-ng proxy
-echo 'Acquire::http::Proxy "http://10.0.2.2:3142";' > /etc/apt/apt.conf.d/80httpproxy
-
 # Update base system, install packages useful for building packages
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
