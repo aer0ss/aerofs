@@ -26,7 +26,6 @@ import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
@@ -74,6 +73,20 @@ public class PolarisClient
         {
             headers.add(HttpHeaders.Names.AUTHORIZATION, auth);
             return headers;
+        }
+    }
+
+    public static class Factory {
+        @Inject CoreExecutor executor;
+        @Inject CfgLocalDID did;
+        @Inject CfgLocalUser user;
+        @Inject Timer timer;
+        @Inject ClientSocketChannelFactory channelFactory;
+        @Inject ClientSSLEngineFactory sslEngineFactory;
+
+        public PolarisClient create()
+        {
+            return new PolarisClient(executor, did, user, timer, channelFactory, sslEngineFactory);
         }
     }
 

@@ -100,7 +100,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             ObjectDeleter od, IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
             CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb, CfgUsePolaris polaris,
-            RemoteLinkDatabase rldb, PolarisClient client)
+            RemoteLinkDatabase rldb, PolarisClient.Factory clientFactory)
     {
         _ss = ss;
         _tokenManager = tokenManager;
@@ -119,7 +119,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _urdb = urdb;
         _polaris = polaris;
         _rldb = rldb;
-        _client = client;
+        // NB: do not reuse the background polaris connection to bypass pipelined messages and
+        // reduce the likelihood of suffering from a broken connection
+        _client = clientFactory.create();
     }
 
     @Override
