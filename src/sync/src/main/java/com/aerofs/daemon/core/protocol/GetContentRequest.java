@@ -106,11 +106,11 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
 
         PBGetContentRequest.Prefix.Builder bd = PBGetContentRequest.Prefix.newBuilder();
 
-        Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
+        Long vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx()).unwrapCentral();
         l.info("prefix ver {} len {}", vPre, len);
         if (vPre != null) {
             bd.setLength(len);
-            bd.setVersion(vPre.unwrapCentral());
+            bd.setVersion(vPre);
             bd.setHashState(new LeanByteString(hashState));
         }
         return bd.build();

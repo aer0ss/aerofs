@@ -198,7 +198,7 @@ public class GetComponentRequest implements CoreProtocolReactor.Handler
         Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
         l.info("prefix ver {} len {}", vPre, len);
 
-        if (vPre != null) {
+        if (!vPre.isZero_()) {
             bd.setPrefixLength(len);
             bd.setPrefixVersion(vPre.toPB_());
         }
