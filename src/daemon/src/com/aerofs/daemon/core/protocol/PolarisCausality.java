@@ -106,7 +106,10 @@ public class PolarisCausality implements Causality {
 
         if (k.kidx().isMaster() && _ccdb.hasChange_(k.sidx(), k.oid())) {
             // TODO: immediately create a conflict branch instead of aborting the dl
-            throw new ExAborted(k + " changed locally");
+            ContentHash h = _ds.getCAHash_(k);
+            if (h == null || !h.equals(content.hash)) {
+                throw new ExAborted(k + " changed locally");
+            }
         }
         if (lcv != null && rcv < lcv) throw new ExAborted(k + " version changed");
 

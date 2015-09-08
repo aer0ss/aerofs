@@ -6,7 +6,10 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
@@ -626,5 +629,67 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertEquals((Long) 1L, cvdb.getVersion_(sidx, oid));
         assertTrue(rcdb.hasRemoteChanges_(sidx, oid, 0L));
         assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
+    }
+
+    @Test
+    public void shouldResolveCycleA() throws Exception {
+        OID foo = OID.generate();
+        OID bar = OID.generate();
+        OID baz = OID.generate();
+        apply(
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FOLDER)
+        );
+
+        try (Trans t = tm.begin_()) {
+            om.moveInSameStore_(new SOID(sidx, foo), baz, "moved", PhysicalOp.MAP, true, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        apply(
+                insert(foo, "moved", bar, ObjectType.FOLDER),
+                remove(OID.ROOT, bar)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder("foo", foo,
+                        folder("moved", bar,
+                                folder("baz", baz))));
+    }
+
+    @Test
+    public void shouldResolveCycleB() throws Exception {
+        OID foo = OID.generate();
+        OID bar = OID.generate();
+        OID baz = OID.generate();
+        apply(
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FOLDER)
+        );
+
+        try (Trans t = tm.begin_()) {
+            om.moveInSameStore_(new SOID(sidx, bar), foo, "moved", PhysicalOp.MAP, true, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        apply(
+                insert(baz, "moved", foo, ObjectType.FOLDER),
+                remove(OID.ROOT, foo)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder("bar", bar,
+                        folder("baz", baz,
+                                folder("moved", foo))));
     }
 }

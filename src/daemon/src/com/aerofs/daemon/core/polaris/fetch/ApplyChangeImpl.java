@@ -151,12 +151,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (shouldBuffer) {
             _mbdb.insert_(parent.sidx(), oidChild, type, mergeBoundary, t);
         } else {
-            applyInsert_(parent.sidx(), oidChild, parent.oid(), name, type, t);
+            applyInsert_(parent.sidx(), oidChild, parent.oid(), name, type, mergeBoundary, t);
         }
     }
 
     private void applyInsert_(SIndex sidx, OID oidChild, OID oidParent, String name, OA.Type type,
-                              Trans t) throws Exception {
+                              long timestamp, Trans t) throws Exception {
         OA oa = _ds.getOANullable_(new SOID(sidx, oidChild));
         if (oa != null) {
             OA parent = _ds.getOANullable_(new SOID(sidx, oidParent));
@@ -177,7 +177,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             } else {
                 l.info("move insert {}{} {}/name", sidx, oidParent, oidChild, name);
             }
-            applyMove_(parent, oa, name, t);
+            applyMove_(parent, oa, name, timestamp, t);
             return;
         }
         _ds.createOA_(type, sidx, oidChild, oidParent, name, t);
@@ -212,18 +212,87 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (hasConflict) {
             _mbdb.insert_(sidx, oidChild, oaChild.type(), mergeBoundary, t);
         } else {
-            applyMove_(_ds.getOA_(parent), oaChild, name, t);
+            applyMove_(_ds.getOA_(parent), oaChild, name, mergeBoundary, t);
         }
     }
 
-    private void applyMove_(OA oaParent, OA oaChild, String name, Trans t) throws Exception {
+    private void applyMove_(OA oaParent, OA oaChild, String name, long timestamp, Trans t)
+            throws Exception {
+        if (resolveCycle_(oaParent.soid(), oaChild.soid(), timestamp, t)) {
+            oaParent = _ds.getOA_(oaParent.soid());
+            oaChild = _ds.getOA_(oaChild.soid());
+        }
         ResolvedPath pOld = _ds.resolve_(oaChild);
+
         _ds.setOAParentAndName_(oaChild, oaParent, name, t);
 
         _expulsion.objectMoved_(pOld, oaChild.soid(), PhysicalOp.APPLY, t);
 
         // all local meta changes affecting the same child are now obsolete
         _mcdb.deleteChanges_(oaChild.soid().sidx(), oaChild.soid().oid(), t);
+    }
+
+    private boolean resolveCycle_(SOID parent, SOID child, long timestamp, Trans t)
+            throws Exception {
+        boolean resolved = false;
+        while (true) {
+            ResolvedPath pParent = _ds.resolve_(parent);
+            ResolvedPath pChild = _ds.resolve_(child);
+
+            if (!pParent.isStrictlyUnder(pChild)) break;
+
+            l.info("breaking cyclic move {} -> {}", pChild, pParent);
+
+            // Here be cycles!
+            //
+            // Suppose you start out with
+            //
+            // r
+            // |_n1o1
+            // |_n2o2
+            //     |_n3o3
+            //
+            //
+            // And two devices make the following changes:
+            //
+            //      A       |       B
+            // -------------|---------------
+            // r            |   r
+            // |_n1o1       |   |_n2o2
+            //    |_n2o2    |      |_n3o3
+            //       |_n3o3 |         |_n1o1
+            //
+            //
+            // One of the changes is going to be accepted by polaris, the other rejected because it
+            // would create a cycle. Then, the device whose change was rejected will receive the
+            // accepted change and will have to resolve the cycle locally.
+            //
+            // e.g.: A receives move o1 under o3
+            //       B receives move o2 under o1
+            //
+            // Resolution:
+            // Walk upwards from the bottom of the cycle, find the first object along that path
+            // whose local parent doesn't match its remote parent and move it back to where it
+            // belongs (potentially causing a recursive cycle resolution...)
+            // Then resolve the object paths again and keep at it until the cycle is broken.
+            for (int i = pParent.soids.size() - 1; i >= 0; i--) {
+                SOID soid = pParent.soids.get(i);
+                OA oa = _ds.getOA_(soid);
+                RemoteLink lnk = _rpdb.getParent_(soid.sidx(), soid.oid());
+                if (lnk.parent.equals(oa.parent())) continue;
+                OA rp = _ds.getOA_(new SOID(soid.sidx(), lnk.parent));
+                String name = lnk.name;
+                OID conflict = _ds.getChild_(soid.sidx(), lnk.parent, name);
+                if (conflict != null) {
+                    OA oaConflict = _ds.getOA_(new SOID(soid.sidx(), conflict));
+                    name = resolveNameConflict_(soid.sidx(), lnk, oaConflict, 0L, t);
+                }
+                applyMove_(rp, oa, name, timestamp, t);
+                break;
+            }
+            resolved = true;
+        }
+        return resolved;
     }
 
     @Override
@@ -245,7 +314,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     void applyDelete_(OA oaChild, Trans t) throws Exception {
         OA oaTrash = _ds.getOA_(new SOID(oaChild.soid().sidx(), OID.TRASH));
-        applyMove_(oaTrash, oaChild, oaChild.soid().oid().toStringFormal(), t);
+        applyMove_(oaTrash, oaChild, oaChild.soid().oid().toStringFormal(), Long.MAX_VALUE, t);
     }
 
     @Override
@@ -488,7 +557,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         if (lnk == null) {
             if (oaChild == null) {
-                applyInsert_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), c.type, t);
+                applyInsert_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), c.type, timestamp, t);
             } else {
                 applyDelete_(oaChild, t);
             }
@@ -528,9 +597,9 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         // apply remote change
         if (oaChild == null) {
-            applyInsert_(sidx, c.oid, lnk.parent, name, c.type, t);
+            applyInsert_(sidx, c.oid, lnk.parent, name, c.type, timestamp, t);
         } else {
-            applyMove_(oaParent, oaChild, name, t);
+            applyMove_(oaParent, oaChild, name, timestamp, t);
         }
     }
 
