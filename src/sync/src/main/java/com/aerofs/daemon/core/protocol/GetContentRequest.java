@@ -103,16 +103,13 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
         if (len == 0) return null;
         byte[] hashState = prefix.hashState_();
         if (hashState == null) return null;
-
-        PBGetContentRequest.Prefix.Builder bd = PBGetContentRequest.Prefix.newBuilder();
-
         Long vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx()).unwrapCentral();
+        if (vPre == null) return null;
         l.info("prefix ver {} len {}", vPre, len);
-        if (vPre != null) {
-            bd.setLength(len);
-            bd.setVersion(vPre);
-            bd.setHashState(new LeanByteString(hashState));
-        }
+        PBGetContentRequest.Prefix.Builder bd = PBGetContentRequest.Prefix.newBuilder();
+        bd.setLength(len);
+        bd.setVersion(vPre);
+        bd.setHashState(new LeanByteString(hashState));
         return bd.build();
     }
 
