@@ -106,7 +106,6 @@ do
         -o $INSTALLERS/modified/${program}Install-${version}.exe &
 
     "${TOOLS}/win/inject_msi.sh" \
-       ${version} \
        "${SITE_PROP}" \
        "${INSTALLERS}/original/${program}Install-${version}.msi" \
        "${INSTALLERS}/modified/${program}Install-${version}.msi" \
@@ -133,39 +132,51 @@ do
             exit 1
             ;;
     esac
-    # add site-config.properties under Release/AeroFS.app/Contents/Resources/Java/
     $TOOLS/osx/add_file_to_zip.sh \
         $INSTALLERS/original/${package}-osx-${version}.zip \
         $INSTALLERS/modified/${package}-osx-${version}.zip \
         $SITE_PROP \
-        Release/${program}.app/Contents/Resources/site-config.lproj/ \
-        locversion.plist &
+        Release/${program}.app/Contents/Resources/site-config.lproj \
+        /locversion.plist &
 done
 
 echo "Repackaging Linux installers..."
 for package in aerofs aerofsts
 do
     # Installer .deb (unified)
-    $TOOLS/linux/add_file_to_deb.sh \
+    ( $TOOLS/linux/add_file_to_deb.sh \
         $INSTALLERS/original/${package}-installer-${version}.deb \
         $INSTALLERS/modified/${package}-installer-${version}.deb \
         $SITE_PROP \
-        usr/share/${package}/shared/ &
+        usr/share/${package}/amd64/;
+      $TOOLS/linux/add_file_to_deb.sh \
+        $INSTALLERS/modified/${package}-installer-${version}.deb \
+        $INSTALLERS/modified/${package}-installer-${version}.deb \
+        $SITE_PROP \
+        usr/share/${package}/i386/ ) &
+
     # Note the output path is "aerofs" even for team server
     # because that's what the updater currently expects and
     # it's hard to change without breaking compat.
     # Installer .tgz (unified)
-    $TOOLS/linux/add_file_to_tgz.sh \
+    ( $TOOLS/linux/add_file_to_tgz.sh \
         $INSTALLERS/original/${package}-installer-${version}.tgz \
         $INSTALLERS/modified/${package}-installer-${version}.tgz \
         $SITE_PROP \
-        aerofs/shared &
+        aerofs/amd64;
+      $TOOLS/linux/add_file_to_tgz.sh \
+        $INSTALLERS/original/${package}-installer-${version}.tgz \
+        $INSTALLERS/modified/${package}-installer-${version}.tgz \
+        $SITE_PROP \
+        aerofs/i386 ) &
+
     # 64-bit update package
     $TOOLS/linux/add_file_to_tgz.sh \
         $INSTALLERS/original/${package}-${version}-x86_64.tgz \
         $INSTALLERS/modified/${package}-${version}-x86_64.tgz \
         $SITE_PROP \
         aerofs &
+
     # 32-bit update package
     $TOOLS/linux/add_file_to_tgz.sh \
         $INSTALLERS/original/${package}-${version}-x86.tgz \

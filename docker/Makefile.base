@@ -16,6 +16,7 @@ LICENSING_SRC = $(GIT_ROOT)/src/licensing/
 PACKAGES_SRC = $(GIT_ROOT)/out.gradle/packages/
 PROTO_SRC = $(GIT_ROOT)/out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java/
 PYTHON_LIB_SRC = $(GIT_ROOT)/src/python-lib/
+UPDATES_SRC = $(GIT_ROOT)/out.gradle/updates/
 VERSION_SRC = $(GIT_ROOT)/out.gradle/packages/current.ver
 
 image: build buildroot

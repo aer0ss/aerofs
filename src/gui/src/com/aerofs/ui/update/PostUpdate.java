@@ -39,7 +39,7 @@ public class PostUpdate
             while (s.hasNextLine()) {
                 String str = s.nextLine();
                 String parts[] = str.split("=");
-                if (parts.length != 2) throw new IOException("ver file format error");
+                if (parts.length != 2) continue;  // do not validate removed files
                 chksums.put(parts[0], BaseUtil.hexDecode(parts[1]));
             }
             return chksums;

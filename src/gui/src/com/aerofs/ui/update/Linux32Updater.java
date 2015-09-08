@@ -8,11 +8,4 @@ class Linux32Updater extends AbstractLinuxUpdater
     {
         super(L.productUnixName() + "-%s-x86.tgz");
     }
-
-    @Override
-    public void update(String installerFilename, String newVersion, boolean hasPermissions)
-    {
-        l.info("update to version " + newVersion);
-        execUpdateCommon(installerFilename, newVersion, hasPermissions);
-    }
 }

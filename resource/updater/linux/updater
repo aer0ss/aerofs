@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Architecture detection without dependencies beyond coreutils.
+# ELF files start out "\x7fELF", and the following byte is
+#   0x01 for 32-bit and
+#   0x02 for 64-bit.
+CURRENT_EXE_HEAD=$(head -c 5 /proc/self/exe )
+case "$CURRENT_EXE_HEAD" in
+    "$(printf '\x7fELF\x01')")
+        # 32-bit ELF
+        ARCH=i386
+        ;;
+    "$(printf '\x7fELF\x02')")
+        # 64-bit ELF
+        ARCH=amd64
+        ;;
+    *)
+        echo "I don't recognize your userspace executable format, so I can't launch."
+        echo "Sorry about that."
+        exit 1
+esac
+
+# Resolve $SOURCE until the file is no longer a symlink
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+exec "$DIR/$ARCH/updater" as "$0"

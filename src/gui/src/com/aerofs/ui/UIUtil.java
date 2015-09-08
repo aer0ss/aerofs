@@ -269,10 +269,10 @@ public class UIUtil
         if (OSUtil.isOSX()) {
             // Launch AeroFS on startup
             SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",
-                    AppRoot.abs().replace("Contents/Resources/Java", ""));
+                    "/Applications/" + L.productSpaceFreeName() + ".app");
 
             SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "add",
-                    AppRoot.abs().replace("Contents/Resources/Java", ""));
+                    "/Applications/" + L.productSpaceFreeName() + ".app");
         }
 
         UI.get().preSetupUpdateCheck_();

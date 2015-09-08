@@ -1,0 +1,59 @@
+#!/bin/bash
+set -eu
+
+function DieUsage {
+    set +x
+    echo "usage: $0 [--signed]" >&2
+    echo "       [--build-linux] [--build-windows] [--build-osx]" >&2
+    echo "       [--build-all]" >&2
+    echo " " >&2
+    exit $ERRBADARGS
+}
+
+SIGNED=false
+BUILD_LINUX=false
+BUILD_WINDOWS=false
+BUILD_OSX=false
+while [ "${1:-}" != "" ]; do
+    case "$1" in
+        "--signed") SIGNED=true ;;
+        "--build-linux") BUILD_LINUX=true ;;
+        "--build-windows") BUILD_WINDOWS=true ;;
+        "--build-osx") BUILD_OSX=true ;;
+        "--build-all")
+            BUILD_LINUX=true
+            BUILD_WINDOWS=true
+            BUILD_OSX=true
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            DieUsage
+            ;;
+    esac
+    shift
+done
+
+include common
+include sign
+
+DST="$BASE_RESOURCES_DIR/updater"
+
+if $BUILD_LINUX ; then
+    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/linux/i386/updater"
+    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/linux/amd64/updater"
+fi
+
+if $BUILD_WINDOWS ; then
+    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/win/updater.exe"
+    if $SIGNED ; then
+        sign_exe "$DST/win/updater.exe"
+    fi
+fi
+
+if $BUILD_OSX ; then
+    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/osx/updater"
+    if $SIGNED ; then
+        sign_osx "$DST/osx/updater"
+    fi
+fi
+

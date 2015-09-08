@@ -30,7 +30,7 @@ _invoke()
 
     # Keep these up to date with the options invoke supports.
     opts="--approot --product --release-version --signed --unsigned --syncdet-case --syncdet-case-timeout --syncdet-config --syncdet-executable --syncdet-extra-args --syncdet-scenario --syncdet-sync-timeout --syncdet-transport --target-os --team-city"
-    commands="build_client build_sa build_protoc_plugins build_images build_sa_images build_vm build_sa_vm build_cloud_config push_images push_sa_images push_vm push_sa_vm tag_release clean markdown markdown_watch package_clients prepare_syncdet proto setupenv test_js test_python test_system test_system_archive write_version"
+    commands="build_client build_cloud_config build_images build_sa_images build_protoc_plugins build_sa_vm build_updater build_vm clean markdown markdown_watch package_clients package_updates prepare_syncdet proto push_images setupenv syncdet tag_release tag_sa_release test_go test_js test_python test_system test_system_archive write_version"
 
     # If the previous arg is one of these, give context specific completion options
     case "${prev}" in
@@ -53,7 +53,7 @@ _invoke()
             return 0
             ;;
         --target-os)
-            local oses="win osx linux32 linux64"
+            local oses="win osx linux/i386 linux/amd64"
             COMPREPLY=( $(compgen -W "${oses}" -- ${cur}) )
             return 0
             ;;

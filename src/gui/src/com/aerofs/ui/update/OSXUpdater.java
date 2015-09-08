@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -24,18 +25,12 @@ class OSXUpdater extends Updater
     @Override
     public void update(String installerFilename, String newVersion, boolean hasPermissions)
     {
-        l.info("update to version " + newVersion);
+        l.info("update to version {}", newVersion);
 
+        InjectableFile packageRoot = _factFile.create("/Applications/" + L.productSpaceFreeName() + ".app");
+        l.debug("packageRoot is {}", packageRoot.getAbsolutePath());
         InjectableFile appRoot = _factFile.create(AppRoot.abs());
-
-        // Go 3 levels up app root to get the package root.
-        InjectableFile packageRoot;
-        assert appRoot.getName().equals("Java");
-        packageRoot = appRoot.getParentFile();
-        assert packageRoot.getName().equals("Resources");
-        packageRoot = packageRoot.getParentFile();
-        assert packageRoot.getName().equals("Contents");
-        packageRoot = packageRoot.getParentFile();
+        l.debug("appRoot is {}", appRoot.getAbsolutePath());
 
         try {
             InjectableFile upFile = _factFile.createTempFile(L.productUnixName() +
@@ -57,13 +52,15 @@ class OSXUpdater extends Updater
             if (hasPermissions) {
                 SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
                         packageRoot.getAbsolutePath(),
-                        Util.join(Cfg.absRTRoot(), "update", installerFilename), newVersion,
+                        appRoot.getAbsolutePath(),
+                        Util.join(Cfg.absRTRoot(), ClientParam.UPDATE_DIR, installerFilename),
+                        newVersion,
                         System.getenv("USER"));
 
                 UI.get().shutdown();
             } else {
-                //the update must be executed as the user who originally copied AeroFS into
-                // the /Applications folder
+                // the update must be executed as the user who originally
+                // copied AeroFS into the /Applications folder
                 OutArg<String> username = new OutArg<String>();
                 SystemUtil.execForeground(username, "stat", "-f", "%Su",
                         packageRoot.getAbsolutePath());

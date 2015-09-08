@@ -85,7 +85,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         String aerofsd;
         if (OSUtil.isWindows()) {
             aerofsd = _factFile.create(AppRoot.abs()).getParentFile()
-                    .newChild("aerofsd.exe").getAbsolutePath();
+                    .newChild("current").newChild("aerofsd.exe").getAbsolutePath();
         } else {
             aerofsd = Util.join(AppRoot.abs(), "aerofsd");
         }

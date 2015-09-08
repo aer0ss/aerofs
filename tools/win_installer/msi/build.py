@@ -33,7 +33,6 @@ files = {}
 transforms = {
     'aerofs.exe':           'filAeroFS',
     'aerofsts.exe':         'filAeroFS',
-    'aerofsd.exe':          'filAeroFSD',
     'AeroFSShellExt32.dll': 'filAeroFSShellExt32',
     'AeroFSShellExt64.dll': 'filAeroFSShellExt64',
     'logo.ico':             'filAeroFSIcon',
@@ -45,7 +44,8 @@ def parse_input(args):
     def uuid_gen():
         return uuid.uuid4().hex.upper()
 
-    for path in [line[:-1] for line in sys.stdin if line.startswith(args.directory)]:
+    for path in [line[:-1] for line in sys.stdin
+                 if line.startswith(args.directory)]:
         if path == args.directory:
             dirs[path] = {
                 'source':   path,
@@ -71,8 +71,8 @@ def parse_input(args):
 
 
 def apply_transforms():
-    for file in [file for file in files.values() if file['name'] in transforms]:
-        file['id'] = transforms[file['name']]
+    for f in [f for f in files.values() if f['name'] in transforms]:
+        f['id'] = transforms[f['name']]
 
 
 # The generated script is vulnerable to SQL injection attacks.
@@ -94,68 +94,88 @@ def generate_script(args):
     print 'cp {} {}'.format(args.base_msi, wip_msi)
 
     # update the database tables related to files
-    for seq, file, comp in [(seq + 1, files[file], 'cmp{}'.format(files[file]['id'][3:])) for (seq, file) in enumerate(files)]:
-        if file['id'] in transforms.values():
-            print_query("update Component set Directory_='{}' where Component='{}';".format(
-                        file['parent'], comp))
-            print_query("update File set FileSize={}, Sequence={}, FileName='{}' where File='{}';".format(
-                        file['size'], seq, file['name'], file['id']))
+    for seq, f, comp in [(seq + 1, f, 'cmp{}'.format(f['id'][3:]))
+                         for (seq, f) in enumerate(files.values())]:
+        if f['id'] in transforms.values():
+            print_query(
+                "update Component set Directory_='{}' "
+                "where Component='{}';".format(
+                    f['parent'], comp))
+            print_query(
+                "update File set FileSize={}, Sequence={}, FileName='{}' "
+                "where File='{}';".format(
+                    f['size'], seq, f['name'], f['id']))
         else:
-            print_query("insert into FeatureComponents(Feature_, Component_) values('AeroFSFeatures', '{}');".format(
-                        comp))
-            print_query("insert into Component(Component, ComponentId, Directory_, Attributes, KeyPath) "
-                        "values('{}', '{}', '{}', 0, '{}');".format(
-                        comp, guid_gen(), file['parent'], file['id']))
-            print_query("insert into File(File, Component_, FileName, FileSize, Attributes, Sequence) "
-                        "values('{}', '{}', '{}', {}, 512, {});".format(
-                        file['id'], comp, file['name'], file['size'], seq))
+            print_query(
+                "insert into FeatureComponents(Feature_, Component_) "
+                "values('AeroFSFeatures', '{}');".format(
+                    comp))
+            print_query(
+                "insert into Component(Component, ComponentId, Directory_, Attributes, KeyPath) "
+                "values('{}', '{}', '{}', 0, '{}');".format(
+                    comp, guid_gen(), f['parent'], f['id']))
+            print_query(
+                "insert into File(File, Component_, FileName, FileSize, Attributes, Sequence) "
+                "values('{}', '{}', '{}', {}, 512, {});".format(
+                    f['id'], comp, f['name'], f['size'], seq))
 
     # update the database tables related to directories
-    for dir in [dirs[dir] for dir in dirs]:
-        print_query("insert into Directory(Directory, Directory_Parent, DefaultDir) "
-                    "values('{}', '{}', '{}');".format(
-                    dir['id'], dir['parent'], dir['name']))
+    for directory in dirs.values():
+        print_query(
+            "insert into Directory(Directory, Directory_Parent, DefaultDir) "
+            "values('{}', '{}', '{}');".format(
+                directory['id'], directory['parent'], directory['name']))
 
-    # the shim contains file hashes of the stub files. Since the file hashes may
-    # interfere with the installation, let's delete the file hashes.
+    # the shim contains file hashes of the stub files. Since the file hashes
+    # may interfere with the installation, let's delete the file hashes.
     #
-    # note that it's necessary to run the query 3 times because not all rows are
-    # deleted each time (why? I have no clue but I suspect foul key sorcery)
+    # note that it's necessary to run the query 3 times because not all rows
+    # are deleted each time (why? I have no clue but I suspect foul key
+    # sorcery)
     #
-    # note that simply dropping the table does not work because the table schema
-    # is protected by validations.
-    for x in range(0, 3):
+    # note that simply dropping the table does not work because the table
+    # schema is protected by validations.
+    for _ in range(0, 3):
         print_query('delete from MsiFileHash;')
 
     # building cab archive
-    for file in files.values():
-        print 'cp {} {}/{}'.format(file['source'], args.workspace, file['id'])
+    for f in files.values():
+        print 'cp {} {}/{}'.format(f['source'], args.workspace, f['id'])
 
     print 'pushd {} > /dev/null'.format(args.workspace)
-    print 'gcab -zc cab1.cab {}'.format(string.join([file['id'] for file in files.values()], ' \\\n'))
+    print 'gcab -zc cab1.cab {}'.format(
+        string.join([f['id'] for f in files.values()], ' \\\n'))
     print 'popd > /dev/null'
     print 'msibuild {} -a cab1.cab {}/cab1.cab'.format(wip_msi, args.workspace)
-    print_query('update Media set LastSequence={} where DiskId=1;'.format(len(files)))
+    print_query('update Media set LastSequence={} '
+                'where DiskId=1;'.format(len(files)))
 
-    # this is to replace the app icon used in shortcuts, Add Remove Programs, etc.
+    # this is to replace the app icon used in shortcuts, Add Remove Programs,
+    # etc.
     #
     # note that Windows shell do cache those icons so changes will probably not
     # be observed until the user exit and log in to the shell.
-    print 'msibuild {} -a Icon.logo.ico {}/filAeroFSIcon'.format(wip_msi, args.workspace)
+    print 'msibuild {} -a Icon.logo.ico {}/filAeroFSIcon'.format(
+        wip_msi, args.workspace)
 
     # update product version
-    print_query("update Property set Value='{}' where Property='ProductVersion';".format(args.set_version))
+    print_query("update Property set Value='{}' "
+                "where Property='ProductVersion';".format(args.set_version))
 
     # update product code
-    print_query("update Property set Value='{}' where Property='ProductCode';".format(guid_gen()))
+    print_query("update Property set Value='{}' "
+                "where Property='ProductCode';".format(guid_gen()))
 
     # update upgrade versions
-    print "msiinfo export {} Upgrade | sed 's/1\.0\.0/{}/g' > {}/Upgrade.idt".format(wip_msi, args.set_version, args.workspace)
+    print "msiinfo export {} Upgrade | sed 's/1\.0\.0/{}/g' > {}/Upgrade.idt".format(
+        wip_msi, args.set_version, args.workspace)
     print 'msibuild {} -i {}/Upgrade.idt'.format(wip_msi, args.workspace)
 
     # update package code
-    print 'msiinfo export {} _SummaryInformation | grep -v "^9\t" > {}/_SummaryInfo.idt'.format(wip_msi, args.workspace)
-    print 'echo -e "9\t{}" >> {}/_SummaryInfo.idt'.format(guid_gen(), args.workspace)
+    print 'msiinfo export {} _SummaryInformation | grep -v "^9\t" > {}/_SummaryInfo.idt'.format(
+        wip_msi, args.workspace)
+    print 'echo -e "9\t{}" >> {}/_SummaryInfo.idt'.format(
+        guid_gen(), args.workspace)
     print 'msibuild {} -i {}/_SummaryInfo.idt'.format(wip_msi, args.workspace)
 
     # finalize

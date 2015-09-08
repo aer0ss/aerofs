@@ -1,0 +1,228 @@
+#!/bin/bash
+set -eu
+
+#########################################################################
+#
+# This script builds update manifests and data for Linux, OSX and Windows
+#
+#########################################################################
+
+function DieUsage {
+    echo >&2 "usage: $0 <build_product> <release_version> <sign_mode>"
+    echo >&2 "       [--build-linux] [--build-windows] [--build-osx]"
+    echo >&2 "       [--build-all]"
+    echo >&2 " "
+    echo >&2 "<build_product>: CLIENT|TEAM_SERVER"
+    echo >&2 "<release_version>: release version (for example: 0.1.0)"
+    echo >&2 "<sign_mode>: SIGNED|UNSIGNED"
+    echo >&2 "[--build-linux]: build the Linux update"
+    echo >&2 "[--build-windows]: build the Windows update"
+    echo >&2 "[--build-osx]: build the OSX update"
+    echo >&2 "[--build-all]: build all of the above (the others do not need to be specified)"
+    echo >&2 " "
+    echo >&2 "example: $0 CLIENT 0.1.0 UNSIGNED --build-all"
+    echo >&2 "example: $0 TEAM_SERVER 0.1.0 UNSIGNED --build-linux"
+    exit $ERRBADARGS
+}
+
+case ${1:-} in
+    CLIENT|TEAM_SERVER) readonly BUILD_PRODUCT=$1 ;;
+    *) DieUsage ;;
+esac
+case ${2:-} in
+    '') DieUsage ;;
+    *) readonly RELEASE_VERSION=$2 ;;
+esac
+case ${3:-} in
+    SIGNED) readonly SIGNED=true ;;
+    UNSIGNED) readonly SIGNED=false ;;
+    *) DieUsage ;;
+esac
+shift 3
+
+BUILD_LINUX=false
+BUILD_WINDOWS=false
+BUILD_OSX=false
+while [ "${1:-}" != "" ]; do
+    case "$1" in
+        "--build-linux") BUILD_LINUX=true ;;
+        "--build-windows") BUILD_WINDOWS=true ;;
+        "--build-osx") BUILD_OSX=true ;;
+        "--build-all")
+            BUILD_LINUX=true
+            BUILD_WINDOWS=true
+            BUILD_OSX=true
+            ;;
+        *) echo >&2 "Unknown argument: $1" ; DieUsage ;;
+    esac
+    shift
+done
+
+include common $BUILD_PRODUCT
+
+case $(uname) in
+    Darwin) MANIFEST="${GIT_ROOT}/resource/updater/osx/updater" ;;
+    Linux) MANIFEST="${GIT_ROOT}/resource/updater/linux/updater" ;;
+    *) echo >&2 "unsupported platform $(uname)" ; exit 1 ;;
+esac
+
+LOCAL_LINUX_PRODUCT_DIR="${LOCAL_RELEASE_DIR}/${LOWERCASE_PRODUCT}-linux"
+LOCAL_OSX_PRODUCT_DIR="${LOCAL_RELEASE_DIR}/${LOWERCASE_PRODUCT}-osx"
+
+function make_linux_product_dir() {
+    rm -rf "${LOCAL_LINUX_PRODUCT_DIR}"
+    mkdir -p "${LOCAL_LINUX_PRODUCT_DIR}"
+
+    # Create the symlinks to updater that will later be copied into the
+    # approot. The symlinks the user should use directly will be created later
+    # as part of the debian package and tgz.
+    # pushd is used to ensure symlinks made are relative
+    pushd "${LOCAL_LINUX_PRODUCT_DIR}" >>/dev/null
+    ln -s updater "${AEROFS_PRODUCT_UNIX}"
+    # Create symlinks for each of the products
+    for SUFFIX in cli gui sh ; do
+        ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
+    done
+    popd >>/dev/null
+
+# render_template "${CLIENT_LINUX_TEMPLATES_DIR}/INSTALL" "${AEROFS_RELEASE_LINUX_DIR}/INSTALL"
+# render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/copier" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" "${LOCAL_LINUX_PRODUCT_DIR}/launcher"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/product.desktop" "${LOCAL_LINUX_PRODUCT_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/updater.sh" "${LOCAL_LINUX_PRODUCT_DIR}/updater.sh"
+}
+
+function make_linux_update() {
+    local ARCH="$1"
+
+    if is_storage_agent ; then
+        SA_DIR="${CLIENT_LINUX_TEMPLATES_DIR}/storage-agent"
+    fi
+
+    $MANIFEST create \
+        "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-linux-${ARCH}.json" \
+        "${UPDATES_DIR}/data" \
+        "${LOCAL_RELEASE_DIR}/aerofs" \
+        "${BASE_RESOURCES_DIR}/updater/linux/${ARCH}" \
+        "${LOCAL_LINUX_PRODUCT_DIR}" \
+        "${CLIENT_LINUX_RESOURCES_DIR}/shared" \
+        "${CLIENT_LINUX_RESOURCES_DIR}/${ARCH}" \
+        ${SA_DIR:-} \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${OTHER_RESOURCES_DIR}:lib"
+}
+
+function make_osx_product_dir() {
+    rm -rf "${LOCAL_OSX_PRODUCT_DIR}"
+    mkdir -p "${LOCAL_OSX_PRODUCT_DIR}"
+
+    render_template "${CLIENT_OSX_TEMPLATES_DIR}/updater.sh" "${LOCAL_OSX_PRODUCT_DIR}/updater.sh"
+}
+
+function make_osx_update() {
+    if is_client ; then
+        SHELLEXT_DIR="${CLIENT_OSX_SHELLEXT_DIR}"
+    fi
+
+    $MANIFEST create \
+        "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base" \
+        "${UPDATES_DIR}/data" \
+        "${LOCAL_RELEASE_DIR}/aerofs" \
+        "${BASE_RESOURCES_DIR}/updater/osx" \
+        "${LOCAL_OSX_PRODUCT_DIR}" \
+        "${CLIENT_OSX_RESOURCES_DIR}" \
+        ${SHELLEXT_DIR:-} \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${OTHER_RESOURCES_DIR}:lib"
+
+    # rename launcher binary to the appropriate name
+    sed "s/\"aerofs\":/\"${AEROFS_PRODUCT_UNIX}\":/" \
+        "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base" \
+        > "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json"
+
+    rm -f "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base"
+}
+
+function make_windows_update() {
+    if $SIGNED ; then
+        # FIXME: there is no point re-signing these on every release
+        # instead they should just be store as signed artifacts
+        # and the signature should be checked when building the appliance
+        chktrust "${CLIENT_WIN_RESOURCES_DIR}/aerofs.exe"
+        chktrust "${CLIENT_WIN_RESOURCES_DIR}/aerofsd.exe"
+    fi
+
+    if is_client ; then
+        SHELLEXT_DIR="${CLIENT_WIN_SHELLEXT_DIR}"
+    fi
+
+    $MANIFEST create \
+        "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base" \
+        "${UPDATES_DIR}/data" \
+        "${LOCAL_RELEASE_DIR}/aerofs" \
+        "${BASE_RESOURCES_DIR}/updater/win" \
+        "${CLIENT_WIN_RESOURCES_DIR}" \
+        ${SHELLEXT_DIR:-} \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${OTHER_RESOURCES_DIR}:lib"
+
+    # rename launcher binary to the appropriate name
+    sed "s/\"aerofs\\.exe\":/\"${AEROFS_PRODUCT_UNIX}.exe\":/" \
+        "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base" \
+        > "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json"
+
+    rm -f "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base"
+}
+
+function create_release_version_file() {
+    declare VERSION_FILE="${UPDATES_DIR}/${CURRENT_VER}"
+    echo Version=$RELEASE_VERSION > "$VERSION_FILE"
+    chmod a+r "$VERSION_FILE"
+}
+
+function make_updates() {
+    mkdir -p "${PACKAGE_DIR}"
+
+    local JOBS=""
+
+    if [ "$BUILD_LINUX" == "true" ] ; then
+        # arch-independent output
+        make_linux_product_dir
+
+        make_linux_update i386 &
+        JOBS="$JOBS $!"
+        make_linux_update amd64 &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_WINDOWS" == "true" ] ; then
+        make_windows_update &
+        JOBS="$JOBS $!"
+    fi
+
+    if [ "$BUILD_OSX" == "true" ] ; then
+        make_osx_product_dir
+
+        make_osx_update &
+        JOBS="$JOBS $!"
+    fi
+
+    # Check that all the background tasks completed successfully
+    FAIL=0
+    for JOB in $JOBS ; do
+        wait $JOB || let "FAIL+=1"
+    done
+
+    if [ "$FAIL" != "0" ] ; then
+        echo "$FAIL of the packaging tasks failed."
+        exit $FAIL
+    fi
+}
+
+compute_product_names
+make_updates
+create_release_version_file
+exit 0

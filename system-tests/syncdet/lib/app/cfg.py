@@ -182,7 +182,7 @@ class BaseOSXCfg(BaseCfg):
         return os.path.join(os.path.expanduser('~'), 'Applications', self._app_name() + '.app')
 
     def get_approot(self):
-        return os.path.join(self._app_path(), 'Contents', 'Resources', 'Java')
+        return os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', self._app_name() + 'Exec')
 
     def get_rtroot(self):
         return os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', self._app_name())

@@ -1,0 +1,115 @@
+#!/bin/bash
+set -eu
+
+###############################################################################
+#
+# This script moves platform specific libraries to the proper locations,
+# creates a jar for AeroFS and prepares the code for packaging. Everything here
+# is done on the local system.
+#
+###############################################################################
+
+include common
+
+function DieUsage() {
+    echo >&2 "usage: $0 [release version]"
+    echo >&2 " "
+    echo >&2 "[release version]: major.minor.build"
+    echo >&2 " "
+    echo >&2 "example: $0 0.4.99"
+    exit $ERRBADARGS
+}
+
+[[ $# -eq 1 ]] || DieUsage
+readonly RELEASE_VERSION="$1"
+
+# Copies and creates the necessary resources in a local resource folder
+# for each platform. This includes moving platform specific libraries,
+# copying the correct certificates, and creating a version file.
+function copy_resources_to_local_release_directories() {
+    rm -rf "${LOCAL_RELEASE_DIR}"
+
+    local LOCAL_BIN="${LOCAL_RELEASE_DIR}/bin"
+    mkdir -p "${LOCAL_BIN}"
+
+    local TARGET_LIB="${AEROFS_RELEASE_DIR}/lib"
+    mkdir -p "${TARGET_LIB}"
+
+    # piggy-back on gradle dist output to build aerofs.jar and fetch deps
+    pushd "${LOCAL_BIN}" >>/dev/null
+    if is_storage_agent ; then
+        JAR_SOURCE_DIR="storage-agent"
+    else
+        JAR_SOURCE_DIR="desktop"
+    fi
+    for jar in "${BUILD_OUTPUT_DIR}/${JAR_SOURCE_DIR}/dist"/*.jar ; do
+        if [[ ${jar##*/} == aerofs-*.jar ]] ; then
+            jar xf "$jar" com
+        else
+            cp "$jar" "${TARGET_LIB}"
+        fi
+    done
+    popd >>/dev/null
+
+    # TODO: make sure files to be removed are at correct locations. See the
+    # labeling process code for an example.
+    find "${LOCAL_BIN}/" -name .DS_Store  | xargs rm -f
+    find "${LOCAL_BIN}/" -name .gitignore | xargs rm -f
+
+    # remove platform-specific gradle-resolved deps
+    # they will be resolved appropriately for each packkage later on
+    rm -f "${TARGET_LIB}/swt-4.jar"
+}
+
+# Creates the Java manifest file and creates the AeroFS jar
+function create_java_jar() {
+    readonly TEMP_MANIFEST="$(mktemp -t manifest_XXXXXX.tmp)"
+
+    if is_storage_agent ; then
+        main_class="StorageAgentMain"
+    else
+        main_class="Main"
+    fi
+    echo "Main-Class: com.aerofs.${main_class}" > "${TEMP_MANIFEST}"
+    echo "Class-Path: " >> "${TEMP_MANIFEST}"
+    for i in "${AEROFS_RELEASE_DIR}"/lib/*.jar; do
+        echo " lib/$(basename "$i") " >> "${TEMP_MANIFEST}"
+    done
+    # OS-libs must share the same name
+    # N.B. we use the Windows dir here because it contains a strict super-set
+    # of all OS-native libs.
+    for i in "${CLIENT_WIN_RESOURCES_DIR}"/lib/*; do
+        echo " lib/$(basename "$i") " >> "${TEMP_MANIFEST}"
+    done
+
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.jar" "${TEMP_MANIFEST}" -C "${LOCAL_RELEASE_DIR}/bin" com
+
+    rm -f "${TEMP_MANIFEST}"
+}
+
+# Writes the release version and checksums of the binaries to the version file.
+function write_version_and_checksums() {
+    local VERSION_FILE="${AEROFS_RELEASE_DIR}/version"
+
+    # Create a version file in the AeroFS release directory
+    echo $RELEASE_VERSION > "${VERSION_FILE}"
+
+    OLDIFS=$IFS
+    IFS=','
+    for i in aerofs.jar,"${AEROFS_RELEASE_DIR}/aerofs.jar" \
+             aerofsd.dll,"${AEROFS_RELEASE_WIN_DIR}/aerofsd.dll" \
+             libaerofsd.dylib,"${AEROFS_RELEASE_OSX_DIR}/libaerofsd.dylib"; do
+        set $i
+        local CHKSUM=$(shasum -a 256 "$2" 2>/dev/null | sed -e 's/ .*//')
+
+        echo "$1=${CHKSUM}" >> "$VERSION_FILE"
+    done
+    IFS=$OLDIFS
+}
+
+compute_product_names
+copy_resources_to_local_release_directories
+create_java_jar
+write_version_and_checksums
+
+exit 0

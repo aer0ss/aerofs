@@ -27,7 +27,6 @@ import datetime
 import os
 import subprocess
 import sys
-import traceback
 
 
 GIT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -119,7 +118,7 @@ def main():
     parser.add_argument('--syncdet-extra-args', action='append')
     parser.add_argument('--syncdet-scenario', action='append')
     parser.add_argument('--syncdet-sync-timeout', action='store')
-    parser.add_argument('--syncdet-transport', action='store')
+    parser.add_argument('--syncdet-transport', action='store', choices=['default', 'tcp', 'zephyr'])
     parser.add_argument('--target-os', action='store', choices=['win', 'osx', 'linux/i386', 'linux/amd64'])
     parser.add_argument('--team-city', action='store_true')
     parser.add_argument('commands', nargs='+', choices=commands)

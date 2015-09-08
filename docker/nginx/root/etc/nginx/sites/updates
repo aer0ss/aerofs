@@ -1,0 +1,4 @@
+location /static/updates/ {
+  rewrite /static/updates/(.+) /$1 break;
+  root /opt/updates;
+}

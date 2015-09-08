@@ -67,51 +67,6 @@ bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg,
     // to turn the executable path into the dirname
     s_approot = s_approot.substr(0, s_approot.rfind(DIRECTORY_SEPARATOR));
 
-    if (fromOSXBundle) {
-        // For aerofs (but not aerofsd) on OS X, approot is in ../Resources/Java relative to the executable
-        s_approot = s_approot.substr(0, s_approot.rfind(DIRECTORY_SEPARATOR));
-        s_approot += tstring(_T("/Resources/Java"));
-    }
-
-    // On Windows, we now install AeroFS in a different subfolder for each version
-    // Only executables and the version file stay at the top-level folder
-    // So in order to find the approot, we have to read the current version folder from version
-
-#ifdef _WIN32
-
-    // Open version
-    // Note: we have to use the Win32 API since the path may have Unicode characters in it
-    tstring path = s_approot + _T("\\version");
-    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                              FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) {
-        SET_ERROR(_T("Could not open %s\n"), path.c_str());
-        _tcscpy_s(approot, approot_len, s_approot.c_str());
-        return false;
-    }
-
-    // Read the first 100 chars of the file into a buffer
-    char buf[20];
-    DWORD bytesRead = 0;
-    ReadFile(hFile, buf, sizeof(buf)-1, &bytesRead, NULL);
-    CloseHandle(hFile);
-    buf[bytesRead] = '\0';
-
-    // Keep only the first line
-    std::string version(buf);
-    size_t pos = version.find_first_of("\r\n\t ");
-    if (pos != string::npos) {
-        version = version.substr(0, pos);
-    }
-
-    // Append the version folder to the approot, unless the version number is empty or equals to
-    // 100.0.0, which is the version number for the development environment.
-    // This version number must be kept consistent with the populate script in /tools/populate/
-    if (!version.empty() && version != "100.0.0") {
-        s_approot += _T("\\v_") + tstring(version.begin(), version.end());
-    }
-
-#endif
     _tcscpy_s(approot, approot_len, s_approot.c_str());
     return true;
 }
@@ -290,7 +245,7 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
     jobjectArray args = env->NewObjectArray(argc, env->FindClass("java/lang/String"), NULL);
     for (int i = 0; i < argc; i++) {
 #ifdef _WIN32
-        env->SetObjectArrayElement(args, i, env->NewString(argv[i], _tcslen(argv[i])));
+        env->SetObjectArrayElement(args, i, env->NewString((const jchar *)argv[i], _tcslen(argv[i])));
 #else
         env->SetObjectArrayElement(args, i, env->NewStringUTF(argv[i]));
 #endif

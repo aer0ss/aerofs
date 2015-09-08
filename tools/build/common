@@ -70,6 +70,12 @@ readonly CLIENT_LINUX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/linux"
 readonly CLIENT_OSX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/osx"
 readonly CLIENT_LINUX_SHARED_TEMPLATES_DIR="${CLIENT_LINUX_TEMPLATES_DIR}/shared"
 
+# Local updater executable directories
+readonly BASE_UPDATER_DIR="${BASE_RESOURCES_DIR}/updater"
+readonly LINUX_UPDATER_DIR="${BASE_UPDATER_DIR}/linux"
+readonly OSX_UPDATER_DIR="${BASE_UPDATER_DIR}/osx"
+readonly WIN_UPDATER_DIR="${BASE_UPDATER_DIR}/win"
+
 # local build directory (where gradle will put stuff)
 readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.gradle"
 
@@ -85,9 +91,10 @@ readonly AEROFS_RELEASE_LINUX_I386_DIR="${AEROFS_RELEASE_LINUX_DIR}/i386"
 readonly AEROFS_RELEASE_LINUX_AMD64_DIR="${AEROFS_RELEASE_LINUX_DIR}/amd64"
 
 # Package temp folder
-readonly PACKAGE_BUILD_DIR="$LOCAL_RELEASE_DIR/expandedpackages"
+readonly PACKAGE_BUILD_DIR="$BUILD_OUTPUT_DIR/expandedpackages"
 # Package output folder (final deployable artifacts go here)
 readonly PACKAGE_DIR="$BUILD_OUTPUT_DIR/packages"
+readonly UPDATES_DIR="$BUILD_OUTPUT_DIR/updates"
 
 # Some OSX specific constants
 readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"

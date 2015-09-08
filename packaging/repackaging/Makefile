@@ -12,11 +12,7 @@ RSYNC += --exclude '_gen'
 PACKAGES = $(shell ls $(PACKAGES_SRC))
 
 build:
-	../../tools/cache/img_fresh.sh $(IMAGE_NAME) . || { \
-		docker build -t $(IMAGE_NAME)-base - < Dockerfile.base && \
-		./addpkg.sh $(IMAGE_NAME)-base ./apk $(IMAGE_NAME)-base \
-			dmg-hfsplus msitools \
-	;}
+	make -C base image
 
 buildroot:
 ifeq (,$(filter 17 18, $(words $(PACKAGES))))

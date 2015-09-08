@@ -9,7 +9,6 @@ set -eu
 ###############################################################################
 
 function DieUsage {
-    set +x
     echo >&2 "usage: $0 <build_product> <release_version> <sign_mode>"
     echo >&2 "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]"
     echo >&2 "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]"
@@ -91,92 +90,131 @@ include common $BUILD_PRODUCT
 ###############################################################################
 
 function make_linux_installer_deb() {
-    local DEBSCRIPT="${BUILD_SCRIPT_DIR}/make_deb"
-    mkdir -p "$PACKAGE_DIR"
-    "$DEBSCRIPT" $RELEASE_VERSION \
-                 $AEROFS_PRODUCT_UNIX \
-                 "$LOCAL_RELEASE_DIR" \
-                 "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
+    local TARGET="${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
+
+    # Only re-make on updates
+    local CREATED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "${PACKAGE_DIR}/${TARGET}" 2>/dev/null)
+    if [[ -n "$CREATED" ]] ; then
+        [[ -z "$(find "${LINUX_UPDATER_DIR}" -type f -newermt "$CREATED" | head -n 1)" ]] && \
+        [[ -z "$(find "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}" -type f -newermt "$CREATED" | head -n 1)" ]] && \
+        [[ -z "$(find "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/icons" -type f -newermt "$CREATED" | head -n 1)" ]]
+
+        if [[ $? == 0 ]]; then
+            echo '>> not rebuilding linux_installer_deb'
+            return
+        fi
+
+        echo ">> rebuilding linux_installer_deb"
+    fi
+    rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-"*.deb
+
+    call make_deb "${RELEASE_VERSION}" \
+                  "${BUILD_PRODUCT}" \
+                  "${PACKAGE_DIR}/${TARGET}"
 }
 
 function make_linux_installer_tgz() {
-    local TGZ_EXPANDED_DIR=$PACKAGE_BUILD_DIR/linux-installer-tgz
-    local local_LINUX_INSTALLER_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz
-    rm -rf $TGZ_EXPANDED_DIR
-    mkdir -p $TGZ_EXPANDED_DIR/aerofs
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux"/* "${TGZ_EXPANDED_DIR}/aerofs/"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${TGZ_EXPANDED_DIR}/aerofs/shared/"
-    pushd "${TGZ_EXPANDED_DIR}/aerofs/" >>/dev/null
-    ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
+    local TARGET="${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz"
+
+    # Only re-make on updates
+    local CREATED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "${PACKAGE_DIR}/${TARGET}" 2>/dev/null)
+    if [[ -n "$CREATED" ]] ; then
+        [[ -z "$(find "${LINUX_UPDATER_DIR}" -type f -newermt "$CREATED" | head -n 1)" ]]
+
+        if [[ $? == 0 ]]; then
+            echo '>> not rebuilding linux_installer_tgz'
+            return
+        fi
+
+        echo ">> rebuilding linux_installer_tgz"
+    fi
+    rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-"*.tgz
+
+    local BUILD_DIR="${PACKAGE_BUILD_DIR}/linux-installer-tgz"
+
+    rm -rf "${BUILD_DIR}"
+    mkdir -p "${BUILD_DIR}/aerofs"
+
+    cp -a "${LINUX_UPDATER_DIR}"/* "${BUILD_DIR}/aerofs/"
+
+    pushd "${BUILD_DIR}/aerofs/" >>/dev/null
+    ln -s updater "${AEROFS_PRODUCT_UNIX}"
     if ! is_storage_agent ; then
-        for suffix in cli gui sh ; do
-            ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
+        for SUFFIX in cli gui sh ; do
+            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
         done
     fi
     popd >>/dev/null
-    mkdir -p ${PACKAGE_DIR}
-    tar -C "$TGZ_EXPANDED_DIR" -zcf "${PACKAGE_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
+
+    tar -C "${BUILD_DIR}" -zcf "${PACKAGE_DIR}/${TARGET}" aerofs
 }
 
 function make_linux_update_tgz() {
-    if [[ "x$1" != "xi386" && "x$1" != "xamd64" ]]; then
-        echo "error: unsupported bits:$1" >&2
-        echo "usage: make_linux_update_tgz [i386|amd64]" >&2
-        exit $ERRBADARGS
-    fi
-
-    local local_ARCH="$1"
-    local local_TGZ_SUFFIX=""
-    case "$local_ARCH" in
-    "i386")
-        local_TGZ_SUFFIX="x86"
-        ;;
-    "amd64")
-        local_TGZ_SUFFIX="x86_64"
-        ;;
-    *)
-        echo "error: unsupported arch:$local_ARCH" >&2
-        exit $ERRBADARGS
-        ;;
+    local ARCH="$1"
+    local TGZ_SUFFIX=""
+    case "${ARCH}" in
+        "i386") TGZ_SUFFIX="x86" ;;
+        "amd64") TGZ_SUFFIX="x86_64" ;;
+        *) echo >&2 "error: unsupported arch:${ARCH}" ; exit $ERRBADARGS ;;
     esac
 
-    echo ">> make arch dependent tgz (${local_ARCH})"
-    local VERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
-    ARCH_TGZ_TEMP_DIR="$PACKAGE_BUILD_DIR/linux-$local_TGZ_SUFFIX"
-    rm -rf "$ARCH_TGZ_TEMP_DIR"
-    mkdir -p "${ARCH_TGZ_TEMP_DIR}/aerofs"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/shared"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/${local_ARCH}"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
-    mkdir -p ${PACKAGE_DIR}
-    tar -C "${ARCH_TGZ_TEMP_DIR}" -zcf "${PACKAGE_DIR}/${VERSIONED_ARCH_TGZ_FILENAME}" aerofs
+    local TARGET="${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-${TGZ_SUFFIX}.tgz"
+
+    # Only re-make on updates
+    local CREATED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "${PACKAGE_DIR}/${TARGET}" 2>/dev/null)
+    if [[ -n "$CREATED" ]] ; then
+        [[ -z "$(find "${LINUX_UPDATER_DIR}/${ARCH}" -type f -newermt "$CREATED" | head -n 1)" ]]
+
+        if [[ $? == 0 ]]; then
+            echo '>> not rebuilding linux_update_tgz'
+            return
+        fi
+
+        echo ">> rebuilding linux_update_tgz"
+    fi
+    rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-"*"-${TGZ_SUFFIX}.tgz"
+
+    local BUILD_DIR="$PACKAGE_BUILD_DIR/linux-$TGZ_SUFFIX"
+
+    rm -rf "${BUILD_DIR}"
+    mkdir -p "${BUILD_DIR}/aerofs"
+
+    cp -a "${LINUX_UPDATER_DIR}/${ARCH}"/updater "${BUILD_DIR}/aerofs/"
+
+    pushd "${BUILD_DIR}/aerofs/" >>/dev/null
+    ln -s updater "${AEROFS_PRODUCT_UNIX}"
+    if ! is_storage_agent ; then
+        for SUFFIX in cli gui sh ; do
+            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
+        done
+    fi
+    popd >>/dev/null
+
+    tar -C "${BUILD_DIR}" -zcf "${PACKAGE_DIR}/${TARGET}" aerofs
 }
 
 function make_windows_installers() {
-    echo ">> make windows installer"
-    mkdir -p ${PACKAGE_DIR}
-    local OUT_EXE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
-    local OUT_MSI="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.msi"
-    local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
-
     # This function is used to sign exe files and dll's
     function sign_exe() {
         FILENAME="$1"
 
-        local CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
-        local KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
-        local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
         # If we later want to let CI use a test cert and key for signing, use the following:
         # CERT_FILE="$BUILD_SCRIPT_DIR/signing/cert.spc"
         # KEY_FILE="$BUILD_SCRIPT_DIR/signing/privateKey.pvk"
         # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
+        local CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
+        local KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
+        local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
+
         if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
-            echo "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE" >&2
+            echo >&2 "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE"
             return 1
         fi
+
         CODESIGNING_PASSWORD=$(cat $CODESIGNING_PASSWORD_FILE)
         export PASSPHRASE="$CODESIGNING_PASSWORD"
         [[ -r "$CERT_FILE" && -r "$KEY_FILE" ]] || (echo "Can't find cert/key at $CERT_FILE and $KEY_FILE - do you need to mount a volume?" && exit 1)
+
         printenv PASSPHRASE | signcode -spc "$CERT_FILE" -v "$KEY_FILE" \
             -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \
             -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "${FILENAME}"
@@ -184,182 +222,193 @@ function make_windows_installers() {
         rm -f "${FILENAME}.bak"
     }
 
-    # Create a temporary directory to work in
-    local WINDOWS_BUILD_DIR_NAME="windows-expanded"
-    local WINDOWS_TEMP_DIR="$PACKAGE_BUILD_DIR/$WINDOWS_BUILD_DIR_NAME"
-    rm -rf $WINDOWS_TEMP_DIR
-    mkdir -p $WINDOWS_TEMP_DIR
+    local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
+    local BUILD_DIR="${PACKAGE_BUILD_DIR}/windows-${PRODUCT}"
 
-    # Create a subfolder in that directory with the version number
-    # Note: we prepend v_ to the version number to make it easy for the NSIS installer
-    # to enumerate and delete all previous versions directories
-    WINDOWS_TEMP_DIR_WITH_VERSION="${WINDOWS_TEMP_DIR}/v_${RELEASE_VERSION}"
-    mkdir "${WINDOWS_TEMP_DIR_WITH_VERSION}"
+    # N.B. it would be great to only rebuild this on changes, but out windows
+    # installer builders do some funky thinks with modifying/deleting source
+    # files
+    rm -rf "${BUILD_DIR}"
+    mkdir -p "${BUILD_DIR}"
 
-    # Copy the aerofs release files in that directory
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${WINDOWS_TEMP_DIR_WITH_VERSION}/"
-    cp -a "${LOCAL_RELEASE_DIR}/aerofs.win"/* "${WINDOWS_TEMP_DIR_WITH_VERSION}/"
+    cp -a "${BASE_RESOURCES_DIR}/updater/win/updater.exe" "${BUILD_DIR}/${EXECUTABLE}"
+    if is_client ; then
+        cp -a "${CLIENT_WIN_SHELLEXT_DIR}"/* "${BUILD_DIR}/"
+    fi
+    echo -n "${RELEASE_VERSION}" > "${BUILD_DIR}/version"
 
-    # Move the things that need to stay at the top-level folder
-    # Also rename aerofs.exe to the appropriate name
-    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "${WINDOWS_TEMP_DIR}/$EXECUTABLE"
-    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "${WINDOWS_TEMP_DIR}/"
-    echo -n "${RELEASE_VERSION}" > "${WINDOWS_TEMP_DIR}/version"
-    mkdir "${WINDOWS_TEMP_DIR}/icons"
-    mv "${WINDOWS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "${WINDOWS_TEMP_DIR}/icons"
+    mkdir "${BUILD_DIR}/icons"
+    cp -a "${CLIENT_WIN_RESOURCES_DIR}/icons/logo.ico" "${BUILD_DIR}/icons"
 
-    chmod -R a+rx "${WINDOWS_TEMP_DIR}"
+    chmod -R a+rx "${BUILD_DIR}"
 
     if $SIGNED ; then
-        sign_exe "${WINDOWS_TEMP_DIR}/$EXECUTABLE"
-        sign_exe "${WINDOWS_TEMP_DIR}/aerofsd.exe"
+        sign_exe "${BUILD_DIR}/${EXECUTABLE}"
     fi
 
     if [ "${BUILD_WINDOWS_EXE}" == "true" ] ; then
-        makensis -V1 -DAEROFS_IN_FOLDER="${WINDOWS_TEMP_DIR}" \
-                -DAEROFS_OUT_FILE="$OUT_EXE" \
-                -DAEROFS_VERSION="$RELEASE_VERSION" \
-                -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
-                -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
-                -DAEROFS_EXECUTABLE="$EXECUTABLE" \
-                "${LOCAL_WINDOWS_DIR}/setup.nsi"
+        local OUT_EXE="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
+
+        echo ">> rebuilding windows_installers exe"
+        rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-"*.exe
+
+        makensis -V1 -DAEROFS_IN_FOLDER="${BUILD_DIR}" \
+                     -DAEROFS_OUT_FILE="${PACKAGE_DIR}/${OUT_EXE}" \
+                     -DAEROFS_VERSION="${RELEASE_VERSION}" \
+                     -DAEROFS_PRODUCT="${AEROFS_PRODUCT}" \
+                     -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+                     -DAEROFS_EXECUTABLE="${EXECUTABLE}" \
+                     "${LOCAL_WINDOWS_DIR}/setup.nsi"
 
         if $SIGNED ; then
-            sign_exe "$OUT_EXE"
+            sign_exe "${PACKAGE_DIR}/${OUT_EXE}"
         fi
     fi
 
     if [ "${BUILD_WINDOWS_MSI}" == "true" ] ; then
+        local OUT_MSI="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.msi"
+
+        echo ">> rebuilding windows msi"
+        rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-"*.msi
+
         # If you think the following line looks bizzare and makes no sense then
         # you are a reasonable person and much sensible than past-Alex.
         #
         # tl;dr: it's weird for historical reasons
         #
         # See comments in build.py for more info.
-        find "${WINDOWS_TEMP_DIR}" | "${LOCAL_MSI_DIR}/build.py" \
-            --directory "${WINDOWS_TEMP_DIR}" \
+        find "${BUILD_DIR}" | "${LOCAL_MSI_DIR}/build.py" \
+            --directory "${BUILD_DIR}" \
             --base-msi "${LOCAL_MSI_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.msi" \
-            --output-msi "${OUT_MSI}" \
+            --output-msi "${PACKAGE_DIR}/${OUT_MSI}" \
             --set-version "${RELEASE_VERSION}" \
-            --workspace "${WINDOWS_TEMP_DIR}/workspace" | bash
+            --workspace "${BUILD_DIR}/workspace" | bash
     fi
 }
 
 function make_osx_packages() {
-    echo ">> make mac osx dmg and zip"
-    mkdir -p ${PACKAGE_DIR}
+    local TARGET="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg"
 
-    local local_VERSIONED_MAC_ZIP_FILENAME="${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip"
-    local local_VERSIONED_MAC_DMG_FILENAME="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg"
-    local local_UNVERSIONED_MAC_DMG_FILENAME="${AEROFS_PRODUCT_SPACEFREE}Install.dmg"
-    local local_OSX_LOCAL_MAC_APP_DIR=Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java
-    local local_OSX_LOCAL_MAC_PLUGINS_DIR=Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Plugins
-    local local_OSX_INSTALLER_VOLUME_DIR="/Volumes/${AEROFS_PRODUCT_SPACEFREE} Installer"
-    local local_OSX_TEMPLATE_APP_FILENAME="osx/${AEROFS_PRODUCT_UNIX}.app.template"
+    # Only re-make on updates
+    local CREATED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "${PACKAGE_DIR}/${TARGET}" 2>/dev/null)
+    if [[ -n "$CREATED" ]] ; then
+        [[ -z "$(find "${OSX_UPDATER_DIR}" -type f -newermt "$CREATED" | head -n 1)" ]] && \
+        [[ -z "$(find "${CLIENT_OSX_RESOURCES_DIR}" -name "aerofs" -type f -newermt "$CREATED" | head -n 1)" ]] && \
+        [[ -z "$(find "${BUILD_SCRIPT_DIR}/osx" -type f -newermt "$CREATED" | head -n 1)" ]]
 
-    readonly local_VERSIONED_MAC_ZIP_FILENAME
-    readonly local_VERSIONED_MAC_DMG_FILENAME
-    readonly local_UNVERSIONED_MAC_DMG_FILENAME
-    readonly local_OSX_LOCAL_MAC_APP_DIR
-    readonly local_OSX_LOCAL_MAC_PLUGINS_DIR
-    readonly local_OSX_INSTALLER_VOLUME_DIR
-    readonly local_OSX_TEMPLATE_APP_FILENAME
+        if [[ $? == 0 ]]; then
+            echo '>> not rebuilding osx_packages'
+            return
+        fi
 
-    # Create a temporary directory to work in
-    local DMG_TEMP_DIR="$PACKAGE_BUILD_DIR/osx-dmg"
+        echo ">> rebuilding osx_packages"
+    fi
+    rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-"*.dmg
+    rm -f "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-osx-"*.zip
 
-    # Create a release folder within the temp directory and copy the template dmg and app folder
-    rm -rf "${DMG_TEMP_DIR}"
-    mkdir -p "${DMG_TEMP_DIR}/Release"
-    cp -a "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_APP_FILENAME}" \
-        "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+    local BUILD_DIR="${PACKAGE_BUILD_DIR}/osx-dmg"
+    local LOCAL_APP_DIR="Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/"
+    local TEMPLATE_FILENAME="${AEROFS_PRODUCT_UNIX}.app.template"
+    local TARGET_ZIP="${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip"
 
-    # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
-    cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
+    rm -rf "${BUILD_DIR}"
+    mkdir -p "${BUILD_DIR}/Release"
+    mkdir -p "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/"
+
+    cp -a "${BUILD_SCRIPT_DIR}/osx/${TEMPLATE_FILENAME}"/* \
+        "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+    cp -a "${BASE_RESOURCES_DIR}/updater/osx/updater" \
+        "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/${AEROFS_PRODUCT_SPACEFREE}Client"
+    cp -a "${BASE_RESOURCES_DIR}/client/osx/aerofs" \
+        "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/${AEROFS_PRODUCT_UNIX}"
 
     if $SIGNED ; then
-        echo ">> sign app for Mac App Store"
-        # Unlock the keychain, to prevent AFK dev from failing a build.  All
-        # the secrets are available already anyway.
+        echo ">> signing app for Mac App Store"
+
+        # Unlock the keychain, to prevent AFK dev from failing a build.
+        # All the secrets are available already anyway.
         SECURE_VOLUME="/Volumes/aerofskeys"
         OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
         OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/keychain_passphrase.txt"
+
         security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
+
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
-        # Note: We avoid re-codesigning AeroFSFinderExtension because every
-        # time we do so, it changes the binary, which in turn changes the
-        # checksum, so we kill finder on update.  Instead, we have pre-signed
-        # the checked-in resource, and must update the signature whenever we
-        # modify anything under the .osax folder.
-        #codesign --force --sign "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
         codesign --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
                  --force \
                  --sign "Air Computing, Inc." \
-                 "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+                 "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+
+        # Note: We avoid re-codesigning AeroFSFinderExtension because
+        # every time we do so, it changes the binary, which in turn
+        # changes the checksum, so we kill finder on update.  Instead,
+        # we have pre-signed the checked-in resource, and must update
+        # the signature whenever we modify anything under the .osax
+        # folder.
+        # codesign --force \
+        #          --sign "Air Computing, Inc." \
+        #          "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
     fi
 
-    # zip the osx client (must go to the directory so that the temp path isn't included in the zip)
-    pushd "$DMG_TEMP_DIR" > /dev/null
-    zip -9 --symlinks --quiet --recurse-paths "${PACKAGE_DIR}/$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
-    popd > /dev/null
+    pushd "$BUILD_DIR" >>/dev/null
+    zip -9 --symlinks --quiet --recurse-paths "${PACKAGE_DIR}/${TARGET_ZIP}" "Release/"
+    popd >>/dev/null
 
-    # Add DMG-specific contents
-    ln -s /Applications "${DMG_TEMP_DIR}/Release/Applications"
-    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/"{.background,.VolumeIcon.icns} "${DMG_TEMP_DIR}/Release/"
-    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/${AEROFS_PRODUCT_UNIX}/DS_Store" "${DMG_TEMP_DIR}/Release/.DS_Store"
+    ln -s /Applications "${BUILD_DIR}/Release/Applications"
+    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/"{.background,.VolumeIcon.icns} "${BUILD_DIR}/Release/"
+    cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/${AEROFS_PRODUCT_UNIX}/DS_Store" "${BUILD_DIR}/Release/.DS_Store"
 
-    # Build the installer DMG
+    rm -rf "${PACKAGE_DIR:?}/${TARGET}"
+
     case $(uname) in
         Darwin)
-            # Create read-write DMG
-            # TODO: make the volume name not spacefree (requires fixing DS_Store for aerofsts)
+            # TODO: make the volume name not spacefree (requires fixing
+            # DS_Store for aerofsts)
             hdiutil create \
                     -fs HFS+ \
                     -volname "${AEROFS_PRODUCT} Installer" \
-                    -srcfolder "${DMG_TEMP_DIR}/Release/" \
+                    -srcfolder "${BUILD_DIR}/Release/" \
                     -format UDRW \
-                    -o "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg"
-            # Mount DMG
-            MOUNTPOINT="${DMG_TEMP_DIR}/mnt"
+                    -o "${BUILD_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg"
+
+            MOUNTPOINT="${BUILD_DIR}/mnt"
             hdiutil attach -readwrite -noautoopen \
-                    "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
+                    "${BUILD_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
                     -mountpoint "$MOUNTPOINT"
+
             # Set volume icon creator to 'icnC' (icon creator)
             SetFile -c icnC "${MOUNTPOINT}/.VolumeIcon.icns"
             # Set volume icon enabled
             SetFile -a C "${MOUNTPOINT}"
-            # Unmount DMG
+
             hdiutil detach "$MOUNTPOINT"
-            # Convert RW DMG to bzip2-compressed DMG
+
             hdiutil convert \
-                    "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
+                    "${BUILD_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
                     -format UDBZ \
-                    -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
+                    -o "${PACKAGE_DIR}/${TARGET}"
             ;;
         Linux)
-            # Create HFS filesystem
-            HFS_IMAGE="${DMG_TEMP_DIR}/img.hfs"
-            dd if=/dev/zero of=$HFS_IMAGE bs=1024 seek=153600 count=1
+            HFS_IMAGE="${BUILD_DIR}/img.hfs"
+            dd if=/dev/zero of="${HFS_IMAGE}" bs=1024 seek=153600 count=1
             mkfs.hfsplus -v "${AEROFS_PRODUCT} Installer" "$HFS_IMAGE"
-            # Add image contents
+
             hfsplus "$HFS_IMAGE" mkdir "/.background"
-            hfsplus "$HFS_IMAGE" addall "${DMG_TEMP_DIR}/Release/.background" "/.background"
-            hfsplus "$HFS_IMAGE" add "${DMG_TEMP_DIR}/Release/.VolumeIcon.icns" "/.VolumeIcon.icns"
-            hfsplus "$HFS_IMAGE" add "${DMG_TEMP_DIR}/Release/.DS_Store" "/.DS_Store"
+            hfsplus "$HFS_IMAGE" addall "${BUILD_DIR}/Release/.background" "/.background"
+            hfsplus "$HFS_IMAGE" add "${BUILD_DIR}/Release/.VolumeIcon.icns" "/.VolumeIcon.icns"
+            hfsplus "$HFS_IMAGE" add "${BUILD_DIR}/Release/.DS_Store" "/.DS_Store"
             hfsplus "$HFS_IMAGE" mkdir "/${AEROFS_PRODUCT_SPACEFREE}.app"
-            hfsplus "$HFS_IMAGE" addall "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "/${AEROFS_PRODUCT_SPACEFREE}.app"
+            hfsplus "$HFS_IMAGE" addall "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "/${AEROFS_PRODUCT_SPACEFREE}.app"
             hfsplus "$HFS_IMAGE" symlink "/Applications" "/Applications"
+
             # Enable custom icon on drive root
             hfsplus "$HFS_IMAGE" attr / C
-            # Wrap the HFS+ filesystem up in a DMG
-            dmg build "$HFS_IMAGE" "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
+
+            dmg build "$HFS_IMAGE" "${PACKAGE_DIR}/${TARGET}"
             rm "$HFS_IMAGE"
             ;;
-        *)
-            echo >&2 "unsupported platform $(uname)"
-            exit 1
-            ;;
+        *) echo >&2 "unsupported platform $(uname)" ; exit 1 ;;
     esac
 }
 
@@ -370,6 +419,8 @@ function create_release_version_file() {
 }
 
 function make_installers() {
+    mkdir -p "${PACKAGE_DIR}"
+
     local JOBS=""
 
     if [ "$BUILD_LINUX_INSTALL_DEB" == "true" ] ; then

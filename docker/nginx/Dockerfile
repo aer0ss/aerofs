@@ -7,4 +7,4 @@ EXPOSE 80 443 4433 5222
 
 CMD [ "/run.sh" ]
 
-COPY root /
+COPY buildroot root /

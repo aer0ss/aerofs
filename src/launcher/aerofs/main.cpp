@@ -41,16 +41,21 @@ int main(int argc, char** argv)
     _TCHAR approot[MAX_APPROOT_LENGTH];
 
 #ifdef __APPLE__
-    bool fromOSXBundle = true;
+    if (argc < 2) {
+        show_error(_T("No approot given"));
+        return EXIT_FAILURE;
+    }
+    strncpy(approot, argv[1], MAX_APPROOT_LENGTH-1);
+    approot[MAX_APPROOT_LENGTH-1] = 0;
 #else
     bool fromOSXBundle = false;
-#endif
 
     if (!launcher_get_approot(approot, sizeof(approot), &errmsg, fromOSXBundle)) {
         _sprintf(msg, sizeof(msg), _T("%s\n%s"), _T("Could not find approot:"), errmsg);
         show_error(msg);
         return EXIT_FAILURE;
     }
+#endif
 
     // Try to move into the approot.
     if (!change_dir(approot)) {
@@ -63,7 +68,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    _TCHAR* args[] = {_T("DEFAULT"), _T("gui"), NULL};
+    _TCHAR* args[] = {(_TCHAR *)_T("DEFAULT"), (_TCHAR *)_T("gui"), NULL};
     bool vm_created = launcher_create_jvm(approot, args, &jvm, &env, &errmsg);
 
     if (!vm_created) {

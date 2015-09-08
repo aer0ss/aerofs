@@ -98,7 +98,7 @@ def repackage_installers(e, wait):
 
     e.get('.btn-primary').click()
 
-    wait.until_display('#success-modal', timeout=20 * 60)
+    wait.until_display('#success-modal', timeout=2 * 60)
     e.get('#success-modal .btn-primary').click()
 
 

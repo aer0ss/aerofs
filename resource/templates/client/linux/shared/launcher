@@ -7,8 +7,7 @@ if [[ $PRODUCT == *"storage"* ]]
 then
     PROG=storage_agent
 else
-    declare -i -r PROG_INDEX=${#PRODUCT}+2
-    PROG=$(basename $0 | cut -c ${PROG_INDEX}-)
+    PROG=$1; shift
     if [ x"$PROG" == x ]; then
         PROG=gui
     fi
@@ -55,7 +54,7 @@ case "$CURRENT_EXE_HEAD" in
         exit 1
 esac
 
-DIST="$HOME/.$PRODUCT-bin"
+DIST="$HOME/.$PRODUCT-bin/current"
 
 # Configure auto-start on login
 mkdir -p "$HOME/.config/autostart/"

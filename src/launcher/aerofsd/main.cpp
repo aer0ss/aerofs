@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         args.push_back(argv[i]);
     }
     args.push_back(argv[1]);
-    args.push_back(_T("daemon"));
+    args.push_back((_TCHAR *)_T("daemon"));
     args.push_back(NULL);
 
     bool vm_created = launcher_create_jvm(approot, &args[0], &jvm, &env, &errmsg);

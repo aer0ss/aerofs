@@ -5,33 +5,27 @@ set -eu
 # arguments
 
 function DieUsage {
-    echo usage "$0 [version number] [aerofs_product_unix] [remote release dir] [output deb filename]"
-    echo "[version number]: major.minor.release (e.g. 0.4.65)"
-    echo "[aerofs_product_unix]: the name of the AeroFS product on Unix (\"aerofs\" or \"aerofsts\")"
-    echo "[remote release dir]: directory in which the release files are on the build server"
+    set +x
+    echo usage "$0 [version] [PRODUCT] [output deb filename]"
+    echo "[version]: major.minor.release (e.g. 0.4.65)"
+    echo "[PRODUCT]: CLIENT|TEAM_SERVER"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
     echo "example: $0 0.4.65 aerofs ~/aerofs.release /data/public-downloads/aerofs-installer.deb"
     exit 1
 }
 
-[[ $# -eq 4 ]] || DieUsage
+[[ $# -eq 3 ]] || DieUsage
 
 #################################
 # set parameters
 
-case "$2" in
-    aerofs|aerofsts) readonly AEROFS_PRODUCT_UNIX=$2 ;;
-    *) DieUsage ;;
-esac
+readonly OUTPUT_DEB_NAME="$3"
+[[ ! -d "$OUTPUT_DEB_NAME" ]] || DieUsage
 
-# check that server relase dir exists
-[[ -d "$3" ]] || DieUsage
-readonly SERVER_RELEASE_DIR="$3"
+include common $2
 
-# check that output deb does not already exist
-[[ ! -d "$4" ]] || DieUsage
-readonly OUTPUT_DEB_NAME="$4"
+compute_product_names
 
 # debian control-file parameters
 readonly PACKAGE_NAME=$(echo $OUTPUT_DEB_NAME | awk -F'/' '{print $NF}' | awk -F '.' '{print $1}')
@@ -91,25 +85,25 @@ mkdir -p $HICOLOR_DIR/64x64/apps
 
 # AeroFS code and assets
 mkdir -p debian/usr/share/$AEROFS_PRODUCT_UNIX/
-cp -a $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/$AEROFS_PRODUCT_UNIX/
-cp -a $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/$AEROFS_PRODUCT_UNIX/shared/
+cp -a $BASE_RESOURCES_DIR/updater/linux/* $LABELING_FILE debian/usr/share/$AEROFS_PRODUCT_UNIX/
+render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" debian/usr/share/$AEROFS_PRODUCT_UNIX/launcher
 
 # Freedesktop.org application file
-cp $SERVER_RELEASE_DIR/aerofs.linux/shared/$AEROFS_PRODUCT_UNIX.desktop debian/usr/share/applications/$AEROFS_PRODUCT_UNIX.desktop
+render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/product.desktop" debian/usr/share/applications/$AEROFS_PRODUCT_UNIX.desktop
 
 # Icons for platform integration
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo_16x16.png $HICOLOR_DIR/16x16/apps/$AEROFS_PRODUCT_UNIX.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo_32x32.png $HICOLOR_DIR/32x32/apps/$AEROFS_PRODUCT_UNIX.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo_64x64.png $HICOLOR_DIR/64x64/apps/$AEROFS_PRODUCT_UNIX.png
+cp $CLIENT_ALL_PLATFORMS_RESOURCES_DIR/icons/logo_16x16.png $HICOLOR_DIR/16x16/apps/$AEROFS_PRODUCT_UNIX.png
+cp $CLIENT_ALL_PLATFORMS_RESOURCES_DIR/icons/logo_32x32.png $HICOLOR_DIR/32x32/apps/$AEROFS_PRODUCT_UNIX.png
+cp $CLIENT_ALL_PLATFORMS_RESOURCES_DIR/icons/logo_64x64.png $HICOLOR_DIR/64x64/apps/$AEROFS_PRODUCT_UNIX.png
 
-# Executables (links to copier, which will invoke launcher once set up)
+# Executables (links to updater, which will invoke launcher once set up)
 # pushd/popd is used to ensure we make relative links
-pushd debian/usr/bin > /dev/null
-ln -s ../share/$AEROFS_PRODUCT_UNIX/shared/copier $AEROFS_PRODUCT_UNIX
+pushd debian/usr/bin >>/dev/null
+ln -s ../share/$AEROFS_PRODUCT_UNIX/updater $AEROFS_PRODUCT_UNIX
 for suffix in sh cli gui ; do
     ln -s $AEROFS_PRODUCT_UNIX $AEROFS_PRODUCT_UNIX-$suffix
 done
-popd > /dev/null
+popd >>/dev/null
 
 #################################
 # generate the control file

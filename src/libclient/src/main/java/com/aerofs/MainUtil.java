@@ -247,7 +247,7 @@ public class MainUtil
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             newDefectWithLogs("system.uncaught_exception")
                     .setMessage("uncaught exception from " +
-                            t.getName() + " . program exists now.")
+                            t.getName() + ". program exits now.")
                     .setException(e)
                     .sendSyncIgnoreErrors();
             // must abort the process as the abnormal thread can no longer run properly

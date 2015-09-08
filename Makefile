@@ -25,6 +25,7 @@ SYNCDET_CASE_TIMEOUT = 180
 SYNCDET_CONFIG = /etc/syncdet/config.yaml
 SYNCDET_EXECUTABLE = $(GIT_ROOT)/../syncdet/syncdet.py
 SYNCDET_SCENARIOS =
+# default, tcp, zephyr
 SYNCDET_TRANSPORT = default
 SYNCDET_SYNC_TIMEOUT = 180
 TEAM_CITY = false
@@ -59,6 +60,14 @@ build_sa_vm:
 	$(GIT_ROOT)/docker/ship-aerofs/build-vm.sh aerofs/sa-loader
 	$(call success,"build_sa_vm")
 
+build_updater:
+ifeq ($(SIGNED),)
+	$(error "SIGNED must be defined to run build_updater.")
+endif
+	$(eval SIGNED_ARG := $(shell [ $(SIGNED) = true ] && echo "--signed" || echo ""))
+	$(GIT_ROOT)/tools/build/bootstrap build_updater --build-all $(SIGNED_ARG)
+	$(call success,"build_updater")
+
 build_vm:
 	$(GIT_ROOT)/docker/ship-aerofs/build-vm.sh aerofs/loader
 	$(call success,"build_vm")
@@ -80,7 +89,7 @@ markdown_watch:
 	$(GIT_ROOT)/tools/markdown_watch.sh -f -r $(GIT_ROOT)/docs $(GIT_ROOT)/out.shell/docs
 	$(call success,"markdown_watch")
 
-package_clients: _clean_packages
+package_clients:
 ifeq ($(PRODUCT),)
 	make _package PKG_PRODUCT=CLIENT
 	make _package PKG_PRODUCT=TEAM_SERVER
@@ -88,6 +97,14 @@ else
 	make _package PKG_PRODUCT=$(PRODUCT)
 endif
 	$(call success,"package_clients")
+
+package_updates: _clean_updates build_client
+ifeq ($(SIGNED),)
+	$(error "SIGNED must be defined to run package_updates.")
+endif
+	$(eval SIGNED_ARG := $(shell [ $(SIGNED) = true ] && echo "SIGNED" || echo "UNSIGNED"))
+	$(GIT_ROOT)/tools/build/bootstrap make_updates $(VERSION) $(SIGNED_ARG) --build-all
+	$(call success,"package_updates")
 
 prepare_syncdet:
 ifeq ($(PRODUCT),TEAM_SERVER)
@@ -185,11 +202,11 @@ write_version:
 	$(call success,"write_version")
 
 
-_clean_packages:
-	rm -rf $(GIT_ROOT)/out.gradle/packages
-
 _clean_protobuf:
 	rm -rf $(GIT_ROOT)/out.shell/protobuf-rpc
+
+_clean_updates:
+	rm -rf $(GIT_ROOT)/out.gradle/updates
 
 _package:
 ifeq ($(SIGNED),)
@@ -231,7 +248,7 @@ _syncdet:
 			$(GIT_ROOT)/system-tests/syncdet \
 			$(GIT_ROOT)/src/python-lib/./aerofs_common \
 			$(GIT_ROOT)/src/python-lib/./aerofs_sp \
-			$(GIT_ROOT)/src/python-lib/./aerofs_ritual \
+			$(GIT_ROOT)/src/python-lib/./aerofs_ritual
 
 _syncdet_clean_install:
 	make _syncdet ARG="--case=lib.cases.clean_install" SYNCDET_ARGS="--case-arg=--transport=$(SYNCDET_TRANSPORT)"
