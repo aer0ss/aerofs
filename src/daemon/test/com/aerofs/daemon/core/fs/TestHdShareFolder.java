@@ -92,6 +92,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock CfgStorageType cfgStorageType;
     @Mock UnlinkedRootDatabase urdb;
     @Mock CfgUsePolaris usePolaris;
+    @Mock PolarisClient.Factory polarisFactory;
     @Mock PolarisClient polaris;
     @Mock RemoteLinkDatabase rldb;
 
@@ -115,6 +116,7 @@ public class TestHdShareFolder extends AbstractTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create()).thenReturn(sp);
         when(sp.signInRemote()).thenReturn(sp);
+        when(polarisFactory.create()).thenReturn(polaris);
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
         when(cfgAbsRoots.get(extSID)).thenReturn("/external");

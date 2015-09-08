@@ -93,8 +93,8 @@ public class DBUtil
     public static boolean insertedOrUpdatedOneRow(int result)
     {
         /*
-         * The "INSERT ... ON DUPLICATE KEY UPDATE" function returns 1 for every succesful INSERT
-         * and 2 for every succesful UPDATE. That means that if you do the command on 5 rows,
+         * The "INSERT ... ON DUPLICATE KEY UPDATE" function returns 1 for every successful INSERT
+         * and 2 for every successful UPDATE. That means that if you do the command on 5 rows,
          * 3 of which result in INSERT, and 2 of which result in UPDATE, the return value
          * will be 7 (3*1 + 2*2). In our case, we expect either a single UPDATE, or a single
          * INSERT, so a return value of 1 or 2 is acceptable.
@@ -164,8 +164,8 @@ public class DBUtil
 
     /**
      * update all rows of the table, set the fields to the given fields where the condition matches
-     * NOTE: when setting the parameters in the Prepared Statement, the condition paramaters are
-     * indexed _after_ the field paramaters
+     * NOTE: when setting the parameters in the Prepared Statement, the condition parameters are
+     * indexed _after_ the field parameters
      *
      * @param table the table to be updated
      * @param condition the fields to be updated
