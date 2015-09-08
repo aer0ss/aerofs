@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -eu
 #
 # Ideally all the commands here should be in Dockerfile instead to leverage Docker's build cache.
 # Unfortunately losetup & mount commands require privileged access which is currently unsupported:

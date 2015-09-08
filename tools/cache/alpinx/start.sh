@@ -1,13 +1,15 @@
 #!/bin/bash
+set -eu
 # alpinx is a poor man's package cacher for Alpine Linux
 # it's basically an nginx instance configured as a caching reverse-proxy
 
-set -e
+PWD="$(cd $(dirname $0); pwd -P)"
 
-PWD="$( cd $(dirname $0) ; pwd -P )"
+success() { echo >&2 -e "\033[32mok: \033[0m- start alpinx"; }
 
 if [[ -n "$(docker ps -q -f 'name=alpinx')" ]] ; then
     echo "devpi server already running"
+    success
     exit 0
 fi
 
@@ -28,4 +30,4 @@ docker run -d --restart=always --name alpinx \
     --dns 8.8.8.8 \
     --volumes-from cache-alpine \
     alpinx
-
+success

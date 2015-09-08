@@ -3,6 +3,9 @@
 # A tool for quickly invoking chains of various build, packaging, and test
 # tasks.
 #
+# This tool is being phased out in favor of this directory's Makefile.
+#
+#
 # Examples:
 #
 # * Populate approot:
@@ -19,790 +22,125 @@
 #
 # TODO: --dry-run - doesn't actually call the subprocess.check_call stuff, just says what would be done
 # TODO: --verbose - prints the commands that will be called as they go
-
-
 import argparse
-from collections import namedtuple
-import ctypes # for 32/64 bit detection
 import datetime
-import functools
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 import traceback
 
-###### Raw data for interaction
-GIT_ROOT= os.path.abspath(os.path.dirname(__file__))
-TOOLS_DIR = os.path.join(GIT_ROOT, "tools")
-SRC_BASE = os.path.join(GIT_ROOT, "src", "base")
-SRC_LIB = os.path.join(GIT_ROOT, "src", "lib")
-SRC_LIBCLIENT = os.path.join(GIT_ROOT, "src", "libclient")
-SRC_DAEMON = os.path.join(GIT_ROOT, "src", "daemon")
-SRC_SYNC = os.path.join(GIT_ROOT, "src", "sync")
-SRC_GUI = os.path.join(GIT_ROOT, "src", "gui")
 
-PROTOC = "/usr/local/bin/protoc"
-BUILD_DIR = os.path.join(GIT_ROOT, "out.shell")
-GRADLE_BUILD_DIR = os.path.join(GIT_ROOT, "out.gradle")
-PACKAGE_DIR = os.path.join(GRADLE_BUILD_DIR, "packages")
-DEFAULT_SYNCDET_REPO_ROOT = os.path.join(os.path.dirname(GIT_ROOT), "syncdet")
-DEFAULT_SYNCDET_PY = os.path.join(DEFAULT_SYNCDET_REPO_ROOT, "syncdet.py")
-
-BOOTSTRAP_ENTRY = os.path.join(TOOLS_DIR, 'build', 'bootstrap')
-
-# Some other tools make assumptions about PWD.  Set it to a trustworthy, consistent value.
-os.chdir(GIT_ROOT)
-
-# Import the compute_next_version() function from tools/build/compute_next_version.py
-sys.path.append(os.path.join(TOOLS_DIR, 'build'))
-from compute_next_version import compute_next_version
-
-# map from <destdir> to <map of language, includes, proto files>
-PROTO_MAPPINGS = {
-        # Java protobufs
-        os.path.join(SRC_BASE, "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto") ],
-                "protos": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto", "rpc_service.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "common.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "sp.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "cmd.proto"),
-                          ],
-            },
-        os.path.join(SRC_LIBCLIENT, "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_LIBCLIENT, "src", "proto"),
-                            ],
-                "protos": [ os.path.join(SRC_LIBCLIENT, "src", "proto", "diagnostics.proto"),
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "path_status.proto"),
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "ritual_notifications.proto"),
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "ritual.proto"),
-                          ],
-            },
-        os.path.join(SRC_SYNC, "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_SYNC, "src", "proto"),
-                            ],
-                "protos": [ os.path.join(SRC_SYNC, "src", "proto", "core.proto"),
-                            os.path.join(SRC_SYNC, "src", "proto", "transport.proto"),
-                          ],
-            },
-        os.path.join(SRC_GUI, "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_LIBCLIENT, "src", "proto"),
-                              os.path.join(SRC_GUI, "src", "proto"),
-                            ],
-                "protos": [ os.path.join(SRC_GUI, "src", "proto", "shellext.proto"),
-                            ],
-            },
-        os.path.join(GIT_ROOT, "src", "zephyr", "gen"):
-            {
-                "lang": "java",
-                "includes": [ os.path.join(GIT_ROOT, "src", "zephyr", "src", "proto"), ],
-                "protos": [ os.path.join(GIT_ROOT, "src", "zephyr", "src", "proto", "zephyr.proto"), ],
-            },
-        # Python protobufs
-        os.path.join(GIT_ROOT, "src", "python-lib", "aerofs_common", "_gen"):
-            {
-                "lang": "python",
-                "includes": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto"),
-                              os.path.join(SRC_BASE, "src", "proto"), ],
-                "protos": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto", "rpc_service.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "common.proto"),
-                            ],
-            },
-        os.path.join(GIT_ROOT, "src", "python-lib", "aerofs_sp", "gen"):
-            {
-                "lang": "python",
-                "includes": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto"),
-                              os.path.join(SRC_BASE, "src", "proto"), ],
-                "protos": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto", "rpc_service.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "common.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "sp.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "cmd.proto"),
-                            ],
-            },
-        os.path.join(GIT_ROOT, "src", "python-lib", "aerofs_ritual", "gen"):
-            {
-                "lang": "python",
-                "includes": [ os.path.join(TOOLS_DIR, "protobuf.plugins", "proto"),
-                              os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_LIBCLIENT, "src", "proto"),
-                            ],
-                "protos": [
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "diagnostics.proto"),
-                            os.path.join(SRC_BASE, "src", "proto", "common.proto"),
-                            os.path.join(TOOLS_DIR, "protobuf.plugins", "proto", "rpc_service.proto"),
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "path_status.proto"),
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "ritual.proto"),
-                            ],
-            },
-        # ObjC protobufs
-        os.path.join(GIT_ROOT, "src", "shellext", "osx_common", "gen"):
-            {
-                "lang": "objc",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_LIBCLIENT, "src", "proto"),
-                              os.path.join(SRC_GUI, "src", "proto"),
-                            ],
-                "protos": [
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "path_status.proto"),
-                            os.path.join(SRC_GUI, "src", "proto", "shellext.proto"),
-                            ],
-            },
-        # C++ protobufs
-        os.path.join(GIT_ROOT, "src", "shellext", "win_explorer", "gen"):
-            {
-                "lang": "cpp",
-                "includes": [ os.path.join(SRC_BASE, "src", "proto"),
-                              os.path.join(SRC_LIBCLIENT, "src", "proto"),
-                              os.path.join(SRC_GUI, "src", "proto"),
-                            ],
-                "protos": [
-                            os.path.join(SRC_LIBCLIENT, "src", "proto", "path_status.proto"),
-                            os.path.join(SRC_GUI, "src", "proto", "shellext.proto"),
-                            ],
-            },
-    }
-
-PYTHON_PROJECTS = [ "python-lib", "licensing", "web", "bunker" ]
+GIT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-###### Utilities
-# For colorizing output for success/error readability
-class Colors:
-    BLACK  = '\033[30m'
-    RED    = "\033[31m"
-    GREEN  = "\033[32m"
-    YELLOW = '\033[33m'
-    BLUE   = "\033[34m"
-    PURPLE = '\033[35m'
-    CYAN   = '\033[36m'
-    WHITE  = '\033[37m'
-    RESET  = "\033[0m"
+commands = [
+    'build_client',
+    'build_cloud_config',
+    'build_docker_images',
+    'build_docker_sa_images',
+    'build_protoc_plugins',
+    'build_sa',
+    'build_sa_vm',
+    'build_updater',
+    'build_vm',
+    'clean',
+    'markdown',
+    'markdown_watch',
+    'package_clients',
+    'package_sa',
+    'package_updates',
+    'prepare_syncdet',
+    'proto',
+    'push_docker_images',
+    'push_docker_sa_images',
+    'push_sa_vm',
+    'push_vm',
+    'setupenv',
+    'syncdet',
+    'tag_release',
+    'tag_sa_release',
+    'test_go',
+    'test_js',
+    'test_python',
+    'test_system',
+    'test_system_archive',
+    'write_version',
+]
 
-def colored(s, color):
-    return "".join([color, s, Colors.RESET])
-
-def _mkdir_p(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
 
 def format_seconds(seconds):
     if seconds < 60:
-        return "{} sec".format(round(seconds, 2))
-    else:
-        return "{} min".format(round(seconds / 60.0, 2))
+        return '{} sec'.format(round(seconds, 2))
 
-# Task time analysis
-def print_timing_stats(records):
-    if len(records) == 0:
-        print "No commands executed successfully."
-        return
-    max_command_width = max( len(r["command"]) for r in records )
-    print "Total time: {}".format(format_seconds(sum([r["time"] for r in records])))
-    for r in records:
-        formatstring = "{:<" + str(max_command_width) + "} : {}"
-        print formatstring.format(r["command"], format_seconds(r["time"]))
-
-# OS detection/mapping
-def get_current_os():
-    if sys.platform.startswith('darwin'):
-        return 'osx'
-    if sys.platform.startswith('win32') or sys.platform.startswith('cygwin'):
-        return 'win'
-    if sys.platform.startswith('linux'):
-        pointer_bytes = ctypes.sizeof(ctypes.c_voidp)
-        if pointer_bytes == 8:
-            return 'linux/amd64'
-        if pointer_bytes == 4:
-            return 'linux/i386'
-    raise NotImplementedError("Didn't recognize the OS we're running under")
-
-# For reconstructing command-line arguments
-def quote_arg(s):
-    quoted = s.replace("\\", "\\\\").replace("'", "\\'")
-    return "'{}'".format(quoted)
-
-# A decorator to mark commands with the switches they require
-# and to enforce these where possible through early checks
-def required_args(*required):
-    def required_args_decorator(func):
-        def check_args(args):
-            for req in required:
-                if getattr(args, req, None) is None:
-                    # Custom help messages for different missing switches
-                    custom_messages = {
-                        'signed': colored("Specify a signed build with --signed or an unsigned build with --unsigned", Colors.RED),
-                    }
-                    if req in custom_messages:
-                        raise ValueError(custom_messages[req])
-                    # Fallback: infer one from the arg name
-                    option = "--" + req.replace("_", "-")
-                    raise ValueError(colored('Missing required argument "{0}" - specify with {1} <{0}>'.format(req, option), Colors.RED))
-        @functools.wraps(func)
-        def func_wrapper(args):
-            check_args(args)
-            return func(args)
-        # save check_args as an attr on the function, so we can call it as part
-        # of a preflight check, as well as when the function itself is called
-        func_wrapper.check_args = check_args
-        return func_wrapper
-    return required_args_decorator
-
-# Another one, but a disjunction of required arguments instead of all
-def requires_one_of(*required):
-    def required_args_decorator(func):
-        def check_args(args):
-            satisfied = False
-            for req in required:
-                if getattr(args, req, None) is not None:
-                    satisfied = True
-                    break
-            if not satisfied:
-                raise ValueError(colored("Need one of the following arguments: {}".format(", ".join(required)), Colors.RED))
-        @functools.wraps(func)
-        def func_wrapper(args):
-            check_args(args)
-            return func(args)
-        # save check_args as an attr on the function, so we can call it as part
-        # of a preflight check, as well as when the function itself is called
-        func_wrapper.check_args = check_args
-        return func_wrapper
-    return required_args_decorator
+    return '{} min'.format(round(seconds / 60., 2))
 
 
-###### Commands
-def proto_python(output_dir, includes, protos):
-    inc_args = ["-I{}".format(include) for include in includes]
-    args = [ PROTOC,
-             "--plugin={}/protobuf-rpc/gen_rpc_python/protoc-gen-rpc-python".format(BUILD_DIR),
-             "--python_out={}".format(output_dir),
-             "--rpc-python_out={}".format(output_dir),
-             "-I{}/protobuf.plugins/proto".format(TOOLS_DIR)
-        ] + inc_args + protos
-    #print "Calling:", args
-    subprocess.check_call(args)
-    # Create a file __init__.py so that the folder in which these python files
-    # were generated is treated as a Python module
-    with open(os.path.join(output_dir, "__init__.py"), "wb") as f:
-        pass
-
-def proto_cpp(output_dir, includes, protos):
-    inc_args = ["-I{}".format(include) for include in includes]
-    args = [ PROTOC,
-             "--cpp_out={}".format(output_dir),
-        ] + inc_args + protos
-    #print "Calling:", args
-    subprocess.check_call(args)
-
-def proto_objc(output_dir, includes, protos):
-    inc_args = ["-I{}".format(include) for include in includes]
-    args = [ PROTOC,
-             "--objc-arc_out={}".format(output_dir),
-        ] + inc_args + protos
-    #print "Calling:", args
-    subprocess.check_call(args)
-
-def proto_java(output_dir, includes, protos):
-    # Generate the protobufs
-    inc_args = ["-I{}".format(include) for include in includes]
-    args = [ PROTOC,
-             "--plugin={}/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java".format(BUILD_DIR),
-             "--java_out={}".format(output_dir),
-             "--rpc-java_out={}".format(output_dir),
-             "-I{}/protobuf.plugins/proto".format(TOOLS_DIR),
-           ] + inc_args + protos
-    #print "Calling:", args
-    subprocess.check_call(args)
-
-    # The code generated by protobuf has some, uh, quirks, which make it
-    # trigger compiler warnings.  This makes protobuf generated code
-    # incompatible with -Werror.
-    # We fix up the generated java files with some find/replace magic.
-    def _fixup_gen_java_file(path):
-        print "Postprocessing generated {}".format(path)
-        with open(path) as f:
-            with tempfile.NamedTemporaryFile(dir=os.path.dirname(path), delete=False) as g:
-                pkg = None
-                while True:
-                    line = f.readline()
-                    if line == "":
-                        break
-
-                    # minify: strip leading and trailing spaces
-                    line = line.strip(' \t')
-
-                    # minify: strip multiline comments
-                    if line.startswith("/*"):
-                        line = line[2:]
-                        idx = line.find("*/")
-                        while line != "" and idx == -1:
-                            line = f.readline()
-                            idx = line.find("*/")
-                        if idx == -1:
-                            break
-                        line = line[idx+2:]
-
-                    # minify: skip empty lines
-                    if line == "\n" or line.startswith("//"):
-                        continue
-
-                    # 1) Suppress all warnings in generated protobuf files, so we can compile with -Werror
-                    if line.startswith("public final class "):
-                        line = '@SuppressWarnings("all") ' + line
-
-                    # 2) Fix for the "using raw type" warning
-                    line = line.replace("com.google.protobuf.GeneratedMessageLite.Builder builder",
-                                        "com.google.protobuf.GeneratedMessageLite.Builder<?,?> builder")
-
-                    # 3) Fix warning about use of "super" in static methods
-                    line = line.replace("super.addAll(",
-                                        "Builder.addAll(")
-
-                    # minify: simplify fully-qualified names
-                    if pkg:
-                        line = line.replace("com.google.protobuf.", "")
-                        line = line.replace("com.google.common.util.concurrent.Futures.", "")
-                        line = line.replace("com.google.common.util.concurrent.", "")
-                        line = line.replace("java.lang.", "")
-                        line = line.replace("java.util.concurrent.", "")
-                        line = line.replace("java.util.", "")
-                        line = line.replace("java.io.IOException", "IOException")
-                        line = line.replace(pkg, "")
-
-                    # minify: shrink common variable names
-                    line = line.replace("bitField0_", "b0_")
-                    line = line.replace("memoizedIsInitialized", "mii")
-                    line = line.replace("memoizedSerializedSize", "mss")
-                    line = line.replace("parsedMessage", "pm")
-                    line = line.replace("extensionRegistry", "er")
-                    line = line.replace("builder", "bd")
-
-                    # Write the new line out to the replacement file
-                    g.write(line)
-
-                    # detect package name and add import statements for minification
-                    if not pkg and line.startswith("package ") and line.endswith(";\n"):
-                        pkg = line[8:-2] + "."
-                        print "detected package {}".format(pkg)
-                        g.write("import com.google.protobuf.*;\n")
-                        g.write("import com.google.common.util.concurrent.*;\n")
-                        g.write("import static com.google.common.util.concurrent.Futures.*;\n")
-                        g.write("import java.util.*;\n")
-                        g.write("import java.util.concurrent.*;\n")
-                        g.write("import java.io.IOException;\n")
-
-                # Commit g over f
-                #print "Will replace {} with {}".format(path, g.name)
-                os.rename(g.name, path)
-
-    # Apply several fixups to the generated java files:
-    for group in os.walk(output_dir):
-        # Destructure group
-        (dirpath, dirnames, filenames) = group
-        for name in filenames:
-            filepath = os.path.join(dirpath, name)
-            if filepath.endswith(".java"):
-                _fixup_gen_java_file(filepath)
-
-def build_protoc_plugins(args):
-    PLUGIN_BUILD_DIR = os.path.join(BUILD_DIR, "protobuf-rpc")
-    _mkdir_p(PLUGIN_BUILD_DIR)
-    subprocess.check_call(["qmake", os.path.join(TOOLS_DIR, "protobuf.plugins", "rpc_plugins.pro")],
-                          cwd=PLUGIN_BUILD_DIR)
-    subprocess.check_call(["make"],
-                          cwd=PLUGIN_BUILD_DIR)
-
-def proto(args=None):
-    # Check if one of the protobuf plugins exists
-    # if not, build them all
-    if not os.path.exists(os.path.join(BUILD_DIR, "protobuf-rpc", "gen_rpc_java", "protoc-gen-rpc-java")):
-        build_protoc_plugins(args)
-
-    # ensure generated protobuf folders exist
-    for folder in PROTO_MAPPINGS:
-        opts = PROTO_MAPPINGS[folder]
-        _mkdir_p(folder)
-        langs = {
-                "java":   proto_java,
-                "python": proto_python,
-                "cpp":    proto_cpp,
-                "objc":   proto_objc,
-        }
-        if opts["lang"] not in langs:
-            raise NotImplementedError("No protobuf backend for {}".format(opts["lang"]))
-        func = langs[opts["lang"]]
-        print "Generating {} protobufs in {}".format(opts["lang"], folder)
-        func(folder, opts["includes"], opts["protos"])
-
-def clean(args):
-    for folder in PROTO_MAPPINGS.keys():
-        if os.path.isdir(folder):
-            print "removing {}".format(folder)
-            shutil.rmtree(folder)
-    if os.path.isdir(BUILD_DIR):
-        print "removing {}".format(BUILD_DIR)
-        shutil.rmtree(BUILD_DIR)
-    if os.path.isdir(GRADLE_BUILD_DIR):
-        print "removing {}".format(GRADLE_BUILD_DIR)
-        shutil.rmtree(GRADLE_BUILD_DIR)
-    subprocess.check_call(["make", "clean"], cwd=os.path.join(GIT_ROOT, "src", "web", "web"))
-
-def build_docker_images(args):
-    subprocess.check_call(["docker/build-images.sh"], cwd=GIT_ROOT)
-
-def build_docker_sa_images(args):
-    subprocess.check_call(["docker/build-sa-images.sh"], cwd=GIT_ROOT)
-
-def push_docker_images(args):
-    subprocess.check_call(["docker/ship-aerofs/push-images.sh", "aerofs/loader"], cwd=GIT_ROOT)
-
-def push_docker_sa_images(args):
-    subprocess.check_call(["docker/ship-aerofs/push-images.sh", "aerofs/sa-loader"], cwd=GIT_ROOT)
-
-def build_vm(args):
-    subprocess.check_call(["docker/ship-aerofs/build-vm.sh", "aerofs/loader"], cwd=GIT_ROOT)
-
-def build_sa_vm(args):
-    subprocess.check_call(["docker/ship-aerofs/build-vm.sh", "aerofs/sa-loader"], cwd=GIT_ROOT)
-
-def build_cloud_config(args):
-    subprocess.check_call(["docker/ship-aerofs/build-cloud-config.sh"], cwd=GIT_ROOT)
-
-def push_vm(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm', 'aerofs/loader' ]
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-def push_sa_vm(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm', 'aerofs/sa-loader' ]
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-def tag_release(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release', 'aerofs/loader']
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-def tag_sa_release(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release', 'aerofs/sa-loader']
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-def _markdown(watch):
-    executable = os.path.join(TOOLS_DIR, "markdown_watch.sh")
-    args = [ executable ] + \
-           ( [ "-f" ] if watch else [] ) + \
-           [ "-r", os.path.join(GIT_ROOT, "docs"), os.path.join(BUILD_DIR, "docs") ]
-    subprocess.check_call(args, cwd=GIT_ROOT)
-
-def markdown(args):
-    _markdown(watch=False)
-
-def markdown_watch(args):
-    _markdown(watch=True)
-
-def ensure_virtualenv():
-    proto()
-    if not os.path.isdir(os.path.join(GIT_ROOT, "env")):
-        args = ["virtualenv", "env"]
-        subprocess.check_call(args, cwd=GIT_ROOT)
-
-def pip_install_deps(folder):
-    args = [ os.path.join(GIT_ROOT, "env", "bin", "pip"),
-            "install", "--requirement", os.path.join(folder, "requirements.txt") ]
-    subprocess.check_call(args, cwd=GIT_ROOT)
-    args = [ os.path.join(GIT_ROOT, "env", "bin", "pip"),
-            "install", "--editable", folder ]
-    subprocess.check_call(args, cwd=GIT_ROOT)
-
-def test_python(args):
-    ensure_virtualenv()
-    for project in PYTHON_PROJECTS:
-        project_dir = os.path.join(GIT_ROOT, "src", project)
-        pip_install_deps(project_dir)
-        args = [ os.path.join(GIT_ROOT, "env", "bin", "python"),
-                 os.path.join(project_dir, "test_all.py") ]
-        subprocess.check_call(args, cwd=project_dir)
-    print colored("Python tests passed", Colors.GREEN)
-
-def test_go(args):
-    subprocess.check_call([os.path.join(GIT_ROOT, "golang", "tester", "run.sh"), "aerofs.com"])
-    print colored("Go tests passed", Colors.GREEN)
-
-def test_js(args):
-    WEB_ROOT = os.path.join(GIT_ROOT, "src", "web", "web")
-    # Clean first to ensure output folder creation
-    subprocess.check_call(["make", "clean"], cwd=WEB_ROOT)
-    # Make everything
-    subprocess.check_call(["make"], cwd=WEB_ROOT)
-    # Setup and run the tests
-    subprocess.check_call(["make", "setup_test", "test"], cwd=WEB_ROOT)
-    print colored("JS tests passed.", Colors.GREEN)
-
-def prepare_syncdet(args):
-    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER"]
-    platforms = ["win", "osx", "linux"]
-    Info = namedtuple('Info', ['prefix', 'extension', 'platform', 'product'])
-    infos = [
-            Info(platform="win", prefix="AeroFSInstall", extension="exe", product="CLIENT"),
-            Info(platform="win", prefix="AeroFSTeamServerInstall", extension="exe", product="TEAM_SERVER"),
-            Info(platform="osx", prefix="aerofs-osx", extension="zip", product="CLIENT"),
-            Info(platform="osx", prefix="aerofsts-osx", extension="zip", product="TEAM_SERVER"),
-            Info(platform="linux", prefix="aerofs-installer", extension="tgz", product="CLIENT"),
-            Info(platform="linux", prefix="aerofsts-installer", extension="tgz", product="TEAM_SERVER"),
-            Info(platform="linux", prefix="aerofs-storage-agent-installer", extension="tgz", product="STORAGE_AGENT"),
-            ]
-    infos_to_copy = [ info for info in infos if info.product in products and info.platform in platforms ]
-    source_dir = PACKAGE_DIR
-    dest_dir = os.path.join(GIT_ROOT, "system-tests", "syncdet")
-    for info in infos_to_copy:
-        dest_filename = ".".join([info.prefix, info.extension])
-        dest_filepath = os.path.join(dest_dir, dest_filename)
-        source_filenames = [f for f in os.listdir(PACKAGE_DIR) if f.startswith(info.prefix) and f.endswith(info.extension)]
-        if len(source_filenames) == 1:
-            source_filepath = os.path.join(source_dir, source_filenames[0])
-            print "copying {} to {}".format(source_filepath, dest_filepath)
-            shutil.copyfile(source_filepath, dest_filepath)
-            os.chmod(dest_filepath, 0700)
-        else:
-            raise ValueError(colored("ambigous {} - options {}".format(dest_filename, source_filenames), Colors.RED))
-
-@required_args('product', 'target_os', 'approot')
-def setupenv(args):
-    command = [ os.path.join(TOOLS_DIR, "populate", "populate"),
-                'PRIVATE',
-                args.product.upper(),
-                args.target_os,
-                os.path.join(GIT_ROOT, 'resource'),
-                args.approot,
-                ]
-    subprocess.check_call(command, cwd=GIT_ROOT)
-
-# A stopgap solution for now to allow invoke to be the global entry point.
-# In the long future, we should build the client code with gradle too.
-def build_client(args):
-    subprocess.check_call([ "gradle", "src/desktop:dist"], cwd=GIT_ROOT)
-    print colored("Client built.", Colors.GREEN)
-
-def build_sa(args):
-    subprocess.check_call([ "gradle", "src/storage-agent:dist"], cwd=GIT_ROOT)
-    print colored("Client built.", Colors.GREEN)
-
-def write_version(args):
-    version = args.release_version or compute_next_version('loader')
-    if not os.path.exists(PACKAGE_DIR):
-        os.makedirs(PACKAGE_DIR)
-    with open(os.path.join(PACKAGE_DIR, "current.ver"), "w") as f:
-        f.write("Version={}".format(version))
-        f.flush()
-
-def _package(args, products, should_clean=True):
-    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
-    # TODO(AS): Version computation based on loader/SA-loader
-    version = args.release_version or compute_next_version('loader')
-    # clean packaging dir
-    if os.path.exists(PACKAGE_DIR) and should_clean:
-        for package in os.listdir(PACKAGE_DIR):
-            os.remove(os.path.join(PACKAGE_DIR, package))
-    for product in products:
-        cmdline = [ BOOTSTRAP_ENTRY,
-                "package",
-                product,
-                version,
-                signed_arg,
-                "--build-all"]
-        subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-@required_args('signed')
-def package_clients(args):
-    products = [ args.product ] if args.product else [ "CLIENT", "TEAM_SERVER"]
-    assert "STORAGE_AGENT" not in products, "Looks like you are trying to package the storage agent. Please use package_sa."
-    should_clean = "package_sa" not in args.commands or (args.commands.index("package_sa") > args.commands.index("package_clients"))
-    _package(args, products, should_clean)
-
-@required_args('signed')
-def package_sa(args):
-    products = [ args.product ] if args.product else [ "STORAGE_AGENT" ]
-    assert "STORAGE_AGENT" in products and len(products) == 1, "Looks like you are trying to package desktop-client/TS. Please use package_clients."
-    should_clean = "package_clients" not in args.commands or (args.commands.index("package_clients") > args.commands.index("package_sa"))
-    _package(args, products, should_clean)
-
-def _syncdet(args, case=None, scenario=None, extra_args=None):
-    # extract args
-    if case is not None:
-        case_arg = '--case={}'.format(case)
-    elif scenario is not None:
-        case_arg = '--scenario={}'.format(scenario)
-    else:
-        raise ValueError(colored("You must specify either a case or scenario to _syncdet", Colors.RED))
-    extra_args_internal = ["--team-city"] if args.team_city else []
-    extra_args_internal.extend(["--purge-log"])
-    extra_args_internal.extend(extra_args or [])
-    extra_args_internal.extend(args.syncdet_extra_args or [])
-    #additional_case_args=
-    cmdline = [ args.syncdet_executable, case_arg,
-            ] + extra_args_internal + [
-            '--config={}'.format(args.syncdet_config),
-            '--case-timeout={}'.format(args.syncdet_case_timeout),
-            '--sync-timeout={}'.format(args.syncdet_sync_timeout),
-            os.path.join(GIT_ROOT, "system-tests", "syncdet"),
-            # The /./ are needed for syncdet to figure out relative paths.  Wat.
-            os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_common",
-            os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_sp",
-            os.path.join(GIT_ROOT, "src", "python-lib") + "/./aerofs_ritual",
-            os.path.join(GIT_ROOT, "resource", "templates", "client", "linux", "storage-agent") + "/./setup_storage_agent.py"
-            ]
-    print "Calling:"
-    print " ".join(quote_arg(str(c)) for c in cmdline)
-    subprocess.check_call(cmdline, cwd=GIT_ROOT)
-
-@requires_one_of('syncdet_case', 'syncdet_scenario')
-def test_system(args):
-    extra_args = ["--case-arg=--transport={}".format(args.syncdet_transport)]
-    _syncdet(args, case='lib.cases.clean_install', extra_args=extra_args)
-    syncdet(args)
-
-@requires_one_of('syncdet_case', 'syncdet_scenario')
-def syncdet(args):
-    # Allow chaining of multiple --case and --scenario.
-    # TODO: ideally, these would land in the same output array, tagged with
-    # type, so they could be run in order.
-    # For now, all cases precede all scenarios.
-    if args.syncdet_case:
-        for case in args.syncdet_case:
-            _syncdet(args, case=case)
-    if args.syncdet_scenario:
-        for scenario in args.syncdet_scenario:
-            _syncdet(args, scenario=scenario)
-
-def test_system_archive(args):
-    extra_args=["--tar=archive_dir"]
-    _syncdet(args, case='lib.cases.move_data_to_archive_dir', extra_args=extra_args)
-
-# A list of the supported commands, and which functions correspond to which
-# command.  Functions bound here take a single argument, args, which gives
-# access to the command-line switches configured.  They should perform a single
-# task, and generally ignore dependency management.
-commands = {
-    "build_client": build_client,
-    "build_sa": build_sa,
-    "build_protoc_plugins": build_protoc_plugins,
-    "build_docker_images": build_docker_images,
-    "build_docker_sa_images": build_docker_sa_images,
-    "build_vm": build_vm,
-    "build_sa_vm": build_sa_vm,
-    "build_cloud_config": build_cloud_config,
-    "push_docker_images": push_docker_images,
-    "push_docker_sa_images": push_docker_sa_images,
-    "push_vm": push_vm,
-    "push_sa_vm": push_sa_vm,
-    "tag_release": tag_release,
-    "tag_sa_release": tag_sa_release,
-    "clean": clean,
-    "markdown": markdown,
-    "markdown_watch": markdown_watch,
-    "package_clients": package_clients,
-    "package_sa": package_sa,
-    "prepare_syncdet": prepare_syncdet,
-    "proto": proto,
-    "setupenv": setupenv,
-    "syncdet": syncdet,
-    "test_go": test_go,
-    "test_js": test_js,
-    "test_python": test_python,
-    "test_system": test_system,
-    "test_system_archive": test_system_archive,
-    "write_version": write_version,
-}
-
-def reconstitute_command_line(executable, args, incomplete_commands):
-    cmdline = [executable]
-    cmdline.extend(["--approot", args.approot])
+def convert_flags(args):
+    cmdline = ['APPROOT={}'.format(args.approot)]
     if args.product:
-        cmdline.extend(["--product", args.product])
+        cmdline.append('PRODUCT={}'.format(args.product))
     if args.release_version:
-        cmdline.extend(["--release-version", args.release_version])
-    if args.signed is not None:
-        cmdline.extend( ["--signed"] if args.signed else ["--unsigned"] )
+        cmdline.append('VERSION={}'.format(args.release_version))
+    cmdline.append('SIGNED={}'.format('true' if args.signed else 'false'))
     if args.syncdet_case:
-        for case in args.syncdet_case:
-            cmdline.extend(["--syncdet-case", case])
-    cmdline.extend(["--syncdet-case-timeout", str(args.syncdet_case_timeout)])
-    cmdline.extend(["--syncdet-config", args.syncdet_config])
-    cmdline.extend(["--syncdet-executable", args.syncdet_executable])
+        cmdline.append('SYNCDET_CASES="{}"'.format(' '.join(args.syncdet_case)))
+    if args.syncdet_case_timeout:
+        cmdline.append('SYNCDET_CASE_TIMEOUT={}'.format(args.syncdet_case_timeout))
+    if args.syncdet_config:
+        cmdline.append('SYNCDET_CONFIG={}'.format(args.syncdet_config))
+    if args.syncdet_executable:
+        cmdline.append('SYNCDET_EXECUTABLE={}'.format(args.syncdet_executable))
     if args.syncdet_extra_args:
-        for arg in args.syncdet_extra_args:
-            cmdline.extend(["--syncdet-extra-args", arg])
+        cmdline.append('SYNCDET_ARGS="{}"'.format(' '.join(args.syncdet_extra_args)))
     if args.syncdet_scenario:
-        for scenario in args.syncdet_scenario:
-            cmdline.extend(["--syncdet-scenario", scenario])
-    cmdline.extend(["--syncdet-sync-timeout", str(args.syncdet_sync_timeout)])
-    cmdline.extend(["--syncdet-transport", args.syncdet_transport])
-    cmdline.extend(["--target-os", args.target_os])
-    if args.team_city:
-        cmdline.extend(["--team-city"])
-    cmdline.extend(incomplete_commands)
-    return " ".join( quote_arg(arg) for arg in cmdline )
+        cmdline.append('SYNCDET_SCENARIOS="{}"'.format(' '.join(args.syncdet_scenario)))
+    if args.syncdet_sync_timeout:
+        cmdline.append('SYNCDET_SYNC_TIMEOUT={}'.format(args.syncdet_sync_timeout))
+    if args.syncdet_transport:
+        cmdline.append('SYNCDET_TRANSPORT={}'.format(args.syncdet_transport))
+    cmdline.append('TEAM_CITY={}'.format('true' if args.team_city else 'false'))
 
-###### Main entry point
+    return cmdline
+
+
 def main():
-    # Set up parser
-    parser = argparse.ArgumentParser(prog="invoke")
-    parser.add_argument("--approot", action='store', default=os.path.join(GIT_ROOT, 'approot'))
-    parser.add_argument("--product", action='store', choices=['CLIENT', 'TEAM_SERVER', 'STORAGE_AGENT'])
-    parser.add_argument("--release-version", action='store')
-    parser.add_argument("--signed", action='store_const', dest='signed', const=True)
-    parser.add_argument("--unsigned", action='store_const', dest='signed', const=False)
-    parser.add_argument("--syncdet-case", action='append')
-    parser.add_argument("--syncdet-case-timeout", action='store', type=int, default=180)
-    parser.add_argument("--syncdet-config", action='store', default='/etc/syncdet/config.yaml')
-    parser.add_argument("--syncdet-executable", action='store', default=DEFAULT_SYNCDET_PY)
-    parser.add_argument("--syncdet-extra-args", action='append')
-    parser.add_argument("--syncdet-scenario", action='append')
-    parser.add_argument("--syncdet-sync-timeout", action='store', type=int, default=180)
-    parser.add_argument("--syncdet-transport", action='store', default='default')
-    parser.add_argument("--target-os", action='store', choices=['win', 'osx', 'linux/i386', 'linux/amd64'], default=get_current_os())
-    parser.add_argument("--team-city", action='store_true')
-    parser.add_argument("commands", nargs="+", choices=sorted(commands.keys()))
+    parser = argparse.ArgumentParser(prog='invoke')
+    parser.add_argument('--approot', action='store', default=os.path.join(GIT_ROOT, 'approot'))
+    parser.add_argument('--product', action='store', choices=['CLIENT', 'TEAM_SERVER', 'STORAGE_AGENT'])
+    parser.add_argument('--release-version', action='store')
+    parser.add_argument('--signed', action='store_const', dest='signed', const=True)
+    parser.add_argument('--unsigned', action='store_const', dest='signed', const=False)
+    parser.add_argument('--syncdet-case', action='append')
+    parser.add_argument('--syncdet-case-timeout', action='store')
+    parser.add_argument('--syncdet-config', action='store')
+    parser.add_argument('--syncdet-executable', action='store')
+    parser.add_argument('--syncdet-extra-args', action='append')
+    parser.add_argument('--syncdet-scenario', action='append')
+    parser.add_argument('--syncdet-sync-timeout', action='store')
+    parser.add_argument('--syncdet-transport', action='store')
+    parser.add_argument('--target-os', action='store', choices=['win', 'osx', 'linux/i386', 'linux/amd64'])
+    parser.add_argument('--team-city', action='store_true')
+    parser.add_argument('commands', nargs='+', choices=commands)
     args = parser.parse_args(sys.argv[1:])
 
-    # Sanity check that we have all the required switches for all the provided commands
-    for arg in args.commands:
-        command = commands[arg]
-        if hasattr(command, 'check_args'):
-            command.check_args(args)
+    make_args = ['make']
+    make_args.extend(convert_flags(args))
+    make_args.extend(args.commands)
 
-    # Execute commands, logging how long each took
-    records = []
-    for i, arg in enumerate(args.commands):
-        command = commands[arg]
-        start = datetime.datetime.today()
-        try:
-            command(args)
-        except Exception as e:
-            print colored("{} failed".format(arg), Colors.RED)
-            print traceback.format_exc()
-            print_timing_stats(records)
-            cmdline = reconstitute_command_line(sys.argv[0], args, args.commands[i:])
-            print colored("To continue running from where you left off:", Colors.YELLOW)
-            print cmdline
-            sys.exit(1)
-        stop = datetime.datetime.today()
-        records.append({
-            "command": arg,
-            "time": (stop - start).total_seconds()
-        })
+    start = datetime.datetime.today()
 
-    # Print execution times
-    print colored("All tasks completed successfully.", Colors.GREEN)
-    print_timing_stats(records)
+    p = subprocess.Popen(make_args, stdout=open('build.log', 'w'),
+                         cwd=GIT_ROOT)
+    p.wait()
+    if p.returncode != 0:
+        print 'Task failed.'
+        print make_args
+        sys.exit(1)
 
-if __name__ == "__main__":
+    stop = datetime.datetime.today()
+    print 'All tasks completed successfully.'
+    print 'Total time: ', format_seconds((stop - start).total_seconds())
+
+
+if __name__ == '__main__':
     main()

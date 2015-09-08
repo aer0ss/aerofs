@@ -1,6 +1,6 @@
+include ../../Makefile.base
+
 IMAGE_NAME = aerofs/charlie
+PACKAGE_NAME = aerofs.com/charlie
 
-image:
-	../../../gockerize/gockerize $(IMAGE_NAME) aerofs.com/charlie ../..
-
-.PHONY: image
+GOCKERIZE_CTX = ../..

@@ -2,9 +2,9 @@
 #
 # The backend script for `POST /images/pull`
 #
-# Don't set -e. We handle errors by ourselves.
+# Don't set -eu. We handle errors by ourselves.
 #
-set -x
+set +eu
 
 REPO=$1
 LOADER=$2

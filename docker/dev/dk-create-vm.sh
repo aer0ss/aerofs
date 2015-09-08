@@ -3,7 +3,7 @@ set -eu
 
 if [ $# -ne 1 ]
 then
-    echo "Usage: $0 <VM>"
+    echo >&2 "Usage: $0 <VM>"
     exit 1
 fi
 

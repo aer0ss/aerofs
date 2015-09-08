@@ -1,3 +1,5 @@
+include ../Makefile.base
+
 IMAGE_NAME = aerofs/maintenance-nginx
 
 FILES = run-common.sh \
@@ -6,15 +8,11 @@ FILES = run-common.sh \
 		etc/nginx/sites/config \
 		etc/nginx/sites/bunker
 
-image: buildroot
+build:
 	../nginx/build.sh
-	docker build -t $(IMAGE_NAME) .
 
-buildroot:
-	rm -rf buildroot/
+buildroot: clean
 	for f in $(FILES) ; do \
 		mkdir -p buildroot/$$(dirname $$f) ; \
 		cp -a ../nginx/root/$$f buildroot/$$f ;\
 	done
-
-.PHONY: image buildroot

@@ -1,16 +1,19 @@
+include ../../docker/Makefile.base
+
 IMAGE_NAME = aerofs/web
 
-BUILD_ROOT = buildroot
-RSYNC = rsync -a --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
+VERSION_DEST = buildroot/opt/repackaging/installers/original/
+WEB_SRC = $(GIT_ROOT)/src/web/web/
+WEB_DEST = buildroot/opt/web/web/
+RSYNC += --exclude node_modules --exclude static-src
 
-image: .make-source
-	mkdir -p buildroot/opt/web buildroot/opt/repackaging/installers/original
-	$(RSYNC) ../../out.gradle/packages/current.ver buildroot/opt/repackaging/installers/original/
-	$(RSYNC) --exclude node_modules --exclude static-src web buildroot/opt/web/
-	docker build -t $(IMAGE_NAME) .
+buildroot: $(VERSION_SRC) $(WEB_SRC)
+	mkdir -p $(VERSION_DEST)
+	$(RSYNC) $(VERSION_SRC) $(VERSION_DEST)
 
-.PHONY: image .make-source
+	mkdir -p $(WEB_DEST)
+	$(RSYNC) --link-dest=$(WEB_SRC) $(WEB_SRC) $(WEB_DEST)
 
-.make-source:
-	$(MAKE) -C web
-
+.PHONY: $(WEB_SRC)
+$(WEB_SRC):
+	make -C web

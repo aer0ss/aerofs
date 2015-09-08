@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+set -eu
+
 #
 # This script simplifies writing Web Driver tests for the AeroFS appliance. It builds Docker images from the specified
 # directory, run the container with appropriate arguments, and print pretty console output. It assumes the container is
@@ -19,7 +20,7 @@ fi
 CALLER_DIR="$1"; shift
 HOST="$1"; shift
 while [ $# != 0 ] && [ "$1" != -- ]; do
-    EXTRA_DOCKER_ARGS="${EXTRA_DOCKER_ARGS} $1"
+    EXTRA_DOCKER_ARGS="${EXTRA_DOCKER_ARGS:-} $1"
     shift
 done
 if [ $# != 0 ]; then
@@ -60,10 +61,10 @@ rm -rf "${SCREEN_SHOTS}"/*
 SCREEN_SHOTS="$(cd "${SCREEN_SHOTS}" && pwd)"
 
 (set +e
-    (set -x; docker run --rm --name "${CONTAINER_NAME}" \
+    docker run --rm --name "${CONTAINER_NAME}" \
         -v "${SCREEN_SHOTS}":/screenshots \
-        ${EXTRA_DOCKER_ARGS} \
-        "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS})
+        ${EXTRA_DOCKER_ARGS:-} \
+        "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS}
 
     EXIT_CODE=$?
 

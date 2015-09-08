@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eu
-set -x
 
 ###############################################################################
 #
@@ -40,7 +39,6 @@ readonly RELEASE_VERSION="$2"
 ######################################################################
 function copy_resources_to_local_release_directories() {
     echo ">> copying resources to release directory"
-
     #------------------------------------------------------
     # setup the directory structure
     #------------------------------------------------------
@@ -67,8 +65,7 @@ function copy_resources_to_local_release_directories() {
 
     # piggy-back on gradle dist output to build aerofs.jar and fetch deps
     # TODO: avoid doing that twice (client and TS)
-    pushd ${local_BIN}
-
+    pushd ${local_BIN} >>/dev/null
     if is_storage_agent ; then
         JAR_SOURCE_DIR="storage-agent"
     else
@@ -86,7 +83,7 @@ function copy_resources_to_local_release_directories() {
             cp "$jar" "${local_ALL_PLATFORMS_RELEASE_LIB}"
         fi
     done
-    popd
+    popd >>/dev/null
 
     # remove unnecessary files
     # TODO (WW) make sure files to be removed are at correct locations. See the
@@ -133,7 +130,7 @@ function copy_resources_to_local_release_directories() {
             for SUFFIX in cli gui sh ; do
                 ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-$SUFFIX"
             done
-       fi
+        fi
     popd > /dev/null
 
     #------------------------------------------------------

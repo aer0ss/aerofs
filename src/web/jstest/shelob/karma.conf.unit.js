@@ -29,7 +29,7 @@ module.exports = function(config) {
       '../../web/static/js/aerofsapi.js',
       'lib/**/*.js',
       '../../web/static-src/js/aerofs.js',
-      '../../web/static-src/shelob/js/**/*.js',
+      '../../web/static-src/shelob/**/*.js',
       'unit/stubs.js',
       'unit/*Spec.js',
       '../../web/static/shelob/**/*.html',

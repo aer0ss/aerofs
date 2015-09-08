@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 #################################
 # arguments
@@ -16,8 +16,6 @@ function DieUsage {
 }
 
 [[ $# -eq 4 ]] || DieUsage
-
-set -u
 
 #################################
 # set parameters
@@ -57,8 +55,8 @@ trap "rm -r $DEB_BUILD_DIR" EXIT
 
 echo ">> build ${PACKAGE_NAME} version = $VERSION"
 
-pushd $DEB_BUILD_DIR > /dev/null
-trap "popd > /dev/null || true" EXIT
+pushd $DEB_BUILD_DIR >>/dev/null
+trap "popd >>/dev/null || true" EXIT
 
 HICOLOR_DIR=debian/usr/share/icons/hicolor
 DEBIAN_CONTROL_DIR=debian/DEBIAN
@@ -93,8 +91,8 @@ mkdir -p $HICOLOR_DIR/64x64/apps
 
 # AeroFS code and assets
 mkdir -p debian/usr/share/$AEROFS_PRODUCT_UNIX/
-cp -av $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/$AEROFS_PRODUCT_UNIX/
-cp -av $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/$AEROFS_PRODUCT_UNIX/shared/
+cp -a $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/$AEROFS_PRODUCT_UNIX/
+cp -a $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/$AEROFS_PRODUCT_UNIX/shared/
 
 # Freedesktop.org application file
 cp $SERVER_RELEASE_DIR/aerofs.linux/shared/$AEROFS_PRODUCT_UNIX.desktop debian/usr/share/applications/$AEROFS_PRODUCT_UNIX.desktop

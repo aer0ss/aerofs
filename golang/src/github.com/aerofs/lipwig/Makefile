@@ -1,6 +1,7 @@
+include ../../../Makefile.base
+
 IMAGE_NAME = aerofs/lipwig
+PACKAGE_NAME = github.com/aerofs/lipwig
 
-image:
-	GOARGS="-tags aero" ../../../../gockerize/gockerize $(IMAGE_NAME) github.com/aerofs/lipwig ../../..
-
-.PHONY: image
+GOCKERIZE_ARGS = GOARGS="-tags aero"
+GOCKERIZE_CTX = ../../..

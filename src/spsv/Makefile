@@ -1,25 +1,21 @@
+include ../../docker/Makefile.base
+
 IMAGE_NAME = aerofs/servlets
-DST_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF/lib
 
-image: base subdirs
+DIST_SRC = $(GIT_ROOT)/out.gradle/spsv/dist/
+DIST_DEST = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF/lib/
 
-base:
-	gradle --daemon dist
-	rm -rf buildroot
-	mkdir -p $(DST_DIR)
-	ln ../../out.gradle/spsv/dist/* $(DST_DIR)
+SUBDIRS:=$(wildcard resources/*/.)
+
+image: $(SUBDIRS)
+
+build: buildroot
 	docker build -t $(IMAGE_NAME) .
 
-DIRS =  sp \
-	log-collection \
-	openid \
-	verification
+buildroot: dist
+	mkdir -p $(DIST_DEST)
+	$(RSYNC) --link-dest=$(DIST_SRC) $(DIST_SRC) $(DIST_DEST)
 
-subdirs: $(DIRS:%=dockerize-%)
-dockerize-%:
-	@echo "========================================"
-	@echo "  Building Docker image $*"
-	@echo "========================================"
-	$(MAKE) -C resources/$* image
-
-.PHONY: base image subdirs
+.PHONY: $(SUBDIRS)
+$(SUBDIRS): build
+	make -C $@ image

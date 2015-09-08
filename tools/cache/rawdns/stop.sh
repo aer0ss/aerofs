@@ -1,4 +1,7 @@
 #!/bin/bash
+set -eu
+
+failure() { echo >&2 -e "\033[31merr: \033[0m- stop rawdns ($1)"; }
 
 docker stop rawdns
 docker rm --force rawdns
@@ -11,7 +14,7 @@ VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 if docker-machine ls "$VM" &>/dev/null ; then
     profile=/var/lib/boot2docker/profile
     service=/etc/systemd/system/docker.service
-    
+
     # detect old boot2docker vs new b2d-ng from docker-machine 0.4+
     os=$(docker-machine ssh $VM "if [ -f $service ] ; then \
         echo b2d-ng ; elif [ -f $profile ] ; then \
@@ -45,9 +48,9 @@ EOF
         echo "restarting docker daemon"
         docker-machine ssh $VM "sudo systemctl daemon-reload && sudo systemctl restart docker"
     else
-        echo "unsupported OS"
+        failure "unsupported OS"
         exit 1
     fi
 else
-    echo "dns config must be manually fixed on raw docker"
+    failure "dns config must be manually fixed on raw docker"
 fi

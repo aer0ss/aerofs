@@ -1,5 +1,5 @@
 gen
 *.pyc
-aerofs-installer.tgz
-aerofs-osx.zip
-AeroFSInstall.exe
+aerofs*-installer.tgz
+aerofs*-osx.zip
+AeroFS*Install.exe

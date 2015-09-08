@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e -u
+set -eu
 
 ###############################################################################
 #
@@ -120,7 +120,7 @@ function is_valid_product() {
 # check that a valid product was specified
 readonly PRODUCT="${1:-CLIENT}"
 if ! is_valid_product "$PRODUCT" ; then
-    echo "error: invalid build product $PRODUCT. Expected CLIENT|TEAM_SERVER." >&2
+    echo >&2 "error: invalid build product $PRODUCT. Expected CLIENT|TEAM_SERVER."
     exit $ERRBADPRODUCT
 fi
 readonly LOWERCASE_PRODUCT="$(echo $PRODUCT | tr '[A-Z]' '[a-z]')"
@@ -193,10 +193,10 @@ RELEASE_VERSION_REGEX="^[0-9]+\\.[0-9]+\\.[0-9]+$"
 ###############################################################################
 function check_version_format() {
     if [[ ! ${1:-} =~ $RELEASE_VERSION_REGEX ]]; then
-        echo "You said ${1} ..." >&2
-        echo "That's a weird release version.  I was expecting something matching:" >&2
-        echo "$RELEASE_VERSION_REGEX" >&2
-        echo "like 0.8.33 or something." >&2
+        echo >&2 "You said ${1} ..."
+        echo >&2 "That's a weird release version.  I was expecting something matching:"
+        echo >&2 "$RELEASE_VERSION_REGEX"
+        echo >&2 "like 0.8.33 or something."
         exit $ERRBADARGS
     fi
 }
@@ -209,12 +209,12 @@ function compute_product_names() {
         # Note the equals.
         local local_KEY_VALUE_PAIR=$(grep ^"$local_PROPERTY"= $LABELING_FILE)
         if [[ $? -ne 0 ]] ; then
-            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
+            echo >&2 "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
             exit 1
         fi
         local local_VALUE=$(echo "$local_KEY_VALUE_PAIR" | cut -d = -f 2)
         if [[ -z "$local_VALUE" ]] ; then
-            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
+            echo >&2 "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
             exit 1
         fi
         echo "$local_VALUE"
@@ -233,26 +233,26 @@ function compute_product_names() {
 # the current labeling
 function render_template() {
     if [ -z "$AEROFS_PRODUCT_SPACEFREE" -o -z "$AEROFS_PRODUCT_UNIX" -o -z "$AEROFS_PRODUCT" ] ; then
-        echo "Can't render template: one of the following is empty or unset:"
-        echo "\$AEROFS_PRODUCT           = $AEROFS_PRODUCT"
-        echo "\$AEROFS_PRODUCT_UNIX      = $AEROFS_PRODUCT_UNIX"
-        echo "\$AEROFS_PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
+        echo >&2 "Can't render template: one of the following is empty or unset:"
+        echo >&2 "\$AEROFS_PRODUCT           = $AEROFS_PRODUCT"
+        echo >&2 "\$AEROFS_PRODUCT_UNIX      = $AEROFS_PRODUCT_UNIX"
+        echo >&2 "\$AEROFS_PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
         exit 1
     fi
 
     if [ $# -ne 2 ]; then
-        echo "You invoked: $0 $@"
-        echo "Usage: $0 <template_file> <output_file>"
+        echo >&2 "You invoked: $0 $@"
+        echo >&2 "Usage: $0 <template_file> <output_file>"
         exit 1
     fi
 
     if [ ! -f "$1" ]; then
-        echo "Template file does not exist: $1"
+        echo >&2 "Template file does not exist: $1"
         exit 1
     fi
 
     if [ -f "$2" ]; then
-        echo "Tried to render to existing file: $2"
+        echo >&2 "Tried to render to existing file: $2"
         exit 1
     fi
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -eu
 #
 # Inject the given file to the root folder of a CoreOS image's OEM partition.
 #

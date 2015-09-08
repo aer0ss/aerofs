@@ -10,7 +10,6 @@ created=$(
     cut -d. -f1 |\
     sed 's/T/ /'
 )
-echo "$1 created: $created" 1>&2
 
 # find first file in build context newer than image, if any
 # NB: docker gives UTC timestamps, make sure find does not compare it to local time

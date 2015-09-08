@@ -1,0 +1,22 @@
+GIT_ROOT = $(shell git rev-parse --show-toplevel)
+include $(GIT_ROOT)/Makefile.common
+
+IMAGE_NAME =
+PACKAGE_NAME =
+
+GOCKERIZE_ARGS =
+GOCKERIZE_BIN = $(GIT_ROOT)/golang/gockerize/gockerize
+# N.B.: relative to the build dir.
+GOCKERIZE_CTX = .
+
+REGISTRY = registry.aerofs.com:5050
+TAG = latest
+
+image:
+	$(GOCKERIZE_ARGS) $(GOCKERIZE_BIN) $(IMAGE_NAME) $(PACKAGE_NAME) $(GOCKERIZE_CTX)
+	$(call success,"- build $(IMAGE_NAME)")
+
+.PHONY: push
+push: image
+	docker tag -f $(IMAGE_NAME) $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+	docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG)

@@ -88,7 +88,6 @@ def reboot_system(e, wait):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 4 of 5'))
 
     e.get('.btn-primary').click()
-    print "Rebooting system..."
 
     wait.until_display('#success-modal', timeout=10 * 60)
     e.get('#success-modal .btn-primary').click()
@@ -98,7 +97,6 @@ def repackage_installers(e, wait):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 5 of 5'))
 
     e.get('.btn-primary').click()
-    print "Repackaging installers..."
 
     wait.until_display('#success-modal', timeout=20 * 60)
     e.get('#success-modal .btn-primary').click()

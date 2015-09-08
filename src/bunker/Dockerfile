@@ -1,11 +1,7 @@
 FROM aerofs/base.python2.7
 
-MAINTAINER AeroFS "support@aerofs.com"
-
-# Expose port
 EXPOSE 8484
 
-# Set working dir, or the app would refuse to start
 WORKDIR /opt/bunker
 
 CMD [ "/run.sh" ]
@@ -17,7 +13,7 @@ RUN apk --update add \
         py-crypto \
         py-mysqldb \
         py-psutil \
-	tar &&\
+        tar && \
     rm -rf /var/cache/apk/*
 
 COPY root/requirements-exact.txt /
@@ -25,6 +21,4 @@ COPY root/requirements-exact.txt /
 RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
         -r /requirements-exact.txt
 
-# Add source files last
 COPY root buildroot /
-

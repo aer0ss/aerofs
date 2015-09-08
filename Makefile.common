@@ -1,0 +1,25 @@
+success = @echo >&2 "\033[32mok: \033[0m$(1)"
+
+%:
+	@echo >&2 'Error: could not `make $@`'
+	@echo >&2 'usage: make [-s]'
+	@make -pn \
+		| grep -A1 "^# makefile (from" \
+		| grep -v "^#\|^--" \
+		| grep -v '_SRC' \
+		| grep -v '^GIT_ROOT' \
+		| grep -v '^MAKEFILE_LIST' \
+		| grep -v '^PWD' \
+		| grep -v '^RSYNC' \
+		| grep -v 'success' \
+		| sort \
+		| sed 's/ = /=/' \
+		| sed 's/^/       /' \
+		| uniq >&2
+	@make -pRrq -f $(firstword $(MAKEFILE_LIST)) : 2>/dev/null \
+		| awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' \
+		| egrep -v -e '^[^[:alnum:]]' \
+		| grep -v '^Makefile' \
+		| sort \
+		| xargs echo >&2 '      '
+	@exit 1

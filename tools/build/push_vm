@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e -u
+set -eu
+
 #
 # Upload the OVA artifact and tag the commit used.
 #

@@ -1,0 +1,43 @@
+GIT_ROOT = $(shell git rev-parse --show-toplevel)
+include $(GIT_ROOT)/Makefile.common
+
+IMAGE_NAME =
+IMAGE_CTX = .
+
+REGISTRY = registry.aerofs.com:5050
+TAG = latest
+
+RSYNC = rsync -a --copy-unsafe-links --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
+
+LICENSING_SRC = $(GIT_ROOT)/src/licensing/
+PACKAGES_SRC = $(GIT_ROOT)/out.gradle/packages/
+PROTO_SRC = $(GIT_ROOT)/out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java/
+PYTHON_LIB_SRC = $(GIT_ROOT)/src/python-lib/
+VERSION_SRC = $(GIT_ROOT)/out.gradle/packages/current.ver
+
+image: build buildroot
+	docker build -t $(IMAGE_NAME) $(IMAGE_CTX)
+	$(call success,"- build $(IMAGE_NAME)")
+
+build:
+buildroot:
+
+dist: $(PROTO_SRC)
+	gradle --daemon dist
+
+$(LICENSING_SRC):
+	make -C $(LICENSING_SRC)
+
+$(PROTO_SRC):
+	make -C $(GIT_ROOT) proto
+
+$(PYTHON_LIB_SRC):
+	make -C $(PYTHON_LIB_SRC)
+
+$(VERSION_SRC):
+	make -C $(GIT_ROOT) write_version
+
+clean:
+	rm -rf buildroot
+
+.PHONY: dist image build buildroot clean

@@ -1,11 +1,10 @@
+include ../../docker/Makefile.base
+
 IMAGE_NAME = aerofs/trifrost
-DST_DIR = buildroot/opt/trifrost
 
-image:
-	gradle --daemon dist
-	rm -rf buildroot
-	mkdir -p $(DST_DIR)
-	ln ../../out.gradle/trifrost/dist/* $(DST_DIR)
-	docker build -t $(IMAGE_NAME) .
+DIST_SRC = $(GIT_ROOT)/out.gradle/trifrost/dist/
+DIST_DEST = buildroot/opt/trifrost/
 
-.PHONY: image
+buildroot: dist
+	mkdir -p $(DIST_DEST)
+	$(RSYNC) --link-dest=$(DIST_SRC) $(DIST_SRC) $(DIST_DEST)

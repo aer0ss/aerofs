@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -eu
 
 die_usage() {
     (set +x
@@ -35,7 +35,7 @@ fi
 SHIP_YML="$2"
 EXTRA_FILES="$3"
 OUTPUT="$4"
-[[ "$5" = nopush ]] && PUSH=0 || PUSH=1
+[[ "${5:-push}" = nopush ]] && PUSH=0 || PUSH=1
 
 # Absolute paths are required by docker. (the realpath command is unavailable on OSX)
 abspath() {
@@ -108,15 +108,12 @@ setup_preload_registry() {
     if [ ${PUSH} = 1 ]; then
         # Push images to the preload registry
         for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
-            (set +x
-                echo "============================================================"
-                echo " Pushing ${i} to local preload registry..."
-                echo "============================================================"
-            )
             PRELOAD="127.0.0.1:${REPO_PORT}/${i}"
             docker tag -f "${i}" "$PRELOAD"
             docker push "${PRELOAD}"
             docker rmi "${PRELOAD}"
+
+            echo >&2 -e "\033[32mok: \033[0m- push ${PRELOAD}"
         done
     fi
 
@@ -150,6 +147,7 @@ build_cloud_config_and_vdi() {
     # Build the builder (how meta)
     local IMAGE=shipenterprise/vm-builder
     docker build -t ${IMAGE} "${THIS_DIR}/builder"
+    echo >&2 -e "\033[32mok: \033[0m- build ${IMAGE}"
 
     # Run the builder. Need privilege to run losetup
     docker run --rm --privileged \

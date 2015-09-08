@@ -1,6 +1,6 @@
+include ../../Makefile.base
+
 IMAGE_NAME = aerofs/zephyr
+PACKAGE_NAME = aerofs.com/valkyrie
 
-image:
-	../../../gockerize/gockerize $(IMAGE_NAME) aerofs.com/valkyrie
-
-.PHONY: image
+GOCKERIZE_CTX = .

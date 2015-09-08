@@ -1,4 +1,7 @@
 FROM scratch
-ADD bin/analytics /analytics
+
 EXPOSE 9400
+
 CMD ["/analytics"]
+
+ADD bin/analytics /analytics

@@ -88,5 +88,5 @@ echo '+---------------------------------------'
 
 call make_release_resources $PRODUCT $RELEASE_VERSION $RELEASE_FLAGS
 call make_client_installers $PRODUCT $RELEASE_VERSION $SIGN_MODE $BUILD_FLAGS
-echo ">> successfully built $SIGN_MODE $PRODUCT release version $RELEASE_VERSION"
+echo >&2 -e "\033[32mok: \033[0m- package $PRODUCT-$RELEASE_VERSION ($SIGN_MODE)"
 exit 0

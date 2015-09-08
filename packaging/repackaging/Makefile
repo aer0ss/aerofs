@@ -1,40 +1,36 @@
+include ../../docker/Makefile.base
+
 IMAGE_NAME = aerofs/repackaging
-ROOT = buildroot
 
-RSYNC = rsync -a --delete --delete-excluded
-PYLIB_SRC = ../../src/python-lib/aerofs_common
+AEROFS_COMMON_SRC = $(GIT_ROOT)/src/python-lib/aerofs_common/
+AEROFS_COMMON_DEST = buildroot/opt/repackaging/api/aerofs_common/
+CONTAINER_SCRIPTS_SRC = $(GIT_ROOT)/docker/base/base/root/container-scripts/
+CONTAINER_SCRIPTS_DEST = buildroot/container-scripts/
+PACKAGES_DEST = buildroot/opt/repackaging/installers/original/
+RSYNC += --exclude '_gen'
 
-image: .copy-packages
-	$(RSYNC) ../../docker/base/base/root/container-scripts buildroot/
-	$(RSYNC) --exclude '*.pyc' --exclude '_gen' $(PYLIB_SRC) buildroot/opt/repackaging/api/
+PACKAGES = $(shell ls $(PACKAGES_SRC))
+
+build:
 	../../tools/cache/img_fresh.sh $(IMAGE_NAME) . || { \
-		cat Dockerfile.base | docker build -t $(IMAGE_NAME)-base - &&\
+		docker build -t $(IMAGE_NAME)-base - < Dockerfile.base && \
 		./addpkg.sh $(IMAGE_NAME)-base ./apk $(IMAGE_NAME)-base \
-			dmg-hfsplus msitools &&\
-		docker build -t $(IMAGE_NAME) . \
+			dmg-hfsplus msitools \
 	;}
 
-# Copy client packages
-SRC_PKGS_DIR = ../../out.gradle/packages
-DST_PKGS_DIR = $(ROOT)/opt/repackaging/installers/original
-
-# Copy Eyja packages
-EYJA_SRC_DIR = $(HOME)/repos/aeroim-client/dist/final
-EYJA_DST_DIR = $(DST_PKGS_DIR)/eyja
-
-PKGS = $(shell ls $(SRC_PKGS_DIR))
-DST_PKGS = $(PKGS:%=$(DST_PKGS_DIR)/%)
-
-.copy-packages:
-ifeq (,$(filter 17 18, $(words $(PKGS))))
-	$(error $(words $(PKGS)) files were found in $(SRC_PKGS_DIR). I expect 17 or 18(syncdet only))
+buildroot:
+ifeq (,$(filter 17 18, $(words $(PACKAGES))))
+	$(error $(words $(PACKAGES)) files were found in $(PACKAGES_SRC). I expect 17 or 18(syncdet only))
 endif
-	# Remove old files from buildroot. TODO (WW) use the buildroot-syncroot approach
-	mkdir -p $(DST_PKGS_DIR)
-	rm -rf $(DST_PKGS_DIR)/*
-	ln $(SRC_PKGS_DIR)/* $(DST_PKGS_DIR)/
-	mkdir -p $(EYJA_DST_DIR)
-	rm -rf $(EYJA_DST_DIR)/*
-	ln $(EYJA_SRC_DIR)/* $(EYJA_DST_DIR)/ ||: # don't fail if eyja not present
+	mkdir -p $(PACKAGES_DEST)
+	$(RSYNC) --link-dest=$(PACKAGES_SRC) $(PACKAGES_SRC) $(PACKAGES_DEST)
 
-.PHONY: image .copy-packages
+	# TODO: Switch to rsync. Until then, don't fail if eyja is missing
+	mkdir -p $(PACKAGES_DEST)/eyja
+	ln -f ~/repos/aeroim-client/dist/final/* $(PACKAGES_DEST)/eyja/ ||:
+
+	mkdir -p $(AEROFS_COMMON_DEST)
+	$(RSYNC) --link-dest=$(AEROFS_COMMON_SRC) $(AEROFS_COMMON_SRC) $(AEROFS_COMMON_DEST)
+
+	mkdir -p $(CONTAINER_SCRIPTS_DEST)
+	$(RSYNC) --link-dest=$(CONTAINER_SCRIPTS_SRC) $(CONTAINER_SCRIPTS_SRC) $(CONTAINER_SCRIPTS_DEST)

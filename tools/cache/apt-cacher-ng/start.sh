@@ -1,12 +1,14 @@
 #!/bin/bash
+set -eu
 # apt-cacher-ng provides package caching for debian/ubuntu
 
-set -e
+PWD="$(cd $(dirname $0); pwd -P)"
 
-PWD="$( cd $(dirname $0) ; pwd -P )"
+success() { echo >&2 -e "\033[32mok: \033[0m- start apt-cacher-ng"; }
 
 if [[ -n "$(docker ps -q -f 'name=apt-cacher-ng')" ]] ; then
     echo "apt-cacher-ng already running"
+    success
     exit 0
 fi
 
@@ -28,4 +30,4 @@ docker run -d --restart=always --name apt-cacher-ng \
         --dns 8.8.8.8 \
         --volumes-from cache-apt \
         apt-cacher-ng
-
+success

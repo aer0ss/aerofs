@@ -1,21 +1,23 @@
+include ../../Makefile.base
+
 IMAGE_NAME = aerofs/sa-loader
 
-TAG = buildroot/tag
+VERSION_SRC = ../../../out.gradle/packages/current.ver
+VERSION_DEST = buildroot/tag
 
-image: $(TAG)
-	../../ship/vm/loader/build.sh
-	docker build -t $(IMAGE_NAME) .
-
+verify:
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		$(IMAGE_NAME) \
 		verify $(IMAGE_NAME)
+	$(call success,"- verify $(IMAGE_NAME)")
 
-$(TAG): ../../../out.gradle/packages/current.ver
-	mkdir -p $(@D)
-	sed -e 's/.*=//' $< > $@
+build:
+	../../ship/vm/loader/build.sh
 
-../../../out.gradle/packages/current.ver:
-	../../../invoke write_version
+buildroot: $(VERSION_SRC)
+	mkdir -p buildroot
+	sed -e 's/.*=//' $< > $(VERSION_DEST)
 
-.PHONY: image
+$(VERSION_SRC):
+	make -C ../../.. write_version

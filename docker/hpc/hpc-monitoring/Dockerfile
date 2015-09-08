@@ -6,11 +6,10 @@ EXPOSE 5000
 
 RUN apk --update add \
        bash \
+       py-pip \
+       py-psutil \
        python \
-       python-dev \
-       py-psutil\
-       py-pip &&\
-
+       python-dev && \
     rm -rf /var/cache/apk/*
 
 ADD root /

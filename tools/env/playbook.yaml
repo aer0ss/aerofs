@@ -3,7 +3,7 @@
   connection: local
 
   vars:
-    aerofs_root: "{{ ansible_env.HOME}}/repos/aerofs"
+    aerofs_root: "{{ ansible_env.HOME }}/repos/aerofs"
 
   tasks:
 
@@ -67,6 +67,7 @@
         - git-review
         - jinja2
         - protobuf
+        - psutil
         - pyyaml
         - requests
         - virtualenv

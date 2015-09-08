@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 THIS_DIR="$(dirname $0)"
 

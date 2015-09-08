@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eu
-set -x
 
 ###############################################################################
 #
@@ -11,24 +10,24 @@ set -x
 
 function DieUsage {
     set +x
-    echo "usage: $0 <build_product> <release_version> <sign_mode>" >&2
-    echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
-    echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
-    echo "       [--build-all]" >&2
-    echo " " >&2
-    echo "<build_product>: CLIENT|TEAM_SERVER|STORAGE_AGENT" >&2
-    echo "<release_version>: release version (for example: 0.1.0)" >&2
-    echo "<sign_mode>: SIGNED|UNSIGNED" >&2
-    echo "[--build-linux-tgz]: build the Linux installer .tgz" >&2
-    echo "[--build-linux-update-tgzs]: build the Linux updater .tgzs" >&2
-    echo "[--build-linux-deb]: build the Linux installer .deb " >&2
-    echo "[--build-windows-exe]: build the Windows installer .exe " >&2
-    echo "[--build-windows-msi]: build the Windows installer .msi " >&2
-    echo "[--build-osx-packages]: build the OSX installer/updater packages" >&2
-    echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
-    echo " " >&2
-    echo "example: $0 CLIENT 0.1.0 UNSIGNED --build-all" >&2
-    echo "example: $0 TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz --build-linux-update-tgzs" >&2
+    echo >&2 "usage: $0 <build_product> <release_version> <sign_mode>"
+    echo >&2 "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]"
+    echo >&2 "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]"
+    echo >&2 "       [--build-all]"
+    echo >&2 " "
+    echo >&2 "<build_product>: CLIENT|TEAM_SERVER|STORAGE_AGENT"
+    echo >&2 "<release_version>: release version (for example: 0.1.0)"
+    echo >&2 "<sign_mode>: SIGNED|UNSIGNED"
+    echo >&2 "[--build-linux-tgz]: build the Linux installer .tgz"
+    echo >&2 "[--build-linux-update-tgzs]: build the Linux updater .tgzs"
+    echo >&2 "[--build-linux-deb]: build the Linux installer .deb "
+    echo >&2 "[--build-windows-exe]: build the Windows installer .exe "
+    echo >&2 "[--build-windows-msi]: build the Windows installer .msi "
+    echo >&2 "[--build-osx-packages]: build the OSX installer/updater packages"
+    echo >&2 "[--build-all]: build all of the above (the others do not need to be specified)"
+    echo >&2 " "
+    echo >&2 "example: $0 CLIENT 0.1.0 UNSIGNED --build-all"
+    echo >&2 "example: $0 TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz --build-linux-update-tgzs"
     exit $ERRBADARGS
 }
 
@@ -105,16 +104,16 @@ function make_linux_installer_tgz() {
     local local_LINUX_INSTALLER_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz
     rm -rf $TGZ_EXPANDED_DIR
     mkdir -p $TGZ_EXPANDED_DIR/aerofs
-    cp -av "${LOCAL_RELEASE_DIR}/aerofs.linux"/* "${TGZ_EXPANDED_DIR}/aerofs/"
-    cp -av "${LOCAL_RELEASE_DIR}/aerofs"/* "${TGZ_EXPANDED_DIR}/aerofs/shared/"
-    pushd "${TGZ_EXPANDED_DIR}/aerofs/"
-        ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
-        if ! is_storage_agent ; then
-            for suffix in cli gui sh ; do
-                ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
-            done
-        fi
-    popd
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux"/* "${TGZ_EXPANDED_DIR}/aerofs/"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${TGZ_EXPANDED_DIR}/aerofs/shared/"
+    pushd "${TGZ_EXPANDED_DIR}/aerofs/" >>/dev/null
+    ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
+    if ! is_storage_agent ; then
+        for suffix in cli gui sh ; do
+            ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
+        done
+    fi
+    popd >>/dev/null
     mkdir -p ${PACKAGE_DIR}
     tar -C "$TGZ_EXPANDED_DIR" -zcf "${PACKAGE_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
 }
@@ -315,13 +314,17 @@ function make_osx_packages() {
         Darwin)
             # Create read-write DMG
             # TODO: make the volume name not spacefree (requires fixing DS_Store for aerofsts)
-            hdiutil create -fs HFS+ -volname "${AEROFS_PRODUCT} Installer" \
-                -srcfolder "${DMG_TEMP_DIR}/Release/" \
-                -format UDRW \
-                -o "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg"
+            hdiutil create \
+                    -fs HFS+ \
+                    -volname "${AEROFS_PRODUCT} Installer" \
+                    -srcfolder "${DMG_TEMP_DIR}/Release/" \
+                    -format UDRW \
+                    -o "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg"
             # Mount DMG
             MOUNTPOINT="${DMG_TEMP_DIR}/mnt"
-            hdiutil attach -readwrite -noautoopen "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" -mountpoint "$MOUNTPOINT"
+            hdiutil attach -readwrite -noautoopen \
+                    "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
+                    -mountpoint "$MOUNTPOINT"
             # Set volume icon creator to 'icnC' (icon creator)
             SetFile -c icnC "${MOUNTPOINT}/.VolumeIcon.icns"
             # Set volume icon enabled
@@ -329,7 +332,10 @@ function make_osx_packages() {
             # Unmount DMG
             hdiutil detach "$MOUNTPOINT"
             # Convert RW DMG to bzip2-compressed DMG
-            hdiutil convert "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" -format UDBZ -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
+            hdiutil convert \
+                    "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}-temp.dmg" \
+                    -format UDBZ \
+                    -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}"
             ;;
         Linux)
             # Create HFS filesystem
@@ -351,7 +357,7 @@ function make_osx_packages() {
             rm "$HFS_IMAGE"
             ;;
         *)
-            echo "unsupported platform $(uname)"
+            echo >&2 "unsupported platform $(uname)"
             exit 1
             ;;
     esac
@@ -394,8 +400,8 @@ function make_installers() {
     fi
 
     if [ "$JOBS" == "" ] ; then
-        echo "The caller did not request to make any client installers!"
-        echo "This is likely a bug. Abort!"
+        echo >&2 "The caller did not request to make any client installers!"
+        echo >&2 "This is likely a bug. Abort!"
         exit 1
     fi
 
@@ -406,7 +412,7 @@ function make_installers() {
     done
 
     if [ "$FAIL" != "0" ] ; then
-        echo "$FAIL of the packaging tasks failed."
+        echo >&2 "$FAIL of the packaging tasks failed."
         exit $FAIL
     fi
 }

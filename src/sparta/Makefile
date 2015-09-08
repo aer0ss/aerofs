@@ -1,11 +1,10 @@
+include ../../docker/Makefile.base
+
 IMAGE_NAME = aerofs/sparta
-DST_DIR = buildroot/opt/sparta
 
-image:
-	gradle --daemon dist
-	rm -rf buildroot
-	mkdir -p $(DST_DIR)
-	ln ../../out.gradle/sparta/dist/* $(DST_DIR)
-	docker build -t $(IMAGE_NAME) .
+DIST_SRC = $(GIT_ROOT)/out.gradle/sparta/dist/
+DIST_DEST = buildroot/opt/sparta/
 
-.PHONY: image 
+buildroot: dist
+	mkdir -p $(DIST_DEST)
+	$(RSYNC) --link-dest=$(DIST_SRC) $(DIST_SRC) $(DIST_DEST)

@@ -1,21 +1,10 @@
 FROM aerofs/base.jre8
 
-MAINTAINER AeroFS "support@aerofs.com"
-
-# Use a single RUN statement to minimize image size. Alternatively, run a shell script
-# which would be much cleaner.
-RUN \
-    #
-    # PREDOCKER forward logs to docker log collector
-    #
-    mkdir -p /var/log/havre &&\
+RUN mkdir -p /var/log/havre && \
     ln -sf /dev/stdout /var/log/havre/havre.log
 
-# Expose port
 EXPOSE 8083 8084
 
-# Define default command
 CMD [ "/run.sh" ]
 
-# Import files
 COPY root buildroot /

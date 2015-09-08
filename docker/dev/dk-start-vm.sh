@@ -3,7 +3,7 @@ set -eu
 
 if [ $# -ne 1 ]
 then
-    echo "Usage: $0 <VM>"
+    echo >&2 "Usage: $0 <VM>"
     exit 1
 fi
 
@@ -57,6 +57,6 @@ then
         echo "VM ${VM} already started."
     fi
 else
-    echo "VM ${VM} does not exist. Please run dk-create-vm."
+    echo >&2 "VM ${VM} does not exist. Please run dk-create-vm."
     exit 1
 fi

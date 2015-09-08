@@ -1,63 +1,42 @@
-SRC=static-src
-DEST=static
-LESS=less
-JS=js
+SRC = static-src
+DEST = static
 
-IS_WATCHMAN=$(shell which watchman)
+APP_FOLDERS = $(SRC)/fellowship $(SRC)/saruman $(SRC)/shadowfax $(SRC)/shelob $(SRC)/strider
+APP_TARGETS = $(DEST)/fellowship.js $(DEST)/saruman.js $(DEST)/shadowfax.js $(DEST)/shelob.js $(DEST)/strider.js
 
-.PHONY : all clean install watch clean-watch clean-dirs setup_test test cache jshint
-APP_TARGETS = $(DEST)/shadowfax.js $(DEST)/strider.js $(DEST)/shelob.js $(DEST)/fellowship.js $(DEST)/saruman.js
-
-# input less files
-FILES_IN_LESS = $(wildcard $(SRC)/$(LESS)/*.less)
-# intermediate css files - compiled from less, but not yet minified
+FILES_IN_LESS = $(wildcard $(SRC)/less/*.less)
 FILES_OUT_CSS = $(subst static-src,static,$(subst /less/,/css/compiled/,$(FILES_IN_LESS:.less=.css)))
-# minified css files, suitable for production use
 FILES_OUT_MINIFIED_CSS = $(subst .css,.min.css,$(FILES_OUT_CSS))
 
-# input js files
-FILES_IN_JS = $(wildcard $(SRC)/$(JS)/*.js)
-# uglified js files, smaller, faster loading
+FILES_IN_JS = $(wildcard $(SRC)/js/*.js)
 FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_JS)))
 
-# Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(APP_TARGETS)
 
-# Destroy the final targets
-ifneq ($(IS_WATCHMAN),)
-clean: clean-watch clean-dirs
-else
-clean: clean-dirs
+all: install $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(APP_TARGETS)
+
+clean:
+ifneq ($(shell which watchman),)
+	watchman trigger-del $(shell pwd) remakejs
+	watchman trigger-del $(shell pwd) remakeless
 endif
 
+	rm -rf $(DEST)/css/compiled/
+	rm -rf $(DEST)/js/compiled/
+	rm -f $(DEST)/*.js
+
+
+# npm install ALWAYS refreshes make targets
 install:
 	npm install
 
-clean-watch:
-	watchman trigger-del $(shell pwd) remakejs
-	watchman trigger-del $(shell pwd) remakeless
 
-clean-dirs:
-	rm -rf $(DEST)/css/compiled/
-	rm -rf node_modules/
-	rm -rf $(DEST)/js/compiled/
-	rm -f $(DEST)/*.js
-	mkdir $(DEST)/css/compiled/
-	mkdir $(DEST)/js/compiled/
-
-.ONESHELL:
-# set up npm install to run the tests
 setup_test:
 	npm install
-	cd ../jstest && npm install
+	( cd ../jstest && npm install )
 
-.ONESHELL:
-# run karma tests
-test:
+test: setup_test
 	../jstest/run_tests.sh
 
-# Watch the filesystem and recompile on file modification
-TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax
 
 # The list to run the jshint on:
 FILES   += $(SRC)/js/recruiting.js
@@ -67,69 +46,49 @@ FILES   += $(SRC)/js/csrf.js
 #  FILES ++ $(SRC)/js/aerofs.js
 
 jshint:
-	for t in $(FILES) ; \
-	do \
-		jshint --config $(PWD)/jshintrc $$t ; \
+	for t in $(FILES) ; do \
+		jshint --config $(shell pwd)/jshintrc $$t ; \
 	done
 
 watch:
 	watchman watch $(shell pwd)
-	for t in $(TARGS) ; \
-	 do \
-	 	watchman -- trigger $$t remakejs_$$t '*.js' -- python $(shell pwd)/make.py $(shell pwd) ; \
-	 	watchman -- trigger $$t remakeless_$$t '*.less' -- python $(shell pwd)/make.py $(shell pwd) ; \
-	 done
+	for t in $(APP_FOLDERS) ; do \
+		watchman -- trigger $$t remakejs_$$t '*.js' -- python $(shell pwd)/make.py $(shell pwd) ; \
+		watchman -- trigger $$t remakeless_$$t '*.less' -- python $(shell pwd)/make.py $(shell pwd) ; \
+	done
 
 
-# .min.css files come from .css files...
-$(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css install
+$(DEST)/css/compiled/%.css: $(SRC)/less/%.less
+	@mkdir -p $(@D)
+	node_modules/.bin/lessc $< > $@
+$(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css
 	node_modules/.bin/minify $<
 
-# and .css files come from .less files.
-$(DEST)/css/compiled/%.css: $(SRC)/$(LESS)/%.less install
-	mkdir -p $(@D)
-	node_modules/.bin/lessc $< > $@
-
-# .js files in the compiled folder come from .js files in the source folder
-$(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js install
-	mkdir -p $(@D)
+$(DEST)/js/compiled/%.js: $(SRC)/js/%.js
+	@mkdir -p $(@D)
 	node_modules/.bin/uglifyjs -o $@ $<
 
-#concatenation, watch the changes in $(DEST)/js/compiled/%.js turn it into bundled.js
 
-$(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
-	$(SRC)/shelob/js/controllers.js \
-	$(SRC)/shelob/js/directives.js \
-	$(SRC)/shelob/js/filters.js \
-	$(SRC)/shelob/js/services.js \
-	$(SRC)/shelob/js/config/config_private.js \
-	$(SRC)/shadowfax/directives.js \
-	$(SRC)/shadowfax/filters.js
+SHELOB_FILES = $(wildcard $(SRC)/shelob/*.js)
+SHELOB_CONFIG_FILE = $(SRC)/shelob/config/config_private.js
+SHELOB_DEPENDENCIES = $(SRC)/shadowfax/directives.js $(SRC)/shadowfax/filters.js
+$(DEST)/shelob.js: $(SHELOB_FILES) $(SHELOB_CONFIG_FILE) $(SHELOB_DEPENDENCIES)
 	cat $^ > $@
 
-$(DEST)/fellowship.js: $(SRC)/fellowship/app.js \
-	$(SRC)/fellowship/controllers.js \
-	$(SRC)/fellowship/directives.js \
-	$(SRC)/fellowship/filters.js
+FELLOWSHIP_FILES = $(wildcard $(SRC)/fellowship/*.js)
+$(DEST)/fellowship.js: $(FELLOWSHIP_FILES)
 	cat $^ > $@
 
-$(DEST)/saruman.js: $(SRC)/saruman/app.js \
-	$(SRC)/saruman/controllers.js \
-	$(SRC)/saruman/directives.js \
-	$(SRC)/saruman/filters.js
+SARUMAN_FILES = $(wildcard $(SRC)/saruman/*.js)
+$(DEST)/saruman.js: $(SARUMAN_FILES)
 	cat $^ > $@
 
-$(DEST)/shadowfax.js: $(SRC)/shadowfax/app.js \
-	$(SRC)/shadowfax/controllers.js \
-	$(SRC)/shadowfax/pagination.js \
-	$(SRC)/shadowfax/filters.js \
-	$(SRC)/shadowfax/directives.js \
-	$(SRC)/shelob/js/services.js \
-	$(SRC)/shelob/js/config/config_private.js
+SHADOWFAX_FILES = $(wildcard $(SRC)/shadowfax/*.js)
+SHADOWFAX_DEPENDENCIES = $(SRC)/shelob/services.js $(SRC)/shelob/config/config_private.js
+$(DEST)/shadowfax.js: $(SHADOWFAX_FILES) $(SHADOWFAX_DEPENDENCIES)
 	cat $^ > $@
 
-$(DEST)/strider.js: $(SRC)/strider/app.js \
-	$(SRC)/strider/controllers.js \
-	$(SRC)/shadowfax/filters.js \
-	$(SRC)/strider/directives.js
+STRIDER_FILES = $(wildcard $(SRC)/strider/*.js)
+STRIDER_DEPENDENCIES = $(SRC)/shadowfax/filters.js
+$(DEST)/strider.js: $(STRIDER_FILES) $(STRIDER_DEPENDENCIES)
 	cat $^ > $@

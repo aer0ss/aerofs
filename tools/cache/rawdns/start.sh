@@ -1,16 +1,15 @@
 #!/bin/bash
+set -eu
 # rawdns provides a Docker-aware DNS server.  You'll need to configure your
 # Docker daemon to use it by default (i.e. "--dns 172.17.42.1"), and configure
 # your host system's resolver as well.
 #
 # github.com/tianon/rawdns
 
-set -e
+PWD="$(cd $(dirname $0); pwd -P)"
 
-# To print on stderr
-echoerr() { echo "$@" 1>&2; }
-
-PWD="$( cd $(dirname $0) ; pwd -P )"
+failure() { echo >&2 -e "\033[31merr: \033[0m- start rawdns ($1)"; }
+success() { echo >&2 -e "\033[32mok: \033[0m- start rawdns"; }
 
 # detect docker bridge IP
 BRIDGE=$(docker run --rm alpine:3.3 ip route | grep default | cut -d ' ' -f 3)
@@ -42,6 +41,7 @@ fi
 
 if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns already configured"
+    success
     exit 0
 fi
 
@@ -49,7 +49,7 @@ VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 
 if docker-machine ls "$VM" &>/dev/null ; then
     echo "updating docker dameon dns config"
-    
+
     profile=/var/lib/boot2docker/profile
     service=/etc/systemd/system/docker.service
 
@@ -91,23 +91,24 @@ EOF
         docker-machine ssh $VM "if [ \$(grep -E \"^ExecStart=\" $service | grep -v -F \"\\\$EXTRA_ARGS\" | wc -l) -eq 1 ] ; then \
             cat $service | sed 's/^ExecStart=\\(.*\\)/ExecStart=\\1 \\\$EXTRA_ARGS/' | sudo tee ${service}.new ; \
             sudo mv ${service}.new ${service} ; fi"
-        
+
         echo "restarting docker daemon"
         docker-machine ssh $VM "sudo systemctl daemon-reload && sudo systemctl restart docker"
     else
-        echoerr "unsupported OS"
+        failure "unsupported OS"
         exit 1
     fi
 else
     # TODO: automatically adjust dns setting for raw docker env
-    echoerr 'Manually add "--dns $BRIDGE" to the options of your docker daemon and restart it'
+    failure "manually add '--dns $BRIDGE' to the options of your docker daemon and restart it"
     exit 1
 fi
 
 # sanity check
 if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns successfully configured"
+    success
 else
-    echoerr "invalid dns configuration"
+    failure "invalid dns configuration"
     exit 1
 fi

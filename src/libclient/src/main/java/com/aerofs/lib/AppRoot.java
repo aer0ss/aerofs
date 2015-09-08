@@ -35,7 +35,7 @@ public class AppRoot
             // N.B. we have a library named ./lib/guice-aerofs.jar , which will match
             // C.AEROFS_JAR without the separator
             if (s.contains(File.separator + ClientParam.AEROFS_JAR)) {
-                v = s.substring(0,s.length() - ClientParam.AEROFS_JAR.length() - 1);
+                v = s.substring(0, s.length() - ClientParam.AEROFS_JAR.length() - 1);
                 break;
             }
         }

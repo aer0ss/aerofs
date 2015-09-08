@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 # See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
 GREEN='0;32'
@@ -62,7 +62,7 @@ fi
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 "${THIS_DIR}/../../tools/wait-for-url.sh" ${HOST}
 
-"${THIS_DIR}/../../system-tests/bunker/setup/test.sh" ${HOST} ${CREATE_FIRST_USER} ${EXTRA_DOCKER_ARGS}
+"${THIS_DIR}/../../system-tests/bunker/setup/test.sh" ${HOST} ${CREATE_FIRST_USER} ${EXTRA_DOCKER_ARGS:-}
 
 if [ ${CREATE_FIRST_USER} = true ]; then
     success 'Services is up and running.'

@@ -106,11 +106,11 @@ do
         -o $INSTALLERS/modified/${program}Install-${version}.exe &
 
     "${TOOLS}/win/inject_msi.sh" \
-        ${version} \
-        "${SITE_PROP}" \
-        "${INSTALLERS}/original/${program}Install-${version}.msi" \
-        "${INSTALLERS}/modified/${program}Install-${version}.msi" \
-        "${TOOLS}/win/${program}_workspace" &
+       ${version} \
+       "${SITE_PROP}" \
+       "${INSTALLERS}/original/${program}Install-${version}.msi" \
+       "${INSTALLERS}/modified/${program}Install-${version}.msi" \
+       "${TOOLS}/win/${program}_workspace" &
 done
 
 echo "Repackaging OSX installers..."

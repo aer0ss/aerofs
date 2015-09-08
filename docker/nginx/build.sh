@@ -17,6 +17,7 @@ fi
 TMP=$THIS_DIR/apk/Dockerfile.tmp
 tee "$TMP" <<EOF
 FROM alpine:3.3
+RUN apk --update upgrade
 ADD x86_64 /apk/x86_64
 EOF
 docker build -t nginx-cxt -f "$TMP" "$THIS_DIR/apk/"
@@ -44,4 +45,3 @@ EOF
 docker rm -f nginx-build
 docker rm -f nginx-cxt
 docker rmi nginx-cxt
-
