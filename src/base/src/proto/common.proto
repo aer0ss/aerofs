@@ -88,7 +88,6 @@ message PBException {
         // The only admin of an organization is going to leave the organization, or the only owner
         // of a shared folder is going to leave the shared folder
         NO_ADMIN_OR_OWNER = 402;
-        NO_STRIPE_CUSTOMER_ID = 403;
         // The user needs to log in
         NOT_AUTHENTICATED = 404;
         INVALID_EMAIL_ADDRESS = 405;
