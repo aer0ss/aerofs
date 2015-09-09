@@ -43,6 +43,12 @@ create:
 
  TODO (MJ) wouldn't it be nice to have a final state that was what
  either of the devices actually wanted.
+
+ Phoenix: only one of the moves will be accepted by polaris and the other
+ device will resolve the cycle by reverting its local changes so the valid
+ final states will be that of whichever device wins the race to submit its
+ meta change.
+
 """
 
 from syncdet.case import sync, actor_id
@@ -123,6 +129,8 @@ def _wait_for_final_state():
             { _NAMES[2] : {},
               _NAMES[0] : {_NAMES[1] : {} } }),
         InstanceUniqueDirTree(_create_nested_dicts_from_list(_NAMES)),
+        InstanceUniqueDirTree(
+            _create_nested_dicts_from_list(_NAMES[1:] + _NAMES[:1])),
         InstanceUniqueDirTree(
             _create_nested_dicts_from_list(_NAMES[-1:] + _NAMES[:-1]))
         ]
