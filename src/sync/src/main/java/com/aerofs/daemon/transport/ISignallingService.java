@@ -35,13 +35,14 @@ public interface ISignallingService
     /**
      * Send a message to a peer via the signalling channel
      *
-     * @param did {@link com.aerofs.base.id.DID} of the peer to sent the message to
+     * @param did {@link com.aerofs.ids.DID} of the peer to sent the message to
      * @param msg {@link com.aerofs.proto.Transport.PBTPHeader} that forms the message payload. Implementers
      * of <code>ISignallingService</code>are free to transform the message as
      * necessary before it is sent out over the signalling channel.
      * @param client {@link ISignallingServiceListener} to be notified if message sending fails.
- * Implementers of <code>ISignallingServiceListener</code> <strong>MUST</strong> call
- * this parameter's <code>sendSignallingMessageFailed</code> method if the
+     * Implementers of <code>ISignallingServiceListener</code> <strong>MUST</strong> call
+     * this parameter's <code>sendSignallingMessageFailed</code> method if the message could not be
+     * sent.
      */
     public void sendSignallingMessage(DID did, byte[] msg, ISignallingServiceListener client);
 }

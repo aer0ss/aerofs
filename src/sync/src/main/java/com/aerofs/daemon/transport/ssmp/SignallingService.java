@@ -6,7 +6,6 @@ import com.aerofs.daemon.transport.ISignallingServiceListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ssmp.*;
-import com.aerofs.ssmp.SSMPClient;
 import com.aerofs.ssmp.SSMPEvent;
 import com.aerofs.ssmp.SSMPEvent.Type;
 import com.aerofs.ssmp.EventHandler;

@@ -36,6 +36,8 @@ import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -65,6 +67,7 @@ public final class TestZephyrUnicast
     private UnicastZephyrDevice localDevice;
     private UnicastZephyrDevice otherDevice;
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private Map<DID, ISignallingServiceListener> signalling = new ConcurrentHashMap<>();
 
     // FIXME (AG): check renegotiation
@@ -103,12 +106,18 @@ public final class TestZephyrUnicast
         public void registerSignallingClient(ISignallingServiceListener client) {
             signalling.put(did, client);
             this.client = client;
-            client.signallingServiceConnected();
+            executor.execute(client::signallingServiceConnected);
         }
 
         @Override
         public void sendSignallingMessage(DID to, byte[] msg, ISignallingServiceListener client) {
-            signalling.get(to).processIncomingSignallingMessage(did, msg);
+            executor.execute(() -> {
+                try {
+                    signalling.get(to).processIncomingSignallingMessage(did, msg);
+                } catch (Exception e) {
+                    client.sendSignallingMessageFailed(did, msg, e);
+                }
+            });
         }
 
         @Override
@@ -119,9 +128,9 @@ public final class TestZephyrUnicast
             boolean wasUp = linkUp;
             linkUp = !current.isEmpty();
             if (wasUp && !linkUp) {
-                if (client != null) client.signallingServiceDisconnected();
+                if (client != null) executor.execute(client::signallingServiceDisconnected);
             } else if (!wasUp && linkUp) {
-                if (client != null) client.signallingServiceConnected();
+                if (client != null) executor.execute(client::signallingServiceConnected);
             }
         }
     }
@@ -155,6 +164,7 @@ public final class TestZephyrUnicast
     {
         localDevice.stop();
         otherDevice.stop();
+        executor.shutdown();
     }
 
     // returns the MessageHandler used to send the packet
