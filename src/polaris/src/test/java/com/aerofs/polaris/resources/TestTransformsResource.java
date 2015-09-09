@@ -142,7 +142,7 @@ public final class TestTransformsResource {
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.transforms, nullValue());
-        assertThat(applied.maxTransformCount, is(0L));
+        assertThat(applied.maxTransformCount, is(2L));
     }
 
     @SuppressWarnings("unchecked")
@@ -180,7 +180,7 @@ public final class TestTransformsResource {
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
         assertThat(applied.transforms, hasSize(5));
-        assertThat(applied.maxTransformCount, is(12L));
+        assertThat(applied.maxTransformCount, is(13L));
         assertThat(applied.transforms, containsInAnyOrder(
                 matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, newFile, ObjectType.FILE, "file"),
                 matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, modifiedFile, ObjectType.FILE, "file2"),
@@ -205,7 +205,7 @@ public final class TestTransformsResource {
 
         applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
         assertThat(applied.transforms, hasSize(1));
-        assertThat(applied.maxTransformCount, is(2L));
+        assertThat(applied.maxTransformCount, is(3L));
         assertThat(applied.transforms.get(0), matchesReorderableRandomChildOIDMetaTransform(DEVICE, store2, TransformType.INSERT_CHILD, ObjectType.FILE, "dest_file"));
     }
 
@@ -242,7 +242,7 @@ public final class TestTransformsResource {
 
         applied = PolarisHelpers.getTransforms(verified, share, -1, 10);
         assertThat(applied.transforms, hasSize(6));
-        assertThat(applied.maxTransformCount, is(13L));
+        assertThat(applied.maxTransformCount, is(14L));
         assertThat(applied.transforms, containsInAnyOrder(
                 matchesReorderableRandomChildOIDMetaTransform(DEVICE, share, TransformType.INSERT_CHILD, ObjectType.FOLDER, "folder"),
                 matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file1"),

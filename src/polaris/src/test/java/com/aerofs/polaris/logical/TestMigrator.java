@@ -336,7 +336,7 @@ public class TestMigrator {
         // fake some work being done before crash
         dbi.inTransaction(((conn, status) -> {
             DAO dao = new DAO(conn);
-            dao.children.add(newAnchor, folder, "folder".getBytes(), false);
+            dao.children.add(newAnchor, folder, "folder".getBytes());
             dao.children.remove(sharedFolder, folder);
             dao.objects.changeStore(newStore, folder);
             return null;
@@ -386,7 +386,7 @@ public class TestMigrator {
             dao.migrations.addOidMapping(folder, newFolderID, jobID);
             dao.objects.add(rootStore, newFolderID, 1L);
             dao.objectTypes.add(newFolderID, ObjectType.FOLDER);
-            dao.children.add(migratedRootFolder, newFolderID, "folder".getBytes(), false);
+            dao.children.add(migratedRootFolder, newFolderID, "folder".getBytes());
 
             return null;
         });

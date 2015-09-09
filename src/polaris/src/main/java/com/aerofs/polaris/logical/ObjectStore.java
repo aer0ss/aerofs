@@ -295,16 +295,10 @@ public final class ObjectStore {
     public Transforms getTransforms(UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
         AccessToken accessToken = checkAccess(user, store, Access.READ);
         return inTransaction(dao -> {
-            long available = getTransformCount(dao, accessToken, store);
+            long available = dao.transforms.getLatestLogicalTimestamp();
             List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);
             return new Transforms(available, transforms);
         }, TransactionIsolation.READ_COMMITTED);
-    }
-
-    private long getTransformCount(DAO dao, AccessToken accessToken, UniqueID store) throws NotFoundException, AccessException {
-        checkAccessGranted(dao, accessToken, store, Access.READ);
-        verifyStore(store);
-        return dao.transforms.getTransformCount(store);
     }
 
     private List<Transform> getTransforms(DAO dao, AccessToken accessToken, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
@@ -313,8 +307,8 @@ public final class ObjectStore {
 
         List<Transform> returned = Lists.newArrayList();
 
-        try (ResultIterator<Transform> iterator = dao.transforms.getTransformsSince(startTimestamp, store)) {
-            while (iterator.hasNext() && returned.size() < maxReturnedResultCount) {
+        try (ResultIterator<Transform> iterator = dao.transforms.getTransformsSince(startTimestamp, store, maxReturnedResultCount)) {
+            while (iterator.hasNext()) {
                 returned.add(iterator.next());
             }
         }

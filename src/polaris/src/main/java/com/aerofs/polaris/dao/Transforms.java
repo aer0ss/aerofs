@@ -26,11 +26,8 @@ public interface Transforms {
     @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, store_oid, oid, transform_type, new_version, child_oid, child_name, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :store_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :timestamp)")
     long add(@Bind("originator") DID originator, @Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable UniqueID child, @Bind("child_name") @Nullable byte[] name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
 
-    @SqlQuery("select logical_timestamp, originator, store_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and store_oid = :store_oid order by logical_timestamp asc")
-    ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("store_oid") UniqueID store);
-
-    @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid")
-    long getTransformCount(@Bind("store_oid") UniqueID store);
+    @SqlQuery("select logical_timestamp, originator, store_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and store_oid = :store_oid order by logical_timestamp asc limit :limit")
+    ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("store_oid") UniqueID store, @Bind("limit") long count);
 
     // these two methods are needed because "child_oid is null" is the only way to enforce that a column is null in mysql
     @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid and oid = :oid and transform_type = :transform_type and child_oid = :child_oid")
@@ -38,6 +35,9 @@ public interface Transforms {
 
     @SqlQuery("select max(logical_timestamp) from transforms where store_oid = :store_oid and oid = :oid and transform_type = :transform_type and child_oid is null")
     long getLatestMatchingTransformTimestamp(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType);
+
+    @SqlQuery("select max(logical_timestamp) from transforms")
+    long getLatestLogicalTimestamp();
 
     @SuppressWarnings("unused")
     void close();

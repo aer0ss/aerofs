@@ -1,7 +1,6 @@
 package com.aerofs.polaris.dao;
 
 import com.aerofs.ids.UniqueID;
-import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
