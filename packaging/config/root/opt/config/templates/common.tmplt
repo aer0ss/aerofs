@@ -48,3 +48,5 @@ properties.modification.time={{ properties_modification_time }}
 docker=1
 
 base.lansync.enabled={{ enable_lansync }}
+
+base.phoenix.enabled={{ enable_phoenix }}
