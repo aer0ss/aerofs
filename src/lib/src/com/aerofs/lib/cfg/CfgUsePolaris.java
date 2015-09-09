@@ -5,6 +5,7 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Lazy;
+import com.aerofs.base.config.ConfigurationProperties;
 
 public class CfgUsePolaris
 {
@@ -12,7 +13,8 @@ public class CfgUsePolaris
             new Lazy<>(() -> CfgUtils.enabledByFile(BaseCfg.getInstance().absRTRoot(), "polaris"));
     public boolean get()
     {
-        return _polaris.get();
+        return ConfigurationProperties.getBooleanProperty("base.phoenix.enabled", false)
+                || _polaris.get();
     }
 
 }
