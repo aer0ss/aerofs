@@ -110,7 +110,7 @@ public final class ObjectStore {
 
     /**
      * Perform a set of operations (query, update) on the
-     * object store within a single transaction at the defaul
+     * object store within a single transaction at the default
      * isolation level.
      *
      * @param transaction anonymous class containing the operations to invoke on the object store
@@ -282,7 +282,7 @@ public final class ObjectStore {
             long available = getTransformCount(dao, accessToken, store);
             List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);
             return new Transforms(available, transforms);
-        });
+        }, TransactionIsolation.READ_COMMITTED);
     }
 
     private long getTransformCount(DAO dao, AccessToken accessToken, UniqueID store) throws NotFoundException, AccessException {
