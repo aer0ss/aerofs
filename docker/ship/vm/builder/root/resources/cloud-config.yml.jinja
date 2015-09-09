@@ -29,6 +29,13 @@ hostname: {{ hostname }}
 
 coreos:
   units:
+    - name: docker.service
+      command: start
+      drop-ins:
+        - name: 50-extra-options.conf
+          content: |
+            [Service]
+            Environment='DOCKER_OPTS=--userland-proxy=false'
     - name: {{ getty_restart_unit }}.path
       command: start
       content: |
