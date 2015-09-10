@@ -32,3 +32,4 @@ from users:
 - an application to monitor the Transport Agent's status and report nifty
   report statistics.
 - an automated test suite.
+- embedded media in the e-mail will not be processed.
