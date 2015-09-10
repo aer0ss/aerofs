@@ -2247,16 +2247,10 @@ public class SPService implements ISPService
             // rather than two.
             inviteToOrganization(inviter, invitee, org, res._signUpCode);
             emailer = res._emailer;
-
-        } else if (!invitee.belongsTo(org)) {
-            // the invitee exists and doesn't belong to the org. Send an invite.
-            emailer = inviteToOrganization(inviter, invitee, org, null);
-
         } else {
             throw new ExAlreadyExist(invitee + " is already a member of the organization");
         }
 
-        PBStripeData sd = getStripeData(org);
         boolean locallyManaged = _authenticator.isLocallyManaged(invitee.id());
 
         _sqlTrans.commit();
@@ -2265,7 +2259,6 @@ public class SPService implements ISPService
         emailer.send();
 
         return createReply(InviteToOrganizationReply.newBuilder()
-                .setStripeData(sd)
                 .setLocallyManaged(locallyManaged)
                 .build());
     }
@@ -2295,42 +2288,11 @@ public class SPService implements ISPService
         return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
     }
 
-    /**
-     *  TODO: Is there any real use of this method? Private Cloud shouldn't allow org migration.
-     */
     @Override
     public ListenableFuture<AcceptOrganizationInvitationReply> acceptOrganizationInvitation(Integer orgID)
             throws Exception
     {
-        _sqlTrans.begin();
-
-        User accepter = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-
-        Organization orgOld = accepter.getOrganization();
-        Organization orgNew = _factOrg.create(orgID);
-
-        l.info("{} accept org invite to {}", accepter, orgNew);
-
-        // Check to see if the user was actually invited to this organization.
-        if (!_factOrgInvite.create(accepter, orgNew).exists()) throw new ExNotFound();
-
-        // This will delete the organization invite
-        // TODO (WW) this comment points to poor naming (or cohesion) in setOrganization
-        Collection<UserID> users = accepter.setOrganization(orgNew, AuthorizationLevel.USER);
-
-        // retrieve the org size for the old organization _after_ the user moves out.
-        PBStripeData sd = getStripeData(orgOld);
-
-        _aclPublisher.publish_(users);
-
-        _sqlTrans.commit();
-        _auditClient.event(AuditTopic.USER, "user.org.accept")
-                .add("user", accepter.id())
-                .add("previous_org", orgOld.id())
-                .add("new_org", orgNew.id())
-                .publish();
-
-        return createReply(AcceptOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
+        throw new UnsupportedOperationException("Cross-team invitations do not exist. How did you get here?");
     }
 
     @Override
@@ -2339,19 +2301,7 @@ public class SPService implements ISPService
             throws SQLException, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired,
             ExSecondFactorSetupRequired
     {
-        _sqlTrans.begin();
-
-        User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
-        Organization org = _factOrg.create(orgID);
-        l.info("Delete org invite by " + user);
-
-        _factOrgInvite.create(user, org).delete();
-
-        PBStripeData sd = getStripeData(org);
-
-        _sqlTrans.commit();
-
-        return createReply(DeleteOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
+        throw new UnsupportedOperationException("Cross-team invitations do not exist. How did you get here?");
     }
 
     @Override
@@ -2389,12 +2339,10 @@ public class SPService implements ISPService
         invitee.deleteAllSignUpCodes();
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-        PBStripeData sd = getStripeData(org);
-
         _sqlTrans.commit();
 
         return createReply(
-                DeleteOrganizationInvitationForUserReply.newBuilder().setStripeData(sd).build());
+                DeleteOrganizationInvitationForUserReply.newBuilder().build());
     }
 
     // this call was previously RemoveUserFromOrganization
@@ -2481,23 +2429,8 @@ public class SPService implements ISPService
                     .build());
     }
 
-    /**
-     * Return a StripeData object for the specified org based on its organization size
-     * NOTE: leaving this as-is to avoid proto nonsense. StripeData is just a container for org size; customer id
-     * has been removed. Any code that refers to it must be dead code.
-     */
-    private PBStripeData getStripeData(Organization org)
-            throws SQLException, ExNotFound
-    {
-        return PBStripeData.newBuilder()
-                .setQuantity(org.countOrganizationInvitations() + org.countUsers())
-                .build();
-    }
-
-    /** NOTE: external use of this PB method appears to be removed everywhere. */
     @Override
-    public ListenableFuture<GetStripeDataReply> getStripeData()
-            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated, ExSecondFactorRequired, ExSecondFactorSetupRequired
+    public ListenableFuture<GetStripeDataReply> getStripeData() throws Exception
     {
         throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
@@ -3513,13 +3446,11 @@ public class SPService implements ISPService
         UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher,
                 _aclPublisher);
 
-        PBStripeData sd = getStripeData(org);
-
         _sqlTrans.commit();
 
         _userTracker.signOutAll(user.id());
 
-        return createReply(DeactivateUserReply.newBuilder().setStripeData(sd).build());
+        return createReply(DeactivateUserReply.newBuilder().build());
     }
 
     @Override

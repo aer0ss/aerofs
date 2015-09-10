@@ -120,8 +120,6 @@ service SPService {
     //   ExAlreadyExist if the email address is already a member of that organization.
     //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
     //                  accepted the invitation.
-    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
-    // Stripe customer ID.
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
     // Accept an organization invitation and move the caller into that organization. Makes
@@ -140,14 +138,6 @@ service SPService {
     // Ignore an invitation to a specific organization. This call deletes the entry in the
     // organization invitation table so that when the user views the pending organization invites
     // page in the admin panel, that organization will no longer appear in the list.
-    //
-    // This method returns the user counts as well as Stripe customer id of the specific
-    // organization, so the Python Web server may update Stripe subscription plan for that org.
-    //
-    // TODO (WW) This design smells weird.
-    // Alternatively we can use a separate method to retrieve  the number but it would bring up
-    // several security issues. The fundamental problem is that the Web server shouldn't have
-    // handled Stripe calls. Either SP or a service that SP depends on should do the job.
     //
     // Required Auth Level: user
     //
@@ -173,8 +163,6 @@ service SPService {
     //   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
     //   ExAlreadyExists if the user is already a member of the folder
     //   ExCannotInviteSelf if the sharer appears in the list of sharees
-    //   ExNoStripeCustomerID if payment is required but the current organization doesn't have a
-    //     Stripe customer ID.
     //
     // Exceptions from shared folder rules.
     rpc ShareFolder(ShareFolderCall) returns(Void);
@@ -431,9 +419,8 @@ service SPService {
     rpc ExtendSession(Void) returns(Void);
 
 
-    // Retrieve Stripe data of the current organization.
-    //
-    // Required Auth Level: admin
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // Delete this call. It is not used.
     rpc GetStripeData(Void) returns(GetStripeDataReply);
 
 
@@ -476,14 +463,12 @@ service SPService {
     // Required Auth Level: user
     rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
 
-    // Set the Stripe customer ID of the current organization
-    //
-    // Required Auth Level: admin
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // Delete this call. It is not used.
     rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
 
-    // Delete the Stripe customer ID of the current organization
-    //
-    // Required Auth Level: admin
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
+    // Delete this call. It is not used.
     rpc DeleteStripeCustomerID(Void) returns (Void);
 
     // Retrieve ACL entries for the user, including those flagged as "external".
@@ -908,6 +893,7 @@ service SPService {
     rpc SearchOrganizationUsers(SearchOrganizationUsersCall) returns (SearchOrganizationUsersReply);
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE : delete me
 message SetStripeCustomerIDCall {
     required string stripe_customer_id = 1;
 }
@@ -924,18 +910,15 @@ message DeleteOrganizationInvitationForUserCall {
 
 message DeleteOrganizationInvitationForUserReply {
     // See InviteToOrganizationReply
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never populated. Remove it.
     required PBStripeData stripe_data = 1;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this message is never used. Remove it.
 // The data structure holds all the information that describes the Stripe subscription of an
-// organization. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
-// transactions should be done inside SP and this data structure should not be needed.
-// See src/web/README.stirpe.txt for detail.
+// organization. The Web server uses it to perform Stripe transactions.
 message PBStripeData {
-    // Stripe customer ID of the organization. Absent if the organization doesn't have the ID.
-    // If the field is present, the caller MUST update Stripe subscription based on quantity.
     optional string customer_id = 1;
-    // The quantity of the subscription. It is identical to the number of organization members.
     required uint32 quantity = 2;
 }
 
@@ -943,6 +926,7 @@ message ListOrganizationInvitedUsersReply {
     repeated string user_id = 1;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this message is never used. Remove it.
 message GetStripeDataReply {
     required PBStripeData stripe_data = 1;
 }
@@ -981,9 +965,7 @@ message InviteToOrganizationCall {
 }
 
 message InviteToOrganizationReply {
-    // Return Stripe data so the Web server doesn't have to make another three SP calls
-    // (get customer id, get current member count, and get invited users count) to update the
-    // subscription. See PBStripeData for more info.
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
     required PBStripeData stripe_data = 1;
 
     // Whether the invited user is locally managed (see Authenticator#isLocallyManaged). Used by
@@ -997,8 +979,7 @@ message AcceptOrganizationInvitationCall {
 }
 
 message AcceptOrganizationInvitationReply {
-    // Return Stripe data for the user's _previous_ organization, so the Web server can downgrade
-    // subscription for that organization.
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
     required PBStripeData stripe_data = 1;
 }
 
@@ -1377,14 +1358,7 @@ message GetUnsubscribeEmailReply {
 }
 
 message DeleteOrganizationInvitationReply {
-    // As the deletion causes the organization to lose one user, the Web server needs to adjust
-    // the organization's subscription plan. However, because the current user doesn't belong to the
-    // organization, the Web server doesn't have the permission to retrieve the organization's
-    // subscription data which is necessary for the adjustment. Therefore, we return the
-    // data in this reply.
-    //
-    // This design is not great. Ideally, SP should perform all Stripe transactions internally
-    // without the Web server's involvement. See PBStripeData for more information.
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
     required PBStripeData stripe_data = 1;
 }
 
@@ -1499,6 +1473,7 @@ message DeactivateUserCall {
 }
 
 message DeactivateUserReply {
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
     required PBStripeData stripe_data = 1;
 }
 

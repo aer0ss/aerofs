@@ -9,24 +9,17 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-
-import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
-
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
+import static com.aerofs.sp.server.lib.user.AuthorizationLevel.ADMIN;
+import static com.aerofs.sp.server.lib.user.AuthorizationLevel.USER;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class TestUser_SetOrganization extends AbstractBusinessObjectTest
 {
@@ -77,20 +70,6 @@ public class TestUser_SetOrganization extends AbstractBusinessObjectTest
             fail();
         } catch (ExNoAdminOrOwner e) {
         }
-    }
-
-    @Test
-    public void shouldDeleteOrganizationInvite()
-            throws Exception
-    {
-        User user = saveUser();
-        User inviter = saveUserWithNewOrganization();
-        Organization org = inviter.getOrganization();
-
-        OrganizationInvitation oi = factOrgInvite.save(inviter, user, org, null);
-        assertTrue(oi.exists());
-        user.setOrganization(org, USER);
-        assertFalse(oi.exists());
     }
 
     @Test
