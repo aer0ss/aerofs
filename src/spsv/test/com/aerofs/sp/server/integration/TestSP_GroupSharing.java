@@ -30,12 +30,9 @@ import org.mockito.Captor;
 
 import java.util.List;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static com.google.common.collect.Lists.newArrayList;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 
 public class TestSP_GroupSharing extends AbstractSPFolderTest
@@ -291,6 +288,20 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void shouldDeleteFolderWithGroupMembers()
+        throws Exception
+    {
+        service.addGroupMembers(group.id().getInt(), emails(user2));
+        shareFolder(owner, sid, group, Permissions.VIEWER);
+        joinSharedFolder(user2, sid);
+        service.destroySharedFolder(BaseUtil.toPB(sid));
+
+        sqlTrans.begin();
+        assertFalse(sf.exists());
+        sqlTrans.commit();
+    }
+
+    @Test
     public void canHandleSignedAndUnsignedGroupIDs()
             throws Exception
     {
@@ -316,7 +327,6 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
             GroupID.fromExternal(Long.toString(tooLargePositive));
             fail();
         } catch (ExBadArgs e) {}
-
     }
 
     private String email(User u) {

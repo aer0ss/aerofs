@@ -197,6 +197,9 @@ public class SharedFolder
             throws SQLException
     {
         ImmutableCollection<UserID> joined = getJoinedUserIDs();
+        for (GroupID gid : getJoinedGroupIDs()) {
+            _f._gsdb.removeSharedFolder(gid, _sid);
+        }
         _f._db.destroy(_sid);
         return joined;
     }
