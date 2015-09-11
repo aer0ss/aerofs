@@ -9,4 +9,8 @@ push: image
 	docker tag -f $(IMAGE_NAME) $(REGISTRY_PUSH)/$(IMAGE_NAME):$(TAG)
 	docker push $(REGISTRY_PUSH)/$(IMAGE_NAME):$(TAG)
 
+run:
+	go install
+	../../../bin/identity -swagger=$(PWD)/swagger-ui/dist -cfg=false -host=localhost -port=8000
+
 .PHONY: image push
