@@ -137,6 +137,12 @@ message PBException {
 
         // Exceeded the group size or shared folder member limit
         MEMBER_LIMIT_EXCEEDED = 418;
+
+        // A user's login credentials have expired
+        PASSWORD_EXPIRED = 419;
+
+        // New password specified by user to reset password is the same as the old password
+        PASSWORD_ALREADY_EXIST = 420;
     }
 
     required Type type = 1;

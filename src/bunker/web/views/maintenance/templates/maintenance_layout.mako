@@ -20,6 +20,7 @@
                 ('auditing', _("Auditing")),
                 ('identity', _("Identity")),
                 ('device_restriction', _("Device restriction")),
+                ('password_restriction', _("Password restriction")),
                 ('timekeeping', _("Timekeeping")),
                 ('collect_logs', _("Collect logs")),
                 ('backup_and_upgrade', _("Backup and upgrade")),

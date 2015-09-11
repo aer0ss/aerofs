@@ -5,6 +5,7 @@ import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExCannotReuseExistingPassword;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
@@ -21,6 +22,10 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 
 /**
  * TODO (WW) OO-tify this class, and have an upper layer handle emailing logic.
@@ -71,13 +76,24 @@ public class PasswordManagement
      */
     public User resetPassword(String passwordResetToken, byte[] newCredentials)
             throws SQLException, ExNotFound, IOException, MessagingException,
-            GeneralSecurityException, ExExternalServiceUnavailable, ExCannotResetPassword
+            GeneralSecurityException, ExExternalServiceUnavailable, ExCannotResetPassword, ExCannotReuseExistingPassword
     {
         UserID userId = _db.resolvePasswordResetToken(passwordResetToken);
         User user = getUserAndThrowIfNoPassword(userId);
-        _db.updateUserCredentials(user.id(),
-                LocalCredential.hashScrypted(
-                        LocalCredential.deriveKeyForUser(userId, newCredentials)));
+        int expirationPeriodMonths = getIntegerProperty("password.restriction.expiration_period_months", 0);
+        byte [] newHashedPassword = LocalCredential.hashScrypted(
+                LocalCredential.deriveKeyForUser(userId, newCredentials));
+        byte [] currentHashedPassword = user.getShaedSP(userId);
+
+        //It's necessary to check that password expiry is enabled in order to avoid the scenario where user thinks they
+        // forgot their password, and tries to reset it to what they want to use, and it turns out to be the same as
+        // existing password.
+        if (Arrays.equals(newHashedPassword, currentHashedPassword) && expirationPeriodMonths != 0) {
+            l.info("Password reset attempted for " + user + " but the new password is the same as current one.");
+            throw new ExCannotReuseExistingPassword();
+        }
+
+        _db.updateUserCredentials(user.id(), newHashedPassword);
         _db.deletePasswordResetToken(passwordResetToken);
 
         l.info("Reset {}'s Password", userId.getString());
@@ -144,10 +160,8 @@ public class PasswordManagement
         _db.updateUserCredentials(user.id(),
                 LocalCredential.hashScrypted(
                         LocalCredential.deriveKeyForUser(user.id(), newCredentials)));
-
         _passwordResetEmailer.sendPasswordChangeNotification(userId);
         l.info("Explicit password set for {}", userId);
-
         return user;
     }
 
@@ -166,4 +180,5 @@ public class PasswordManagement
         l.info("Password action requested for " + userId + " but user has no local credential");
         throw new ExCannotResetPassword();
     }
+
 }

@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 
@@ -137,6 +138,9 @@ public class S
                     "an error while processing your request.",
 
             SETUP_DEFAULT_SIGNIN_ERROR = "Sorry, " + L.product() + " has failed to sign in.",
+            SETUP_SIGNIN_PASSWORD_EXPIRED_ERROR = "Sorry, " + L.product() + " has failed to sign in because your" +
+                    " password has expired. Please reset your password: " + WWW.PASSWORD_RESET_REQUEST_URL,
+
             SETUP_DEFAULT_INSTALL_ERROR = "Sorry, " + L.product() + " has failed to install.",
 
             SETUP_SWIFT_CONNECTION_ERROR = "We weren't able to connect to the Swift node, " +

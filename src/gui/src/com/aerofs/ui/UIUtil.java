@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExPasswordExpired;
 import com.aerofs.ids.SID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.Launcher;
@@ -11,14 +12,8 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.ExNotSetup;
@@ -314,8 +309,13 @@ public class UIUtil
     private static void logAndShowLaunchError(Throwable e)
     {
         l.warn(Util.e(e));
-        UI.get().show(MessageType.ERROR, e instanceof ExUIMessage ? e.getMessage() :
-                LAUNCH_ERROR_STRING + ": " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e));
+
+        String errMessage;
+        if (e instanceof ExUIMessage) errMessage = e.getMessage();
+        else if (e instanceof ExPasswordExpired) errMessage = S.SETUP_SIGNIN_PASSWORD_EXPIRED_ERROR;
+        else errMessage = LAUNCH_ERROR_STRING + ": " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
+
+        UI.get().show(MessageType.ERROR, errMessage);
     }
 
     private static void finishLaunch(Runnable postLaunch)

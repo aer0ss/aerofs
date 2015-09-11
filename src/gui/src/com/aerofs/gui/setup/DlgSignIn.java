@@ -6,10 +6,7 @@ package com.aerofs.gui.setup;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExExternalAuthFailure;
-import com.aerofs.base.ex.ExInternalError;
-import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.base.ex.*;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
@@ -368,6 +365,7 @@ public class DlgSignIn extends TitleAreaDialog
         else if (e instanceof ExUIMessage) return e.getMessage();
         else if (e instanceof ExTimeout) return S.OPENID_AUTH_TIMEOUT;
         else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
+        else if (e instanceof ExPasswordExpired) return S.SETUP_SIGNIN_PASSWORD_EXPIRED_ERROR;
         else return S.SETUP_DEFAULT_SIGNIN_ERROR;
     }
 

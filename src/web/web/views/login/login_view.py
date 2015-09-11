@@ -55,6 +55,10 @@ def _do_login(request):
                 flash_error(request, _("Email or password is incorrect."))
             elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
                 flash_error(request, _("The email address cannot be empty."))
+            elif e.get_type() == PBException.PASSWORD_EXPIRED:
+                log.warn(userid + " attempts to log in with expired password.")
+                return HTTPFound(location=request.route_path('request_password_reset',
+                        _query={"password_expired": True, "userid": userid}))
             elif e.get_type() == PBException.LICENSE_LIMIT:
                 # When a user logs in with a non-local credential for the first time this actually
                 # does a license check. We might want to handle this nicely on a different page, but

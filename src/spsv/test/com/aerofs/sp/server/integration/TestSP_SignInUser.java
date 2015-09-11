@@ -4,11 +4,20 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExPasswordExpired;
 import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Properties;
+
+import static org.mockito.Mockito.doReturn;
 
 /**
  * Important: signIn() and signInUser() might expect scrypted password, or plaintext, depending on
@@ -18,6 +27,13 @@ import org.junit.Test;
  */
 public class TestSP_SignInUser extends AbstractSPTest
 {
+
+    Calendar calendar = Calendar.getInstance();
+    Timestamp currentTS = new Timestamp(calendar.getTime().getTime());
+    long twoMonthsInMillis = 5259492000L;
+    long spyPasswordCreatedTSInMillis = currentTS.getTime() - twoMonthsInMillis;
+
+
     @Test
     public void testSignInClearText() throws Exception
     {
@@ -92,4 +108,63 @@ public class TestSP_SignInUser extends AbstractSPTest
 
         service.signInUser(user.id().getString(), ByteString.copyFrom(CRED));
     }
+
+    //TODO (SN) unit tests for password expiration
+    @Test(expected = ExPasswordExpired.class)
+    public void shouldFailSignInIfPasswordIsExpired() throws Exception
+    {
+        //TestSP_ExternalRestrictedSharing.java (use this as a reference for spoofing expiration period value
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "1");
+        ConfigurationProperties.setProperties(props);
+
+        User userSpy = Mockito.spy(user);
+
+        doReturn(userSpy).when(factUser).createFromExternalID(user.id().getString());
+        doReturn(new Timestamp(spyPasswordCreatedTSInMillis)).when(userSpy).getPasswordCreatedTS();
+        System.out.println("Date print:" + userSpy.getPasswordCreatedTS());
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test
+    public void shouldSucceedSignInIfPasswordIsNotExpired() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "3");
+        ConfigurationProperties.setProperties(props);
+
+        User userSpy = Mockito.spy(user);
+
+        doReturn(userSpy).when(factUser).createFromExternalID(user.id().getString());
+        doReturn(new Timestamp(spyPasswordCreatedTSInMillis)).when(userSpy).getPasswordCreatedTS();
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+    @Test
+    public void shouldSucceedSignInIfPasswordExpiryIsNotSet() throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "");
+        ConfigurationProperties.setProperties(props);
+
+        User userSpy = Mockito.spy(user);
+
+        doReturn(userSpy).when(factUser).createFromExternalID(user.id().getString());
+        doReturn(new Timestamp(spyPasswordCreatedTSInMillis)).when(userSpy).getPasswordCreatedTS();
+        service.credentialSignIn(user.id().getString(), ByteString.copyFrom(CRED));
+    }
+
+
 }

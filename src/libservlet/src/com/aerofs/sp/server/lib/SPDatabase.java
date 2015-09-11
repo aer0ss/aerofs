@@ -29,10 +29,12 @@ import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_PASS_TS;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_PASSWORD_RESET;
 import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
+
 
 // TODO (WW) move ALL methods to appropriate classes.
 // DO NOT ADD NEW METHODS.
@@ -96,10 +98,13 @@ public class SPDatabase extends AbstractSQLDatabase
         throws SQLException
     {
         try (PreparedStatement psUUC = prepareStatement("update " + T_USER + " set " +
-                C_USER_CREDS + "=? where " + C_USER_ID + "=?")) {
+                C_USER_CREDS + " =?, " + C_USER_PASS_TS + " =? where " + C_USER_ID + " =?")) {
 
             psUUC.setString(1, Base64.encodeBytes(credentials));
-            psUUC.setString(2, userId.getString());
+            java.util.Date today = new java.util.Date();
+
+            psUUC.setTimestamp(2, new Timestamp(today.getTime()));
+            psUUC.setString(3, userId.getString());
             Util.verify(psUUC.executeUpdate() == 1);
         }
     }

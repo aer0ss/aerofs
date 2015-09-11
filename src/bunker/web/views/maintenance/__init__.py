@@ -45,6 +45,8 @@ routes = [
     'sync_settings',
     'json_set_sync_settings',
     'json_set_auditing',
+    'password_restriction',
+    'json_set_password_restriction',
     'device_restriction',
     'json_set_device_authorization',
     'registered_apps',

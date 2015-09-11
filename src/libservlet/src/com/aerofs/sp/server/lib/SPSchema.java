@@ -21,6 +21,7 @@ public final class SPSchema
             C_USER_BYTES_USED               = "u_bytes_used",
             C_USER_USAGE_WARNING_SENT       = "u_usage_warning_sent",
             C_USER_TWO_FACTOR_ENFORCED      = "u_two_factor_enforced",
+            C_USER_PASS_TS                  = "u_passwd_created_ts",
 
             T_ORGANIZATION                  = "sp_organization",
             C_O_ID                          = "o_id",

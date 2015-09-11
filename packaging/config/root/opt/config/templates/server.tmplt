@@ -90,6 +90,10 @@ device.authorization.endpoint_certificate={{ device_authorization_endpoint_certi
 mobile.device.management.enabled={{ mobile_device_management_enabled }}
 mobile.device.management.proxies={{ mobile_device_management_proxies }}
 
+password.restriction.min_password_length={{ password_restriction_min_password_length }}
+password.restriction.numbers_letters_required={{ password_restriction_numbers_letters_required }}
+password.restriction.expiration_period_months={{ password_restriction_expiration_period_months }}
+
 {# This section will be filled with all key-value pairs stored in the
  # license-info file inside the license file.  On first boot, it will be empty;
  # otherwise, it will contain a set of key-value pairs, including at least

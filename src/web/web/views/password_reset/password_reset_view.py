@@ -9,7 +9,8 @@ from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
 from aerofs_sp.gen.common_pb2 import PBException
-from web.util import flash_error, get_rpc_stub, is_valid_email, is_valid_password
+from web.util import flash_error, get_rpc_stub, is_valid_email, is_valid_password, str2bool
+from aerofs_common.exception import ExceptionReply
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +25,14 @@ def request_password_reset(request):
 
     success = False
     error = ''
+    password_expired = False
+    userid = ''
+
+    if 'password_expired' in request.params:
+        password_expired = str2bool(request.params['password_expired'])
+
+    if 'userid' in request.params:
+        userid = request.params['userid']
 
     # Only POST requests can modify state. See README.security.txt
     # TOOD (WW) separate POST and GET handling to different view callables
@@ -49,7 +58,9 @@ def request_password_reset(request):
 
     return {
         'success': success,
-        'error': error
+        'error': error,
+        'password_expired': password_expired,
+        'userid': userid
     }
 
 @view_config(
@@ -66,6 +77,7 @@ def password_reset(request):
     valid_password = True
     not_found = False
     success = False
+    password_already_exist = False
 
     # if we don't have both a token and a user_id, redirect to the token request page
     if token is None or user_id is None:
@@ -81,17 +93,18 @@ def password_reset(request):
             try:
                 sp.reset_password(token, password)
                 success = True
-            except PBException as e:
-                # TODO (WW) What? We don't throw PBExceptions.
-                # Use ExceptionReply instead, or don't catch exceptions at all
-                if e.type == PBException.NOT_FOUND:
+            except ExceptionReply as e:
+                if e.get_type() == PBException.NOT_FOUND:
                     not_found = True
+                if e.get_type() == PBException.PASSWORD_ALREADY_EXIST:
+                    password_already_exist = True
                 error = str(e)
-                log.warn(error)
+
             except Exception as e:
                 error = str(e)
                 log.warn(error)
         else:
+            log.warn("did I make it here 4")
             log.warn(error)
             flash_error(request, error)
 
@@ -101,5 +114,6 @@ def password_reset(request):
         "not_found":not_found,
         "valid_password":valid_password,
         "error":error,
-        "success":success
+        "success":success,
+        'password_already_exist': password_already_exist
     }

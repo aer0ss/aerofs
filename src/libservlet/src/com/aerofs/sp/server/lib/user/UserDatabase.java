@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
@@ -21,6 +22,7 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.common.SharedFolderState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,6 +47,8 @@ import static com.aerofs.sp.server.lib.SPSchema.*;
  */
 public class UserDatabase extends AbstractSQLDatabase
 {
+    private static final Logger l = Loggers.getLogger(UserDatabase.class);
+
     @Inject
     public UserDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
@@ -130,7 +134,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
-C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
+                C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
             ps.setString(1, userId.getString());
             try (ResultSet rs = ps.executeQuery()) {
                 return DBUtil.binaryCount(rs);
@@ -245,6 +249,17 @@ C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
         }
     }
 
+    public Timestamp getPasswordCreatedTS(UserID userId)
+            throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = queryUser(userId, C_USER_PASS_TS);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, userId);
+            return rs.getTimestamp(1);
+        }
+    }
+
+
     /**
      * @return the usage in bytes, or null if the value has never been set
      */
@@ -300,7 +315,8 @@ C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
             throws SQLException {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", fields));
-        ps.setString(1, userId.getString());
+        String user_str = userId.getString();
+        ps.setString(1, user_str);
         return ps;
     }
 

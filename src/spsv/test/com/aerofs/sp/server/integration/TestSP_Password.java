@@ -4,7 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExCannotResetPassword;
+import com.aerofs.base.ex.ExCannotReuseExistingPassword;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.Identity;
@@ -22,6 +24,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import java.util.Properties;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
@@ -29,6 +32,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 
 public class TestSP_Password extends AbstractTest
 {
@@ -191,7 +195,7 @@ public class TestSP_Password extends AbstractTest
                 "old password".getBytes(),
                 "new password".getBytes());
         verify(db).checkAndUpdateUserCredentials(user.id(), SPParam.getShaedSP("old password"
-                .getBytes()),
+                        .getBytes()),
                 SPParam.getShaedSP("new password".getBytes()));
     }
 
@@ -241,5 +245,54 @@ public class TestSP_Password extends AbstractTest
     {
         when(authenticator.isLocallyManaged(eq(user.id()))).thenReturn(false);
         _passwordManagement.setPassword(user.id(), "test".getBytes());
+    }
+
+    @Test(expected = ExCannotReuseExistingPassword.class)
+    public void shouldFailToResetPasswordIfNewPasswordIsTheSameAsCurrentOne() throws Exception
+    {
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "3");
+        ConfigurationProperties.setProperties(props);
+
+        byte[] currentPassword = "test".getBytes();
+        byte[] credential = LocalCredential.hashScrypted(
+                LocalCredential.deriveKeyForUser(user.id(), currentPassword));
+
+        when(user.getShaedSP(eq(user.id()))).thenReturn(credential);
+        _passwordManagement.setPassword(user.id(), currentPassword);
+
+        _passwordManagement.resetPassword(anyString(), currentPassword);
+    }
+
+    @Test
+    public void shouldSucceedToResetPasswordIfNewPasswordIsDifferentFromCurrentOne() throws Exception
+    {
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "3");
+        ConfigurationProperties.setProperties(props);
+
+        byte[] currentPassword = "test".getBytes();
+        byte[] newPassword = "newtest".getBytes();
+        byte[] credential = LocalCredential.hashScrypted(
+                LocalCredential.deriveKeyForUser(user.id(), currentPassword));
+
+        when(user.getShaedSP(eq(user.id()))).thenReturn(credential);
+        _passwordManagement.setPassword(user.id(), currentPassword);
+        _passwordManagement.resetPassword(anyString(), newPassword);
+    }
+
+    @Test
+    public void shouldSucceedToResetPasswordIfPasswordExpiryNotSet() throws Exception {
+        Properties props = new Properties();
+        props.put("password.restriction.expiration_period_months", "");
+        ConfigurationProperties.setProperties(props);
+
+        byte[] currentPassword = "test".getBytes();
+        byte[] credential = LocalCredential.hashScrypted(
+                LocalCredential.deriveKeyForUser(user.id(), currentPassword));
+
+        when(user.getShaedSP(eq(user.id()))).thenReturn(credential);
+        _passwordManagement.setPassword(user.id(), currentPassword);
+        _passwordManagement.resetPassword(anyString(), currentPassword);
     }
 }

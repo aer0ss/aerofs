@@ -116,6 +116,7 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalTime;
@@ -127,6 +128,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
@@ -2826,9 +2828,9 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(SignInUserReply.newBuilder()
-                        .setNeedSecondFactor(needSecondFactor)
-                        .setNeedSecondFactorSetup(needSecondFactorSetup)
-                        .build());
+                .setNeedSecondFactor(needSecondFactor)
+                .setNeedSecondFactorSetup(needSecondFactorSetup)
+                .build());
     }
 
     /**
@@ -2858,6 +2860,7 @@ public class SPService implements ISPService
         _session.setBasicAuthDate(System.currentTimeMillis());
         _userTracker.signIn(user.id(), _session.id());
         _sqlTrans.begin();
+
         Organization org = user.getOrganization();
         TwoFactorEnforcementLevel level = org.getTwoFactorEnforcementLevel();
         boolean enforceTwoFactor = user.shouldEnforceTwoFactor() &&
@@ -2866,11 +2869,28 @@ public class SPService implements ISPService
                 !enforceTwoFactor;
         boolean needSecondFactor = enforceTwoFactor && !_session.getAuthenticatedProvenances()
                 .contains(Provenance.BASIC_PLUS_SECOND_FACTOR);
+        Timestamp passwordCreatedTS = user.getPasswordCreatedTS();
         _sqlTrans.commit();
+
+        // Check if user's password is expired (in the event that password expiry is set)
+        Calendar calendar = Calendar.getInstance();
+        Timestamp currentTS = new Timestamp(calendar.getTime().getTime());
+        long tsDiffInMillis = currentTS.getTime() - passwordCreatedTS.getTime();
+        int expirationPeriodMonths = getIntegerProperty("password.restriction.expiration_period_months", 0);
+        double NUM_MILLISECONDS_IN_YEAR = 31556952000D;
+
+        //Convert password expiration period from months to milliseconds
+        double expirationPeriodMonthsInMillis = expirationPeriodMonths * NUM_MILLISECONDS_IN_YEAR/12;
+
+        if (tsDiffInMillis > expirationPeriodMonthsInMillis && expirationPeriodMonths != 0){
+            l.info("Password expired for " + user);
+            throw new ExPasswordExpired();
+        }
+
         return createReply(SignInUserReply.newBuilder()
-                .setNeedSecondFactor(needSecondFactor)
-                .setNeedSecondFactorSetup(needSecondFactorSetup)
-                .build());
+                    .setNeedSecondFactor(needSecondFactor)
+                    .setNeedSecondFactorSetup(needSecondFactorSetup)
+                    .build());
     }
 
     /**

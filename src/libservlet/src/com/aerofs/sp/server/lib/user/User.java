@@ -49,6 +49,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -296,6 +297,18 @@ public class User
             throws SQLException
     {
         _f._udb.setUsageWarningSent(_id, warningSent);
+    }
+
+    public Timestamp getPasswordCreatedTS()
+            throws ExNotFound, SQLException
+    {
+        return _f._udb.getPasswordCreatedTS(_id);
+    }
+
+    public byte[] getShaedSP(UserID userId)
+            throws ExNotFound, SQLException
+    {
+        return _f._udb.getShaedSP(userId);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?

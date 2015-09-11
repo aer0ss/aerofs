@@ -7,6 +7,7 @@ import logging
 import markupsafe
 import smtplib
 from email.mime.text import MIMEText
+from aerofs_common.constants import DEFAULT_MIN_PASSWORD_LENGTH, DEFAULT_IS_NUMBERS_LETTERS_REQUIRED
 
 from error import expected_error
 from aerofs_sp.connection import SyncConnectionService
@@ -73,12 +74,38 @@ def is_valid_password(request, password):
     """
     _ = request.translate
 
-    if len(password) < 6:
-        return False, _("Passwords must have at least 6 characters.")
-    elif not _is_ascii(password):
-        return False, _("The password contains invalid (non-ASCII) characters.")
+    min_password_length = request.registry.settings.get('password.restriction.min_password_length')
+    is_numbers_letters_required = str2bool(request.registry.settings.get(
+        'password.restriction.numbers_letters_required'))
+
+    if not min_password_length:
+        min_password_length = DEFAULT_MIN_PASSWORD_LENGTH
+
+    if not is_numbers_letters_required:
+        is_numbers_letters_required = DEFAULT_IS_NUMBERS_LETTERS_REQUIRED
+
+    if is_numbers_letters_required:
+        if len(password) < int(min_password_length) and not _password_has_numbers_letters(password):
+            return False, _("Password must be at least %s characters long and consist of alphanumeric characters "
+                            "(i.e. password123)" % min_password_length)
+        elif len(password) < int(min_password_length):
+            return False, _("Password must be at least %s characters long" % min_password_length)
+        elif not _password_has_numbers_letters(password):
+            return False, _("Password must have alphanumeric characters")
+        elif not _is_ascii(password):
+            return False, _("The password contains invalid (non-ASCII) characters.")
+        else:
+            return True, ""
     else:
-        return True, ""
+        if len(password) < int(min_password_length):
+            return False, _("Password must have at least %s characters" % min_password_length)
+        elif not _is_ascii(password):
+            return False, _("The password contains invalid (non-ASCII) characters.")
+        else:
+            return True, ""
+
+def _password_has_numbers_letters(password):
+    return re.search(r"\d", password) and re.search(r"[a-zA-Z]", password)
 
 def get_error(exception):
     """
