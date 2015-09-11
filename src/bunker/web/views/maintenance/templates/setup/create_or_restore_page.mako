@@ -122,7 +122,7 @@
                         console.log('restore failed');
                         window.clearInterval(interval);
                         $('#${progress_modal.id()}').modal('hide');
-                        showErrorMessageWithDownloadLogPrompt("Restore failed.");
+                        showLogPromptWithMessageUnsafe("Restore failed.");
                     }
                 }).fail(failed);
             }, 1000);

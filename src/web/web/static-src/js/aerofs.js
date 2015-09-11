@@ -126,25 +126,21 @@ function showErrorMessageFromResponse(xhr) {
   if (xhr.responseText) {
     data = $.parseJSON(xhr.responseText);
   }
-  if (status === 400) {
-    // We only use 400 for expected JSON error replies. See error.py
-    showErrorMessage(data.message);
-  } else if (status === 403) {
+  showErrorMessageWith(data, status);
+}
+
+function showErrorMessageWith(data, status) {
+  'use strict';
+  if (status === 403) {
     // See error_view.py:_force_login on generation of 403
     // Note that both web and bunker uses 'login' as the login route
     window.location.assign('/login?next=' +
       encodeURIComponent(window.location.pathname +
         window.location.search + window.location.hash));
+  } else if (status === 400 && data && data.hasOwnProperty('message')) {
+    showErrorMessage(data.message);
   } else {
-    // In the event of backend failure, 2 scenarios will happen:
-    // 1. Web backend returns 5xx with an error message indicating 
-    //	what service failed or
-    // 2. The web backend died, and we have no data.
-    if (data && data.hasOwnProperty('message')) {
-      showErrorMessageUnsafe(data.message);
-    } else {
-      showErrorMessageUnsafe(getInternalErrorText());
-    }
+    showErrorMessageUnsafe(getInternalErrorText());
     console.log('show error message. status: ' + status +
       ' data: ' + data);
   }

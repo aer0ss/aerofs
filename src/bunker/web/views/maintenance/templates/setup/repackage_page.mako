@@ -94,7 +94,7 @@
                             if (count > 10) {
                                 console.log('waitForHealthyServices() timed out');
                                 hideAllModals();
-                                showErrorMessageWithDownloadLogPrompt('Service ' + service + ' failed to start.');
+                                showLogPromptWithMessageUnsafe('Service ' + service + ' failed to start.');
                                 trackError();
                             } else {
                                 console.log('wait');
@@ -155,7 +155,7 @@
                         window.clearInterval(interval);
                         console.log('repackaging has not succeeded');
                         hideAllModals();
-                        showErrorMessageWithDownloadLogPrompt("Repackaging of AeroFS clients couldn't complete.");
+                        showLogPromptWithMessageUnsafe("Repackaging of AeroFS clients couldn't complete.");
                         trackError();
                     }
                 }).fail(function(xhr) {
