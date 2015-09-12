@@ -13,6 +13,7 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.FutureCallback;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -72,9 +73,10 @@ class SignallingService implements ISignallingService, EventHandler {
 
         try {
             DID did = new DID(ev.from.toString());
-            if (ev.payload.startsWith(_prefix)) {
+            String payload = new String(ev.payload, StandardCharsets.UTF_8);
+            if (payload.startsWith(_prefix)) {
                 _listener.processIncomingSignallingMessage(did,
-                        _decoder.decode(ev.payload.substring(_prefix.length())));
+                        _decoder.decode(payload.substring(_prefix.length())));
             }
         } catch (ExInvalidID ex) {}
     }

@@ -80,7 +80,7 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
             // unsubscribe/mcast race
             if (!_interest.contains(sid)) return;
 
-            l.info("{} recv mc", did);
+            l.debug("{} recv mc {}", did, sid);
 
             byte[] bs = SSMPUtil.decodeMcastPayload(did, ev.payload);
 
@@ -107,14 +107,10 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
         try {
             _c.request(SSMPRequest.mcast(
                     SSMPIdentifier.fromInternal(sid.toStringFormal()),
-                    encodeMaxcast(bs)));
+                    SSMPUtil.encodeMcastPayload(bs)));
         } catch (Exception e) {
             l.warn("mc failed", e);
         }
-    }
-
-    private String encodeMaxcast(byte[] bs) {
-        return SSMPUtil.encodeMcastPayload(bs);
     }
 
     @Override

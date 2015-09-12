@@ -81,7 +81,7 @@ public final class ACLNotificationSubscriber implements ConnectionListener, Even
         ++_aclSyncSeqNum;
     }
 
-    private void launchExpRetryAclSync(@Nullable String payload) {
+    private void launchExpRetryAclSync(@Nullable byte[] payload) {
         final long currentACLSyncSeqNum = ++_aclSyncSeqNum;
 
         _sched.schedule(new AbstractEBSelfHandling() {
@@ -92,7 +92,7 @@ public final class ACLNotificationSubscriber implements ConnectionListener, Even
                     if (currentACLSyncSeqNum != _aclSyncSeqNum) return null;
                     l.debug("sync to local");
                     if (payload != null) {
-                        long aclEpoch = Long.valueOf(payload);
+                        long aclEpoch = Long.valueOf(new String(payload, StandardCharsets.UTF_8));
                         _aclSynchronizer.syncToLocal_(aclEpoch);
                     } else {
                         _aclSynchronizer.syncToLocal_();

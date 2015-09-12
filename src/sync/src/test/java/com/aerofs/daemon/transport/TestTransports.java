@@ -19,7 +19,7 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.ssmp.SSMPIdentifier;
 import com.aerofs.ssmp.SSMPServer;
-import com.aerofs.ssmp.SSMPServerCodec.Authenticator;
+import com.aerofs.ssmp.Authenticator;
 import com.aerofs.zephyr.server.ZephyrServer;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.base.Charsets;
@@ -83,7 +83,10 @@ public final class TestTransports
     @Parameters
     public static Collection<Object[]> transports()
     {
-        Object[][] data = new Object[][]{{TransportType.LANTCP}, {TransportType.ZEPHYR}};
+        Object[][] data = new Object[][]{
+                {TransportType.LANTCP},
+                {TransportType.ZEPHYR}
+        };
         return Arrays.asList(data);
     }
 

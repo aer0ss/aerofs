@@ -9,6 +9,7 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -140,17 +141,18 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
 
     @Override
     public void eventReceived(SSMPEvent ev) {
-        l.info("recv event {} {} {} {}", ev.from, ev.type, ev.to, ev.payload);
+        l.debug("recv event {} {} {} {}", ev.from, ev.type, ev.to,
+                ev.payload != null ? new String(ev.payload, StandardCharsets.UTF_8) : null);
         EventHandler h = null;
         switch (ev.type) {
         case UCAST:
-            h = routeByPayload(ev.payload, _ucastHandlers);
+            h = routeByPayload(new String(ev.payload, StandardCharsets.UTF_8), _ucastHandlers);
             break;
         case MCAST:
             h = _mcastHandlers.get(ev.to.toString());
             break;
         case BCAST:
-            h = routeByPayload(ev.payload, _bcastHandlers);
+            h = routeByPayload(new String(ev.payload, StandardCharsets.UTF_8), _bcastHandlers);
             break;
         default:
             break;

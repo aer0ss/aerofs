@@ -16,6 +16,7 @@ import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +63,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
 
     @Override
     public void eventReceived(SSMPEvent ev) {
-        String d = ev.payload.substring(LOCATIONS.length() + 1);
+        String d = new String(ev.payload, StandardCharsets.UTF_8).substring(LOCATIONS.length() + 1);
         if (ev.type == Type.BCAST) {
             parseLocations(ev.from.toString(), d);
         } else if (ev.type == Type.UCAST) {

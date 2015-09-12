@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.*;
-import java.util.Base64;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
 
@@ -24,10 +23,10 @@ public abstract class SSMPUtil
         // private to prevent instantiation
     }
 
-    public static String encodeMcastPayload(byte[] bs)
+    public static byte[] encodeMcastPayload(byte[] bs)
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (DataOutputStream os = new DataOutputStream(Base64.getEncoder().wrap(bos))) {
+        try (DataOutputStream os = new DataOutputStream(bos)) {
             byte chksum = 0;
             for (byte b : bs) chksum ^= b;
 
@@ -38,14 +37,14 @@ public abstract class SSMPUtil
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-        return bos.toString();
+        return bos.toByteArray();
     }
 
-    public static @Nullable byte[] decodeMcastPayload(DID did, String body)
+    public static @Nullable byte[] decodeMcastPayload(DID did, byte[] body)
             throws IOException
     {
-        ByteArrayInputStream bis = new ByteArrayInputStream(body.getBytes());
-        try (DataInputStream is = new DataInputStream(Base64.getDecoder().wrap(bis))) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(body);
+        try (DataInputStream is = new DataInputStream(bis)) {
             int magic = is.readInt();
             if (magic != LibParam.CORE_PROTOCOL_VERSION) {
                 l.warn("{} magic mismatch exp:{} act:{} bdy:{}", did, LibParam.CORE_PROTOCOL_VERSION, magic, body);
