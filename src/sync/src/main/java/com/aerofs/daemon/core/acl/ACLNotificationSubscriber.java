@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -35,8 +34,7 @@ public final class ACLNotificationSubscriber implements ConnectionListener, Even
     public ACLNotificationSubscriber(SSMPConnection ssmp, CfgLocalUser localUser,
             CoreScheduler scheduler, ACLSynchronizer aclSynchronizer)
     {
-        _topic = SSMPIdentifier.fromInternal("acl/" + Base64.getEncoder().encodeToString(
-                localUser.get().getString().getBytes(StandardCharsets.UTF_8)));
+        _topic = SSMPIdentifiers.getACLTopic(localUser.get().getString());
         _ssmp = ssmp;
         _sched = scheduler;
         _exponential = new ExponentialRetry(scheduler);
