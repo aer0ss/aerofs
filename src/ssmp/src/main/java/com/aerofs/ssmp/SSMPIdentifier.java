@@ -36,7 +36,7 @@ public class SSMPIdentifier {
     SSMPIdentifier(byte[] id) { _id = id; }
 
     public static boolean isValid(String id) {
-        if (id.length() > 64) return false;
+        if (id.length() > SSMPDecoder.MAX_ID_LENGTH) return false;
         for (int i = 0; i < id.length(); ++i) {
             if (!ALLOWED.contains((byte) id.charAt(i))) return false;
         }
