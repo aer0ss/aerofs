@@ -38,7 +38,10 @@ final class ZephyrRegistrationDecoder extends FrameDecoder
 
         ctx.getChannel().getPipeline().remove(this);
         Channels.fireMessageReceived(channel, new Registration(assignedZid));
+        if (!buffer.readable()) return null;
 
-        return buffer.readable() ? buffer : null;
+        ChannelBuffer r = buffer.duplicate();
+        buffer.skipBytes(buffer.readableBytes());
+        return r;
     }
 }

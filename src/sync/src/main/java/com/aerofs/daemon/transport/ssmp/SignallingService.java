@@ -1,6 +1,5 @@
 package com.aerofs.daemon.transport.ssmp;
 
-import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.daemon.transport.ISignallingService;
 import com.aerofs.daemon.transport.ISignallingServiceListener;
 import com.aerofs.ids.DID;
@@ -11,7 +10,9 @@ import com.aerofs.ssmp.SSMPEvent.Type;
 import com.aerofs.ssmp.EventHandler;
 import com.aerofs.ssmp.SSMPRequest;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
 
+import java.io.IOException;
 import java.util.Base64;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -42,7 +43,15 @@ class SignallingService implements ISignallingService, EventHandler {
             addCallback(_c.request(SSMPRequest.ucast(
                             SSMPIdentifier.fromInternal(did.toStringFormal()),
                             _prefix + _encoder.encodeToString(msg))),
-                    new FailedFutureCallback() {
+                    new FutureCallback<SSMPResponse>() {
+                        @Override
+                        public void onSuccess(SSMPResponse r) {
+                            if (r.code != SSMPResponse.OK) {
+                                _listener.sendSignallingMessageFailed(did, msg, new IOException(
+                                        "UCAST to " + did + " failed with code " + r.code
+                                ));
+                            }
+                        }
                         @Override
                         public void onFailure(Throwable t) {
                             if (t instanceof Exception) {

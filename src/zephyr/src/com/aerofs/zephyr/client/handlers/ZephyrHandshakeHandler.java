@@ -111,26 +111,14 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
         handlerCtx = ctx;
 
         ChannelFuture passedOnFuture = future(channel);
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                originalConnectEvent.getFuture().setFailure(new IOException("channel closed during zephyr handshake"));
-            }
-        });
+        channel.getCloseFuture().addListener(cf -> originalConnectEvent.getFuture()
+                .setFailure(new IOException("channel closed during zephyr handshake")));
 
-        passedOnFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                if (!channelFuture.isSuccess()) {
-                    Throwable originalCause = channelFuture.getCause();
-                    originalConnectEvent.getFuture().setFailure(originalCause == null ? new IOException("connect failed during zephyr handshake") : originalCause);
-                }
+        passedOnFuture.addListener(cf -> {
+            if (!cf.isSuccess()) {
+                Throwable t = cf.getCause();
+                originalConnectEvent.getFuture().setFailure(t == null
+                        ? new IOException("connect failed during zephyr handshake") : t);
             }
         });
 
@@ -186,15 +174,9 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
 
     private void setHandshakeTimeout(final Channel channel)
     {
-        handshakeTimer.newTimeout(new TimerTask()
-        {
-            @Override
-            public void run(Timeout timeout)
-                    throws Exception
-            {
-                if (!channel.getCloseFuture().isDone() && !(handshakeEngine.getState() == SUCCEEDED)) {
-                    fireExceptionCaught(channel, new ExHandshakeFailed("timeout during handshake for " + channelId));
-                }
+        handshakeTimer.newTimeout(timeout -> {
+            if (!channel.getCloseFuture().isDone() && !(handshakeEngine.getState() == SUCCEEDED)) {
+                fireExceptionCaught(channel, new ExHandshakeFailed("timeout during handshake for " + channelId));
             }
         }, handshakeTimeout, handshakeTimeoutTimeUnit);
     }
@@ -263,28 +245,22 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
         l.debug("c:{} bind to remote l:{} r:{}", channelId, handshakeEngine.getLocalZid(), remoteZid);
 
         ChannelFuture writeFuture = future(ctx.getChannel());
-        writeFuture.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                Channel channel = channelFuture.getChannel();
-                channel.getPipeline().remove(ZephyrHandshakeHandler.this);
+        writeFuture.addListener(cf -> {
+            Channel channel = cf.getChannel();
+            channel.getPipeline().remove(ZephyrHandshakeHandler.this);
 
-                if (channelFuture.isSuccess()) {
-                    checkNotNull(originalConnectEvent);
+            if (cf.isSuccess()) {
+                checkNotNull(originalConnectEvent);
 
-                    l.debug("c:{} succeed bind write", channelId);
-                    originalConnectEvent.getFuture().setSuccess();
-                    fireChannelConnected(ctx, (SocketAddress) originalConnectEvent.getValue());
+                l.debug("c:{} succeed bind write", channelId);
+                originalConnectEvent.getFuture().setSuccess();
+                fireChannelConnected(ctx, (SocketAddress) originalConnectEvent.getValue());
 
-                    drainReceived(ctx);
-                } else {
-                    l.warn("c:{} fail bind write", channelId);
-                    Throwable originalCause = channelFuture.getCause();
-                    fireExceptionCaught(ctx, originalCause == null ? new IOException("bind write failed") : originalCause);
-                }
+                drainReceived(ctx);
+            } else {
+                l.warn("c:{} fail bind write", channelId);
+                Throwable originalCause = cf.getCause();
+                fireExceptionCaught(ctx, originalCause == null ? new IOException("bind write failed") : originalCause);
             }
         });
 
