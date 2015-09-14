@@ -58,6 +58,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                 insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
                 insert(foo, "bar", bar, ObjectType.FOLDER),
                 insert(bar, "baz", baz, ObjectType.FILE),
+                insert(bar, "qux", qux, ObjectType.FOLDER),
                 updateContent(baz, did, h, 0L, 42L)
         );
 
@@ -76,7 +77,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
-                                        content(EMPTY, 42)))));
+                                        content(EMPTY, 42)),
+                                folder("qux", qux))));
 
         apply(
                 share(foo)
@@ -95,11 +97,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
-                                        content(EMPTY, 42)))));
+                                        content(EMPTY, 42)),
+                                folder("qux", qux))));
 
         // shared objects do not exist in root store anymore
         assertNotPresent(bar, baz);
-        assertHasRemoteLink(SID.folderOID2convertedAnchorOID(foo), OID.ROOT, "foo", 5);
+        assertHasRemoteLink(SID.folderOID2convertedAnchorOID(foo), OID.ROOT, "foo", 6);
 
         // remote links in new store with negative version
         assertHasRemoteLink(shared, bar, OID.ROOT, "bar", -1);
@@ -119,6 +122,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         apply(shared,
                 insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
                 insert(bar, "baz", baz, ObjectType.FILE),
+                insert(bar, "qux", qux, ObjectType.FOLDER),
                 updateContent(baz, did, h, 0L, 42L)
         );
 
@@ -132,7 +136,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
-                                        content(EMPTY, 42)))));
+                                        content(EMPTY, 42)),
+                                folder("qux", qux))));
 
         // no local changes
         assertHasLocalChanges(sidx);

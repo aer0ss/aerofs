@@ -303,8 +303,17 @@ public class ImmigrantCreator
                 }
                 _ccdb.deleteChange_(sidxFrom, oidFrom, t);
                 if (reuseId) {
-                    try (IDBIterator<OID> it = _ds.listChildren_(oaFrom.soid())) {
-                        checkState(!it.next_());
+                    if (oaFrom.isDir()) {
+                        // NB: careful about listing children
+                        // One does not simply keep multiple ResultSet open for the same prepared
+                        // statement. Because of an optimization in DirectoryService#walk_ files
+                        // are walked immediately and folders are placed into a list to be walked
+                        // later. Calling listChildren for a file would reset the iterator in
+                        // DirectoryService#walk_ and cause the migration to skip children, in turn
+                        // causing this very assertion to fail
+                        try (IDBIterator<OID> it = _ds.listChildren_(oaFrom.soid())) {
+                            checkState(!it.next_());
+                        }
                     }
                     _os.deleteOA_(oaFrom.soid(), t);
                 } else {
