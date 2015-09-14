@@ -8,11 +8,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Arrays;
+import java.util.List;
 
 public final class MoveChild extends Operation {
 
@@ -41,6 +43,11 @@ public final class MoveChild extends Operation {
         this.child = child;
         this.newParent = newParent;
         this.newChildName = newChildName;
+    }
+
+    @Override
+    public List<UniqueID> affectedOIDs() {
+        return Lists.newArrayList(newParent);
     }
 
     @Override

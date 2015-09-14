@@ -1,10 +1,7 @@
 package com.aerofs.polaris.resources;
 
 import com.aerofs.baseline.db.MySQLDatabase;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.acl.Access;
@@ -16,20 +13,23 @@ import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
 import com.aerofs.polaris.api.batch.location.LocationBatchResult;
 import com.aerofs.polaris.api.batch.location.LocationUpdateType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
+import org.mockito.ArgumentMatcher;
+
+import java.util.Collection;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyVararg;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 
@@ -174,7 +174,7 @@ public final class TestLocationBatchResource {
         OID object2 = PolarisHelpers.newFile(AUTHENTICATED, folder100, "file2");
 
         // set the access manager to *reject* changes to store0
-        doThrow(new AccessException(USERID, store0, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store0), anyVararg());
+        doThrow(new AccessException(USERID, store0, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store0)), anyVararg());
 
         // now, submit a batch
         LocationBatch batch = new LocationBatch(ImmutableList.of(
@@ -208,5 +208,21 @@ public final class TestLocationBatchResource {
         operationResult = result.results.get(2);
         assertThat(operationResult.successful, is(false));
         assertThat(operationResult.error.errorCode, equalTo(PolarisError.INSUFFICIENT_PERMISSIONS));
+    }
+
+    private class ContainingUniqueID extends ArgumentMatcher<Collection<UniqueID>> {
+        private UniqueID match;
+
+        public ContainingUniqueID(UniqueID match) {
+            this.match = match;
+        }
+
+        @SuppressWarnings("unchecked")
+        public boolean matches(Object collection) {
+            for (UniqueID id : (Collection<UniqueID>) collection) {
+                if (match.equals(id)) return true;
+            }
+            return false;
+        }
     }
 }

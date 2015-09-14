@@ -14,6 +14,7 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.InsertChild;
+import com.aerofs.polaris.api.operation.MoveChild;
 import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.api.operation.Restore;
 import com.aerofs.polaris.api.types.ObjectType;
@@ -26,9 +27,11 @@ import org.apache.http.HttpStatus;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
+import org.mockito.ArgumentMatcher;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Random;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
@@ -37,9 +40,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -274,7 +275,7 @@ public final class TestObjectResource {
         SID store = SID.generate();
 
         // throw an exception if this user attempts to access this shared folder
-        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store), anyVararg());
+        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store)), anyVararg());
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
@@ -303,7 +304,7 @@ public final class TestObjectResource {
 
         // now, change the access manager to throw
         // if this user attempts to access the same shared folder
-        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store), anyVararg());
+        doThrow(new AccessException(USERID, store, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store)), anyVararg());
 
         // remove any notifications as a result of the setup actions
         reset(polaris.getNotifier());
@@ -328,7 +329,7 @@ public final class TestObjectResource {
         // setup the access manager to throw an exception
         // if we attempt to access the denied shared folder
         SID store0 = SID.generate();
-        doThrow(new AccessException(USERID, store0, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), eq(store0), anyVararg());
+        doThrow(new AccessException(USERID, store0, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store0)), anyVararg());
 
         // now, make a call to insert the folder directly into the denied shared folder
         OID folder = OID.generate();
@@ -659,6 +660,72 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_OK);
     }
 
+    @Test
+    public void shouldRequirePermissionsOnBothStoresForCrossStoreMove()
+            throws Exception
+    {
+        SID store1 = SID.generate();
+        SID store2 = SID.generate();
+
+        // first, insert an object into the shared folder
+        // this should succeed, because access manager allows everyone
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, store1, "folder1");
+        OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, store2, "folder2");
+
+        // now, change the access manager to throw
+        // if this user attempts to access the same shared folder
+        doThrow(new AccessException(USERID, store2, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store2)), anyVararg());
+
+        // remove any notifications as a result of the setup actions
+        reset(polaris.getNotifier());
+
+        // try to move folder1 from store1 to store2, which should fail because the user does not have access to store2
+        given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body(new MoveChild(folder1, store2, "folder1"))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(store1))
+                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // same thing in reverse
+        given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body(new MoveChild(folder2, store1, "folder2"))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(store2))
+                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // and definitely so if both stores are restricted
+        doThrow(new AccessException(USERID, store1, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store1)), anyVararg());
+
+        // try to move folder1 from store1 to store2, which should fail because the user does not have access to store2
+        given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body(new MoveChild(folder1, store2, "folder1"))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(store1))
+                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // same thing in reverse
+        given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body(new MoveChild(folder2, store1, "folder2"))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(store2))
+                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // shouldn't get any updates
+        verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);
@@ -674,5 +741,21 @@ public final class TestObjectResource {
     private static JsonNode getWantedTree(UniqueID store, String resourcePath) throws IOException {
         ObjectMapper mapper = PolarisHelpers.newPolarisMapper();
         return mapper.createObjectNode().set(store.toStringFormal(), mapper.readTree(Resources.getResource(resourcePath)));
+    }
+
+    private class ContainingUniqueID extends ArgumentMatcher<Collection<UniqueID>> {
+        private UniqueID match;
+
+        public ContainingUniqueID(UniqueID match) {
+            this.match = match;
+        }
+
+        @SuppressWarnings("unchecked")
+        public boolean matches(Object collection) {
+            for (UniqueID id : (Collection<UniqueID>) collection) {
+                if (match.equals(id)) return true;
+            }
+            return false;
+        }
     }
 }

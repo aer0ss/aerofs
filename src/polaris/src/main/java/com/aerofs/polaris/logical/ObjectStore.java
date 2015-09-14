@@ -20,6 +20,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -75,7 +77,7 @@ import java.util.Set;
  *              ...
  * </pre>
  * If you need to, you can expose all the privateMethodXXX(AccessToken, ...)
- * calls, do a single access check externally using the {@link #checkAccess(UserID, UniqueID, Access...)}
+ * calls, do a single access check externally using the {@link #checkAccess(UserID, Collection, Access...)}
  * call and then chain as many db operations as you'd like in
  * a single {@link #inTransaction(StoreTransaction)} method call.
  */
@@ -153,14 +155,14 @@ public final class ObjectStore {
     public static final class AccessToken {
 
         public final UserID user;
-        public final UniqueID store;
+        public final Set<UniqueID> stores;
         public final Set<Access> granted;
 
         // private so that it can *only* be created from within this class
-        private AccessToken(UserID user, UniqueID store, Access... granted) {
+        private AccessToken(UserID user, Set<UniqueID> stores, Access... granted) {
             Preconditions.checkArgument(granted.length > 0, "at least access type must be allowed");
             this.user = user;
-            this.store = store;
+            this.stores = stores;
             this.granted = ImmutableSet.copyOf(granted);
         }
 
@@ -170,12 +172,12 @@ public final class ObjectStore {
             if (o == null || getClass() != o.getClass()) return false;
 
             AccessToken other = (AccessToken) o;
-            return Objects.equal(user, other.user) && Objects.equal(store, other.store) && Objects.equal(granted, other.granted);
+            return Objects.equal(user, other.user) && Objects.equal(stores, other.stores) && Objects.equal(granted, other.granted);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(user, store, granted);
+            return Objects.hashCode(user, stores, granted);
         }
 
         @Override
@@ -183,7 +185,7 @@ public final class ObjectStore {
             return Objects
                     .toStringHelper(this)
                     .add("user", user)
-                    .add("store", store)
+                    .add("stores", stores)
                     .add("granted", granted)
                     .toString();
         }
@@ -210,23 +212,37 @@ public final class ObjectStore {
      * Check if an object can be accessed by a user.
      *
      * @param user user id for which permissions should be checked
-     * @param oid object the user wants to access
+     * @param oids objects the user wants to access
      * @param requested permissions the user wants on the object
      * @throws NotFoundException if the object does not exist
      * @throws AccessException if the user cannot access the object
      */
-    public AccessToken checkAccess(UserID user, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
+    public AccessToken checkAccess(UserID user, Collection<UniqueID> oids, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
-        UniqueID store = inTransaction(dao -> getStore(dao, oid));
+        Set<UniqueID> stores = inTransaction(dao -> {
+            Set<UniqueID> s = Sets.newHashSet();
+            for (UniqueID oid : oids) {
+                s.add(getStore(dao, oid));
+            }
+            return s;
+        });
+
+        Set<UniqueID> verified = Sets.newHashSet();
 
         // avoid checking sparta if it turns out that this is some user's root store
-        if (Identifiers.isRootStore(store) && SID.rootSID(user).equals(store)) {
-            return new AccessToken(user, store, requested);
+        for (UniqueID store: stores) {
+            if (Identifiers.isRootStore(store) && SID.rootSID(user).equals(store)) {
+                verified.add(store);
+            }
         }
 
-        accessManager.checkAccess(user, store, requested);
-        return new AccessToken(user, store, requested);
+        accessManager.checkAccess(user, Sets.difference(stores, verified), requested);
+        return new AccessToken(user, stores, requested);
+    }
+
+    private AccessToken checkAccess(UserID user, UniqueID store, Access... requested) {
+        return checkAccess(user, Lists.newArrayList(store), requested);
     }
 
     /* (non-javadoc)
@@ -236,12 +252,12 @@ public final class ObjectStore {
     private void checkAccessGranted(DAO dao, AccessToken accessToken, UniqueID oid, Access... requested) throws NotFoundException, AccessException {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
-        UniqueID currentStore = getStore(dao, oid);
-        Preconditions.checkArgument(currentStore.equals(accessToken.store), "access granted for store %s instead of %s", accessToken.store, currentStore);
+        UniqueID store = getStore(dao, oid);
+        Preconditions.checkArgument(accessToken.stores.contains(store), "access granted not granted for store %s", store);
 
         if (!accessToken.subsumes(requested)) {
             LOGGER.warn("access granted for {} instead of {}", accessToken.granted, requested);
-            throw new AccessException(accessToken.user, accessToken.store, requested);
+            throw new AccessException(accessToken.user, store, requested);
         }
     }
 
@@ -326,7 +342,9 @@ public final class ObjectStore {
      * @throws AccessException if {@code user} cannot transform {@code object} or one of its dependents
      */
     public OperationResult performTransform(UserID user, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException {
-        AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
+        List<UniqueID> affectedObjects = Lists.newArrayList(operation.affectedOIDs());
+        affectedObjects.add(oid);
+        AccessToken accessToken = checkAccess(user, affectedObjects, Access.READ, Access.WRITE);
         return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
     }
 
@@ -347,16 +365,18 @@ public final class ObjectStore {
                 if (oid.equals(mc.newParent)) {
                     updated.add(renameChild(dao, device, oid, mc.child, mc.newChildName));
                 } else {
-                    LogicalObject newParent = getParent(dao, mc.newParent);
-                    if (getStore(dao, oid).equals(newParent.store)) {
+                    if (getStore(dao, oid).equals(getStore(dao, mc.newParent))) {
                         updated.addAll(moveChild(dao, device, oid, mc.newParent, mc.child, mc.newChildName));
-                    } else if (dao.objectTypes.get(mc.child) == ObjectType.FILE) {
-                        updated.add(migrateObject(dao, device, mc.newParent, OID.generate(), mc.child, mc.newChildName));
-                        updated.add(removeChild(dao, device, oid, mc.child));
                     } else {
-                        OID newOid = OID.generate();
-                        updated.add(migrateObject(dao, device, mc.newParent, newOid, mc.child, mc.newChildName));
-                        jobID = migrator.moveCrossStore(mc.child, newOid, device);
+                        checkAccessGranted(dao, accessToken, mc.newParent, Access.READ, Access.WRITE);
+                        if (dao.objectTypes.get(mc.child) == ObjectType.FILE) {
+                            updated.add(migrateObject(dao, device, mc.newParent, OID.generate(), mc.child, mc.newChildName));
+                            updated.add(removeChild(dao, device, oid, mc.child));
+                        } else {
+                            OID newOid = OID.generate();
+                            updated.add(migrateObject(dao, device, mc.newParent, newOid, mc.child, mc.newChildName));
+                            jobID = migrator.moveCrossStore(mc.child, newOid, device);
+                        }
                     }
                 }
                 break;

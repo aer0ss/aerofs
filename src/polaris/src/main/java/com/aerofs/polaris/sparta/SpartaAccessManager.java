@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
@@ -102,42 +103,45 @@ public final class SpartaAccessManager implements ManagedAccessManager {
     // FIXME (AG): do not throw AccessException when there's an IOException
 
     @Override
-    public void checkAccess(UserID user, UniqueID store, Access... requested) throws AccessException {
-        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, store.toStringFormal(), user.getString()));
-        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
+    public void checkAccess(UserID user, Collection<UniqueID> stores, Access... requested) throws AccessException {
+        for (UniqueID store : stores) {
+            // TODO (RD): cache responses and pipeline requests if necessary
+            HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, store.toStringFormal(), user.getString()));
+            get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
 
-        try {
-            try (CloseableHttpResponse response = client.execute(get)) {
-                int statusCode = response.getStatusLine().getStatusCode();
+            try {
+                try (CloseableHttpResponse response = client.execute(get)) {
+                    int statusCode = response.getStatusLine().getStatusCode();
 
-                // if we got a 404 then the user doesn't exist
-                if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    LOGGER.warn("user does not belong to shared folder {}", store);
-                    throw new AccessException(user, store, Access.READ);
-                } else if (statusCode != HttpStatus.SC_OK) {
-                    LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
-                    throw new AccessException(user, store, requested);
-                }
+                    // if we got a 404 then the user doesn't exist
+                    if (statusCode == HttpStatus.SC_NOT_FOUND) {
+                        LOGGER.warn("user does not belong to shared folder {}", store);
+                        throw new AccessException(user, store, Access.READ);
+                    } else if (statusCode != HttpStatus.SC_OK) {
+                        LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
+                        throw new AccessException(user, store, requested);
+                    }
 
-                boolean writeAccessRequested = isWriteAccessRequested(requested);
+                    boolean writeAccessRequested = isWriteAccessRequested(requested);
 
-                // we haven't requested WRITE access
-                // members of a shared folder have READ access by default
-                if (!writeAccessRequested) {
-                    return;
-                }
+                    // we haven't requested WRITE access
+                    // members of a shared folder have READ access by default
+                    if (!writeAccessRequested) {
+                        return;
+                    }
 
-                // we've requested WRITE access and the user exists...
-                try (InputStream content = response.getEntity().getContent()) {
-                    Member member = mapper.readValue(content, Member.class);
-                    if (!member.permissions.contains("WRITE")) {
-                        throw new AccessException(user, store, Access.WRITE);
+                    // we've requested WRITE access and the user exists...
+                    try (InputStream content = response.getEntity().getContent()) {
+                        Member member = mapper.readValue(content, Member.class);
+                        if (!member.permissions.contains("WRITE")) {
+                            throw new AccessException(user, store, Access.WRITE);
+                        }
                     }
                 }
+            } catch (IOException e) {
+                LOGGER.warn("fail retrieve ACL from sparta", e);
+                throw new AccessException(user, store, requested);
             }
-        } catch (IOException e) {
-            LOGGER.warn("fail retrieve ACL from sparta", e);
-            throw new AccessException(user, store, requested);
         }
     }
 

@@ -3,6 +3,8 @@ package com.aerofs.polaris.acl;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 
+import java.util.Collection;
+
 /**
  * Implemented by classes that can perform ACL checks whenever:
  * <ul>
@@ -23,10 +25,10 @@ public interface AccessManager {
      * when the access check is complete.
      *
      * @param user user id of the user who wants to access the shared folder
-     * @param store oid of the store store or shared folder the user wants to access
+     * @param stores a collection of the store or shared folder IDs the user wants to access
      * @param requested one or more permissions the user wants when accessing the store store or shared folder
      * @throws AccessException if <strong>any</strong> of the {@code requested}
      * permissions cannot be granted to the user
      */
-    void checkAccess(UserID user, UniqueID store, Access... requested) throws AccessException;
+    void checkAccess(UserID user, Collection<UniqueID> stores, Access... requested) throws AccessException;
 }
