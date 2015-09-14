@@ -79,7 +79,7 @@ public class SSMPRequest {
 
     private static void checkTextPayload(String payload) {
         checkPayloadLength(payload.length());
-        if (payload.charAt(0) > 3 && payload.indexOf('\n') == -1) {
+        if (payload.charAt(0) <= 3 || payload.indexOf('\n') != -1) {
             throw new IllegalArgumentException();
         }
     }
