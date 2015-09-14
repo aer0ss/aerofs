@@ -355,7 +355,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
-        service.setMaxFreeMembers(Integer.MAX_VALUE);
     }
 
     /**

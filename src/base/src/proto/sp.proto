@@ -23,7 +23,7 @@ import "cmd.proto";
 //
 // When this happens, deal with any comment tagged with WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE and
 // make sure you bump the protocol version everywhere:
-//      SP_PROTOCOL_VERSION in BaseParam.java
+//      SP_PROTOCOL_VERSION in src/base/src/main/java/com/aerofs/sp/client/SPProtocol.java
 //      SP_PROTO_VERSION in src/python-lib/aerofs_sp/param.py
 //      sp.version in
 //          src/web/root/opt/web/production.ini.template
@@ -132,8 +132,7 @@ service SPService {
     //   ExNotFound if the user does not have a pending invitation for the specified organization.
     //   ExBadArgs if the user is already a member of the target organization.
     //   ExNoAdminForNonEmptyTeam if the organization would have no admins but non-admin members.
-    rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
-            returns(AcceptOrganizationInvitationReply);
+    rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall) returns(Void);
 
     // Ignore an invitation to a specific organization. This call deletes the entry in the
     // organization invitation table so that when the user views the pending organization invites
@@ -143,8 +142,7 @@ service SPService {
     //
     // Throws:
     //   ExNotFound if the user does not have a pending invitation for the specified organization.
-    rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
-            DeleteOrganizationInvitationReply);
+    rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(Void);
 
     // this call was RemoveUserFromOrganization and is now removed.
     rpc Noop(Void) returns(Void);
@@ -284,7 +282,7 @@ service SPService {
     //      - if the caller is the user itself ExNoAdminOrOwner is thrown
     //
     // Required Auth Level: User to delete self, Admin to delete others
-    rpc DeactivateUser(DeactivateUserCall) returns(DeactivateUserReply);
+    rpc DeactivateUser(DeactivateUserCall) returns(Void);
 
 
     /////////
@@ -419,11 +417,6 @@ service SPService {
     rpc ExtendSession(Void) returns(Void);
 
 
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
-    // Delete this call. It is not used.
-    rpc GetStripeData(Void) returns(GetStripeDataReply);
-
-
     // List all the users who have been invited to the current user's organization.
     //
     // Required Auth Level: admin
@@ -455,21 +448,12 @@ service SPService {
     // Required Auth Level: admin
     //
     // Throws: ExEmptyEmailAddress if the user id is empty
-    rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
-            DeleteOrganizationInvitationForUserReply);
+    rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(Void);
 
     // Used only by a DaemonPostUpdateTask to set OS information for existing devices
     //
     // Required Auth Level: user
     rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
-    // Delete this call. It is not used.
-    rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
-
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
-    // Delete this call. It is not used.
-    rpc DeleteStripeCustomerID(Void) returns (Void);
 
     // Retrieve ACL entries for the user, including those flagged as "external".
     // See docs/design/sharing_and_migration.txt for information about the external flag.
@@ -893,11 +877,6 @@ service SPService {
     rpc SearchOrganizationUsers(SearchOrganizationUsersCall) returns (SearchOrganizationUsersReply);
 }
 
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE : delete me
-message SetStripeCustomerIDCall {
-    required string stripe_customer_id = 1;
-}
-
 message SetDeviceOSFamilyAndNameCall {
     required bytes device_id = 1;
     required string os_family = 2;
@@ -908,27 +887,8 @@ message DeleteOrganizationInvitationForUserCall {
     required string user_id = 1;
 }
 
-message DeleteOrganizationInvitationForUserReply {
-    // See InviteToOrganizationReply
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never populated. Remove it.
-    required PBStripeData stripe_data = 1;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this message is never used. Remove it.
-// The data structure holds all the information that describes the Stripe subscription of an
-// organization. The Web server uses it to perform Stripe transactions.
-message PBStripeData {
-    optional string customer_id = 1;
-    required uint32 quantity = 2;
-}
-
 message ListOrganizationInvitedUsersReply {
     repeated string user_id = 1;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this message is never used. Remove it.
-message GetStripeDataReply {
-    required PBStripeData stripe_data = 1;
 }
 
 message SignUpWithCodeCall {
@@ -965,22 +925,14 @@ message InviteToOrganizationCall {
 }
 
 message InviteToOrganizationReply {
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
-    required PBStripeData stripe_data = 1;
-
     // Whether the invited user is locally managed (see Authenticator#isLocallyManaged). Used by
     // the frontend to determine if to add the user to the pending invitation list.
     // optional is for backward compatibility. Can be convert to required after Dec 1, 2013.
-    optional bool locally_managed = 2 [default = true];
+    optional bool locally_managed = 1 [default = true];
 }
 
 message AcceptOrganizationInvitationCall {
     required int32 organization_id = 1;
-}
-
-message AcceptOrganizationInvitationReply {
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
-    required PBStripeData stripe_data = 1;
 }
 
 message DeleteOrganizationInvitationCall {
@@ -1357,11 +1309,6 @@ message GetUnsubscribeEmailReply {
     required string email_id = 1;
 }
 
-message DeleteOrganizationInvitationReply {
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
-    required PBStripeData stripe_data = 1;
-}
-
 message PBFullName {
     required string first_name = 1;
     required string last_name = 2;
@@ -1470,11 +1417,6 @@ enum PBSharedFolderState {
 message DeactivateUserCall {
     required string user_id = 1;
     required bool erase_devices = 2;
-}
-
-message DeactivateUserReply {
-    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: this field is never used. Remove it.
-    required PBStripeData stripe_data = 1;
 }
 
 message AddUserToWhitelistCall {

@@ -10,7 +10,7 @@ deployment.api_server_uri = http://havre.service:8083
 deployment.sp_server_uri = http://sp.service:8080
 
 # SP settings
-sp.version = 21
+sp.version = 22
 
 # Pyramid settings
 pyramid.reload_templates = false

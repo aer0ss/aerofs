@@ -185,14 +185,6 @@ public class SPService implements ISPService
 
     private final InvitationHelper _invitationHelper;
 
-    // Remember to update text in team_members.mako, team_settings.mako, and pricing.mako when
-    // changing this number.
-    private int _maxFreeMembersPerOrg = 3;
-
-    // Whether to enforce payment checks
-    private final Boolean ENABLE_PAYMENT =
-            getBooleanProperty("sp.payment.enabled", true);
-
     // Whether to allow self sign-ups via RequestToSignUp()
     private final Boolean OPEN_SIGNUP =
             getBooleanProperty("open_signup", true);
@@ -294,8 +286,7 @@ public class SPService implements ISPService
 
         _rateLimiter = rateLimiter;
 
-        ScheduledExecutorService _scheduledExecutor = scheduledExecutor;
-        startPeriodicSyncing(_scheduledExecutor, () -> {
+        startPeriodicSyncing(scheduledExecutor, () -> {
             try {
                 syncGroupsWithLDAPImpl(null);
             } catch (Exception e) {
@@ -306,15 +297,6 @@ public class SPService implements ISPService
             }
         });
         _bifrostClient = bifrostClient;
-    }
-
-    /**
-     * For testing only. Don't use in production.
-     * TODO (WW) use configuration service.
-     */
-    public void setMaxFreeMembers(int maxFreeMembersPerOrg)
-    {
-        _maxFreeMembersPerOrg = maxFreeMembersPerOrg;
     }
 
     public void setUserTracker(SPActiveUserSessionTracker userTracker)
@@ -1107,18 +1089,6 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<Void> setStripeCustomerID(String stripeCustomerId) throws Exception
-    {
-        throw new UnsupportedOperationException("Stripe operations no longer supported");
-    }
-
-    @Override
-    public ListenableFuture<Void> deleteStripeCustomerID() throws Exception
-    {
-        throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
 
     private static void throwIfNotOwner(User user, Device device)
@@ -1989,7 +1959,6 @@ public class SPService implements ISPService
 
         String fromName = SPParam.EMAIL_FROM_NAME;
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
-        String replyTo = contactEmail;
         String header = format("%s Support", SPParam.BRAND);
         String body;
 
@@ -2009,7 +1978,7 @@ public class SPService implements ISPService
         _emailSender.sendPublicEmailFromSupport(
                 fromName,
                 to,
-                replyTo,
+                contactEmail,
                 format("[%s Support] %s", SPParam.BRAND, subject),
                 email.getTextEmail(),
                 email.getHTMLEmail());
@@ -2289,14 +2258,14 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<AcceptOrganizationInvitationReply> acceptOrganizationInvitation(Integer orgID)
+    public ListenableFuture<Void> acceptOrganizationInvitation(Integer orgID)
             throws Exception
     {
         throw new UnsupportedOperationException("Cross-team invitations do not exist. How did you get here?");
     }
 
     @Override
-    public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
+    public ListenableFuture<Void> deleteOrganizationInvitation(
             Integer orgID)
             throws SQLException, ExNotAuthenticated, ExNotFound, ExSecondFactorRequired,
             ExSecondFactorSetupRequired
@@ -2305,7 +2274,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<DeleteOrganizationInvitationForUserReply> deleteOrganizationInvitationForUser(
+    public ListenableFuture<Void> deleteOrganizationInvitationForUser(
             String userID) throws Exception
     {
         _sqlTrans.begin();
@@ -2338,11 +2307,9 @@ public class SPService implements ISPService
          */
         invitee.deleteAllSignUpCodes();
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-
         _sqlTrans.commit();
 
-        return createReply(
-                DeleteOrganizationInvitationForUserReply.newBuilder().build());
+        return createVoidReply();
     }
 
     // this call was previously RemoveUserFromOrganization
@@ -2427,12 +2394,6 @@ public class SPService implements ISPService
         return createReply(RecertifyDeviceReply.newBuilder()
                     .setCert(cert.toString())
                     .build());
-    }
-
-    @Override
-    public ListenableFuture<GetStripeDataReply> getStripeData() throws Exception
-    {
-        throw new UnsupportedOperationException("Stripe operations no longer supported");
     }
 
     @Override
@@ -3434,14 +3395,12 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<DeactivateUserReply> deactivateUser(String userId, Boolean eraseDevices)
+    public ListenableFuture<Void> deactivateUser(String userId, Boolean eraseDevices)
             throws Exception
     {
         _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         User user = _factUser.createFromExternalID(userId);
-
-        Organization org = user.getOrganization();
 
         UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher,
                 _aclPublisher);
@@ -3450,7 +3409,7 @@ public class SPService implements ISPService
 
         _userTracker.signOutAll(user.id());
 
-        return createReply(DeactivateUserReply.newBuilder().build());
+        return createVoidReply();
     }
 
     @Override
@@ -3760,11 +3719,9 @@ public class SPService implements ISPService
 
     int getSeatCountForPrivateOrg() throws SQLException
     {
-        int returnValue = 0;
-
         _sqlTrans.begin();
         Organization privateOrg = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-        returnValue = privateOrg.countUsers();
+        int returnValue = privateOrg.countUsers();
         _sqlTrans.commit();
 
         return returnValue;
