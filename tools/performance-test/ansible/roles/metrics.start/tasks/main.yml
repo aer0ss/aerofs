@@ -1,0 +1,5 @@
+- name: Start collecting polaris metrics
+  service:
+    name: record-metrics.service
+    state: started
+  become: true

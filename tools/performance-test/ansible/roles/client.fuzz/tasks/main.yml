@@ -1,0 +1,4 @@
+- name: Run Fuzzer
+  command: "~/client-scripts/run_fuzzer.py -o {{ objects }} -f {{ fuzz }}"
+  async: 45
+  poll: 0

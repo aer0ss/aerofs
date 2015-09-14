@@ -1,0 +1,17 @@
+- name: Distribute Client Approot
+  command: >-
+    rsync --delay-updates -F --compress --archive --copy-links
+          --rsh 'ssh -i aws.pem -S none -o StrictHostKeyChecking=no'
+          --out-format='<<CHANGED>>%i %n%L'
+          {{ ansible_appliance_home }}/repos/aerofs/approot
+          {{ ansible_ssh_user }}@{{ inventory_hostname }}:{{ ansible_home }}
+  delegate_to: "{{ appliance[0] }}"
+
+- name: Distribute Client Scripts
+  command: >-
+    rsync --delay-updates -F --compress --archive --copy-links
+          --rsh 'ssh -i aws.pem -S none -o StrictHostKeyChecking=no'
+          --out-format='<<CHANGED>>%i %n%L'
+          {{ ansible_appliance_home }}/repos/aerofs/tools/performance-test/client-scripts
+          {{ ansible_ssh_user }}@{{ inventory_hostname }}:{{ ansible_home }}
+  delegate_to: "{{ appliance[0] }}"

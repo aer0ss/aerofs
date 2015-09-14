@@ -1,0 +1,9 @@
+[Unit]
+Description=RecordMetrics
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/home/core/repos/aerofs/tools/performance-test/record-metrics.sh /home/core/metrics
+
+[Install]
+WantedBy=multi-user.target

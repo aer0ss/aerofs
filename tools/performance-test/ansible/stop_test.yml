@@ -1,0 +1,11 @@
+# Since we are "firing-and-forgetting" the previous operations to ensure all
+# clients run simulatenously, we cannot wait for their completion explicitly.
+- name: Stop Fuzzing Operations
+  hosts: clients
+  roles:
+    - client.stop
+
+- name: End Metrics
+  hosts: appliance
+  roles:
+    - metrics.stop

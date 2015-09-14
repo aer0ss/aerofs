@@ -1,0 +1,34 @@
+#!/bin/bash
+# Run this script to launch a dockerized shell for PerfTest work.
+docker build -t aerofs/perfshell "$(dirname "$0")"
+
+# Create this file with `vault auth -method=github token=...`
+touch ${HOME}/.vault-token
+
+# We need to share the SSH keys with the container
+SSH_ARGS="-v ${HOME}/.ssh/:/root/.ssh/"
+
+# Detect and pass the ssh-agent if needed
+[ -n "$SSH_AUTH_SOCK" ] && SSH_ARGS="\
+    -v ${HOME}/.ssh/known_hosts:/root/.ssh/known_hosts:ro \
+    -v ${SSH_AUTH_SOCK}:/tmp/ssh_auth_sock \
+    -e SSH_AUTH_SOCK=/tmp/ssh_auth_sock"
+
+
+CMD="docker run --rm -it \
+    -v ${HOME}/repos:/repos \
+    ${SSH_ARGS} \
+    -v ${HOME}/.vault-token:/root/.vault-token \
+    -v ${HOME}/.ssh/id_rsa:/root/.ssh/id_rsa \
+    -v ${HOME}/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub \
+    -w /repos/aerofs/tools/performance-test \
+    --dns 172.16.0.83 \
+    --name perfshell \
+    aerofs/perfshell"
+
+if [ $# = 0 ]
+then
+    ${CMD} bash
+else
+    ${CMD} "$@"
+fi

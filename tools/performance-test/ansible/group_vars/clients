@@ -1,0 +1,7 @@
+---
+
+ansible_ssh_user: ubuntu
+ansible_distribution: Ubuntu
+ansible_os_family: Ubuntu
+ansible_appliance_home: /home/core
+ansible_home: /home/ubuntu

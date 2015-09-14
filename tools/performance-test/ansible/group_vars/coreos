@@ -1,0 +1,7 @@
+---
+
+ansible_ssh_user: core
+ansible_python_interpreter: "PATH=/home/core/bin:$PATH python"
+ansible_distribution: CoreOS
+ansible_os_family: CoreOS
+ansible_home: /home/core

@@ -23,5 +23,4 @@ cecho ${CYAN} "Running Ship Emulator in the background..."
 echo "See ${LOG} for logs."
 
 nohup "${THIS_DIR}/../ship/emulate.sh" "${SHIP_YML}" $@ >>"${LOG}" 2>&1 &
-
 disown

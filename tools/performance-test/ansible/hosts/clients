@@ -1,0 +1,11 @@
+#!/bin/bash
+# A dynamic inventory backed by Terraform
+# N.B. For large-scale tests, you may want to run this command manually and
+# replace this file with the results -- otherwise, Ansible will try to run it
+# several times and you'll be sad about how slow it is.
+terraform-inventory --list "$(dirname "$0")"/../../terraform/terraform.tfstate \
+    | jq -r '.client | .[]' \
+    | xargs -I {} terraform-inventory --host={} "$(dirname "$0")"/../../terraform/terraform.tfstate \
+    | jq -r '.private_ip' \
+    | jq --raw-input --slurp 'split("\n")' \
+    | jq -r '{ "clients": . }'

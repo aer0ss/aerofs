@@ -1,0 +1,136 @@
+- name: Install docker-py
+  pip: name=docker-py version=1.1.0 state=present
+
+- name: Get private_key
+  stat:
+    path: "{{ ansible_home }}/.ssh/id_rsa"
+  register: private_key
+
+- name: Import aws key
+  copy:
+    src: aws.pem
+    dest: "{{ ansible_home }}/aws.pem"
+    mode: "0600"
+
+- name: Get Gerrit SSH key from Vault
+  local_action: command vault read -field data secret/ci/gerrit_ssh_key
+  register: gerrit_ssh_key
+  when: not private_key.stat.exists
+
+- name: Install Gerrit SSH key
+  copy:
+    content: "{{ gerrit_ssh_key.stdout }}"
+    dest: "{{ ansible_home }}/.ssh/id_rsa"
+    mode: "600"
+  register: gerrit_ssh_key_file
+  when: not private_key.stat.exists
+
+- name: Import build script
+  copy:
+    src: build-appliance.sh
+    dest: "{{ ansible_home }}/build-appliance.sh"
+    mode: "u+x"
+  register: build_appliance_file
+
+- name: Import test script
+  copy:
+    src: test-appliance.sh
+    dest: "{{ ansible_home }}/test-appliance.sh"
+    mode: "u+x"
+  register: test_appliance_file
+
+- name: Create host folder for repos
+  file:
+    path: "{{ ansible_home }}/repos"
+    state: directory
+  register: repos_dir
+
+- name: Create emulate-ship job
+  copy:
+    src: emulate-ship.service
+    dest: "/etc/systemd/system/emulate-ship.service"
+    mode: "u+x"
+  register: emulate_ship_service
+  become: true
+
+- name: Create record-metrics job
+  copy:
+    src: record-metrics.service
+    dest: "/etc/systemd/system/record-metrics.service"
+    mode: "u+x"
+  register: record_metrics_service
+  become: true
+
+- name: notify systemd of config changes
+  command: systemctl daemon-reload
+  when: emulate_ship_service.changed == True or record_metrics_service.changed == True
+  become: true
+
+- name: Create share.syncfs.com loopback
+  copy:
+    content: "127.0.0.1 share.syncfs.com"
+    dest: "/etc/hosts"
+  become: true
+
+# This is used to ensure the aerofs/aero-teamcity-agent is only used to build
+# containers once, since the provisioning process is so long.
+- name: Check if docker provisioning has started
+  raw: "stat {{ ansible_home }}/.built-appliance"
+  register: need_build_appliance
+  ignore_errors: True
+
+- name: Update aero-teamcity-agent
+  command: docker pull aerofs/aero-teamcity-agent
+  when: need_build_appliance | failed
+
+# Once the 'add_host' is actually supported by ansible/docker, we can use that.
+# Until then, enjoy this ugly hack.
+- name: Create appliance and dev client
+  command: >-
+    docker run --name=dev-build
+               --dns=172.17.42.1 --dns=172.16.0.83
+               --add-host share.syncfs.com:172.17.42.1
+               -v=/var/run/docker.sock:/var/run/docker.sock
+               -v={{ private_key.stat.path }}:/root/.ssh/id_rsa
+               -v={{ build_appliance_file.dest }}:/build-appliance.sh
+               -v={{ repos_dir.path }}:/repos
+               aerofs/aero-teamcity-agent:latest
+               /build-appliance.sh
+  when: need_build_appliance | failed
+
+- name: Start emulator
+  service:
+    name: emulate-ship.service
+    state: started
+  when: need_build_appliance | failed
+  become: true
+
+# Since the test license only supports 100 users, larger-scale perftests will
+# require a bigger license.
+- name: Overwrite test.license with perftest.license
+  copy:
+    src: perftest.license
+    dest: "{{ repos_dir.path }}/aerofs/system-tests/webdriver-lib/root/test.license"
+    mode: "0644"
+  become: true
+
+# See above.
+- name: Test appliance and dev client to create new user
+  command: >-
+    docker run --name=dev-test
+               --dns=172.17.42.1 --dns=172.16.0.83
+               --add-host share.syncfs.com:172.17.42.1
+               -v=/var/run/docker.sock:/var/run/docker.sock
+               -v={{ private_key.stat.path }}:/root/.ssh/id_rsa
+               -v={{ test_appliance_file.dest }}:/test-appliance.sh
+               -v={{ repos_dir.path }}:/repos
+               aerofs/aero-teamcity-agent:latest
+               /test-appliance.sh
+  when: need_build_appliance | failed
+
+- name: Mark docker appliance as provisioned
+  copy:
+    content: "provisioned"
+    dest: "{{ ansible_home }}/.built-appliance"
+    mode: "644"
+  when: need_build_appliance | failed

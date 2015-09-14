@@ -45,7 +45,7 @@ echo "Modifying ${NGINX} ..."
     TMP="$(mktemp -d -t XXXXXX)"
     cat > "${TMP}/Dockerfile" <<END
 FROM ${NGINX}
-RUN  mv /etc/nginx/sites-disabled/* /etc/nginx/sites
+RUN mv /etc/nginx/sites-disabled/* /etc/nginx/sites
 END
     docker build -t ${NGINX} "${TMP}"
     rm -rf "${TMP}"

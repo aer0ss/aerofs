@@ -100,7 +100,7 @@ def repackage_installers(e, wait):
     e.get('.btn-primary').click()
     print "Repackaging installers..."
 
-    wait.until_display('#success-modal', timeout=10 * 60)
+    wait.until_display('#success-modal', timeout=20 * 60)
     e.get('#success-modal .btn-primary').click()
 
 

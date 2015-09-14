@@ -1,0 +1,24 @@
+- name: Prepare CoreOS hosts
+  hosts: coreos
+  gather_facts: False
+  roles:
+    - defunctzombie.coreos-bootstrap
+
+- name: Prepare Appliance
+  hosts: appliance
+  roles:
+    - perftest.appliance
+
+- name: Distribute Executables
+  hosts: clients
+  roles:
+    - perftest.distribute
+
+- name: Setup Clients
+  hosts: clients
+  roles:
+    - perftest.client
+    - client.create
+  vars:
+    users: 1
+    devices: 2

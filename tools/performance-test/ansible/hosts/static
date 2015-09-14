@@ -1,0 +1,8 @@
+[appliance]
+
+[clients]
+
+[coreos]
+
+[coreos:children]
+appliance

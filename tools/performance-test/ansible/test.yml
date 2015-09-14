@@ -1,0 +1,17 @@
+- name: Start Clients
+  hosts: clients
+  roles:
+    - client.start
+
+- name: Start Metrics
+  hosts: appliance
+  roles:
+    - metrics.start
+
+- name: Fuzzing Operations
+  hosts: clients
+  roles:
+    - client.fuzz
+  vars:
+    objects: 1000
+    fuzz: 10000

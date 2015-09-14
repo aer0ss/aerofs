@@ -1,0 +1,5 @@
+- name: Stop collecting polaris metrics
+  service:
+    name: record-metrics.service
+    state: stopped
+  become: true
