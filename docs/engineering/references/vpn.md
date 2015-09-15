@@ -61,7 +61,7 @@ To refresh it:
 Install
 [Tunnelblick](https://code.google.com/p/tunnelblick/wiki/DownloadsEntry?tm=2#Tunnelblick_Beta_Releases).
 
-Then, double click your `AeroFSVPN.tblk` folder to install the config.
+Then, double click your `AeroFSVPN.tblk` folder to install the config. Make sure Tunnelblick isn't already running otherwise the config file won't load.
 
 ### Linux 
 

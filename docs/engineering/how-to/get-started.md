@@ -30,11 +30,11 @@ Your public key is `$HOME/.ssh/id_rsa.pub`. Ask for a volunteer in the #eng chat
 Ping Matt to provision you a VPN config bundle.
 You will need it to access most of the internal servers and build the project.
 
-See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box.
+See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box. Make sure Tunnelblick isn't running before you double-click on AeroFSVPN.tblk.
 
 ## Register for Gerrit, our code review tool
 
-Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Weihan or Drew to add you to the 'Developers' group in Gerrit.
+Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Matt to add you to the 'Developers' group in Gerrit.
 
 ## Register for JIRA, our issue tracker
 
@@ -42,7 +42,7 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
 
 ## Install AeroFS client and join the team folder
 
-  * Ask Weihan or Yuri to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
+  * Ask Matt to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
   * Accept the invitation via the email you received
   * Go to [https://share.aerofs.com/](https://share.aerofs.com/)
   * [Download and install the AeroFS client](https://share.aerofs.com/download).
@@ -55,8 +55,9 @@ Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com 
 ## Install XCode command line tools
 
     gcc
-    
-In the past, it was necessary to also do `xcode-select --install`.
+    xcode-select --install
+
+will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools. Note that there are _two sets_ of "command line developer tools," so one must run both commands to get both sets.
 
 ## Install JDK 8
 
@@ -68,6 +69,16 @@ You should configure your environment to pick up JDK8 instead of the default JDK
 For bash this can be achieved by adding the following line to your `~/.bash_profile`:
 
     export JAVA_HOME="$(/usr/libexec/java_home -v '1.8*')"
+
+## Obtain the AeroFS source code
+
+Before this step, you'll need your accounts created on gerrit, so get to that.
+
+Make sure you put the repo at `$HOME/repos/aerofs`:
+
+    mkdir -p $HOME/repos && cd $HOME/repos
+    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/syncdet
+    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
 
 ## Install Homebrew
 
@@ -158,17 +169,7 @@ We require that you use either an IDE or a language validator to check syntax an
 
 Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't deploy production releases.)
 
-## Obtain the AeroFS source code
-
-Before this step, you'll need your accounts created on gerrit, so get to that.
-
-Make sure you put the repo at `$HOME/repos/aerofs`:
-
-    mkdir -p $HOME/repos && cd $HOME/repos
-    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/syncdet
-    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
-
-### Install git-review for a better gerrit experience
+## Install git-review for a better gerrit experience
 
     cd $HOME/repos/aerofs
     pip install git-review
@@ -177,7 +178,7 @@ Make sure you put the repo at `$HOME/repos/aerofs`:
 
 This installs `git-review`, installs a post-commit hook for gerrit and adds the gerrit remote.
 
-### Enable vim syntax highlighting
+## Enable vim syntax highlighting
 
     cat > ~/.vimrc <<END
     syntax on
@@ -237,6 +238,8 @@ This step requires a running local prod. In addition, you need to be on the VPN 
     gradle clean dist
     ./invoke --product CLIENT setupenv
     approot/run ~/rtroot/user1 gui
+
+If you get an error about protobuf when running `./invoke clean proto` make sure that you've installed Xcode command line tools. This happens because homebrew installs headers in /usr/local/include but in newer releases of Xcode gcc won't search that location unless the command line tools are installed.
 
 Running gradle will compile the Java source code and create the class files needed to run the client. Running invoke will create a directory called approot and populate it with all environment-dependent resources.
 

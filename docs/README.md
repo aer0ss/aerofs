@@ -8,7 +8,7 @@ Welcome! Follow these steps to get started:
     
 This will compile all the .md files into .html files. Then,
 
-	$ open ~/repos/aerofs/shell.out/docs/engineering/how-to/get-started.html
+	$ open ~/repos/aerofs/out.shell/docs/engineering/how-to/get-started.html
 	
 or click [here](engineering/how-to/get-started.html) to browse the getting started guide.
 
