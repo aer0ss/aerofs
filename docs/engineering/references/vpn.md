@@ -44,6 +44,18 @@ and restart dnsmasq, and VPN clients will see them.
 * extract the config from the .tgz
 * Set up the OpenVPN client with your freshly-minted config (see below)
 
+# Setting up a new OpenVPN certificate
+The certificate for the OpenVPN server expires every 1000 days, currently set to expire on Jun 10 2018.
+To refresh it:
+
+* ssh vpn.arrowfs.org
+* become root
+* archive the old key/csr/crt files in `/root/`, `/etc/ssl/certs/openvpn.crt`, `/etc/ssl/private/openvpn.key`
+* run `openssl req -newkey rsa:2048 -keyout ~/openvpn.key -out ~/openvpn.csr -nodes -subj "/O=aerofs.com/OU=OpenVPN/CN=vpn.aerofs.com"` which will save new files to `/root/`
+* run `openssl ca -config /etc/openvpn/ca/openssl.cnf  -days 1000 -in ~/openvpn.csr -out ~/openvpn.crt` which will sign the csr and save the new crt under `/root/`
+* make sure permissions on these files make sense, and then replace the old versions with them
+* run `service openvpn restart`
+
 ### OSX
 
 Install
