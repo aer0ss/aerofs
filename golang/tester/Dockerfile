@@ -1,15 +1,17 @@
 FROM debian:sid
 
-RUN apt-get update &&\
-    apt-get install --no-install-recommends -y -q \
+RUN apt-get update \
+    && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends -y -q \
         bzr \
         ca-certificates \
         curl \
+        expect \
         git \
         golang \
         mercurial \
-        &&\
-    mkdir /gopath
+        mysql-server \
+    && mysql_install_db --user=mysql -ldata=/var/lib/mysql \
+    && mkdir /gopath
 
 ENV GOPATH /gopath
 
