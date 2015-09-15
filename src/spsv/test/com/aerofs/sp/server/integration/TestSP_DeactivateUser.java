@@ -69,7 +69,7 @@ public class TestSP_DeactivateUser extends AbstractSPACLTest
     }
 
     @Test(expected = ExNotFound.class)
-    public void shouldThowIfUserNotFound() throws Exception
+    public void shouldThrowIfUserNotFound() throws Exception
     {
         setSession(u0);
         service.deactivateUser("totallynotauser", false);

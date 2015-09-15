@@ -3401,6 +3401,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         User caller = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         User user = _factUser.createFromExternalID(userId);
+        user.getOrganization();
 
         UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher,
                 _aclPublisher);
