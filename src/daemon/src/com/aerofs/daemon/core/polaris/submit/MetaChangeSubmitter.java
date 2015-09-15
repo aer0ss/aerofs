@@ -128,7 +128,7 @@ public class MetaChangeSubmitter implements Submitter
         return c;
     }
 
-    private final int MAX_BATCH_SIZE = 100;
+    private final int MAX_BATCH_SIZE = 20;
 
     private class RemoteLinkProxy
     {

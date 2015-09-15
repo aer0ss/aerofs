@@ -109,7 +109,7 @@ public class PolarisClient
         _bootstrap.setPipelineFactory(() -> {
             try {
                 return Channels.pipeline(
-                        new IdleStateHandler(timer, 0, 0, 5),
+                        new IdleStateHandler(timer, 0, 0, 30),
                         sslEngineFactory.newSslHandler(),
                         new HttpClientCodec(),
                         new HttpChunkAggregator(256 * C.KB),
