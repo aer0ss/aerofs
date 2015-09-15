@@ -39,6 +39,7 @@ sys.path.append(python_aerofs_lib)
 
 from aerofs_sp import connection
 from aerofs_sp.gen import sp_pb2
+from aerofs_sp.param import SP_PROTO_VERSION
 
 
 #################################
@@ -59,7 +60,6 @@ ARCHIVE_DIR = '~/archive'
 CODE_URL = "http://share.syncfs.com:21337/get_code"
 POOL_URL = "http://ci.arrowfs.org:8040"
 CI_SP_URL = "https://share.syncfs.com:4433/sp"
-CI_SP_VERSION = '21' # update this if we ever bump SP version before burning it
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 # Allowed Teamserver storage types
@@ -109,7 +109,7 @@ def generate_unique_userid(userid_fmt):
 def create_user(userid, password, admin_userid=None, admin_pass=None, sp_url=CI_SP_URL):
     if userid is None:
         userid = generate_unique_userid(DEFAULT_USERID_FMT)
-    conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
+    conn = connection.SyncConnectionService(sp_url, SP_PROTO_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
     if admin_userid is None:
         sp.request_to_sign_up(userid)
@@ -122,7 +122,7 @@ def create_user(userid, password, admin_userid=None, admin_pass=None, sp_url=CI_
 
 
 def make_user_admin(userid, admin_userid=ADMIN_USERID, admin_pass=ADMIN_PASS, sp_url=CI_SP_URL):
-    conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
+    conn = connection.SyncConnectionService(sp_url, SP_PROTO_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
     sp.credential_sign_in(admin_userid, admin_pass)
     sp.set_authorization_level(userid, sp_pb2.PBAuthorizationLevel.Value("ADMIN"))
