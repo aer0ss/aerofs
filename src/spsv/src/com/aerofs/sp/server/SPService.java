@@ -1622,7 +1622,7 @@ public class SPService implements ISPService
         sf.throwIfNotJoinedOwner(requester);
 
         // Generate bifrost token.
-        String token = _bifrostClient.getBifrostToken(
+        String token = _bifrostClient.getBifrostToken(soid,
                 getMobileAccessCode(requester).get().getAccessCode(), 0);
 
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
@@ -1678,11 +1678,11 @@ public class SPService implements ISPService
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
 
         UrlShare link = _factUrlShare.create(key);
-        SID sid = link.getSid();
-        SharedFolder sf = _factSharedFolder.create(sid);
+        RestObject soid = link.getRestObject();
+        SharedFolder sf = _factSharedFolder.create(soid.getSID());
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        String newToken = _bifrostClient.getBifrostToken(
+        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
                 getMobileAccessCode(requester).get().getAccessCode(), expires);
         _bifrostClient.deleteToken(link.getToken());
 
@@ -1700,11 +1700,11 @@ public class SPService implements ISPService
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
 
         UrlShare link = _factUrlShare.create(key);
-        SID sid = link.getSid();
-        SharedFolder sf = _factSharedFolder.create(sid);
+        RestObject soid = link.getRestObject();
+        SharedFolder sf = _factSharedFolder.create(soid.getSID());
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        String newToken = _bifrostClient.getBifrostToken(
+        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
                 getMobileAccessCode(requester).get().getAccessCode(), 0);
         _bifrostClient.deleteToken(link.getToken());
 
@@ -1742,12 +1742,12 @@ public class SPService implements ISPService
         User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
 
         UrlShare link = _factUrlShare.create(key);
-        SID sid = link.getSid();
-        SharedFolder sf = _factSharedFolder.create(sid);
+        RestObject soid = link.getRestObject();
+        SharedFolder sf = _factSharedFolder.create(soid.getSID());
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
         Long oldExpiry = link.getExpiresNullable();
-        String newToken = _bifrostClient.getBifrostToken(
+        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
                 getMobileAccessCode(requester).get().getAccessCode(),
                 oldExpiry == null ? 0 : oldExpiry);
         _bifrostClient.deleteToken(link.getToken());

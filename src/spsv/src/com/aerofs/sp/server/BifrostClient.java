@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.LazyChecked;
+import com.aerofs.oauth.Scope;
 import com.aerofs.sp.authentication.DeploymentSecret;
 import com.google.gson.JsonParser;
 
@@ -69,13 +70,16 @@ public class BifrostClient
      * Client-secret
      * Token expiry time.
      */
-    public String getBifrostToken(String mobileAccessCode, long expires)
+    public String getBifrostToken(String soid, String mobileAccessCode, long expires)
             throws IOException
     {
-        String formParams =
-                "grant_type=authorization_code&code=" + mobileAccessCode +
-                        "&code_type=device_authorization&client_id=aerofs-zelda" +
-                        "&client_secret=" + ZELDA_SECRET.get() + "&expires_in=" + expires;
+        String formParams = "grant_type=authorization_code"
+                + "&code=" + mobileAccessCode
+                + "&code_type=device_authorization"
+                + "&client_id=aerofs-zelda"
+                + "&client_secret=" + ZELDA_SECRET.get()
+                + "&scope=" + Scope.LINKSHARE.name + "," + Scope.READ_FILES.name + ":" + soid
+                + "&expires_in=" + expires;
 
         URL bifrostBaseUrl = new URL("http://sparta.service:8700");
         URL bifrostTokensUrl = new URL(bifrostBaseUrl, "/token");

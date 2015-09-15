@@ -35,7 +35,7 @@ public enum Scope
     READ_GROUPS("groups.read", false)
     ;
 
-    private final String name;
+    public final String name;
     private final boolean qualifiable;
 
     Scope(String name, boolean qualifiable)
