@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +49,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     {
         // Using thenAnswer as the value of mockToken changes and we want latest value of mockToken
         // to be returned in the tests.
-        when(bifrostClient.getBifrostToken(
+        when(bifrostClient.getBifrostToken(anyString(),
                 any(String.class), any(Long.class)))
                 .thenAnswer(invocation -> mockToken);
 
