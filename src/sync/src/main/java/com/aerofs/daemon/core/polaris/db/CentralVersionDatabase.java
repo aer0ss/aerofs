@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris.db;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
@@ -99,12 +100,18 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
             DBUtil.insert(T_VERSION, C_VERSION_SIDX, C_VERSION_OID, C_VERSION_TICK));
     public void setVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
-        // FIXME: update count may not be trustworthy
         checkState(exec(_pswSetVersion, ps -> {
             ps.setLong(1, version);
             ps.setInt(2, sidx.getInt());
             ps.setBytes(3, oid.getBytes());
-            return (ps.executeUpdate() == 1);
+            int n = ps.executeUpdate();
+            // FIXME: update count appears to sometimes be borked
+            // unclear if the issue is deep in sqlite, sqlite-jdbc or cosmic-ray induced
+            if (n != 1 && version > 1) {
+                Loggers.getLogger(CentralVersionDatabase.class)
+                        .warn("{}{} {} {} {}", sidx, oid, version, getVersion_(sidx, oid), n);
+            }
+            return n == 1;
         }) || exec(_pswInsertVersion, ps -> {
             ps.setInt(1, sidx.getInt());
             ps.setBytes(2, oid.getBytes());
