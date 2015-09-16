@@ -134,7 +134,7 @@ in this regard, it asks for name and email together)
     share.example.com->Client: "200 OK"
 
 
-![Sequence diagram for above lives at: docs/engineering/design/messaging/privatecloudsignin.png](privatecloudsignin.png)
+![Sequence diagram for above lives at: docs/engineering/design/messaging/privatecloudsignin.png](http://www.websequencediagrams.com/cgi-bin/cdraw?lz=dGl0bGUgUHJpdmF0ZSBDbG91ZCBTaWduLUluCgpVc2VyLT5DbGllbnQ6ABIFIGluICJqb25AZXhhbXBsZS5jb20iCgAcBi0-TGl6YXJkOiBHRVQgL2FwcGxpYW5jZXMvACILCgAeBgBMCnsgImhvc3QiOiJzaGFyZS4ATQx9CgBSCQAMETogUE9TVCAvdXNlcnMvAIEEDwoAOxEtPlNNVFA6ICJZb3VyIGNvZGUgaXMgMTIzNDU2IgpTTVRQLT5Vc2VyAAwWLCDimIMiAIIBDwA3BgBrNz9jb2RlPQA8BwCBGxMAgm0IIjIwMCBPSyIKCg&s=vs2010)
 
 
 ### LDAP identity stores
