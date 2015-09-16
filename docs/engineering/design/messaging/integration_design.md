@@ -134,7 +134,7 @@ in this regard, it asks for name and email together)
     share.example.com->Client: "200 OK"
 
 
-![Sequence diagrams? I love those things!](./privatecloudsignin.png "Updated sign-in sequence")
+![Sequence diagram for above lives at: docs/engineering/design/messaging/privatecloudsignin.png](privatecloudsignin.png)
 
 
 ### LDAP identity stores
