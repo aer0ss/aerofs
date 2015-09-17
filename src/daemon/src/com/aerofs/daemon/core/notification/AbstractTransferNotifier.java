@@ -189,7 +189,7 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
     protected final PBNotification newTransferNotification_(TransferredItem item, TransferProgress progress, boolean isUpload)
     {
         l.debug("transfer notif: {} {} {} {}/{}",
-                item._socid, isUpload ? "to" : "from", item._ep, progress._total, progress._done);
+                item._socid, isUpload ? "to" : "from", item._ep, progress._done, progress._total);
         return PBNotification
                 .newBuilder()
                 .setType(TRANSFER)

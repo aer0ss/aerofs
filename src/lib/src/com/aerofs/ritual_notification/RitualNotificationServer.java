@@ -18,7 +18,6 @@ import org.newsclub.net.unix.NativeSocketAddress;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 
 public class RitualNotificationServer
 {
