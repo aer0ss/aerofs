@@ -12,7 +12,7 @@
                 <h4>Active license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if active_license.is_trial %}Free{% else %}Paid{% endif %}</dd>
+                    <dd>{% if active_license.is_trial %}Team{% else %}Business{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ active_license.seats }}</dd>
                     <dt>Valid until:</dt>
@@ -22,7 +22,7 @@
                 <h4>Pending license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if newest_license.is_trial %}Free{% else %}Paid{% endif %}</dd>
+                    <dd>{% if newest_license.is_trial %}Team{% else %}Business{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ newest_license.seats }}</dd>
                     <dt>Valid until:</dt>
@@ -38,9 +38,9 @@
                     <dd>{{ active_license.expiry_date | date }}</dd>
                 </dl>
             {% endif %}
-                <h4>Purchase Licenses</h4>
+                <h4>Purchase Business Licenses</h4>
 
-                    <p>You can purchase or upgrade your licenses at any time. If you need more than 1,000 seats,
+                    <p>You can purchase or upgrade your <a href="https://www.aerofs.com/pricing" target="_blank">business</a> licenses at any time. If you need more than 1,000 seats,
                     please <a href="/contact">contact us</a>.</p>
                     <form role="form" class="form-inline" action="" method="post" name="seats">
                         {{ form.hidden_tag() }}

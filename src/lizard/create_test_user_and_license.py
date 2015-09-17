@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument("--last-name", help="create user with a particular last name", default=u"Lasto")
     parser.add_argument("--license-days", type=int, help="create license valid until a particular number of days from now", default=30)
     parser.add_argument("--license-seats", type=int, help="create license with a particular number of seats", default=30)
-    parser.add_argument("--license-full", help="create non-trial license", action="store_false")
+    parser.add_argument("--license-full", help="create non-trial license", action="store_true")
     parser.add_argument("--license-audit", help="allow auditing", action="store_true")
     parser.add_argument("--license-identity", help="allow identity", action="store_true")
     parser.add_argument("--license-mdm", help="allow MDM", action="store_true")

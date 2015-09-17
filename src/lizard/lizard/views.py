@@ -621,7 +621,10 @@ def dashboard():
         flash('Sorry, we found a problem with your license request. Please contact us at support@aerofs.com', "error")
         return redirect(url_for(".login_page"))
 
-    form = forms.LicenseCountForm(count=(customer.renewal_seats or newest_license.seats)+5) #default to a 5 more seats than we already have for purchase
+    if newest_license.is_trial:
+        form = forms.LicenseCountForm(count=1)
+    else:
+        form = forms.LicenseCountForm(count=(customer.renewal_seats or newest_license.seats)+5) #default to a 5 more seats than we already have for purchase
     if form.validate_on_submit():
         requested_license_count = int(form.count.data)
 

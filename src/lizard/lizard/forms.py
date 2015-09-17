@@ -49,7 +49,7 @@ class PreferencesForm(Form):
 
 class LicenseCountForm(Form):
 
-    count = IntegerField('New License Count', validators=[NumberRange(min=31,max=1000,message="Purchase between 31 and 1,000 seats")])
+    count = IntegerField('New License Count', validators=[NumberRange(min=1,max=1000,message="Purchase between 1 and 1,000 seats")])
 
 def IsFutureDate(message=None):
     def _IsFutureDate(form, field):
