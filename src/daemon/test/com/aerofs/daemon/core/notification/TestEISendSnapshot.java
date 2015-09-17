@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
@@ -17,6 +18,7 @@ import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.ImmutableSet;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -37,6 +39,11 @@ public class TestEISendSnapshot
     @Mock PathStatusNotifier _psn;
     @Mock OnlineStatusNotifier _osn;
     @Mock TCP _tcp;
+
+    @Before
+    public void setUp() {
+        TC._coreLockChecks = false;
+    }
 
     private EISendSnapshot createHandler(boolean filterMeta)
     {

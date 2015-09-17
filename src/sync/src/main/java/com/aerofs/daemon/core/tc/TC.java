@@ -345,7 +345,9 @@ public class TC implements IDumpStatMisc, ITokenUseListener
     }
 
     // for debugging only
+    public static boolean _coreLockChecks = true;
     public static void assertHoldsCoreLock_() {
+        if (!_coreLockChecks) return;
         TCB tcb = tcb();
         if (tcb == null || !tcb.holdsCoreLock_()) throw new AssertionError();
     }
