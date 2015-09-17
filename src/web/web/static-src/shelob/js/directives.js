@@ -31,6 +31,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 } else if (response.reason == 'upload') {
                     if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
                     else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                    else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
                     else showErrorMessageUnsafe(getInternalErrorText());
                 } else showErrorMessageUnsafe(getInternalErrorText());
             }, function(response) {
@@ -81,6 +82,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 scope.progressModal.dismiss();
                 if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
                 else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
+                else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
                 else showErrorMessageUnsafe(getInternalErrorText());
             });
         };
