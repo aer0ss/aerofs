@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.transfers;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -43,6 +44,7 @@ public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransfer
     // @param done == total means completion, either failure or success
     public void progress_(SOCID socid, Endpoint ep, long done, long total)
     {
+        TC.assertHoldsCoreLock_();
         TransferredItem item = new TransferredItem(socid, ep);
         TransferProgress progress = new TransferProgress(done, total);
         if (done != total) {
@@ -56,6 +58,7 @@ public class BaseTransferState extends ConcurrentlyModifiableListeners<ITransfer
 
     public void ended_(SOCID socid, Endpoint ep, boolean failed)
     {
+        TC.assertHoldsCoreLock_();
         TransferredItem item = new TransferredItem(socid, ep);
         TransferProgress progress = new TransferProgress(failed);
         _state.remove(item);

@@ -113,6 +113,8 @@ public class TC implements IDumpStatMisc, ITokenUseListener
             postPause_(this);
         }
 
+        private boolean holdsCoreLock_() { return _l.isHeldByCurrentThread(); }
+
         /**
          * @return false if timeout occurs
          */
@@ -342,6 +344,11 @@ public class TC implements IDumpStatMisc, ITokenUseListener
         return old;
     }
 
+    // for debugging only
+    public static void assertHoldsCoreLock_() {
+        TCB tcb = tcb();
+        if (tcb == null || !tcb.holdsCoreLock_()) throw new AssertionError();
+    }
 
     @Override
     public void prePause_(TCB tcb, Token tk, String reason) throws ExAborted
