@@ -18,9 +18,9 @@ import org.slf4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -38,7 +38,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
     private final static Logger l = Loggers.getLogger(LocationManager.class);
 
     private final SSMPConnection _c;
-    private final Map<ITransport, List<IPresenceLocation>> _locations = new HashMap<>();
+    private final Map<ITransport, List<IPresenceLocation>> _locations = new ConcurrentHashMap<>();
 
     private final String LOCATIONS = "loc";
     private final String REQUEST = "req";
@@ -68,8 +68,9 @@ public class LocationManager implements EventHandler, IMulticastListener {
             parseLocations(ev.from.toString(), d);
         } else if (ev.type == Type.UCAST) {
             if (d.equals(REQUEST)) {
-                l.info("locations request {} {}", ev.from, locations());
-                request(SSMPRequest.ucast(ev.from, LOCATIONS + " " + locations()));
+                String loc = locations();
+                l.info("locations request {} {}", ev.from, loc);
+                request(SSMPRequest.ucast(ev.from, LOCATIONS + " " + loc));
             } else {
                 parseLocations(ev.from.toString(), d);
             }
