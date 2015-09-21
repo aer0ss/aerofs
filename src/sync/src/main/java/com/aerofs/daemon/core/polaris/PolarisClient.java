@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -37,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -109,10 +109,10 @@ public class PolarisClient
         _bootstrap.setPipelineFactory(() -> {
             try {
                 return Channels.pipeline(
-                        new IdleStateHandler(timer, 0, 0, 30),
                         sslEngineFactory.newSslHandler(),
                         new HttpClientCodec(),
                         new HttpChunkAggregator(256 * C.KB),
+                        new IdleStateHandler(timer, 0, 0, 30),
                         new Handler());
             } catch (IOException | GeneralSecurityException e) {
                 throw new RuntimeException(e);
@@ -134,8 +134,7 @@ public class PolarisClient
 
     private static class Handler extends IdleStateAwareChannelHandler
     {
-        private final Queue<SettableFuture<HttpResponse>> _requests =
-                Queues.newConcurrentLinkedQueue();
+        private Queue<SettableFuture<HttpResponse>> _requests = new ArrayDeque<>();
 
         @Override
         public void writeRequested(ChannelHandlerContext ctx, MessageEvent ev)
@@ -143,7 +142,13 @@ public class PolarisClient
             Object request = ev.getMessage();
             if (request instanceof Request) {
                 Request r = (Request)request;
-                _requests.add(r.f);
+                synchronized (this) {
+                    if (_requests == null) {
+                        ev.getFuture().setFailure(new ClosedChannelException());
+                        return;
+                    }
+                    _requests.add(r.f);
+                }
                 if (r.http.getContent() != null) {
                     l.info("write {}\n{}", r.http,
                             r.http.getContent().toString(BaseUtil.CHARSET_UTF));
@@ -165,7 +170,13 @@ public class PolarisClient
             if (l.isDebugEnabled()) {
                 l.debug("{}", r.getContent().toString(BaseUtil.CHARSET_UTF));
             }
-            _requests.poll().set(r);
+            synchronized (this) {
+                if (_requests != null) {
+                    _requests.poll().set(r);
+                } else {
+                    l.warn("already closed");
+                }
+            }
         }
 
         @Override
@@ -183,17 +194,27 @@ public class PolarisClient
         }
 
         @Override
-        public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
-        {
-            l.info("inactive");
+        public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
+                throws Exception {
+            l.info("disconnected");
             failRequests();
-            super.channelClosed(ctx, e);
         }
 
-        private synchronized void failRequests()
+        @Override
+        public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
         {
-            SettableFuture<?> f;
-            while ((f = _requests.poll()) != null) {
+            l.info("closed");
+        }
+
+        private void failRequests()
+        {
+            SettableFuture<HttpResponse> f;
+            Queue<SettableFuture<HttpResponse>> q;
+            synchronized (this) {
+                if ((q = _requests) == null) return;
+                _requests = null;
+            }
+            while ((f = q.poll()) != null) {
                 l.info("fail remaining req");
                 f.setException(new ClosedChannelException());
             }
