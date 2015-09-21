@@ -354,9 +354,13 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
                 block.getImmigrantDeviceIdCount(),
                 block.getImmigrantTickCount());
 
-        if (block.hasDeviceId()) didBlock = new DID(BaseUtil.fromPB(block.getDeviceId()));
+        if (block.hasDeviceId()) {
+            DID did = new DID(BaseUtil.fromPB(block.getDeviceId()));
+            if (did.equals(didBlock)) throw new ExProtocolError();
+            didBlock = did;
+        }
 
-        if (didBlock != null && didBlock.equals(Cfg.did())) throw new ExProtocolError();
+        if (didBlock == null || didBlock.equals(Cfg.did())) throw new ExProtocolError();
 
         // for debugging only
         Tick tickPrev = Tick.ZERO;
@@ -397,11 +401,13 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         if (block.hasKnowledgeTick() &&
                 block.getKnowledgeTick() > vKwlgLocal.get_(didBlock).getLong()) {
             Tick tick = new Tick(block.getKnowledgeTick());
+            l.info("{} +k {} {} {}", from, sidx, didBlock, tick);
             _nvc.addKnowledge_(sidx, didBlock, tick, t);
         }
 
         if (block.hasImmigrantKnowledgeTick() && (block.getImmigrantKnowledgeTick() > vImmKwlgLocal.get_(didBlock).getLong())) {
             Tick tick = new Tick(block.getImmigrantKnowledgeTick());
+            l.info("{} +ik {} {} {}", from, sidx, didBlock, tick);
             _ivc.addKnowledge_(sidx, didBlock, tick, t);
         }
 
