@@ -2,7 +2,7 @@ from StringIO import StringIO
 import datetime
 import tarfile
 
-from flask import Blueprint, url_for, render_template, redirect, Response, request, flash
+from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, flash
 
 from aerofs_licensing import unicodecsv
 from lizard import db, csrf
@@ -109,6 +109,81 @@ def license_download(license_id):
                 headers={"Content-Disposition": "attachment; filename=aerofs-private-cloud.license"}
                 )
     return r
+
+
+# Record the hostname of the appliance for the given customer.
+# We can't validate this hostname; it may be VPN only, or an internal IP.
+#
+# Example usage:
+#   curl -XPOST localhost:4444/customers/1/host -d '{"hostname":"share.test.co"}'
+#
+@csrf.exempt
+@blueprint.route("/customers/<int:customer_id>/host", methods=["POST"])
+def set_appliance_hostname(customer_id):
+    body = request.get_json(force=True)
+    hostname = body["hostname"]
+    current_app.logger.info("Register: host %s for customer %d", hostname, customer_id)
+
+    customer = models.Customer.query.get(customer_id)
+    if customer is None:
+        return Response('No such customer', 404)
+
+    appliance = models.Appliance()
+    appliance.customer = customer
+    appliance.hostname = hostname
+    db.session.add(appliance)
+    db.session.commit()
+
+    return Response('', 204)
+
+
+
+# Create a mail domain record and associate it with a customer. This is not a regex!
+# The mail domain cannot be queried by public users until it has been verified.
+#
+# Example usage:
+#   curl -XPUT localhost:4444/customers/1/domains/test.co
+#
+@csrf.exempt
+@blueprint.route("/customers/<int:customer_id>/domains/<string:domain_val>", methods=["PUT"])
+def register_domain_for_customer(customer_id, domain_val):
+    current_app.logger.info("Register: domain %s for customer %d", domain_val, customer_id)
+
+    customer = models.Customer.query.get(customer_id)
+    if customer is None:
+        return Response('No such customer', 404)
+
+    d = models.Domain()
+    d.customer = customer
+    d.mail_domain = domain_val
+    db.session.add(d)
+    db.session.commit()
+
+    return Response('', 204)
+
+
+# Mark the given mail domain as "verified".
+# Actually verifying the mail domain is a handwave. For now we do this manually.
+#
+# Example usage:
+#   curl -XPUT localhost:4444/customers/1/domains/test.co/verify
+#
+@csrf.exempt
+@blueprint.route("/customers/<int:customer_id>/domains/<string:domain_val>/verify", methods=["PUT"])
+def verify_domain_for_customer(customer_id, domain_val):
+    current_app.logger.info("Verified: domain %s for customer %d", domain_val, customer_id)
+
+    customer = models.Customer.query.get(customer_id)
+    if customer is None:
+        return Response('No such customer', 404)
+
+    domain = customer.domains.filter_by(mail_domain=domain_val).first_or_404()
+    domain.verify_date = datetime.datetime.now()
+    db.session.commit()
+
+    return Response('', 204)
+
+
 
 PAGE_SIZE = 10
 

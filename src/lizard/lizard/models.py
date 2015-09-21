@@ -82,6 +82,12 @@ class Customer(db.Model, TimeStampedMixin):
     # A customer may have many licenses and license requests in the pipeline.
     licenses = db.relationship("License", backref="customer", lazy="dynamic")
 
+    # A customer may have at most one 'active', newest appliance
+    appliances = db.relationship("Appliance", backref="customer", lazy="dynamic")
+
+    # A customer may have zero to many registered mail domains
+    domains = db.relationship("Domain", backref="customer", lazy="dynamic")
+
     # How many seats should the customer be billed for on Renewal?
     # This is used at the time of renewal.
     renewal_seats = db.Column(db.Integer, nullable=True)
@@ -119,7 +125,6 @@ class Customer(db.Model, TimeStampedMixin):
                 ).first()
 
         return pending_license or active_license or held_license or ignored_license
-
 
     def __repr__(self):
         return "<Customer '{}'>".format(self.name)
@@ -268,8 +273,41 @@ class License(db.Model, TimeStampedMixin):
         self.expiry_date = datetime.datetime(year=e.year, month=e.month, day=e.day)
 
 
+class Appliance(db.Model, TimeStampedMixin):
+    __tablename__ = "appliance"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # To which customer does this appliance record belong?
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+
+    # Hostname, as entered by the admin. We can't server-side validate this address.
+    hostname = db.Column(db.String(256), nullable=False)
+
+    def __repr__(self):
+        return "<Appliance '{}'>".format(self.hostname)
+
+class Domain(db.Model, TimeStampedMixin):
+    __tablename__ = "domain"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # To which customer does this mail domain belong?
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+
+    # Mail domain as entered by an admin
+    mail_domain = db.Column(db.String(256), nullable=False)
+
+    # Date that this domain was validated by (...)
+    verify_date = db.Column(db.DateTime, nullable=False)
+
+    def __repr__(self):
+        return "<Domain '{}' '{}'>".format(self.mail_domain, self.verify_date is not None)
+
 
 # Each class with create_date/modify_date autoupdate magic must register here
 Customer.register()
 Admin.register()
 License.register()
+Appliance.register()
+Domain.register()

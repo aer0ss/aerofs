@@ -723,6 +723,32 @@ def get_appliance_version():
             mimetype='text/plain'
             )
 
+# Get the appliance hostname for the given email domain.
+# If the domain is not verified, return 404.
+# If the customer that has verified that domain does not have an active appliance hostname,
+# return 404.
+# Otherwise, return the hostname in a json blob:
+#
+# Example usage:
+#   curl localhost:4444/domains/test.co
+#
+#   { "host": "share.test.co", "domain":"test.co"}
+#
+@blueprint.route("/domains/<string:mail_domain_val>", methods=["GET"])
+def get_appliance_hostname(mail_domain_val):
+    domain = models.Domain.query.filter_by(
+            mail_domain=mail_domain_val).filter(
+            models.Domain.verify_date != None).order_by(
+            models.Domain.verify_date.desc()
+            ).first_or_404()
+
+    # someone has registered this mail domain... do they have an appliance hostname?
+    appliance = domain.customer.appliances.order_by(models.Appliance.modify_date.desc()).first_or_404()
+    return Response(json.dumps({'host': appliance.hostname, 'domain':mail_domain_val}),
+            mimetype='application/json',
+            )
+
+
 @blueprint.route("/download_latest_license", methods=["GET"])
 @login.login_required
 def download_latest_license():
