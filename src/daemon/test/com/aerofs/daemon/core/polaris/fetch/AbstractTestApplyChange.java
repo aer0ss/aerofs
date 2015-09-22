@@ -228,6 +228,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         try (Statement s = dbcw.getConnection().createStatement()) {
             new PolarisSchema().create_(s, dbcw);
         }
+        dbcw.getConnection().commit();
         inj.getInstance(Stores.class).init_();
         try {
             inj.getInstance(StoreCreator.class).createRootStore_(rootSID, "", mock(Trans.class));

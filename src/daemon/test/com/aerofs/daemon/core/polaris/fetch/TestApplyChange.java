@@ -9,7 +9,9 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
@@ -404,24 +406,101 @@ public class TestApplyChange extends AbstractTestApplyChange
     }
 
     @Test
-    public void shouldAliasFile() throws Exception
+    public void shouldAliasFileWithNoContent() throws Exception
     {
         addMetaChange(sidx);
         OID alias = OID.generate();
-        ds.createOA_(OA.Type.FILE, sidx, alias, OID.ROOT, "foo", t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.FILE, sidx, alias, OID.ROOT, "foo", t);
+            t.commit_();
+        }
 
+        DID did = DID.generate();
         OID oid = OID.generate();
         ContentHash h = new ContentHash(BaseSecUtil.hash());
 
         apply(
                 insert(OID.ROOT, "foo", oid, ObjectType.FILE),
-                updateContent(oid, h, 0L, 42L)
+                updateContent(oid, did, h, 0L, 42L)
         );
         ac.applyBufferedChanges_(sidx, 42, t);
 
         assertNotPresent(alias);
         mds.expect(rootSID,
                 file("foo", oid));
+        assertHasContentChanges(sidx);
+        assertNull(cvdb.getVersion_(sidx, oid));
+        assertNull(cvdb.getVersion_(sidx, alias));
+        assertHasRemoteContent(sidx, oid, new RemoteContent(1, did, h, 0));
+    }
+
+    @Test
+    public void shouldAliasFileWithSameContent() throws Exception
+    {
+        ContentHash h = new ContentHash(BaseSecUtil.hash());
+
+        addMetaChange(sidx);
+        OID alias = OID.generate();
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.FILE, sidx, alias, OID.ROOT, "foo", t);
+            ds.createCA_(new SOID(sidx, alias), KIndex.MASTER, t);
+            ds.setCA_(new SOKID(sidx, alias, KIndex.MASTER), 0L, 42L, h, t);
+            ccdb.insertChange_(sidx, alias, t);
+            t.commit_();
+        }
+
+        DID did = DID.generate();
+        OID oid = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FILE),
+                updateContent(oid, did, h, 0L, 42L)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        assertNotPresent(alias);
+        mds.expect(rootSID,
+                file("foo", oid,
+                        content(new byte[]{}, 42L)));
+        assertHasContentChanges(sidx);
+        assertEquals(Long.valueOf(1), cvdb.getVersion_(sidx, oid));
+        assertNull(cvdb.getVersion_(sidx, alias));
+        assertHasRemoteContent(sidx, oid, new RemoteContent(1, did, h, 0));
+    }
+
+    @Test
+    public void shouldAliasFileWithDiffContent() throws Exception
+    {
+        ContentHash h0 = new ContentHash(BaseSecUtil.hash());
+        ContentHash h1 = new ContentHash(BaseSecUtil.hash(new byte[]{1}));
+
+        addMetaChange(sidx);
+        OID alias = OID.generate();
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.FILE, sidx, alias, OID.ROOT, "foo", t);
+            ds.createCA_(new SOID(sidx, alias), KIndex.MASTER, t);
+            ds.setCA_(new SOKID(sidx, alias, KIndex.MASTER), 1L, 42L, h1, t);
+            ccdb.insertChange_(sidx, alias, t);
+            t.commit_();
+        }
+
+        DID did = DID.generate();
+        OID oid = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FILE),
+                updateContent(oid, did, h0, 0L, 42L)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        assertNotPresent(alias);
+        mds.expect(rootSID,
+                file("foo", oid,
+                        content(new byte[]{1}, 42L)));
+        assertHasContentChanges(sidx, oid);
+        assertNull(cvdb.getVersion_(sidx, oid));
+        assertNull(cvdb.getVersion_(sidx, alias));
+        assertHasRemoteContent(sidx, oid, new RemoteContent(1, did, h0, 0));
     }
 
     @Test

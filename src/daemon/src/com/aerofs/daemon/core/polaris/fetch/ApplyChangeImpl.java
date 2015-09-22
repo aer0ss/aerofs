@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase.BufferedChange;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteChild;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
@@ -63,6 +64,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final MetaChangesDatabase _mcdb;
     private final ContentChangesDatabase _ccdb;
     private final RemoteContentDatabase _rcdb;
+    private final CentralVersionDatabase _cvdb;
     private final MetaChangeSubmitter _submitter;
     private final StoreCreator _sc;
     private final StoreDeleter _sd;
@@ -73,8 +75,9 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     @Inject
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
                            MapAlias2Target a2t, ObjectSurgeon os, RemoteLinkDatabase rpdb,
-                           MetaBufferDatabase mbdb, MetaChangesDatabase mcdb,
-                           ContentChangesDatabase ccdb, RemoteContentDatabase rcdb,
+                           CentralVersionDatabase cvdb, MetaBufferDatabase mbdb,
+                           MetaChangesDatabase mcdb,  ContentChangesDatabase ccdb,
+                           RemoteContentDatabase rcdb,
                            MetaChangeSubmitter submitter, StoreCreator sc, IMapSID2SIndex sid2sidx,
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd)
     {
@@ -83,6 +86,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _expulsion = expulsion;
         _a2t = a2t;
         _os = os;
+        _cvdb = cvdb;
         _rpdb = rpdb;
         _mbdb = mbdb;
         _mcdb = mcdb;
@@ -704,11 +708,31 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 // TODO: delete *all* prefixes
                 _ps.newPrefix_(new SOKID(oaConflict.soid(), kidx), null).delete_();
             }
-            if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t)) {
+
+            CA ca = oaConflict.caMasterNullable();
+            boolean match = ca != null && matchContent_(sidx, oid, ca.length(), t);
+
+            if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t) && !match) {
                 _ccdb.insertChange_(sidx, oid, t);
             }
         } else {
             _ps.newFolder_(pConflict).updateSOID_(new SOID(sidx, oid), t);
         }
+    }
+
+    private boolean matchContent_(SIndex sidx, OID oid, long length, Trans t) throws SQLException {
+        ContentHash h = _ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER));
+
+        try (IDBIterator<RemoteContent> it = _rcdb.list_(sidx, oid)) {
+            while (it.next_()) {
+                RemoteContent rc = it.get_();
+                if (rc.hash.equals(h) && rc.length == length) {
+                    _cvdb.setVersion_(sidx, oid, rc.version, t);
+                    _rcdb.deleteUpToVersion_(sidx, oid, rc.version, t);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
