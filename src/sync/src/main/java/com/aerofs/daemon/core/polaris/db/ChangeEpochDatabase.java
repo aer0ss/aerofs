@@ -35,38 +35,24 @@ public class ChangeEpochDatabase extends AbstractDatabase
     public @Nullable Long getChangeEpoch_(SIndex sidx) throws SQLException
     {
         if (!_dbcw.columnExists(T_STORE, C_STORE_LTS_LOCAL)) return null;
-        return exec(_pswGetEpoch, ps -> {
-            ps.setInt(1, sidx.getInt());
-            try (ResultSet rs = ps.executeQuery()) {
-                checkState(rs.next());
-                long epoch = rs.getLong(1);
-                return rs.wasNull() ? null : epoch;
-            }
-        });
+        try (ResultSet rs = query(_pswGetEpoch, sidx.getInt())) {
+            checkState(rs.next());
+            long epoch = rs.getLong(1);
+            return rs.wasNull() ? null : epoch;
+        }
     }
 
     private final PreparedStatementWrapper _pswSetLocalEpoch = new PreparedStatementWrapper(
             DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_LOCAL));
     public void setChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
     {
-        setChangeEpoch_(_pswSetLocalEpoch, sidx, epoch, t);
+        checkState(1 == update(_pswSetLocalEpoch, epoch, sidx.getInt()));
     }
 
     private final PreparedStatementWrapper _pswSetRemoteEpoch = new PreparedStatementWrapper(
             DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_REMOTE));
     public void setRemoteChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
     {
-        setChangeEpoch_(_pswSetRemoteEpoch, sidx, epoch, t);
-    }
-
-    private void setChangeEpoch_(PreparedStatementWrapper psw, SIndex sidx, long epoch ,Trans t)
-            throws SQLException
-    {
-        exec(psw, ps -> {
-            ps.setLong(1, epoch);
-            ps.setInt(2, sidx.getInt());
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswSetRemoteEpoch, epoch, sidx.getInt()));
     }
 }

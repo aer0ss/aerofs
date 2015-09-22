@@ -46,7 +46,9 @@ public class NRODatabase extends AbstractDatabase
             PreparedStatement ps = _pswCheck.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
-            return DBUtil.binaryCount(ps.executeQuery());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.binaryCount(rs);
+            }
         } catch (SQLException e) {
             _pswCheck.close();
             throw detectCorruption(e);

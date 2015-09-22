@@ -15,6 +15,7 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
@@ -62,6 +63,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class CentralVersionDatabase extends AbstractDatabase implements IStoreDeletionOperator
 {
+    private final static Logger l = Loggers.getLogger(CentralVersionDatabase.class);
+
     @Inject
     public CentralVersionDatabase(IDBCW dbcw, StoreDeletionOperators sdo)
     {
@@ -84,13 +87,9 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
                     C_VERSION_SIDX + "=? and " + C_VERSION_OID + "=?", C_VERSION_TICK));
     public @Nullable Long getVersion_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswGetVersion, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getLong(1) : null;
-            }
-        });
+        try (ResultSet rs = query(_pswGetVersion, sidx.getInt(), oid.getBytes())) {
+            return rs.next() ? rs.getLong(1) : null;
+        }
     }
 
     private final PreparedStatementWrapper _pswSetVersion = new PreparedStatementWrapper(
@@ -100,34 +99,21 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
             DBUtil.insert(T_VERSION, C_VERSION_SIDX, C_VERSION_OID, C_VERSION_TICK));
     public void setVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
-        checkState(exec(_pswSetVersion, ps -> {
-            ps.setLong(1, version);
-            ps.setInt(2, sidx.getInt());
-            ps.setBytes(3, oid.getBytes());
-            int n = ps.executeUpdate();
-            // FIXME: update count appears to sometimes be borked
-            // unclear if the issue is deep in sqlite, sqlite-jdbc or cosmic-ray induced
-            if (n != 1 && version > 1) {
-                Loggers.getLogger(CentralVersionDatabase.class)
-                        .warn("{}{} {} {} {}", sidx, oid, version, getVersion_(sidx, oid), n);
-            }
-            return n == 1;
-        }) || exec(_pswInsertVersion, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            ps.setLong(3, version);
-            return (ps.executeUpdate() == 1);
-        }));
+        int n = update(_pswSetVersion, version, sidx.getInt(), oid.getBytes());
+        if (n == 1) return;
+        // FIXME: update fails sometimes, WTF?!?!
+        // current hypothesis is that lambdas were doing funky stuff to captured variables
+        // keeping this log line around in case the issue resurfaces...
+        if (version > 1) {
+            l.warn("{}{} {} {} {}", sidx, oid, version, getVersion_(sidx, oid), n);
+        }
+        checkState(1 == update(_pswInsertVersion, sidx.getInt(), oid.getBytes(), version));
     }
 
     private final PreparedStatementWrapper _pswDeleteVersion = new PreparedStatementWrapper(
             DBUtil.deleteWhereEquals(T_VERSION, C_VERSION_SIDX, C_VERSION_OID));
     public boolean deleteVersion_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswDeleteVersion, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDeleteVersion, sidx.getInt(), oid.getBytes());
     }
 }

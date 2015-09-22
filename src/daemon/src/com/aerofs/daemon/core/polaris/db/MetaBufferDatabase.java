@@ -68,14 +68,7 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
     public void insert_(SIndex sidx, OID oid, Type type, long mergeBoundary, Trans t)
             throws SQLException
     {
-        exec(_pswInsert, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            ps.setInt(3, type.ordinal());
-            ps.setLong(4, mergeBoundary);
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswInsert, sidx.getInt(), oid.getBytes(), type.ordinal(), mergeBoundary));
     }
 
     public static class BufferedChange
@@ -97,14 +90,10 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
     public @Nullable BufferedChange getBufferedChange_(SIndex sidx, long until)
             throws SQLException
     {
-        return exec(_pswList, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setLong(2, until);
-            try (ResultSet rs = ps.executeQuery()) {
-                return !rs.next() ? null
-                        : new BufferedChange(new OID(rs.getBytes(1)), Type.valueOf(rs.getInt(2)));
-            }
-        });
+        try (ResultSet rs = query(_pswList, sidx.getInt(), until)) {
+            return !rs.next() ? null
+                    : new BufferedChange(new OID(rs.getBytes(1)), Type.valueOf(rs.getInt(2)));
+        }
     }
 
     private final PreparedStatementWrapper _pswDelete = new PreparedStatementWrapper(
@@ -112,11 +101,7 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
                     C_META_BUFFER_SIDX + "=? and " + C_META_BUFFER_OID + "=?"));
     public boolean remove_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswDelete, ps -> {
-            ps.setLong(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDelete, sidx.getInt(), oid.getBytes());
     }
 
     private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(
@@ -125,12 +110,8 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
                     C_META_BUFFER_BOUND));
     public boolean isBuffered_(SOID soid) throws SQLException
     {
-        return exec(_pswGet, ps -> {
-            ps.setInt(1, soid.sidx().getInt());
-            ps.setBytes(2, soid.oid().getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        });
+        try (ResultSet rs = query(_pswGet, soid.sidx().getInt(), soid.oid().getBytes())) {
+            return rs.next();
+        }
     }
 }

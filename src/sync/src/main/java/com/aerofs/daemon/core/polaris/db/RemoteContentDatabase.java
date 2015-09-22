@@ -100,15 +100,8 @@ public class RemoteContentDatabase extends AbstractDatabase
     public void insert_(SIndex sidx, OID oid, long version, DID did, ContentHash hash,
             long length, Trans t) throws SQLException
     {
-        exec(_pswInsert.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            ps.setLong(2, version);
-            ps.setBytes(3, did.getBytes());
-            ps.setBytes(4, hash.getBytes());
-            ps.setLong(5, length);
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswInsert.get(sidx),
+                oid.getBytes(), version, did.getBytes(), hash.getBytes(), length));
     }
 
     public static class RemoteContent {
@@ -135,16 +128,13 @@ public class RemoteContentDatabase extends AbstractDatabase
                     C_REMOTE_CONTENT_VERSION, C_REMOTE_CONTENT_DID, C_REMOTE_CONTENT_HASH,
                     C_REMOTE_CONTENT_LENGTH) + "order by " + C_REMOTE_CONTENT_VERSION);
     public IDBIterator<RemoteContent> list_(SIndex sidx, OID oid) throws SQLException {
-        return exec(_pswList.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return new AbstractDBIterator<RemoteContent>(ps.executeQuery()) {
-                @Override
-                public RemoteContent get_() throws SQLException {
-                    return new RemoteContent(_rs.getLong(1), new DID(_rs.getBytes(2)),
-                            new ContentHash(_rs.getBytes(3)), _rs.getLong(4));
-                }
-            };
-        });
+        return new AbstractDBIterator<RemoteContent>(query(_pswList.get(sidx), oid.getBytes())) {
+            @Override
+            public RemoteContent get_() throws SQLException {
+                return new RemoteContent(_rs.getLong(1), new DID(_rs.getBytes(2)),
+                        new ContentHash(_rs.getBytes(3)), _rs.getLong(4));
+            }
+        };
     }
 
     private final ParameterizedStatement<SIndex> _pswDelete = new ParameterizedStatement<>(
@@ -152,11 +142,7 @@ public class RemoteContentDatabase extends AbstractDatabase
                     C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + "<?"));
     public boolean deleteUpToVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
-        return exec(_pswDelete.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            ps.setLong(2, version);
-            return ps.executeUpdate() > 0;
-        });
+        return 0 < update(_pswDelete.get(sidx), oid.getBytes(), version);
     }
 
     private final ParameterizedStatement<SIndex> _pswHasNew = new ParameterizedStatement<>(
@@ -165,13 +151,9 @@ public class RemoteContentDatabase extends AbstractDatabase
                     + " limit 1");
     public boolean hasRemoteChanges_(SIndex sidx, OID oid, long version) throws SQLException
     {
-        return exec(_pswHasNew.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            ps.setLong(2, version);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        });
+        try (ResultSet rs = query(_pswHasNew.get(sidx), oid.getBytes(), version)) {
+            return rs.next();
+        }
     }
 
     private final ParameterizedStatement<SIndex> _pswHas = new ParameterizedStatement<>(
@@ -179,13 +161,9 @@ public class RemoteContentDatabase extends AbstractDatabase
                     C_REMOTE_CONTENT_OID + "=? and " + C_REMOTE_CONTENT_VERSION + "=?", "1"));
     public boolean hasRemoteChange_(SIndex sidx, OID oid, long version) throws SQLException
     {
-        return exec(_pswHas.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            ps.setLong(2, version);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        });
+        try (ResultSet rs = query(_pswHas.get(sidx), oid.getBytes(), version)) {
+            return rs.next();
+        }
     }
 
     private final ParameterizedStatement<SIndex> _pswGetOriginator = new ParameterizedStatement<>(
@@ -194,12 +172,9 @@ public class RemoteContentDatabase extends AbstractDatabase
             + " order by " + C_REMOTE_CONTENT_VERSION + " limit 1");
     public DID getOriginator_(SOID soid) throws SQLException
     {
-        return exec(_pswGetOriginator.get(soid.sidx()), ps -> {
-            ps.setBytes(1, soid.oid().getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? new DID(rs.getBytes(1)) : null;
-            }
-        });
+        try (ResultSet rs = query(_pswGetOriginator.get(soid.sidx()), soid.oid().getBytes())) {
+            return rs.next() ? new DID(rs.getBytes(1)) : null;
+        }
     }
 
     private final ParameterizedStatement<SIndex> _pswGetMaxVersion = new ParameterizedStatement<>(
@@ -207,11 +182,8 @@ public class RemoteContentDatabase extends AbstractDatabase
                     "max(" + C_REMOTE_CONTENT_VERSION + ")"));
     public Long getMaxVersion_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswGetMaxVersion.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getLong(1) : null;
-            }
-        });
+        try (ResultSet rs = query(_pswGetMaxVersion.get(sidx), oid.getBytes())) {
+            return rs.next() ? rs.getLong(1) : null;
+        }
     }
 }

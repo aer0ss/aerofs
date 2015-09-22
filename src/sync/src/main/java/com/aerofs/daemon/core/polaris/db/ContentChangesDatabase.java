@@ -20,6 +20,7 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -74,34 +75,34 @@ public class ContentChangesDatabase extends AbstractDatabase
             sidx -> "replace into " + tableName(sidx) + "(" + C_CONTENT_CHANGE_OID + ") values(?)");
     public long insertChange_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswInsert.get(sidx), ps -> {
+        try {
+            PreparedStatement ps = _pswInsert.get(sidx).get(c());
             ps.setBytes(1, oid.getBytes());
             checkState(ps.executeUpdate() == 1);
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 checkState(rs.next());
                 return rs.getLong(1);
             }
-        });
+        } catch (SQLException e) {
+            _pswInsert.get(sidx).close();
+            throw detectCorruption(e);
+        }
     }
 
     private final ParameterizedStatement<SIndex> _pswDeleteObject = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhereEquals(tableName(sidx), C_CONTENT_CHANGE_OID));
     public boolean deleteChange_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswDeleteObject.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDeleteObject.get(sidx), oid.getBytes());
     }
 
     private final ParameterizedStatement<SIndex> _pswHasChange = new ParameterizedStatement<>(
             sidx -> DBUtil.selectWhere(tableName(sidx), C_CONTENT_CHANGE_OID + "=?", "count(*)"));
     public boolean hasChange_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswHasChange.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return DBUtil.binaryCount(ps.executeQuery());
-        });
+        try (ResultSet rs = query(_pswHasChange.get(sidx), oid.getBytes())) {
+            return DBUtil.binaryCount(rs);
+        }
     }
 
     public static class ContentChange
@@ -129,22 +130,19 @@ public class ContentChangesDatabase extends AbstractDatabase
             + " order by " + C_CONTENT_CHANGE_IDX);
     public IDBIterator<ContentChange> getChanges_(SIndex sidx) throws SQLException
     {
-        return exec(_pswList.get(sidx), ps -> new AbstractDBIterator<ContentChange>(ps.executeQuery()) {
+        return new AbstractDBIterator<ContentChange>(query(_pswList.get(sidx))) {
             @Override
             public ContentChange get_() throws SQLException
             {
                 return new ContentChange(sidx, _rs.getLong(1), new OID(_rs.getBytes(2)));
             }
-        });
+        };
     }
 
     private final ParameterizedStatement<SIndex> _pswDelete = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_CONTENT_CHANGE_IDX + "=?"));
     public boolean deleteChange_(SIndex sidx, long idx, Trans t) throws SQLException
     {
-        return exec(_pswDelete.get(sidx), ps -> {
-            ps.setLong(1, idx);
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDelete.get(sidx), idx);
     }
 }

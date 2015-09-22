@@ -361,7 +361,7 @@ public class MetaChangeSubmitter implements Submitter
         LocalChange.Type lct = matches_(lc, rc, lnk);
         if (lct == null) return false;
 
-        l.info("ack submission");
+        l.info("ack submission: {}", lc);
         UpdatedObject ack = new UpdatedObject();
         ack.object = new LogicalObject();
         ack.object.oid = rc.oid;

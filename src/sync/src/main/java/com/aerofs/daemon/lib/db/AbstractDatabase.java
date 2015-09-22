@@ -2,19 +2,15 @@ package com.aerofs.daemon.lib.db;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
-import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public abstract class AbstractDatabase
 {
-    private static final Logger l = Loggers.getLogger(AbstractDatabase.class);
     protected final IDBCW _dbcw;
 
     protected AbstractDatabase(IDBCW dbcw)
@@ -27,29 +23,106 @@ public abstract class AbstractDatabase
         return _dbcw.getConnection();
     }
 
-    protected boolean isValid(PreparedStatement ps)
-    {
-        if (ps == null) return false;
+    public ResultSet query(PreparedStatementWrapper psw,
+                           Object p0) throws SQLException {
         try {
-            return ps.getConnection() == c();
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            return ps.executeQuery();
         } catch (SQLException e) {
-            l.warn(Util.e(e));
-            DBUtil.close(ps);
-            return false;
+            psw.close();
+            throw detectCorruption(e);
         }
     }
 
-    @FunctionalInterface
-    protected static interface StatementRunner<T>
-    {
-        public T execute(PreparedStatement ps) throws SQLException;
+    public ResultSet query(PreparedStatementWrapper psw,
+                           Object p0, Object p1) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            ps.setObject(2, p1);
+            return ps.executeQuery();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
     }
 
-    protected <T> T exec(PreparedStatementWrapper psw, StatementRunner<T> r)
-            throws SQLException
-    {
+    public ResultSet query(PreparedStatementWrapper psw,
+                           Object p0, Object p1, Object p2) throws SQLException {
         try {
-            return r.execute(psw.get(c()));
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            ps.setObject(2, p1);
+            ps.setObject(3, p2);
+            return ps.executeQuery();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    public ResultSet query(PreparedStatementWrapper psw,
+                           Object ...p) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            for (int i = 0; i < p.length; ++i) {
+                ps.setObject(i, p[i]);
+            }
+            return ps.executeQuery();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    public int update(PreparedStatementWrapper psw,
+                      Object p0) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    public int update(PreparedStatementWrapper psw,
+                      Object p0, Object p1) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            ps.setObject(2, p1);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    public int update(PreparedStatementWrapper psw,
+                      Object p0, Object p1, Object p2) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            ps.setObject(1, p0);
+            ps.setObject(2, p1);
+            ps.setObject(3, p2);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            psw.close();
+            throw detectCorruption(e);
+        }
+    }
+
+    public int update(PreparedStatementWrapper psw,
+                      Object... p) throws SQLException {
+        try {
+            PreparedStatement ps = psw.get(c());
+            for (int i = 0; i < p.length; ++i) {
+                ps.setObject(1 + i, p[i]);
+            }
+            return ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
             throw detectCorruption(e);

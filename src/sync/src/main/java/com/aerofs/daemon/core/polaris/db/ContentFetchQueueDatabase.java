@@ -78,20 +78,14 @@ public class ContentFetchQueueDatabase extends AbstractDatabase
             "insert or ignore into " + tableName(sidx) + "(" + C_CONTENT_QUEUE_OID + ") values(?)");
     public boolean insert_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswInsert.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswInsert.get(sidx), oid.getBytes());
     }
 
     private final ParameterizedStatement<SIndex> _pswDelete = new ParameterizedStatement<>(sidx ->
             DBUtil.deleteWhereEquals(tableName(sidx), C_CONTENT_QUEUE_OID));
     public boolean remove_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        return exec(_pswDelete.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDelete.get(sidx), oid.getBytes());
     }
 
     private final ParameterizedStatement<SIndex> _pswList = new ParameterizedStatement<>(sidx ->
@@ -100,15 +94,12 @@ public class ContentFetchQueueDatabase extends AbstractDatabase
                     + " order by " + C_CONTENT_QUEUE_IDX);
     public IDBIterator<OIDAndFetchIdx> list_(SIndex sidx, long from) throws SQLException
     {
-        return exec(_pswList.get(sidx), ps -> {
-            ps.setLong(1, from);
-            return new AbstractDBIterator<OIDAndFetchIdx>(ps.executeQuery()) {
-                @Override
-                public OIDAndFetchIdx get_() throws SQLException
-                {
-                    return new OIDAndFetchIdx(_rs.getBytes(2), _rs.getLong(1));
-                }
-            };
-        });
+        return new AbstractDBIterator<OIDAndFetchIdx>(query(_pswList.get(sidx), from)) {
+            @Override
+            public OIDAndFetchIdx get_() throws SQLException
+            {
+                return new OIDAndFetchIdx(_rs.getBytes(2), _rs.getLong(1));
+            }
+        };
     }
 }

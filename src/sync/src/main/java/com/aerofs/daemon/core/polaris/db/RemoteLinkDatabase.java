@@ -159,14 +159,10 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
                     C_REMOTE_LINK_PARENT, C_REMOTE_LINK_NAME, C_REMOTE_LINK_VERSION));
     public RemoteLink getParent_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswGet, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return !rs.next() ? null
-                        : new RemoteLink(new OID(rs.getBytes(1)), rs.getString(2), rs.getLong(3));
-            }
-        });
+        try (ResultSet rs = query(_pswGet, sidx.getInt(), oid.getBytes())) {
+            return !rs.next() ? null
+                    : new RemoteLink(new OID(rs.getBytes(1)), rs.getString(2), rs.getLong(3));
+        }
     }
 
     public static class RemoteChild {
@@ -184,16 +180,12 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
                     C_REMOTE_LINK_SIDX + "=? and " + C_REMOTE_LINK_PARENT + "=?",
                     C_REMOTE_LINK_OID, C_REMOTE_LINK_NAME));
     public IDBIterator<RemoteChild> listChildren_(SIndex sidx, OID oid) throws SQLException {
-        return exec(_pswList, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            return new AbstractDBIterator<RemoteChild>(ps.executeQuery()) {
-                @Override
-                public RemoteChild get_() throws SQLException {
-                    return new RemoteChild(new OID(_rs.getBytes(1)), _rs.getString(2));
-                }
-            };
-        });
+        return new AbstractDBIterator<RemoteChild>(query(_pswList, sidx.getInt(), oid.getBytes())) {
+            @Override
+            public RemoteChild get_() throws SQLException {
+                return new RemoteChild(new OID(_rs.getBytes(1)), _rs.getString(2));
+            }
+        };
     }
 
     private final PreparedStatementWrapper _pswInsert = new PreparedStatementWrapper(
@@ -203,15 +195,8 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
             Trans t)
             throws SQLException
     {
-        exec(_pswInsert, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            ps.setBytes(3, parent.getBytes());
-            ps.setString(4, name);
-            ps.setLong(5, logicalTimestamp);
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswInsert, sidx.getInt(), oid.getBytes(), parent.getBytes(), name,
+                logicalTimestamp));
         Waiter f = _waiters.get(oid);
         if (f != null) {
             _waiters.remove(oid, f);
@@ -224,12 +209,7 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
                     C_REMOTE_LINK_SIDX + "=? and " + C_REMOTE_LINK_OID + "=?"));
     public void removeParent_(SIndex sidx, OID oid, Trans t) throws SQLException
     {
-        exec(_pswDelete, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswDelete, sidx.getInt(), oid.getBytes()));
     }
 
     private final PreparedStatementWrapper _pswUpdate = new PreparedStatementWrapper(
@@ -240,15 +220,8 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
             Trans t)
             throws SQLException
     {
-        exec(_pswUpdate, ps -> {
-            ps.setBytes(1, parent.getBytes());
-            ps.setString(2, name);
-            ps.setLong(3, logicalTimestamp);
-            ps.setInt(4, sidx.getInt());
-            ps.setBytes(5, oid.getBytes());
-            checkState(ps.executeUpdate() == 1);
-            return null;
-        });
+        checkState(1 == update(_pswUpdate,
+                parent.getBytes(), name, logicalTimestamp, sidx.getInt(), oid.getBytes()));
     }
 
     private final PreparedStatementWrapper _pswHasChildren = new PreparedStatementWrapper(
@@ -257,12 +230,8 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
                     C_REMOTE_LINK_OID));
     public boolean hasChildren_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswHasChildren, ps -> {
-            ps.setInt(1, sidx.getInt());
-            ps.setBytes(2, oid.getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        });
+        try (ResultSet rs = query(_pswHasChildren, sidx.getInt(), oid.getBytes())) {
+            return rs.next();
+        }
     }
 }

@@ -21,6 +21,7 @@ import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -82,7 +83,8 @@ public class MetaChangesDatabase extends AbstractDatabase
     public long insertChange_(SIndex sidx, OID oid,  @Nullable OID newParent,
             @Nullable String newName, Trans t) throws SQLException
     {
-        return exec(_pswInsertChange.get(sidx), ps -> {
+        try {
+            PreparedStatement ps = _pswInsertChange.get(sidx).get(c());
             ps.setBytes(1, oid.getBytes());
             ps.setBytes(2, newParent != null ? newParent.getBytes() : null);
             ps.setString(3, newName);
@@ -91,17 +93,16 @@ public class MetaChangesDatabase extends AbstractDatabase
                 checkState(rs.next());
                 return rs.getLong(1);
             }
-        });
+        } catch (SQLException e) {
+            _pswInsertChange.get(sidx).close();
+            throw detectCorruption(e);
+        }
     }
 
     private final ParameterizedStatement<SIndex> _pswUpdateChanges = new ParameterizedStatement<>(
             sidx ->  DBUtil.updateWhere(tableName(sidx), C_META_CHANGE_OID + "=?", C_META_CHANGE_OID));
     public int updateChanges_(SIndex sidx, OID oid, OID anchor, Trans t) throws SQLException {
-        return exec(_pswUpdateChanges.get(sidx), ps -> {
-            ps.setBytes(1, anchor.getBytes());
-            ps.setBytes(2, oid.getBytes());
-            return ps.executeUpdate();
-        });
+        return update(_pswUpdateChanges.get(sidx), anchor.getBytes(), oid.getBytes());
     }
 
     public static class MetaChange
@@ -140,17 +141,14 @@ public class MetaChangesDatabase extends AbstractDatabase
             + " order by " + C_META_CHANGE_IDX);
     public IDBIterator<MetaChange> getChangesSince_(SIndex sidx, long idx) throws SQLException
     {
-        return exec(_pswGetStoreChanges.get(sidx), ps -> {
-            ps.setLong(1, idx);
-            return new AbstractDBIterator<MetaChange>(ps.executeQuery()) {
-                @Override
-                public MetaChange get_() throws SQLException
-                {
-                    return new MetaChange(sidx, _rs.getLong(1), new OID(_rs.getBytes(2)),
-                            _rs.getBytes(3), _rs.getString(4));
-                }
-            };
-        });
+        return new AbstractDBIterator<MetaChange>(query(_pswGetStoreChanges.get(sidx), idx)) {
+            @Override
+            public MetaChange get_() throws SQLException
+            {
+                return new MetaChange(sidx, _rs.getLong(1), new OID(_rs.getBytes(2)),
+                        _rs.getBytes(3), _rs.getString(4));
+            }
+        };
     }
 
     public boolean hasChanges_(SIndex sidx) throws SQLException
@@ -164,20 +162,13 @@ public class MetaChangesDatabase extends AbstractDatabase
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_IDX + "=?"));
     public boolean deleteChange_(SIndex sidx, long idx, Trans t) throws SQLException
     {
-        return exec(_pswDeleteChange.get(sidx), ps -> {
-            ps.setLong(1, idx);
-            return ps.executeUpdate() == 1;
-        });
+        return 1 == update(_pswDeleteChange.get(sidx), idx);
     }
 
     private final ParameterizedStatement<SIndex> _pswDeleteObjectChanges = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_OID + "=?"));
-    public boolean deleteChanges_(SIndex sidx, OID oid, Trans t) throws SQLException
-    {
-        return exec(_pswDeleteObjectChanges.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return ps.executeUpdate() == 1;
-        });
+    public boolean deleteChanges_(SIndex sidx, OID oid, Trans t) throws SQLException {
+        return 1 == update(_pswDeleteObjectChanges.get(sidx), oid.getBytes());
     }
 
     private final ParameterizedStatement<SIndex> _pswGetObjectChanges = new ParameterizedStatement<>(
@@ -188,15 +179,12 @@ public class MetaChangesDatabase extends AbstractDatabase
                     + " order by " + C_META_CHANGE_IDX);
     public IDBIterator<MetaChange> getChanges_(SIndex sidx, OID oid) throws SQLException
     {
-        return exec(_pswGetObjectChanges.get(sidx), ps -> {
-            ps.setBytes(1, oid.getBytes());
-            return new AbstractDBIterator<MetaChange>(ps.executeQuery()) {
-                @Override
-                public MetaChange get_() throws SQLException
-                {
-                    return new MetaChange(sidx, _rs.getLong(1), oid, _rs.getBytes(2), _rs.getString(3));
-                }
-            };
-        });
+        return new AbstractDBIterator<MetaChange>(query(_pswGetObjectChanges.get(sidx), oid.getBytes())) {
+            @Override
+            public MetaChange get_() throws SQLException
+            {
+                return new MetaChange(sidx, _rs.getLong(1), oid, _rs.getBytes(2), _rs.getString(3));
+            }
+        };
     }
 }

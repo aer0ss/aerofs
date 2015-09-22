@@ -703,12 +703,9 @@ public class MetaDatabase extends AbstractDatabase
     @Override
     public long getBytesUsed_(SIndex sidx) throws SQLException
     {
-        return exec(_pswGetBytesUsed, ps -> {
-            ps.setInt(1, sidx.getInt());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getLong(1) : 0;
-            }
-        });
+        try (ResultSet rs = query(_pswGetBytesUsed, sidx.getInt())) {
+            return rs.next() ? rs.getLong(1) : 0;
+        }
     }
 
     private PreparedStatementWrapper _pswSetBytesUsed = new PreparedStatementWrapper(
@@ -716,11 +713,6 @@ public class MetaDatabase extends AbstractDatabase
     @Override
     public void setBytesUsed_(SIndex sidx, long total, Trans t) throws SQLException
     {
-        exec(_pswSetBytesUsed, ps -> {
-            ps.setLong(1, total);
-            ps.setInt(2, sidx.getInt());
-            ps.executeUpdate();
-            return null;
-        });
+        update(_pswSetBytesUsed, total, sidx.getInt());
     }
 }
