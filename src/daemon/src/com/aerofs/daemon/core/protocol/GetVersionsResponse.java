@@ -360,7 +360,15 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             didBlock = did;
         }
 
-        if (didBlock == null || didBlock.equals(Cfg.did())) throw new ExProtocolError();
+        if (didBlock == null) {
+            // a final block with no device can occur which contains only the filter
+            if (block.getObjectIdCount() > 0 || block.getImmigrantObjectIdCount() > 0
+                || block.hasKnowledgeTick() || block.hasImmigrantKnowledgeTick()) {
+                throw new ExProtocolError();
+            }
+            return null;
+        }
+        if (didBlock.equals(Cfg.did())) throw new ExProtocolError();
 
         // for debugging only
         Tick tickPrev = Tick.ZERO;
