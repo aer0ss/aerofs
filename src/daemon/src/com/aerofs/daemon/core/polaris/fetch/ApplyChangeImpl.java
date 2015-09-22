@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
+import static com.aerofs.daemon.core.ds.OA.Type.DIR;
+import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.google.common.base.Preconditions.checkState;
@@ -60,6 +62,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final MetaBufferDatabase _mbdb;
     private final MetaChangesDatabase _mcdb;
     private final ContentChangesDatabase _ccdb;
+    private final RemoteContentDatabase _rcdb;
     private final MetaChangeSubmitter _submitter;
     private final StoreCreator _sc;
     private final StoreDeleter _sd;
@@ -71,9 +74,9 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
                            MapAlias2Target a2t, ObjectSurgeon os, RemoteLinkDatabase rpdb,
                            MetaBufferDatabase mbdb, MetaChangesDatabase mcdb,
-                           ContentChangesDatabase ccdb, MetaChangeSubmitter submitter,
-                           StoreCreator sc, IMapSID2SIndex sid2sidx, ImmigrantCreator imc,
-                           ExpulsionDatabase exdb, StoreDeleter sd)
+                           ContentChangesDatabase ccdb, RemoteContentDatabase rcdb,
+                           MetaChangeSubmitter submitter, StoreCreator sc, IMapSID2SIndex sid2sidx,
+                           ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd)
     {
         _ds = ds;
         _ps = ps;
@@ -84,6 +87,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _mbdb = mbdb;
         _mcdb = mcdb;
         _ccdb = ccdb;
+        _rcdb = rcdb;
         _submitter = submitter;
         _sc = sc;
         _sd = sd;
@@ -145,8 +149,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         //   1. there are local changes
         //   2. the parent is already buffered
         //   3. a name conflict is detected
+        //   4. a folder/anchor conflict is detected
         boolean shouldBuffer = _mbdb.isBuffered_(parent) || _mcdb.hasChanges_(parent.sidx())
-                || _ds.getChild_(parent.sidx(), parent.oid(), name) != null;
+                || _ds.getChild_(parent.sidx(), parent.oid(), name) != null
+                || (type == DIR && _ds.getOANullable_(new SOID(parent.sidx(), SID.folderOID2convertedAnchorOID(oidChild))) != null);
 
         if (shouldBuffer) {
             _mbdb.insert_(parent.sidx(), oidChild, type, mergeBoundary, t);
@@ -323,6 +329,18 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         SID sid = SID.folderOID2convertedStoreSID(soid.oid());
         OID anchor = SID.storeSID2anchorOID(sid);
         SOID soidAnchor = new SOID(soid.sidx(), anchor);
+
+        OA oaAnchor = _ds.getOANullable_(soidAnchor);
+        if (oaAnchor != null) {
+            // If the anchor is present before the folder is shared, which should only ever happen
+            // after an unlink/reinstall wherein shared folders are restored from tag files, the
+            // creation of the original folder and its children will be buffered and they will all
+            // eventually be dropped.
+            // See applyBufferedChanges_
+            l.warn("anchor present before SHARE: {} {}", soid, oaAnchor);
+            checkState(_ds.getOANullable_(soid) == null);
+            return;
+        }
 
         OA oa = _ds.getOA_(soid);
         ResolvedPath p = _ds.resolve_(oa);
@@ -547,7 +565,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
     }
 
-    private void applyBufferedChange_(SIndex sidx, BufferedChange c, long timestamp, Trans t)
+    private boolean applyBufferedChange_(SIndex sidx, BufferedChange c, long timestamp, Trans t)
             throws Exception {
         RemoteLink lnk = _rpdb.getParent_(sidx, c.oid);
         OA oaChild = _ds.getOANullable_(new SOID(sidx, c.oid));
@@ -561,20 +579,45 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             } else {
                 applyDelete_(oaChild, t);
             }
-            return;
+            return true;
         }
 
         // ensure parent exists
         OA oaParent = _ds.getOANullable_(new SOID(sidx, lnk.parent));
         if (oaParent == null) {
             l.info("apply parent {}{}", sidx, lnk.parent);
-            checkState(_mbdb.isBuffered_(new SOID(sidx, lnk.parent)));
-            // TODO(phoenix): watch for cycles
-            applyBufferedChange_(sidx, new BufferedChange(lnk.parent, OA.Type.DIR), timestamp, t);
+            if (!_mbdb.isBuffered_(new SOID(sidx, lnk.parent))
+                    || !applyBufferedChange_(sidx, new BufferedChange(lnk.parent, DIR), timestamp, t)) {
+                l.warn("dropping buffered child {}/{}:{}", lnk.parent, c.oid, lnk.name);
+                if (c.type == FILE) {
+                    // remote content is not buffered and needs to be removed when a file is dropped
+                    _rcdb.deleteUpToVersion_(sidx, c.oid, Long.MAX_VALUE, t);
+                }
+                return false;
+            }
             oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
         }
 
         String name = lnk.name;
+
+        if (oaChild == null && c.type == DIR) {
+            OA oaAnchor = _ds.getOANullable_(new SOID(sidx, SID.folderOID2convertedAnchorOID(c.oid)));
+            if (oaAnchor != null) {
+                // This should only happen in case a user cleanly unlinks and the shared folder
+                // is restored on the first scan after reinstall.
+                // In this case we should simply drop the folder and all its buffered children as
+                // the destination may already have some children and will sync the rest on its own.
+                l.warn("dropping buffered folder w/ matching anchor {}/{}:{}",
+                        lnk.parent, c.oid, name);
+                // NB: we do NOT create the folder under the trash as would normally happen in a
+                // SHARE operation. This is on purpose. Instead the resulting tree will be as though
+                // the user joined the folder instead of being the original sharer. The downside of
+                // this approach is that the tree will be subtly mismatched across devices of the
+                // same user, which is a small price to pay to simplify the handling of this nasty
+                // corner case.
+                return false;
+            }
+        }
 
         // check for conflict
         OID oidConflict = _ds.getChild_(sidx, lnk.parent, name);
@@ -589,7 +632,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 alias_(sidx, c.oid, oaConflict, t);
 
                 // no need to insert the child
-                return;
+                return true;
             } else {
                 name = resolveNameConflict_(sidx, lnk, oaConflict, timestamp, t);
             }
@@ -601,6 +644,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         } else {
             applyMove_(oaParent, oaChild, name, timestamp, t);
         }
+        return true;
     }
 
     private String resolveNameConflict_(SIndex sidx, RemoteLink lnk, OA oaConflict, long timestamp,

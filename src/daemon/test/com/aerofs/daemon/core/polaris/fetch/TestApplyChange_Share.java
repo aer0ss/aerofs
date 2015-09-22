@@ -841,4 +841,140 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // TODO: similarly delay issuing of leave command in other cases of anchor deletion
         assertFalse(inj.getInstance(SharedFolderUpdateQueueDatabase.class).getCommands_().next_());
     }
+
+    @Test
+    public void shouldBufferAndDropWhenAnchorPresentWithSameName() throws Exception {
+        SID sid = SID.folderOID2convertedStoreSID(foo);
+
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foo", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        SIndex shared = mds.sm.get_(sid);
+
+        // sync changes in shared folder
+        apply(shared,
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FILE),
+                updateContent(baz, did, h, 0L, 42L)
+        );
+
+        try (Trans t = tm.begin_()) {
+            // local version + remote dl -> conflict
+            setContent(shared, baz, CONTENT, 1234);
+            downloadContent(shared, baz, 1, EMPTY, 42, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH),
+                anchor("foo", foo,
+                        folder(LibParam.TRASH, OID.TRASH),
+                        folder("bar", bar,
+                                file("baz", baz,
+                                        content(CONTENT, 1234),
+                                        content(EMPTY, 42)))));
+
+        assertHasRemoteContent(shared, baz,
+                new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(foo, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FILE),
+                updateContent(baz, did, h, 0L, 42L),
+                share(foo),
+                insert(OID.ROOT, "qux", qux, ObjectType.FOLDER)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH),
+                anchor("foo", foo,
+                        folder(LibParam.TRASH, OID.TRASH),
+                        folder("bar", bar,
+                                file("baz", baz,
+                                        content(CONTENT, 1234),
+                                        content(EMPTY, 42)))),
+                folder("qux", qux));
+
+        assertHasRemoteContent(sidx, baz);
+        assertHasRemoteContent(shared, baz,
+                new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+    }
+
+    @Test
+    public void shouldBufferAndDropWhenAnchorPresentWithDifferentName() throws Exception {
+        SID sid = SID.folderOID2convertedStoreSID(foo);
+
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        SIndex shared = mds.sm.get_(sid);
+
+        // sync changes in shared folder
+        apply(shared,
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FILE),
+                updateContent(baz, did, h, 0L, 42L)
+        );
+
+        try (Trans t = tm.begin_()) {
+            // local version + remote dl -> conflict
+            setContent(shared, baz, CONTENT, 1234);
+            downloadContent(shared, baz, 1, EMPTY, 42, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH),
+                                folder("bar", bar,
+                                        file("baz", baz,
+                                                content(CONTENT, 1234),
+                                                content(EMPTY, 42)))));
+
+        assertHasRemoteContent(shared, baz,
+                new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(foo, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FILE),
+                updateContent(baz, did, h, 0L, 42L),
+                share(foo),
+                insert(OID.ROOT, "qux", qux, ObjectType.FOLDER)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH),
+                        folder("bar", bar,
+                                file("baz", baz,
+                                        content(CONTENT, 1234),
+                                        content(EMPTY, 42)))),
+                folder("qux", qux));
+
+        assertHasRemoteContent(sidx, baz);
+        assertHasRemoteContent(shared, baz,
+                new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+    }
 }
