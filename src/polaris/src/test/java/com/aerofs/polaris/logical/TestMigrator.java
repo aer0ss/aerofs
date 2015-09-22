@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class TestMigrator {
@@ -288,7 +289,11 @@ public class TestMigrator {
         insertAnchor(folder, share1, "share");
 
         migrator.start();
-        migrator.moveCrossStore(folder, destFolder, DEVICE);
+        dbi.inTransaction((conn, handle) -> {
+            DAO dao = new DAO(conn);
+            migrator.moveCrossStore(dao, folder, destFolder, DEVICE);
+            return null;
+        });
         migratorExecutor.shutdown();
         assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
 
@@ -416,7 +421,7 @@ public class TestMigrator {
         OID sharedFolder = newFolder(rootStore, "shared_folder");
         OID folder = newFolder(sharedFolder, "folder");
         // ensure the second shareFolder call is performed before the migrator can do any work
-        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
+        doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(any(DAO.class), eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
         shareFolder(sharedFolder);
         try {
             shareFolder(folder);

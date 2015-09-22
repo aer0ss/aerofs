@@ -375,7 +375,7 @@ public final class ObjectStore {
                         } else {
                             OID newOid = OID.generate();
                             updated.add(migrateObject(dao, device, mc.newParent, newOid, mc.child, mc.newChildName));
-                            jobID = migrator.moveCrossStore(mc.child, newOid, device);
+                            jobID = migrator.moveCrossStore(dao, mc.child, newOid, device);
                         }
                     }
                 }
@@ -394,7 +394,7 @@ public final class ObjectStore {
             case SHARE: {
                 OID folderOID = new OID(oid);
                 changeToStore(dao, folderOID);
-                jobID = migrator.migrateStore(SID.folderOID2convertedStoreSID(folderOID), device);
+                jobID = migrator.migrateStore(dao, SID.folderOID2convertedStoreSID(folderOID), device);
                 break;
             }
             case RESTORE: {

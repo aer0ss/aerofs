@@ -75,31 +75,19 @@ public class Migrator implements Managed {
     /*
      * @return the Job ID associated with this migration
      */
-    public UniqueID migrateStore(SID storeSID, DID originator)
+    public UniqueID migrateStore(DAO dao, SID storeSID, DID originator)
     {
         UniqueID jobID = UniqueID.generate();
-
-        dbi.inTransaction((conn, status) -> {
-            DAO dao = new DAO(conn);
-            dao.migrations.addStoreMigration(SID.convertedStoreSID2folderOID(storeSID), storeSID, jobID, originator, JobStatus.RUNNING);
-            return null;
-        });
-
+        dao.migrations.addStoreMigration(SID.convertedStoreSID2folderOID(storeSID), storeSID, jobID, originator, JobStatus.RUNNING);
         startStoreMigration(storeSID, jobID, originator);
         return jobID;
     }
 
-    public UniqueID moveCrossStore(UniqueID child, OID destination, DID originator)
+    public UniqueID moveCrossStore(DAO dao, UniqueID child, OID destination, DID originator)
     {
         UniqueID jobID = UniqueID.generate();
-
-        dbi.inTransaction((conn, status) -> {
-            DAO dao = new DAO(conn);
-            dao.migrations.addFolderMigration(child, destination, jobID, originator, JobStatus.RUNNING);
-            dao.migrations.addOidMapping(child, destination, jobID);
-            return null;
-        });
-
+        dao.migrations.addFolderMigration(child, destination, jobID, originator, JobStatus.RUNNING);
+        dao.migrations.addOidMapping(child, destination, jobID);
         startFolderMigration(child, destination, jobID, originator);
         return jobID;
     }
