@@ -219,6 +219,7 @@ public class ContentChangeSubmitter implements Submitter
             }
 
             long ack = 0L;
+            int failed = 0;
             SIndex sidx = null;
 
             // TODO: optimistic transaction merging
@@ -244,8 +245,10 @@ public class ContentChangeSubmitter implements Submitter
                     } else if (or.errorCode == PolarisError.VERSION_CONFLICT) {
                         onConflict_(c.get(i), lc, "");
                     } else {
-                        // TODO(phoenix): ???
-                        l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage, GsonUtil.GSON.toJson(batch.operations.get(i)));
+                        // TODO(phoenix): figure out which errors need special handling
+                        ++failed;
+                        l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
+                                GsonUtil.GSON.toJson(batch.operations.get(i)));
                     }
                 }
             } finally {
@@ -253,6 +256,7 @@ public class ContentChangeSubmitter implements Submitter
                     _nus.sendForStore_(sidx, ack);
                 }
             }
+            if (failed > 0) throw new ExRetryLater("batch not complete");
             return true;
         }
         default:

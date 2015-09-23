@@ -268,6 +268,7 @@ public class MetaChangeSubmitter implements Submitter
             }
 
             long ack = 0L;
+            int failed = 0;
             SIndex sidx = null;
 
             // TODO: optimistic transaction merging
@@ -292,7 +293,8 @@ public class MetaChangeSubmitter implements Submitter
                     } else if (or.errorCode == PolarisError.NAME_CONFLICT) {
                         onConflict_(c.get(i), lc, "");
                     } else {
-                        // TODO(phoenix): ???
+                        // TODO(phoenix): figure out which errors need special handling
+                        ++failed;
                         l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
                                 GsonUtil.GSON.toJson(batch.operations.get(i)));
                     }
@@ -302,6 +304,7 @@ public class MetaChangeSubmitter implements Submitter
                     _nus.sendForStore_(sidx, ack);
                 }
             }
+            if (failed > 0) throw new ExRetryLater("batch not complete");
             return true;
         }
         default:
