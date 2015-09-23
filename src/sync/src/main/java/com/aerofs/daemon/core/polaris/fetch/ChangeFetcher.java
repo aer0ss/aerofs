@@ -23,6 +23,7 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
+import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.*;
 import org.slf4j.Logger;
@@ -128,21 +129,20 @@ public class ChangeFetcher
             t.commit_();
         }
 
-        long lastLogicalTimestamp = 0;
+        long lastLogicalTimestamp = Objects.firstNonNull(_cedb.getChangeEpoch_(sidx), 0L);
         for (RemoteChange rc : c.transforms) {
+            if (rc.logicalTimestamp <= lastLogicalTimestamp) {
+                throw new ExProtocolError();
+            }
             // Polaris use the SID as the root object of a store
             // we need to convert that back to OID.ROOT for local processing
             if (_sidx2sid.get_(sidx).equals(rc.oid)) {
                 rc.oid = OID.ROOT;
             }
-
             try (Trans t = _tm.begin_()) {
                 _at.apply_(sidx, rc, c.maxTransformCount, t);
                 _cedb.setChangeEpoch_(sidx, rc.logicalTimestamp, t);
                 t.commit_();
-            }
-            if (rc.logicalTimestamp <= lastLogicalTimestamp) {
-                throw new ExProtocolError();
             }
             lastLogicalTimestamp = rc.logicalTimestamp;
         }
