@@ -1,7 +1,5 @@
 DROP INDEX `store_index` on `objects`;
 
-DROP INDEX `store_transforms_index` ON `transforms`;
-
 CREATE INDEX `object_transforms_index` ON `transforms` (`oid`, `transform_type`);
 
 DROP INDEX `store_max_logical_timestamp_index` ON `store_max_logical_timestamp`;
