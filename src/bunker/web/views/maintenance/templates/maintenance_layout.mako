@@ -26,7 +26,7 @@
                 ('setup', _("Setup")),
                 ('toggle_maintenance_mode', _("System maintenance")),
                 ('customization', _("Customization")),
-                ('sync_settings', _("Sync Settings")),
+                ('sync_settings', _("Sync settings")),
             ]
 
             if not is_maintenance_mode(None):
