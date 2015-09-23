@@ -727,6 +727,17 @@ public final class TestObjectResource {
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
     }
 
+    @Test
+    public void shouldNotReturn500ForFailingToFindNoop() throws Exception
+    {
+        SID store = SID.generate();
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+
+        // rename op to "file" will be no-op, but there won't be a matching transform
+        PolarisHelpers.moveObject(AUTHENTICATED, store, store, file, "file")
+            .assertThat().statusCode(SC_CONFLICT);
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);

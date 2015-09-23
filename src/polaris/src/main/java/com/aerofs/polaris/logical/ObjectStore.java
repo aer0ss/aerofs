@@ -464,15 +464,17 @@ public final class ObjectStore {
             }
             LogicalObject parent = dao.objects.get(parentOid);
             Preconditions.checkState(parent != null, "current parent with oid %s could not be found", parentOid);
-            LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.INSERT_CHILD, childOid);
             if (matchingTransform == 0L && Identifiers.isMountPoint(childOid)) {
                 // could also be the result of a share operation
                 matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, SID.anchorOID2folderOID(new OID(childOid)), TransformType.SHARE);
             }
-            Preconditions.checkState(matchingTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, parentOid);
-            return new Updated(matchingTransform, parent);
-        } else if (currentParentOid != null) {
+            if (matchingTransform != 0L) {
+                LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
+                return new Updated(matchingTransform, parent);
+            }
+        }
+        if (currentParentOid != null) {
             // currentParentOid will be non-null for deleted files and folders (but not anchors) as well as objects under another parent, so no re-insertions of deleted objects
             throw new ParentConflictException(childOid, parentOid, currentParentOid);
         }
@@ -518,10 +520,11 @@ public final class ObjectStore {
         // get the current child name (informational)
         byte[] currentChildName = dao.children.getActiveChildName(parentOid, childOid);
         if (Arrays.equals(newChildName, currentChildName)) {
-            LOGGER.info("no-op for renameChild operation on child {} of {}", childOid, parentOid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.RENAME_CHILD, childOid);
-            Preconditions.checkState(matchingTransform != 0L, "could not find transform renaming %s as a child of %s", childOid, parentOid);
-            return new Updated(matchingTransform, parent);
+            if (matchingTransform != 0L) {
+                LOGGER.info("no-op for renameChild operation on child {} of {}", childOid, parentOid);
+                return new Updated(matchingTransform, parent);
+            }
         }
 
         // the child we're removing exists and is not locked
@@ -549,16 +552,15 @@ public final class ObjectStore {
         // check if this operation would be a no-op
         if (newParentOid.equals(currentParentOid) && Arrays.equals(childName, dao.children.getActiveChildName(newParentOid, childOid))) {
             LogicalObject newParent = getExistingObject(dao, newParentOid);
-            LOGGER.info("child {} already exists under parent {}, possible movechild no-op", childOid, newParentOid);
             long insertTransform = dao.transforms.getLatestMatchingTransformTimestamp(newParent.store, newParentOid, TransformType.INSERT_CHILD, childOid);
-            Preconditions.checkState(insertTransform != 0L, "could not find transform inserting %s as a child of %s", childOid, newParentOid);
-
-            LogicalObject oldParent = getExistingObject(dao, oldParentOid);
-            LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, oldParentOid);
-            long removeTransform = dao.transforms.getLatestMatchingTransformTimestamp(oldParent.store, oldParentOid, TransformType.REMOVE_CHILD, childOid);
-            Preconditions.checkState(removeTransform != 0L, "could not find transform removing %s as a child of %s", childOid, oldParentOid);
-            Preconditions.checkState(insertTransform < removeTransform, "could not find two transforms to match a move no-op");
-            return Lists.newArrayList(new Updated(insertTransform, newParent), new Updated(removeTransform, oldParent));
+            if (insertTransform != 0L) {
+                LogicalObject oldParent = getExistingObject(dao, oldParentOid);
+                long removeTransform = dao.transforms.getLatestMatchingTransformTimestamp(oldParent.store, oldParentOid, TransformType.REMOVE_CHILD, childOid);
+                if (removeTransform != 0L && insertTransform < removeTransform) {
+                    LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, oldParentOid);
+                    return Lists.newArrayList(new Updated(insertTransform, newParent), new Updated(removeTransform, oldParent));
+                }
+            }
         }
 
         Preconditions.checkArgument(oldParentOid.equals(currentParentOid) && !dao.children.isDeleted(oldParentOid, childOid), "%s is not an active child of %s", childOid, oldParentOid);
@@ -601,10 +603,11 @@ public final class ObjectStore {
         LogicalObject parent = getUnlockedParent(dao, parentOid);
 
         if (dao.children.isDeleted(parentOid, childOid)) {
-            LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.REMOVE_CHILD, childOid);
-            Preconditions.checkArgument(matchingTransform != 0L, "%s is not a child of %s", childOid, parentOid);
-            return new Updated(matchingTransform, parent);
+            if (matchingTransform != 0L) {
+                LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
+                return new Updated(matchingTransform, parent);
+            }
         }
 
         // the child we're removing exists and isn't locked (can't remove objects that are already in migration queue)
@@ -646,10 +649,11 @@ public final class ObjectStore {
         // check if the new content matches the object's latest content (disregarding version)
         Content currentObjectContent = dao.objectProperties.getLatest(oid);
         if (currentObjectContent != null && currentObjectContent.equals(new Content(oid, object.version, contentHash, contentSize, contentTime))) {
-            LOGGER.info("no-op for makeContent operation on {}", oid);
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(object.store, oid, TransformType.UPDATE_CONTENT);
-            Preconditions.checkState(matchingTransform != 0L, "could not find transform updating content of %s", oid);
-            return new Updated(matchingTransform, object);
+            if (matchingTransform != 0L) {
+                LOGGER.info("no-op for makeContent operation on {}", oid);
+                return new Updated(matchingTransform, object);
+            }
         }
 
         // cannot update deleted files
