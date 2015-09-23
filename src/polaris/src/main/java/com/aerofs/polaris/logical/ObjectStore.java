@@ -805,8 +805,8 @@ public final class ObjectStore {
             dao.children.remove(parent.oid, child.oid);
         }
 
-        // update mountpoints table if the removed child was a mount point
-        if (child.objectType == ObjectType.STORE) {
+        // update mountpoints table if the removed child was a mount point, but not if part of a Move operation (indicated by atomic)
+        if (child.objectType == ObjectType.STORE && atomic == null) {
             dao.mountPoints.remove(parent.store, child.oid);
         }
 

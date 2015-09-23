@@ -559,7 +559,8 @@ public final class TestObjectResource {
 
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sf).jobID, 5);
 
-        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, folder, rootStore, anchor, "shared_folder");
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, folder, rootStore, anchor, "new_name");
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, folder, anchor, "old_name");
     }
 
     @Test
