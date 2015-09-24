@@ -33,7 +33,7 @@ public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
     public AbstractDlgSetupAdvanced(Shell parentShell, String deviceName, String absRootAnchor)
     {
-        super("Advanced Options", parentShell, true, false, false, false);
+        super("Advanced Options", parentShell, true, false, false);
         _deviceName = deviceName;
         _absRootAnchor = absRootAnchor;
     }

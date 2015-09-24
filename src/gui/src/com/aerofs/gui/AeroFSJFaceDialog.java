@@ -22,12 +22,9 @@ public class AeroFSJFaceDialog extends Dialog {
     /**
      * @param title the title of the dialog. will be suffixed with S.TITLE_SUFFIX
      * null to use S.DEFAULT_TITLE
-     * @param resizable valid only if !sheet
-     * @param alwaysOnTop valid only if !sheet
-     * @param close valid only if !sheet
      */
     public AeroFSJFaceDialog(@Nullable String title, Shell parentShell, boolean sheet,
-            boolean resizable, boolean alwaysOnTop, boolean close)
+            boolean resizable, boolean close)
     {
         super(parentShell);
 
@@ -35,20 +32,13 @@ public class AeroFSJFaceDialog extends Dialog {
 
         _title = title;
 
-        if (sheet) {
-            setShellStyle(SWT.SHEET);
-        } else {
-                setShellStyle(
-                        (alwaysOnTop ? GUIUtil.alwaysOnTop() : 0) |
-                        (resizable ? SWT.RESIZE : 0) |
-                        (close ? SWT.DIALOG_TRIM : (SWT.DIALOG_TRIM & ~SWT.CLOSE)));
-        }
+        setShellStyle(GUIUtil.createShellStyle(sheet, resizable, close));
     }
 
     @Override
     protected void configureShell(Shell newShell)
     {
-        GUI.get().registerShell(newShell);
+        GUI.get().registerShell(newShell, getClass());
 
         super.configureShell(newShell);
         GUIUtil.setShellIcon(newShell);

@@ -17,7 +17,6 @@ import com.aerofs.sp.client.InjectableSPBlockingClientFactory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,7 +32,6 @@ public abstract class PriorityDefect
 
     protected String    _subject;
     protected String    _message;
-    protected Throwable _exception;
     protected String    _contactEmail;
     protected boolean   _sampleCPU;
 
@@ -57,12 +55,6 @@ public abstract class PriorityDefect
     {
         _message = message;
         _sampleCPU = _message.toLowerCase().contains("cpu");
-        return this;
-    }
-
-    public PriorityDefect setException(@Nullable Throwable exception)
-    {
-        _exception = exception;
         return this;
     }
 
@@ -110,7 +102,7 @@ public abstract class PriorityDefect
                 .setFilesToUpload(AutoDefect.UPLOAD_LOGS | AutoDefect.UPLOAD_HEAP_DUMPS | AutoDefect.UPLOAD_FILENAMES)
                 .setSubject(_subject)
                 .setMessage(_message)
-                .setException(_exception)
+                .setException(null)
                 .addData("daemon_status", getDaemonStatus());
 
         // Dump the defect content into the log.

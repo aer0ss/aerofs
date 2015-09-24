@@ -32,9 +32,11 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -49,15 +51,17 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
+import static com.aerofs.gui.GUIUtil.createShellStyle;
 import static com.aerofs.gui.GUIUtil.getNewText;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
 
-public class DlgSignIn extends AeroFSTitleAreaDialog
+public class DlgSignIn extends TitleAreaDialog
 {
     public DlgSignIn(Shell parentShell, SetupModel model) throws Exception
     {
-        super(null, parentShell, false, shouldAlwaysOnTop(), false);
+        super(parentShell);
 
+        setShellStyle(createShellStyle(false, false, false));
         setTitleImage(Images.get(Images.IMG_SETUP));
 
         _model = model;
@@ -71,15 +75,23 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     @Override
     protected void configureShell(final Shell newShell)
     {
+        GUI.get().registerShell(newShell, getClass());
         super.configureShell(newShell);
+
+        GUIUtil.setShellIcon(newShell);
+        newShell.setText(S.DEFAULT_DIALOG_TITLE);
 
         newShell.addTraverseListener(e -> {
             if (e.keyCode == SWT.ESC && _inProgress) e.doit = false;
         });
 
-        newShell.addListener(SWT.Show, event -> {
-            if (!shouldAlwaysOnTop()) GUIUtil.forceActive(newShell);
-        });
+        newShell.addListener(SWT.Show, event -> newShell.forceActive());
+    }
+
+    @Override
+    protected Point getInitialSize()
+    {
+        return getShell().computeSize(SWT.DEFAULT, SWT.DEFAULT);
     }
 
     /**
@@ -254,12 +266,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         composite.setLayout(layout);
 
         return composite;
-    }
-
-    static private boolean shouldAlwaysOnTop()
-    {
-        // On 10.5 the cocoasudo dialog goes behind the setup dialog if it's always on top.
-        return !(OSUtil.isOSX() && OSUtil.getOSVersion().startsWith("10.5"));
     }
 
     @Override
@@ -437,7 +443,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         getButton(OK_ID).setEnabled(enabled && isReady(_txtUserID.getText()));
     }
 
-    @Override
     public boolean isCancelled()
     {
         return !_okay;

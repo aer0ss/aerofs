@@ -46,12 +46,12 @@ class AddSharedFolderDialogs
      * For internal folders, the path is '{root_store_id}:/path/to/subfolder'
      * For external folders, the path is '{store_id}:'
      */
-    static interface IShareNewFolderCallback
+    interface IShareNewFolderCallback
     {
         void onSuccess(@Nonnull Path path);
     }
 
-    private static interface IShareNewFolder {
+    private interface IShareNewFolder {
         // Get the name of the new shared folder
         @Nonnull String getName();
         // Share the specified folder. Return the Path of the shared folder.
@@ -171,5 +171,4 @@ class AddSharedFolderDialogs
             }
         }.openDialog();
     }
-
 }

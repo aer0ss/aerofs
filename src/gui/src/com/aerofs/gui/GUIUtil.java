@@ -29,8 +29,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -130,16 +128,16 @@ public class GUIUtil
     }
 
     /**
-     * the shell must be visible for forceActive() to take effect
+     * @return  SWT.SHEET if {@param sheet} is true, else SWT.DIALOG_TRIM
+     *          | SWT.RESIZE if resizable
+     *          & ~SWT.CLOSE if not closable
      */
-    public static void forceActive(Shell shell)
+    public static int createShellStyle(boolean sheet, boolean resizable, boolean closable)
     {
-        // setVisible() causes problems on Windows
-        //boolean visible = shell.getVisible();
-        //shell.setVisible(true);
-        shell.forceActive();
-        shell.setFocus();
-        //shell.setVisible(visible);
+        return (sheet ? SWT.SHEET : SWT.DIALOG_TRIM)
+                | (resizable ? SWT.RESIZE : SWT.NONE)
+                // N.B. SWT.DIALOG_TRIM includes SWT.CLOSE by default.
+                & ~(closable ? SWT.NONE: SWT.CLOSE);
     }
 
     public static String shortenText(GC gc, String str, TableColumn tc,
@@ -296,12 +294,6 @@ public class GUIUtil
         }
     }
 
-    public static int alwaysOnTop()
-    {
-        // ON_TOP makes dialogs frame-less on Linux
-        return OSUtil.isLinux() ? 0 : SWT.ON_TOP;
-    }
-
     private static boolean isTryingToShareRoot(Path path)
     {
         if (new Path(Cfg.rootSID()).equals(path)) {
@@ -323,15 +315,10 @@ public class GUIUtil
         }
         try {
             final String link = UIGlobals.ritual().createUrl(path.toPB()).getLink();
-            GUI.get().asyncExec(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    String linkUrl = WWW.DASHBOARD_HOST_URL + "/l/" + link;
-                    copyLinkToClipboard(linkUrl);
-                    showLinkUrl(path, linkUrl);
-                }
+            GUI.get().asyncExec(() -> {
+                String linkUrl = WWW.DASHBOARD_HOST_URL + "/l/" + link;
+                copyLinkToClipboard(linkUrl);
+                showLinkUrl(path, linkUrl);
             });
         } catch (Exception e) {
             ErrorMessages.show(e, "Unable to create link for " + path.last() + ".",
@@ -345,14 +332,7 @@ public class GUIUtil
         String toastMsg = "A link has been created for " + path.last() +
                 " and copied to your clipboard (Click to view)";
         // Notify the user and open link in browser if clicked.
-        UI.get().notify(MessageType.INFO, toastMsg, new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                GUIUtil.launch(linkUrl);
-            }
-        });
+        UI.get().notify(MessageType.INFO, toastMsg, () -> GUIUtil.launch(linkUrl));
     }
 
     private static void copyLinkToClipboard(String linkUrl)
@@ -557,69 +537,5 @@ public class GUIUtil
     public static Label createLabel(Composite parent, int style)
     {
         return new AeroFSLabel(parent, style);
-    }
-
-    /**
-     * This class is used as an utility for implementing a new GUI layout and determining
-     *   margins.
-     *
-     * Coater.coat(Control) visits a control and all its descendants recursively and
-     *   set them each to a different color. It helps the developer visualize the layout
-     *   and identify the cause of layout flaws. Typically used at top-level shells.
-     *
-     * Usage: new Coater().coat(shell);
-     */
-    public static class Coater
-    {
-        Color[] colors;
-        int index;
-
-        /**
-         * Recursively visit the given control and its descendants and set each
-         *   control's background to a different colour.
-         *
-         * @param control the root control to start coating
-         */
-        public void coat(Control control)
-        {
-            if (colors == null) init(control.getDisplay());
-            visit(control);
-        }
-
-        /**
-         * initialize the color pallete.
-         *
-         * @param device the device to allocate the color for
-         */
-        private void init(Device device)
-        {
-            // please use prime number of colors
-            colors = new Color[] {
-                    new Color(device, 0xFF, 0, 0),
-                    new Color(device, 0xFF, 0xBB, 0),
-                    new Color(device, 0xFF, 0xFF, 0),
-                    new Color(device, 0xBB, 0xFF, 0),
-                    new Color(device, 0, 0xFF, 0),
-                    new Color(device, 0, 0xFF, 0xBB),
-                    new Color(device, 0, 0xFF, 0xFF),
-                    new Color(device, 0, 0xBB, 0xFF),
-                    new Color(device, 0, 0, 0xFF),
-                    new Color(device, 0xBB, 0, 0xFF),
-                    new Color(device, 0xFF, 0, 0xFF),
-            };
-
-            index = 0;
-        }
-
-        private void visit(Control control)
-        {
-            control.setBackground(colors[index++ % colors.length]);
-
-            if (control instanceof Composite) {
-                for (Control child : ((Composite)control).getChildren()) {
-                    visit(child);
-                }
-            }
-        }
     }
 }

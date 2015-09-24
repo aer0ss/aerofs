@@ -30,9 +30,12 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.update.Updater;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ShellAdapter;
+import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
@@ -43,9 +46,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.HashMap;
 
-import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.gui.GUIUtil.createLabel;
 
 public class GUI implements IUI
@@ -113,6 +115,22 @@ public class GUI implements IUI
         _sh.setText(L.product());
         GUIUtil.setShellIcon(_sh);
         GUIUtil.centerShell(_sh);
+
+        _sh.addShellListener(new ShellAdapter()
+        {
+            @Override
+            public void shellActivated(ShellEvent e)
+            {
+                showAllShells();
+            }
+        });
+    }
+
+    public void showAllShells()
+    {
+        for (Shell shell : Display.getCurrent().getShells()) {
+            shell.forceActive();
+        }
     }
 
     public void scheduleLaunch(final String rtRoot)
@@ -294,15 +312,10 @@ public class GUI implements IUI
     public void safeAsyncExec(final Widget w, final Runnable run)
     {
         if (!_disp.isDisposed() && !w.isDisposed()) {
-            _disp.asyncExec(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    if (w.isDisposed()) return;
-                    assert _disp == w.getDisplay();
-                    run.run();
-                }
+            _disp.asyncExec(() -> {
+                if (w.isDisposed()) return;
+                assert _disp == w.getDisplay();
+                run.run();
             });
         }
     }
@@ -310,14 +323,10 @@ public class GUI implements IUI
     public void safeExec(final Widget w, final Runnable run)
     {
         if (!_disp.isDisposed() && !w.isDisposed()) {
-            _disp.syncExec(new Runnable() {
-                @Override
-                public void run()
-                {
-                    if (w.isDisposed()) return;
-                    assert _disp == w.getDisplay();
-                    run.run();
-                }
+            _disp.syncExec(() -> {
+                if (w.isDisposed()) return;
+                assert _disp == w.getDisplay();
+                run.run();
             });
         }
     }
@@ -453,7 +462,7 @@ public class GUI implements IUI
 
     // where run() is called in a different thread, okay and error are
     // called within the UI thread.
-    public static interface ISWTWorker {
+    public interface ISWTWorker {
         void run() throws Exception;
         void okay();
         void error(Exception e);
@@ -532,7 +541,7 @@ public class GUI implements IUI
             // N.B. a null result indicates the user has canceled the setup.
             if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            AeroFSTitleAreaDialog dlg = new DlgSignIn(_sh, model);
+            DlgSignIn dlg = new DlgSignIn(_sh, model);
 
             dlg.open();
 
@@ -616,31 +625,16 @@ public class GUI implements IUI
         ExitCode.NORMAL_EXIT.exit();
     }
 
-    private int _openShells;
-
-    private final HashSet<Shell> _open = new HashSet<Shell>(); // for debugging only
+    private final HashMap<Shell, String> _openShells = Maps.newHashMap();
 
     /**
      * See registerShell()
      */
     public boolean isOpen()
     {
-        l.info("isOpen(): " + (_openShells != 0));
-        boolean open = _openShells != 0;
-
-        // for debugging only. TODO remove it
-        exec(() -> {
-            for (Shell shell : _open) {
-                if (shell.isDisposed() || !shell.isVisible()) {
-                    newDefectWithLogs("gui.is_open")
-                            .setMessage(
-                                    "closed shells in _open: " + shell + ": " + shell.isDisposed())
-                            .sendAsync();
-                }
-            }
-        });
-
-        return open;
+        l.info("isOpen(): {} shells currently open.", _openShells.size());
+        logOpenShells();
+        return !_openShells.isEmpty();
     }
 
     /**
@@ -648,50 +642,39 @@ public class GUI implements IUI
      * the shells. however, it's not easy to force it (i.e. to use a custom
      * shell everywhere). we have to rely on the classes' constructors to call
      * this method
+     *
+     * _must_ be called from the GUI thread to avoid concurrent access to the
+     * shell registry.
      */
-    public void registerShell(final Shell shell)
+    public void registerShell(final Shell shell, Class<? extends Object> subclass)
     {
         // clients must call us before the shell is open or disposed
         assert !shell.isVisible();
         assert !shell.isDisposed();
-        assert _openShells >= 0;
+        assert isUIThread();
 
-        if (_open.size() != _openShells) {
-            String shs = "";
-            for (Shell sh : _open) shs += " " + sh;
-            newDefectWithLogs("gui.register_shell")
-                    .setMessage("_open != open: " + _openShells + " == " + shs)
-                    .sendAsync();
-        }
+        final String name = subclass.getName();
 
-        _openShells++;
-        l.info("open " + _openShells);
+        l.info("Registering shell: {}", name);
+        _openShells.put(shell, name);
+        logOpenShells();
 
-        if (!_open.add(shell)) {
-            newDefectWithLogs("gui.register_shell")
-                    .setMessage("re-register shell: " + shell)
-                    .sendAsync();
-        }
-
-        shell.addDisposeListener(e -> {
-            _openShells--;
-            l.info("dispose " + _openShells);
-
-            if (!_open.remove(shell)) {
-                newDefectWithLogs("gui.register_shell")
-                        .setMessage("re-unregister shell: " + shell)
-                        .sendAsync();
-            }
-
-            if (_open.size() != _openShells) {
-                String shs = "";
-                for (Shell sh : _open) shs += " " + sh;
-
-                newDefectWithLogs("gui.register_shell")
-                        .setMessage("_open != open: " + _openShells + " == " + shs)
-                        .sendAsync();
-            }
+        shell.addDisposeListener(disposeEvent -> {
+            l.info("Disposing shell: {}", name);
+            _openShells.remove(shell);
+            logOpenShells();
         });
+    }
+
+    private void logOpenShells()
+    {
+        // at the time of writing, the GUI log contains very little information about anything.
+        // that's why this log open shells verbosely at info level.
+        l.info("Open shells:");
+        _openShells.entrySet();
+        for (String shellNames : _openShells.values()) {
+            l.info("  {}", shellNames);
+        }
     }
 
     @Override

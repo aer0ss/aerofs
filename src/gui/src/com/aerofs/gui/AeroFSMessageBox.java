@@ -5,9 +5,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.custom.CLabel;
@@ -18,18 +16,16 @@ import org.eclipse.swt.widgets.Button;
 
 import javax.annotation.Nullable;
 
-import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
-
 public class AeroFSMessageBox extends AeroFSJFaceDialog {
 
-    public static enum IconType {
+    public enum IconType {
         INFO,
         WARN,
         ERROR,
         QUESTION
     }
 
-    public static enum ButtonType {
+    public enum ButtonType {
         // Only show an OK button
         OKAY,
 
@@ -78,7 +74,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
             ButtonType bt, String okayLabel, String cancelLabel, boolean allowClose)
     {
-        super(null, parentShell, sheet, false, true, allowClose);
+        super(null, parentShell, sheet, false, allowClose);
         _it = it;
         _bt = bt;
         _okayLabel = okayLabel;
@@ -135,13 +131,9 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         });
 
         if (!_allowClose) {
-            getShell().addListener(SWT.Traverse, new Listener() {
-                @Override
-                public void handleEvent(Event e)
-                {
-                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
-                        e.doit = false;
-                    }
+            getShell().addListener(SWT.Traverse, e -> {
+                if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                    e.doit = false;
                 }
             });
         }

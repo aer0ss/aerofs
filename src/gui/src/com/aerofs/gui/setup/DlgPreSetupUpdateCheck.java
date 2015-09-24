@@ -44,7 +44,7 @@ public class DlgPreSetupUpdateCheck extends Shell
 
     public DlgPreSetupUpdateCheck(Shell shell)
     {
-        super(shell, SWT.DIALOG_TRIM | GUIUtil.alwaysOnTop());
+        super(shell, GUIUtil.createShellStyle(false, false, true));
         setText("Setup " + L.product());
 
         GridLayout gridLayout = new GridLayout(1, false);

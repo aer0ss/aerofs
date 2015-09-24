@@ -90,24 +90,14 @@ public class AeroFSTimedMessageBox extends AeroFSMessageBox
      */
     private void addStopTimerListeners(final Runnable runnable)
     {
-        getOkayBtn().addListener(SWT.Selection, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                // -1 to stop the timerExec for the runnable
-                Display.getDefault().timerExec(-1, runnable);
-            }
+        getOkayBtn().addListener(SWT.Selection, event -> {
+            // -1 to stop the timerExec for the runnable
+            Display.getDefault().timerExec(-1, runnable);
         });
 
-        getCancelBtn().addListener(SWT.Selection, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                // -1 to stop the timerExec for the runnable
-                Display.getDefault().timerExec(-1, runnable);
-            }
+        getCancelBtn().addListener(SWT.Selection, event -> {
+            // -1 to stop the timerExec for the runnable
+            Display.getDefault().timerExec(-1, runnable);
         });
 
     }

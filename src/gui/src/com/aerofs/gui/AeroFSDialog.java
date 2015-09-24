@@ -5,7 +5,6 @@ import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.SWT;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 
 /**
@@ -36,15 +35,8 @@ public abstract class AeroFSDialog extends Dialog {
     public AeroFSDialog(Shell parent, String title,
             boolean sheet, boolean resizable, boolean closeable)
     {
-        super(parent, style(sheet, resizable, closeable));
+        super(parent, GUIUtil.createShellStyle(sheet, resizable, closeable));
         _title = title;
-    }
-
-    private static int style(boolean sheet, boolean resizable, boolean closable)
-    {
-        int style = resizable ? SWT.RESIZE : 0;
-        style |= sheet ? SWT.SHEET : (SWT.DIALOG_TRIM | GUIUtil.alwaysOnTop());
-        return closable ? style : (style & ~SWT.CLOSE);
     }
 
     /**
@@ -82,7 +74,7 @@ public abstract class AeroFSDialog extends Dialog {
     public Object openDialog()
     {
         _shell = new Shell(getParent(), getStyle());
-        GUI.get().registerShell(_shell);
+        GUI.get().registerShell(_shell, getClass());
 
         _shell.setText(Strings.isNullOrEmpty(_title) ?
                 S.DEFAULT_DIALOG_TITLE : _title + S.DIALOG_TITLE_SUFFIX);

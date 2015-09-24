@@ -10,15 +10,12 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.UIGlobals;
 import com.swtdesigner.SWTResourceManager;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
-
-import javax.annotation.Nullable;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
@@ -32,18 +29,9 @@ public class DlgDefect extends AeroFSJFaceDialog
     private Text _txtSubject;
     private Text _txtMessage;
 
-    @Nullable private final Throwable _exception;
-
     public DlgDefect()
     {
-        this(null, null);
-    }
-
-    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception)
-    {
-        super(S.REPORT_A_PROBLEM, sheetStyleParent == null ? GUI.get().sh() : sheetStyleParent,
-                sheetStyleParent != null, true, true, true);
-        _exception = exception;
+        super(S.REPORT_A_PROBLEM, GUI.get().sh(), false, true, true);
     }
 
     /**
@@ -64,8 +52,6 @@ public class DlgDefect extends AeroFSJFaceDialog
         createEmailFields(container);
 
         createCommentFields(container);
-
-        if (_exception != null) createExceptionDetailsFields(container);
 
         createSendMetadataFields(container);
 
@@ -88,19 +74,12 @@ public class DlgDefect extends AeroFSJFaceDialog
         Label lblTxtSubject = createLabel(container, SWT.NONE);
         lblTxtSubject.setText("\nSubject:");
 
-        _txtSubject = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        _txtSubject = new Text(container, SWT.BORDER);
         GridData gdSubject = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
         gdSubject.heightHint = 20;
         gdSubject.widthHint = 346;
         _txtSubject.setLayoutData(gdSubject);
-        _txtSubject.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                updateControlStatus();
-            }
-        });
+        _txtSubject.addModifyListener(modifyEvent -> updateControlStatus());
 
         Label lblTxtMessage = createLabel(container, SWT.NONE);
         lblTxtMessage.setText("\nMessage (please describe the problem):");
@@ -110,31 +89,7 @@ public class DlgDefect extends AeroFSJFaceDialog
         gdMessage.heightHint = 80;
         gdMessage.widthHint = 346;
         _txtMessage.setLayoutData(gdMessage);
-        _txtMessage.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                updateControlStatus();
-            }
-        });
-    }
-
-    private void createExceptionDetailsFields(Composite container)
-    {
-        Label lblWhatsUp = createLabel(container, SWT.NONE);
-        // \n: a nasty way of setting margins. it's ugly but it works.
-        lblWhatsUp.setText("\nTechnical details:");
-
-        Text txtDetails = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI |
-                SWT.READ_ONLY);
-        GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
-        gd_text.heightHint = 120;
-        gd_text.widthHint = 346;
-        txtDetails.setLayoutData(gd_text);
-
-        txtDetails.setForeground(GUI.get().disp().getSystemColor(SWT.COLOR_DARK_GRAY));
-        txtDetails.setText(ExceptionUtils.getFullStackTrace(_exception));
+        _txtMessage.addModifyListener(modifyEvent -> updateControlStatus());
     }
 
     private void createSendMetadataFields(Composite container)
@@ -198,7 +153,6 @@ public class DlgDefect extends AeroFSJFaceDialog
         _defectFactory.newPriorityDefect()
                 .setSubject(subject)
                 .setMessage(message)
-                .setException(_exception)
                 .setContactEmail(contactEmail)
                 .sendAsync();
     }

@@ -142,14 +142,7 @@ public class Defect
 
     public void sendAsync()
     {
-        _executor.execute(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                sendSyncIgnoreErrors();
-            }
-        });
+        _executor.execute(() -> sendSyncIgnoreErrors());
     }
 
     /**

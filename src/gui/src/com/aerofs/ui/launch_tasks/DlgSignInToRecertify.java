@@ -17,8 +17,6 @@ import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.S;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -50,7 +48,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
 
     public DlgSignInToRecertify(Shell parentShell, SetupModel setup)
     {
-        super("Authorize this device", parentShell, false, false, true, true);
+        super("Authorize this device", parentShell, false, false, true);
         _setupModel = setup;
     }
 
@@ -116,14 +114,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
 
             _txtEmail = new Text(container, SWT.NONE);
             _txtEmail.setText(_setupModel.getUsername());
-            _txtEmail.addModifyListener(new ModifyListener()
-            {
-                @Override
-                public void modifyText(ModifyEvent ev)
-                {
-                    updateButtons();
-                }
-            });
+            _txtEmail.addModifyListener(ev -> updateButtons());
             _txtEmail.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         } else {
             createLabel(container, SWT.RIGHT).setText(S.SETUP_USER_ID + ":");
@@ -140,14 +131,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
                 L.isMultiuser() ? S.ADMIN_PASSWD + ":" : S.SETUP_PASSWD + ":");
 
         _txtPasswd = new Text(container, SWT.BORDER | SWT.PASSWORD);
-        _txtPasswd.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent ev)
-            {
-                updateButtons();
-            }
-        });
+        _txtPasswd.addModifyListener(ev -> updateButtons());
         _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         _txtPasswd.setFocus();
 

@@ -45,7 +45,7 @@ public class SingleUserDlgSecondFactor extends AeroFSJFaceDialog
 
     public SingleUserDlgSecondFactor(Shell parent, SetupModel model)
     {
-        super("Two Factor Authentication", parent, true, false, false, false);
+        super("Two Factor Authentication", parent, true, false, false);
         _model = model;
     }
 

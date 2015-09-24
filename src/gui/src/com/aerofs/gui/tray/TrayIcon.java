@@ -110,6 +110,8 @@ public class TrayIcon implements ITrayMenuListener
                 @Override
                 public void handleEventImpl(Event event)
                 {
+                    GUI.get().showAllShells();
+
                     _st.setMenuVisible(true);
                 }
             };
