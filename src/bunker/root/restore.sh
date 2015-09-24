@@ -110,6 +110,15 @@ else
         echo ">>> Migrating CA files..."
         /opt/bunker/migration.sh
     fi
+
+    # As a compromise between CI and packaging complexity, we ship polaris
+    # in the private cloud appliance. It is running but clients do not
+    # attempt to talk to it and nginx doesn't proxy requests to it.
+    # To preserve maximum schema flexibility we explictly drop the polaris
+    # db from backups.
+    # TODO: remove this when polaris schema is stable
+    echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql -h mysql.service
+
 fi
 
 # Only restore charlie db for backups that are new enough to contain it
