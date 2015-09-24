@@ -14,6 +14,8 @@ import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -105,6 +107,10 @@ public class Cfg
         initDB_();
         _db.reload();
         _baseCfg.initializeValuesFromConfigStore(_db);
+        // always enable verbose logging for internal users to ensure bug reports are useful
+        if (_baseCfg.user().isAeroFSUser() && !LogUtil.isVerbose()) {
+            LogUtil.setLevel(Level.DEBUG);
+        }
         // We want to keep the user-specified path in the DB, but we need the canonical path to
         // watch for filesystem changes on OSX.
         File rootAnchor = new File(_db.get(ROOT));

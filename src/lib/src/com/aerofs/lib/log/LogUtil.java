@@ -1,5 +1,6 @@
 package com.aerofs.lib.log;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -91,6 +92,12 @@ public abstract class LogUtil extends BaseLogUtil
         console.start();
 
         context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(console);
+    }
+
+    public static boolean isVerbose()
+    {
+        ch.qos.logback.classic.Level l = context.getLogger(Logger.ROOT_LOGGER_NAME).getLevel();
+        return l == ch.qos.logback.classic.Level.DEBUG || l == ch.qos.logback.classic.Level.TRACE;
     }
 
     public static void setLevel(Level level)
