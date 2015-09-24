@@ -75,6 +75,7 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         sqlTrans.begin();
         saveUser(internalSharer);
         internalSharer.setLevel(AuthorizationLevel.ADMIN);
+        internalSharer.setWhitelisted(true);
         saveUser(internalUser1);
         saveUser(internalUser2);
         saveUser(internalUser3);
@@ -167,16 +168,23 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void shouldDisallowExternalUserToShareFolder()
+            throws Exception
+    {
+        try {
+            shareFolder(externalUser1, sid, internalUser1, Permissions.allOf());
+            fail();
+        }catch (ExNoPerm e){}
+
+    }
+
+    @Test
     public void shouldDisallowSharerAsExternalUserToAddInternalEditor() throws Exception
     {
         try {
             shareFolder(externalUser1, sid, internalUser1, Permissions.allOf(Permission.WRITE));
             fail();
-        } catch (ExSharingRulesWarning e) {
-            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
-            assertEquals(1, e.descriptions().get(0).users.size());
-            sqlTrans.rollback();
-        }
+        } catch (ExNoPerm e) {}
     }
 
     @Test
@@ -196,7 +204,7 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldAllowSharerAsInternalUserToAddExternalEditors()
+    public void shouldNotAllowSharerAsInternalUserWithoutPublisherToAddExternalEditors()
             throws Exception
     {
         shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.WRITE,
@@ -205,14 +213,89 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
 
         try {
             shareFolder(internalUser1, sid, externalUser2, Permissions.allOf(Permission.WRITE));
+            fail();
+        } catch (ExNoPerm e) {}
+
+    }
+
+    @Test
+    public void shouldAllowInternalUserToInviteOtherInternalUserWithReadOnlyInExternalFolder()
+        throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+
+        try {
+            //internalUser1 with Manage permission
+            shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.MANAGE));
+            joinSharedFolder(internalUser1, sid);
+
+            //Switch to externally shared folder
+            shareFolder(internalSharer, sid, externalUser1, Permissions.allOf());
+            fail();
         } catch (ExSharingRulesWarning e) {
             assertEquals(1, e.descriptions().size());
             assertEquals(Type.WARNING_EXTERNAL_SHARING, e.descriptions().get(0).type);
             sqlTrans.rollback();
         }
 
-        shareFolderSuppressWarnings(internalUser1, sid, externalUser2, Permissions.allOf(
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
                 Permission.WRITE));
+
+        joinSharedFolder(externalUser1, sid);
+
+        try {
+            shareFolder(internalUser1, sid, internalUser2, Permissions.allOf());
+        } catch (ExSharingRulesWarning e){
+            assertEquals(1, e.descriptions().size());
+            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
+            sqlTrans.rollback();
+        }
+
+        shareFolderSuppressWarnings(internalUser1, sid, internalUser2, Permissions.allOf());
+        sqlTrans.begin();
+        assertEquals(sf.getPermissionsNullable(internalUser2), Permissions.allOf());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldWarnDowngradeWhenInternalUserInviteOtherInternalUserWithWritePermissionInExternalFolder()
+            throws Exception
+    {
+        SharedFolder sf = factSharedFolder.create(sid);
+
+        try {
+            shareFolder(internalSharer, sid, internalUser1, Permissions.allOf(Permission.MANAGE));
+            joinSharedFolder(internalUser1, sid);
+
+            //Switch to externally shared folder
+            shareFolder(internalSharer, sid, externalUser1, Permissions.allOf(Permission.WRITE));
+            fail();
+        } catch (ExSharingRulesWarning e) {
+            assertEquals(1, e.descriptions().size());
+            assertEquals(Type.WARNING_EXTERNAL_SHARING, e.descriptions().get(0).type);
+            sqlTrans.rollback();
+        }
+
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Permissions.allOf(
+                Permission.WRITE));
+
+        joinSharedFolder(externalUser1, sid);
+
+        try {
+            shareFolder(internalUser1, sid, internalUser2, Permissions.allOf(Permission.WRITE));
+        } catch (ExSharingRulesWarning e){
+            assertEquals(1, e.descriptions().size());
+            assertEquals(Type.WARNING_DOWNGRADE, e.descriptions().get(0).type);
+            sqlTrans.rollback();
+        }
+
+        shareFolderSuppressWarnings(internalUser1, sid, internalUser2, Permissions.allOf(Permission.WRITE));
+
+        //internalUser2 should only have read-only since it is not a publisher
+        sqlTrans.begin();
+        assertEquals(sf.getPermissionsNullable(internalUser2), Permissions.allOf());
+        sqlTrans.commit();
+
     }
 
     @Test
@@ -271,8 +354,6 @@ public class TestSP_RestrictedExternalSharing extends AbstractSPFolderTest
         sqlTrans.commit();
 
         // make sure role change notification emails are sent
-        verify(sharedFolderNotificationEmailer).sendRoleChangedNotificationEmail(sf, internalSharer,
-                internalSharer, Permissions.OWNER, Permissions.allOf(Permission.MANAGE));
         verify(sharedFolderNotificationEmailer).sendRoleChangedNotificationEmail(sf, internalSharer,
                 internalUser1, Permissions.EDITOR, Permissions.VIEWER);
         verify(sharedFolderNotificationEmailer).sendRoleChangedNotificationEmail(sf, internalSharer,

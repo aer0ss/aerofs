@@ -96,7 +96,9 @@ def json_add_org_group(request):
             PBException.NOT_FOUND:
                 _("Sorry, members of group '" + common_name + "' could not be added because " +
                     "one of the provided member email addresses has no user in " +
-                    "this organization associated with it.")
+                    "this organization associated with it."),
+            PBException.WRONG_ORGANIZATION:
+                _("Sorry, cannot add an external member to organization group.")
         }
     )
     return {
@@ -129,12 +131,16 @@ def json_edit_org_group(request):
             PBException.NOT_FOUND:
                 _("Sorry, members of group '" + common_name + "' could not be added because " +
                     "one of the provided member email addresses has no user in " +
-                    "this organization associated with it.")
+                    "this organization associated with it."),
+            PBException.WRONG_ORGANIZATION:
+                _("Sorry, cannot add member to this organization.")
             }
         )
     if len(to_remove) > 0:
         sp = util.get_rpc_stub(request)
-        exception2error(sp.remove_group_members, [group_id, to_remove], {})
+        exception2error(sp.remove_group_members, [group_id, to_remove], {
+            PBException.WRONG_ORGANIZATION:
+                _("Sorry, cannot add member to organization.")})
     return HTTPOk()
 
 

@@ -375,7 +375,7 @@ def json_add_shared_folder_perm(request):
         PBException.EMPTY_EMAIL_ADDRESS:
             _("The email address can't be empty"),
         PBException.NO_PERM:
-            _("You don't have permission to invite people to this folder"),
+            _("You do not have permission to manage external users for this folder"),
     }))
 
 

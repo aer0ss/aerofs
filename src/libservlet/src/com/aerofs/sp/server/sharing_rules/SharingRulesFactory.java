@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.sharing_rules;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.group.Group;
@@ -58,9 +59,15 @@ public class SharingRulesFactory
     }
 
     public ISharingRules create(User sharer)
+            throws Exception
     {
         boolean readOnlyExternalFolders =
                 getBooleanProperty(Permissions.RESTRICTED_EXTERNAL_SHARING, false);
+
+        //If the user is an external user, they will have no permission to share
+        if (readOnlyExternalFolders && !_authenticator.isInternalUser(sharer.id())) {
+            throw new ExNoPerm("External members are not allowed to share or manage folder");
+        }
 
         return readOnlyExternalFolders ?
                 new RestrictedExternalSharing(this, sharer) :

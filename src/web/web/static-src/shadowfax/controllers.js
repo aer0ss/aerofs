@@ -55,6 +55,14 @@ shadowfaxControllers.controller('SharedFoldersController',
         getData();
 
         $scope.manage = function(folder) {
+            var ManageExternalModalCtrl = function ($scope, $modalInstance) {
+                $scope.external_cancel = function () {
+                    $modalInstance.close();
+                };
+                $scope.external_ok = function() {
+                    $modalInstance.close(true);
+                }
+            };
             var ManageModalCtrl = function ($scope, $modalInstance, folder) {
               $scope.folder = folder;
               $scope.people = $scope.folder.people;
@@ -121,8 +129,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                     return permissions[role];
               };
 
-              var showModalErrorMessage = function(message) {
-                return function(response) {
+              var showModalErrorMessage = function(message, response) {
                     if (response && response.status == 403) {
                         $scope.error = message +
                             " It appears you are not authorized to administer this folder. " +
@@ -130,12 +137,19 @@ shadowfaxControllers.controller('SharedFoldersController',
                     } else if (response && response.message) {
                         $scope.error = response.message;
                     } else {
-                        $scope.error = message + " Please try again.";
+                        $scope.error = message;
                     }
-                };
               };
 
-              var _make_member_request = function(identifier, entity, permissions, is_group) {
+              var _externalConfirmModal = function () {
+                return $modal.open({
+                    templateUrl: '/static/shadowfax/partials/confirm-external.html',
+                    controller: ManageExternalModalCtrl
+                });
+              }
+
+              var _make_member_request = function(identifier, entity, permissions, is_group, suppress_sharing_rules_warnings) {
+                suppress_sharing_rules_warnings = typeof suppress_sharing_rules_warnings === 'boolean' ? suppress_sharing_rules_warnings : false;
                 $http.post(addMemberUrl,
                     {
                         subject_id: identifier,
@@ -143,7 +157,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                         is_group: is_group,
                         store_id: $scope.folder.sid,
                         folder_name: $scope.folder.name,
-                        suppress_sharing_rules_warnings: false
+                        suppress_sharing_rules_warnings: suppress_sharing_rules_warnings
                     }
                 ).success(function(response) {
                     var newMember = $scope.newMember();
@@ -163,7 +177,30 @@ shadowfaxControllers.controller('SharedFoldersController',
                         newMember.last_name = entity.last_name;
                     }
                     $scope.people.push(newMember);
-                }).error(showModalErrorMessage("Sorry, the invitation failed."));
+                }).error(function(response) {
+                    if(response.type === "SHARING_RULES_WARNINGS") {
+                        var data = (JSON.parse(response.data)).pop();
+                        if(data.type === "WARNING_DOWNGRADE") {
+                             showModalErrorMessage("This folder is shared with external users. To avoid accidental " +
+                                "data leaks, internal Owners are downgraded to Managers, and internal Editors to Viewers.",
+                                response);
+                                 _make_member_request(identifier, entity, permissions, is_group, true);
+                        } else if(data.type === "WARNING_NO_EXTERNAL_OWNERS") {
+                             showModalErrorMessage("External Users cannot manage or own a shared folder.",
+                                         response);
+                        } else if(data.type === "WARNING_EXTERNAL_SHARING"){
+                            _externalConfirmModal().result.then(function(inviteExternalUser) {
+                                if(inviteExternalUser){
+                                    _make_member_request(identifier, entity, permissions, is_group, true);
+                                }
+                            });
+                        } else {
+                            showModalErrorMessage("Sorry, the invitation failed. Please try again.", response);
+                        }
+                    } else {
+                        showModalErrorMessage("Sorry, the invitation failed. Please try again.", response);
+                    }
+                });
               };
 
               $scope.ok = function () {
@@ -219,21 +256,40 @@ shadowfaxControllers.controller('SharedFoldersController',
               $scope.changePerms = function(entity, role) {
                 startModalSpinner();
 
-                var identifier = entity.email || entity.id;
                 $log.info("Changing permissions for " + (entity.email || entity.name) + " on folder " + folder.name);
+                var _set_perm_request = function (entity, role, suppress_sharing_rules_warnings) {
+                    suppress_sharing_rules_warnings = typeof suppress_sharing_rules_warnings === 'boolean' ? suppress_sharing_rules_warnings : false;
+                    var identifier = entity.email || entity.id;
+                        $http.post(setPermUrl, {
+                            store_id: $scope.folder.sid,
+                            subject_id: identifier,
+                            is_group: entity.is_group,
+                            permissions: _get_json_permissions(role),
+                            suppress_sharing_rules_warnings: suppress_sharing_rules_warnings
+                        }).success(function(response){
+                            // casting to boolean
+                            entity.is_owner = role === "Owner";
+                            entity.can_edit = (role === "Owner" || role === "Editor");
+                            stopModalSpinner();
+                        }).error(function(response){
+                            if(response.type === "SHARING_RULES_WARNINGS") {
+                                var data = (JSON.parse(response.data)).pop();
+                                if(data.type === "WARNING_DOWNGRADE") {
+                                     showModalErrorMessage("This folder is shared with external users. To avoid accidental " +
+                                        "data leaks, internal Owners are downgraded to Managers, and internal Editors to Viewers.",
+                                        response);
+                                } else if(data.type === "WARNING_NO_EXTERNAL_OWNERS") {
+                                     showModalErrorMessage("External Users cannot manage or own a shared folder.",
+                                        response);
+                                }
+                            } else {
+                                showModalErrorMessage("Sorry, the permissions change failed.", response);
+                            }
+                        });
+                };
+                _set_perm_request(entity, role);
 
-                $http.post(setPermUrl, {
-                    store_id: $scope.folder.sid,
-                    subject_id: identifier,
-                    is_group: entity.is_group,
-                    permissions: _get_json_permissions(role),
-                    suppress_sharing_rules_warnings: false
-                }).success(function(response){
-                    // casting to boolean
-                    entity.is_owner = role === "Owner";
-                    entity.can_edit = (role === "Owner" || role === "Editor");
-                    stopModalSpinner();
-                }).error(showModalErrorMessage("Sorry, the permissions change failed."));
+                stopModalSpinner();
               };
 
               $scope.remove = function(entity) {

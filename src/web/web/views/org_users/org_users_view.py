@@ -6,6 +6,7 @@ from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
+from aerofs_common.exception import ExceptionReply
 
 from web import util
 from web.oauth import get_privileged_bifrost_client
@@ -71,8 +72,12 @@ def json_list_org_users(request):
 
     use_restricted = is_restricted_external_sharing_enabled(request.registry.settings)
     if use_restricted:
-        wl_reply = sp.list_whitelisted_users()
-        publishers = set([u.user_email for u in wl_reply.user])
+        try:
+            wl_reply = sp.list_whitelisted_users()
+            publishers = set([u.user_email for u in wl_reply.user])
+        except ExceptionReply as e:
+            # only admin will see publisher status.
+            publishers = set()
     else:
         # if restricted external sharing is not being used, pretend the list
         # of publishers is empty so all of the labels are hidden

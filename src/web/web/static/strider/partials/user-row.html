@@ -7,7 +7,7 @@
             <span ng-show="user.is_admin" data-toggle="tooltip" 
                 tooltip="An admin can provision Team Servers, manage users and shared folders, add/remove other admins, and other organization functions." 
                 class="admin_label label">admin</span>
-            <span ng-if="isAdmin" ng-show="user.is_publisher" data-toggle="tooltip" 
+            <span ng-if="isAdmin" ng-show="user.is_publisher" data-toggle="tooltip"
                 tooltip="A publisher is a user in your organization who can be made an editor of externally shared folders. Since you have enabled external sharing restrictions, users in your organization cannot edit externally shared folders by default." 
                 class="publisher_label label label-warning">publisher</span>
         </div>
@@ -38,7 +38,7 @@
                             <span ng-hide="user.is_admin">Add as Admin</span>
                         </a>
                     </li>
-                    <li ng-if="user.email != me && use_restricted">
+                    <li ng-if="use_restricted">
                         <a ng-click="togglePublisher(user)">
                             <span ng-show="user.is_publisher">Remove as Publisher</span>
                             <span ng-hide="user.is_publisher">Add as Publisher</span>

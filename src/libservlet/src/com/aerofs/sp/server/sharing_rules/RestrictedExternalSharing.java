@@ -7,6 +7,7 @@ package com.aerofs.sp.server.sharing_rules;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
@@ -74,6 +75,13 @@ public class RestrictedExternalSharing implements ISharingRules
 
         boolean isExternalFolder = !externalMembers.isEmpty();
         boolean isExternalSharee = !_f._authenticator.isInternalUser(sharee.id());
+        boolean shareeExistsAndWhitelisted = sharee.exists() && sharee.isWhitelisted();
+
+
+        //Only Internal Manager with publishing status are allow to invite external member to a shared folder
+        if (!_sharer.isWhitelisted() && isExternalSharee) {
+            throw new ExNoPerm("Not allowed to manage external member of this shared folder");
+        }
 
         if (isExternalSharee && !externalMembers.contains(sharee.id())) {
             // adding an external user
@@ -84,15 +92,16 @@ public class RestrictedExternalSharing implements ISharingRules
         }
 
         // prevent granting write access to an externally shared folder to internal users
+        // if the user has not accepted the invitation, it will throw back ExNotFound Exception
         if (isExternalFolder
                 && !isExternalSharee
-                && !sharee.isWhitelisted()
-                && newPermissions.covers(Permission.WRITE))
-        {
+                && !shareeExistsAndWhitelisted
+                && newPermissions.covers(Permission.WRITE)) {
             _warnings.add(new DetailedDescription(Type.WARNING_DOWNGRADE,
                     getFullNames(externalMembers)));
             return newPermissions.minus(Permission.WRITE);
         }
+
         if (isExternalSharee
                 && newPermissions.covers(Permission.MANAGE))
         {
@@ -126,6 +135,10 @@ public class RestrictedExternalSharing implements ISharingRules
         }
 
         if (addingExternal) {
+            if (!_sharer.isWhitelisted()) {
+                throw new ExNoPerm("Not allowed to manage external members of this shared folder");
+            }
+
             if (_f._authenticator.isInternalUser(_sharer.id())) {
                 _warnings.add(new DetailedDescription(Type.WARNING_EXTERNAL_SHARING,
                         getFullNames(ImmutableList.copyOf(externalUsers))));
@@ -196,8 +209,11 @@ public class RestrictedExternalSharing implements ISharingRules
     private void revokeWritePermissionForInternalUsers(SharedFolder sf, User sharer)
             throws SQLException, ExNoAdminOrOwner, ExNotFound, IOException, MessagingException
     {
+        //In the event there are pending users, isWhiteListed() will throw an exception if we don't check
+        //whether an user exists.
         for (UserPermissionsAndState urs : sf.getAllUsersRolesAndStates()) {
-            if (urs._user.id().isTeamServerID() || urs._user.isWhitelisted()) continue;
+            boolean userExistsAndWhitelisted = urs._user.exists() && urs._user.isWhitelisted();
+            if (urs._user.id().isTeamServerID() || userExistsAndWhitelisted) continue;
             if (urs._permissions.covers(Permission.WRITE)) {
                 _shouldBumpEpoch = true;
                 sf.revokePermission(urs._user, Permission.WRITE);
