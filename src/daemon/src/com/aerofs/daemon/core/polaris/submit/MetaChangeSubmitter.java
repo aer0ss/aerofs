@@ -33,7 +33,6 @@ import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
-import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -82,14 +81,13 @@ public class MetaChangeSubmitter implements Submitter
     private final PauseSync _pauseSync;
     private final DirectoryService _ds;
     private final TransManager _tm;
-    private final NewUpdatesSender _nus;
     private final MapSIndex2Store _sidx2s;
 
     @Inject
     public MetaChangeSubmitter(PolarisClient client, MetaChangesDatabase mcdb,
             MetaBufferDatabase mbdb, RemoteLinkDatabase rpdb, CentralVersionDatabase cvdb,
             IMapSIndex2SID sidx2sid, MapAlias2Target a2t, PauseSync pauseSync,
-            DirectoryService ds, TransManager tm, NewUpdatesSender nus, MapSIndex2Store sidx2s)
+            DirectoryService ds, TransManager tm, MapSIndex2Store sidx2s)
     {
         _client = client;
         _mcdb = mcdb;
@@ -101,7 +99,6 @@ public class MetaChangeSubmitter implements Submitter
         _pauseSync = pauseSync;
         _ds = ds;
         _tm = tm;
-        _nus = nus;
         _sidx2s = sidx2s;
     }
 
@@ -267,41 +264,33 @@ public class MetaChangeSubmitter implements Submitter
                 throw new ExProtocolError("invalid result size");
             }
 
-            long ack = 0L;
             int failed = 0;
             SIndex sidx = null;
 
             // TODO: optimistic transaction merging
-            try {
-                for (int i = 0; i < r.results.size(); ++i) {
-                    BatchOpResult or = r.results.get(i);
-                    LocalChange lc = batch.operations.get(i).operation;
-                    if (or.successful) {
-                        try (Trans t = _tm.begin_()) {
-                            ackSubmission_(c.get(i), lc.type, or.updated, t);
-                            t.commit_();
-                        }
-                        if (or.updated.size() > 0) {
-                            if (sidx == null) {
-                                sidx = c.get(i).sidx;
-                            } else {
-                                // we segregate update submission by store
-                                checkState(sidx == c.get(i).sidx);
-                            }
-                            ack = Math.max(ack, or.updated.get(0).transformTimestamp);
-                        }
-                    } else if (or.errorCode == PolarisError.NAME_CONFLICT) {
-                        onConflict_(c.get(i), lc, "");
-                    } else {
-                        // TODO(phoenix): figure out which errors need special handling
-                        ++failed;
-                        l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
-                                GsonUtil.GSON.toJson(batch.operations.get(i)));
+            for (int i = 0; i < r.results.size(); ++i) {
+                BatchOpResult or = r.results.get(i);
+                LocalChange lc = batch.operations.get(i).operation;
+                if (or.successful) {
+                    try (Trans t = _tm.begin_()) {
+                        ackSubmission_(c.get(i), lc.type, or.updated, t);
+                        t.commit_();
                     }
-                }
-            } finally {
-                if (sidx != null && ack > 0) {
-                    _nus.sendForStore_(sidx, ack);
+                    if (or.updated.size() > 0) {
+                        if (sidx == null) {
+                            sidx = c.get(i).sidx;
+                        } else {
+                            // we segregate update submission by store
+                            checkState(sidx == c.get(i).sidx);
+                        }
+                    }
+                } else if (or.errorCode == PolarisError.NAME_CONFLICT) {
+                    onConflict_(c.get(i), lc, "");
+                } else {
+                    // TODO(phoenix): figure out which errors need special handling
+                    ++failed;
+                    l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
+                            GsonUtil.GSON.toJson(batch.operations.get(i)));
                 }
             }
             if (failed > 0) throw new ExRetryLater("batch not complete");
