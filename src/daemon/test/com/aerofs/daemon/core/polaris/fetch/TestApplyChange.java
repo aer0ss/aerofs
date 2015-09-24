@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
@@ -26,6 +27,8 @@ import java.sql.SQLException;
 import static com.aerofs.daemon.core.polaris.InMemoryDS.*;
 import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 // TODO: more name conflict tests
 public class TestApplyChange extends AbstractTestApplyChange
@@ -63,6 +66,26 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertNotPresent(oid);
         assertHasRemoteLink(oid, OID.ROOT, "foo", 1);
         assertIsBuffered(true, oid);
+    }
+
+    @Test
+    public void shouldNotBufferInsertWhenObjectLocallyPresent() throws Exception
+    {
+        OID oid = OID.generate();
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(Type.DIR, sidx, oid, OID.ROOT, "foo", t);
+            t.commit_();
+        }
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
+        );
+
+        // verify
+        mds.expect(rootSID,
+                folder("foo"));
+        assertHasRemoteLink(oid, OID.ROOT, "foo", 1);
+        assertIsBuffered(false, oid);
     }
 
     @Test
@@ -546,6 +569,27 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertEquals(new SOID(sidx, p), a2t.dereferenceAliasedOID_(lp));
         assertEquals(new SOID(sidx, a), a2t.dereferenceAliasedOID_(new SOID(sidx, a)));
         assertEquals(b, a2t.dereferenceAliasedOID_(b));
+    }
+
+    @Test
+    public void shouldHandleBufferedNop() throws Exception
+    {
+        addMetaChange(sidx);
+        OID oid = OID.generate();
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(Type.DIR, sidx, oid, OID.ROOT, "foo", t);
+            t.commit_();
+        }
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        verify(ps, never()).newFolder_(ds.resolve_(new SOID(sidx, oid)));
+
+        mds.expect(rootSID,
+                folder("foo", oid));
     }
 
     @Test

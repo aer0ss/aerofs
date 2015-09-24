@@ -155,7 +155,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         //   3. a name conflict is detected
         //   4. a folder/anchor conflict is detected
         boolean shouldBuffer = _mbdb.isBuffered_(parent) || _mcdb.hasChanges_(parent.sidx())
-                || _ds.getChild_(parent.sidx(), parent.oid(), name) != null
+                || neitherNullNor(_ds.getChild_(parent.sidx(), parent.oid(), name), oidChild)
                 || (type == DIR && _ds.getOANullable_(new SOID(parent.sidx(), SID.folderOID2convertedAnchorOID(oidChild))) != null);
 
         if (shouldBuffer) {
@@ -163,6 +163,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         } else {
             applyInsert_(parent.sidx(), oidChild, parent.oid(), name, type, mergeBoundary, t);
         }
+    }
+
+    private static boolean neitherNullNor(OID a, OID b) {
+        return a != null && !a.equals(b);
     }
 
     private void applyInsert_(SIndex sidx, OID oidChild, OID oidParent, String name, OA.Type type,
@@ -625,7 +629,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         // check for conflict
         OID oidConflict = _ds.getChild_(sidx, lnk.parent, name);
-        if (oidConflict != null) {
+        if (neitherNullNor(oidConflict, c.oid)) {
             RemoteLink clnk = _rpdb.getParent_(sidx, oidConflict);
             OA oaConflict = _ds.getOA_(new SOID(sidx, oidConflict));
 
@@ -643,11 +647,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
 
         // apply remote change
-        if (oaChild == null) {
-            applyInsert_(sidx, c.oid, lnk.parent, name, c.type, timestamp, t);
-        } else {
-            applyMove_(oaParent, oaChild, name, timestamp, t);
-        }
+        // NB: applyInsert_ will do a move if the object already exists
+        applyInsert_(sidx, c.oid, lnk.parent, name, c.type, timestamp, t);
         return true;
     }
 
