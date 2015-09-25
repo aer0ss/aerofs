@@ -1,0 +1,30 @@
+service:
+  host: 0.0.0.0
+  port: 9999
+
+admin:
+  host: 0.0.0.0
+  port: 8888
+
+database:
+  username: test
+  password: temp123
+  driverClass: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost/trifrost
+
+logging:
+  level: INFO
+
+  console:
+    enabled: true
+
+  file:
+    enabled: true
+    logfile: /var/log/aeroim/aeroim.log
+
+unifiedPush:
+  androidVariantId: 7001af75-0c5e-4641-929a-0da4d811d4da
+  androidVariantSecret: 89c9da0c-e84c-460c-8ff4-95576cb5d018
+  iosVariantId: 94991857-9591-455d-be3e-549ab7662dba
+  iosVariantSecret: 3f301ed7-fbfa-4773-af60-b9ad66c68963
+  serverURL: http://localhost:8080/ag-push/
