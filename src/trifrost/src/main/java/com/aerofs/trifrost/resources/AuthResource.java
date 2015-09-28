@@ -100,8 +100,10 @@ public final class AuthResource {
         }
 
         assert auth.grantType == DeviceAuthentication.GrantType.AuthCode;
-        if (Strings.isNullOrEmpty(auth.email) || Strings.isNullOrEmpty(auth.authCode)) {
-            throw new BadRequestException("error processing auth code request");
+        if (Strings.isNullOrEmpty(auth.email)) {
+            throw new BadRequestException("missing required field \"email\"");
+        } else if (Strings.isNullOrEmpty(auth.authCode)) {
+            throw new BadRequestException("missing required field \"auth_code\"");
         }
         return handleAuthCode(auth);
     }
