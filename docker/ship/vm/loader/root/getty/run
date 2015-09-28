@@ -3,37 +3,36 @@
 
 STATIC_NETWORK_FILE=/etc/systemd/network/10-ship-static.network
 
-default_iface() {
+function default_iface() {
     # Example output: enp0s17.
-    #
-    # TODO (WW) it may echo an empty string if no route is configured. This script doesn't work well in this case since
-    # we don't know the correct interface name to place in STATIC_NETWORK_FILE. See config_static_network_file.
-    # Additionally, if systemd-networkd restart failed, we can't configure static networks, either. This is to be improved.
-    #
-    # 'head' is needed in case there are multiple route to 0/0
     ip route show to 0/0 | grep 'default via' | head -1 | awk '{print $5}'
 }
 
-first_gateway() {
+function available_ifaces() {
+    # Example output: enp0s17 en0 ens32
+    ip link | awk '!/docker0/ && !/lo/' | grep 'state UP' | awk '{print $2}' | sed 's/://' | tr '\n' ' '
+}
+
+function first_gateway() {
     # Example output: 1.2.3.4
     ip route show to 0/0 | grep 'default via' | head -1 | awk '{print $3}'
 }
 
-mac_address_of() {
+function mac_address_of() {
     # Example output: 00:00:00:00:00:00
     ip addr show $1 | grep -E '^ +link/ether ' | awk '{print $2}'
 }
 
-first_ipv4_address_and_mask_of() {
+function first_ipv4_address_and_mask_of() {
     # Example output: 1.2.3.4/8
     ip addr show $1 | grep -E '^ +inet ' | head -1 | awk '{print $2}'
 }
 
-name_servers() {
+function name_servers() {
     cat /etc/resolv.conf | grep -E '^nameserver\s' | awk '{print $2}'
 }
 
-is_dhcp_selected() {
+function is_dhcp_selected() {
     # The OS default is DHCP
     [[ -f ${STATIC_NETWORK_FILE} ]] && echo 0 || echo 1
 }
@@ -44,7 +43,44 @@ cecho() {
     echo -e "${CYAN}$1${NORM}"
 }
 
-validated_read() {
+function is_valid_iface() {
+local selected_interface=$1
+for iface in $(available_ifaces)
+do
+    if [ "${selected_interface}" = "${iface}" ]; then
+        return 0
+    fi
+done
+
+return 1
+}
+
+function is_override_selected() {
+    local selected_interface=$1
+    echo "Invalid input. Are you sure you want to use this interface [${selected_interface}]" >&2
+    echo "Type 'yes' to confirm, other to cancel." >&2
+
+    local input_override && read input_override
+
+    [ "${input_override}" = "yes" ] || return 1
+}
+
+function validated_read_iface() {
+    local PROMPT=$1
+    local IFACES=$(available_ifaces)
+
+    while true; do
+        echo -n "${PROMPT} (Available Interfaces: ${IFACES}): " >&2
+        local input_iface && read input_iface
+
+	if is_valid_iface "${input_iface}" || is_override_selected "${input_iface}"; then
+	    echo "${input_iface}"
+            break
+        fi
+    done
+}
+
+function validated_read() {
     local PROMPT=$1
     local EXAMPLE_INPUT=$2
     local EXPECTED_PATTERN=$3
@@ -61,7 +97,7 @@ validated_read() {
     done
 }
 
-write_static_network_file() {
+function write_static_network_file() {
     local IPV4_PATTERN_SNIPPET='((2[0-5]|1[0-9]|[0-9])?[0-9]\.){3}((2[0-5]|1[0-9]|[0-9])?[0-9])'
     local IPV4_PATTERN="^${IPV4_PATTERN_SNIPPET}$"
 
@@ -69,7 +105,7 @@ write_static_network_file() {
     # See http://www.freedesktop.org/software/systemd/man/systemd.network.html for syntax
     cat > ${STATIC_NETWORK_FILE} <<END
 [Match]
-Name=$(default_iface)
+Name=$(validated_read_iface 'Network Interface')
 
 [Network]
 Address=$(validated_read 'IP Address & prefix' '1.2.3.4/24' "^${IPV4_PATTERN_SNIPPET}/[0-9]{1,2}$")
@@ -83,7 +119,7 @@ END
     done
 }
 
-delete_all_ipv4_addresses_of() {
+function delete_all_ipv4_addresses_of() {
     [[ "$1" ]] || return
     while true; do
         local IP=$(first_ipv4_address_and_mask_of $1)
@@ -91,7 +127,7 @@ delete_all_ipv4_addresses_of() {
     done
 }
 
-interact() {
+function interact() {
     local INPUT && read INPUT
     case "$INPUT" in
     1)
@@ -121,7 +157,7 @@ interact() {
     esac
 }
 
-welcome_screen() {
+function welcome_screen() {
     local IFACE=$(default_iface)
     local MAC=$(mac_address_of ${IFACE})
     local IP_AND_MASK=$(first_ipv4_address_and_mask_of ${IFACE})
