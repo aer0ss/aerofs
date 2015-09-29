@@ -216,17 +216,20 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         SOID soidChild = new SOID(parent.sidx(), oidChild);
         // buffer moves if:
         //   1. the child is already buffered
-        //   2. a name conflict is detected
+        //   2. the parent doesn't exist (but is buffered)
+        //   3. a name conflict is detected
         boolean isBuffered = _mbdb.isBuffered_(soidChild);
-        boolean hasConflict = _ds.getChild_(sidx, parent.oid(), name) != null;
 
         if (isBuffered) return;
 
+        OA oaParent = _ds.getOANullable_(parent);
+        boolean hasConflict = _ds.getChild_(sidx, parent.oid(), name) != null;
+
         OA oaChild = _ds.getOA_(soidChild);
-        if (hasConflict) {
+        if (oaParent == null || hasConflict) {
             _mbdb.insert_(sidx, oidChild, oaChild.type(), mergeBoundary, t);
         } else {
-            applyMove_(_ds.getOA_(parent), oaChild, name, mergeBoundary, t);
+            applyMove_(oaParent, oaChild, name, mergeBoundary, t);
         }
     }
 

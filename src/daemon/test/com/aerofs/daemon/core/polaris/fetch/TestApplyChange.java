@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -569,6 +570,45 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertEquals(new SOID(sidx, p), a2t.dereferenceAliasedOID_(lp));
         assertEquals(new SOID(sidx, a), a2t.dereferenceAliasedOID_(new SOID(sidx, a)));
         assertEquals(b, a2t.dereferenceAliasedOID_(b));
+    }
+
+    @Test
+    public void shouldHandleMoveUnderAlias() throws Exception
+    {
+        OID p = OID.generate(), lp = OID.generate();
+        OID c = SID.folderOID2convertedAnchorOID(OID.generate());
+
+        apply(
+                insert(OID.ROOT, "bar", c, ObjectType.STORE)
+        );
+
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(Type.DIR, sidx, lp, OID.ROOT, "foo", t);
+            om.moveInSameStore_(new SOID(sidx, c), lp, "bar", PhysicalOp.MAP, true, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        apply(
+                insert(OID.ROOT, "foo", p, ObjectType.FOLDER),
+                insert(p, "bar", c, ObjectType.STORE),
+                remove(OID.ROOT, c)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        // verify
+        mds.expect(rootSID,
+                folder("foo", p,
+                        anchor("bar", SID.anchorOID2folderOID(c))));
+
+        assertNotPresent(lp);
+        assertHasRemoteLink(p, OID.ROOT, "foo", 2);
+        assertHasRemoteLink(c, p, "bar", 3);
+        assertIsBuffered(false, p, lp, c);
+        assertEquals(new SOID(sidx, p), a2t.dereferenceAliasedOID_(new SOID(sidx, lp)));
     }
 
     @Test
