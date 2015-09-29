@@ -121,6 +121,12 @@ public class ChangeFetcher
 
         if (c.transforms == null || c.transforms.isEmpty()) {
             l.debug("no transforms");
+            // the max transform count may be strictly superior to the last transform for the store
+            // if transform epochs are shared by multiple stores. In this case we need to apply
+            // buffered changes for the max reported epoch when all transforms have been received
+            // otherwise we risk holding on buffered changes until a new changes is made in this
+            // store.
+            applyBufferedChanges_(sidx, c.maxTransformCount);
             return false;
         }
 
@@ -153,6 +159,7 @@ public class ChangeFetcher
     private void applyBufferedChanges_(SIndex sidx, long timestamp) throws Exception
     {
         // NB: can throw for exp retry
+        l.debug("apply buffered {} {}", sidx, timestamp);
         try (Trans t = _tm.begin_()) {
             _at.applyBufferedChanges_(sidx, timestamp, t);
             t.commit_();
