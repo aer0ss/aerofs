@@ -10,6 +10,8 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.misc.DlgDefect;
 import com.aerofs.ids.SID;
 import com.aerofs.defects.Defect;
 import com.aerofs.defects.Defects;
@@ -395,6 +397,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         _firstStart = false;
     }
 
+    private long _lastDeath;
+    private int _lastCode = -1;
+    private int _deathCount;
+    private static final int MAX_DEATH_COUNT = 5;
+
     /**
      * Sends a defect report of the daemon's death with the exit code of the daemon's process.
      */
@@ -412,6 +419,33 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         }
 
         l.error("daemon died {}: {}", exitCode, getMessage(exitCode));
+
+        long now = System.nanoTime();
+        // Exit when detecting a crash loop (i.e. rapidly recurring crash) to avoid excessive log
+        // growth and high CPU utilization.
+        if (_lastCode == exitCode
+                && (now - _lastDeath) < TimeUnit.NANOSECONDS.convert(1, TimeUnit.MINUTES)) {
+            if (++_deathCount > MAX_DEATH_COUNT) {
+                l.error("crash loop detected");
+                if (UI.isGUI()) {
+                    try {
+                        if (UI.get().ask(MessageType.ERROR, L.product()
+                                + " is experiencing repeated failures and will"
+                                + " terminate to avoid wasting resources.",
+                                "Submit problem report", "Exit")) {
+                            GUI.get().exec(() -> new DlgDefect(false).open());
+                        }
+                    } catch (ExNoConsole e) {
+                        throw new AssertionError(e);
+                    }
+                }
+                FATAL_ERROR.exit();
+            }
+        } else {
+            _lastCode = exitCode;
+            _deathCount = 0;
+        }
+        _lastDeath = now;
 
         ThreadUtil.startDaemonThread("dm-death", () -> {
             // wait so that the daemon.log sent along the defect will

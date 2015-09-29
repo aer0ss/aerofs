@@ -1,6 +1,7 @@
 package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.defects.PriorityDefect;
 import com.aerofs.defects.UIPriorityDefect.Factory;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
@@ -29,9 +30,17 @@ public class DlgDefect extends AeroFSJFaceDialog
     private Text _txtSubject;
     private Text _txtMessage;
 
+    private final boolean _sendAsync;
+
     public DlgDefect()
     {
+        this(true);
+    }
+
+    public DlgDefect(boolean async)
+    {
         super(S.REPORT_A_PROBLEM, GUI.get().sh(), false, true, true);
+        _sendAsync = async;
     }
 
     /**
@@ -150,11 +159,15 @@ public class DlgDefect extends AeroFSJFaceDialog
 
         String contactEmail = _txtEmailAddress.getText();
 
-        _defectFactory.newPriorityDefect()
+        PriorityDefect d = _defectFactory.newPriorityDefect()
                 .setSubject(subject)
                 .setMessage(message)
-                .setContactEmail(contactEmail)
-                .sendAsync();
+                .setContactEmail(contactEmail);
+        if (_sendAsync) {
+            d.sendAsync();
+        } else {
+            d.sendSyncIgnoreErrors();
+        }
     }
 
     /**
