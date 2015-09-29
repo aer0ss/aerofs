@@ -1,0 +1,35 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2015.
+//-----------------------------------------------------------------------------
+
+sourceCompatibility = 1.8
+
+archivesBaseName = 'aerofs-trifrost'
+
+dependencies {
+    compile 'org.flywaydb:flyway-core:3.0'
+    compile 'com.aerofs.baseline:baseline-service:0.6.2'
+    compile 'com.aerofs.baseline:baseline-db:0.6.2'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'org.apache.httpcomponents:httpclient:4.4'
+    compile 'org.apache.httpcomponents:fluent-hc:4.4-beta1'
+    compile project(':src/aero-auth')
+    compile project(':src/libservlet')
+    runtime 'mysql:mysql-connector-java:5.1.35'
+    testCompile project(':src/lib')
+    testCompile project(path: ':src/lib', configuration: 'testutil')
+    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    // testCompile 'com.aerofs.baseline:baseline-testlib:0.6.2'
+    // testRuntime 'com.h2database:h2:1.4.187'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.aerofs.trifrost.Trifrost',
+                'Class-Path': configurations.runtime.collect { it.getName() }.join(' ')
+        )
+    }
+}
+
