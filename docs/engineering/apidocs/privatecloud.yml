@@ -1,0 +1,42 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Private cloud mail domain lookup
+  description: 'Given an email address, find an AeroFS appliance that may support chat and file sharing for that user.'
+paths:
+  '/domains/{mail_domain}':
+    get:
+      summary: Find host information for a given domain
+      description: "Look for public customer information associated with the given email domain. \nIf the mail domain is registered to a customer, and the customer has configured a\nprivate cloud appliance address, that address is returned.\n\nA list of registered domains may also be returned; clients can use this list to \nfilter email addresses and suggest contacts from the client contact list.\n"
+      parameters:
+        - name: mail_domain
+          in: path
+          description: domain part to search.
+          required: true
+          type: string
+      tags:
+        - Public
+      responses:
+        '200':
+          description: A host information object
+          schema:
+            $ref: '#/definitions/HostRecord'
+        '404':
+          description: 'The domain has not been registered, or the customer owning it has not configured an appliance hostname.'
+host: privatecloud.aerofs.com
+schemes:
+  - https
+produces:
+  - application/json
+definitions:
+  HostRecord:
+    type: object
+    properties:
+      host:
+        type: string
+        format: uri
+      domains:
+        type: array
+        items:
+          type: string
+

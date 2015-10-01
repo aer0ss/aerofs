@@ -1,0 +1,79 @@
+swagger: '2.0'
+info:
+  version: '1.0'
+  title: Private Cloud Internal access points
+  description: "For use in the vpn by admins only. Not exposed.\n\nAssume for now we will manage this by hand (db scripts) but in the\nfuture, a logged-in administrator will be able to create mail domain \nand host records. It will still require some processing on our end to\n\"verify\" a mail domain, which is why it's called out separately here.\n\nOnce a domain is verified, any registered admin for that customer can\nupdate the appliance hostname. This in turn will be used by clients to\nfind the local appliance given only an email address.\n"
+paths:
+  '/customers/{customer_id}/domains/{domain_val}':
+    put:
+      summary: Provisionally associate the given domain with a customer
+      description: |
+        This creates an unverified record that the mail domain belongs to a
+        particular customer. Note that unverified records are ignored when
+        looking for an appliance hostname.
+      parameters:
+        - name: customer_id
+          in: path
+          description: Unique customer identifier
+          required: true
+          type: integer
+        - name: domain_val
+          in: path
+          description: Mail domain string to register
+          required: true
+          type: string
+      responses:
+        '204':
+          description: Successfully created the mail domain association
+        '404':
+          description: No such customer record
+  '/customers/{customer_id}/domains/{domain_val}/verify':
+    put:
+      summary: 'Mark the mail domain as "verified"'
+      description: "Verifying that the given domain is owned by the given customer is \na handwave; an exercise left for the reader. For now, this is\nperformed manually. Unverified domains will not be returned by the\nprivatecloud domain lookup endpoint.\n"
+      parameters:
+        - name: customer_id
+          in: path
+          description: Unique customer identifier
+          required: true
+          type: integer
+          format: int32
+        - name: domain_val
+          in: path
+          description: Mail domain string to mark as verified
+          required: true
+          type: string
+      responses:
+        '204':
+          description: Successfully marked as verified
+        '404':
+          description: No such customer record or domain
+  '/customers/{customer_id}/host':
+    post:
+      summary: Record the hostname of a private cloud appliance
+      description: "This creates or updates the appliance record for the given customer.\nWe will return the given hostname for a lookup request to any of \nthis customer's registered mail domains.\n"
+      parameters:
+        - name: customer_id
+          description: Unique customer identifier
+          in: path
+          required: true
+          type: string
+        - name: host
+          in: body
+          description: Host name you want to register
+          schema:
+            $ref: '#/definitions/Host'
+          required: true
+      responses:
+        '204':
+          description: Successfully created the hostname record
+        '404':
+          description: No such customer record
+definitions:
+  Host:
+    type: object
+    properties:
+      hostname:
+        type: string
+        description: Hostname (DNS or IP address) to record
+

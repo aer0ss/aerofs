@@ -1,0 +1,47 @@
+SWAGGER, and how to live with it.
+
+---- Generating swagger specs ----
+
+Swagger may be good or bad, depending how you use it. As long as your documentation
+comes _from_ your code, and you don't count on an omniscient being to somehow update
+them in lockstep, you're doing it right!
+
+Three ways to work with Swagger.
+
+1.) (Best). Virtually all of our server stacks have good support for some
+    swagger-core plugin. Swagger will read the annotations on your real code,
+    and generate a simple configuration-file specification of your entire web API.
+
+    You can download the swagger spec from your server, commit it in this folder,
+    and then disable the swagger listener in production use; for example:
+
+        curl -k -v https://share.syncfs.com/messaging/swagger.yaml > trifrost.yaml
+
+2.) (Also good). Use a swagger editor (try http://editor.swagger.io !) to build
+    the swagger spec directly, and see the documentation as you work on the spec.
+
+    When you want reviewers, download the swagger spec and commit it here. Send
+    your review team to look at
+        docs.arrowfs.org:8000/engineering/apidocs/
+    or if you think they're lazy,
+        docs.arrowfs.org:8000/swagger-ui/dist?url=/engineering/apidocs/my_new_service.yaml
+
+    When you're done with reviews, ask swagger to generate a server package.
+
+    Then, and this is IMPORTANT, throw out the hand-built spec. From now on,
+    your server code *is* the spec. Use mode (1) to extract the spec, commit it here.
+
+3.) (Bad). Use a swagger editor. When you change the spec, update the code to
+    match. This is not recommended. Don't do it. They will never be kept in sync.
+
+---- Building an index for the docs server ----
+
+The swagger-ui piece is a delightfully simple chunk of static web resources
+that gives you a live view of API documentation. It includes the ability to
+run commands directly against your server (if it is configured and accessible).
+
+A script on the docs server will generate an index.html for a set of swagger specs
+in this directory, and expose them using swagger-ui:
+
+    http://docs.arrowfs.org:8000/swagger-ui/dist?url=/engineering/apidocs/YOUR_WHATEVER.json
+

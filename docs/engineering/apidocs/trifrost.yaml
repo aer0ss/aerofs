@@ -1,0 +1,213 @@
+---
+swagger: "2.0"
+info:
+  version: '1.0'
+  title: 'Trifrost'
+host: "trifrost.service:8888"
+basePath: "/"
+tags:
+- name: "invite users"
+- name: "user authorization"
+- name: "device parameters"
+schemes:
+- "http"
+paths:
+  /auth/auth_code:
+    post:
+      tags:
+      - "user authorization"
+      summary: "Request a verification code by email"
+      description: "Initiate the sign-in process by requesting a unique verification\
+        \ code by email"
+      operationId: "requestVerification"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/EmailAddress"
+      responses:
+        default:
+          description: "successful operation"
+  /auth/refresh:
+    delete:
+      tags:
+      - "user authorization"
+      summary: "clear all auth tokens"
+      description: "Invalidate the given refresh tokens as well as any access tokens\
+        \ that were issued with it."
+      operationId: "invalidateTokens"
+      consumes:
+      - "application/json"
+      produces:
+      - "text/plain"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/RefreshToken"
+      responses:
+        default:
+          description: "successful operation"
+  /auth/token:
+    post:
+      tags:
+      - "user authorization"
+      summary: "Create a new access token"
+      description: "Complete the sign-in process and create a new access token for\
+        \ the given user.\n\nThis endpoint supports two mechanisms to prove identity;\
+        \ .\n\nThe `grant_type` body parameter is required, and chooses between the\
+        \ two supported identity-verification mechanisms: a single-use, emailed auth\
+        \ code (created by the `auth/auth_code` route) or a previously-issued refresh\
+        \ token.\n\nOn successful verification, an access token and refresh token\
+        \ will be issued."
+      operationId: "verifyDevice"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/DeviceAuthentication"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/VerifiedDevice"
+  /devices/{deviceid}:
+    put:
+      tags:
+      - "device parameters"
+      summary: "Register for push notification"
+      description: "Update device parameters (name and family), or register for push\
+        \ notification services.\n\nsee the Device model for more information; APNS\
+        \ and GCM registration are currently supported."
+      operationId: "updateDevice"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "deviceid"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/Device"
+      responses:
+        default:
+          description: "successful operation"
+  /invite/{email_addr}:
+    post:
+      tags:
+      - "invite users"
+      summary: "Invite a user to user AeroIM"
+      description: "Send an email invitation to the given address."
+      operationId: "inviteUser"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "email_addr"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        default:
+          description: "successful operation"
+definitions:
+  RefreshToken:
+    type: "object"
+    required:
+    - "refreshToken"
+    properties:
+      refreshToken:
+        type: "string"
+  Device:
+    type: "object"
+    required:
+    - "family"
+    - "name"
+    properties:
+      name:
+        type: "string"
+        description: "device name, unique per user"
+      family:
+        type: "string"
+        description: "general category (ios, android, web)"
+      pushType:
+        type: "string"
+        description: "must be one of 'apns', 'gcm'"
+        enum:
+        - "APNS"
+        - "GCM"
+        - "NONE"
+      pushToken:
+        type: "string"
+        description: "required if push_type is provided"
+  DeviceAuthentication:
+    type: "object"
+    properties:
+      grantType:
+        type: "string"
+        description: "must be 'auth_code' or 'refresh_token'"
+        enum:
+        - "AuthCode"
+        - "RefreshToken"
+      authCode:
+        type: "string"
+        description: "auth code received by email"
+      email:
+        type: "string"
+        description: "required if grant_type = 'auth_code'"
+      refreshToken:
+        type: "string"
+        description: "valid refresh token"
+      userId:
+        type: "string"
+        description: "required if grant_type = 'refresh_token'"
+      device:
+        description: "optional device information"
+        $ref: "#/definitions/Device"
+  VerifiedDevice:
+    type: "object"
+    properties:
+      userId:
+        type: "string"
+        description: "unique user identifier"
+      domain:
+        type: "string"
+        description: "domain string for xmpp connections"
+      deviceId:
+        type: "string"
+        description: "device identifier, unique for this user"
+      accessToken:
+        type: "string"
+        description: "time-limited authorization token"
+      accessTokenExpiration:
+        type: "integer"
+        format: "int64"
+        description: "expiration date of the access token, in milliseconds since the\
+          \ Epoch"
+      refreshToken:
+        type: "string"
+        description: "single-use refresh token"
+  EmailAddress:
+    type: "object"
+    required:
+    - "email"
+    properties:
+      email:
+        type: "string"

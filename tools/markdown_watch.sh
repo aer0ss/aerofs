@@ -203,15 +203,17 @@ function CheckMarkdown
     fi
 }
 
-# Copy the HTML document if the source file is newer than the target file,
+# Copy the document if the source file is newer than the target file,
 # or the target doesn't exist. Create parent folders of the target if
 # necessary.
 #
 # This method assumes PWD is the folder being scanned.
-# $1 : html file path
-# $2 : target base dir path
+# $1 : source file path
+# $2 : target path: base dir
 #
-function CheckHtml
+# given "CopyDocument a/b.txt /c/", this will create "/c/a/b.txt".
+#
+function CopyDocument
 {
     typeset m="${1}"
     typeset h="${2}/${m}"
@@ -275,30 +277,21 @@ function ScanDir
         actualTargetDir="${pwd}/${targetDir}"
     fi
 
-    if [ $Recursive -ne 0 ]
-    then
-        # Markdown
-        for x in `find . -iname \*.md -type f`
-        do
-            CheckMarkdown "$x" "${actualTargetDir}"
-        done
-        # HTML
-        for x in `find . -iname \*.html -type f`
-        do
-            CheckHtml "$x" "${actualTargetDir}"
-        done
-    else
-        # Markdown
-        for x in *.md
-        do
-            [ -f "$x" ] && CheckMarkdown "$x" "${actualTargetDir}"
-        done
-        # HTML
-        for x in *.html
-        do
-            [ -f "$x" ] && CheckHtml "$x" "${actualTargetDir}"
-        done
-    fi
+    DEPTH=""
+    [[ $Recursive -eq 0 ]] && DEPTH="maxdepth 1"
+
+    # Generate markdown for all .md files
+    for x in $(find . -iname \*.md -type f $DEPTH)
+    do
+        CheckMarkdown "$x" "${actualTargetDir}"
+    done
+
+    # Copy html and apidoc artifacts directly.
+    # TODO: are there diagrams? PNG?
+    for x in $(find .  -type f $DEPTH \( -iname \*.html -o -iname \*.yaml -o -iname \*.json \) )
+    do
+        CopyDocument "$x" "${actualTargetDir}"
+    done
 
     # Restore the old pwd
     cd "$pwd"
