@@ -58,7 +58,7 @@ public final class AccessException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("user", user);
+        errorFields.put("user", user.getString());
         errorFields.put("store", store.toStringFormal());
         errorFields.put("access", requested);
     }
