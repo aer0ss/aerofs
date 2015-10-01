@@ -327,9 +327,6 @@ containers:
       volume:
         # To rotate docker logs
         - /var/lib/docker/containers:/var/lib/docker/containers
-      link:
-        # To restart containers after rotating logs
-        - loader:loader.service
 
   maintenance-nginx:
     image: aerofs/maintenance-nginx
