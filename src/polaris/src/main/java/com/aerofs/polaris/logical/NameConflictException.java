@@ -30,7 +30,7 @@ public final class NameConflictException extends PolarisException {
 
     @Override
     protected void addErrorFields(Map<String, Object> errorFields) {
-        errorFields.put("parent", parent);
+        errorFields.put("parent", parent.toStringFormal());
         errorFields.put("child_name", childName);
         errorFields.put("conflicting_object", conflictingObject.toStringFormal());
     }
