@@ -30,5 +30,5 @@ logging:
     enabled: true
 
   file:
-    enabled: true
+    enabled: false
     logfile: /var/log/polaris/polaris.log
