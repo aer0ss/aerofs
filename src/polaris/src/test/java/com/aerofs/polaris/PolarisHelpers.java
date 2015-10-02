@@ -101,7 +101,21 @@ public abstract class PolarisHelpers {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(child, childObjectType, childName))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(child, childObjectType, childName, null))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(parent))
+                .then();
+    }
+
+    public static void insertMigrant(RequestSpecification authenticated, UniqueID newParent, UniqueID newOID, String childName, ObjectType childObjectType, UniqueID migrant) {
+        migratedObject(authenticated, newParent, newOID, childName, childObjectType, migrant).assertThat().statusCode(SC_OK);
+    }
+
+    public static ValidatableResponse migratedObject(RequestSpecification authenticated, UniqueID parent, UniqueID child, String childName, ObjectType childObjectType, UniqueID migrant) {
+        return given()
+                .spec(authenticated)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(child, childObjectType, childName, migrant))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(parent))
                 .then();
@@ -276,7 +290,7 @@ public abstract class PolarisHelpers {
             ObjectStore objects)
     {
         OID folder = OID.generate();
-        Operation op = new InsertChild(folder, ObjectType.FOLDER, name);
+        Operation op = new InsertChild(folder, ObjectType.FOLDER, name, null);
         objects.performTransform(userid, device, parent, op);
         return folder;
     }
@@ -285,9 +299,14 @@ public abstract class PolarisHelpers {
             ObjectStore objects)
     {
         OID file = OID.generate();
-        Operation op = new InsertChild(file, ObjectType.FILE, name);
+        Operation op = new InsertChild(file, ObjectType.FILE, name, null);
         objects.performTransform(userid, device, parent, op);
         return file;
+    }
+
+    public static void insertAnchor(UniqueID parent, SID store, String name, UserID user, DID device, ObjectStore objects) {
+        Operation op = new InsertChild(store, ObjectType.STORE, name, null);
+        objects.performTransform(user, device, parent, op);
     }
 
     public static UniqueID shareFolder(UniqueID folder, UserID userid, DID device,
@@ -295,6 +314,12 @@ public abstract class PolarisHelpers {
     {
         Operation op = new Share();
         return objects.performTransform(userid, device, folder, op).jobID;
+    }
+
+    public static OperationResult moveObject(UniqueID parent, UniqueID newParent, UniqueID child, byte[] childName, UserID user, DID device, ObjectStore objects)
+    {
+        Operation op = new MoveChild(child, newParent, childName);
+        return objects.performTransform(user, device, parent, op);
     }
 
     private PolarisHelpers() {

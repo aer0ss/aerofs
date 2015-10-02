@@ -70,6 +70,12 @@ public final class Transform {
 
     private long contentMtime = Content.INVALID_MODIFICATION_TIME;
 
+    //
+    // this parameter is set when the transform is from a cross-store move
+    //
+
+    private UniqueID migrantOid = null;
+
     // constructor only includes parameters that must *always* be set
     public Transform(
             long logicalTimestamp,
@@ -240,6 +246,14 @@ public final class Transform {
         this.contentMtime = contentMtime;
     }
 
+    public UniqueID getMigrantOid() {
+        return migrantOid;
+    }
+
+    public void setMigrantOid(UniqueID migrantOid) {
+        this.migrantOid = migrantOid;
+    }
+
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
@@ -261,7 +275,8 @@ public final class Transform {
                 && Arrays.equals(childName, other.childName)
                 && Arrays.equals(contentHash, other.contentHash)
                 && contentSize == other.contentSize
-                && contentMtime == other.contentMtime;
+                && contentMtime == other.contentMtime
+                && Objects.equal(migrantOid, other.migrantOid);
     }
 
     @Override
@@ -282,7 +297,8 @@ public final class Transform {
                 childName,
                 contentHash,
                 contentSize,
-                contentMtime);
+                contentMtime,
+                migrantOid);
     }
 
     @Override
@@ -305,6 +321,7 @@ public final class Transform {
                 .add("contentHash", contentHash)
                 .add("contentSize", contentSize)
                 .add("contentMtime", contentMtime)
+                .add("migrantOid", migrantOid)
                 .toString();
     }
 }

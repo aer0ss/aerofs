@@ -77,7 +77,7 @@ public final class TestJsonConversion {
     @Test
     public void shouldSerializeAndDeserializeTransformBatch() throws IOException {
         List<TransformBatchOperation> operations = ImmutableList.of(
-                new TransformBatchOperation(SID.generate(), new InsertChild(OID.generate(), ObjectType.FILE, "file")),
+                new TransformBatchOperation(SID.generate(), new InsertChild(OID.generate(), ObjectType.FILE, "file", null)),
                 new TransformBatchOperation(SID.generate(), new RemoveChild(OID.generate())),
                 new TransformBatchOperation(OID.generate(), new MoveChild(OID.generate(), SID.generate(), "new")),
                 new TransformBatchOperation(OID.generate(), new MoveChild(OID.generate(), OID.generate(), "new again")),
@@ -231,7 +231,7 @@ public final class TestJsonConversion {
 
     @Test
     public void shouldSerializeAndDeserializeInsertChild() throws IOException {
-        InsertChild insertChild = new InsertChild(OID.generate(), ObjectType.FOLDER, "CHILD NAME");
+        InsertChild insertChild = new InsertChild(OID.generate(), ObjectType.FOLDER, "CHILD NAME", OID.generate());
 
         String serialized = mapper.writeValueAsString(insertChild);
         LOGGER.info("insert_child:{}", serialized);

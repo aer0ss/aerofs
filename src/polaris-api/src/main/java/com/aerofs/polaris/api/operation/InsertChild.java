@@ -30,19 +30,25 @@ public final class InsertChild extends Operation {
     @Size(min = 1)
     public final byte[] childName;
 
-    public InsertChild(UniqueID child, @Nullable ObjectType childObjectType, String childName) {
-        this(child, childObjectType, PolarisUtilities.stringToUTF8Bytes(childName));
+    // only set from client-side for insert childs resulting from a cross-store move, references the OID this object was originally
+    @Nullable
+    public final UniqueID migrant;
+
+    public InsertChild(UniqueID child, @Nullable ObjectType childObjectType, String childName, @Nullable UniqueID migrant) {
+        this(child, childObjectType, PolarisUtilities.stringToUTF8Bytes(childName), migrant);
     }
 
     @JsonCreator
     public InsertChild(
             @JsonProperty("child") UniqueID child,
             @JsonProperty("child_object_type") @Nullable ObjectType childObjectType,
-            @JsonProperty("child_name") byte[] childName) {
+            @JsonProperty("child_name") byte[] childName,
+            @JsonProperty("migrant") UniqueID migrant) {
         super(OperationType.INSERT_CHILD);
         this.child = child;
         this.childObjectType = childObjectType;
         this.childName = childName;
+        this.migrant = migrant;
     }
 
     @Override
@@ -54,12 +60,13 @@ public final class InsertChild extends Operation {
         return type == other.type
                 && Objects.equal(child, other.child)
                 && Objects.equal(childObjectType, other.childObjectType)
-                && Arrays.equals(childName, other.childName);
+                && Arrays.equals(childName, other.childName)
+                && Objects.equal(migrant, other.migrant);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(type, child, childObjectType, childName);
+        return Objects.hashCode(type, child, childObjectType, childName, migrant);
     }
 
     @Override
@@ -70,6 +77,7 @@ public final class InsertChild extends Operation {
                 .add("child", child)
                 .add("childObjectType", childObjectType)
                 .add("childName", childName)
+                .add("migrant", migrant)
                 .toString();
     }
 }

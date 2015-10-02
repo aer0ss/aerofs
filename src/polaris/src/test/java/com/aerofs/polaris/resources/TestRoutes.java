@@ -128,7 +128,7 @@ public final class TestRoutes {
         given()
                 .spec(AUTHENTICATED)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(file, FILE, "file"))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(file, FILE, "file", null))
                 .and()
                 .when().post(PolarisTestServer.getServiceURL() + "/objects/" + store.toStringFormal())
                 .then().assertThat().statusCode(SC_OK);
@@ -162,7 +162,7 @@ public final class TestRoutes {
                 .spec(AUTHENTICATED)
                 .and()
                 .header(ACCEPT, APPLICATION_JSON)
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new TransformBatch(ImmutableList.of(new TransformBatchOperation(store, new InsertChild(file, FILE, "file")))))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new TransformBatch(ImmutableList.of(new TransformBatchOperation(store, new InsertChild(file, FILE, "file", null)))))
                 .and()
                 .when().post(PolarisTestServer.getServiceURL() + "/batch/transforms/")
                 .then()

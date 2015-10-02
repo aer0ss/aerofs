@@ -60,9 +60,9 @@ public final class TestTransformBatchResource {
         SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_3"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_3", null))
         ));
 
         // attempt to reinsert filename into store to create:
@@ -94,9 +94,9 @@ public final class TestTransformBatchResource {
         SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null))
         ));
 
         // attempt to reinsert filename into store to create:
@@ -141,9 +141,9 @@ public final class TestTransformBatchResource {
         SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2", null))
         ));
 
         // attempt to reinsert filename into store to create:
@@ -182,9 +182,9 @@ public final class TestTransformBatchResource {
         SID store = SID.generate();
 
         TransformBatch batch = new TransformBatch(ImmutableList.of(
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1")),
-                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2"))
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_1", null)),
+                new TransformBatchOperation(store, new InsertChild(OID.generate(), ObjectType.FILE, "file_2", null))
         ));
 
         // attempt to reinsert filename into store to create:

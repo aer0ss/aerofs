@@ -172,7 +172,7 @@ public final class TestOrderedNotifierThreadSafety {
 
             return dbi.inTransaction((conn, status) -> {
                 Transforms transforms = conn.attach(Transforms.class);
-                long  logicalTimestamp = transforms.add(DID.generate(), store, store, TransformType.INSERT_CHILD, /* don't care */ 888, OID.generate(), "hello".getBytes(Charsets.UTF_8), System.currentTimeMillis(), null);
+                long  logicalTimestamp = transforms.add(DID.generate(), store, store, TransformType.INSERT_CHILD, /* don't care */ 888, OID.generate(), "hello".getBytes(Charsets.UTF_8), null, System.currentTimeMillis(), null);
 
                 LogicalTimestamps timestamps = conn.attach(LogicalTimestamps.class);
                 timestamps.updateLatest(store, logicalTimestamp);

@@ -58,7 +58,7 @@ public final class TestTransformsResource {
         assertThat(applied.maxTransformCount, is(1L));
 
         Transform transform = applied.transforms.get(0);
-        assertThat(transform, matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
+        assertThat(transform, matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1", null));
     }
 
     @Test
@@ -71,8 +71,8 @@ public final class TestTransformsResource {
         assertThat(applied.transforms, hasSize(2));
         assertThat(applied.maxTransformCount, is(2L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.REMOVE_CHILD, 2, folder, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.REMOVE_CHILD, 2, folder, null, null, null));
     }
 
     @Test
@@ -87,11 +87,11 @@ public final class TestTransformsResource {
         assertThat(applied.transforms, hasSize(5));
         assertThat(applied.maxTransformCount, is(5L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2", null));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file", null));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed", null));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null, null));
     }
 
     @Test
@@ -105,9 +105,9 @@ public final class TestTransformsResource {
         assertThat(applied.transforms, hasSize(3));
         assertThat(applied.maxTransformCount, is(3L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed"));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file", null));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.RENAME_CHILD, 2, file, ObjectType.FILE, "renamed", null));
     }
 
     @Test
@@ -124,7 +124,7 @@ public final class TestTransformsResource {
         assertThat(applied.transforms, hasSize(2));
         assertThat(applied.maxTransformCount, is(2L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file", null));
         assertThat(applied.transforms.get(1), matchesContentTransform(2, DEVICE, file, 1, hash, 100, 1024));
     }
 
@@ -139,8 +139,8 @@ public final class TestTransformsResource {
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
         assertThat(applied.transforms, hasSize(2));
         assertThat(applied.maxTransformCount, is(2L));
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.SHARE, 1, null, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.SHARE, 1, null, null, null, null));
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
@@ -171,14 +171,14 @@ public final class TestTransformsResource {
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
         assertThat(applied.transforms, hasSize(8));
         assertThat(applied.maxTransformCount, is(13L));
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, newFile, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.INSERT_CHILD, 2, modifiedFile, ObjectType.FILE, "file2"));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, rootStore, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, folder, TransformType.INSERT_CHILD, 1, newFile, ObjectType.FILE, "file", null));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder, TransformType.INSERT_CHILD, 2, modifiedFile, ObjectType.FILE, "file2", null));
         assertThat(applied.transforms.get(3), matchesContentTransform(4, DEVICE, modifiedFile, 1, hash, 100, 1024));
-        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder, TransformType.INSERT_CHILD, 3, deletedFile, ObjectType.FILE, "file3"));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder, TransformType.INSERT_CHILD, 3, deletedFile, ObjectType.FILE, "file3", null));
         assertThat(applied.transforms.get(5), matchesContentTransform(6, DEVICE, deletedFile, 1, hash, 100, 1024));
-        assertThat(applied.transforms.get(6), matchesMetaTransform(7, DEVICE, folder, TransformType.REMOVE_CHILD, 4, deletedFile, null, null));
-        assertThat(applied.transforms.get(7), matchesMetaTransform(13, DEVICE, folder, TransformType.SHARE, 5, null, null, null));
+        assertThat(applied.transforms.get(6), matchesMetaTransform(7, DEVICE, folder, TransformType.REMOVE_CHILD, 4, deletedFile, null, null, null));
+        assertThat(applied.transforms.get(7), matchesMetaTransform(13, DEVICE, folder, TransformType.SHARE, 5, null, null, null, null));
 
         SID sharedFolder = SID.folderOID2convertedStoreSID(folder);
         applied = PolarisHelpers.getTransforms(verified, sharedFolder, -1, 10);
@@ -196,20 +196,29 @@ public final class TestTransformsResource {
     public void shouldReturnCorrectTransformsWhenFileIsMigrated()
             throws Exception
     {
+        byte[] hash1 = new byte[32], hash2 = new byte[32];
+        Random random = new Random();
         SID store1 = SID.generate(), store2 = SID.generate();
         OID file = PolarisHelpers.newFile(verified, store1, "src_file");
+        random.nextBytes(hash1);
+        PolarisHelpers.newFileContent(verified, file, 0, hash1, 100, 1024);
+        random.nextBytes(hash2);
+        PolarisHelpers.newFileContent(verified, file, 1, hash2, 100, 2048);
         PolarisHelpers.moveFileOrFolder(verified, store1, store2, file, "dest_file");
 
         Transforms applied = PolarisHelpers.getTransforms(verified, store1, -1, 10);
-        assertThat(applied.transforms, hasSize(2));
-        assertThat(applied.maxTransformCount, is(3L));
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "src_file"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(3, DEVICE, store1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.transforms, hasSize(4));
+        assertThat(applied.maxTransformCount, is(6L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "src_file", null));
+        assertThat(applied.transforms.get(1), matchesContentTransform(2, DEVICE, file, 1, hash1, 100, 1024));
+        assertThat(applied.transforms.get(2), matchesContentTransform(3, DEVICE, file, 2, hash2, 100, 2048));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(6, DEVICE, store1, TransformType.REMOVE_CHILD, 2, file, null, null, null));
 
         applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
-        assertThat(applied.transforms, hasSize(1));
-        assertThat(applied.maxTransformCount, is(3L));
-        assertThat(applied.transforms.get(0), matchesReorderableRandomChildOIDMetaTransform(DEVICE, store2, TransformType.INSERT_CHILD, ObjectType.FILE, "dest_file"));
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(6L));
+        assertThat(applied.transforms.get(0), matchesReorderableRandomChildOIDMetaTransform(DEVICE, store2, TransformType.INSERT_CHILD, ObjectType.FILE, "dest_file", file));
+        assertThat(applied.transforms.get(1), matchesReorderableRandomOIDContentTransform(DEVICE, 2, hash2, 100, 2048));
     }
 
     @SuppressWarnings("unchecked")
@@ -223,9 +232,10 @@ public final class TestTransformsResource {
 
         SID rootStore = SID.rootSID(USERID), share = SID.generate();
         OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
-        PolarisHelpers.newFile(verified, folder, "file1");
+        OID file1 = PolarisHelpers.newFile(verified, folder, "file1");
         OID modifiedFile = PolarisHelpers.newFile(verified, folder, "file2");
-        PolarisHelpers.newFileContent(verified, modifiedFile, 0, hash, 100, 1024);
+        PolarisHelpers.newFileContent(verified, modifiedFile, 0, hash, 100, 512);
+        PolarisHelpers.newFileContent(verified, modifiedFile, 1, hash, 200, 1024);
         OID deletedFile = PolarisHelpers.newFile(verified, folder, "file3");
         PolarisHelpers.newFileContent(verified, deletedFile, 0, hash, 50, 2048);
         PolarisHelpers.removeFileOrFolder(verified, folder, deletedFile);
@@ -239,20 +249,34 @@ public final class TestTransformsResource {
         }
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
-        assertThat(applied.transforms, hasSize(8));
-        assertThat(applied.maxTransformCount, is(14L));
-        assertThat(applied.transforms.get(7), matchesMetaTransform(14, DEVICE, rootStore, TransformType.REMOVE_CHILD, 2, folder, null, null));
+        assertThat(applied.transforms, hasSize(9));
+        assertThat(applied.maxTransformCount, is(15L));
+        assertThat(applied.transforms.get(8), matchesMetaTransform(15, DEVICE, rootStore, TransformType.REMOVE_CHILD, 2, folder, null, null, null));
 
         applied = PolarisHelpers.getTransforms(verified, share, -1, 10);
         assertThat(applied.transforms, hasSize(6));
-        assertThat(applied.maxTransformCount, is(14L));
+        assertThat(applied.maxTransformCount, is(15L));
         assertThat(applied.transforms, containsInAnyOrder(
-                matchesReorderableRandomChildOIDMetaTransform(DEVICE, share, TransformType.INSERT_CHILD, ObjectType.FOLDER, "folder"),
-                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file1"),
-                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file2"),
-                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file3"),
-                matchesReorderableRandomOIDContentTransform(DEVICE, 1, hash, 100, 1024),
-                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.REMOVE_CHILD, null, null)));
+                matchesReorderableRandomChildOIDMetaTransform(DEVICE, share, TransformType.INSERT_CHILD, ObjectType.FOLDER, "folder", folder),
+                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file1", file1),
+                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file2", modifiedFile),
+                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file3", deletedFile),
+                matchesReorderableRandomOIDContentTransform(DEVICE, 2, hash, 200, 1024),
+                matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.REMOVE_CHILD, null, null, null)));
+    }
+
+    @Test
+    public void shouldReturnCorrectTransformsWhenClientMigratesObject()
+    {
+        SID store1 = SID.generate(), store2 = SID.generate();
+        OID migrant = PolarisHelpers.newFolder(verified, store1, "folder");
+        OID newOID = OID.generate();
+        PolarisHelpers.insertMigrant(verified, store2, newOID, "folder", ObjectType.FOLDER, migrant);
+
+        Transforms applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
+        assertThat(applied.transforms, hasSize(1));
+        assertThat(applied.maxTransformCount, is(2L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(2, DEVICE, store2, TransformType.INSERT_CHILD, 1, newOID, ObjectType.FOLDER, "folder", migrant));
     }
 
     @Test
@@ -269,11 +293,11 @@ public final class TestTransformsResource {
         assertThat(applied.transforms, hasSize(5));
         assertThat(applied.maxTransformCount, is(5L));
 
-        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1"));
-        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2"));
-        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file"));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed"));
-        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder1, ObjectType.FOLDER, "folder_1", null));
+        assertThat(applied.transforms.get(1), matchesMetaTransform(2, DEVICE, store, TransformType.INSERT_CHILD, 2, folder2, ObjectType.FOLDER, "folder_2", null));
+        assertThat(applied.transforms.get(2), matchesMetaTransform(3, DEVICE, folder1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "file", null));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(4, DEVICE, folder2, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "renamed", null));
+        assertThat(applied.transforms.get(4), matchesMetaTransform(5, DEVICE, folder1, TransformType.REMOVE_CHILD, 2, file, null, null, null));
 
         applied = PolarisHelpers.getTransforms(verified, store, 5, 10);
         assertThat(applied.transforms, empty()); // i.e. no transforms
@@ -308,7 +332,7 @@ public final class TestTransformsResource {
 
         count = 1;
         for (int i = 0; i < applied.transforms.size(); i++) {
-            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, store, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i)));
+            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, store, TransformType.INSERT_CHILD, count + i, folders[i], ObjectType.FOLDER, "folder_" + (count + i), null));
         }
 
         applied = PolarisHelpers.getTransforms(verified, store, 10, 100);
@@ -317,7 +341,7 @@ public final class TestTransformsResource {
 
         count = 11;
         for (int i = 0; i < applied.transforms.size(); i++) {
-            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, store, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i)));
+            assertThat(applied.transforms.get(i), matchesMetaTransform(count + i, DEVICE, store, TransformType.INSERT_CHILD, count + i, folders[count + i - 1], ObjectType.FOLDER, "folder_" + (count + i), null));
         }
     }
 
@@ -329,9 +353,10 @@ public final class TestTransformsResource {
             final long newVersion,
             @Nullable final OID child,
             @Nullable final ObjectType childObjectType,
-            @Nullable final String childName
-    ) {
-        return new MetaTransformMatcher(logicalTimestamp, originator, oid, transformType, newVersion, child, childObjectType, childName, false, false, false);
+            @Nullable final String childName,
+            @Nullable OID migrant)
+    {
+        return new MetaTransformMatcher(logicalTimestamp, originator, oid, transformType, newVersion, child, childObjectType, childName, migrant, false, false, false);
     }
 
     private static Matcher<? super Transform> matchesReorderableMetaTransform(
@@ -342,7 +367,7 @@ public final class TestTransformsResource {
             @Nullable final ObjectType childObjectType,
             @Nullable final String childName
     ) {
-        return new MetaTransformMatcher(1L, originator, oid, transformType, 1L, child, childObjectType, childName, true, false, false);
+        return new MetaTransformMatcher(1L, originator, oid, transformType, 1L, child, childObjectType, childName, null, true, false, false);
     }
 
     private static Matcher<? super Transform> matchesReorderableRandomChildOIDMetaTransform(
@@ -350,18 +375,20 @@ public final class TestTransformsResource {
             final UniqueID oid,
             final TransformType transformType,
             @Nullable final ObjectType childObjectType,
-            @Nullable final String childName
+            @Nullable final String childName,
+            @Nullable final OID migrant
     ) {
-        return new MetaTransformMatcher(1L, originator, oid, transformType, 1L, null, childObjectType, childName, true, false, true);
+        return new MetaTransformMatcher(1L, originator, oid, transformType, 1L, null, childObjectType, childName, migrant, true, false, true);
     }
 
     private static Matcher<? super Transform> matchesReorderableRandomOIDsMetaTransform(
             final DID originator,
             final TransformType transformType,
             @Nullable final ObjectType childObjectType,
-            @Nullable final String childName
+            @Nullable final String childName,
+            @Nullable final OID migrant
     ) {
-        return new MetaTransformMatcher(1L, originator, null, transformType, 1L, null, childObjectType, childName, true, true, true);
+        return new MetaTransformMatcher(1L, originator, null, transformType, 1L, null, childObjectType, childName, migrant, true, true, true);
     }
 
 
@@ -407,6 +434,7 @@ public final class TestTransformsResource {
         final OID child;
         final ObjectType childObjectType;
         final String childName;
+        final OID migrant;
         final boolean ignoreTimestamp;
         final boolean ignoreOID;
         final boolean ignoreChildOID;
@@ -420,6 +448,7 @@ public final class TestTransformsResource {
                 @Nullable final OID child,
                 @Nullable final ObjectType childObjectType,
                 @Nullable final String childName,
+                @Nullable final OID migrant,
                 boolean ignoreTimestamp,
                 boolean ignoreOID,
                 boolean ignoreChildOID
@@ -432,6 +461,7 @@ public final class TestTransformsResource {
             this.child = child;
             this.childObjectType = childObjectType;
             this.childName = childName;
+            this.migrant = migrant;
             this.ignoreTimestamp = ignoreTimestamp;
             this.ignoreOID = ignoreOID;
             this.ignoreChildOID = ignoreChildOID;
@@ -447,6 +477,7 @@ public final class TestTransformsResource {
                     && (ignoreChildOID || Objects.equal(child, item.getChild()))
                     && Objects.equal(childObjectType, item.getChildObjectType())
                     && Objects.equal(childName, PolarisUtilities.stringFromUTF8Bytes(item.getChildName()))
+                    && Objects.equal(migrant, item.getMigrantOid())
                     && item.getContentHash() == null
                     && item.getContentSize() == -1
                     && item.getContentMtime() == -1;
@@ -518,6 +549,7 @@ public final class TestTransformsResource {
                     && item.getChild() == null
                     && item.getChildObjectType() == null
                     && item.getChildName() == null
+                    && item.getMigrantOid() == null
                     && Arrays.equals(contentHash, item.getContentHash())
                     && contentSize == item.getContentSize()
                     && contentMtime == item.getContentMtime();

@@ -287,7 +287,7 @@ public final class TestObjectResource {
         given()
                 .spec(AUTHENTICATED)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A"))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store))
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
@@ -317,7 +317,7 @@ public final class TestObjectResource {
         given()
                 .spec(AUTHENTICATED)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder1, ObjectType.FOLDER, "folder1"))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder1, ObjectType.FOLDER, "folder1", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(folder0))
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
@@ -338,7 +338,7 @@ public final class TestObjectResource {
         given()
                 .spec(AUTHENTICATED)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A"))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store0))
                 .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
@@ -738,6 +738,25 @@ public final class TestObjectResource {
         // rename op to "file" will be no-op, but there won't be a matching transform
         PolarisHelpers.moveObject(AUTHENTICATED, store, store, file, "file")
             .assertThat().statusCode(SC_CONFLICT);
+    }
+
+    @Test
+    public void shouldNotAcceptInvalidMigrationInserts() throws Exception
+    {
+        SID store1 = SID.generate(), store2 = SID.generate();
+
+        // can't migrate from an unrecognized oid
+        PolarisHelpers.migratedObject(AUTHENTICATED, store2, OID.generate(), "migrated", ObjectType.FILE, OID.generate())
+                .assertThat().statusCode(SC_NOT_FOUND);
+
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store1, "file");
+
+        // object type must match migrant
+        PolarisHelpers.migratedObject(AUTHENTICATED, store2, OID.generate(), "migrated", ObjectType.FOLDER, file)
+                .assertThat().statusCode(SC_BAD_REQUEST);
+
+        PolarisHelpers.migratedObject(AUTHENTICATED, store2, OID.generate(), "migrated", ObjectType.FILE, file)
+                .assertThat().statusCode(SC_OK);
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

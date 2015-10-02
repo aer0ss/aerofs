@@ -23,10 +23,10 @@ import java.sql.SQLException;
 public interface Transforms {
 
     @GetGeneratedKeys
-    @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, store_oid, oid, transform_type, new_version, child_oid, child_name, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :store_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :timestamp)")
-    long add(@Bind("originator") DID originator, @Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable UniqueID child, @Bind("child_name") @Nullable byte[] name, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
+    @SqlUpdate("insert into transforms(atomic_operation_id, atomic_operation_index, atomic_operation_total, originator, store_oid, oid, transform_type, new_version, child_oid, child_name, migrant_oid, timestamp) values(:atomic_operation_id, :atomic_operation_index, :atomic_operation_total, :originator, :store_oid, :oid, :transform_type, :new_version, :child_oid, :child_name, :migrant_oid, :timestamp)")
+    long add(@Bind("originator") DID originator, @Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid, @Bind("transform_type") TransformType transformType, @Bind("new_version") long newVersion, @Bind("child_oid") @Nullable UniqueID child, @Bind("child_name") @Nullable byte[] name, @Bind("migrant_oid") @Nullable UniqueID migrant, @Bind("timestamp") long timestamp, @BindAtomic @Nullable Atomic atomic);
 
-    @SqlQuery("select logical_timestamp, originator, store_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and store_oid = :store_oid order by logical_timestamp asc limit :limit")
+    @SqlQuery("select logical_timestamp, originator, store_oid, transforms.oid, transform_type, new_version, child_oid, object_type, child_name, atomic_operation_id, atomic_operation_index, atomic_operation_total, hash, size, mtime, migrant_oid, timestamp from transforms left join object_types on (transforms.child_oid = object_types.oid) left join file_properties on (transforms.oid = file_properties.oid and transforms.new_version = file_properties.version) where logical_timestamp > :logical_timestamp and store_oid = :store_oid order by logical_timestamp asc limit :limit")
     ResultIterator<Transform> getTransformsSince(@Bind("logical_timestamp") long since, @Bind("store_oid") UniqueID store, @Bind("limit") long count);
 
     // these two methods are needed because "child_oid is null" is the only way to enforce that a column is null in mysql
@@ -59,7 +59,8 @@ public interface Transforms {
         private static final int COL_CONTENT_HASH           = 13;
         private static final int COL_CONTENT_SIZE           = 14;
         private static final int COL_CONTENT_MTIME          = 15;
-        private static final int COL_TIMESTAMP              = 16;
+        private static final int COL_MIGRANT_OID            = 16;
+        private static final int COL_TIMESTAMP              = 17;
 
         @Override
         public Transform map(int index, ResultSet r, StatementContext ctx) throws SQLException {
@@ -97,6 +98,11 @@ public interface Transforms {
                 byte[] hash = r.getBytes(COL_CONTENT_HASH);
                 if (hash != null) {
                     transform.setContentParameters(hash, r.getLong(COL_CONTENT_SIZE), r.getLong(COL_CONTENT_MTIME));
+                }
+
+                byte[] migrant = r.getBytes(COL_MIGRANT_OID);
+                if (migrant != null) {
+                    transform.setMigrantOid(new UniqueID(migrant));
                 }
 
                 return transform;

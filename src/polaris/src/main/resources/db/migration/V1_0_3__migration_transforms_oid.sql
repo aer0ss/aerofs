@@ -1,0 +1,1 @@
+ALTER TABLE `transforms` ADD COLUMN `migrant_oid` BINARY(16) DEFAULT NULL;

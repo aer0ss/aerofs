@@ -216,7 +216,7 @@ public class Migrator implements Managed {
             DAO dao = new DAO(conn);
             LogicalObject oldFolder = getObject(dao, folder);
 
-            long logicalTimestamp = dao.transforms.add(originator, oldFolder.store, folder, TransformType.SHARE, oldFolder.version + 1, null, null, System.currentTimeMillis(), null);
+            long logicalTimestamp = dao.transforms.add(originator, oldFolder.store, folder, TransformType.SHARE, oldFolder.version + 1, null, null, null, System.currentTimeMillis(), null);
             dao.objects.update(oldFolder.store, folder, oldFolder.version + 1);
 
             return new Update(oldFolder.store, logicalTimestamp);
@@ -286,7 +286,7 @@ public class Migrator implements Managed {
                 }
             });
 
-            return new Update(originalParent.store, dao.transforms.add(originator, originalParent.store, originalParentID, TransformType.REMOVE_CHILD, originalParent.version + 1, migrant, null, System.currentTimeMillis(), null));
+            return new Update(originalParent.store, dao.transforms.add(originator, originalParent.store, originalParentID, TransformType.REMOVE_CHILD, originalParent.version + 1, migrant, null, null, System.currentTimeMillis(), null));
         });
 
         List<Update> updates = Lists.newArrayList(oldStoreUpdate);
@@ -324,11 +324,11 @@ public class Migrator implements Managed {
                 newParentVersion = versionMap.get(newParent);
 
                 Atomic atomic = migrating.child.deleted ? new Atomic(2) : null;
-                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, System.currentTimeMillis(), atomic);
+                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, migratingObject.oid, migrating.child.name, null, System.currentTimeMillis(), atomic);
                 if (migrating.child.deleted) {
-                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, migratingObject.oid, null, System.currentTimeMillis(), atomic);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, migratingObject.oid, null, null, System.currentTimeMillis(), atomic);
                 } else if (migratingObject.objectType == ObjectType.FILE && migratingObject.version > Constants.INITIAL_OBJECT_VERSION) {
-                    migratingToTimestamp = dao.transforms.add(originator, newStore, migratingObject.oid, TransformType.UPDATE_CONTENT, migratingObject.version, null, null, System.currentTimeMillis(), null);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, migratingObject.oid, TransformType.UPDATE_CONTENT, migratingObject.version, null, null, null, System.currentTimeMillis(), null);
                 }
 
                 dao.objects.changeStore(newStore, migratingObject.oid);
@@ -383,15 +383,15 @@ public class Migrator implements Managed {
                 dao.objectTypes.add(newOID, migratingObject.objectType == ObjectType.STORE ? ObjectType.FOLDER : migratingObject.objectType);
                 dao.children.add(newParent, newOID, migrating.child.name, migrating.child.deleted);
 
-                // TODO(RD): atomic operations?
-                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, newOID, migrating.child.name, System.currentTimeMillis(), null);
+                migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.INSERT_CHILD, ++newParentVersion, newOID, migrating.child.name, migratingObject.oid, System.currentTimeMillis(), null);
                 if (migrating.child.deleted) {
-                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, newOID, null, System.currentTimeMillis(), null);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, newParent, TransformType.REMOVE_CHILD, ++newParentVersion, newOID, null, null, System.currentTimeMillis(), null);
                 } else if (migratingObject.objectType == ObjectType.FILE && migratingObject.version > Constants.INITIAL_OBJECT_VERSION) {
                     Content oldFile = dao.objectProperties.getLatest(migratingObject.oid);
                     Preconditions.checkState(oldFile != null, "could not find latest file content for migrating file %s", migratingObject.oid);
-                    migratingToTimestamp = dao.transforms.add(originator, newStore, newOID, TransformType.UPDATE_CONTENT, migratingObject.version, null, null, System.currentTimeMillis(), null);
+                    migratingToTimestamp = dao.transforms.add(originator, newStore, newOID, TransformType.UPDATE_CONTENT, migratingObject.version, null, null, null, System.currentTimeMillis(), null);
                     dao.objectProperties.add(newOID, migratingObject.version, oldFile.hash, oldFile.size, oldFile.mtime);
+                    dao.objects.update(newStore, newOID, migratingObject.version);
                 }
 
                 dao.objects.update(newStore, newParent, newParentVersion);

@@ -130,7 +130,7 @@ public class MetadataBuilder
                     Sets.newHashSet(objectStore.getStore(dao, rootSID)), READ, WRITE);
             updated.addAll(objectStore.performTransform(dao, accessToken,
                     principal.getDID(), rootSID,
-                    new InsertChild(appDataId, FOLDER, APPDATA_FOLDER_NAME)).updated);
+                    new InsertChild(appDataId, FOLDER, APPDATA_FOLDER_NAME, null)).updated);
         }
 
         UniqueID clientId = dao.children.getActiveChildNamed(appDataId, principal.audience().getBytes());
@@ -145,7 +145,7 @@ public class MetadataBuilder
                     Sets.newHashSet(objectStore.getStore(dao, appDataId)), READ, WRITE);
             updated.addAll(objectStore.performTransform(dao, accessToken,
                     principal.getDID(), appDataId,
-                    new InsertChild(clientId, FOLDER, principal.audience())).updated);
+                    new InsertChild(clientId, FOLDER, principal.audience(), null)).updated);
             return clientId;
         }
         return clientId;
@@ -456,7 +456,7 @@ public class MetadataBuilder
         OID oid = OID.generate();
         l.info("Create object. parent {} object name {} oid {}", parentOID, name, oid);
         OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
-                parentOID, new InsertChild(oid, isFile ? FILE : FOLDER, name));
+                parentOID, new InsertChild(oid, isFile ? FILE : FOLDER, name, null));
         l.info("Result for creating object {}: {}", name, result);
 
         String location = EXTERNAL_API_LOCATION

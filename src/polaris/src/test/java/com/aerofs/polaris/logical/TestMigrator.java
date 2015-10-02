@@ -33,9 +33,7 @@ import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.polaris.PolarisHelpers.newFile;
-import static com.aerofs.polaris.PolarisHelpers.newFolder;
-import static com.aerofs.polaris.PolarisHelpers.shareFolder;
+import static com.aerofs.polaris.PolarisHelpers.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
@@ -122,7 +120,7 @@ public class TestMigrator {
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
         shareFolder(sharedFolder, USERID, DEVICE, objects);
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
-        moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes());
+        moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes(), USERID, DEVICE, objects);
 
         migrator.start();
         migratorExecutor.shutdown();
@@ -225,7 +223,7 @@ public class TestMigrator {
         });
 
         try {
-            objects.performTransform(USERID, DEVICE, lockedFolder, new InsertChild(OID.generate(), ObjectType.FOLDER, "a folder"));
+            objects.performTransform(USERID, DEVICE, lockedFolder, new InsertChild(OID.generate(), ObjectType.FOLDER, "a folder", null));
             fail();
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
@@ -289,7 +287,7 @@ public class TestMigrator {
         SID share1 = SID.generate(), share2 = SID.generate();
         newFile(share1, "file", USERID, DEVICE, objects);
         OID destFolder = newFolder(share2, "folder", USERID, DEVICE, objects);
-        insertAnchor(folder, share1, "share");
+        insertAnchor(folder, share1, "share", USERID, DEVICE, objects);
 
         migrator.start();
         dbi.inTransaction((conn, handle) -> {
@@ -378,7 +376,7 @@ public class TestMigrator {
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(migrationRoot), any(OID.class), any(UniqueID.class), eq(DEVICE));
-        UniqueID jobID = moveObject(share2, rootStore, migrationRoot, "migrant_folder".getBytes()).jobID;
+        UniqueID jobID = moveObject(share2, rootStore, migrationRoot, "migrant_folder".getBytes(), USERID, DEVICE, objects).jobID;
         assertTrue("failed to return a job id for migration", jobID != null);
 
         // fake some work being done before server crash
@@ -432,17 +430,6 @@ public class TestMigrator {
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
         }
-    }
-
-    private OperationResult moveObject(UniqueID parent, UniqueID newParent, UniqueID child, byte[] childName)
-    {
-        Operation op = new MoveChild(child, newParent, childName);
-        return this.objects.performTransform(USERID, DEVICE, parent, op);
-    }
-
-    private void insertAnchor(UniqueID parent, SID store, String name) {
-        Operation op = new InsertChild(store, ObjectType.STORE, name);
-        this.objects.performTransform(USERID, DEVICE, parent, op);
     }
 
 }
