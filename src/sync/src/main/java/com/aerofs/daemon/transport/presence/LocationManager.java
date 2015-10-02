@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
@@ -10,9 +11,7 @@ import com.aerofs.ssmp.*;
 import com.aerofs.ssmp.SSMPEvent.Type;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -20,9 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.aerofs.daemon.transport.presence.TCPPresenceLocation.fromExportedLocation;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -58,7 +59,12 @@ public class LocationManager implements EventHandler, IMulticastListener {
 
     public void onLocationChanged(ITransport tp, List<IPresenceLocation> locations) {
         _locations.put(tp, locations);
-        request(SSMPRequest.bcast(LOCATIONS + " " + locations()));
+        String loc = LOCATIONS + " " + locations();
+        if (loc.length() > 1024) {
+            l.info("too many locations to fit in SSMP payload: {}", loc);
+            return;
+        }
+        request(SSMPRequest.bcast(loc));
     }
 
     @Override
@@ -68,9 +74,13 @@ public class LocationManager implements EventHandler, IMulticastListener {
             parseLocations(ev.from.toString(), d);
         } else if (ev.type == Type.UCAST) {
             if (d.equals(REQUEST)) {
-                String loc = locations();
-                l.info("locations request {} {}", ev.from, loc);
-                request(SSMPRequest.ucast(ev.from, LOCATIONS + " " + loc));
+                String loc = LOCATIONS + " " + locations();
+                l.info("{} {}", ev.from, loc);
+                if (loc.length() > 1024) {
+                    l.info("too many locations to fit in SSMP payload");
+                    return;
+                }
+                request(SSMPRequest.ucast(ev.from, loc));
             } else {
                 parseLocations(ev.from.toString(), d);
             }
@@ -80,14 +90,21 @@ public class LocationManager implements EventHandler, IMulticastListener {
     private void parseLocations(String from, String s) {
         try {
             DID did = new DID(from);
-            JsonArray locations = new JsonParser().parse(s).getAsJsonArray();
-            for (JsonElement e : locations) {
-                try {
-                    IPresenceLocation loc = PresenceLocationFactory.fromJson(did, e.getAsJsonObject());
-                    l.info("location {} {}", did, loc);
-                    _listeners.forEach(listener -> listener.onPresenceReceived(loc));
-                } catch (ExInvalidPresenceLocation ex) {
-                    l.warn("invalid location: {}", ex.getMessage());
+            JsonObject transports = new JsonParser().parse(s).getAsJsonObject();
+            for (Entry<String, JsonElement> e : transports.entrySet()) {
+                if (!e.getKey().equals("t")) {
+                    l.debug("unsupported transport location: {} {}", e.getKey(), e.getValue());
+                    continue;
+                }
+                JsonArray locations = e.getValue().getAsJsonArray();
+                for (JsonElement addr : locations) {
+                    try {
+                        IPresenceLocation loc = fromExportedLocation(did, addr.getAsString());
+                        l.info("location {} {}", did, addr);
+                        _listeners.forEach(listener -> listener.onPresenceReceived(loc));
+                    } catch (ExInvalidPresenceLocation ex) {
+                        l.warn("invalid location: {}", ex.getMessage());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -96,11 +113,11 @@ public class LocationManager implements EventHandler, IMulticastListener {
     }
 
     private String locations() {
-        return _locations.values().stream()
-                .map(ll -> ll.stream()
-                                .map(l -> l.toJson().toString())
-                                .collect(Collectors.joining(","))
-        ).filter(s -> !s.isEmpty()).collect(Collectors.joining(",", "[", "]"));
+        return _locations.entrySet().stream()
+                .map(e -> GsonUtil.GSON.toJson(e.getKey().id()) + ":" + e.getValue().stream()
+                                .map(l -> GsonUtil.GSON.toJson(l.exportLocation()))
+                                .collect(Collectors.joining(",", "[", "]"))
+                ).collect(Collectors.joining(",", "{", "}"));
     }
 
     private void requestLocations(DID did) {

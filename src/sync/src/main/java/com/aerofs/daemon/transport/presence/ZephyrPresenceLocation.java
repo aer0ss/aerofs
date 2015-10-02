@@ -22,7 +22,6 @@ public class ZephyrPresenceLocation implements IPresenceLocation
 
     private final DID did;
     private final InetSocketAddress zephyrSocketAddress;
-    private final static int VERSION = 100;
 
     public ZephyrPresenceLocation(final DID did, final InetSocketAddress zephyrSocketAddress) {
         Preconditions.checkState(zephyrSocketAddress != null);
@@ -54,9 +53,6 @@ public class ZephyrPresenceLocation implements IPresenceLocation
 
     @Override
     public DID did() { return did; }
-
-    @Override
-    public int version() { return VERSION; }
 
     @Override
     public boolean equals(Object o) {

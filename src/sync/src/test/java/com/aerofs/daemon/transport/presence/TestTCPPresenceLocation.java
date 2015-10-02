@@ -12,6 +12,8 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+import static org.junit.Assert.assertEquals;
+
 public class TestTCPPresenceLocation extends AbstractTest
 {
     DID _did;
@@ -29,47 +31,19 @@ public class TestTCPPresenceLocation extends AbstractTest
     @Test
     public void shouldStoreValues() throws Exception
     {
-        Assert.assertEquals(location.transportType(), TransportType.LANTCP);
-        Assert.assertEquals(location.did(), _did);
-        Assert.assertEquals(location.socketAddress(), new InetSocketAddress(_host, _port));
+        assertEquals(location.transportType(), TransportType.LANTCP);
+        assertEquals(location.did(), _did);
+        assertEquals(location.socketAddress(), new InetSocketAddress(_host, _port));
     }
 
     @Test
     public void shouldExportLocation() throws Exception
     {
-        Assert.assertEquals(location.exportLocation(), _host + ":" + _port);
+        assertEquals(location.exportLocation(), _host + ":" + _port);
     }
 
     @Test
-    public void shouldExportJson() throws Exception
-    {
-        JsonObject json = location.toJson();
-        Assert.assertTrue(json.has("version"));
-        Assert.assertTrue(json.getAsJsonPrimitive("version").getAsInt() >= 100);
-
-        Assert.assertEquals(json.getAsJsonPrimitive("transport").getAsString(), TransportType.LANTCP.toString());
-        Assert.assertEquals(json.getAsJsonPrimitive("location").getAsString(), _host + ":" + _port);
-    }
-
-    @Test
-    /**
-     * This test is not specific to TCP
-     * and I am not sure where to put the tested method.
-     */
-    public void shouldCheckVersion()
-    {
-        Assert.assertTrue(IPresenceLocation.versionCompatible(100, 100));
-        Assert.assertTrue(IPresenceLocation.versionCompatible(105, 100));
-        Assert.assertTrue(IPresenceLocation.versionCompatible(120, 100));
-        Assert.assertTrue(IPresenceLocation.versionCompatible(199, 100));
-
-        Assert.assertTrue(IPresenceLocation.versionCompatible(200, 200));
-        Assert.assertTrue(IPresenceLocation.versionCompatible(223, 200));
-
-        Assert.assertFalse(IPresenceLocation.versionCompatible(300, 200));
-        Assert.assertFalse(IPresenceLocation.versionCompatible(300, 299));
-
-        // Not sure here, do we want updated client to accept old locations?
-        Assert.assertFalse(IPresenceLocation.versionCompatible(200, 300));
+    public void shouldParseExported() throws Exception {
+        assertEquals(location, TCPPresenceLocation.fromExportedLocation(_did, location.exportLocation()));
     }
 }

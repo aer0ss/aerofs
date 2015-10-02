@@ -13,10 +13,8 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -145,31 +143,6 @@ public class LinkStateService
         }
 
         return active;
-    }
-
-    /**
-     * Try to read and return the list of local IPs associated with the active interfaces
-     * This may return IPv6 addresses, and IP addresses associated with virtual networks (vboxnet0...)
-     */
-    public ArrayList<InetAddress> getCurrentIPs()
-    {
-        ArrayList<InetAddress> addresses = new ArrayList<>();
-
-        try {
-            ImmutableSet<NetworkInterface> interfaces = getActiveInterfaces();
-
-            for (NetworkInterface iface: interfaces){
-                for (Enumeration<InetAddress> e = iface.getInetAddresses(); e.hasMoreElements();) {
-                    addresses.add(e.nextElement());
-                }
-            }
-        } catch (SocketException e) {
-            l.warn("Error when retrieving the current IP addresses: SocketException " + e.getMessage());
-            // Failure to discover our IP addresses should not crash the daemon, as we can still use
-            // Zephyr to connect to other peers. So we just log the exception.
-        }
-
-        return addresses;
     }
 
     private void checkLinkState()

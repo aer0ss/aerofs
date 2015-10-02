@@ -5,8 +5,7 @@ import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.ids.DID;
 import com.google.common.base.Preconditions;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.net.*;
 
 /**
  * Presence locations are a structured way to represent where a given DID can be found
@@ -17,13 +16,25 @@ import java.net.InetSocketAddress;
 public class TCPPresenceLocation implements IPresenceLocation {
     private final DID _did;
     private final InetSocketAddress _socketAddress;
-    public final static int VERSION = 100;
 
     public TCPPresenceLocation(final DID did, final InetAddress IPAddress, final int listeningPort) {
         _did = did;
 
         // Build the list of socket addresses, from the IPs and the port
         _socketAddress = new InetSocketAddress(IPAddress, listeningPort);
+    }
+
+    public static TCPPresenceLocation fromExportedLocation(DID did, String location)
+            throws ExInvalidPresenceLocation
+    {
+        try {
+            URI uri = new URI("presence://" + location + "/");
+            return new TCPPresenceLocation(did, InetAddress.getByName(uri.getHost()), uri.getPort());
+        } catch (URISyntaxException |IllegalArgumentException e) {
+            throw new ExInvalidPresenceLocation("Malformed socket address " + location, e);
+        } catch (UnknownHostException e) {
+            throw new ExInvalidPresenceLocation("Unknown host in socket address " + location, e);
+        }
     }
 
     public TransportType transportType() { return TransportType.LANTCP; }
@@ -47,9 +58,6 @@ public class TCPPresenceLocation implements IPresenceLocation {
     public DID did() { return _did; }
 
     @Override
-    public int version() { return VERSION; }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -57,7 +65,6 @@ public class TCPPresenceLocation implements IPresenceLocation {
         TCPPresenceLocation that = (TCPPresenceLocation) o;
 
         if (_did != null ? !_did.equals(that.did()) : that.did() != null) return false;
-        if (VERSION != that.version()) return false;
         return !(_socketAddress != null ? !_socketAddress.equals(that.socketAddress()) : that.socketAddress() != null);
 
     }
