@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
-import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.DeletionStatus;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -62,6 +61,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(ds.getOANullable_(any(SOID.class))).thenReturn(oa);
         when(ds.getAliasedOANullable_(any(SOID.class))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
+        when(oa.parent()).thenReturn(OID.ROOT);
         when(ds.resolve_(oa)).thenReturn(new ResolvedPath(rootSID, ImmutableList.of(soid), ImmutableList.of("name")));
         when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
     }
@@ -80,6 +80,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(ds.getOANullable_(eq(soid))).thenReturn(oa);
         when(ds.getAliasedOANullable_(eq(soid))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
+        when(oa.parent()).thenReturn(OID.ROOT);
         SortedMap<KIndex, CA> cas = Maps.newTreeMap();
         if (flag == ObjectFlag.NO_CONTENT) {
             when(oa.isFile()).thenReturn(true);
@@ -170,11 +171,11 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         // Tell the executor that enough time has passed to delete the first 4 objects
         final long mockExecuteTime = System.currentTimeMillis() + TimeoutDeletionBuffer.TIMEOUT -
                                      timeoutDelay;
-        final DeletionStatus remainingUnheld = delBuffer.executeDeletion_(mockExecuteTime, t);
+        final int remainingUnheld = delBuffer.executeDeletion_(mockExecuteTime, t);
 
         // There should be some objects remaining that are unheld, but were not deleted as the
         // timeout did not elapse.
-        assertTrue(remainingUnheld == DeletionStatus.RESCHEDULE);
+        assertTrue((remainingUnheld & TimeoutDeletionBuffer.RESCHEDULE) != 0);
 
         // We should see the expected SOIDs were deleted
         for (SOID s : expectedDeletableSOIDs) {

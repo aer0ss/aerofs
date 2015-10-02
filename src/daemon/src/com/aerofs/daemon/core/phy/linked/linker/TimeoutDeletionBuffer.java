@@ -272,33 +272,31 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      */
     private boolean executeDeletion_() throws Exception
     {
-        DeletionStatus status;
+        boolean resched;
+        int status;
 
         do {
             try (Trans t = _tm.begin_()) {
                 status = executeDeletion_(System.currentTimeMillis(), t);
                 t.commit_();
             }
-        } while (status == DeletionStatus.CONTINUE);
+            resched = (status & RESCHEDULE) != 0;
+        } while ((status & CONTINUE) != 0);
 
-        return status == DeletionStatus.RESCHEDULE;
+        return resched;
     }
 
-    static enum DeletionStatus
-    {
-        DONE,           // no more object to delete
-        CONTINUE,       // more objects to delete immediately (in separate transaction)
-        RESCHEDULE      // more objects to delete in the future
-    }
+    static final int CONTINUE = 1;      // more objects to delete immediately (split trans)
+    static final int RESCHEDULE = 2;    // more objects to delete in the future
 
     private static final int MAX_DELETION_PER_TRANS = 1000;
 
     /**
      * N.B. this is only package-private so that TestTimeoutDeletionBuffer can access it
      */
-    DeletionStatus executeDeletion_(long currentTime, Trans t) throws Exception
+    int executeDeletion_(long currentTime, Trans t) throws Exception
     {
-        DeletionStatus status = DeletionStatus.DONE;
+        int status = 0;
         final List<SOID> deletedSOIDs = Lists.newLinkedList();
 
         for (Map.Entry<SOID, Long> entry : _scheduled.entrySet()) {
@@ -312,22 +310,18 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
             // split the transaction
             if (deletedSOIDs.size() > MAX_DELETION_PER_TRANS) {
-                status = DeletionStatus.CONTINUE;
+                status |= CONTINUE;
                 break;
             }
 
-            if (time <= currentTime) {
-                if (deleteLogicalObject_(soid, t)) {
-                    deletedSOIDs.add(soid);
-                }
+            if (time <= currentTime && deleteLogicalObject_(soid, t)) {
+                deletedSOIDs.add(soid);
             } else {
-                // This object has no holders, but its scheduled deletion time has not passed,
-                // so there are remaining unheld objects.
-                status = DeletionStatus.RESCHEDULE;
+                status |= RESCHEDULE;
             }
         }
 
-        // Remove the deleted SOIDSs from the buffer *after* all have been successfully deleted
+        // Remove the deleted SOIDs from the buffer *after* all have been successfully deleted
         // i.e. be sure the transaction will complete, before removing the SOIDs
         t.addListener_(new AbstractTransListener() {
             @Override
@@ -340,10 +334,10 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         return status;
     }
 
-
     private boolean deleteLogicalObject_(SOID soid, Trans t) throws Exception
     {
-        if (!_ds.hasOA_(soid)) {
+        OA oa = _ds.getOANullable_(soid);
+        if (oa == null) {
             // During the aliasing process, we rename the aliased folder,
             // move its contents to the target folder, then delete the aliased folder.
             // When the filesystem watcher observes this last deletion,
@@ -354,17 +348,29 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             // there is also a potential race condition between observing a deletion
             // in the scanner and the store disappearing altogether (lost ACLs)
             l.info("missing oa {} {}", soid, _ds.hasAliasedOA_(soid));
-            return false;
-        } else {
-            OA oa =  _ds.getOA_(soid);
-
-            if (physicalObjectDisappeared(oa)) {
-                l.info("delete {} {}", soid,
-                        oa.name());
-                _od.delete_(soid, PhysicalOp.MAP, t);
-            }
             return true;
         }
+        if (oa.isExpelled()) return true;
+        // files with no master branch should not appear in the deletion buffer
+        // but we need to be extra defensive here to avoid mistakenly propagating
+        // a deletion operation to remote nodes
+        if (oa.isFile() && oa.caMasterNullable() == null) return true;
+        // likewise, NROs should not appear in the deletion buffer but again we
+        // need to be extra defensive about deletions so we double check here
+        if (_rh.isNonRepresentable_(oa)) return true;
+
+        if (_scheduled.containsKey(new SOID(soid.sidx(), oa.parent()))) {
+            // delay deletion if the parent is also scheduled for deletion
+            // when an entire tree is deleted recursively we want to turn this in a single
+            // deletion of the top-level folder instead of deletion every object individually
+            l.debug("delay deletion {} under {}", soid, oa.parent());
+            return false;
+        }
+        if (physicalObjectDisappeared(oa)) {
+            l.info("delete {} {}", soid, oa.name());
+            _od.delete_(soid, PhysicalOp.MAP, t);
+        }
+        return true;
     }
 
     /**
@@ -382,15 +388,6 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      */
     private boolean physicalObjectDisappeared(OA oa) throws Exception
     {
-        if (oa.isExpelled()) return false;
-        // files with no master branch should not appear in the deletion buffer
-        // but we need to be extra defensive here to avoid mistakenly propagating
-        // a deletion operation to remote nodes
-        if (oa.isFile() && oa.caMasterNullable() == null) return false;
-        // likewise, NROs should not appear in the deletion buffer but again we
-        // need to be extra defensive about deletions so we double check here
-        if (_rh.isNonRepresentable_(oa)) return false;
-
         if (_il.isIgnored(oa.name())) return true;
 
         Path path = _ds.resolve_(oa);

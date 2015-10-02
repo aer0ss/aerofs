@@ -32,12 +32,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Iterator;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -185,7 +180,7 @@ class ScanSession
         // Initialization
         if (_stack == null) {
             if (l.isInfoEnabled()) {
-                l.info("[" + Joiner.on(", ").join(_sortedPCRoots) + "] " + _recursive);
+                l.info("[{}] {}", Joiner.on(", ").join(_sortedPCRoots), _recursive);
             }
             _stack = Lists.newLinkedList();
         } else {
@@ -263,29 +258,29 @@ class ScanSession
     private void addRootPathComboToStack_()
     {
         Iterator<PathCombo> iter = _sortedPCRoots.iterator();
-        if (iter.hasNext()) {
-            PathCombo pcRoot = iter.next();
-            while (!(pcRoot._path.isEmpty() || isScannableDir(pcRoot._absPath))) {
-                /*
-                 * In a perfect world this race condition could be safely ignored, however
-                 * nothing is ever quite that simple in this wretched world. One would think
-                 * that if a folder disappears we would be notified about it. To be fair, we
-                 * sort of are, just not necessarily the way the docs say it should happen...
-                 *
-                 * On OSX deletion of folders should be reported as changes to be scanned in
-                 * the parent folders, which is mostly what happens, except sometimes we
-                 * instead get notifications of changes in the deleted folders and none for
-                 * the parent folders, in which case safety can only be achieved by forcing
-                 * a re-scan of the parent.
-                 */
-                l.warn("{} no longer a dir. go up", pcRoot._absPath);
-                pcRoot = pcRoot.parent();
-            }
-
-            iter.remove();
-            _stack.push(pcRoot);
+        if (!iter.hasNext()) return;
+        PathCombo pcRoot = iter.next();
+        while (!(pcRoot._path.isEmpty() || isScannableDir(pcRoot._absPath))) {
+            /*
+             * In a perfect world this race condition could be safely ignored, however
+             * nothing is ever quite that simple in this wretched world. One would think
+             * that if a folder disappears we would be notified about it. To be fair, we
+             * sort of are, just not necessarily the way the docs say it should happen...
+             *
+             * On OSX deletion of folders should be reported as changes to be scanned in
+             * the parent folders, which is mostly what happens, except sometimes we
+             * instead get notifications of changes in the deleted folders and none for
+             * the parent folders, in which case safety can only be achieved by forcing
+             * a re-scan of the parent.
+             */
+            l.warn("{} no longer a dir. go up", pcRoot._absPath);
+            pcRoot = pcRoot.parent();
         }
+        iter.remove();
+        _stack.push(pcRoot);
     }
+
+    private final Set<PathCombo> _scanned = new HashSet<>();
 
     /**
      * Scan physical objects under the specified parent folder, stack up child folders if needed.
@@ -295,6 +290,10 @@ class ScanSession
      */
     private int scan_(PathCombo pcParent, Trans t) throws Exception
     {
+        // a given path may not be scanned twice in the same ScanSession
+        // otherwise children would be held twice in TimeoutDeletionBuffer, triggering an AE
+        if (!_scanned.add(pcParent)) return 0;
+
         // empty path <=> physical root
         // make sure the tag file is kept correct for all physical roots
         if (pcParent._path.isEmpty()) {
@@ -393,7 +392,7 @@ class ScanSession
             return false;
         }
 
-        if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
+        l.info("on {}:{}", soidParent, pcParent);
 
         OA oaParent = _f._ds.getOA_(soidParent);
         if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) {
@@ -443,24 +442,20 @@ class ScanSession
         }
 
         // add logical children to the deletion buffer
-        if (soidParent != null) {
-            IDBIterator<OID> it = _f._ds.listChildren_(soidParent);
-            try {
-                while (it.next_()) {
-                    SOID soid = new SOID(soidParent.sidx(), it.get_());
-                    OA oa = _f._ds.getOA_(soid);
-                    // avoid placing objects in deletion buffer if we know they won't appear in a scan:
-                    // 1. expelled objects
-                    // 2. files whose master branch was not successfully downloaded yet
-                    // 3. non-representable objects
-                    if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
-                        l.debug("hold_ on {}", soid);
-                        _holder.hold_(soid);
-                    }
-                    _f._pi.incrementMonotonicProgress();
+        if (soidParent == null) return;
+        try (IDBIterator<OID> it = _f._ds.listChildren_(soidParent)) {
+            while (it.next_()) {
+                SOID soid = new SOID(soidParent.sidx(), it.get_());
+                OA oa = _f._ds.getOA_(soid);
+                // avoid placing objects in deletion buffer if we know they won't appear in a scan:
+                // 1. expelled objects
+                // 2. files whose master branch was not successfully downloaded yet
+                // 3. non-representable objects
+                if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable_(oa))) {
+                    l.debug("hold_ on {}", soid);
+                    _holder.hold_(soid);
                 }
-            } finally {
-                it.close_();
+                _f._pi.incrementMonotonicProgress();
             }
         }
     }
