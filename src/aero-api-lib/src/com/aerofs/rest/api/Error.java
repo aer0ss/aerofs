@@ -19,6 +19,7 @@ public class Error
         INTERNAL_ERROR,
         TOO_MANY_REQUESTS,
         INSUFFICIENT_STORAGE,
+        NOT_IMPLEMENTED
     }
 
     // machine-readable descriptor

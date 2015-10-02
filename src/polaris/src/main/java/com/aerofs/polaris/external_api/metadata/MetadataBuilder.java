@@ -504,6 +504,18 @@ public class MetadataBuilder
         if (fromParent == null) {
             throw new NotFoundException(oid);
         }
+
+        // TODO(AS): Temp remove when cross store file moves are supported.
+        if (objectStore.isFile(dao.objectTypes.get(oid)) &&
+                !objectStore.getStore(dao, fromParent).equals(objectStore.getStore(dao, toParent))) {
+            throw new WebApplicationException(Response
+                    .status(Response.Status.NOT_IMPLEMENTED)
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .entity(new Error(Error.Type.NOT_IMPLEMENTED,
+                            "Cannot move a file from one shared folder to another currently."))
+                    .build());
+        }
+
         l.info("Move object {} from {} to {}", name, fromParent, toParent);
         OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
