@@ -2,6 +2,8 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
+import com.aerofs.base.BaseLogUtil;
+import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.batch.location.LocationBatch;
 import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
 import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
@@ -43,8 +45,13 @@ public final class LocationBatchResource {
                 objectStore.performLocationUpdate(principal.getUser(), operation.locationUpdateType, operation.oid, operation.version, operation.did);
                 results.add(new LocationBatchOperationResult());
             } catch (Exception e) {
+                Throwable cause = Resources.rootCause(e);
                 LocationBatchOperationResult result = new LocationBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
-                LOGGER.warn("fail location batch operation {}", operation, e);
+                if (cause instanceof PolarisException || cause instanceof IllegalArgumentException) {
+                    LOGGER.info("fail location batch operation {}", operation, BaseLogUtil.suppress(cause));
+                } else {
+                    LOGGER.warn("unexpected fail location batch operation {}", operation, cause);
+                }
                 results.add(result);
                 break; // abort batch processing early
             }

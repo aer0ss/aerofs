@@ -2,7 +2,10 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
+import com.aerofs.base.BaseLogUtil;
+import com.aerofs.baseline.db.Databases;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.batch.transform.TransformBatch;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
@@ -12,6 +15,7 @@ import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.skife.jdbi.v2.exceptions.DBIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +57,13 @@ public final class TransformBatchResource {
                 results.add(new TransformBatchOperationResult(result));
                 result.updated.stream().collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max)).forEach((k, v) -> updatedStores.merge(k, v, Math::max));
             } catch (Exception e) {
-                TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(e));
-                LOGGER.warn("fail transform batch operation {}", operation, e);
+                Throwable cause = Resources.rootCause(e);
+                TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(cause));
+                if (cause instanceof PolarisException || cause instanceof IllegalArgumentException) {
+                    LOGGER.info("fail transform batch operation {}", operation, BaseLogUtil.suppress(cause));
+                } else {
+                    LOGGER.warn("unexpected fail transform batch operation {}", operation, cause);
+                }
                 results.add(result);
                 break; // abort early if a batch operation fails
             }

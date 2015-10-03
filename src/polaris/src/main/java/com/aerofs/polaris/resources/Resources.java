@@ -8,11 +8,16 @@ import org.skife.jdbi.v2.exceptions.DBIException;
 
 abstract class Resources {
 
+    static Throwable rootCause(Throwable e) {
+        if (e instanceof DBIException) {
+            return Databases.findExceptionRootCause((DBIException) e);
+        }
+        return e;
+    }
+
     static BatchError getBatchErrorFromThrowable(Throwable cause) {
         // first, extract the underlying cause if it's an error within DBI
-        if (cause instanceof DBIException) {
-            cause = Databases.findExceptionRootCause((DBIException) cause);
-        }
+        cause = rootCause(cause);
 
         // then, find the exact error code and message
         if (cause instanceof PolarisException) {
