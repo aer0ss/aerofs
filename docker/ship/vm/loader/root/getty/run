@@ -2,6 +2,7 @@
 # No set -e. We display errors ourselves.
 
 STATIC_NETWORK_FILE=/etc/systemd/network/10-ship-static.network
+CLOUD_CONFIG_FILE=/usr/share/oem/cloud-config.yml
 
 function default_iface() {
     # Example output: enp0s17.
@@ -119,6 +120,18 @@ END
     done
 }
 
+function add_dns_nameservers_to_cloud_config_file(){
+    docker_opts_dns_entries=""
+    dns_nameservers=$(grep "DNS" ${STATIC_NETWORK_FILE}| sed "s/DNS=//g" | tr "\n" " ")
+
+    for nameserver in ${dns_nameservers}
+    do
+        docker_opts_dns_entries+=" --dns=${nameserver}"
+    done
+
+    sed -i "/DOCKER_OPTS=/ s/'$/${docker_opts_dns_entries}'/" ${CLOUD_CONFIG_FILE}
+}
+
 function delete_all_ipv4_addresses_of() {
     [[ "$1" ]] || return
     while true; do
@@ -127,18 +140,25 @@ function delete_all_ipv4_addresses_of() {
     done
 }
 
+function delete_all_dns_nameservers() {
+    sed -i "s/[ ]--dns=.[^ ']*//g" ${CLOUD_CONFIG_FILE} 
+}
+
 function interact() {
     local INPUT && read INPUT
     case "$INPUT" in
     1)
         rm -f ${STATIC_NETWORK_FILE}
         delete_all_ipv4_addresses_of $(default_iface)
-        systemctl restart systemd-networkd && cecho "DHCP is configured."
+	delete_all_dns_nameservers
+	systemctl reboot 
         ;;
     2)
-        write_static_network_file
-        delete_all_ipv4_addresses_of $(default_iface)
-        systemctl restart systemd-networkd && cecho "Static networking is configured."
+	write_static_network_file
+	delete_all_ipv4_addresses_of $(default_iface)
+	delete_all_dns_nameservers
+	add_dns_nameservers_to_cloud_config_file
+	systemctl reboot
         ;;
     3)
         systemctl reboot
