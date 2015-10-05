@@ -8,12 +8,13 @@ import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.AsyncEmailSender;
-import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.*;
+import com.aerofs.trifrost.resources.ApiListingResource;
 import com.aerofs.trifrost.resources.AuthResource;
 import com.aerofs.trifrost.resources.DeviceResource;
 import com.aerofs.trifrost.resources.InviteResource;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import io.swagger.jaxrs.config.BeanConfig;
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.skife.jdbi.v2.DBI;
@@ -66,6 +67,7 @@ public class Trifrost extends Service<TrifrostConfiguration> {
             }
         });
 
+
         // setup authentication
         environment.addAuthenticator(new HttpBasicAuthenticator(dbi));
 
@@ -80,6 +82,25 @@ public class Trifrost extends Service<TrifrostConfiguration> {
         environment.addResource(AuthResource.class);
         environment.addResource(DeviceResource.class);
         environment.addResource(InviteResource.class);
+
+        if (configuration.isSwaggerEnabled()) {
+            BeanConfig beanConfig = new BeanConfig();
+            beanConfig.setTitle("Trifrost");
+            beanConfig.setVersion("1.0");
+            beanConfig.setSchemes(new String[]{"https"});
+            beanConfig.setHost("share.syncfs.com");
+            beanConfig.setBasePath("/messaging");
+            beanConfig.setResourcePackage("com.aerofs.trifrost.resources");
+            beanConfig.setScan(true);
+            beanConfig.setDescription("Message services for user management");
+            environment.addResource(io.swagger.jaxrs.listing.SwaggerSerializers.class);
+            // FIXME: A bug exists in swagger up to and including 1.5.3; ApiListingResource dies with NPE
+            // in our environment. Until that is fixed, we hack around it with our own ApiListing resource.
+            // When the bug is fixed, remove this class and use the swagger ApiListingResource.
+            // BUG: https://github.com/swagger-api/swagger-core/issues/1103
+            // environment.addResource(io.swagger.jaxrs.listing.ApiListingResource.class);
+            environment.addResource(ApiListingResource.class);
+        }
     }
 
     protected void initConfigProperties() throws Exception {

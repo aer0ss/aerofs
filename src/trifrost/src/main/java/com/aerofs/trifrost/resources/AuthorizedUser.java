@@ -1,4 +1,4 @@
-package com.aerofs.trifrost.model;
+package com.aerofs.trifrost.resources;
 
 /**
  */

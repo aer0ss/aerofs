@@ -17,6 +17,9 @@ public final class TrifrostConfiguration extends Configuration {
     @NotBlank
     private String deploymentSecretPath = Constants.DEPLOYMENT_SECRET_ABSOLUTE_PATH;
 
+    @Valid
+    private boolean swaggerEnabled = false;
+
     public DatabaseConfiguration getDatabase() {
         return database;
     }
@@ -39,5 +42,13 @@ public final class TrifrostConfiguration extends Configuration {
 
     public void setDeploymentSecretPath(String deploymentSecretPath) {
         this.deploymentSecretPath = deploymentSecretPath;
+    }
+
+    public boolean isSwaggerEnabled() {
+        return swaggerEnabled;
+    }
+
+    public void setSwaggerEnabled(boolean swaggerEnabled) {
+        this.swaggerEnabled = swaggerEnabled;
     }
 }

@@ -8,10 +8,10 @@ import com.aerofs.trifrost.base.InvalidCodeException;
 import com.aerofs.trifrost.base.UniqueID;
 import com.aerofs.trifrost.base.UniqueIDGenerator;
 import com.aerofs.trifrost.db.*;
-import com.aerofs.trifrost.model.AuthorizedUser;
-import com.aerofs.trifrost.api.VerifiedDevice;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +26,11 @@ import java.util.Date;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
-/**
- * Resource for signing and registering a device for push notification.
- */
 @Path("/auth")
 @PermitAll
+@Api(value = "user authorization",
+        produces = "application/json",
+        consumes = "application/json")
 public final class AuthResource {
     private static final Logger logger = LoggerFactory.getLogger(AuthResource.class);
     private static final Device DEFAULT_DEVICE = new Device("", "");
@@ -42,7 +42,6 @@ public final class AuthResource {
     private final String MAIL_FROM_NAME = getStringProperty("labeling.brand", "AeroFS");
     private final String MAIL_FROM_ADDR = getStringProperty("base.www.support_email_address", "");
 
-
     public AuthResource(@Context DBI dbi,
                         @Context AbstractEmailSender mailSender,
                         @Context UnifiedPushConfiguration unifiedPushConfiguration,
@@ -52,13 +51,14 @@ public final class AuthResource {
         this.uniq = uniqueID;
     }
 
-    /**
-     * Request a verification code be sent to the given email address.
-     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/auth_code")
+    @ApiOperation(
+            value = "Request a verification code by email",
+            notes = "Initiate the sign-in process by requesting a unique verification code by email"
+    )
     public Response requestVerification(final EmailAddress claimedEmail) {
         return dbi.inTransaction((conn, status) -> {
             VerificationCodes codes = conn.attach(VerificationCodes.class);
@@ -66,28 +66,34 @@ public final class AuthResource {
             char[] authCodeCh = uniq.generateOneTimeCode();
             String authCode = new String(authCodeCh);
 
-            codes.add(claimedEmail.getEmail(), authCode, new Date().getTime());
+            codes.add(claimedEmail.email, authCode, new Date().getTime());
 
             mailSender.sendPublicEmail(MAIL_FROM_ADDR, MAIL_FROM_NAME,
-                    claimedEmail.getEmail(),
+                    claimedEmail.email,
                     null,
                     "Your AeroIM code is " + authCode,
                     "Here be two snowmans: ☃ ☃",
                     null);
 
-            logger.info("verification code {} for user {}", authCode, claimedEmail.getEmail());
+            logger.info("verification code {} for user {}", authCode, claimedEmail.email);
             return Response.ok().build();
         });
     }
 
-    /**
-     */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/token")
+    @ApiOperation(
+            value = "Create a new access token",
+            notes = "Complete the sign-in process and create a new access token for the given user.\n\n" +
+                    "This endpoint supports two mechanisms to prove identity; .\n\n" +
+                    "The `grant_type` body parameter is required, and chooses between the two supported " +
+                    "identity-verification mechanisms: a single-use, emailed auth code (" +
+                    "created by the `auth/auth_code` route) or a previously-issued refresh token.\n\n" +
+                    "On successful verification, an access token and refresh token will be issued."
+    )
     public VerifiedDevice verifyDevice(final DeviceAuthentication auth) {
-
         if (auth.grantType == null) {
             throw new BadRequestException("grant type must be specified");
         }
@@ -108,16 +114,16 @@ public final class AuthResource {
         return handleAuthCode(auth);
     }
 
-    // clear all auth tokens associated with this refresh token
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/refresh")
-    public Response invalidateRefresh(
+    @ApiOperation(value = "clear all auth tokens",
+            notes = "Invalidate the given refresh tokens as well as any access tokens that were issued with it."
+    )
+    public Response invalidateTokens(
             @Context AuthorizedUser authorizedUser,
-            RefreshToken provided)
-    {
-
+            RefreshToken provided) {
         Preconditions.checkNotNull(authorizedUser);
 
         return dbi.inTransaction((conn, status) -> {

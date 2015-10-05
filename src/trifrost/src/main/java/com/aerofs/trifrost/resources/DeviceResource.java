@@ -2,16 +2,17 @@ package com.aerofs.trifrost.resources;
 
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.trifrost.UnifiedPushConfiguration;
-import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.api.Device;
+import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.DeviceNotFoundException;
 import com.aerofs.trifrost.base.UniqueIDGenerator;
 import com.aerofs.trifrost.base.UserNotAuthorizedException;
 import com.aerofs.trifrost.db.Devices;
-import com.aerofs.trifrost.model.AuthorizedUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 import org.skife.jdbi.v2.DBI;
@@ -32,15 +33,18 @@ import java.util.HashMap;
  */
 @Path("/devices")
 @PermitAll
+@Api(value = "device parameters",
+        produces = "application/json",
+        consumes = "application/json")
 public class DeviceResource {
+    private static final Logger logger = LoggerFactory.getLogger(AuthResource.class);
     private final DBI dbi;
     private final UnifiedPushConfiguration unifiedPushConfiguration;
-    private static final Logger logger = LoggerFactory.getLogger(AuthResource.class);
 
     public DeviceResource(@Context DBI dbi,
-                        @Context AbstractEmailSender mailSender,
-                        @Context UnifiedPushConfiguration unifiedPushConfiguration,
-                        @Context UniqueIDGenerator uniqueID) throws IOException {
+                          @Context AbstractEmailSender mailSender,
+                          @Context UnifiedPushConfiguration unifiedPushConfiguration,
+                          @Context UniqueIDGenerator uniqueID) throws IOException {
         this.dbi = dbi;
         this.unifiedPushConfiguration = unifiedPushConfiguration;
     }
@@ -50,6 +54,10 @@ public class DeviceResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{deviceid}")
+    @ApiOperation(value = "Register for push notification",
+            notes = "Update device parameters (name and family), or register for push notification services.\n\n" +
+                    "see the Device model for more information; APNS and GCM registration are currently supported."
+    )
     public Response updateDevice(
             @PathParam("deviceid") final String deviceId,
             @NotNull Device update,

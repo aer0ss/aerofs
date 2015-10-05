@@ -1,6 +1,6 @@
 package com.aerofs.trifrost;
 
-import com.aerofs.trifrost.model.AuthorizedUser;
+import com.aerofs.trifrost.resources.AuthorizedUser;
 import com.google.common.base.Preconditions;
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;

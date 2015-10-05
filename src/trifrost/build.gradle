@@ -13,6 +13,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.3.2'
     compile 'org.apache.httpcomponents:httpclient:4.4'
     compile 'org.apache.httpcomponents:fluent-hc:4.4-beta1'
+    compile 'io.swagger:swagger-jersey2-jaxrs:1.5.0'
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile project(':src/aero-auth')
     compile project(':src/libservlet')

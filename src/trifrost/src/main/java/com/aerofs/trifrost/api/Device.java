@@ -1,20 +1,24 @@
 package com.aerofs.trifrost.api;
 
 import com.google.common.base.Strings;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.constraints.NotNull;
 
 public class Device {
     @NotNull
+    @ApiModelProperty("device name, unique per user")
     public String name;
     @NotNull
+    @ApiModelProperty("general category (ios, android, web)")
     public String family;
+    @ApiModelProperty("must be one of 'apns', 'gcm'")
     public PushType pushType;
+    @ApiModelProperty("required if push_type is provided")
     public String pushToken;
 
-    public static enum PushType {
+    public enum PushType {
         APNS, GCM, NONE;
-
         @Override
         public String toString () {
             return name().toLowerCase();
@@ -36,7 +40,8 @@ public class Device {
         }
     }
 
-    private Device() { /* Jackson compat */ }
+    @SuppressWarnings("unused") // Jackson compatibility
+    private Device() { }
 
     public String getName() {
         return name;
