@@ -42,11 +42,10 @@ As a AeroIM user, I can:
 10. Tag someone.
 11. **Know who has AeroIM open at the time.**
 12. Lnow who is part of a group conversation.
-13. **Know if someone was invited into a group.**
-14. **Know if someone joined a public group.**
+13. **Know if someone joined or was added to a group.**
 14. **Know if someone was removed from a group.**
 15. **Know if someone left a group.**
-13. Know the contact's email address.
+16. Know the contact's email address.
 
 ### Be Notified
 
@@ -54,7 +53,7 @@ As a AeroIM user, I can:
 	1. **(A new message is sent to me, or**
 	2. **A message is sent to a private group I am part of), and**
 	3. **The user is not actively looking at the conversation where the message appears.**
-2. **Teceive a notification when I am tagged in a public group conversation.**
+2. **Receive a notification when I am tagged in a public group conversation.**
 3. Receive a notification when I join a conversation.
 4. Receive a notification when I leave a conversation.
 
