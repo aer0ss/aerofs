@@ -163,7 +163,7 @@ We require that you use either an IDE or a language validator to check syntax an
 ## Install VM tools
 
 * `vagrant` may be found [here](http://www.vagrantup.com)
-* `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Required version: 4.2.16).
+* `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Required version: 4.3.28).
 
 ## Install Mono MDK
 
