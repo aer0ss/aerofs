@@ -211,7 +211,7 @@ Setup docker environment the first time:
      # Display the documentation
      dk-help
      dk-create-vm
-     docker-machine upgrade
+     docker-machine upgrade docker-dev
 
 The default toolchain uses docker-machine. Raw docker is only partially supported at this time.
 If you want to use raw docker you will need to add `--dns 172.17.42.1` to the docker daemon options
