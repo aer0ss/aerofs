@@ -127,9 +127,12 @@ User should make the least effort possible to (in this order):
 
 ### Platform-specific Optimizations
 
-Desktop:
+#### Desktop
+
 1. copy paste a screenshot.
-iOS:
+
+#### iOS
+
 1. upload a picture from library or camera.
 
 # Exclusion From Beta
