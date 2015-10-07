@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.expel;
 
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.ContentVersionControl;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.IContentVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -78,12 +78,12 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
     private final static Logger l = Loggers.getLogger(LogicalStagingArea.class);
 
     private final DirectoryService _ds;
-    private final ContentVersionControl _cvc;
+    private final IContentVersionControl _cvc;
     private final PrefixVersionControl _pvc;
 
     @Inject
     public LogicalStagingArea(DirectoryService ds, IPhysicalStorage ps,
-            ContentVersionControl cvc, PrefixVersionControl pvc, LogicalStagingAreaDatabase sadb,
+            IContentVersionControl cvc, PrefixVersionControl pvc, LogicalStagingAreaDatabase sadb,
             CoreScheduler sched, IMapSIndex2SID sidx2sid, StoreDeletionOperators sdo,
             TransManager tm)
     {

@@ -136,12 +136,14 @@ public class CoreModule extends AbstractModule
 
             bind(Store.Factory.class).to(PolarisStore.Factory.class);
 
+            bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
             // client/SA behavioral differences
             bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
             bind(IContentDownloads.class).to(Downloads.class);
             bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
         } else {
             bind(Store.Factory.class).to(LegacyStore.Factory.class);
+            bind(IContentVersionControl.class).to(LegacyContentVersionControl.class);
         }
 
         multibind(binder(), HealthCheckService.ScheduledRunnable.class, CoreProgressWatcher.class);

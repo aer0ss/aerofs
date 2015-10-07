@@ -4,10 +4,8 @@
 
 package com.aerofs.daemon.core.expel;
 
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.daemon.core.ContentVersionControl;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.IContentVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -19,6 +17,8 @@ import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
@@ -42,27 +42,18 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 public class TestLogicalStagingArea extends AbstractTest
 {
     @Mock DirectoryService ds;
     @Mock IPhysicalStorage ps;
-    @Mock ContentVersionControl cvc;
+    @Mock IContentVersionControl cvc;
     @Mock PrefixVersionControl pvc;
     @Mock CoreScheduler sched;
     @Mock TransManager tm;
