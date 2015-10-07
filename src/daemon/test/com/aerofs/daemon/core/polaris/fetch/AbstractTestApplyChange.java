@@ -2,7 +2,9 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.TimerUtil;
+import com.aerofs.daemon.core.IContentVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -210,6 +212,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
                 bind(IContentDownloads.class).to(Downloads.class);
                 bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
+                bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
 
                 bind(Timer.class).toInstance(TimerUtil.getGlobalTimer());
 
