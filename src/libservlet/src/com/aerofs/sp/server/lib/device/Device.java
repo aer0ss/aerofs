@@ -141,15 +141,10 @@ public class Device
         return _f._factCert.list(_id);
     }
 
-    public boolean hasValidCertWithSerial(long serial)
+    public boolean isUnlinked()
             throws ExInvalidID, SQLException, ExNotFound
     {
-        for (Certificate cert : certificates()) {
-            if (cert.serial() == serial) {
-                return !cert.isRevoked();
-            }
-        }
-        return false;
+        return _f._db.isUnlinked(_id);
     }
 
     public void setName(String name)

@@ -547,30 +547,29 @@ public class User
     public void throwIfBadCertificate(CertificateAuthenticator certauth, Device device)
             throws SQLException, ExBadCredential, ExNotFound, ExInvalidID
     {
-        if (!certauth.isAuthenticated())
-        {
-            l.warn(toString() + ": cert not authenticated");
+        if (!certauth.isAuthenticated()) {
+            l.warn("{}: cert not authenticated", toString());
             throw new ExBadCredential();
         }
 
-        l.info("SI (cert): " + toString() + ":" + device.id().toStringFormal());
+        l.info("SI (cert): {}:{}", toString(), device.id().toStringFormal());
 
         String actualCName = certauth.getCName();
         String expectedCName = BaseSecUtil.getCertificateCName(id(), device.id());
 
         // Can happen if one user is impersonating another user.
         if (!actualCName.equals(expectedCName)) {
-            l.error(toString() + ": wrong cname actual=" + actualCName + " expected=" + expectedCName);
+            l.error("{}: wrong cname actual={} epxected={}", toString(), actualCName, expectedCName);
             throw new ExBadCredential();
         }
 
-        if (!device.hasValidCertWithSerial(certauth.getSerial())) {
-            l.warn(toString() + ": cert revoked");
+        if (device.isUnlinked()) {
+            l.warn("{}: device unlinked", toString());
             throw new ExBadCredential();
         }
 
         if (!device.getOwner().equals(this)) {
-            l.warn(toString() + ": device does not belong to user.");
+            l.warn("{}: device does not belong to user.", toString());
             throw new ExBadCredential();
         }
     }

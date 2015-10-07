@@ -120,7 +120,7 @@ service SPService {
     //   ExAlreadyExist if the email address is already a member of that organization.
     //   ExAlreadyInvited if the user has already been invited to the organization but has not yet
     //                  accepted the invitation.
-     rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
+    rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
     // Accept an organization invitation and move the caller into that organization. Makes
     // appropriate ACL updates to allow for Team Server sync.
@@ -145,6 +145,7 @@ service SPService {
     rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(Void);
 
     // this call was RemoveUserFromOrganization and is now removed.
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove
     rpc Noop(Void) returns(Void);
 
     // Shares a folder with another user.
@@ -305,14 +306,13 @@ service SPService {
     // Throws: ExNotFound if the user is not a member or pending user of the specified folder
     rpc DeleteACL(DeleteACLCall) returns (Void);
 
-    // Get the certificate revocations relevant to a specific user, based on the certificate
-    // revocation list epoch number.
-    //
-    // Required Auth Level: user
-    rpc GetUserCRL(GetUserCRLCall) returns(GetUserCRLReply);
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove
+    // used to be GetUserCRL
+    rpc Noop2(GetUserCRLCall) returns(Void);
 
-    // Get global (full, non-user specific) certificate revocation list.
-    rpc GetCRL(Void) returns(GetCRLReply);
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove
+    // used to be GetCRL
+    rpc Noop3(Void) returns(Void);
 
     // Revoke the certificate of a specific device and optionally erase AeroFS files from the
     // device. This will trigger a ssmp notification for the CRL.
@@ -1178,17 +1178,9 @@ message ChangePasswordCall {
     required bytes new_credentials = 2;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove
 message GetUserCRLCall {
     required uint64 crl_epoch = 1;
-}
-
-message GetUserCRLReply {
-    required uint64 crl_epoch = 1;
-    repeated uint64 serial = 2;
-}
-
-message GetCRLReply {
-    repeated uint64 serial = 1;
 }
 
 message UnlinkDeviceCall {

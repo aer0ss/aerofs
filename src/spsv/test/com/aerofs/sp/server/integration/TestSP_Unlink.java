@@ -5,15 +5,12 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.sp.server.lib.device.Device;
-import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,8 +19,6 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
 /**
  * A class to test unlinking operations on SP.
@@ -64,10 +59,7 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         // Follow a typical certify-revoke cycle.
         service.unlinkDevice(BaseUtil.toPB(device.id()), false);
 
-        // Verify that only one certificate has been revoked, as expected.
-        GetCRLReply reply = service.getCRL().get();
-        assertTrue(reply.getSerialList().size() == 1);
-        assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
+        // TODO: verify device revocation, once enforced
     }
 
     @Test
@@ -117,18 +109,9 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
     public void shouldGetFullCRLSuccessfullyAfterOneRevocation()
             throws Exception
     {
-        GetCRLReply reply;
-
-        // Initially the list is empty...
-        reply = service.getCRL().get();
-        assertTrue(reply.getSerialList().size() == 0);
+        // TODO: verify device revocation, once implemented
 
         service.unlinkDevice(BaseUtil.toPB(device.id()), false);
-
-        // And after one revocation, the list will be of length 1.
-        reply = service.getCRL().get();
-        assertTrue(reply.getSerialList().size() == 1);
-        assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
     }
 
     @Test

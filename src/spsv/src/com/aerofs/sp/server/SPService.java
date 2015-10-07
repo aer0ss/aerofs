@@ -3098,34 +3098,17 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<GetUserCRLReply> getUserCRL(final Long crlEpoch)
+    public ListenableFuture<Void> noop2(final Long crlEpoch)
         throws Exception
     {
-        throw new UnsupportedOperationException();
-
-        // TODO finish this...
-
-        /*GetUserCRLReply reply = GetUserCRLReply.newBuilder()
-                .setCrlEpoch(0L)
-                .build();
-        return createReply(reply);*/
+        throw new ExProtocolError("GetUserCRL has been removed");
     }
 
     @Override
-    public ListenableFuture<GetCRLReply> getCRL()
+    public ListenableFuture<Void> noop3()
         throws Exception
     {
-        ImmutableList<Long> crl;
-
-        _sqlTrans.begin();
-        crl = _certdb.getCRL();
-        _sqlTrans.commit();
-
-        GetCRLReply reply = GetCRLReply.newBuilder()
-                .addAllSerial(crl)
-                .build();
-
-        return createReply(reply);
+        throw new ExProtocolError("GetCRL has been removed");
     }
 
     @Override

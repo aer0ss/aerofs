@@ -84,6 +84,14 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
+    public boolean isUnlinked(DID did) throws SQLException, ExNotFound {
+        try (PreparedStatement ps = queryDevice(did, C_DEVICE_UNLINKED);
+             ResultSet rs = ps.executeQuery()) {
+            throwIfEmptyResultSet(rs, did);
+            return rs.getBoolean(1);
+        }
+    }
+
     public boolean hasDevice(DID did)
             throws SQLException
     {
