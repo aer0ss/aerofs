@@ -10,9 +10,7 @@ public class SendableContent {
     final SOKID sokid;
     final long mtime;
     final long length;
-    final
-    @Nullable
-    ContentHash hash;
+    final @Nullable ContentHash hash;
     final IPhysicalFile pf;
 
     public SendableContent(SOKID sokid, long mtime, long length, @Nullable ContentHash hash, IPhysicalFile pf) {

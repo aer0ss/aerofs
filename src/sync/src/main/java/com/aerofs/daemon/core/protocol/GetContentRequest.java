@@ -28,7 +28,6 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBCore;
@@ -194,8 +193,17 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
             prefix = null;
         }
 
-        ContentHash h = _contentSender.send_(msg.ep(), _provider.content(k), prefix, bdCore, bd);
-        // TODO: hash validation
+        SendableContent c = _provider.content(k);
+        ContentHash h = _contentSender.send_(msg.ep(), c, prefix, bdCore, bd);
+        if (!h.equals(c.hash)) {
+            // well, shit.
+            // The hash mismatch might be a transient race condition that will be resolved shortly
+            // by filesystem notifications. It may however be a sign of something more sinister,
+            // like broken filesystem notifications, or aggravating users making multiple changes
+            // to the same file within the same second without changing the size.
+            // To be on the safe side we need to re-hash the file
+            c.pf.onContentHashMismatch_();
+        }
 
         _oel.log_(CONTENT_COMPLETION, k.soid(), msg.did());
     }
