@@ -187,7 +187,7 @@ public final class TestAeroDeviceCertAuthenticator {
     }
 
     @Test
-    public void shouldGet403IfVerifyHeaderDoesNotHaveSuccessValue() throws IOException {
+    public void shouldGet401IfVerifyHeaderDoesNotHaveSuccessValue() throws IOException {
         HttpGet get = new HttpGet(server.getServiceURL() + "/r2");
         get.addHeader(HttpHeaders.AUTHORIZATION, getAuthHeaderValue(USERID, DEVICE));
         get.addHeader(AeroDeviceCert.AERO_VERIFY_HEADER, "FAILED");
@@ -196,29 +196,29 @@ public final class TestAeroDeviceCertAuthenticator {
         // note that although the values are correct, we trust nginx to properly populate the VERIFY header
 
         HttpResponse response = client.execute(get);
-        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_FORBIDDEN));
+        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_UNAUTHORIZED));
     }
 
     @Test
-    public void shouldGet403IfUserAndDeviceRetrievedFromCertDoesNotMatchTheOnesInTheHeader0() throws IOException {
+    public void shouldGet401IfUserAndDeviceRetrievedFromCertDoesNotMatchTheOnesInTheHeader0() throws IOException {
         HttpGet get = new HttpGet(server.getServiceURL() + "/r0");
         get.addHeader(HttpHeaders.AUTHORIZATION, getAuthHeaderValue("jon@aerofs.com", DEVICE)); // report that we are jon@aerofs.com
         get.addHeader(AeroDeviceCert.AERO_VERIFY_HEADER, AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE);
         get.addHeader(AeroDeviceCert.AERO_DNAME_HEADER, getDNameHeaderValue(USERID, DEVICE)); // but cname is actually for allen@aerofs.com
 
         HttpResponse response = client.execute(get);
-        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_FORBIDDEN));
+        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_UNAUTHORIZED));
     }
 
     @Test
-    public void shouldGet403IfUserAndDeviceRetrievedFromCertDoesNotMatchTheOnesInTheHeader1() throws IOException {
+    public void shouldGet401IfUserAndDeviceRetrievedFromCertDoesNotMatchTheOnesInTheHeader1() throws IOException {
         HttpGet get = new HttpGet(server.getServiceURL() + "/r0");
         get.addHeader(HttpHeaders.AUTHORIZATION, getAuthHeaderValue(USERID, "acf5cdf7876af1610ddf7fef16d559c2")); // report that we are have a different device than the one in the cname
         get.addHeader(AeroDeviceCert.AERO_VERIFY_HEADER, AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE);
         get.addHeader(AeroDeviceCert.AERO_DNAME_HEADER, getDNameHeaderValue(USERID, DEVICE)); // but cname is for USERID, DEVICE
 
         HttpResponse response = client.execute(get);
-        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_FORBIDDEN));
+        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_UNAUTHORIZED));
     }
 
     @Test

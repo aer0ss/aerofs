@@ -182,12 +182,12 @@ public final class TestAeroDelegatedUserDeviceAuthenticator {
     }
 
     @Test
-    public void shouldGet403IfDeploymentSecretInRequestIsIncorrect() throws IOException {
+    public void shouldGet401IfDeploymentSecretInRequestIsIncorrect() throws IOException {
         HttpGet get = new HttpGet(server.getServiceURL() + "/r0");
         get.addHeader(HttpHeaders.AUTHORIZATION, getAuthHeaderValue(SERVICE, "337c0ef46f232e9f41117eed8c0791a9", USERID, DEVICE)); // deployment secret has correct format, but wrong value
 
         HttpResponse response = client.execute(get);
-        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_FORBIDDEN));
+        assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.SC_UNAUTHORIZED));
     }
 
     @Test

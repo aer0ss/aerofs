@@ -24,26 +24,26 @@ public final class TestAuth extends AbstractRestTest
     }
 
     @Test
-    public void shouldReturn403WhenAccessTokenInvalid() throws Exception
+    public void shouldReturn401WhenAccessTokenInvalid() throws Exception
     {
         OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "file");
         RestObject object = new RestObject(rootSID, file);
 
         givenInvalidToken()
         .expect()
-                .statusCode(403)
+                .statusCode(401)
         .when().get(PolarisTestServer.getApiFilesURL() + object.toStringFormal());
     }
 
     @Test
-    public void shouldReturn403WhenAccessTokenExpired() throws Exception
+    public void shouldReturn401WhenAccessTokenExpired() throws Exception
     {
         OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "file");
         RestObject object = new RestObject(rootSID, file);
 
         givenExpiredToken()
         .expect()
-                .statusCode(403)
+                .statusCode(401)
         .when().get(PolarisTestServer.getApiFilesURL() + object.toStringFormal());
     }
 
