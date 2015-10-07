@@ -39,14 +39,14 @@ server.tmplt
 
 Then the client configuration interface will give you:
 
-https://aerofs.com:5435/
+https://share.syncfs.com/config/client
 
     updater.server.url=https://aerofs.com:8080/
     web.server.url=https://aerofs.com/
 
-And the server configuration interface will give you (not that the server interface is only accessable from the server itself):
+And the server configuration interface will give you (note that the server interface is only accessable from the server itself):
 
-http://localhost:5436/
+https://share.syncfs.com/config/server
 
     updater.server.url=https://aerofs.com:8080/
     ca.server.url=http://aerofs.com:1029/
