@@ -61,7 +61,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
         echo "restarting docker daemon"
         # shitty old init scripts are so goddamn borked that a reboot is the only reliable way to restart
         # the docker daemon after tweaking its configuration
-        docker-machine restart $VM
+        docker-machine restart $VM; sleep 5
     elif [[ "$os" == "b2d-ng" ]] ; then
         # update EXTRA_ARGS to use rawdns resolver [idempotent]
         extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns 172.17.42.1\""

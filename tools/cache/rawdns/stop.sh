@@ -22,9 +22,9 @@ if docker-machine ls "$VM" &>/dev/null ; then
         docker-machine ssh $VM "grep -v -F 'EXTRA_ARGS=\"--dns 172.17.42.1' $profile | sudo tee ${profile}.old ; \
             sudo mv ${profile}.old ${profile}"
 
-        # restart docker daemon (the the init script is borked and cannot restart properly...)
+        # restart docker daemon (the init script is borked and cannot restart properly...)
         echo "restarting docker daemon"
-        docker-machine ssh $VM "sudo /etc/init.d/docker stop ; sleep 5 ; sudo /etc/init.d/docker start"
+        docker-machine restart $VM; sleep 5
     elif [[ "$os" == "b2d-ng" ]] ; then
         docker-machine ssh $VM "cat $service | sed 's/\\\$EXTRA_ARGS//' | sudo tee ${service}.old ; \
             sudo mv ${service}.old ${service} ; \
