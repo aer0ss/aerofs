@@ -12,12 +12,12 @@ import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -131,7 +131,7 @@ public abstract class AbstractLogicalStagingArea implements CleanupScheduler.Cle
         try {
             while (it.next_()) {
                 StagedFolder f = it.get_();
-                immediateCleanup_(f.soid, f.historyPath, t);
+                immediateCleanup_(f, t);
             }
         } finally {
             it.close_();
@@ -139,9 +139,8 @@ public abstract class AbstractLogicalStagingArea implements CleanupScheduler.Cle
         checkState(!_sadb.hasMoreEntries_(sidx));
     }
 
-    abstract protected void immediateCleanup_(SOID soid, Path historyPath, Trans t)
-            throws Exception;
+    abstract protected void immediateCleanup_(StagedFolder f, Trans t) throws Exception;
     abstract protected void processStagedFolder_(StagedFolder it_) throws SQLException, IOException;
 
-    public abstract void stageCleanup_(SOID soid, ResolvedPath pathOld, Trans t) throws Exception;
+    public abstract void stageCleanup_(SOID soid, ResolvedPath pathOld, @Nullable String rev, Trans t) throws Exception;
 }

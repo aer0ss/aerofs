@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -170,15 +171,15 @@ public class AsyncWorkScheduler implements AsyncTaskCallback
         checkState((_state & INFLIGHT) != 0);
         _state &= ~INFLIGHT;
         if (_state == STOPPED) {
-            l.info("{} stopping {}", _name, BaseLogUtil.suppress(t));
+            l.info("{} stopping {}", _name, BaseLogUtil.suppress(t, ExRetryLater.class));
             return;
         }
         if (_state == SCHEDULED) {
-            l.info("{} fast retry", _name, BaseLogUtil.suppress(t));
+            l.info("{} fast retry", _name, BaseLogUtil.suppress(t, ExRetryLater.class));
             // TODO: bypass core queue?
             _sched.schedule_(_ev);
         } else {
-            l.info("{} retry in {}", _name, _delay, BaseLogUtil.suppress(t));
+            l.info("{} retry in {}", _name, _delay, BaseLogUtil.suppress(t, ExRetryLater.class));
             // exponential backoff
             _state = SCHEDULED;
             _delay = Math.min(LibParam.EXP_RETRY_MAX_DEFAULT,

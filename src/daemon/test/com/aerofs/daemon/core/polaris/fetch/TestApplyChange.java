@@ -236,8 +236,11 @@ public class TestApplyChange extends AbstractTestApplyChange
     public void shouldRenameImmediately() throws Exception
     {
         OID oid = OID.generate();
-        ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
-        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
+            rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
+            t.commit_();
+        }
         state.get(sidx).put(OID.ROOT, 1L);
 
         apply(
@@ -255,8 +258,11 @@ public class TestApplyChange extends AbstractTestApplyChange
     public void shouldCompactRenameWhenBuffering() throws Exception
     {
         OID oid = OID.generate();
-        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
-        mbdb.insert_(sidx, oid, OA.Type.DIR, 42, t);
+        try (Trans t = tm.begin_()) {
+            rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
+            mbdb.insert_(sidx, oid, OA.Type.DIR, null, 42, t);
+            t.commit_();
+        }
         state.get(sidx).put(OID.ROOT, 1L);
 
         apply(

@@ -16,13 +16,12 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static com.aerofs.daemon.lib.db.SyncSchema.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -36,18 +35,20 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
     }
 
     private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_LSA, C_LSA_SIDX + "=? AND " + C_LSA_OID + "=?", C_LSA_HISTORY_PATH));
+            DBUtil.selectWhere(T_LSA, C_LSA_SIDX + "=? AND " + C_LSA_OID + "=?",
+                    C_LSA_HISTORY_PATH, C_LSA_REV));
     /**
      * @return null if SOID not staged, empty if history should not be kept
      */
-    public @Nullable Path historyPath_(SOID soid) throws SQLException
+    public @Nullable StagedFolder historyPath_(SOID soid) throws SQLException
     {
         try {
             PreparedStatement ps = _pswGet.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
             try (ResultSet rs = ps.executeQuery()) {
-                    return rs.next() ? Path.fromStringFormal(rs.getString(1)) : null;
+                return !rs.next() ? null
+                        : new StagedFolder(soid, Path.fromStringFormal(rs.getString(1)), rs.getString(2));
             } catch (ExFormatError e) {
                 throw new SQLException(e);
             }
@@ -58,14 +59,16 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
     }
 
     private final PreparedStatementWrapper _pswAdd = new PreparedStatementWrapper(
-            DBUtil.insert(T_LSA, C_LSA_SIDX, C_LSA_OID, C_LSA_HISTORY_PATH));
-    public void addEntry_(SOID soid, @Nonnull Path historyPath, Trans t) throws SQLException
+            DBUtil.insert(T_LSA, C_LSA_SIDX, C_LSA_OID, C_LSA_HISTORY_PATH, C_LSA_REV));
+    public void addEntry_(SOID soid, @Nonnull Path historyPath, @Nullable String rev, Trans t)
+            throws SQLException
     {
         try {
             PreparedStatement ps = _pswAdd.get(c());
             ps.setInt(1, soid.sidx().getInt());
             ps.setBytes(2, soid.oid().getBytes());
             ps.setString(3, historyPath.toStringFormal());
+            ps.setString(4, rev);
             int n = ps.executeUpdate();
             checkState(n == 1);
         } catch (SQLException e) {
@@ -93,16 +96,23 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
     {
         public final SOID soid;
         public final Path historyPath;
+        public final @Nullable String rev;
 
-        StagedFolder(SOID soid, Path historyPath)
+        StagedFolder(SOID soid, Path historyPath, @Nullable String rev)
         {
             this.soid = soid;
             this.historyPath = historyPath;
+            this.rev = rev;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + Joiner.on(",").join(historyPath, rev) + "}";
         }
     }
 
     private final PreparedStatementWrapper _pswList = new PreparedStatementWrapper(
-            DBUtil.select(T_LSA, C_LSA_SIDX, C_LSA_OID, C_LSA_HISTORY_PATH));
+            DBUtil.select(T_LSA, C_LSA_SIDX, C_LSA_OID, C_LSA_HISTORY_PATH, C_LSA_REV));
     public IDBIterator<StagedFolder> listEntries_() throws SQLException
     {
         try {
@@ -115,7 +125,8 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
                     try {
                         return new StagedFolder(
                                 new SOID(new SIndex(_rs.getInt(1)), new OID(_rs.getBytes(2))),
-                                Path.fromStringFormal(_rs.getString(3)));
+                                Path.fromStringFormal(_rs.getString(3)),
+                                _rs.getString(4));
                     } catch (ExFormatError e) {
                         throw new SQLException(e);
                     }
@@ -135,7 +146,8 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
     }
 
     private final PreparedStatementWrapper _pswListByStore = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_LSA, C_LSA_SIDX + "=?", C_LSA_OID, C_LSA_HISTORY_PATH));
+            DBUtil.selectWhere(T_LSA, C_LSA_SIDX + "=?",
+                    C_LSA_OID, C_LSA_HISTORY_PATH, C_LSA_REV));
     public IDBIterator<StagedFolder> listEntriesByStore_(final SIndex sidx) throws SQLException
     {
         try {
@@ -148,7 +160,8 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
                 {
                     try {
                         return new StagedFolder(new SOID(sidx, new OID(_rs.getBytes(1))),
-                                Path.fromStringFormal(_rs.getString(2)));
+                                Path.fromStringFormal(_rs.getString(2)),
+                                _rs.getString(3));
                     } catch (ExFormatError e) {
                         throw new SQLException(e);
                     }

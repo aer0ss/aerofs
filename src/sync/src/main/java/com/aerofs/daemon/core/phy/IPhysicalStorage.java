@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.phy;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -101,7 +102,7 @@ public interface IPhysicalStorage extends IStartable
      * through the daemon (i.e. LINKED storage) MUST offer a way to recursively delete
      * folders in a way that *appears* atomic to the outside world.
      */
-    void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    @Nullable String deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException;
 
     /**
@@ -116,16 +117,28 @@ public interface IPhysicalStorage extends IStartable
      *
      * Specifically:
      *   - BlockStorage maintains NO path->object mapping
-     *   - LinkedStorage does not maintain path->object mappping for conflicts and NROs
+     *   - LinkedStorage does not maintain path->object mapping for conflicts and NROs
      *
      * @param historyPath path under which to preserve old versions. If empty, files are discarded
      */
-    void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
+    void scrub_(SOID soid, @Nonnull Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException;
 
     /**
      * Move downloaded prefix directly to sync history.
      * @pre The file must already exist.
      */
-    void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t) throws IOException, SQLException;
+    void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t)
+            throws IOException, SQLException;
+
+    /**
+     * Restore the latest version of a deleted object into a physical file
+     * @param soid deleted object
+     * @param deletedRoot root of deleted subtree (may be equal to deleted object)
+     * @param deletedPath path of deleted object under deleted root (may be empty)
+     * @param pf destination file (must not exist)
+     * @return whether content was successfully restored
+     */
+    boolean restore_(SOID soid, OID deletedRoot, List<String> deletedPath, IPhysicalFile pf, Trans t)
+            throws SQLException, IOException;
 }

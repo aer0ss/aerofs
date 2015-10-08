@@ -203,13 +203,16 @@ public class MetaChangeSubmitter implements Submitter
 
         RemoteLink lnk = proxy.getParent_(c.oid);
 
-        l.info("op: {} {} {} {} {}", sidx, c.oid, lnk, c.newParent, c.newName);
+        l.info("op: {} {} {} {} {} {}", sidx, c.oid, lnk, c.newParent, c.newName, c.migrant);
 
         if (lnk == null || lnk.parent == null) {
             checkState(c.newParent != null && !c.newParent.isTrash());
             parent = c.newParent;
             change.type = LocalChange.Type.INSERT_CHILD;
             change.childName = c.newName;
+            if (c.migrant != null) {
+                change.migrant = c.migrant.toStringFormal();
+            }
             OA oa = _ds.getOA_(new SOID(sidx, c.oid));
             change.childObjectType = type(oa.type());
             proxy.setParent(c.oid, c.newParent, c.newName);

@@ -153,7 +153,7 @@ public class TestLogicalStagingArea extends AbstractTest
         verify(cvc, mode).fileExpelled_(soid, t);
         verify(ds, mode).deleteCA_(soid, KIndex.MASTER, t);
 
-        verify(ps).scrub_(soid, historyPath, t);
+        verify(ps).scrub_(eq(soid), eq(historyPath), anyString(), eq(t));
         verify(pvc).deleteAllPrefixVersions_(soid, t);
     }
 
@@ -175,7 +175,7 @@ public class TestLogicalStagingArea extends AbstractTest
         int n = sm.getNullable_(soid.sidx()) != null ? 1 : 0;
         verify(ds, times(n)).unsetFID_(soid, t);
 
-        verify(ps).scrub_(soid, historyPath, t);
+        verify(ps).scrub_(eq(soid), eq(historyPath), anyString(), eq(t));
     }
 
     private void verifyFolderCleanup(String relative) throws SQLException, IOException
@@ -203,7 +203,7 @@ public class TestLogicalStagingArea extends AbstractTest
         checkNotNull(soid);
         ResolvedPath p = ds.resolve_(soid);
 
-        lsa.stageCleanup_(soid, p, t);
+        lsa.stageCleanup_(soid, p, null, t);
 
         verifyFileCleanup(soid, p);
         assertStagingDatabaseContains();
@@ -215,10 +215,10 @@ public class TestLogicalStagingArea extends AbstractTest
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, "empty"));
         ResolvedPath p = ds.resolve_(soid);
 
-        lsa.stageCleanup_(soid, p, t);
+        lsa.stageCleanup_(soid, p, "", t);
 
         assertStagingDatabaseContains();
-        verify(ps, never()).scrub_(any(SOID.class), any(Path.class), any(Trans.class));
+        verify(ps, never()).scrub_(any(SOID.class), any(Path.class), anyString(), any(Trans.class));
     }
 
     @Test
@@ -227,10 +227,10 @@ public class TestLogicalStagingArea extends AbstractTest
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, "anchor"));
         ResolvedPath p = ds.resolve_(soid);
 
-        lsa.stageCleanup_(soid, p, t);
+        lsa.stageCleanup_(soid, p, "", t);
 
         assertStagingDatabaseContains();
-        verify(ps, never()).scrub_(any(SOID.class), any(Path.class), any(Trans.class));
+        verify(ps, never()).scrub_(any(SOID.class), any(Path.class), anyString(), any(Trans.class));
     }
 
     @Test
@@ -239,7 +239,7 @@ public class TestLogicalStagingArea extends AbstractTest
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, "foo"));
         ResolvedPath p = ds.resolve_(soid);
 
-        lsa.stageCleanup_(soid, p, t);
+        lsa.stageCleanup_(soid, p, null, t);
 
         assertStagingDatabaseContains("foo");
     }
@@ -250,7 +250,7 @@ public class TestLogicalStagingArea extends AbstractTest
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, "foo"));
         ResolvedPath p = ds.resolve_(soid);
 
-        lsadb.addEntry_(soid, p, t);
+        lsadb.addEntry_(soid, p, null, t);
 
         while (lsa.process_()) {}
 
@@ -270,7 +270,7 @@ public class TestLogicalStagingArea extends AbstractTest
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, "foo"));
         ResolvedPath p = ds.resolve_(soid);
 
-        lsadb.addEntry_(soid, p, t);
+        lsadb.addEntry_(soid, p, null, t);
 
         SOID target = new SOID(soid.sidx(), OID.generate());
         lsa.objectAliased_(soid, target, t);
@@ -295,7 +295,7 @@ public class TestLogicalStagingArea extends AbstractTest
         Path parentPath = Path.fromString(rootSID, "foo");
         SOID parent = ds.resolveNullable_(parentPath);
 
-        lsadb.addEntry_(parent, parentPath, t);
+        lsadb.addEntry_(parent, parentPath, null, t);
 
         // pretend the child was renamed
         lsa.preserveStaging_(ds.resolve_(parent), t);
@@ -311,7 +311,7 @@ public class TestLogicalStagingArea extends AbstractTest
 
         SOID child = ds.resolveNullable_(Path.fromString(rootSID, "foo/bar"));
 
-        lsadb.addEntry_(parent, parentPath, t);
+        lsadb.addEntry_(parent, parentPath, null, t);
 
         // pretend the child was renamed
         lsa.preserveStaging_(ds.resolve_(child), t);
@@ -325,7 +325,7 @@ public class TestLogicalStagingArea extends AbstractTest
         Path p = Path.fromString(rootSID, "foo");
         OA oa = ds.getOA_(ds.resolveThrows_(p));
 
-        lsadb.addEntry_(oa.soid(), p, t);
+        lsadb.addEntry_(oa.soid(), p, null, t);
 
         lsa.ensureClean_(ds.resolve_(oa), t);
 
@@ -339,7 +339,7 @@ public class TestLogicalStagingArea extends AbstractTest
         Path p = Path.fromString(rootSID, "foo");
         OA oa = ds.getOA_(ds.resolveThrows_(p));
 
-        lsadb.addEntry_(oa.soid(), p, t);
+        lsadb.addEntry_(oa.soid(), p, null, t);
 
         lsa.ensureClean_(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, "foo/bar"))), t);
 
@@ -353,7 +353,7 @@ public class TestLogicalStagingArea extends AbstractTest
         Path p = Path.fromString(rootSID, "foo");
         OA oa = ds.getOA_(ds.resolveThrows_(p));
 
-        lsadb.addEntry_(oa.soid(), p, t);
+        lsadb.addEntry_(oa.soid(), p, null, t);
 
         lsa.ensureClean_(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, "foo/qux"))), t);
 
@@ -367,7 +367,7 @@ public class TestLogicalStagingArea extends AbstractTest
         Path p = Path.fromString(rootSID, "foo");
         SOID soid = ds.resolveThrows_(p);
 
-        lsadb.addEntry_(soid, p, t);
+        lsadb.addEntry_(soid, p, null, t);
 
         // pretend the store was deleted and partially cleaned
         when(sm.getNullable_(soid.sidx())).thenReturn(null);
@@ -394,7 +394,7 @@ public class TestLogicalStagingArea extends AbstractTest
         // pretend the store was deleted
         when(sm.getNullable_(soid.sidx())).thenReturn(null);
         // empty path: don't keep history
-        lsadb.addEntry_(soid, Path.root(rootSID), t);
+        lsadb.addEntry_(soid, Path.root(rootSID), null, t);
 
         while (lsa.process_()) {}
 
@@ -416,15 +416,16 @@ public class TestLogicalStagingArea extends AbstractTest
         Path path = Path.fromString(rootSID, "foo/bar");
         SOID soid = ds.resolveNullable_(path);
 
-        lsadb.addEntry_(soid, Path.root(rootSID), t);
+        lsadb.addEntry_(soid, Path.root(rootSID), null, t);
 
         // for every object, fail the first call to scrub_
         doAnswer(invocation -> {
             doNothing().when(ps).scrub_((SOID)invocation.getArguments()[0],
                     (Path)invocation.getArguments()[1],
-                    (Trans)invocation.getArguments()[2]);
+                    (String)invocation.getArguments()[2],
+                    (Trans)invocation.getArguments()[3]);
             throw new IOException("" + invocation.getArguments()[0]);
-        }).when(ps).scrub_(any(SOID.class), any(Path.class), eq(t));
+        }).when(ps).scrub_(any(SOID.class), any(Path.class), anyString(), eq(t));
 
         lsa.start_();
 
@@ -433,7 +434,7 @@ public class TestLogicalStagingArea extends AbstractTest
                 "foo/bar/deep/inside/the", "foo/bar/deep/inside/the/moria")) {
             SOID obj = ds.resolveThrows_(Path.fromString(rootSID, s));
             verify(ds).unsetFID_(obj, t);
-            verify(ps, atLeast(2)).scrub_(obj, Path.root(rootSID), t);
+            verify(ps, atLeast(2)).scrub_(eq(obj), eq(Path.root(rootSID)), anyString(), eq(t));
         }
         assertStagingDatabaseContains();
     }

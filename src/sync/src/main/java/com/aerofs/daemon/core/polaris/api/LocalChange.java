@@ -23,6 +23,9 @@ public class LocalChange
     public String childName;
     public ObjectType childObjectType;
 
+    // migration
+    public String migrant;
+
     // move
     public String newParent;
     public String newChildName;

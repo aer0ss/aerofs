@@ -23,6 +23,7 @@ import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -58,10 +59,10 @@ public class ApplyChange
         boolean newContent_(SOID soid, RemoteChange c, Trans t)
                 throws SQLException, IOException;
 
-        void delete_(SOID parent, OID oidChild, Trans t) throws Exception;
+        void delete_(SOID parent, OID oidChild, @Nullable OID migrant, Trans t) throws Exception;
 
         void insert_(SOID parent, OID oidChild, String childName, ObjectType childObjectType,
-                     long mergeBoundary, Trans t) throws Exception;
+                     @Nullable OID migrant, long mergeBoundary, Trans t) throws Exception;
 
         void move_(SOID parent, OID oidChild, String name,
                    long mergeBoundary, Trans t) throws Exception;
@@ -102,8 +103,6 @@ public class ApplyChange
             applyContentChange_(parent, c ,t);
             return;
         }
-
-        // FIXME: discard changes to migrated objects?
 
         // the value of version indicate that we have applied *ALL* changes up to that point
         // so any incoming changes that predate this value can be safely ignored
@@ -219,7 +218,7 @@ public class ApplyChange
         }
 
         // Remove parent after deleting since we use RemoteLinkDatabase to resolve path in SA.
-        _impl.delete_(parent, oidChild, t);
+        _impl.delete_(parent, oidChild, c.migrantOid, t);
         _rpdb.removeParent_(sidx, oidChild, t);
     }
 
@@ -268,7 +267,7 @@ public class ApplyChange
 
         _rpdb.insertParent_(sidx, oidChild, parent.oid(), c.childName, c.logicalTimestamp, t);
 
-        _impl.insert_(parent, oidChild, c.childName, c.childObjectType, mergeBoundary, t);
+        _impl.insert_(parent, oidChild, c.childName, c.childObjectType, c.migrantOid, mergeBoundary, t);
     }
 
     private void share(SOID parent, long lts, Trans t) throws Exception

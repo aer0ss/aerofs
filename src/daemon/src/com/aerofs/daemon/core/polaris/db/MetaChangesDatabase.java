@@ -57,6 +57,7 @@ public class MetaChangesDatabase extends AbstractDatabase
             s.executeUpdate("create table " + tableName(sidx) + "("
                     + C_META_CHANGE_IDX + _dbcw.longType() + " primary key " + _dbcw.autoIncrement() + ","
                     + C_META_CHANGE_OID + _dbcw.uniqueIdType() + "not null,"
+                    + C_META_CHANGE_MIGRANT + _dbcw.uniqueIdType() + ","
                     + C_META_CHANGE_NEW_PARENT + _dbcw.uniqueIdType() + ","
                     + C_META_CHANGE_NEW_NAME + _dbcw.nameType()
                     + ")");
@@ -79,15 +80,22 @@ public class MetaChangesDatabase extends AbstractDatabase
 
     private final ParameterizedStatement<SIndex> _pswInsertChange = new ParameterizedStatement<>(
             sidx ->  DBUtil.insert(tableName(sidx), C_META_CHANGE_OID,
-                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME));
+                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME, C_META_CHANGE_MIGRANT));
     public long insertChange_(SIndex sidx, OID oid,  @Nullable OID newParent,
-            @Nullable String newName, Trans t) throws SQLException
+                              @Nullable String newName, Trans t) throws SQLException
+    {
+        return insertChange_(sidx, oid, newParent, newName, null, t);
+    }
+
+    public long insertChange_(SIndex sidx, OID oid,  @Nullable OID newParent,
+            @Nullable String newName, @Nullable OID migrant, Trans t) throws SQLException
     {
         try {
             PreparedStatement ps = _pswInsertChange.get(sidx).get(c());
             ps.setBytes(1, oid.getBytes());
             ps.setBytes(2, newParent != null ? newParent.getBytes() : null);
             ps.setString(3, newName);
+            ps.setBytes(4, migrant != null ? migrant.getBytes() : null);
             checkState(ps.executeUpdate() == 1);
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 checkState(rs.next());
@@ -110,21 +118,29 @@ public class MetaChangesDatabase extends AbstractDatabase
         public final SIndex sidx;
         public final long idx;
         public final OID oid;
+        public final OID migrant;
         public OID newParent;
         public final String newName;
 
         public MetaChange(SIndex sidx, long idx, OID oid, OID newParent, String newName)
+        {
+            this(sidx, idx, oid, newParent, newName, null);
+        }
+
+        public MetaChange(SIndex sidx, long idx, OID oid, OID newParent, String newName, OID migrant)
         {
             this.sidx = sidx;
             this.idx = idx;
             this.oid = oid;
             this.newParent = newParent;
             this.newName = newName;
+            this.migrant = migrant;
         }
 
-        public MetaChange(SIndex sidx, long idx, OID oid, byte[] newParent, String newName)
+        public MetaChange(SIndex sidx, long idx, OID oid, byte[] newParent, String newName, byte[] migrant)
         {
-            this(sidx, idx, oid, newParent != null ? new OID(newParent) : null, newName);
+            this(sidx, idx, oid, newParent != null ? new OID(newParent) : null, newName,
+                    migrant != null ? new OID(migrant) : null);
         }
 
         @Override
@@ -137,7 +153,7 @@ public class MetaChangesDatabase extends AbstractDatabase
             sidx -> DBUtil.selectWhere(tableName(sidx),
                     C_META_CHANGE_IDX + ">?",
                     C_META_CHANGE_IDX, C_META_CHANGE_OID,
-                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME)
+                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME, C_META_CHANGE_MIGRANT)
             + " order by " + C_META_CHANGE_IDX);
     public IDBIterator<MetaChange> getChangesSince_(SIndex sidx, long idx) throws SQLException
     {
@@ -146,7 +162,7 @@ public class MetaChangesDatabase extends AbstractDatabase
             public MetaChange get_() throws SQLException
             {
                 return new MetaChange(sidx, _rs.getLong(1), new OID(_rs.getBytes(2)),
-                        _rs.getBytes(3), _rs.getString(4));
+                        _rs.getBytes(3), _rs.getString(4), _rs.getBytes(5));
             }
         };
     }
@@ -169,22 +185,5 @@ public class MetaChangesDatabase extends AbstractDatabase
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_OID + "=?"));
     public boolean deleteChanges_(SIndex sidx, OID oid, Trans t) throws SQLException {
         return 1 == update(_pswDeleteObjectChanges.get(sidx), oid.getBytes());
-    }
-
-    private final ParameterizedStatement<SIndex> _pswGetObjectChanges = new ParameterizedStatement<>(
-            sidx -> DBUtil.selectWhere(tableName(sidx),
-                    C_META_CHANGE_OID + "=?",
-                    C_META_CHANGE_IDX,
-                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME)
-                    + " order by " + C_META_CHANGE_IDX);
-    public IDBIterator<MetaChange> getChanges_(SIndex sidx, OID oid) throws SQLException
-    {
-        return new AbstractDBIterator<MetaChange>(query(_pswGetObjectChanges.get(sidx), oid.getBytes())) {
-            @Override
-            public MetaChange get_() throws SQLException
-            {
-                return new MetaChange(sidx, _rs.getLong(1), oid, _rs.getBytes(2), _rs.getString(3));
-            }
-        };
     }
 }

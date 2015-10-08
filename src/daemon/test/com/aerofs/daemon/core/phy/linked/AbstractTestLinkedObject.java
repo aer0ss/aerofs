@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.daemon.core.phy.linked.db.HistoryDatabase;
 import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -120,8 +121,8 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh,
                 mock(StoreHierarchy.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class),
-                mock(LinkedStagingArea.class), mock(LinkedRevProvider.class),
-                mock(HashQueue.class), mock(CoreScheduler.class));
+                mock(LinkedStagingArea.class), mock(HashQueue.class), mock(LinkedRevProvider.class),
+                mock(HistoryDatabase.class), mock(CoreScheduler.class));
 
         obj = createPhysicalObject(s, sokid, lp);
     }

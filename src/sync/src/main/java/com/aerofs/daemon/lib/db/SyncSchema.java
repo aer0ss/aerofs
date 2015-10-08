@@ -85,7 +85,8 @@ public class SyncSchema implements ISchema
             T_LSA               = "lsa",
             C_LSA_SIDX          = "lsa_s",
             C_LSA_OID           = "lsa_o",
-            C_LSA_HISTORY_PATH  = "lsa_p";  // path for sync history, empty if no history is kept
+            C_LSA_HISTORY_PATH  = "lsa_p",  // path for sync history, empty if no history is kept
+            C_LSA_REV           = "lsa_r";
 
     @Inject
     public SyncSchema()
@@ -200,6 +201,7 @@ public class SyncSchema implements ISchema
                 + C_LSA_SIDX + " integer not null,"
                 + C_LSA_OID + dbcw.uniqueIdType() + "not null,"
                 + C_LSA_HISTORY_PATH + " text not null,"
+                + C_LSA_REV + " text,"
                 + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
                 + ")");
     }

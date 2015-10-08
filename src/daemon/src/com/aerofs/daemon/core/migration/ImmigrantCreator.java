@@ -1,21 +1,26 @@
 package com.aerofs.daemon.core.migration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.*;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.polaris.db.*;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.core.store.DaemonPolarisStore;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -27,12 +32,18 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
+import org.jboss.netty.handler.codec.http.HttpResponse;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map.Entry;
+import java.util.concurrent.Executor;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -63,13 +74,17 @@ public class ImmigrantCreator
     private final ExpulsionDatabase _exdb;
     private final ContentFetchQueueDatabase _cfqdb;
     private final MapSIndex2Store _sidx2s;
+    private final PolarisClient _client;
+
+    private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
 
     @Inject
     public ImmigrantCreator(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
             ObjectMover om, ObjectDeleter od, ObjectCreator oc, ObjectSurgeon os,
             CfgUsePolaris polaris, RemoteLinkDatabase rldb, MetaChangesDatabase mcdb,
             ContentChangesDatabase ccdb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
-            ExpulsionDatabase exdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s)
+            ExpulsionDatabase exdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s,
+            PolarisClient.Factory clientFactory)
     {
         _ds = ds;
         _ps = ps;
@@ -87,6 +102,8 @@ public class ImmigrantCreator
         _exdb = exdb;
         _cfqdb = cfqdb;
         _sidx2s = sidx2s;
+        // TODO: use same instance as HdShareFolder?
+        _client = clientFactory.create();
     }
 
     /**
@@ -113,6 +130,11 @@ public class ImmigrantCreator
         return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
     }
 
+    private UniqueID rootOID2SID(SIndex sidx, OID oid)
+    {
+        return oid.isRoot() ? _sidx2sid.get_(sidx) : oid;
+    }
+
     /**
      * This method either moves objects within the same store, or across stores via migration,
      * depending on whether the old sidx is the same as the new one.
@@ -133,7 +155,48 @@ public class ImmigrantCreator
             _om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true, t);
             return soid;
         } else if (_polaris.get()) {
+            // NB: this is really gross, especially considering that this can be triggered by
+            // a filesystem notification
+            // Ideally cross-store moves would be submitted asynchronously, like regular meta
+            // changes. However the current state of things makes that extremely hard to do safely.
+            // Better solutions would require either dropping support for legacy p2p entirely or
+            // maintaining two completely different code bases with largely incompatible DB schemas.
+            // Neither of these is currently acceptable.
+            // Hopefully offline cross-store moves are rare enough that the synchronous polaris
+            // request doesn't cause too much trouble
+            // TODO: revisit this once p2p meta sync is burned
             OA oa = _ds.getOA_(soid);
+            LocalChange c = new LocalChange();
+            c.type = LocalChange.Type.MOVE_CHILD;
+            c.child = soid.oid().toStringFormal();
+            c.newChildName = toName;
+            c.newParent = rootOID2SID(soidToParent.sidx(), soidToParent.oid()).toStringFormal();
+            SettableFuture<UniqueID> f = SettableFuture.create();
+            _client.post("/objects/" + rootOID2SID(soid.sidx(), oa.parent()).toStringFormal(), c,
+                    new AsyncTaskCallback() {
+                        @Override
+                        public void onSuccess_(boolean hasMore) {}
+
+                        @Override
+                        public void onFailure_(Throwable t) {
+                            f.setException(t);
+                        }
+                    }, r -> handle_(f, r), _sameThread);
+            // wait for polaris response
+            f.get();
+
+            // polaris accepted the move, proceed with local migration
+            // NB: it is unfortunate but necessary to do a local migration before receiving the
+            // migrated transforms from polaris as the caller expects the tree to be migrated
+            // immediately and there is no tractable way to change that since this method is called
+            // to adjust the logical tree after a filesystem change.
+            // This will result in conflicting OIDs which will eventually be resolved by aliasing
+            // or renaming. Some duplication may arise if the local tree diverged from the remote
+            // tree. This is suboptimal but about as good as can be done at this point.
+            // Slightly better edge-case behavior might be achievable through extensive change in
+            // the logical object tree but the amount of work required would be significant and the
+            // benefits marginal so it is left as an exercise for the future maintainer.
+            // TODO: revisit this once p2p meta sync is burned
             ResolvedPath p = _ds.resolve_(oa);
             OA oaParentTo = _ds.getOA_(soidToParent);
             ResolvedPath dest = _ds.resolve_(oaParentTo).join(soid, toName);
@@ -153,6 +216,25 @@ public class ImmigrantCreator
             return createLegacyImmigrantRecursively_(_ds.resolve_(soid).parent(), soid, soidToParent,
                     toName, op, t);
         }
+    }
+
+    private boolean handle_(SettableFuture<UniqueID> f, HttpResponse r) throws Exception {
+        String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
+        if (!r.getStatus().equals(HttpResponseStatus.OK)) {
+            l.info("polaris error {}\n{}", r.getStatus(), content);
+            if (r.getStatus().getCode() >= 500) {
+                throw new ExRetryLater(r.getStatus().getReasonPhrase());
+            }
+            throw new ExProtocolError(r.getStatus().getReasonPhrase());
+        }
+        // TODO
+        f.set(null);
+        return false;
+    }
+
+    private boolean canReuseId(SIndex sidxFrom, OID oid, RemoteTreeCache cache) throws SQLException {
+        return cache != null &&
+                (cache.isInSharedTree(oid) || _rldb.getParent_(sidxFrom, oid) == null);
     }
 
     /**
@@ -180,6 +262,10 @@ public class ImmigrantCreator
 
         l.info("{} -> {}", pathParent.from, pathParent.to);
 
+        OA oaFromRoot = _ds.getOA_(soidFromRoot);
+        OID oidToRoot = !oaFromRoot.isAnchor() && canReuseId(sidxFrom, soidFromRoot.oid(), cache)
+                ? soidFromRoot.oid() : OID.generate();
+
         _ds.walk_(soidFromRoot, pathParent, new IObjectWalker<MigratedPath>() {
             @Override
             public MigratedPath prefixWalk_(MigratedPath pathParent, OA oaFrom)
@@ -200,11 +286,17 @@ public class ImmigrantCreator
                         ? soidToRootParent : pathParent.to.soid();
 
                 // NB: reuse OID iff the object has not inadvertently crossed share boundary
-                boolean reuseId = !oaFrom.isAnchor() && canReuseId(oidFrom);
+                boolean reuseId = !oaFrom.isAnchor() && canReuseId(sidxFrom, oidFrom, cache);
 
-                SOID soidTo = new SOID(sidxTo, reuseId ? oidFrom : OID.generate());
-                String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
-
+                SOID soidTo;
+                String name;
+                if (soidFromRoot.equals(oaFrom.soid())) {
+                    soidTo = new SOID(sidxTo, oidToRoot);
+                    name = toRootName;
+                } else {
+                    soidTo = new SOID(sidxTo, reuseId ? oidFrom : OID.generate());
+                    name = oaFrom.name();
+                }
                 l.info("{} {} {} {}", oaFrom.soid(), soidToParent, soidTo, name);
 
                 // make sure the physical file reflect the migrated SOID before any MAP operation
@@ -218,7 +310,7 @@ public class ImmigrantCreator
                 }
 
                 Type typeTo = migratedType(oaFrom.type());
-
+                _ds.createOA_(typeTo, soidTo.sidx(), soidTo.oid(), soidToParent.oid(), name, t);
                 // NB: create a MetaChange in the db iff the OID is not reused
                 //
                 // OIDs are only reused when a strict set of conditions are met. In particular this
@@ -229,8 +321,10 @@ public class ImmigrantCreator
                 //
                 // When new OIDs are generated, a local change needs to be generated to ensure the
                 // OID propagates to polaris and from there to other peers.
-                boolean metaChange = !reuseId || _rldb.getParent_(sidxFrom, oidFrom) == null;
-                _oc.createOA_(typeTo, soidTo, soidToParent.oid(), name, metaChange, t);
+                if (!reuseId || _rldb.getParent_(sidxFrom, oidFrom) == null) {
+                    _mcdb.insertChange_(sidxTo, soidTo.oid(), soidToParent.oid(), name,
+                            reuseId ? null : oidFrom, t);
+                }
 
                 // preserve explicit expulsion state
                 if (oaFrom.isSelfExpelled()) {
@@ -253,8 +347,14 @@ public class ImmigrantCreator
                 }
 
                 if (oaFrom.isFile()) {
+                    // preserve local content changes
+                    // NB: we do NOT need to advertise content if we don't have local changes as
+                    // polaris will take care of migrating the latest content state of every file
+                    // during any cross-store move (SHARE or MOVE_CHILD across store boundary)
+                    // Advertising content when there is no change would create false conflicts
+                    // if some devices are not fully in sync at the time of the migration.
                     if (oaFrom.caMasterNullable() != null
-                            && (!reuseId || _ccdb.hasChange_(sidxFrom, oidFrom))) {
+                            && _ccdb.hasChange_(sidxFrom, oidFrom)) {
                         _ccdb.insertChange_(soidTo.sidx(), soidTo.oid(), t);
                     }
 
@@ -281,11 +381,6 @@ public class ImmigrantCreator
                 return p;
             }
 
-            private boolean canReuseId(OID oid) throws SQLException {
-                return cache != null &&
-                        (cache.isInSharedTree(oid) || _rldb.getParent_(sidxFrom, oid) == null);
-            }
-
             @Override
             public void postfixWalk_(MigratedPath pathParent, OA oaFrom)
                     throws Exception {
@@ -295,7 +390,7 @@ public class ImmigrantCreator
                 OID oidFrom = oaFrom.soid().oid();
                 if (oidFrom.isRoot() || oidFrom.isTrash()) return;
 
-                boolean reuseId = !oaFrom.isAnchor() && canReuseId(oidFrom);
+                boolean reuseId = !oaFrom.isAnchor() && canReuseId(sidxFrom, oidFrom, cache);
                 // no need to publish local meta changes in old store
                 // NB: do not immediately delete meta changes for reused OIDs
                 // as the remote tree walk done after the local tree walk will take care of it
@@ -322,7 +417,7 @@ public class ImmigrantCreator
                     // avoid deleting object if its parent will be deleted
                     // NB: this cascades up to result in a single deletion at the root of a subtree
                     // instead of deleting every node in the subtree
-                    if (oidFrom.equals(soidFromRoot.oid()) || canReuseId(oaFrom.parent())) {
+                    if (oidFrom.equals(soidFromRoot.oid()) || canReuseId(sidxFrom, oaFrom.parent(), cache)) {
                         _od.delete_(oaFrom.soid(), op != PhysicalOp.APPLY ? PhysicalOp.NOP : op, t);
                     }
                 }
@@ -334,7 +429,7 @@ public class ImmigrantCreator
         s.contentSubmitter().startOnCommit_(t);
         s.metaSubmitter().startOnCommit_(t);
 
-        return new SOID(soidToRootParent.sidx(), soidFromRoot.oid());
+        return new SOID(soidToRootParent.sidx(), oidToRoot);
     }
 
     public boolean preserveVersions_(SIndex sidxFrom, OID oidFrom, OA.Type type, SIndex sidxTo, Trans t)

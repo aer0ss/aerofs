@@ -20,6 +20,8 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.injectable.InjectableFile;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkState;
 
 public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolder
@@ -117,7 +119,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
 
     @SuppressWarnings("fallthrough")
     @Override
-    public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public @Nullable String delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         l.debug("delete {} {}", this, op);
 
@@ -143,6 +145,7 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
         _s.onDeletion_(this, op, t);
         // always reset FID to avoid violating FID consistency invariants
         _fidm.physicalObjectDeleted_(t);
+        return null;
     }
 
     private void applyDeletion_(Trans t) throws SQLException, IOException

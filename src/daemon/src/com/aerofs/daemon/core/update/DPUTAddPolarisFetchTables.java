@@ -17,7 +17,10 @@ public class DPUTAddPolarisFetchTables implements IDaemonPostUpdateTask
     public void run() throws Exception
     {
         DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
-            PolarisSchema.createPolarisFetchTables(s, _dbcw);
+            // we internally started using polaris already...
+            if (!_dbcw.tableExists(PolarisSchema.T_VERSION)) {
+                PolarisSchema.createPolarisFetchTables(s, _dbcw);
+            }
         });
     }
 }

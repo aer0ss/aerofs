@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.store.*;
@@ -39,6 +40,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final NativeVersionControl _nvc;
     private final MapSIndex2Store _sidx2s;
     private final CfgUsePolaris _usePolaris;
+    private final CentralVersionDatabase _cvdb;
     private final RemoteContentDatabase _rcdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
@@ -48,7 +50,8 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
-            CfgUsePolaris usePolaris, RemoteContentDatabase rcdb, LogicalStagingAreaDatabase sadb)
+            CfgUsePolaris usePolaris, CentralVersionDatabase cvdb, RemoteContentDatabase rcdb,
+            LogicalStagingAreaDatabase sadb)
     {
         _sc = sc;
         _imd = imd;
@@ -60,6 +63,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _sidx2s = sidx2s;
         _usePolaris = usePolaris;
         _rcdb = rcdb;
+        _cvdb = cvdb;
         _sadb = sadb;
     }
 
@@ -168,6 +172,8 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         checkArgument(_ds.getOA_(soid).isFile());
 
         if (_usePolaris.get()) {
+            // see PolarisContentVersionControl#fileExpelled_
+            _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
             if (_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) {
                 // TODO(phoenix): BF adjustment (when BF brought back)
                 _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);

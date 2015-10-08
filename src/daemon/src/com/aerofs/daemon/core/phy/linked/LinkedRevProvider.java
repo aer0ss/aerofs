@@ -121,7 +121,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
          * is necessary to avoid losing revision information on Unix devices and avoid no-sync on
          * Windows ones (renaming fails when the target exists)).
          */
-        public RevisionInfo(int kidx, long mtime, long rtime)
+        public RevisionInfo(int kidx, long rtime, long mtime)
         {
             _kidx = kidx;
             _mtime = mtime;
@@ -139,8 +139,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             if (decoded.length != DECODED_LENGTH) return null;
             ByteBuffer buf = ByteBuffer.wrap(decoded);
             int kidx = buf.getInt();
-            long mtime = buf.getLong();
             long rtime = buf.getLong();
+            long mtime = buf.getLong();
             return new RevisionInfo(kidx, mtime, rtime);
         }
 
@@ -149,8 +149,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             if (encoded == null) {
                 ByteBuffer buf = ByteBuffer.allocate(DECODED_LENGTH);
                 buf.putInt(_kidx);
-                buf.putLong(_mtime);
                 buf.putLong(_rtime);
+                buf.putLong(_mtime);
                 encoded = BaseUtil.hexEncode(buf.array());
             }
             return encoded;
@@ -181,12 +181,14 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     {
         private final Path _path;
         private final InjectableFile _fRev, _fOrg;
+        private final String _index;
 
-        private LinkedRevFile(Path path, InjectableFile fRev, InjectableFile fOrg)
+        private LinkedRevFile(Path path, InjectableFile fRev, InjectableFile fOrg, String index)
         {
             _path = path;
             _fRev = fRev;
             _fOrg = fOrg;
+            _index = index;
         }
 
         void save_() throws IOException
@@ -206,11 +208,18 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             changeSpace(-_fOrg.length());
         }
 
-        void delete_() throws IOException
-        {
+        void delete_() throws IOException {
             long sz = _fRev.length();
             _fRev.delete();
             changeSpace(-sz);
+        }
+
+        public boolean exists_() {
+            return _fRev.exists();
+        }
+
+        public String index() {
+            return _index;
         }
     }
 
@@ -291,16 +300,27 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     String newRevPath(Path path, String absPath, KIndex kidx) throws IOException
     {
         InjectableFile f = _factFile.create(absPath);
-        String revPath = revPath(path, PathType.FILE);
         RevisionInfo info = new RevisionInfo(kidx.getInt(), _ts.getTime(), f.lastModified());
-        return Util.join(revPath, info.hexEncoded());
+        return Util.join(revPath(path, PathType.FILE), info.hexEncoded());
     }
 
-    LinkedRevFile newLocalRevFile(Path path, String absPath, KIndex kidx) throws IOException
+    String newRevPath(Path path, String index) throws IOException
+    {
+        return Util.join(revPath(path, PathType.FILE), index);
+    }
+
+    LinkedRevFile newLocalRevFile(Path path, String absPath, KIndex kidx) throws IOException {
+        InjectableFile f = _factFile.create(absPath);
+        RevisionInfo info = new RevisionInfo(kidx.getInt(), _ts.getTime(), f.lastModified());
+        return localRevFile(path, absPath, info.hexEncoded());
+    }
+
+    LinkedRevFile localRevFile(Path path, String absPath, String index) throws IOException
     {
         return new LinkedRevFile(path,
-                _factFile.create(newRevPath(path, absPath, kidx)),
-                _factFile.create(absPath));
+                _factFile.create(newRevPath(path, index)),
+                _factFile.create(absPath),
+                index);
     }
 
     @Override
@@ -354,7 +374,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     : null;
             if (info != null) {
                 revisions.put(info,
-                        new Revision(BaseUtil.string2utf(file.getName()), info._mtime,
+                        new Revision(BaseUtil.string2utf(file.getName()), file.lastModified(),
                                 file.lengthOrZeroIfNotFile()));
             }
         }
@@ -382,7 +402,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         RevisionInfo suffix = RevisionInfo.fromHexEncodedNullable(BaseUtil.utf2string(index));
         if (suffix == null) throw new ExInvalidRevisionIndex();
         InjectableFile file = getExistingRevFile_(path, index);
-        return new RevInputStream(file.newInputStream(), file.length(), suffix._mtime);
+        return new RevInputStream(file.newInputStream(), file.length(), file.lastModified());
     }
 
     @Override

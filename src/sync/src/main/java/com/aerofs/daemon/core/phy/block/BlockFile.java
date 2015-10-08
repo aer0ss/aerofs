@@ -17,6 +17,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -143,10 +144,11 @@ class BlockFile implements IPhysicalFile
     }
 
     @Override
-    public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public @Nullable String delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         l.debug("{}.delete_({})", this, op);
         if (op == PhysicalOp.APPLY) _s.delete_(this, t);
+        return null;
     }
 
     @Override

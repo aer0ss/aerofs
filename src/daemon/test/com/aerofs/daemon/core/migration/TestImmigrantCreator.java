@@ -1,5 +1,8 @@
 package com.aerofs.daemon.core.migration;
 
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
@@ -15,6 +18,7 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -24,6 +28,7 @@ import org.mockito.Mock;
 
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * This class tests ImmigrantDetector.initiateImmigrationRecursively_()
@@ -35,6 +40,16 @@ public class TestImmigrantCreator extends AbstractTest
     @Mock ObjectCreator oc;
     @Mock ObjectMover om;
     @Mock SIDMap sm;
+    @Mock CfgUsePolaris usePolaris;
+    @Mock RemoteLinkDatabase rldb;
+    @Mock MetaChangesDatabase mcdb;
+    @Mock RemoteContentDatabase rcdb;
+    @Mock ContentChangesDatabase ccdb;
+    @Mock CentralVersionDatabase cvdb;
+    @Mock ContentFetchQueueDatabase cfqdb;
+    @Mock MapSIndex2Store sidx2s;
+    @Mock PolarisClient.Factory factClient;
+    @Mock PolarisClient client;
 
     @Mock Trans t;
 
@@ -54,6 +69,7 @@ public class TestImmigrantCreator extends AbstractTest
     public void setup() throws Exception
     {
         mds = new MockDS(rootSID, ds, sm, sm);
+        when(factClient.create()).thenReturn(client);
     }
 
     private void setupMockDS(int branches) throws Exception

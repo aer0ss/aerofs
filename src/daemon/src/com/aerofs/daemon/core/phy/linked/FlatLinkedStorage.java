@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.daemon.core.phy.linked.db.HistoryDatabase;
 import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -51,27 +52,16 @@ public class FlatLinkedStorage extends LinkedStorage
     private final IOSUtil _os;
 
     @Inject
-    public FlatLinkedStorage(InjectableFile.Factory factFile,
-            IFIDMaintainer.Factory factFIDMan,
-            LinkerRootMap lrm,
-            InjectableDriver dr,
-            StoreHierarchy stores,
-            RepresentabilityHelper rh,
-            IMapSIndex2SID sidx2sid,
-            CfgAbsRoots cfgAbsRoots,
-            CfgAbsDefaultRoot cfgAbsDefaultRoot,
-            CfgStoragePolicy cfgStoragePolicy,
-            IgnoreList il,
-            SharedFolderTagFileAndIcon sfti,
-            LocalACL lacl,
-            IOSUtil os,
-            LinkedStagingArea sa,
-            LinkedRevProvider revProvider,
-            HashQueue hq,
-            CoreScheduler sched)
+    public FlatLinkedStorage(InjectableFile.Factory factFile, IFIDMaintainer.Factory factFIDMan,
+                             LinkerRootMap lrm, InjectableDriver dr, StoreHierarchy stores,
+                             RepresentabilityHelper rh, IMapSIndex2SID sidx2sid, IgnoreList il,
+                             CfgAbsRoots cfgAbsRoots, CfgAbsDefaultRoot cfgAbsDefaultRoot,
+                             CfgStoragePolicy cfgStoragePolicy, SharedFolderTagFileAndIcon sfti,
+                             LocalACL lacl, IOSUtil os, LinkedStagingArea sa, HashQueue hq,
+                             LinkedRevProvider revProvider, HistoryDatabase hdb, CoreScheduler sched)
     {
         super(factFile, factFIDMan, lrm, os, dr, rh, stores, sidx2sid, cfgAbsRoots,
-                cfgStoragePolicy, il, sfti, sa, revProvider, hq, sched);
+                cfgStoragePolicy, il, sfti, sa, hq, revProvider, hdb, sched);
         _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));

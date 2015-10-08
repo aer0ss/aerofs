@@ -8,6 +8,7 @@
 :include ../core/sharing/test_sharing_group.scn
 :include ../core/sharing/acl/test_acl_group.scn
 :include ../core/aliasing/2_client_group.scn
+:include ../core/migration/test_migration_group.scn
 :include ../core/relocate/test_relocate_group.scn
 :include ../core/revision/test_revision_group.scn
 :include ../core/misc/test_misc_group.scn

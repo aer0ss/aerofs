@@ -108,11 +108,11 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
      * @param pOld path to {@paramref soid} at the time of deletion/expulsion
      */
     @Override
-    public void stageCleanup_(SOID soid, ResolvedPath pOld, Trans t)
+    public void stageCleanup_(SOID soid, ResolvedPath pOld, @Nullable String rev, Trans t)
             throws Exception
     {
         Path historyPath = _ps.isDiscardingRevForTrans_(t) ? Path.root(pOld.sid()) : pOld;
-        stageCleanup_(soid, historyPath, t);
+        stageCleanup_(soid, historyPath, rev, t);
     }
 
     /**
@@ -124,12 +124,12 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
     public void ensureClean_(ResolvedPath pathOld, Trans t) throws Exception
     {
         SOID soid = pathOld.soid();
-        @Nullable Path historyPath = getHistoryPath_(pathOld);
-        l.debug("ensure clean {}: {}", soid, historyPath);
+        @Nullable StagedFolder f = getHistoryPath_(pathOld);
+        l.debug("ensure clean {}: {} {} ", soid, f);
 
-        if (historyPath == null) return;
+        if (f == null) return;
 
-        cleanupObject_(_ds.getOA_(soid), historyPath, t);
+        cleanupObject_(_ds.getOA_(soid), f.historyPath, f.rev, t);
     }
 
     /**
@@ -144,10 +144,10 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         SOID soid = pathOld.soid();
         if (isStaged_(soid)) return;
 
-        @Nullable Path historyPath = getHistoryPath_(pathOld);
-        if (historyPath == null) return;
+        @Nullable StagedFolder f = getHistoryPath_(pathOld);
+        if (f == null) return;
 
-        stageCleanup_(soid, historyPath, t);
+        stageCleanup_(soid, f.historyPath, f.rev, t);
     }
 
     /**
@@ -156,45 +156,46 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
      * @pre the subtree is being readmitted
      */
     @Override
-    protected void immediateCleanup_(final SOID soidRoot, Path historyPath, final Trans t)
+    protected void immediateCleanup_(final StagedFolder f, final Trans t)
             throws Exception
     {
-        l.info("immediate cleanup {} {}", soidRoot, historyPath);
-        _ds.walk_(soidRoot, historyPath, new IObjectWalker<Path>() {
+        l.info("immediate cleanup {} {} {}", f.soid, f.historyPath, f.rev);
+        _ds.walk_(f.soid, f, new IObjectWalker<StagedFolder>() {
             @Override
-            public @Nullable Path prefixWalk_(Path pOldParent, OA oa)
+            public @Nullable StagedFolder prefixWalk_(StagedFolder fp, OA oa)
                     throws SQLException, IOException
             {
-                boolean isRoot = soidRoot.equals(oa.soid());
+                boolean isRoot = f.soid.equals(oa.soid());
                 boolean oldExpelled = oa.isSelfExpelled();
                 checkState(!(isRoot && oldExpelled), "%s", oa.soid());
 
-                Path pathOld = isRoot || pOldParent.isEmpty()
-                        ? pOldParent
-                        : pOldParent.append(oa.name());
+                Path pathOld = isRoot || fp.historyPath.isEmpty()
+                        ? fp.historyPath
+                        : fp.historyPath.append(oa.name());
 
                 // check for and honor divergent history path for subtree
                 if (!isRoot) {
-                    Path h = _sadb.historyPath_(oa.soid());
-                    if (h != null) {
-                        pathOld = h;
+                    StagedFolder f = _sadb.historyPath_(oa.soid());
+                    if (f != null) {
+                        pathOld = f.historyPath;
+                        fp = f;
                         _sadb.removeEntry_(oa.soid(), t);
                     }
                 }
 
                 if (oa.isDir() && oldExpelled) return null;
 
-                cleanupObject_(oa, pathOld, t);
+                cleanupObject_(oa, pathOld, fp.rev, t);
 
-                return oa.isDir() ? pathOld : null;
+                return oa.isDir() ? new StagedFolder(null, pathOld, fp.rev) : null;
             }
 
             @Override
-            public void postfixWalk_(Path pOldParent, OA oa)
+            public void postfixWalk_(StagedFolder fp, OA oa)
             { }
         });
 
-        finalize_(soidRoot, historyPath.sid(), t);
+        finalize_(f.soid, f.historyPath.sid(), t);
     }
 
     /**
@@ -212,14 +213,16 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
      *      - empty if the innermost staged folder is marked to not keep history
      *      - otherwise, join(innermost history path, child path)
      */
-    private Path getHistoryPath_(ResolvedPath p) throws SQLException
+    private StagedFolder getHistoryPath_(ResolvedPath p) throws SQLException
     {
         for (int i = p.soids.size() - 1; i >= 0; --i) {
             SOID soid = p.soids.get(i);
-            Path historyPath = _sadb.historyPath_(soid);
-            if (historyPath != null) {
-                if (historyPath.isEmpty()) return historyPath;
-                return historyPath.append(p.elements(), i + 1, p.soids.size() - (i + 1));
+            StagedFolder f = _sadb.historyPath_(soid);
+            if (f != null) {
+                if (f.historyPath.isEmpty()) return f;
+                return new StagedFolder(p.soid(),
+                        f.historyPath.append(p.elements(), i + 1, p.soids.size() - (i + 1)),
+                        f.rev);
             }
         }
         return null;
@@ -232,7 +235,7 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
      *
      * @pre the top-level physical object should have been deleted (recursively if applicable)
      */
-    private void stageCleanup_(SOID soid, @Nonnull Path historyPath, Trans t)
+    private void stageCleanup_(SOID soid, @Nonnull Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException
     {
         OA oa = _ds.getOANullableNoFilter_(soid);
@@ -245,7 +248,7 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         if (oa.isAnchor()) return;
 
         if (oa.isFile()) {
-            cleanupFile_(oa, historyPath, t);
+            cleanupFile_(oa, historyPath, rev, t);
             return;
         }
 
@@ -262,7 +265,7 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         }
 
         l.info("sched dir cleanup {} {}", soid, historyPath);
-        _sadb.addEntry_(soid, historyPath, t);
+        _sadb.addEntry_(soid, historyPath, rev, t);
         t.addListener_(new AbstractTransListener()
         {
             @Override
@@ -310,8 +313,8 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
                             ? f.historyPath
                             : f.historyPath.append(oa.name());
 
-                    if (cleanupObject_(oa, historyPath, t)) {
-                        _sadb.addEntry_(oa.soid(), historyPath, t);
+                    if (cleanupObject_(oa, historyPath, f.rev, t)) {
+                        _sadb.addEntry_(oa.soid(), historyPath, f.rev, t);
                     }
                     if (++n > SPLIT_TRANS_THRESHOLD) {
                         // split trans when folder has large number of children
@@ -329,7 +332,7 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         }
     }
 
-    private boolean cleanupObject_(OA oa, Path historyPath, Trans t)
+    private boolean cleanupObject_(OA oa, Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException
     {
         //l.trace("cleanup {}", oa.soid(), historyPath);
@@ -338,10 +341,10 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         }
         switch (oa.type()) {
         case FILE:
-            cleanupFile_(oa, historyPath, t);
+            cleanupFile_(oa, historyPath, rev, t);
             break;
         case DIR:
-            _ps.scrub_(oa.soid(), historyPath, t);
+            _ps.scrub_(oa.soid(), historyPath, rev, t);
 
             return _ds.hasChildren_(oa.soid());
         case ANCHOR:
@@ -357,10 +360,11 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
     /**
      * Cleanup expelled immediately
      */
-    private void cleanupFile_(OA oa, Path historyPath, Trans t) throws SQLException, IOException
+    private void cleanupFile_(OA oa, Path historyPath, @Nullable String rev, Trans t)
+            throws SQLException, IOException
     {
         SOID soid = oa.soid();
-        _ps.scrub_(soid, historyPath, t);
+        _ps.scrub_(soid, historyPath, rev, t);
 
         // if the entire store is staged it's counter-productive to cleanup objects one by one
         if (!isStoreStaged_(soid.sidx())) {
@@ -379,9 +383,9 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
      */
     public void objectAliased_(SOID alias, SOID target, Trans t) throws SQLException
     {
-        Path historyPath = _sadb.historyPath_(alias);
-        if (historyPath != null) {
-            _sadb.addEntry_(target, historyPath, t);
+        StagedFolder f = _sadb.historyPath_(alias);
+        if (f != null) {
+            _sadb.addEntry_(target, f.historyPath, f.rev, t);
             _sadb.removeEntry_(alias, t);
         }
     }

@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;
 
+import javax.annotation.Nullable;
+
 /**
  * instances of this interface represent a combination of SOKIDs and file or directory paths.
  * They don't necessarily represent existing files/folders. This is very similar to how java.physical.File
@@ -26,7 +28,7 @@ public interface IPhysicalObject
      *
      * N.B. must roll back the operation if the transaction is aborted
      */
-    void delete_(PhysicalOp op, Trans t) throws IOException, SQLException;
+    @Nullable String delete_(PhysicalOp op, Trans t) throws IOException, SQLException;
 
     /**
      * If the physical storage uses OID in any way, update any and all information relative to

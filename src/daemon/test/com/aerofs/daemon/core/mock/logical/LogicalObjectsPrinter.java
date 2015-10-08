@@ -1,18 +1,22 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.OID;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.id.SOKID;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.Map.Entry;
 
 /**
  * See MockRoot for usage
@@ -37,7 +41,11 @@ public class LogicalObjectsPrinter
         String str = oa.soid() + (oa.isExpelled() ? " X " : " - ") + path;
         SOID soidParent;    // not null to recurse down to children
         if (oa.isFile()) {
-            l.info(str + " " + oa.cas());
+            for (Entry<KIndex, CA> e : oa.cas().entrySet()) {
+                str += " " + e.getKey() + ":{" + e.getValue()
+                        + "," + ds.getCAHash_(new SOKID(soid, e.getKey())) + "}";
+            }
+            l.info(str);
             soidParent = null;
         } else if (oa.isDir()) {
             // don't print the trailing slash for the root directory

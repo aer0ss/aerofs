@@ -15,6 +15,7 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,12 +41,13 @@ public class LinkedStagingAreaDatabase extends AbstractDatabase
     }
 
     private final PreparedStatementWrapper _pswAdd = new PreparedStatementWrapper(
-            DBUtil.insert(T_PSA, C_PSA_PATH));
-    public long addEntry_(Path path, Trans t) throws SQLException
+            DBUtil.insert(T_PSA, C_PSA_PATH, C_PSA_REV));
+    public long addEntry_(Path path, String rev, Trans t) throws SQLException
     {
         try {
             PreparedStatement ps = _pswAdd.get(c());
             ps.setString(1, path.toStringFormal());
+            ps.setString(2, rev);
             ps.executeUpdate();
             return DBUtil.generatedId(ps);
         } catch (SQLException e) {
@@ -59,9 +61,7 @@ public class LinkedStagingAreaDatabase extends AbstractDatabase
     public void removeEntry_(long id, Trans t) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswRemove.get(c());
-            ps.setLong(1, id);
-            int n = ps.executeUpdate();
+            int n = update(_pswRemove, id);
             checkState(n == 1);
         } catch (SQLException e) {
             _pswRemove.close();
@@ -73,11 +73,16 @@ public class LinkedStagingAreaDatabase extends AbstractDatabase
     {
         public final long id;
         public final Path historyPath;
+        public final @Nullable String rev;
 
-        StagedFolder(long id, String historyPath) throws ExFormatError
-        {
+        StagedFolder(long id, String historyPath, @Nullable String rev) throws ExFormatError {
+            this(id, Path.fromStringFormal(historyPath), rev);
+        }
+
+        public StagedFolder(long id, Path historyPath, @Nullable String rev) {
             this.id = id;
-            this.historyPath = Path.fromStringFormal(historyPath);
+            this.historyPath = historyPath;
+            this.rev = rev;
         }
     }
 
@@ -92,7 +97,7 @@ public class LinkedStagingAreaDatabase extends AbstractDatabase
         public StagedFolder get_() throws SQLException
         {
             try {
-                return new StagedFolder(_rs.getLong(1), _rs.getString(2));
+                return new StagedFolder(_rs.getLong(1), _rs.getString(2), _rs.getString(3));
             } catch (ExFormatError e) {
                 throw new SQLException(e);
             }
@@ -100,14 +105,11 @@ public class LinkedStagingAreaDatabase extends AbstractDatabase
     }
 
     private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_PSA, C_PSA_ID + ">?", C_PSA_ID, C_PSA_PATH));
+            DBUtil.selectWhere(T_PSA, C_PSA_ID + ">?", C_PSA_ID, C_PSA_PATH, C_PSA_REV));
     public IDBIterator<StagedFolder> listEntries_(long lastId) throws SQLException
     {
         try {
-            PreparedStatement ps = _pswGet.get(c());
-            ps.setLong(1, lastId);
-            ResultSet rs = ps.executeQuery();
-            return new DBIterator(rs);
+            return new DBIterator(query(_pswGet, lastId));
         } catch (SQLException e) {
             _pswGet.close();
             throw detectCorruption(e);

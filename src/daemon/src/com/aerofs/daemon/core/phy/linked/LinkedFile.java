@@ -26,6 +26,8 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 
 import com.aerofs.lib.id.SOKID;
 
+import javax.annotation.Nullable;
+
 import static com.aerofs.daemon.core.phy.linked.LinkedStorage.MoveToRepresentableException;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -133,7 +135,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 
     @SuppressWarnings("fallthrough")
     @Override
-    public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public @Nullable String delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         l.debug("delete {} {}", this, op);
 
@@ -143,6 +145,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         // ghost physical objects in the NRO dialog.
         if (!_path.isRepresentable() && op == PhysicalOp.MAP) op = PhysicalOp.APPLY;
 
+        String rev = null;
         switch (op) {
         case APPLY:
             // don't fail if the file to delete is missing
@@ -168,7 +171,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
                     _fidm.throwIfFIDInconsistent_();
                 }
 
-                _s.moveToRev_(this, t);
+                rev= _s.moveToRev_(this, true, t);
             }
             // fallthrough
         case MAP:
@@ -180,6 +183,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
         _s.onDeletion_(this, op, t);
         // always reset FID to avoid violating FID consistency invariants
         _fidm.physicalObjectDeleted_(t);
+        return rev;
     }
 
     @Override

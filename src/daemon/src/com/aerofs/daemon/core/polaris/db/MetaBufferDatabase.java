@@ -64,35 +64,61 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
 
     private final PreparedStatementWrapper _pswInsert = new PreparedStatementWrapper(
             DBUtil.insert(T_META_BUFFER,
-                    C_META_BUFFER_SIDX, C_META_BUFFER_OID, C_META_BUFFER_TYPE, C_META_BUFFER_BOUND));
-    public void insert_(SIndex sidx, OID oid, Type type, long mergeBoundary, Trans t)
+                    C_META_BUFFER_SIDX, C_META_BUFFER_OID, C_META_BUFFER_TYPE, C_META_BUFFER_MIGRANT, C_META_BUFFER_BOUND));
+    public void insert_(SIndex sidx, OID oid, Type type, @Nullable OID migrant, long mergeBoundary,
+                        Trans t)
             throws SQLException
     {
-        checkState(1 == update(_pswInsert, sidx.getInt(), oid.getBytes(), type.ordinal(), mergeBoundary));
+        checkState(1 == update(_pswInsert, sidx.getInt(), oid.getBytes(), type.ordinal(),
+                migrant != null ? migrant.getBytes() : null, mergeBoundary));
     }
 
     public static class BufferedChange
     {
         public final OID oid;
         public final Type type;
+        public final @Nullable OID migrant;
 
-        public BufferedChange(OID oid, Type type)
+        public BufferedChange(OID oid, Type type, @Nullable OID migrant)
         {
             this.oid = oid;
             this.type = type;
+            this.migrant = migrant;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + oid + "," + type + "," + migrant + "}";
         }
     }
 
     private final PreparedStatementWrapper _pswList = new PreparedStatementWrapper(
             DBUtil.selectWhere(T_META_BUFFER,
                     C_META_BUFFER_SIDX + "=? and " + C_META_BUFFER_BOUND + "<=?",
-                    C_META_BUFFER_OID, C_META_BUFFER_TYPE));
+                    C_META_BUFFER_OID, C_META_BUFFER_TYPE, C_META_BUFFER_MIGRANT));
     public @Nullable BufferedChange getBufferedChange_(SIndex sidx, long until)
             throws SQLException
     {
         try (ResultSet rs = query(_pswList, sidx.getInt(), until)) {
-            return !rs.next() ? null
-                    : new BufferedChange(new OID(rs.getBytes(1)), Type.valueOf(rs.getInt(2)));
+            if (!rs.next()) return null;
+            byte[] migrant = rs.getBytes(3);
+            return new BufferedChange(new OID(rs.getBytes(1)), Type.valueOf(rs.getInt(2)),
+                    migrant != null ? new OID(migrant) : null);
+        }
+    }
+
+    private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_META_BUFFER,
+                    C_META_BUFFER_SIDX + "=? and " + C_META_BUFFER_OID + "=?",
+                    C_META_BUFFER_TYPE, C_META_BUFFER_MIGRANT));
+    public @Nullable BufferedChange getBufferedChange_(SIndex sidx, OID oid)
+            throws SQLException
+    {
+        try (ResultSet rs = query(_pswGet, sidx.getInt(), oid.getBytes())) {
+            if (!rs.next()) return null;
+            byte[] migrant = rs.getBytes(2);
+            return new BufferedChange(oid, Type.valueOf(rs.getInt(1)),
+                    migrant != null ? new OID(migrant) : null);
         }
     }
 
@@ -104,13 +130,13 @@ public class MetaBufferDatabase extends AbstractDatabase implements IStoreDeleti
         return 1 == update(_pswDelete, sidx.getInt(), oid.getBytes());
     }
 
-    private final PreparedStatementWrapper _pswGet = new PreparedStatementWrapper(
+    private final PreparedStatementWrapper _pswExists = new PreparedStatementWrapper(
             DBUtil.selectWhere(T_META_BUFFER,
                     C_META_BUFFER_SIDX + "=? and " + C_META_BUFFER_OID + "=?",
                     C_META_BUFFER_BOUND));
     public boolean isBuffered_(SOID soid) throws SQLException
     {
-        try (ResultSet rs = query(_pswGet, soid.sidx().getInt(), soid.oid().getBytes())) {
+        try (ResultSet rs = query(_pswExists, soid.sidx().getInt(), soid.oid().getBytes())) {
             return rs.next();
         }
     }

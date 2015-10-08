@@ -14,14 +14,16 @@ class InstanceUniqueDirTree:
     A wrapper of DirTree which knows that its root_path is always
     supposed to be files.instance_unique_path. This simplifies the API
     """
-    def __init__(self, tree, ignore_content=None):
+    def __init__(self, tree, ignore_content=None, ignore_file=None):
         self._dict = tree
         self._ignore_content = ignore_content
+        self._ignore_file = ignore_file
 
     def dt(self):
         if not hasattr(self, '_dt'):
             self._dt = DirTree(os.path.basename(files.instance_unique_path()), self._dict,
-                               ignore_content=self._ignore_content)
+                               ignore_content=self._ignore_content,
+                               ignore_file=self._ignore_file)
         return self._dt
 
     def write(self, ignore_existing_dir = False, verbose = False):

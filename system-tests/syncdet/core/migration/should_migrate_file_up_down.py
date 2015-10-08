@@ -9,24 +9,23 @@ from lib.files.dirtree import InstanceUniqueDirTree
 from lib import ritual
 from syncdet.case.sync import sync
 
-FILENAME = 'foo'
-CONTENT = 'bar'
+CONTENT = 'baz'
 
 
 def original():
-    return instance_path(FILENAME)
+    return instance_path('foo', 'bar')
 
 
 def migrated():
-    return os.path.join(os.path.dirname(instance_path()), FILENAME)
+    return instance_path('bar')
 
 
 def creator():
     print 'creator'
 
     r = ritual.connect()
-    InstanceUniqueDirTree({FILENAME: CONTENT}).write()
-    r.share_folder(instance_path())
+    InstanceUniqueDirTree({'foo': {'bar': CONTENT}}).write()
+    r.share_folder(instance_path('foo'))
 
     sync(1)
 
@@ -48,7 +47,7 @@ def syncer():
 
     r = ritual.connect()
     wait_file_with_content(original(), CONTENT)
-    r.wait_shared(instance_path())
+    r.wait_shared(instance_path('foo'))
 
     sync(1)
 

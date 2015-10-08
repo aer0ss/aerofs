@@ -23,13 +23,11 @@ import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.core.polaris.InMemoryDS;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
@@ -74,17 +72,23 @@ import org.hamcrest.Matcher;
 import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -120,6 +124,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
     protected final IPhysicalFolder pf = mock(IPhysicalFolder.class);
     protected final IPhysicalFile file = mock(IPhysicalFile.class);
     protected final IPhysicalPrefix prefix = mock(IPhysicalPrefix.class);
+    protected final Map<SOID, IPhysicalFile> files = new HashMap<>();
 
     protected Injector inj;
 
@@ -135,12 +140,37 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
     protected SIndex sidx;
 
+    protected final PolarisClient client = mock(PolarisClient.class);
+    protected final PolarisClient.Factory factClient = mock(PolarisClient.Factory.class);
+
     @Before
     public void setUp() throws Exception
     {
+        doAnswer(invocation -> {
+            Object[] arg = invocation.getArguments();
+            try {
+                ((AsyncTaskCallback) arg[2]).onSuccess_(false);
+            } catch (Throwable t) {
+                ((AsyncTaskCallback) arg[2]).onFailure_(t);
+            }
+            return null;
+        }).when(client).post(anyString(), anyObject(), any(AsyncTaskCallback.class), any(),
+                any(Executor.class));
+
+        when(factClient.create()).thenReturn(client);
+
         when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(pf);
-        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).thenReturn(file);
         when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(prefix);
+
+        when(prefix.newOutputStream_(anyBoolean())).thenAnswer(invocation -> {
+            return new PrefixOutputStream(new ByteArrayOutputStream(), BaseSecUtil.newMessageDigest());
+        });
+
+        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).thenAnswer(invocation -> {
+            ResolvedPath p = (ResolvedPath)invocation.getArguments()[0];
+            IPhysicalFile pf = files.get(p.soid());
+            return pf != null ? pf : file;
+        });
 
         inj = Guice.createInjector(new AbstractModule() {
             @Override
@@ -221,6 +251,9 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
                 bind(EffectiveUserList.class).toInstance(mock(EffectiveUserList.class));
             }
+
+            @Provides
+            public PolarisClient.Factory provideClientFactory() { return factClient; }
 
             @Provides
             public IOSUtil provideIOSUtil()
@@ -445,14 +478,28 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         });
     }
 
-    protected void setContent(SIndex sidx, OID oid, byte[] c, long mtime) throws SQLException {
+    protected void setContent(SIndex sidx, OID oid, byte[] c, long mtime, Trans t)
+            throws SQLException, IOException {
         ds.createCA_(new SOID(sidx, oid), KIndex.MASTER, t);
         ds.setCA_(new SOKID(sidx, oid, KIndex.MASTER), c.length, mtime,
                 new ContentHash(BaseSecUtil.hash(c)), t);
+
+        ccdb.insertChange_(sidx, oid, t);
+        mockPhy(sidx, oid, c, mtime);
+    }
+
+    private void mockPhy(SIndex sidx, OID oid, byte[] c, long mtime) throws IOException
+    {
+        IPhysicalFile pf = mock(IPhysicalFile.class);
+        when(pf.lengthOrZeroIfNotFile()).thenReturn((long)c.length);
+        when(pf.lastModified()).thenReturn(mtime);
+        when(pf.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(c));
+
+        files.put(new SOID(sidx, oid), pf);
     }
 
     protected void downloadContent(SIndex sidx, OID oid, long version, byte[] d, long mtime, Trans t)
-            throws SQLException {
+            throws SQLException, IOException {
         KIndex kidx = KIndex.MASTER;
         OA oa = ds.getOA_(new SOID(sidx, oid));
         if (oa.caMasterNullable() != null) kidx = kidx.increment();
@@ -460,5 +507,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         ds.createCA_(new SOID(sidx, oid), kidx, t);
         ds.setCA_(new SOKID(sidx, oid, kidx), d.length, mtime, new ContentHash(BaseSecUtil.hash(d)), t);
         cvdb.setVersion_(sidx, oid, version, t);
+
+        mockPhy(sidx, oid, d, mtime);
     }
 }

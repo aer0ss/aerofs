@@ -1,2 +1,3 @@
 :group migration_group
-    core.migration.should_migrate_large_hierarchy
+    core.migration.should_migrate_file_up_down
+    core.migration.should_migrate_local_changes

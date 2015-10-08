@@ -14,6 +14,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -44,10 +45,11 @@ class BlockFolder implements IPhysicalFolder
     }
 
     @Override
-    public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public @Nullable String delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         l.debug("{}.delete_({})", this, op);
         // Noop: we do not need to maintain any explicit folder structure
+        return null;
     }
 
     @Override

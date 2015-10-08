@@ -1,17 +1,18 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.migration.RemoteTreeCache;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.*;
@@ -21,9 +22,7 @@ import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteChild;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.StoreCreator;
-import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
@@ -31,17 +30,20 @@ import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.DigestInputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 import static com.aerofs.daemon.core.ds.OA.Type.DIR;
@@ -71,15 +73,20 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final IMapSID2SIndex  _sid2sidx;
     private final ImmigrantCreator _imc;
     private final ExpulsionDatabase _exdb;
+    private final StoreHierarchy _stores;
+    private final LogicalStagingArea _sa;
+    private final MapSIndex2Store _sidx2s;
+    private final VersionUpdater _vu;
 
     @Inject
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
                            MapAlias2Target a2t, ObjectSurgeon os, RemoteLinkDatabase rpdb,
                            CentralVersionDatabase cvdb, MetaBufferDatabase mbdb,
                            MetaChangesDatabase mcdb,  ContentChangesDatabase ccdb,
-                           RemoteContentDatabase rcdb,
-                           MetaChangeSubmitter submitter, StoreCreator sc, IMapSID2SIndex sid2sidx,
-                           ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd)
+                           RemoteContentDatabase rcdb, MetaChangeSubmitter submitter,
+                           StoreHierarchy stores, StoreCreator sc, IMapSID2SIndex sid2sidx,
+                           ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
+                           LogicalStagingArea sa, MapSIndex2Store sidx2s, VersionUpdater vu)
     {
         _ds = ds;
         _ps = ps;
@@ -98,6 +105,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _sid2sidx = sid2sidx;
         _imc = imc;
         _exdb = exdb;
+        _stores = stores;
+        _sa = sa;
+        _vu = vu;
+        _sidx2s = sidx2s;
     }
 
     @Override
@@ -147,7 +158,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     @Override
     public void insert_(SOID parent, OID oidChild, String name, ObjectType objectType,
-                 long mergeBoundary, Trans t) throws Exception {
+                 @Nullable OID migrant, long mergeBoundary, Trans t) throws Exception {
         OA.Type type = type(objectType);
         // buffer inserts if:
         //   1. there are local changes
@@ -159,9 +170,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 || (type == DIR && _ds.getOANullable_(new SOID(parent.sidx(), SID.folderOID2convertedAnchorOID(oidChild))) != null);
 
         if (shouldBuffer) {
-            _mbdb.insert_(parent.sidx(), oidChild, type, mergeBoundary, t);
+            l.info("buffering {}{} {} {}", parent.sidx(), oidChild, migrant, mergeBoundary);
+            _mbdb.insert_(parent.sidx(), oidChild, type, migrant, mergeBoundary, t);
         } else {
-            applyInsert_(parent.sidx(), oidChild, parent.oid(), name, type, mergeBoundary, t);
+            applyInsert_(parent.sidx(), oidChild, parent.oid(), name, type, migrant, mergeBoundary, t);
         }
     }
 
@@ -170,7 +182,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     }
 
     private void applyInsert_(SIndex sidx, OID oidChild, OID oidParent, String name, OA.Type type,
-                              long timestamp, Trans t) throws Exception {
+                              @Nullable OID migrant, long timestamp, Trans t) throws Exception {
         OA oa = _ds.getOANullable_(new SOID(sidx, oidChild));
         if (oa != null) {
             OA parent = _ds.getOANullable_(new SOID(sidx, oidParent));
@@ -199,7 +211,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         oa = _ds.getOA_(new SOID(sidx, oidChild));
         if (!oa.isExpelled()) {
             IPhysicalFolder pf = _ps.newFolder_(_ds.resolve_(oa));
-            if (oa.isDirOrAnchor()) {
+            if (migrant != null) {
+                SIndex sidxFrom = locate_(migrant, sidx);
+                if (sidxFrom != null) {
+                    migrate_(sidxFrom, migrant, sidx, oidChild, t);
+                } else {
+                    l.info("unable to locate migrant {} {}", oidChild, migrant);
+                }
+            } else if (oa.isDirOrAnchor()) {
                 pf.create_(APPLY, t);
             }
             if (oa.isAnchor()) {
@@ -208,6 +227,145 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 pf.promoteToAnchor_(sid, APPLY, t);
             }
         }
+    }
+
+    private SIndex locate_(OID migrant, SIndex expect) throws SQLException {
+        for (SIndex sidx : _stores.getAll_()) {
+            if (sidx.equals(expect)) continue;
+            OA oa = _ds.getOANullable_(new SOID(sidx, migrant));
+            if (oa != null) {
+                return sidx;
+            }
+        }
+        return null;
+    }
+
+    private void migrate_(SIndex sidxFrom, OID emigrant, SIndex sidxTo, OID immigrant, Trans t)
+            throws Exception {
+        OA oaFrom = _ds.getOA_(new SOID(sidxFrom, emigrant));
+        OA oa = _ds.getOA_(new SOID(sidxTo, immigrant));
+
+        if (oaFrom.type() != oa.type()) throw new ExProtocolError();
+
+        if (oa.isFile()) {
+            l.info("migrate content {}{} {}{}", sidxFrom, emigrant, sidxTo, immigrant);
+            try (IDBIterator<RemoteContent> it = _rcdb.list_(sidxFrom, emigrant)) {
+                while (it.next_()) {
+                    RemoteContent rc = it.get_();
+                    _rcdb.insert_(sidxTo, immigrant, rc.version, rc.originator, rc.hash, rc.length, t);
+                }
+            }
+            // nothing to restore if destination is expelled
+            if (oa.isExpelled()) return;
+            ResolvedPath pTo = _ds.resolve_(oa);
+            if (oaFrom.isExpelled()) {
+                // NB: nothing to restore on explicit expulsion
+                if (_ds.isDeleted_(oaFrom)) {
+                    restoreContent_(oaFrom, pTo, t);
+                }
+            } else {
+                copy_(oaFrom, oa, pTo, t);
+                Long v = _cvdb.getVersion_(sidxFrom, emigrant);
+                if (v != null) {
+                    _cvdb.setVersion_(sidxTo, immigrant, v, t);
+                }
+                if (oaFrom.caMasterNullable() != null && _ccdb.hasChange_(sidxFrom, emigrant)) {
+                    // add content change and schedule submit
+                    _vu.update_(new SOCKID(sidxTo, immigrant, CID.CONTENT, KIndex.MASTER), t);
+                }
+            }
+            Long v = _cvdb.getVersion_(sidxTo, immigrant);
+            if (_rcdb.hasRemoteChanges_(sidxTo, immigrant, v != null ? v : 0)) {
+                _sidx2s.get_(sidxTo).iface(ContentFetcher.class).schedule_(immigrant, t);
+            }
+        } else if (oa.isDir()) {
+            l.info("migrate children {}{} {}{}", sidxFrom, emigrant, sidxTo, immigrant);
+            _ps.newFolder_(_ds.resolve_(oa)).create_(APPLY, t);
+            // TODO: linked storage, physical children not yet scanned?
+            for (OID c : _ds.getChildren_(oaFrom.soid())) {
+                if (_rpdb.getParent_(sidxFrom, c) != null) continue;
+                OA cc = _ds.getOA_(new SOID(sidxFrom, c));
+                OID mc = OID.generate();
+                _ds.createOA_(cc.type(), sidxTo, mc, immigrant, cc.name(), t);
+                // add meta change and schedule submit
+                _vu.update_(new SOCKID(sidxTo, mc, CID.META, KIndex.MASTER), t);
+                migrate_(sidxFrom, c, sidxTo, mc, t);
+            }
+        } else {
+            throw new ExProtocolError();
+        }
+    }
+
+    private void restoreContent_(OA from, ResolvedPath pTo, Trans t) throws Exception {
+        // need to make sure the deleted subtree is properly cleaned before attempting
+        // to restore
+        _sa.ensureStoreClean_(from.soid().sidx(), t);
+        IPhysicalFile pf = _ps.newFile_(pTo, KIndex.MASTER);
+
+        // retrieve path within deleted subtree (RemoteLinkDatabase)
+        SIndex sidx = from.soid().sidx();
+        OID oid = from.soid().oid();
+        RemoteLink lnk;
+        List<String> p = new ArrayList<>();
+        while ((lnk = _rpdb.getParent_(sidx, oid)) != null) {
+            oid = lnk.parent;
+            p.add(lnk.name);
+        }
+
+        if (!_ps.restore_(from.soid(), oid, p, pf, t)) {
+            l.warn("failed to restore content");
+        } else {
+            // TODO: store content hash of history files to avoid recomputing
+            ContentHash h = contentHash(pf);
+            long length = pf.lengthOrZeroIfNotFile();
+            long mtime = pf.lastModified();
+            _ds.createCA_(pTo.soid(), KIndex.MASTER, t);
+            _ds.setCA_(new SOKID(pTo.soid(), KIndex.MASTER), length, mtime, h, t);
+            if (!matchContent_(pTo.soid().sidx(), pTo.soid().oid(), length, t)) {
+                // preserve base version to avoid false conflicts
+                // NB: central version is preserved for deleted objects specifically for this to
+                // work. See PolarisContentVersionControl#fileExpelled_
+                Long v = _cvdb.getVersion_(from.soid().sidx(), from.soid().oid());
+                if (v != null) {
+                    _cvdb.setVersion_(pTo.soid().sidx(), pTo.soid().oid(), v, t);
+                }
+                _vu.update_(new SOCKID(pTo.soid(), CID.CONTENT, KIndex.MASTER), t);
+            }
+        }
+    }
+
+    private static ContentHash contentHash(IPhysicalFile pf) throws IOException {
+        ContentHash h;
+        try (DigestInputStream is = new DigestInputStream(pf.newInputStream(), BaseSecUtil.newMessageDigest())) {
+            ByteStreams.copy(is, ByteStreams.nullOutputStream());
+            h = new ContentHash(is.getMessageDigest().digest());
+        }
+        return h;
+    }
+
+    private void copy_(OA from, OA to, ResolvedPath pTo, Trans t) throws SQLException, IOException {
+        ResolvedPath pFrom = _ds.resolve_(from);
+        for (Entry<KIndex, CA> e : from.cas().entrySet()) {
+            KIndex kidx = e.getKey();
+            SOKID k = new SOKID(to.soid(), kidx);
+            CA ca = e.getValue();
+            ContentHash h = _ds.getCAHash_(new SOKID(from.soid(), kidx));
+            l.info("copy {} {} {} {}", k, ca.length(), ca.mtime(), h);
+            _ds.createCA_(to.soid(), kidx, t);
+            _ds.setCA_(k, ca.length(), ca.mtime(), h, t);
+            copy_(_ps.newFile_(pFrom, kidx), _ps.newFile_(pTo, kidx), ca.mtime(), t);
+        }
+    }
+
+    // TODO: zero-copy copy for Block Storage
+    private void copy_(IPhysicalFile from, IPhysicalFile to, long mtime, Trans t)
+            throws SQLException, IOException {
+        IPhysicalPrefix p = _ps.newPrefix_(to.sokid(), "copy");
+        try (InputStream is = from.newInputStream();
+             OutputStream os = p.newOutputStream_(false)) {
+            ByteStreams.copy(is, os);
+        }
+        _ps.apply_(p, to, false, mtime, t);
     }
 
     @Override
@@ -228,7 +386,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         OA oaChild = _ds.getOA_(soidChild);
         if (oaParent == null || hasConflict) {
-            _mbdb.insert_(sidx, oidChild, oaChild.type(), mergeBoundary, t);
+            _mbdb.insert_(sidx, oidChild, oaChild.type(), null, mergeBoundary, t);
         } else {
             applyMove_(oaParent, oaChild, name, mergeBoundary, t);
         }
@@ -314,10 +472,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     }
 
     @Override
-    public void delete_(SOID parent, OID oidChild, Trans t) throws Exception {
+    public void delete_(SOID parent, OID oidChild, @Nullable OID migrant, Trans t) throws Exception {
         SOID soidChild = new SOID(parent.sidx(), oidChild);
 
         boolean isBuffered = _mbdb.isBuffered_(soidChild);
+
+        if (migrant != null) {
+            reconcileLocalChangesInMigratedTree_(parent.sidx(), oidChild, t);
+        }
 
         // defer delete
         if (isBuffered) return;
@@ -327,6 +489,45 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             l.warn("no such object to remove {} {}", parent, oidChild);
         } else {
             applyDelete_(oaChild, t);
+        }
+    }
+
+    void reconcileLocalChangesInMigratedTree_(SIndex sidx, OID oid, Trans t)
+            throws SQLException, IOException, ExAlreadyExist {
+        RemoteTreeCache cache = new RemoteTreeCache(sidx, oid, _rpdb);
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
+            while (it.next_()) {
+                MetaChange c = it.get_();
+                boolean from = cache.isInSharedTree(c.oid);
+                boolean to = c.newParent != null && _ds.resolve_(new SOID(sidx, c.newParent))
+                        .soids.contains(new SOID(sidx, oid));
+                if (from) {
+                    l.info("discard change in migrated subtree {}{}", sidx, c.oid);
+                    // changes would be rejected by polaris as the migrated tree is locked to avoid
+                    // races.
+                    // NB: if we support wholesale "restore" of deleted trees in the future we may
+                    // have to reconcile the divergence at that point
+                    _mcdb.deleteChange_(sidx, c.idx, t);
+                    if (to) {
+                        OID cc = OID.generate();
+                        OA oa = _ds.getOA_(new SOID(sidx, c.oid));
+                        alias_(sidx, cc, oa, t);
+                        _vu.update_(new SOCKID(sidx, cc, CID.META, KIndex.MASTER), t);
+                        if (oa.caMasterNullable() != null) {
+                            _vu.update_(new SOCKID(sidx, cc, CID.CONTENT, KIndex.MASTER), t);
+                        }
+                    }
+                } else if (to) {
+                    _mcdb.deleteChange_(sidx, c.idx, t);
+                    if (_rpdb.getParent_(sidx, c.oid) != null) {
+                        l.info("del obj locally moved into migrated tree {}{}", c.sidx, c.oid);
+                        // ideally we'd cause a cross-store move instead but that's hard since at
+                        // this point we have no idea what the parent is going to be in the
+                        // destination store
+                        _mcdb.insertChange_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), t);
+                    }
+                }
+            }
         }
     }
 
@@ -587,7 +788,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         if (lnk == null) {
             if (oaChild == null) {
-                applyInsert_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), c.type, timestamp, t);
+                applyInsert_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), c.type, c.migrant, timestamp, t);
             } else {
                 applyDelete_(oaChild, t);
             }
@@ -595,11 +796,11 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
 
         // ensure parent exists
-        OA oaParent = _ds.getOANullable_(new SOID(sidx, lnk.parent));
-        if (oaParent == null) {
+        if (_ds.getOANullable_(new SOID(sidx, lnk.parent)) == null) {
             l.info("apply parent {}{}", sidx, lnk.parent);
-            if (!_mbdb.isBuffered_(new SOID(sidx, lnk.parent))
-                    || !applyBufferedChange_(sidx, new BufferedChange(lnk.parent, DIR), timestamp, t)) {
+            BufferedChange pc = _mbdb.getBufferedChange_(sidx, lnk.parent);
+            checkState(pc == null || pc.type == DIR, "%s", pc);
+            if (pc == null || !applyBufferedChange_(sidx, pc, timestamp, t)) {
                 l.warn("dropping buffered child {}/{}:{}", lnk.parent, c.oid, lnk.name);
                 if (c.type == FILE) {
                     // remote content is not buffered and needs to be removed when a file is dropped
@@ -607,7 +808,6 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 }
                 return false;
             }
-            oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
         }
 
         String name = lnk.name;
@@ -641,6 +841,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             // instead should throw and let the submitter perform aliasing on 409
             if (oaChild == null && clnk == null
                     && oaConflict.type() == c.type && c.type != OA.Type.ANCHOR) {
+                // TODO: migration?
                 alias_(sidx, c.oid, oaConflict, t);
 
                 // no need to insert the child
@@ -652,7 +853,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         // apply remote change
         // NB: applyInsert_ will do a move if the object already exists
-        applyInsert_(sidx, c.oid, lnk.parent, name, c.type, timestamp, t);
+        applyInsert_(sidx, c.oid, lnk.parent, name, c.type, c.migrant, timestamp, t);
         return true;
     }
 

@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionInfo;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -28,6 +29,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -62,11 +64,12 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     private final TokenManager _tokenManager;
     private final IgnoreList _il;
     private final LinkedRevProvider _revProvider;
+    private final TimeSource _ts;
 
     @Inject
     public LinkedStagingArea(LinkerRootMap lrm,
             LinkedStagingAreaDatabase sadb, InjectableFile.Factory factFile,
-            CoreScheduler sched, TransManager tm,
+            CoreScheduler sched, TransManager tm, TimeSource ts,
             TokenManager tokenManager, IgnoreList il, LinkedRevProvider revProvider)
     {
         _sas = new CleanupScheduler(this, sched);
@@ -76,6 +79,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         _tm = tm;
         _tokenManager = tokenManager;
         _il = il;
+        _ts = ts;
         _revProvider = revProvider;
     }
 
@@ -99,11 +103,14 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
      * entire physical subtree. However it may take a while for all files to make their way to sync
      * history or to be cleaned up from the disk.
      */
-    void stageDeletion_(String absPath, Path historyPath, Trans t)
-            throws SQLException, IOException
-    {
+    @Nullable String stageDeletion_(String absPath, Path historyPath, @Nullable String rev, Trans t)
+            throws SQLException, IOException {
         final InjectableFile from = _factFile.create(absPath);
-        if (!from.exists()) return;
+        if (!from.exists()) return null;
+
+        if (rev == null) {
+            rev = new RevisionInfo(KIndex.MASTER.getInt(), _ts.getTime(), 0).hexEncoded();
+        }
 
         // the staging area may contain entries from a previous installation
         // in which case we should:
@@ -112,7 +119,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         long id;
         InjectableFile sf;
         do {
-            id = _sadb.addEntry_(historyPath, t);
+            id = _sadb.addEntry_(historyPath, rev, t);
             sf = stagedPath(id, historyPath.sid());
         } while (sf.exists());
 
@@ -142,6 +149,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                 }
             }
         });
+        return rev;
     }
 
     /**
@@ -156,6 +164,12 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     {
         return _factFile.create(
                 Util.join(_lrm.auxRoot_(sid), AuxFolder.STAGING_AREA._name, Long.toHexString(id)));
+    }
+
+    boolean hasEntries_() throws SQLException {
+        try (IDBIterator<?> it = _sadb.listEntries_(-1)) {
+            return it.next_();
+        }
     }
 
     @Override
@@ -213,7 +227,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
             if (sf.historyPath.isEmpty()) {
                 return deleteIgnoreErrorRecursively_(f);
             } else {
-                return moveToRevIgnoreErrorRecursively_(f, sf.historyPath);
+                return moveToRevIgnoreErrorRecursively_(f, sf);
             }
         });
     }
@@ -241,7 +255,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
         }
     }
 
-    private boolean moveToRevIgnoreErrorRecursively_(InjectableFile f, Path p)
+    private boolean moveToRevIgnoreErrorRecursively_(InjectableFile f, StagedFolder sf)
     {
         if (!f.exists()) {
             // file doesn't exist, nothing we need to delete
@@ -255,7 +269,8 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
                     if (_il.isIgnored(c)) {
                         deleteIgnoreErrorRecursively_(cf);
                     } else {
-                        moveToRevIgnoreErrorRecursively_(cf, p.append(c));
+                        moveToRevIgnoreErrorRecursively_(cf,
+                                new StagedFolder(-1, sf.historyPath.append(c), sf.rev));
                     }
                 }
             }
@@ -265,16 +280,18 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
             try {
                 if (_il.isIgnored(f.getName())) {
                     return f.deleteIgnoreError();
+                } else if (sf.rev != null) {
+                    _revProvider.localRevFile(sf.historyPath, f.getAbsolutePath(), sf.rev).save_();
                 } else {
-                    _revProvider.newLocalRevFile(p, f.getAbsolutePath(), KIndex.MASTER).save_();
+                    _revProvider.newLocalRevFile(sf.historyPath, f.getAbsolutePath(), KIndex.MASTER).save_();
                 }
                 return true;
             } catch (IOException e) {
-                l.warn("could not move to rev {} {}", f, p, BaseLogUtil.suppress(e));
+                l.warn("could not move to rev {} {}", f, sf, BaseLogUtil.suppress(e));
                 return false;
             }
         }
-        l.warn("could not move to rev {} {}", f, p);
+        l.warn("could not move to rev {} {}", f, sf);
         return false;
     }
 }

@@ -129,7 +129,7 @@ public class DBUtil
         return insertImpl(insertStmt(), table, fields).toString();
     }
 
-    private static StringBuilder insertImpl(String stmt, String table, String... fields)
+    public static StringBuilder insertImpl(String stmt, String table, String... fields)
     {
         StringBuilder sb = new StringBuilder(stmt).append(table).append(" (");
         boolean first = true;

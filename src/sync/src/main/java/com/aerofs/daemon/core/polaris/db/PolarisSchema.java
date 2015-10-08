@@ -42,12 +42,14 @@ public class PolarisSchema implements ISchema {
             C_META_BUFFER_SIDX      = "mb_s",
             C_META_BUFFER_OID       = "mb_o",
             C_META_BUFFER_TYPE      = "mb_t",
+            C_META_BUFFER_MIGRANT   = "mb_m",
             C_META_BUFFER_BOUND     = "mb_b",
 
             // Local meta changes   (per-store)
             T_META_CHANGE               = "mc",
             C_META_CHANGE_IDX           = "mc_i",
             C_META_CHANGE_OID           = "mc_o",
+            C_META_CHANGE_MIGRANT       = "mc_m",
             C_META_CHANGE_NEW_PARENT    = "mc_p",
             C_META_CHANGE_NEW_NAME      = "mc_n",
 
@@ -103,6 +105,7 @@ public class PolarisSchema implements ISchema {
                 + C_META_BUFFER_SIDX + " integer not null,"
                 + C_META_BUFFER_OID + dbcw.uniqueIdType() + "not null,"
                 + C_META_BUFFER_TYPE + " integer not null,"
+                + C_META_BUFFER_MIGRANT + dbcw.uniqueIdType() + ","
                 + C_META_BUFFER_BOUND + dbcw.longType() + " not null,"
                 + "primary key(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_OID + "))");
 

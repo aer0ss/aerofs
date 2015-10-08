@@ -99,12 +99,12 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
 
     private MetaChange move(OID oid, OID newParent, String newName)
     {
-        return new MetaChange(sidx, 0, oid, newParent.getBytes(), newName);
+        return new MetaChange(sidx, 0, oid, newParent, newName);
     }
 
     private MetaChange delete(OID oid)
     {
-        return new MetaChange(sidx, 0, oid, OID.TRASH.getBytes(), oid.toStringFormal());
+        return new MetaChange(sidx, 0, oid, OID.TRASH, oid.toStringFormal());
     }
 
     private boolean ackRemoteChange(RemoteChange rc, RemoteLink lnk) throws Exception

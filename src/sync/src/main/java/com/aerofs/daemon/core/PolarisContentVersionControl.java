@@ -32,7 +32,9 @@ public class PolarisContentVersionControl implements IContentVersionControl
     @Override
     public void fileExpelled_(SOID soid, Trans t) throws SQLException
     {
-        _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
+        // NB: we do not clear the central version because migration relies on its continued
+        // presence for deleted objects to avoid false content conflicts.
+        // Instead we clean it up on re-admission
         _ccdb.deleteChange_(soid.sidx(), soid.oid(), t);
         _cfqdb.remove_(soid.sidx(), soid.oid(), t);
     }

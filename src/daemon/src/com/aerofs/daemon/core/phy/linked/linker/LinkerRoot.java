@@ -19,7 +19,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.BaseCfg;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.google.inject.Inject;

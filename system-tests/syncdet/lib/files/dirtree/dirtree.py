@@ -74,7 +74,7 @@ class _PhysicalDirTree(_FSObject):
     """
     Construct an _FSObject with a hash digest, from a physical directory
     """
-    def __init__(self, path, ignore_content=None):
+    def __init__(self, path, ignore_content=None, ignore_file=None):
         """
         create a DirTree with hash from the given path
         """
@@ -112,7 +112,9 @@ class _PhysicalDirTree(_FSObject):
 
             elif os.path.isdir(abs_path):
                 try:
-                    stack.extend([join(rel_path, child) for child in sorted(os.listdir(abs_path), reverse=True)])
+                    for child in sorted(os.listdir(abs_path), reverse=True):
+                        if not (ignore_file and child in ignore_file):
+                            stack.append(join(rel_path, child))
                 except EnvironmentError:
                     raise _FileSystemRaceError
             else:
@@ -172,7 +174,7 @@ class _File(_FSObject):
 
 
 class DirTree(_FSObject):
-    def __init__(self, rel_path, children, ignore_content=None, hash=None):
+    def __init__(self, rel_path, children, ignore_content=None, ignore_file=None, hash=None):
         """
         @param rel_path see _FSObject.__init__
         @param children a mapping of name:content pairs
@@ -183,6 +185,7 @@ class DirTree(_FSObject):
         """
         self._children = []
         self._ignore_content = ignore_content
+        self._ignore_file = ignore_file
 
         assert isinstance(children, collections.Mapping)
 
@@ -196,15 +199,15 @@ class DirTree(_FSObject):
             child_rel_path = join(rel_path, n)
             f = None
             if isinstance(content, types.StringTypes):
-                f = _File(child_rel_path, content, ignore_content, hash)
+                f = _File(child_rel_path, content, ignore_content=ignore_content, hash=hash)
             else:
-                f = DirTree(child_rel_path, content, ignore_content, hash)
+                f = DirTree(child_rel_path, content, ignore_content=ignore_content, hash=hash)
 
             self._children.append(f)
 
         _FSObject.__init__(self, rel_path, hash)
 
-    def write(self, root_path, ignore_existing_dir = False, verbose = False):
+    def write(self, root_path, ignore_existing_dir=False, verbose=False):
         """
         Write this DirTree to the physical file system,
         rooted inside root_path
@@ -223,9 +226,9 @@ class DirTree(_FSObject):
         for f in self._children:
             f.write(root_path, ignore_existing_dir, verbose)
 
-    def represents(self, root_path, verbose = False):
+    def represents(self, root_path, verbose=False):
         try:
-            phys_dirtree = _PhysicalDirTree(root_path, self._ignore_content)
+            phys_dirtree = _PhysicalDirTree(root_path, ignore_content=self._ignore_content, ignore_file=self._ignore_file)
         except _FileSystemRaceError:
             # The file system changed underneath while scanning the
             # physical directory.
@@ -252,7 +255,7 @@ class DirTree(_FSObject):
         @return a list of paths, relative to the root of the DirTree,
         for all leaf nodes (files or empty directories) in the DirTree
         """
-        if not self._children : return [self._rel_path]
+        if not self._children: return [self._rel_path]
 
         return list(itertools.chain(*[fs_obj.leaf_nodes() for fs_obj in
                                      self._children]))

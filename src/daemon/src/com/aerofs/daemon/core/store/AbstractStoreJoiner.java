@@ -6,10 +6,8 @@ package com.aerofs.daemon.core.store;
 
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.ids.OID;
-import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -24,12 +22,9 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;

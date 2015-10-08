@@ -9,6 +9,8 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
 
+import javax.annotation.Nullable;
+
 public class RemoteChange
 {
     public enum Type {
@@ -33,12 +35,21 @@ public class RemoteChange
     public String childName;
     public ObjectType childObjectType;
 
+    // migration
+    public OID migrantOid;
+
     // for content changes
     public ContentHash contentHash;
     public Long contentSize;
     public Long contentMtime;
 
     public static RemoteChange insert(UniqueID parent, String name, OID child, ObjectType type)
+    {
+        return insert(parent, name, child, type, null);
+    }
+
+    public static RemoteChange insert(UniqueID parent, String name, OID child, ObjectType type,
+                                      @Nullable OID migrant)
     {
         RemoteChange rc = new RemoteChange();
         rc.oid = parent;
@@ -47,16 +58,23 @@ public class RemoteChange
         rc.childName = name;
         rc.childObjectType = type;
         rc.originator = DID.generate();
+        rc.migrantOid = migrant;
         return rc;
     }
 
     public static RemoteChange remove(UniqueID parent, OID child)
+    {
+        return remove(parent, child, null);
+    }
+
+    public static RemoteChange remove(UniqueID parent, OID child, @Nullable OID migrant)
     {
         RemoteChange rc = new RemoteChange();
         rc.oid = parent;
         rc.transformType = Type.REMOVE_CHILD;
         rc.child = child;
         rc.originator = DID.generate();
+        rc.migrantOid = migrant;
         return rc;
     }
 

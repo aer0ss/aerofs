@@ -12,6 +12,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.lib.CleanupScheduler;
+import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -48,10 +49,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
+import java.util.*;
 
 /**
  * IPhysicalStorage interface to a block-based storage backend
@@ -345,16 +343,17 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
     }
 
     @Override
-    public void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    public @Nullable String deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException
     {
+        return null;
     }
 
     @Override
     public boolean shouldScrub_(SID sid) { return true; }
 
     @Override
-    public void scrub_(SOID soid, @Nonnull Path historyPath, Trans t)
+    public void scrub_(SOID soid, @Nonnull Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException
     {
         String prefix = objectPrefix(soid);
@@ -396,6 +395,25 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
                 currFile._length, currFile._mtime, currFile._chunks), t);
         _bsdb.preserveFileInfo(to._path, new FileInfo(id, currFile._ver, length, mtime,
                 hash), t);
+    }
+
+    @Override
+    public boolean restore_(SOID soid, OID deletedRoot, List<String> deletedPath, IPhysicalFile pf,
+                            Trans t) throws SQLException, IOException {
+        FileInfo info = getFileInfoNullable_(new SOKID(soid, KIndex.MASTER));
+        if (info == null) return false;
+
+        if (info._length != DELETED_FILE_LEN || info._mtime != DELETED_FILE_DATE) {
+            l.warn("restore non-deleted file {}", pf.sokid(), info._length, info._mtime);
+        } else {
+            info = _bsdb.getHistFileInfo_(info._id, info._ver - 1);
+            if (info == null) return false;
+        }
+
+        long id = getOrCreateFileId_(pf.sokid(), t);
+        _bsdb.insertEmptyFileInfo(id, t);
+        _bsdb.updateFileInfo_(new FileInfo(id, -1, info._length, info._mtime, info._chunks), t);
+        return true;
     }
 
     private final TransLocal<Boolean> _tlScheduleCleaner = new TransLocal<Boolean>()  {

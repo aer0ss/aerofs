@@ -342,9 +342,15 @@ public class BlockStorageDatabase extends AbstractDatabase
             throw detectCorruption(e);
         }
     }
+    public FileInfo getHistFileInfo_(byte[] index) throws SQLException
+    {
+        long[] d = decodeIndex(index);
+        if (d == null) return null;
+        return getHistFileInfo_(d[0], d[1]);
+    }
 
     private PreparedStatement _psGetHistFileInfo;
-    public FileInfo getHistFileInfo_(byte[] index) throws SQLException
+    public FileInfo getHistFileInfo_(long id, long version) throws SQLException
     {
         PreparedStatement ps = _psGetHistFileInfo;
         try {
@@ -353,11 +359,8 @@ public class BlockStorageDatabase extends AbstractDatabase
                         C_FileHist_Index + "=? AND " + C_FileHist_Ver + "=?",
                         C_FileHist_Len, C_FileHist_Date, C_FileHist_Chunks));
             }
-            long[] idx = decodeIndex(index);
-            if (idx == null) return null;
-
-            ps.setLong(1, idx[0]);
-            ps.setLong(2, idx[1]);
+            ps.setLong(1, id);
+            ps.setLong(2, version);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
@@ -368,8 +371,8 @@ public class BlockStorageDatabase extends AbstractDatabase
                     hash = new byte[0];
                 }
                 return new FileInfo(
-                        idx[0],
-                        idx[1],
+                        id,
+                        version,
                         rs.getLong(1),
                         rs.getLong(2),
                         new ContentBlockHash(hash));

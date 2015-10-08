@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.daemon.core.phy.linked.db.HistoryDatabase;
 import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -171,8 +172,8 @@ public class TestLinkedStorage extends AbstractTest
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
                 mock(IOSUtil.class), mock(InjectableDriver.class), rh, stores, sidx2sid,
                 cfgAbsRoots, cfgStoragePolicy, il, null, mock(LinkedStagingArea.class),
-                new LinkedRevProvider(lrm, factFile, new TimeSource()),
-                mock(HashQueue.class), mock(CoreScheduler.class));
+                mock(HashQueue.class), new LinkedRevProvider(lrm, factFile, new TimeSource()),
+                mock(HistoryDatabase.class), mock(CoreScheduler.class));
 
         tm = new TransManager(new Trans.Factory(mock(IDBCW.class)));
 

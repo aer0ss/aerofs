@@ -30,6 +30,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.testlib.AbstractTest;
 import org.hamcrest.BaseMatcher;
@@ -92,7 +93,7 @@ public class TestLinkedStagingArea extends AbstractTest
         new LinkedStorageSchema().create_(dbcw.getConnection().createStatement(), dbcw);
 
         lsa = new LinkedStagingArea(lrm, lsadb, factFile,
-                sched, tm, tokenManager,
+                sched, tm, mock(TimeSource.class), tokenManager,
                 mock(IgnoreList.class), revProvider);
 
         LinkerRoot lr = mock(LinkerRoot.class);
@@ -138,7 +139,7 @@ public class TestLinkedStagingArea extends AbstractTest
                         file("foo"))
         ).mock(factFile, null);
 
-        lsa.stageDeletion_("/AeroFS/bar", historyPath, t);
+        lsa.stageDeletion_("/AeroFS/bar", historyPath, null, t);
 
         verify(factFile.create("/AeroFS/bar"))
                 .moveInSameFileSystem(fileAt(auxPath(AuxFolder.STAGING_AREA, "1")));
@@ -179,7 +180,7 @@ public class TestLinkedStagingArea extends AbstractTest
 
     InjectableFile staged(Path historyPath) throws Exception
     {
-        long id = lsadb.addEntry_(historyPath, t);
+        long id = lsadb.addEntry_(historyPath, null, t);
         dir(lrm.auxRoot_(rootSID), dir(AuxFolder.STAGING_AREA._name,
                 dir(Long.toHexString(id), dir("bar", file("baz")), file("baz"))
         )).mock(factFile, null);

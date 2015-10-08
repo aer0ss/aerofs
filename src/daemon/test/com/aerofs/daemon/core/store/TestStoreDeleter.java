@@ -138,7 +138,7 @@ public class TestStoreDeleter extends AbstractTest
 
     private void verifyStoreDeletion(SIndex sidx, VerificationMode mode) throws Exception
     {
-        verify(sa, mode).stageCleanup_(eq(new SOID(sidx, OID.ROOT)), any(ResolvedPath.class), eq(t));
+        verify(sa, mode).stageCleanup_(eq(new SOID(sidx, OID.ROOT)), any(ResolvedPath.class), anyString(), eq(t));
         verify(_operators, mode).runAllImmediate_(sidx, t);
     }
 }

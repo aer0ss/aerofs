@@ -3,7 +3,10 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.phy.linked.db.HistoryDatabase;
+import com.aerofs.daemon.core.phy.linked.db.HistoryDatabase.DeletedFile;
 import com.aerofs.daemon.core.phy.linked.linker.HashQueue;
+import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -80,6 +83,7 @@ public class LinkedStorage implements IPhysicalStorage
     final RepresentabilityHelper _rh;
     private final CoreScheduler _sched;
     private final HashQueue _hq;
+    private final HistoryDatabase _hdb;
 
     private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
         @Override
@@ -90,22 +94,12 @@ public class LinkedStorage implements IPhysicalStorage
     };
 
     @Inject
-    public LinkedStorage(InjectableFile.Factory factFile,
-            IFIDMaintainer.Factory factFIDMan,
-            LinkerRootMap lrm,
-            IOSUtil osutil,
-            InjectableDriver dr,
-            RepresentabilityHelper rh,
-            StoreHierarchy stores,
-            IMapSIndex2SID sidx2sid,
-            CfgAbsRoots cfgAbsRoots,
-            CfgStoragePolicy cfgStoragePolicy,
-            IgnoreList il,
-            SharedFolderTagFileAndIcon sfti,
-            LinkedStagingArea sa,
-            LinkedRevProvider revProvider,
-            HashQueue hq,
-            CoreScheduler sched)
+    public LinkedStorage(InjectableFile.Factory factFile, IFIDMaintainer.Factory factFIDMan,
+                         LinkerRootMap lrm, IOSUtil osutil, InjectableDriver dr,
+                         RepresentabilityHelper rh, StoreHierarchy stores, IMapSIndex2SID sidx2sid,
+                         CfgAbsRoots cfgAbsRoots, CfgStoragePolicy cfgStoragePolicy, IgnoreList il,
+                         SharedFolderTagFileAndIcon sfti, LinkedStagingArea sa, HashQueue hq,
+                         LinkedRevProvider revProvider, HistoryDatabase hdb, CoreScheduler sched)
     {
         _il = il;
         _rh = rh;
@@ -123,6 +117,7 @@ public class LinkedStorage implements IPhysicalStorage
         _revProvider = revProvider;
         _hq = hq;
         _sched = sched;
+        _hdb = hdb;
     }
 
     @Override
@@ -277,19 +272,28 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public void deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
+    public @Nullable String deleteFolderRecursively_(ResolvedPath path, PhysicalOp op, Trans t)
             throws SQLException, IOException
     {
+        String rev = null;
         if (op == PhysicalOp.APPLY) {
             String absPath = _rh.getPhysicalPath_(path, PathType.SOURCE).physical;
             if (path.isEmpty()) {
                 absPath = stagePhysicalRoot_(path.sid(), t);
             }
-            _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()), t);
+            rev = _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()),
+                    null, t);
+
+            if (rev != null && _tlUseHistory.get(t)) {
+                l.info("record folder deletion {} {}:{}", path.soid(), rev, path);
+                long id = _hdb.createHistoryPath_(path, t);
+                _hdb.insertDeletedFile_(path.soid(), id, rev, t);
+            }
         }
         if (!path.isEmpty()) {
             onDeletion_(newFolder_(path, PathType.SOURCE), op, t);
         }
+        return rev;
     }
 
     /**
@@ -323,8 +327,7 @@ public class LinkedStorage implements IPhysicalStorage
 
             t.addListener_(new AbstractTransListener() {
                 @Override
-                public void aborted_()
-                {
+                public void aborted_() {
                     for (String child : children) {
                         try {
                             _factFile.create(staging, child)
@@ -351,7 +354,7 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public void scrub_(SOID soid,  @Nonnull Path historyPath, Trans t)
+    public void scrub_(SOID soid,  @Nonnull Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException
     {
         //l.info("scrub {} {}", soid, historyPath);
@@ -364,9 +367,13 @@ public class LinkedStorage implements IPhysicalStorage
         InjectableFile f = _factFile.create(nro);
         if (f.exists()) {
             if (f.isDirectory()) {
-                _sa.stageDeletion_(nro, historyPath, t);
+                _sa.stageDeletion_(nro, historyPath, rev, t);
             } else if (!historyPath.isEmpty()) {
-                _revProvider.newLocalRevFile(historyPath, nro, KIndex.MASTER).save_();
+                LinkedRevFile rf = rev != null
+                        ? _revProvider.localRevFile(historyPath, nro, rev)
+                        : _revProvider.newLocalRevFile(historyPath, nro, KIndex.MASTER);
+                rf.save_();
+                TransUtil.onRollback_(f, t, rf::rollback_);
             } else {
                 f.delete();
             }
@@ -382,6 +389,30 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public void applyToHistory_(IPhysicalPrefix prefix, IPhysicalFile file, long mtime, Trans t) {
         throw new UnsupportedOperationException("Applying file directly to history for Linked Storage");
+    }
+
+    @Override
+    public boolean restore_(SOID soid, OID deletedRoot, List<String> deletedPath, IPhysicalFile pf,
+                            Trans t) throws SQLException, IOException {
+        // TODO: only throw if at least one of the remaining staging folders covers the deleted file
+        if (_sa.hasEntries_()) {
+            throw new IOException("wait for staged folders to be processed");
+        }
+        LinkedFile f = (LinkedFile)pf;
+        DeletedFile df = _hdb.getDeletedFile_(soid.sidx(), deletedRoot);
+        if (df == null) return false;
+        Path p = new Path(rootSID_(soid.sidx()), _hdb.getHistoryPath_(df.path))
+                .append(deletedPath.toArray(new String[deletedPath.size()]), 0, deletedPath.size());
+        LinkedRevFile rev = _revProvider.localRevFile(p, f._f.getAbsolutePath(), df.rev);
+        l.info("attempting to restore {} {}:{}", soid, df.rev, p);
+        // revision file may have been removed by the cleaner (or by the user)
+        if (!rev.exists_()) {
+            l.info("no such rev: {}", _revProvider.listRevHistory_(p));
+            return false;
+        }
+        rev.rollback_();
+        TransUtil.onRollback_(f._f, t, rev::save_);
+        return true;
     }
 
     void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
@@ -412,7 +443,7 @@ public class LinkedStorage implements IPhysicalStorage
                 copyACL(_factFile.create(f.getAbsPath_()).getParent(), f.getAbsPath_());
             }
         } else {
-            if (wasPresent) moveToRev_(f, t);
+            if (wasPresent) moveToRev_(f, false, t);
             move_(p, f, t);
         }
         f._f.setLastModified(mtime);
@@ -540,7 +571,8 @@ public class LinkedStorage implements IPhysicalStorage
     /**
      * Move the file to the revision history storage area.
      */
-    void moveToRev_(LinkedFile f, Trans t) throws SQLException, IOException
+    String moveToRev_(LinkedFile f, boolean delete, Trans t)
+            throws SQLException, IOException
     {
         final LinkedRevFile rev = _revProvider.newLocalRevFile(f._path.virtual,
                 f._f.getAbsolutePath(), f._sokid.kidx());
@@ -553,7 +585,13 @@ public class LinkedStorage implements IPhysicalStorage
         // be implemented by the history cleaner.
         if (!_tlUseHistory.get(t)) {
             _tlDel.get(t).add(rev);
+        } else if (delete && f._sokid.kidx().isMaster()) {
+            l.info("record folder deletion {} {}:{}", f.sokid().soid(), rev.index(), f._path.virtual);
+            long id = _hdb.createHistoryPath_(f._path.virtual, t);
+            _hdb.insertDeletedFile_(f._sokid.soid(), id, rev.index(), t);
         }
+
+        return rev.index();
     }
 
     /**

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Arrays;
 
@@ -76,12 +77,13 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
         }
 
         // atomic recursive deletion of physical objects, if applicable
+        @Nullable String rev;
         if (oa.isDirOrAnchor()) {
-            _ps.deleteFolderRecursively_(pOld, op, t);
+            rev = _ps.deleteFolderRecursively_(pOld, op, t);
         } else  {
-            _ps.newFile_(pOld, KIndex.MASTER).delete_(op, t);
+            rev = _ps.newFile_(pOld, KIndex.MASTER).delete_(op, t);
         }
-        _sa.stageCleanup_(soidRoot, pOld, t);
+        _sa.stageCleanup_(soidRoot, pOld, rev, t);
     }
 
     /**

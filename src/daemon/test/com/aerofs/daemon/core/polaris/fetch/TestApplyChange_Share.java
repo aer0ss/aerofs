@@ -2,7 +2,9 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.multiplicity.singleuser.SharedFolderUpdateQueueDatabase;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -64,7 +66,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
             t.commit_();
         }
@@ -112,7 +114,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         assertHasLocalChanges(sidx);
         assertHasContentChanges(sidx);
         assertHasLocalChanges(shared);
-        assertHasContentChanges(shared);
+        assertHasContentChanges(shared, baz);
         assertHasRemoteContent(shared, baz, new RemoteContent(1, did, h, 0));
 
         assertEquals(Long.valueOf(1), cvdb.getVersion_(shared, baz));
@@ -144,7 +146,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         assertHasContentChanges(sidx);
 
         assertHasLocalChanges(shared);
-        assertHasContentChanges(shared);
+        assertHasContentChanges(shared, baz);
         assertHasRemoteContent(shared, baz, new RemoteContent(1, did, h, 0));
 
         // TODO: more state checks?
@@ -167,7 +169,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1,EMPTY, 42, t);
 
             // local change
@@ -262,6 +264,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         assertHasRemoteContent(shared, baz, new RemoteContent(1, did, h, 0));
         assertHasRemoteContent(sidx, oidAt("qux/moved/baz"));
+
+        assertHasContentChanges(sidx, oidAt("qux/moved/baz"));
     }
 
     @Test
@@ -281,8 +285,11 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
+
+            // content change before cross-store move
+            ccdb.insertChange_(sidx, baz, t);
 
             // local change
             om.moveInSameStore_(new SOID(sidx, bar), foo, "moved", PhysicalOp.MAP, true, t);
@@ -327,6 +334,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         assertHasRemoteContent(sidx, baz, new RemoteContent(1, did, h, 0));
         assertHasRemoteContent(shared, oidAt("foo/moved/baz"));
+
+        assertHasContentChanges(shared, oidAt("foo/moved/baz"));
 
         // TODO: more state checks?
     }
@@ -404,7 +413,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, qux, CONTENT, 1234);
+            setContent(sidx, qux, CONTENT, 1234, t);
             downloadContent(sidx, qux, 1, EMPTY, 42, t);
 
             // local change
@@ -421,7 +430,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                 new MetaChange(sidx, -1, bar, foo, "rab"),
                 new MetaChange(sidx, -1, qux, bar, "qux"));
 
-        assertHasContentChanges(sidx);
+        assertHasContentChanges(sidx, qux);
 
         assertHasRemoteContent(sidx, qux, new RemoteContent(1, did, h, 0));
 
@@ -457,7 +466,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                 new MetaChange(shared, -1, qux, bar, "qux"));
 
         assertHasContentChanges(sidx);
-        assertHasContentChanges(shared);
+        assertHasContentChanges(shared, qux);
 
         assertHasRemoteContent(shared, qux, new RemoteContent(1, did, h, 0));
 
@@ -480,12 +489,13 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
             om.moveInSameStore_(new SOID(sidx, qux), bar, "qux", PhysicalOp.MAP, true, t);
             od.delete_(new SOID(sidx, bar), PhysicalOp.MAP, t);
+            inj.getInstance(LogicalStagingArea.class).ensureStoreClean_(sidx, t);
             t.commit_();
         }
 
@@ -551,7 +561,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
@@ -610,7 +620,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
@@ -658,11 +668,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
             od.delete_(new SOID(sidx, foo), PhysicalOp.MAP, t);
+            inj.getInstance(LogicalStagingArea.class).ensureStoreClean_(sidx, t);
             t.commit_();
         }
 
@@ -714,7 +725,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
@@ -783,7 +794,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(sidx, baz, CONTENT, 1234);
+            setContent(sidx, baz, CONTENT, 1234, t);
             downloadContent(sidx, baz, 1, EMPTY, 42, t);
 
             // local change
@@ -864,7 +875,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(shared, baz, CONTENT, 1234);
+            setContent(shared, baz, CONTENT, 1234, t);
             downloadContent(shared, baz, 1, EMPTY, 42, t);
             t.commit_();
         }
@@ -908,6 +919,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         assertHasRemoteContent(sidx, baz);
         assertHasRemoteContent(shared, baz,
                 new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+        assertHasContentChanges(shared, baz);
     }
 
     @Test
@@ -932,7 +944,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         try (Trans t = tm.begin_()) {
             // local version + remote dl -> conflict
-            setContent(shared, baz, CONTENT, 1234);
+            setContent(shared, baz, CONTENT, 1234, t);
             downloadContent(shared, baz, 1, EMPTY, 42, t);
             t.commit_();
         }
@@ -943,10 +955,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                 folder(LibParam.TRASH, OID.TRASH),
                 anchor("foolish", foo,
                         folder(LibParam.TRASH, OID.TRASH),
-                                folder("bar", bar,
-                                        file("baz", baz,
-                                                content(CONTENT, 1234),
-                                                content(EMPTY, 42)))));
+                        folder("bar", bar,
+                                file("baz", baz,
+                                        content(CONTENT, 1234),
+                                        content(EMPTY, 42)))));
 
         assertHasRemoteContent(shared, baz,
                 new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
@@ -976,5 +988,6 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         assertHasRemoteContent(sidx, baz);
         assertHasRemoteContent(shared, baz,
                 new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
+        assertHasContentChanges(shared, baz);
     }
 }

@@ -17,6 +17,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -141,11 +142,11 @@ public class StoreDeleter
         // physical anchors as they are not empty.
 
         // atomic recursive deletion of physical objects, if applicable
-        _ps.deleteFolderRecursively_(pathOld, op, t);
+        @Nullable String rev = _ps.deleteFolderRecursively_(pathOld, op, t);
 
         // Run immediate deletion operators now; then call into the staging area, which will
         // finalize and run the deferred operators.
         _operators.runAllImmediate_(sidx, t);
-        _sa.stageCleanup_(new SOID(sidx, OID.ROOT), pathOld, t);
+        _sa.stageCleanup_(new SOID(sidx, OID.ROOT), pathOld, rev, t);
     }
 }
