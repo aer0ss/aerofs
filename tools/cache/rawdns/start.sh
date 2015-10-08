@@ -59,7 +59,9 @@ if docker-machine ls "$VM" &>/dev/null ; then
         docker-machine ssh $VM "echo 'EXTRA_ARGS=\"--dns 172.17.42.1 \$EXTRA_ARGS\"' | sudo tee -a $profile"
 
         echo "restarting docker daemon"
-        docker-machine ssh $VM "sudo /etc/init.d/docker stop ; sleep 5 ; sudo /etc/init.d/docker start"
+        # shitty old init scripts are so goddamn borked that a reboot is the only reliable way to restart
+        # the docker daemon after tweaking its configuration
+        docker-machine restart $VM
     elif [[ "$os" == "b2d-ng" ]] ; then
         # update EXTRA_ARGS to use rawdns resolver [idempotent]
         extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns 172.17.42.1\""
