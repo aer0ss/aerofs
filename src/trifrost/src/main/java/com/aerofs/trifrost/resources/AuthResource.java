@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.PermitAll;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -59,7 +60,7 @@ public final class AuthResource {
             value = "Request a verification code by email",
             notes = "Initiate the sign-in process by requesting a unique verification code by email"
     )
-    public Response requestVerification(final EmailAddress claimedEmail) {
+    public Response requestVerification(@NotNull final EmailAddress claimedEmail) {
         return dbi.inTransaction((conn, status) -> {
             VerificationCodes codes = conn.attach(VerificationCodes.class);
 
@@ -167,14 +168,11 @@ public final class AuthResource {
 
             // save refresh token
             String refreshToken = new String(UniqueID.generateUUID());
-            UserAddresses addresses = conn.attach(UserAddresses.class);
 
-            String userId1 = addresses.get(auth.email);
-            if (userId1 == null) {
-                userId1 = new String(UniqueID.generateUUID());
-                addresses.add(auth.email, userId1);
+            String userId = Users.get(conn, auth.email);
+            if (userId == null) {
+                userId = Users.allocate(conn, auth.email);
             }
-            String userId = userId1;
             conn.attach(RefreshTokens.class).add(refreshToken, userId, UniqueID.getDefaultRefreshExpiry());
 
             // save auth token

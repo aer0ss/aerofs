@@ -2,8 +2,7 @@ package com.aerofs.trifrost.resources;
 
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.trifrost.base.Constants;
-import com.aerofs.trifrost.base.UniqueID;
-import com.aerofs.trifrost.db.UserAddresses;
+import com.aerofs.trifrost.db.Users;
 import com.google.common.base.Preconditions;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -64,14 +63,13 @@ public class InviteResource {
         // FIXME: validate destination email is in a permitted domain
         Preconditions.checkNotNull(user);
         Response response = dbi.inTransaction((conn, status) -> {
-            UserAddresses addresses = conn.attach(UserAddresses.class);
-            String userId = addresses.get(emailAddr);
+            String userId = Users.get(conn, emailAddr);
             if (userId != null) {
                 l.info("invite existing e:{} u:{}", emailAddr, userId);
             } else {
                 // otherwise, initialize a new (empty) user record for this address
                 l.info("invite new e:{}", emailAddr);
-                addresses.add(emailAddr, new String(UniqueID.generateUUID()));
+                Users.allocate(conn, emailAddr);
             }
             return Response.ok().build();
         });
