@@ -34,6 +34,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import static com.aerofs.polaris.acl.Access.*;
@@ -128,7 +129,7 @@ public class MetadataBuilder
             // still call this method to get the access token for performTransform.
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     Sets.newHashSet(objectStore.getStore(dao, rootSID)), READ, WRITE);
-            updated.addAll(objectStore.performTransform(dao, accessToken,
+            updated.addAll(performTransform(dao, accessToken,
                     principal.getDID(), rootSID,
                     new InsertChild(appDataId, FOLDER, APPDATA_FOLDER_NAME, null)).updated);
         }
@@ -143,7 +144,7 @@ public class MetadataBuilder
             clientId = OID.generate();
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     Sets.newHashSet(objectStore.getStore(dao, appDataId)), READ, WRITE);
-            updated.addAll(objectStore.performTransform(dao, accessToken,
+            updated.addAll(performTransform(dao, accessToken,
                     principal.getDID(), appDataId,
                     new InsertChild(clientId, FOLDER, principal.audience(), null)).updated);
             return clientId;
@@ -455,7 +456,7 @@ public class MetadataBuilder
 
         OID oid = OID.generate();
         l.info("Create object. parent {} object name {} oid {}", parentOID, name, oid);
-        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
+        OperationResult result = performTransform(dao, accessToken, principal.getDID(),
                 parentOID, new InsertChild(oid, isFile ? FILE : FOLDER, name, null));
         l.info("Result for creating object {}: {}", name, result);
 
@@ -517,7 +518,7 @@ public class MetadataBuilder
         }
 
         l.info("Move object {} from {} to {}", name, fromParent, toParent);
-        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
+        OperationResult result = performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
         UniqueID child = dao.children.getActiveChildNamed(toParent, name.getBytes());
         return new ApiOperationResult(result.updated, Response.ok()
@@ -550,7 +551,7 @@ public class MetadataBuilder
 
         UniqueID parent = getParentOID(dao, principal.getUser(), oid);
         Preconditions.checkArgument(!Identifiers.isRootStore(oid), "cannot remove user root");
-        OperationResult result = objectStore.performTransform(dao, accessToken,
+        OperationResult result = performTransform(dao, accessToken,
                 principal.getDID(), parent, new RemoveChild(new OID(oid)));
 
         l.info("Result for deleting object {}: {}", oid.toStringFormal(), result);
@@ -575,6 +576,16 @@ public class MetadataBuilder
         return Response.ok()
                 .entity(filtered)
                 .build();
+    }
+
+    private OperationResult performTransform(DAO dao, AccessToken token, DID device, UniqueID oid, Operation operation)
+    {
+        Lock l = objectStore.lockObject(oid);
+        try {
+            return objectStore.performTransform(dao, token, device, oid, operation);
+        } finally {
+            l.unlock();
+        }
     }
 
     private ChildrenList children(DAO dao, AeroOAuthPrincipal principal, RestObject object,

@@ -20,6 +20,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
@@ -30,10 +31,10 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 // FIXME (AG): this is such a shitty, shitty piece of code: methods have a ton of parameters, the code looks ugly, it's painful
@@ -91,6 +92,7 @@ public final class ObjectStore {
     private final AccessManager accessManager;
     private final DBI dbi;
     private final Migrator migrator;
+    private final ConcurrentMap<UniqueID, Lock> objectLocks;
 
     /**
      * Constructor.
@@ -103,6 +105,7 @@ public final class ObjectStore {
         this.accessManager = accessManager;
         this.dbi = dbi;
         this.migrator = migrator;
+        objectLocks = new MapMaker().weakValues().makeMap();
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -320,6 +323,15 @@ public final class ObjectStore {
         return returned;
     }
 
+    public Lock lockObject(UniqueID oid)
+    {
+        Lock l = new ReentrantLock();
+        Lock prev = objectLocks.putIfAbsent(oid, l);
+        l = prev == null ? l : prev;
+        l.lock();
+        return l;
+    }
+
     /**
      * Perform a high-level transformation on a logical object. This transformation can be an:
      * <ul>
@@ -343,7 +355,12 @@ public final class ObjectStore {
         List<UniqueID> affectedObjects = Lists.newArrayList(operation.affectedOIDs());
         affectedObjects.add(oid);
         AccessToken accessToken = checkAccess(user, affectedObjects, Access.READ, Access.WRITE);
-        return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
+        Lock l = lockObject(oid);
+        try {
+            return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
+        } finally {
+            l.unlock();
+        }
     }
 
     public OperationResult performTransform(DAO dao, AccessToken accessToken, DID device, UniqueID oid, Operation operation) throws NotFoundException, AccessException, ParentConflictException, NameConflictException, VersionConflictException {
@@ -764,8 +781,6 @@ public final class ObjectStore {
     //
 
     private static LockableLogicalObject newStore(DAO dao, UniqueID oid) {
-        verifyStore(oid);
-
         return newObject(dao, oid, oid, ObjectType.STORE);
     }
 
