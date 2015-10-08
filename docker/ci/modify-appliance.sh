@@ -8,6 +8,8 @@ set -e
 # The script should be idempotent to support repetitive runs in test environments.
 #
 
+cp docker/aeroim.yml docker/crane.yml
+
 # Figure out registry and version
 SPECIMEN=aerofs/nginx
 LINE="$(docker images | grep ${SPECIMEN})"

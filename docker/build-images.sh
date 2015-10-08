@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 #
 # Build all AeroFS images. Sort non-base image names alphabetically to help users observe build progress
 #
@@ -10,6 +11,7 @@ DIRS="
     base/jre8-and-mysql-client
     base/python2.7
 
+    aeroim
     ../golang/src/aerofs.com/auditor
     ../src/bunker
     ../golang/src/aerofs.com/ca-server
@@ -32,6 +34,7 @@ DIRS="
     ../packaging/sanity
     ../src/sparta
     ../src/spsv
+    ../src/trifrost
     ../golang/src/aerofs.com/ts-probe
     ../golang/src/aerofs.com/valkyrie
     ../src/web
