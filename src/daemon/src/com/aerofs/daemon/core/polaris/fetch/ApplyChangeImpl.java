@@ -185,6 +185,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 throw new ExProtocolError();
             } else if (oa.parent().equals(oidParent) && oa.name().equals(name)) {
                 l.info("nop insert {}{} {}/name", sidx, oidParent, oidChild, name);
+                _mcdb.deleteChanges_(sidx, oidChild, t);
                 return;
             } else if (_ds.isDeleted_(oa)) {
                 l.info("restoring {}{} {}/{}", sidx, oidChild, parent.soid(), name);
