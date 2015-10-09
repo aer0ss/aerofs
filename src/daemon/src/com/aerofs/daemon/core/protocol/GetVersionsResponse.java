@@ -34,6 +34,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetVersionsResponse;
 import com.aerofs.proto.Core.PBGetVersionsResponseBlock;
@@ -158,12 +159,13 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         /**
          * @return false if this store should be ignored
          */
-        boolean newStore_(PBStoreHeader h) throws SQLException
+        boolean newStore_(PBStoreHeader h) throws ExRetryLater, SQLException
         {
             SID sid = new SID(BaseUtil.fromPB(h.getStoreId()));
             _sidx = _sid2sidx.getNullable_(sid);
+            BFOID filter = new BFOID(h.getSenderFilter());
 
-            l.info("{} receive gv response for {} {}", _from, sid, _filter);
+            l.info("{} receive gv response for {} {}", _from, sid, filter);
 
             // store was expelled locally between request and response
             if (_sidx == null) {
@@ -184,14 +186,17 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
 
             _didBlock = null;
             refreshKnowledge_();
-            // RACE RACE RACE
-            // if we send a GetVers request and then discard collector filters before receiving
-            // the response we MUST discard any filter in the response
-            // When filters are discarded, the request will include the fromBase bit and the
-            // corresponding response will have 0 as the senderFilterIndex
-            if (h.hasSenderFilter()
-                    && (_pulleddb.contains_(_sidx, _from) || h.getSenderFilterIndex() == 0)) {
-                _filter = new BFOID(h.getSenderFilter());
+            if (h.hasSenderFilter()) {
+                if (!_pulleddb.contains_(_sidx, _from) && h.getSenderFilterIndex() != 0) {
+                    // RACE RACE RACE
+                    // if we send a GetVers request and then discard collector filters before
+                    // receiving the response we MUST discard any filter in the response.
+                    // The only safe way to discard filters is to discard the entire response
+                    // When filters are discarded, the request will include the fromBase bit and the
+                    // corresponding response will have 0 as the senderFilterIndex
+                    throw new ExRetryLater("race");
+                }
+                _filter = filter;
                 _senderFilterIndex = h.getSenderFilterIndex();
                 _senderFilterUpdateSeq = h.getSenderFilterUpdateSeq();
             } else {
