@@ -163,7 +163,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         {
             SID sid = new SID(BaseUtil.fromPB(h.getStoreId()));
             _sidx = _sid2sidx.getNullable_(sid);
-            BFOID filter = new BFOID(h.getSenderFilter());
+            BFOID filter = h.hasSenderFilter() ? new BFOID(h.getSenderFilter()) : null;
 
             l.info("{} receive gv response for {} {}", _from, sid, filter);
 
