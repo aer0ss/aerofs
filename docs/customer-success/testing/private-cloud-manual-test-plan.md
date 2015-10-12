@@ -89,6 +89,7 @@ Tests appliance/client/TS upgrade flow from previous version
 - Restore from the old appliance's backup file
 - Verify that all settings are pre-populated and restore succeeds
 - Verify that clients and Team Server are able to upgrade to the latest version
+- Verify that file upload from outside the iOS app is successful
 
 #### Pass 2
 
@@ -153,6 +154,12 @@ Basic tests that cover major product features. For this test pass, use the same 
 - Exit maintenance mode
 - Verify the appliance login page is displayed instead of maintenance mode page
 - Take a screenshot of this appliance's console
+
+#### Mobile Apps
+
+- Scan QR code, verify that file download to iOS and Android apps is successful when a new file is
+  uploaded via web/desktop
+- Verify that file upload from outside the iOS app is successful and appears on desktop/web
 
 #### Pass 5
 
