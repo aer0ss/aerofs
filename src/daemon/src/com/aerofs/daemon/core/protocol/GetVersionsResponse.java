@@ -187,13 +187,11 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             _didBlock = null;
             refreshKnowledge_();
             if (h.hasSenderFilter()) {
-                if (!_pulleddb.contains_(_sidx, _from) && h.getSenderFilterIndex() != 0) {
+                if (!(_pulleddb.contains_(_sidx, _from) || h.getFromBase())) {
                     // RACE RACE RACE
                     // if we send a GetVers request and then discard collector filters before
                     // receiving the response we MUST discard any filter in the response.
                     // The only safe way to discard filters is to discard the entire response
-                    // When filters are discarded, the request will include the fromBase bit and the
-                    // corresponding response will have 0 as the senderFilterIndex
                     throw new ExRetryLater("race");
                 }
                 _filter = filter;

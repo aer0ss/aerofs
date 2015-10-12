@@ -128,6 +128,7 @@ message PBStoreHeader {
     optional bytes sender_filter = 2;
     optional uint64 sender_filter_index = 3;
     optional uint64 sender_filter_update_seq = 4;
+    optional bool from_base = 5 [default = false];
 }
 
 message PBGetComponentRequest {

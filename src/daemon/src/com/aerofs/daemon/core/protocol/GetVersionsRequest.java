@@ -297,7 +297,8 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
         if (sfi != null) {
             bd.setSenderFilter(sfi._filter.toPB())
                 .setSenderFilterIndex(sfi._sfidx.getLong())
-                .setSenderFilterUpdateSeq(sfi._updateSeq);
+                .setSenderFilterUpdateSeq(sfi._updateSeq)
+                .setFromBase(fromBase);
         }
         PBStoreHeader h = bd.build();
 
