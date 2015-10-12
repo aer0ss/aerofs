@@ -468,10 +468,10 @@ public final class ObjectStore {
             }
             LogicalObject parent = dao.objects.get(parentOid);
             Preconditions.checkState(parent != null, "current parent with oid %s could not be found", parentOid);
-            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.INSERT_CHILD, childOid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, childOid);
             if (matchingTransform == 0L && Identifiers.isMountPoint(childOid)) {
                 // could also be the result of a share operation
-                matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, SID.anchorOID2folderOID(new OID(childOid)), TransformType.SHARE);
+                matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, SID.anchorOID2folderOID(new OID(childOid)));
             }
             if (matchingTransform != 0L) {
                 LOGGER.info("no-op for insertChild operation inserting {} into {}", childOid, parentOid);
@@ -529,7 +529,7 @@ public final class ObjectStore {
         // get the current child name (informational)
         byte[] currentChildName = dao.children.getActiveChildName(parentOid, childOid);
         if (Arrays.equals(newChildName, currentChildName)) {
-            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.RENAME_CHILD, childOid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, childOid);
             if (matchingTransform != 0L) {
                 LOGGER.info("no-op for renameChild operation on child {} of {}", childOid, parentOid);
                 return new Updated(matchingTransform, parent);
@@ -561,14 +561,10 @@ public final class ObjectStore {
         // check if this operation would be a no-op
         if (newParentOid.equals(currentParentOid) && Arrays.equals(childName, dao.children.getActiveChildName(newParentOid, childOid))) {
             LogicalObject newParent = getExistingObject(dao, newParentOid);
-            long insertTransform = dao.transforms.getLatestMatchingTransformTimestamp(newParent.store, newParentOid, TransformType.INSERT_CHILD, childOid);
+            long insertTransform = dao.transforms.getLatestMatchingTransformTimestamp(newParent.store, newParentOid, childOid);
             if (insertTransform != 0L) {
-                LogicalObject oldParent = getExistingObject(dao, oldParentOid);
-                long removeTransform = dao.transforms.getLatestMatchingTransformTimestamp(oldParent.store, oldParentOid, TransformType.REMOVE_CHILD, childOid);
-                if (removeTransform != 0L && insertTransform < removeTransform) {
-                    LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, oldParentOid);
-                    return Lists.newArrayList(new Updated(insertTransform, newParent), new Updated(removeTransform, oldParent));
-                }
+                LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, oldParentOid);
+                return Lists.newArrayList(new Updated(insertTransform, newParent));
             }
         }
 
@@ -612,7 +608,7 @@ public final class ObjectStore {
         LogicalObject parent = getUnlockedParent(dao, parentOid);
 
         if (dao.children.isDeleted(parentOid, childOid)) {
-            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, TransformType.REMOVE_CHILD, childOid);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(parent.store, parent.oid, childOid);
             if (matchingTransform != 0L) {
                 LOGGER.info("no-op for removeChild operation on child {} of {}", childOid, parentOid);
                 return new Updated(matchingTransform, parent);
@@ -664,7 +660,7 @@ public final class ObjectStore {
         // check if the new content matches the object's latest content (disregarding version)
         Content currentObjectContent = dao.objectProperties.getLatest(oid);
         if (currentObjectContent != null && currentObjectContent.equals(new Content(oid, object.version, contentHash, contentSize, contentTime))) {
-            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(object.store, oid, TransformType.UPDATE_CONTENT);
+            long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(object.store, oid);
             if (matchingTransform != 0L) {
                 LOGGER.info("no-op for makeContent operation on {}", oid);
                 return new Updated(matchingTransform, object);

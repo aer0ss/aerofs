@@ -437,7 +437,7 @@ public final class TestObjectResource {
                 .assertThat().body("updated[0].transform_timestamp", equalTo(1));
 
         PolarisHelpers.moveObject(AUTHENTICATED, folder, store, file, "moved_file")
-                .assertThat().body("updated[0].transform_timestamp", equalTo(4), "updated[1].transform_timestamp", equalTo(5));
+                .assertThat().body("updated[0].transform_timestamp", equalTo(4));
 
         PolarisHelpers.moveObject(AUTHENTICATED, folder, folder, renamedFile, "renamed_file")
                 .assertThat().body("updated[0].transform_timestamp", equalTo(6));
@@ -453,7 +453,6 @@ public final class TestObjectResource {
         PolarisHelpers.removeObject(AUTHENTICATED, folder, renamedFile)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(8));
 
-        // transform 9
         OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, SID.rootSID(USERID), "sharedfolder");
         PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), sharedFolder, "sharedfolder", ObjectType.FOLDER)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(9));
@@ -461,6 +460,13 @@ public final class TestObjectResource {
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
         PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), SID.folderOID2convertedAnchorOID(sharedFolder), "sharedfolder", ObjectType.STORE)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(10));
+
+        // auto join of shared folders should also be repeatable
+        SID store2 = SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), store2, "sf2", ObjectType.STORE)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(11));
+        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), store2, "sf2", ObjectType.STORE)
+                .assertThat().body("updated[0].transform_timestamp", equalTo(11));
     }
 
     @Test
@@ -730,14 +736,14 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void shouldNotReturn500ForFailingToFindNoop() throws Exception
+    public void shouldFindNoopWithoutTransformTypeMatch() throws Exception
     {
         SID store = SID.generate();
         OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
-        // rename op to "file" will be no-op, but there won't be a matching transform
+        // rename op to "file" will be logical no-op, but there won't be a matching RENAME transform
         PolarisHelpers.moveObject(AUTHENTICATED, store, store, file, "file")
-            .assertThat().statusCode(SC_CONFLICT);
+            .assertThat().statusCode(SC_OK);
     }
 
     @Test
