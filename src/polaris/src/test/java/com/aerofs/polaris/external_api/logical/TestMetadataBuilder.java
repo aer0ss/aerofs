@@ -28,10 +28,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
@@ -52,21 +49,21 @@ public class TestMetadataBuilder
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();
+    private static final SID rootStore = SID.rootSID(USERID);
 
-    private BasicDataSource dataSource;
+    @ClassRule
+    public static MySQLDatabase database = new MySQLDatabase("test");
+    private static BasicDataSource dataSource;
+    private static DBI realdbi;
     private DBI dbi;
-    private ObjectStore objects;
 
-    @Rule
-    public MySQLDatabase database = new MySQLDatabase("test");
-    private Notifier notifier = mock(Notifier.class);
-    private AeroOAuthPrincipal principal = mock(AeroOAuthPrincipal.class);
-    private SID rootStore;
+    private ObjectStore objects;
+    private AeroOAuthPrincipal principal;
     private MetadataBuilder metadataBuilder;
 
-
-    @Before
-    public void setup() throws Exception {
+    @BeforeClass
+    public static void setupDB() throws Exception
+    {
         // setup database
         PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
         DatabaseConfiguration database = configuration.getDatabase();
@@ -85,31 +82,38 @@ public class TestMetadataBuilder
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
-
-        // spy on it
-        this.dbi = spy(dbi);
-
-        this.objects = new ObjectStore(mock(AccessManager.class), dbi, mock(Migrator.class));
-        rootStore = SID.rootSID(USERID);
-
-
-        when(principal.getUser()).thenReturn(USERID);
-        when(principal.getName()).thenReturn("test");
-        when(principal.audience()).thenReturn("audience");
-        when(principal.getDID()).thenReturn(DEVICE);
-        when(principal.scope()).thenReturn(OAuthScopeParsingUtil.parseScopes(ImmutableSet.of("files.read", "files.write")));
-
-        metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(), notifier, dbi);
+        realdbi = dbi;
     }
 
-    @After
-    public void tearDown()
+    @AfterClass
+    public static void tearDown()
     {
         try {
             dataSource.close();
         } catch (SQLException e) {
             // noop
         }
+    }
+
+    @Before
+    public void setupMocks() throws Exception {
+        this.dbi = spy(realdbi);
+
+        this.principal = mock(AeroOAuthPrincipal.class);
+        when(principal.getUser()).thenReturn(USERID);
+        when(principal.getName()).thenReturn("test");
+        when(principal.audience()).thenReturn("audience");
+        when(principal.getDID()).thenReturn(DEVICE);
+        when(principal.scope()).thenReturn(OAuthScopeParsingUtil.parseScopes(ImmutableSet.of("files.read", "files.write")));
+
+        this.objects = new ObjectStore(mock(AccessManager.class), dbi, mock(Migrator.class));
+        this.metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(), mock(Notifier.class), dbi);
+    }
+
+    @After
+    public void clearData()
+    {
+        database.clear();
     }
 
     private void verifyCommonMetadata(List<CommonMetadata> commonMetadatas, SID parentSID,
@@ -313,7 +317,6 @@ public class TestMetadataBuilder
         List<String> resultNames = ((ParentPath) result).folders.stream()
                 .map(folder -> folder.name).collect(Collectors.toList());
 
-        System.out.println(resultNames.get(0));
         assertEquals(expectedNames.size(), resultNames.size());
         assertTrue(expectedNames.containsAll(resultNames));
     }

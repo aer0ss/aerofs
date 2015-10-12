@@ -5,7 +5,6 @@ import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
-import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
@@ -21,10 +20,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
@@ -42,27 +38,25 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-public class TestMigrator {
-    static {
-        LoggerSetup.init();
-    }
+public class TestMigrator
+{
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();
 
-    private BasicDataSource dataSource;
+    private static BasicDataSource dataSource;
+    private static DBI realdbi;
     private DBI dbi;
-    private Notifier notifier = mock(Notifier.class);
+    private Notifier notifier;
     private Migrator migrator;
     private ListeningExecutorService migratorExecutor;
     private ObjectStore objects;
 
-    @Rule
-    public MySQLDatabase database = new MySQLDatabase("test");
+    @ClassRule
+    public static MySQLDatabase database = new MySQLDatabase("test");
 
-    @Before
-    public void setup() throws Exception {
-
+    @BeforeClass
+    public static void setup() throws Exception {
         // setup database
         PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
         DatabaseConfiguration database = configuration.getDatabase();
@@ -81,26 +75,37 @@ public class TestMigrator {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
-
-        // spy on it
-        this.dbi = spy(dbi);
-
-        this.migratorExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
-        this.migrator = spy(new Migrator(this.dbi, notifier, migratorExecutor));
-        migrator.start();
-
-        this.objects = new ObjectStore(mock(AccessManager.class), dbi, migrator);
+        realdbi = dbi;
     }
 
-    @After
-    public void tearDown()
+    @AfterClass
+    public static void tearDown()
     {
-        migrator.stop();
         try {
             dataSource.close();
         } catch (SQLException e) {
             // noop
         }
+    }
+
+    @Before
+    public void setupMocks() throws Exception
+    {
+        // spy on it
+        this.dbi = spy(realdbi);
+
+        this.notifier = mock(Notifier.class);
+        this.migratorExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+        this.migrator = spy(new Migrator(this.dbi, notifier, migratorExecutor));
+        this.objects = new ObjectStore(mock(AccessManager.class), dbi, migrator);
+        migrator.start();
+    }
+
+    @After
+    public void clearData()
+    {
+        migrator.stop();
+        database.clear();
     }
 
     @Test

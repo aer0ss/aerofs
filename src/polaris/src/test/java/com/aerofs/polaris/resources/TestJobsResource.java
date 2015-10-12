@@ -15,13 +15,13 @@ import com.jayway.restassured.specification.RequestSpecification;
 import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.RuleChain;
 import org.skife.jdbi.v2.DBI;
 
 import javax.ws.rs.core.Response;
+
+import java.sql.SQLException;
 
 import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.assertThat;
@@ -33,18 +33,20 @@ public class TestJobsResource {
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
     private static final DID DEVICE = DID.generate();
-    private final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
-    private PolarisTestServer polaris = new PolarisTestServer();
-    private DBI dbi;
+    private static final RequestSpecification verified = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
+    private static PolarisTestServer polaris = new PolarisTestServer();
+    private static MySQLDatabase database = new MySQLDatabase("test");
+    private static DBI dbi;
+    private static BasicDataSource dataSource;
 
-    @Rule
-    public RuleChain chain = RuleChain.outerRule(new MySQLDatabase("test")).around(polaris);
+    @ClassRule
+    public static RuleChain chain = RuleChain.outerRule(database).around(polaris);
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeClass
+    public static void startup() throws Exception {
         PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
         DatabaseConfiguration database = configuration.getDatabase();
-        BasicDataSource dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(database);
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);
@@ -59,6 +61,22 @@ public class TestJobsResource {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+    }
+
+    @After
+    public void cleanup() throws Exception
+    {
+        database.clear();
+    }
+
+    @AfterClass
+    public static void shutdown() throws Exception
+    {
+        try {
+            dataSource.close();
+        } catch (SQLException e) {
+            // noop
+        }
     }
 
     @Test
