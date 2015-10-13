@@ -23,7 +23,7 @@ if [ $(uname -s) = "Darwin" ] ; then
     brew update && brew install --upgrade docker graphviz
 
     # Install crane
-    bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/master/download.sh)"
+    bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/v1.1.1/download.sh)"
     mv crane /usr/local/bin/crane
 
     # Install docker-machine
