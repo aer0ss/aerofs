@@ -116,8 +116,11 @@ else
     # attempt to talk to it and nginx doesn't proxy requests to it.
     # To preserve maximum schema flexibility we explictly drop the polaris
     # db from backups.
-    # TODO: remove this when polaris schema is stable
-    echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql -h mysql.service
+    if [ ! -e aerofs-db-backup/restore-polaris ]
+    then
+        echo ">>> Dropping database polaris created before schema stabilized..."
+        echo "drop database if exists \`polaris\`; create database \`polaris\`;" | mysql -h mysql.service
+    fi
 
 fi
 

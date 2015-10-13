@@ -21,6 +21,9 @@ else
     echo ">>> Backing up mysql database..."
     mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
 
+    # To mark that the polaris db from this appliance is stable enough to not be dropped
+    touch aerofs-db-backup/restore-polaris
+
     echo ">>> Backing up CA files..."
     mkdir -p aerofs-db-backup/ca-files
     touch aerofs-db-backup/ca-files/migrated
