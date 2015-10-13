@@ -54,6 +54,7 @@ def _pb_rest_object_url_to_dict(pb):
         'key': pb.key,
         'token': pb.token,
         'soid': pb.soid,
+        'team_only': getattr(pb, 'team_only', False),
         'has_password': getattr(pb, 'has_password', False),
         'expires': _abs_milli_to_delta_seconds(getattr(pb, 'expires', 0)),
     }
@@ -67,6 +68,8 @@ def _make_sp_request(fn, args):
     except ExceptionReply as e:
         if e.get_type() == PBException.BAD_CREDENTIAL:
             raise HTTPUnauthorized()
+        if e.get_type() == PBException.NOT_AUTHENTICATED:
+            raise HTTPUnauthorized(detail='Log in required.')
         if e.get_type() == PBException.NO_PERM:
             raise HTTPForbidden()
         if e.get_type() == PBException.NOT_FOUND:
@@ -136,6 +139,31 @@ def get_url_info(request):
     reply = _make_sp_request(get_rpc_stub(request).get_url_info, (key, password))
     _audit(request, "LINK", "link.access", {'key': key})
     return _pb_rest_object_url_to_dict(reply.url_info)
+
+
+@view_config(
+        route_name='set_url_team_only',
+        renderer='json',
+        permission='user',
+        request_method='POST',
+)
+def set_url_team_only(request):
+    key = request.json_body.get("key")
+    team_only = request.json_body.get("team_only")
+    if key is None:
+        error.expected_error('missing "key" param')
+    if team_only is None:
+        error.expected_error('missing "team_only" param')
+
+    _make_sp_request(get_rpc_stub(request).set_url_team_only, (key, team_only))
+
+    _audit(request, 'LINK', 'link.set_team_only', {
+        'caller': authenticated_userid(request),
+        'key': key,
+        'team_only': team_only,
+    })
+
+    return {}
 
 
 @view_config(

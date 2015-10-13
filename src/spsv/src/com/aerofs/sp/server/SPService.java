@@ -1653,6 +1653,16 @@ public class SPService implements ISPService
         UrlShare link = _factUrlShare.create(key);
         RestObject object = link.getRestObject();
         boolean hasPassword = link.hasPassword();
+        boolean teamOnly = link.getTeamOnly();
+
+        if (teamOnly) {
+            User user = _session.getUserNullable();
+
+            if (user == null) {
+                l.info("getUrlInfo is teamOnly - no user found");
+                throw new ExNotAuthenticated();
+            }
+        }
         if (hasPassword) {
             try {
                 User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
@@ -1668,6 +1678,31 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(GetUrlInfoReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> setUrlTeamOnly(String key, Boolean teamOnly)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+
+        UrlShare link = _factUrlShare.create(key);
+        RestObject soid = link.getRestObject();
+        SharedFolder sf = _factSharedFolder.create(soid.getSID());
+        sf.throwIfNoPrivilegeToChangeACL(requester);
+
+        Long oldExpiry = link.getExpiresNullable();
+        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
+                getMobileAccessCode(requester).get().getAccessCode(),
+                oldExpiry == null ? 0 : oldExpiry);
+
+        _bifrostClient.deleteToken(link.getToken());
+
+        link.setTeamOnly(teamOnly.booleanValue(), newToken);
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     @Override

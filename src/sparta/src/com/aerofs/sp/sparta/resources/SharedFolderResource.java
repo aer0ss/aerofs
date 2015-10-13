@@ -718,6 +718,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         // FIXME: that seems overly restrictive
         // surely it would be good for users to know which files have been shared via links
         // even if they can't create/remove/edit links in this shared folder
+
         if (caller != null) {
             sf.throwIfNoPrivilegeToChangeACL(caller);
         }
@@ -739,6 +740,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                     url.getRestObject().toStringFormal(),
                     url.getToken(),
                     url.getCreatedBy().getString(),
+                    url.getTeamOnly(),
                     url.hasPassword(),
                     expires));
         }

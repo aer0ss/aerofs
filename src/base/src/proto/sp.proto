@@ -654,8 +654,9 @@ service SPService {
     // Get the info associated with a URL key (rest object, token, expiry, etc.)
     //
     // Required Auth Level:
-    //   None, if no password is set
-    //   store owner OR provide password, if password is set
+    //   None, unless
+    //    - URL is team-only: user
+    //    - URL is password-protected: provide password
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExBadCredential if a password is set and the user is not a store owner and does not
@@ -875,6 +876,15 @@ service SPService {
 
     // Search an organization's users for those matching a prefix search
     rpc SearchOrganizationUsers(SearchOrganizationUsersCall) returns (SearchOrganizationUsersReply);
+
+    // Set the team level permissions on URL
+    //
+    // Required Auth Level: store owner
+    // Throws:
+    //   ExNotFound if the key does not exist
+    //   ExNoPerm if the current user isn't a manager of the containing store
+    //
+    rpc SetUrlTeamOnly(SetUrlTeamOnlyCall) returns (Void);
 }
 
 message SetDeviceOSFamilyAndNameCall {
@@ -1458,7 +1468,8 @@ message PBRestObjectUrl {
     required string token = 3;
     required string created_by = 4;
     optional uint64 expires = 5;
-    optional bool has_password = 6;  // no field == false
+    optional bool has_password = 6 [default = false];
+    optional bool team_only = 7 [default = false];
 }
 
 message CreateUrlReply {
@@ -1637,4 +1648,9 @@ message SearchOrganizationUsersCall {
 message SearchOrganizationUsersReply {
     // There will be at most 'max_results' entries
     repeated PBUser matching_users = 1;
+}
+
+message SetUrlTeamOnlyCall {
+    required string key = 1;
+    required bool team_only = 2;
 }

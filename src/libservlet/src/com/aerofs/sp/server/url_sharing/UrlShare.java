@@ -83,7 +83,7 @@ public class UrlShare
             while (true) {
                 String key = generateKey();
                 try {
-                    _db.insertRow(key, restObject.getSID(), restObject.getOID(), token, null,
+                    _db.insertRow(key, restObject.getSID(), restObject.getOID(), token, null, false,
                             createdBy);
                     return create(key);
                 } catch (ExAlreadyExist ignored) {
@@ -145,6 +145,18 @@ public class UrlShare
     {
         String userid = _f._db.getCreatedBy(_key);
         return UserID.fromInternal(userid);
+    }
+
+    public boolean getTeamOnly()
+        throws SQLException, ExNotFound
+    {
+        return _f._db.getTeamOnly(_key);
+    }
+
+    public void setTeamOnly(boolean teamOnly, @Nonnull String newToken)
+            throws SQLException, ExNotFound
+    {
+        _f._db.setTeamOnlyAndToken(_key, teamOnly, newToken);
     }
 
     public void setExpires(long expires, @Nonnull String newToken)
@@ -213,6 +225,7 @@ public class UrlShare
                 .setSoid(getRestObject().toStringFormal())
                 .setCreatedBy(getCreatedBy().getString())
                 .setHasPassword(hasPassword())
+                .setTeamOnly(getTeamOnly())
                 .setToken(getToken());
         Long expires = getExpiresNullable();
         if (expires != null) builder.setExpires(expires);

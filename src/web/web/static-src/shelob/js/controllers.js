@@ -268,6 +268,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         if ($scope.enableLinksharing) {
             // ping get_url_info for link's password-needed, expiry, token, and soid
             // if login's already run, and successfully, there'll be a password attached
+
             $http.post('/url_info/' + $scope.currentShare.token, {
                 password: $rootScope.linkPasswordEntered
             }).success(function(response){
@@ -290,11 +291,15 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                     _getFolders();
                 }
             }).error(function(response, status){
-                /* If 401, will redirect to login
-                   Otherwise, shows error message. */
-                _handleFailure({
-                    status: status
-                });
+                if (status == 401 && response.indexOf('Log in required') > -1 ) {
+                    window.location.href = window.location.origin + '/login?next=' + encodeURIComponent(window.location.pathname);
+                } else {
+                    /* If 401, will redirect to login
+                     Otherwise, shows error message. */
+                    _handleFailure({
+                        status: status
+                    });
+                }
             });
         } else {
             // links created before admin turned off linksharing
@@ -681,6 +686,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }).success(function(response) {
             var newLink = {
                 key: response.key,
+                team_only: false,
                 has_password: false,
                 // all new links have no expiration, can be added later
                 expires: 0

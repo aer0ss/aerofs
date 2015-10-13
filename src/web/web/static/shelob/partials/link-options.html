@@ -1,11 +1,12 @@
-<div class="btn-group pull-right">
+ <div class="btn-group pull-right">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
     {{title}} <span class="caret"></span>
   </button>
   <ul class="dropdown-menu pull-right" role="menu">
+    <li ng-hide="link.expires > 0"><a ng-click="expiry()">Add Expiration Time</a></li>
     <li ng-hide="link.has_password"><a ng-click="password()">Add Password</a></li>
     <li ng-show="link.has_password"><a ng-click="removePassword()">Remove Password</a></li>
-    <li ng-hide="link.expires > 0"><a ng-click="expiry()">Add Expiration Time</a></li>
+    <li><a ng-click="setTeamOnly()"><span ng-show="link.team_only" class="glyphicon glyphicon-ok"></span> Require Sign In</a></li>
     <li ng-show="link.expires > 0"><a ng-click="expiry()">Expires: {{link.expires|humanDate}}</a></li>
     <li class="divider"></li>
     <li><a ng-click="deleteLink()"><span class="glyphicon glyphicon-trash"></span> Delete Link</a></li>

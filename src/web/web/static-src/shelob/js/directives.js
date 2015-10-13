@@ -251,6 +251,27 @@ shelobDirectives.directive('aeroLinkOptions', ['$modal','$log','$http','$timeout
         },
         templateUrl: '/static/shelob/partials/link-options.html',
         link: function($scope, element, attrs) {
+
+            //Sets the current link to team only
+            $scope.setTeamOnly = function () {
+
+                $http.post('/set_url_team_only', {
+                    key: $scope.link.key,
+                    team_only: !$scope.link.team_only
+                }).success(function(response){
+                    if ($scope.link.team_only) {
+                        //It was team only, now it is public
+                        showSuccessMessage("Anyone with the link can access it.");
+                        $scope.link.team_only = false;
+                    } else {
+                        showSuccessMessage("Only signed-in users can access the link.");
+                        $scope.link.team_only = true;
+                    }
+                }).error(function () {
+                    showErrorMessageUnsafe(getInternalErrorText());
+                });
+            },
+
             // Deletes shareable link
             $scope.deleteLink = function() {
                 // destroy link on server

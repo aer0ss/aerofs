@@ -27,6 +27,7 @@ import java.util.List;
 
 import static com.aerofs.sp.server.lib.SPSchema.C_US_CREATED_BY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_EXPIRES;
+import static com.aerofs.sp.server.lib.SPSchema.C_US_TEAM_ONLY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_HASHED_PASSWORD;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_KEY;
 import static com.aerofs.sp.server.lib.SPSchema.C_US_OID;
@@ -57,21 +58,36 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
 
     // FIXME this function never throws ExAlreadyExist, but it should.
     public void insertRow(@Nonnull String key, @Nonnull SID sid, @Nonnull OID oid,
-            @Nonnull String token, @Nullable Long expires, @Nonnull UserID createdBy)
+            @Nonnull String token, @Nullable Long expires, boolean teamOnly,
+            @Nonnull UserID createdBy)
             throws SQLException, ExAlreadyExist
     {
         try (PreparedStatement ps = prepareStatement(
                 DBUtil.insert(T_US, C_US_KEY, C_US_SID, C_US_OID, C_US_TOKEN, C_US_EXPIRES,
-                        C_US_CREATED_BY))) {
+                        C_US_TEAM_ONLY, C_US_CREATED_BY))) {
             ps.setString(1, key);
             ps.setBytes(2, sid.getBytes());
             ps.setBytes(3, oid.getBytes());
             ps.setString(4, token);
             if (expires == null) ps.setNull(5, Types.BIGINT);
             else ps.setLong(5, expires);
-            ps.setString(6, createdBy.getString());
+            ps.setBoolean(6, teamOnly);
+            ps.setString(7, createdBy.getString());
 
             ps.executeUpdate();
+        }
+    }
+
+    public void setTeamOnlyAndToken(@Nonnull String key, boolean teamOnly, @Nonnull String token)
+            throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = prepareStatement(
+                DBUtil.updateWhere(T_US, C_US_KEY + "=?", C_US_TEAM_ONLY, C_US_TOKEN))) {
+            ps.setBoolean (1, teamOnly);
+            ps.setString(2, token);
+            ps.setString(3, key);
+
+            if (ps.executeUpdate() != 1) throw new ExNotFound();
         }
     }
 
@@ -112,6 +128,12 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
             throws SQLException, ExNotFound
     {
         return getStringColumn(key, C_US_CREATED_BY);
+    }
+
+    public boolean getTeamOnly(@Nonnull String key)
+            throws SQLException, ExNotFound
+    {
+        return getBooleanColumn(key, C_US_TEAM_ONLY);
     }
 
     public @Nullable Long getExpires(@Nonnull String key)
@@ -163,6 +185,19 @@ public class UrlSharingDatabase extends AbstractSQLDatabase
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getString(1);
+                else throw new ExNotFound();
+            }
+        }
+    }
+
+    private boolean getBooleanColumn(String key, String column)
+            throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_US, C_US_KEY + "=?", column))) {
+            ps.setString(1, key);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getBoolean(1);
                 else throw new ExNotFound();
             }
         }

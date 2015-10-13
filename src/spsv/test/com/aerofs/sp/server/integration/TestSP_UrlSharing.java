@@ -7,14 +7,12 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.*;
 import com.aerofs.ids.OID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Sp.ListUrlsForStoreReply;
 import com.aerofs.proto.Sp.PBRestObjectUrl;
 import com.aerofs.sp.server.lib.user.User;
@@ -97,6 +95,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(mockToken, objectUrl.getToken());
         assertEquals(owner.id().getString(), objectUrl.getCreatedBy());
         assertFalse(objectUrl.hasExpires());
+        assertTrue(objectUrl.hasTeamOnly());
+        assertFalse(objectUrl.getTeamOnly());
     }
 
     @Test
@@ -168,6 +168,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(owner.id().getString(), getReply.getCreatedBy());
         assertFalse(getReply.hasExpires());
+        assertTrue(getReply.hasTeamOnly());
+        assertFalse(getReply.getTeamOnly());
     }
 
     @Test
@@ -284,6 +286,133 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void getUrlInfo_shouldThrowForAnonIfTeamOnly() throws Exception
+    {
+        // create the link
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the team only parameter
+        service.setUrlTeamOnly(key, true);
+
+        // no session user
+        session.deauthorize();
+
+        // check that GetUrlInfo fails
+        try {
+            service.getUrlInfo(key).get();
+            fail();
+        } catch (ExNotAuthenticated ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void getUrlInfo_shouldGetUrlInfoForOrgMemberIfTeamOnly() throws Exception
+    {
+        // create the link
+
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the team only parameter
+        service.setUrlTeamOnly(key, true);
+
+        // check that GetUrlInfo succeeds for owner
+        PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertEquals(key, getReply.getKey());
+
+        // and for editor
+        setSession(editor);
+        PBRestObjectUrl getReplyAgain = service.getUrlInfo(key).get().getUrlInfo();
+        assertEquals(key, getReplyAgain.getKey());
+    }
+
+    @Test
+    public void setUrlTeamOnly_shouldSetTeamOnlyToTrue() throws Exception
+    {
+        // create the link
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the team only parameter
+        service.setUrlTeamOnly(key, true);
+
+        // check that GetUrlInfo succeeds and that the new team only value is true
+        PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertEquals(key, getReply.getKey());
+        assertEquals(mockToken, getReply.getToken());
+        assertEquals(object.toStringFormal(), getReply.getSoid());
+        assertEquals(owner.id().getString(), getReply.getCreatedBy());
+        assertFalse(getReply.hasExpires());
+        assertTrue(getReply.getTeamOnly());
+    }
+
+    @Test
+    public void setUrlTeamOnly_shouldSetTeamOnlyBackToFalse() throws Exception
+    {
+        // create the link
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        // set the team only parameter
+        service.setUrlTeamOnly(key, true);
+
+        // check that GetUrlInfo succeeds and that the new team only value is true
+        PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertTrue(getReply.getTeamOnly());
+
+        // set the team only parameter
+        service.setUrlTeamOnly(key, false);
+        getReply = service.getUrlInfo(key).get().getUrlInfo();
+        assertFalse(getReply.getTeamOnly());
+    }
+
+    @Test
+    public void setUrlTeamOnly_shouldThrowIfKeyDoesNotExist() throws Exception
+    {
+        String key = UniqueID.generate().toStringFormal();
+
+        try {
+            service.setUrlTeamOnly(key, true);
+            fail();
+        } catch (ExNotFound ignored) {
+            // success
+        }
+    }
+
+    @Test
+    public void setUrlTeamOnly_shouldThrowIfUserIsNotManager() throws Exception
+    {
+        // create the link
+        RestObject object = new RestObject(sid);
+        PBRestObjectUrl createReply = service.createUrl(object.toStringFormal())
+                .get()
+                .getUrlInfo();
+        String key = createReply.getKey();
+
+        setSession(editor);
+        try {
+            service.setUrlTeamOnly(key, true);
+            fail();
+        } catch (ExNoPerm ignored) {
+            // success
+        }
+    }
+
+    @Test
     public void setUrlExpires_shouldSetUrlExpires() throws Exception
     {
         // create the link
@@ -303,6 +432,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(mockToken, getReply.getToken());
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(expires, getReply.getExpires());
+        assertFalse(getReply.getTeamOnly());
     }
 
     @Test
