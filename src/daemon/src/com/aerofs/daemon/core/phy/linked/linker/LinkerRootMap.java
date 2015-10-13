@@ -20,6 +20,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -202,7 +203,7 @@ public class LinkerRootMap
     {
         // ensure aux folders clean
         // we don't want leftover conflicts, nros or prefixes
-        InjectableFile auxRoot = _factFile.create(Cfg.absAuxRootForPath(absRoot, sid));
+        InjectableFile auxRoot = _factFile.create(BaseCfg.absAuxRootForPath(absRoot, sid));
         for (AuxFolder af : LibParam.AuxFolder.values()) {
             // do not enforce history cleanup as this folder could be very large
             if (af.equals(AuxFolder.HISTORY)) continue;
@@ -274,7 +275,7 @@ public class LinkerRootMap
             public void committed_()
             {
                 notifyRootsChanged_();
-                boolean ok =_factFile.create(Cfg.absAuxRootForPath(absPath, sid))
+                boolean ok =_factFile.create(BaseCfg.absAuxRootForPath(absPath, sid))
                         .deleteIgnoreErrorRecursively();
                 l.info("cleanup auxroot {} {}", sid, ok);
             }
@@ -352,7 +353,7 @@ public class LinkerRootMap
 
     public final String auxRoot_(SID root)
     {
-        return Cfg.absAuxRootForPath(absRootAnchor_(root), root);
+        return BaseCfg.absAuxRootForPath(absRootAnchor_(root), root);
     }
 
     public final String auxFilePath_(SID sid, SOID soid, AuxFolder folder)
@@ -406,7 +407,7 @@ public class LinkerRootMap
         // must ensure existence of aux root before creating LinkerRoot as
         // filesystem properties are probed in the aux root
         // NB: can't use auxRoot_ method as the root is not in the map yet
-        ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
+        ensureSaneAuxRoot_(BaseCfg.absAuxRootForPath(absRoot, sid));
         LinkerRoot root = _factLR.create_(sid, absRoot);
 
         boolean rootExists = _factFile.create(root.absRootAnchor()).exists();

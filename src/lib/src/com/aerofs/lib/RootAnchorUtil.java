@@ -10,6 +10,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
@@ -116,7 +117,7 @@ public abstract class RootAnchorUtil
 
     public static File cleanAuxRootForPath(String rootAnchor, SID sid)
     {
-        File dir = new File(Cfg.absAuxRootForPath(rootAnchor, sid));
+        File dir = new File(BaseCfg.absAuxRootForPath(rootAnchor, sid));
         FileUtil.deleteIgnoreErrorRecursively(dir);
         return dir;
     }

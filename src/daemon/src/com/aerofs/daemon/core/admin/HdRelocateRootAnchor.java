@@ -17,6 +17,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -204,8 +205,8 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             _oldRoot = oldRoot;
             _newRoot = newRoot;
 
-            _oldAuxRoot = _factFile.create(Cfg.absAuxRootForPath(oldRoot.getAbsolutePath(), sid));
-            _newAuxRoot = _factFile.create(Cfg.absAuxRootForPath(newRoot.getAbsolutePath(), sid));
+            _oldAuxRoot = _factFile.create(BaseCfg.absAuxRootForPath(oldRoot.getAbsolutePath(), sid));
+            _newAuxRoot = _factFile.create(BaseCfg.absAuxRootForPath(newRoot.getAbsolutePath(), sid));
         }
 
         /**

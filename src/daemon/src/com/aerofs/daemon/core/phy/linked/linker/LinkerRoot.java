@@ -18,6 +18,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -109,7 +110,7 @@ public class LinkerRoot
 
     public String absAuxRoot()
     {
-        return Cfg.absAuxRootForPath(_absRootAnchor, _sid);
+        return BaseCfg.absAuxRootForPath(_absRootAnchor, _sid);
     }
 
     public int watchId()

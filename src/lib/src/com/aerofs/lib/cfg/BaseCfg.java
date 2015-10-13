@@ -31,6 +31,7 @@ public class BaseCfg {
     private DID _did;
     private UserID _user;
     private String _absDefaultRootAnchor;
+    private String _absDefaultAuxRoot;
     private String _ver;
     private X509Certificate _cert;
     private X509Certificate _cacert;
@@ -83,6 +84,7 @@ public class BaseCfg {
         File rootAnchor = new File(store.get(ROOT));
         assert rootAnchor.isAbsolute();
         _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
+        _absDefaultAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _rootSID);
 
         try {
             _cert = readCert();
@@ -92,6 +94,20 @@ public class BaseCfg {
 
         _storageType = StorageType.fromString(store.getNullable(STORAGE_TYPE));
         _inited = true;
+    }
+
+    /**
+     * Ideally the aux root should reside under the root it is associated with to simplify relocate
+     * algorithm and allow using the root of a disk/partition as an external root
+     *
+     * In the meantime we place the aux root of each store at the same level as the physical root to
+     * reduce the likelihood of problems arising form lack of permissions or non-atomicity of file
+     * renaming
+     */
+    public static String absAuxRootForPath(String path, SID sid)
+    {
+        return new File(new File(path).getParentFile(),
+                LibParam.AUXROOT_NAME + "." + sid.toStringFormal().substring(0, 6)).getAbsolutePath();
     }
 
     public void readPrivateKey(boolean readPasswd) throws IOException, GeneralSecurityException
@@ -114,6 +130,10 @@ public class BaseCfg {
 
     protected String absDefaultRootAnchor() {
         return _absDefaultRootAnchor;
+    }
+
+    protected String absDefaultAuxRoot() {
+        return _absDefaultAuxRoot;
     }
 
     protected UserID user() {
