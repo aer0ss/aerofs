@@ -701,7 +701,6 @@ public class TestFolderResource extends AbstractRestTest
         .when().delete(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
-
     @Test
     public void shouldReturn404ForDeleteNonExistent() throws Exception
     {

@@ -477,9 +477,17 @@ public class MetadataBuilder
 
         UniqueID oid = restObject2OID(principal, object);
         UniqueID toParent = restObject2OID(principal, RestObject.fromString(parent));
-        AccessToken accessToken = checkAccess(principal, Lists.newArrayList(oid, toParent),
-                READ, WRITE);
+        Set<UniqueID> stores = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            UniqueID parentOID = getParentOID(dao, principal.getUser(), oid);
+            if (parentOID == null) {
+                throw new NotFoundException(oid);
+            }
+            return Sets.newHashSet(objectStore.getStore(dao, parentOID), objectStore.getStore(dao, toParent));
+        });
 
+        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(), stores,
+                READ, WRITE);
         ApiOperationResult result  = dbi.inTransaction((conn, status) ->
                 move(new DAO(conn), principal, object, RestObject.fromString(parent), oid,
                         toParent, name, accessToken));
@@ -517,7 +525,7 @@ public class MetadataBuilder
                     .build());
         }
 
-        l.info("Move object {} from {} to {}", name, fromParent, toParent);
+        l.info("Move object <oid, name> <{}, {}> from {} to {}", oid, name, fromParent, toParent);
         OperationResult result = performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
         UniqueID child = dao.children.getActiveChildNamed(toParent, name.getBytes());
@@ -529,10 +537,20 @@ public class MetadataBuilder
     public Response delete(AeroOAuthPrincipal principal, RestObject object)
     {
         l.info("Deleting object {}", object.toStringFormal());
-        UniqueID oid = restObject2OID(principal, object);
-        AccessToken accessToken = checkAccess(principal, Lists.newArrayList(oid), READ, WRITE);
 
-        ApiOperationResult result  = dbi.inTransaction((conn, status) ->
+        UniqueID oid = restObject2OID(principal, object);
+        Set<UniqueID> parentStores = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            UniqueID parent = getParentOID(dao, principal.getUser(), oid);
+            if (parent == null) {
+                throw new NotFoundException(oid);
+            }
+            return Sets.newHashSet(objectStore.getStore(dao, parent));
+        });
+
+        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
+                parentStores, READ, WRITE);
+        ApiOperationResult result = dbi.inTransaction((conn, status) ->
                 delete(new DAO(conn), principal, object, oid, accessToken));
         Map<UniqueID, Long> updatedStores =result.updated.stream()
                 .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
@@ -548,9 +566,9 @@ public class MetadataBuilder
         }
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
         throwIfInSufficientTokenScope(principal, oid, Scope.WRITE_FILES, parentFolders);
+        Preconditions.checkArgument(!Identifiers.isRootStore(oid), "cannot remove user root");
 
         UniqueID parent = getParentOID(dao, principal.getUser(), oid);
-        Preconditions.checkArgument(!Identifiers.isRootStore(oid), "cannot remove user root");
         OperationResult result = performTransform(dao, accessToken,
                 principal.getDID(), parent, new RemoveChild(new OID(oid)));
 
