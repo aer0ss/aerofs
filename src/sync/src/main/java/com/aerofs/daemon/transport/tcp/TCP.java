@@ -193,10 +193,21 @@ public class TCP implements ITransport, IAddressResolver, ILinkStateListener
             List<IPresenceLocation> locations = new ArrayList<>();
             for (NetworkInterface iface: current) {
                 for (Enumeration<InetAddress> e = iface.getInetAddresses(); e.hasMoreElements();) {
-                    locations.add(new TCPPresenceLocation(null, e.nextElement(), port));
+                    locations.add(new TCPPresenceLocation(null, removeScope(e.nextElement()), port));
                 }
             }
             locationManager.onLocationChanged(this, locations);
+        }
+    }
+
+    // IPv6 addresses are scoped to the network interface they are listed from
+    // this scope is encoded into the string representation, which is problematic when advertising
+    // the IP to remote peers...
+    private InetAddress removeScope(InetAddress addr) {
+        try {
+            return InetAddress.getByAddress(addr.getAddress());
+        } catch (Exception e) {
+            return addr;
         }
     }
 
