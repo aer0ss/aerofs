@@ -18,7 +18,8 @@ class SignupForm(Form):
     phone_number = TextField("Phone Number", validators=[InputRequired()])
     job_title = TextField("Job Title", validators=[InputRequired()])
     company_size = TextField("Company Size", validators=[Optional()])
-    deployment_environment = TextField("Deployment Environment", validators=[Optional()])
+    current_fss = TextField("Current file sharing solution", validators=[Optional()])
+    country = TextField("Country", validators=[Optional()])
 
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[Length(min=6)])

@@ -133,7 +133,8 @@ def signup_request_page():
             'phone': record.phone_number.encode('utf-8'),
             'job_title': record.job_title.encode('utf-8'),
             'company_size': form.company_size.data.encode('utf-8'),
-            'deployment_environment': form.deployment_environment.data.encode('utf-8')
+            'current_fss': form.current_fss.data.encode('utf-8'),
+            'country': form.country.data.encode('utf-8')
         }
         r = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
 

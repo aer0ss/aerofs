@@ -14,7 +14,8 @@
         {{ render_field(form.job_title, type="text") }}
         {{ render_field(form.phone_number, type="phone") }}
         {{ render_field(form.company_size, type="text") }}
-        {{ render_field(form.deployment_environment, type="text") }}
+        {{ render_field(form.current_fss, type="text") }}
+        {{ render_field(form.country, type="text") }}
         {{ eula_notice() }}
 
         {{ submit_button("Sign Up", horizontal=True) }}
