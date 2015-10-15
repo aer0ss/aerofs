@@ -38,10 +38,6 @@ public interface LogicalObjects {
     LockableLogicalObject get(@Bind("oid") UniqueID oid);
 
     @Nullable
-    @SqlQuery("select store_oid, objects.oid, version, object_type, locked from objects inner join object_types on (objects.oid = object_types.oid) where objects.oid = :oid and version = :version")
-    LockableLogicalObject get(@Bind("oid") UniqueID oid, @Bind("version") long version);
-
-    @Nullable
     @RegisterMapper(OneColumnUniqueIDMapper.class)
     @SqlQuery("select store_oid from objects where oid = :oid")
     UniqueID getStore(@Bind("oid") UniqueID oid);
