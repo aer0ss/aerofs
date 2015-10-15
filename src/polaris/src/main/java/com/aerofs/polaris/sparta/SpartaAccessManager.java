@@ -7,6 +7,9 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Objects;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -20,6 +23,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -27,9 +31,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
 import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
@@ -47,6 +54,7 @@ public final class SpartaAccessManager implements ManagedAccessManager {
     private final String spartaUrl;
     private final ObjectMapper mapper;
     private final CloseableHttpClient client;
+    private final Cache<UserStore, List<Access>> permsCache = CacheBuilder.newBuilder().expireAfterWrite(3, TimeUnit.MINUTES).build();
 
     @Inject
     public SpartaAccessManager(
@@ -102,58 +110,104 @@ public final class SpartaAccessManager implements ManagedAccessManager {
         }
     }
 
-    // FIXME (AG): do not throw AccessException when there's an IOException
-
     @Override
     public void checkAccess(UserID user, Collection<UniqueID> stores, Access... requested) throws AccessException {
-        for (UniqueID store : stores) {
-            // TODO (RD): cache responses and pipeline requests if necessary
-            HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, store.toStringFormal(), user.getString()));
-            get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
-
-            try {
-                try (CloseableHttpResponse response = client.execute(get)) {
-                    int statusCode = response.getStatusLine().getStatusCode();
-
-                    // if we got a 404 then the user doesn't exist
-                    if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                        LOGGER.warn("user does not belong to shared folder {}", store);
-                        throw new AccessException(user, store, Access.READ);
-                    } else if (statusCode != HttpStatus.SC_OK) {
-                        LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
-                        throw new AccessException(user, store, requested);
-                    }
-
-                    List<String> nonReadAccesses = nonReadAccessRequested(requested);
-                    // we haven't requested WRITE/MANAGE access
-                    // members of a shared folder have READ access by default
-                    if (nonReadAccesses.size() == 0) {
-                        return;
-                    }
-
-                    // we've requested WRITE/MANAGE access and the user exists...
-                    try (InputStream content = response.getEntity().getContent()) {
-                        Member member = mapper.readValue(content, Member.class);
-                        if (!member.permissions.containsAll(nonReadAccesses)) {
-                            throw new AccessException(user, store, requested);
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                LOGGER.warn("fail retrieve ACL from sparta", e);
-                throw new AccessException(user, store, requested);
-            }
+        List<Access> req = Arrays.asList(requested);
+        Map<UniqueID, List<Access>> perms = stores.parallelStream().collect(Collectors.toMap((store) -> store, (store) -> findAccessPermissions(user, store)));
+        UniqueID rej = perms.entrySet().stream().filter((entry) -> !entry.getValue().containsAll(req)).findAny().map(Map.Entry::getKey).orElse(null);
+        if (rej != null) {
+            throw new AccessException(user, rej, requested);
         }
     }
 
-    private List<String> nonReadAccessRequested(Access[] requested)
-    {
-        List<String> accesses = Lists.newArrayList();
-        for (Access access : requested) {
-            if (access != Access.READ) {
-                accesses.add(access.name());
+    private List<Access> findAccessPermissions(UserID user, UniqueID store) {
+        UserStore key = new UserStore(user, store);
+        List<Access> cached = permsCache.getIfPresent(key);
+        if (cached != null) {
+            return cached;
+        }
+
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s/members/%s", SPARTA_API_VERSION, store.toStringFormal(), user.getString()));
+        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
+
+        try {
+            try (CloseableHttpResponse response = client.execute(get)) {
+                int statusCode = response.getStatusLine().getStatusCode();
+
+                // if we got a 404 then the user doesn't exist
+                if (statusCode == HttpStatus.SC_NOT_FOUND) {
+                    LOGGER.warn("user does not belong to shared folder {}", store);
+                    return Lists.newArrayList();
+                } else if (statusCode != HttpStatus.SC_OK) {
+                    LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
+                    return Lists.newArrayList();
+                }
+
+                try (InputStream content = response.getEntity().getContent()) {
+                    Member member = mapper.readValue(content, Member.class);
+                    List<Access> accesses = accessFromMemberPermissions(member.permissions);
+                    // cache the member's current permissions in the store, don't cache other negative responses
+                    permsCache.put(key, accesses);
+                    return accesses;
+                }
+            }
+        } catch (IOException e) {
+            // FIXME (AG): do not cause AccessException when there's an IOException
+            LOGGER.warn("fail retrieve ACL from sparta", e);
+            return Lists.newArrayList();
+        }
+    }
+
+    private List<Access> accessFromMemberPermissions(List<String> perms) {
+        List<Access> a = Lists.newArrayListWithCapacity(perms.size() + 1);
+        a.add(Access.READ);
+        for (String s : perms) {
+            switch (s) {
+                case "WRITE":
+                    a.add(Access.WRITE);
+                    break;
+                case "MANAGE":
+                    a.add(Access.MANAGE);
+                    break;
+                default:
+                    LOGGER.warn("Unrecognized perm {}", s);
+                    break;
             }
         }
-        return accesses;
+        return a;
+    }
+
+    private static class UserStore
+    {
+        private final UserID user;
+        private final UniqueID store;
+
+        UserStore(UserID user, UniqueID store) {
+            this.user = user;
+            this.store = store;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            UserStore other = (UserStore) o;
+            return user.equals(other.user) && store.equals(other.store);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(user, store);
+        }
+
+        @Override
+        public String toString() {
+            return Objects
+                    .toStringHelper(this)
+                    .add("user", user)
+                    .add("store", store)
+                    .toString();
+        }
     }
 }
