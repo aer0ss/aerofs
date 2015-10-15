@@ -10,6 +10,11 @@ ENV="$HOME/.aerofs-web-env"
 virtualenv "$ENV"
 
 # Install web's dependencies in virtualenv
+pushd ${SRC_ROOT}/python-lib
+"$ENV/bin/python" setup.py develop
+popd
+
+# Install web's dependencies in virtualenv
 "$ENV/bin/pip" install --requirement ${SRC_ROOT}/web/root/requirements-exact.txt
 
 # Install links for python-lib and web

@@ -25,5 +25,5 @@ RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-hos
 COPY buildroot /
 
 RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
-        /sdist/* &&\
+        --force-reinstall /sdist/* &&\
     rm -rf /sdist
