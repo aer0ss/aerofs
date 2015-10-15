@@ -118,6 +118,7 @@ public class ContentChangeSubmitter implements Submitter
         }
 
         boolean retry = false;
+        Counters cnt = new Counters();
         List<ContentChange> cc = Lists.newArrayList();
         List<BatchOp> ops = Lists.newArrayList();
         // TODO(phoenix): avoid wasteful repeated iteration of ignored entries
@@ -125,7 +126,7 @@ public class ContentChangeSubmitter implements Submitter
         try (IDBIterator<ContentChange> it = _ccdb.getChanges_(sidx)) {
             while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
                 ContentChange c = it.get_();
-                BatchOp op = op_(c);
+                BatchOp op = op_(c, cnt);
                 if (op != null) {
                     cc.add(c);
                     ops.add(op);
@@ -135,6 +136,18 @@ public class ContentChangeSubmitter implements Submitter
             }
         }
 
+        if (cnt.meta_delay > 0) {
+            l.info("delay content submit until meta submitted: {}", cnt.meta_delay);
+        }
+        if (cnt.hash_delay > 0) {
+            l.info("delay content submit until hash computed: {}", cnt.hash_delay);
+        }
+        if (cnt.scan_delay > 0) {
+            l.info("delay content submit for modified file: {}", cnt.scan_delay);
+        }
+        if (cnt.conflict > 0) {
+            l.info("ignore conflict branch: {}", cnt.conflict);
+        }
 
         if (ops.isEmpty()) {
             // TODO(phoenix): make sure ignored entries are submitted promptly on condition change
@@ -148,20 +161,27 @@ public class ContentChangeSubmitter implements Submitter
         }
     }
 
-    private BatchOp op_(ContentChange c)
+    private static class Counters {
+        long meta_delay;
+        long hash_delay;
+        long scan_delay;
+        long conflict;
+    }
+
+    private BatchOp op_(ContentChange c, Counters cnt)
             throws SQLException
     {
         OA oa = _ds.getOA_(new SOID(c.sidx, c.oid));
 
         // skip content submission until meta is successfully submitted
         if (_rldb.getParent_(c.sidx, c.oid) == null) {
-            l.info("delay content submit until meta submitted");
+            ++cnt.meta_delay;
             return null;
         }
 
         // don't submit changes when a conflict exists
         if (oa.cas().size() != 1) {
-            l.info("ignore conflict branch");
+            ++cnt.conflict;
             // TODO(phoenix): remove ccbd entry?
             return null;
         }
@@ -169,14 +189,14 @@ public class ContentChangeSubmitter implements Submitter
 
         ContentHash h = _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
         if (h == null) {
-            l.info("delay content submit until hash computed");
+            ++cnt.hash_delay;
             return null;
         }
 
         try {
             IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
             if (pf.wasModifiedSince(ca.mtime(), ca.length())) {
-                l.info("delay content submit for modified file");
+                ++cnt.scan_delay;
                 return null;
             }
         } catch (IOException e) {
