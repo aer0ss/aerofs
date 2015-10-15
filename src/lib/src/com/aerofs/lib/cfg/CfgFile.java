@@ -1,8 +1,12 @@
 package com.aerofs.lib.cfg;
 
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.Util;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -11,14 +15,18 @@ import java.util.Set;
 
 public class CfgFile extends ICfgStore {
 
-    public CfgFile() throws IOException
+    private static final String DEFAULT_CONF_LOCATION = Util.join("/etc", LibParam.SA_CFG_FILE);
+
+    @Inject
+    public CfgFile(CfgAbsRTRoot cfgAbsRTRoot) throws IOException
     {
-        readFromConfFile();
+        readFromConfFile(new File(DEFAULT_CONF_LOCATION).exists() ? DEFAULT_CONF_LOCATION :
+                Util.join(cfgAbsRTRoot.get(), LibParam.SA_CFG_FILE));
     }
 
-    public void readFromConfFile() throws IOException
+    public void readFromConfFile(String confFile) throws IOException
     {
-        BufferedReader br = new BufferedReader(new FileReader("/etc/storage_agent.conf"));
+        BufferedReader br = new BufferedReader(new FileReader(confFile));
         String line;
         Set<CfgKey> keysInCfgFile = Sets.newHashSet();
         while ((line = br.readLine()) != null) {

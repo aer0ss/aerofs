@@ -60,6 +60,7 @@ public class LibParam extends BaseParam
     public static final String CORE_DATABASE           = "db";
     public static final String OBF_CORE_DATABASE       = "obf-db";
     public static final String CFG_DATABASE            = "conf";
+    public static final String SA_CFG_FILE             = "storage_agent.conf";
     public static final String ICONS_DIR               = "/icons/";
     // Freedesktop.org-compliant icon theme folder
     public static final String FDO_ICONS_DIR           = "icons";
