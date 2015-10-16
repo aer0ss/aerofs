@@ -24,26 +24,17 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.Set;
 
 import static com.aerofs.daemon.core.lib.AsyncDownloadTestHelper.anyDM;
-import static com.aerofs.daemon.core.lib.AsyncDownloadTestHelper.endpoint;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Download contract:
@@ -101,11 +92,9 @@ public class TestDownload extends AbstractDownloadTest
 
         dl(socid).download_();
 
-        InOrder ordered = inOrder(dls, dlstate);
+        InOrder ordered = inOrder(dls);
 
         ordered.verify(dls).downloadSync_(eq(new SOCID(soid, CID.META)), eq(dids), anyDC());
-
-        ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
     }
 
     @Test
@@ -117,27 +106,20 @@ public class TestDownload extends AbstractDownloadTest
         mockReplies(child, did1, did1);
         mockReplies(parent, did1);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
-                throw new ExDependsOn(new OCID(parent.oid(), parent.cid()), DependencyType.PARENT);
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
+            throw new ExDependsOn(new OCID(parent.oid(), parent.cid()), DependencyType.PARENT);
         }).when(gcr).processResponse_(eq(child), anyDM(), anyDC());
 
         dl(child).download_();
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(false));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
     }
@@ -152,43 +134,31 @@ public class TestDownload extends AbstractDownloadTest
         mockReplies(o1, did1);
         mockReplies(o2, did1, did1);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                throw new ExNameConflictDependsOn(o1.oid(), p.oid(), Version.of(did1, new Tick(42)),
-                        PBMeta.newBuilder()
-                                .setType(Type.FILE)
-                                .setName("foo")
-                                .setParentObjectId(BaseUtil.toPB(p.oid()))
-                                .setFlags(0)
-                                .build(),
-                        o2.soid());
-            }
+        doAnswer(invocation -> {
+            throw new ExNameConflictDependsOn(o1.oid(), p.oid(), Version.of(did1, new Tick(42)),
+                    PBMeta.newBuilder()
+                            .setType(Type.FILE)
+                            .setName("foo")
+                            .setParentObjectId(BaseUtil.toPB(p.oid()))
+                            .setFlags(0)
+                            .build(),
+                    o2.soid());
         }).when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
-                return null;
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
+            return null;
         }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         dl(o2).download_();
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(false));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
     }
@@ -212,27 +182,20 @@ public class TestDownload extends AbstractDownloadTest
                         .build(), o2.soid()))
                 .when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
-                throw new ExNoComponentWithSpecifiedVersion();
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
+            throw new ExNoComponentWithSpecifiedVersion();
         }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         dl(o2).download_();
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
     }
@@ -242,24 +205,16 @@ public class TestDownload extends AbstractDownloadTest
     {
         mockReplies(socid, did1, did1);
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                doNothing().when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
-                throw new ExRestartWithHashComputed(KIndex.MASTER);
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
+            throw new ExRestartWithHashComputed(KIndex.MASTER);
         }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
 
         dl(socid).download_();
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
-
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
+        ordered.verify(gcc, times(2)).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
 
         verifyZeroInteractions(dls);
     }
@@ -277,10 +232,9 @@ public class TestDownload extends AbstractDownloadTest
             fail();
         } catch (ExAborted e) {}
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
     }
@@ -308,13 +262,11 @@ public class TestDownload extends AbstractDownloadTest
             assertTrue(e.recursiveUnwrap() instanceof ExNoComponentWithSpecifiedVersion);
         }
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
     }
@@ -339,13 +291,9 @@ public class TestDownload extends AbstractDownloadTest
                 o2.soid()))
                 .when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable
-            {
-                doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
-                throw new IOException();
-            }
+        doAnswer(invocation -> {
+            doNothing().when(gcr).processResponse_(eq(o2), anyDM(), anyDC());
+            throw new IOException();
         }).when(gcr).processResponse_(eq(o1), anyDM(), anyDC());
 
         try {
@@ -357,13 +305,11 @@ public class TestDownload extends AbstractDownloadTest
             assertTrue(e.recursiveUnwrap() instanceof IOException);
         }
 
-        InOrder ordered = inOrder(gcc, dlstate);
+        InOrder ordered = inOrder(gcc);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
     }
@@ -383,34 +329,26 @@ public class TestDownload extends AbstractDownloadTest
                 .when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
 
         when(ddr.resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC()))
-                .thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable
-            {
-                // simulate deadlock resolution...
-                doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
-                doNothing().when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
-                return true;
-            }
-        });
+                .thenAnswer(invocation -> {
+                    // simulate deadlock resolution...
+                    doNothing().when(gcr).processResponse_(eq(child), anyDM(), anyDC());
+                    doNothing().when(gcr).processResponse_(eq(parent), anyDM(), anyDC());
+                    return true;
+                });
 
         dl(child).download_();
 
-        InOrder ordered = inOrder(gcc, dlstate, ddr);
+        InOrder ordered = inOrder(gcc, ddr);
 
         ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(true));
 
         ordered.verify(ddr).resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC());
 
         ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(false));
 
         ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
-        ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
     }

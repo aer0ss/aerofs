@@ -114,12 +114,12 @@ public class AsyncDownload extends Download implements IAsyncDownload
         private final RemoteChangeChecker _changes;
 
         @Inject
-        public Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
+        public Factory(DirectoryService ds, Downloads dls,
                 GetComponentRequest gcc, GetComponentResponse gcr, To.Factory factTo,
                 DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid, RemoteChangeChecker changes,
                 CfgUsePolaris usePolaris, GetContentRequest pgcc, GetContentResponse pgcr)
         {
-            super(ds, dlstate, dls, factTo, gcc, gcr, ddr, sidx2sid, usePolaris, pgcc, pgcr);
+            super(ds, dls, factTo, gcc, gcr, ddr, sidx2sid, usePolaris, pgcc, pgcr);
             _changes = changes;
         }
 

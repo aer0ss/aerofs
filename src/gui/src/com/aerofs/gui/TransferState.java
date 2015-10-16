@@ -50,8 +50,8 @@ public class TransferState
 
                     l.debug("update transfer: {} {} {} {}/{}",
                             socid, t.getUpload() ? "to" : "from", did, t.getDone(), t.getTotal());
+                    UI.get().asyncExec(() -> updateTransfers(pb));
                 }
-                UI.get().asyncExec(() -> updateTransfers(pb));
             }
 
             @Override
@@ -68,10 +68,8 @@ public class TransferState
      */
     private synchronized void updateTransfers(PBNotification pb)
     {
-        if (pb.getType() == Type.TRANSFER) {
-            updateTransferState_(pb.getTransfer());
-            notifyListeners();
-        }
+        updateTransferState_(pb.getTransfer());
+        notifyListeners();
     }
 
     private synchronized void clearTransfers()

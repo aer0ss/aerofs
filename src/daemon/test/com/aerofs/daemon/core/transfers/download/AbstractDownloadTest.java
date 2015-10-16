@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.device.Devices;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.protocol.GetComponentRequest;
 import com.aerofs.daemon.core.protocol.GetComponentResponse;
 import com.aerofs.daemon.core.protocol.GetContentRequest;
@@ -49,7 +48,6 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock ITransport tp;
 
     @Mock DirectoryService ds;
-    @Mock DownloadState dlstate;
     @Mock Downloads dls;
     @Mock GetComponentRequest gcc;
     @Mock GetComponentResponse gcr;
@@ -93,7 +91,7 @@ public class AbstractDownloadTest extends AbstractTest
         when(cfgLocalDID.get()).thenReturn(new DID(UniqueID.generate()));
 
         factTo = new To.Factory(mock(Devices.class), cfgLocalDID);
-        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, ddr, sidx2sid, changes,
+        factDL = new AsyncDownload.Factory(ds, dls, gcc, gcr, factTo, ddr, sidx2sid, changes,
                 mock(CfgUsePolaris.class), pgcc, pgcr);
     }
 

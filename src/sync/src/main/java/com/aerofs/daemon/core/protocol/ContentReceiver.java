@@ -278,11 +278,6 @@ public class ContentReceiver
 
         byte[] buf = new byte[4096];
         while (remaining > 0) {
-            int n = is.read(buf, 0, (int) Math.min(buf.length, remaining));
-            if (n == -1) throw new EOFException();
-            remaining -= n;
-            prefixStream.write(buf, 0, n);
-            l.trace("written {}>{}", n, remaining);
             // sending notifications is not cheap, hence the rate-limiting
             if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
                 if (ongoing.aborted()) {
@@ -291,6 +286,11 @@ public class ContentReceiver
                 ongoing.progress(remaining);
                 timer.restart();
             }
+            int n = is.read(buf, 0, (int) Math.min(buf.length, remaining));
+            if (n == -1) throw new EOFException();
+            remaining -= n;
+            prefixStream.write(buf, 0, n);
+            l.trace("written {}>{}", n, remaining);
         }
     }
 

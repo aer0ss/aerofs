@@ -146,7 +146,6 @@ class Download
         protected final To.Factory _factTo;
         protected final DirectoryService _ds;
         protected final Downloads _dls;
-        protected final DownloadState _dlstate;
         protected final GetComponentRequest _gcc;
         protected final GetComponentResponse _gcr;
         protected final GetContentRequest  _pgcc;
@@ -155,14 +154,13 @@ class Download
         protected final IMapSIndex2SID _sidx2sid;
 
         @Inject
-        protected Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
+        protected Factory(DirectoryService ds, Downloads dls,
                 To.Factory factTo, GetComponentRequest gcc, GetComponentResponse gcr,
                 DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid,
                 CfgUsePolaris usePolaris, GetContentRequest pgcc, GetContentResponse pgcr)
         {
             _ds = ds;
             _dls = dls;
-            _dlstate = dlstate;
             _gcc = gcc;
             _gcr = gcr;
             _usePolaris = usePolaris;
@@ -302,7 +300,6 @@ class Download
                 failed = false;
             } finally {
                 l.debug("{} ended {} {} over {}", msg.did(), _socid, failed ? "FAILED" : "OK", msg.tp());
-                _f._dlstate.ended_(_socid, msg.ep(), failed);
             }
             return true;
         } catch (ExNameConflictDependsOn e) {

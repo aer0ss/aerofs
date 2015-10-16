@@ -12,7 +12,6 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.slf4j.Logger;
 
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -36,23 +35,13 @@ public class RitualNotifier extends SimpleChannelHandler
     // utility
     //
 
-    private static String clientString(Channel channel)
-    {
-        return clientString(channel.getId(), channel.getRemoteAddress());
-    }
-
-    private static String clientString(Integer channelId, SocketAddress remoteAddress)
-    {
-        return "client id:" + channelId + " rem:" + remoteAddress;
-    }
-
     private static void addWriteFailureFuture(ChannelFuture writeFuture)
     {
         final Channel channel = writeFuture.getChannel();
 
         writeFuture.addListener(channelFuture -> {
             if (!channelFuture.isSuccess()) {
-                l.warn("fail write notification to " + clientString(channel));
+                l.warn("fail write notification to {}", channel);
                 channel.close();
             }
         });
@@ -81,21 +70,25 @@ public class RitualNotifier extends SimpleChannelHandler
             throws Exception
     {
         final Channel channel = e.getChannel();
-        final Integer channelId = channel.getId();
-        final SocketAddress remoteAddress = channel.getRemoteAddress();
-
         boolean added = _allChannels.add(channel);
         if (!added) {
-            throw new ExDuplicateNotificationClient(clientString(channelId, remoteAddress));
+            throw new ExDuplicateNotificationClient("client id:" + channel.toString());
         }
 
-        l.info("add " + clientString(channelId, remoteAddress));
+        l.info("add {}", channel);
 
+        // FIXME: this will send snapshot to *all* clients instead of just the new one...
         for (IRitualNotificationClientConnectedListener listener : _listeners) {
             listener.onNotificationClientConnected();
         }
 
-        l.info("notify of connection " + clientString(channelId, remoteAddress));
+        l.info("notify of connection {}", channel);
+    }
+
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        l.info("remove {}", e.getChannel());
+        _allChannels.remove(e.getChannel());
     }
 
     //
@@ -104,6 +97,7 @@ public class RitualNotifier extends SimpleChannelHandler
 
     public void sendNotification(PBNotification notification)
     {
+        l.debug("send notif to {} clients: {}", _allChannels.size(), notification.getType());
         for (Channel channel : _allChannels) {
             ChannelFuture writeFuture = channel.write(notification);
             addWriteFailureFuture(writeFuture);
