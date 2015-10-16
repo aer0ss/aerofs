@@ -263,7 +263,9 @@ public class ContentChangeSubmitter implements Submitter
                             ack = Math.max(ack, or.updated.get(0).transformTimestamp);
                         }
                     } else if (or.errorCode == PolarisError.VERSION_CONFLICT) {
-                        onConflict_(c.get(i), lc, "");
+                        if (onConflict_(c.get(i), lc, "")) {
+                            ++failed;
+                        }
                     } else {
                         // TODO(phoenix): figure out which errors need special handling
                         ++failed;
@@ -285,6 +287,7 @@ public class ContentChangeSubmitter implements Submitter
         }
     }
 
+    // return false if the conflict is resolved
     private boolean onConflict_(ContentChange c, LocalChange change, String body)
     {
         l.info("conflict {} {}: {}", c.sidx, c.oid, body);
