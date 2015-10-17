@@ -390,9 +390,15 @@ function make_installers() {
         JOBS="$JOBS $!"
     fi
 
+    if [ "$JOBS" == "" ] ; then
+        echo "The caller did not request to make any client installers!"
+        echo "This is likely a bug. Abort!"
+        exit 1
+    fi
+
     # Check that all the background tasks completed successfully
     FAIL=0
-    for JOB in "$JOBS" ; do
+    for JOB in $JOBS ; do
         wait $JOB || let "FAIL+=1"
     done
 
