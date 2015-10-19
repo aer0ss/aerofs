@@ -525,13 +525,22 @@ public final class ObjectStore {
             Preconditions.checkArgument(isInRootStore(dao, parentOid), "can only insert mount points into user root stores");
         }
 
+        LogicalObject migrantObject = null;
         if (migrant != null) {
-            LogicalObject migrantObject = getExistingObject(dao, migrant);
+            migrantObject = getExistingObject(dao, migrant);
             Preconditions.checkArgument(migrantObject.objectType.equals(child.objectType), "migrant %s has different objecttype from new copy %s", migrant, childOid);
         }
 
         // attach the object to the requested parent
         long transformTimestamp = attachChild(dao, device, parent, child, childName, migrant, null);
+        if (migrantObject != null && migrantObject.objectType.equals(ObjectType.FILE) && migrantObject.version > Constants.INITIAL_OBJECT_VERSION) {
+            Content content = dao.objectProperties.getLatest(migrant);
+            Preconditions.checkState(content != null, "could not find content for migrant file %s", migrant);
+            dao.objectProperties.add(childOid, content.version, content.hash, content.size, content.mtime);
+            dao.objects.update(child.store, childOid, content.version);
+            dao.locations.add(childOid, content.version, device);
+            transformTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, child.store, childOid, TransformType.UPDATE_CONTENT, content.version, null, null, null, null);
+        }
 
         LOGGER.info("insert {} into {}", childOid, parentOid);
 
@@ -653,17 +662,6 @@ public final class ObjectStore {
         Preconditions.checkArgument(!Identifiers.isRootStore(migrantOid), "can't migrate root store");
         Preconditions.checkArgument(!isInSubtree(dao, migrantOid, parentOid));
         Updated update = insertChild(dao, device, parentOid, newOid, migrant.objectType, name, migrantOid);
-        if (migrant.objectType == ObjectType.FILE && migrant.version > Constants.INITIAL_OBJECT_VERSION) {
-            Content currentContent = dao.objectProperties.getLatest(migrantOid);
-            Preconditions.checkState(currentContent != null, "could not find latest content for file %s", migrantOid);
-
-            // update content, but force the version to be the same as the old version of the file
-            long logicalTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, update.object.store, newOid, TransformType.UPDATE_CONTENT, currentContent.version, null, null, null, null);
-            dao.objectProperties.add(newOid, currentContent.version, currentContent.hash, currentContent.size, currentContent.mtime);
-            dao.objects.update(update.object.store, newOid, currentContent.version);
-            dao.locations.add(newOid, currentContent.version, device);
-            update = new Updated(logicalTimestamp, getExistingObject(dao, newOid));
-        }
         return update;
     }
 

@@ -268,15 +268,21 @@ public final class TestTransformsResource {
     @Test
     public void shouldReturnCorrectTransformsWhenClientMigratesObject()
     {
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
         SID store1 = SID.generate(), store2 = SID.generate();
-        OID migrant = PolarisHelpers.newFolder(verified, store1, "folder");
+        OID migrant = PolarisHelpers.newFile(verified, store1, "file");
+        PolarisHelpers.newFileContent(verified, migrant, 0L, hash, 100, 512);
         OID newOID = OID.generate();
-        PolarisHelpers.insertMigrant(verified, store2, newOID, "folder", ObjectType.FOLDER, migrant);
+        PolarisHelpers.insertMigrant(verified, store2, newOID, "file", ObjectType.FILE, migrant);
 
         Transforms applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
-        assertThat(applied.transforms, hasSize(1));
-        assertThat(applied.maxTransformCount, is(2L));
-        assertThat(applied.transforms.get(0), matchesMetaTransform(2, DEVICE, store2, TransformType.INSERT_CHILD, 1, newOID, ObjectType.FOLDER, "folder", migrant));
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(4L));
+        assertThat(applied.transforms.get(0), matchesMetaTransform(3, DEVICE, store2, TransformType.INSERT_CHILD, 1, newOID, ObjectType.FILE, "file", migrant));
+        assertThat(applied.transforms.get(1), matchesContentTransform(4, DEVICE, newOID, 1L, hash, 100, 512));
     }
 
     @Test
