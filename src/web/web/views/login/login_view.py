@@ -89,6 +89,7 @@ def login_view(request):
         if ret: return ret
 
     openid_enabled = _is_openid_enabled(request)
+    disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
 
     if not openid_enabled and not _has_users(settings):
         log.info('no users yet. ask to create the first user')
@@ -119,6 +120,7 @@ def login_view(request):
         'openid_service_external_hint': external_hint,
         'display_user_pass_login': display_user_pass_login,
         'login': login,
+        'disable_remember_me': disable_remember_me,
     }
 
 

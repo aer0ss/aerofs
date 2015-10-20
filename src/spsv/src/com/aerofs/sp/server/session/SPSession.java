@@ -6,6 +6,7 @@ package com.aerofs.sp.server.session;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExSecondFactorRequired;
 import com.aerofs.base.ex.ExSecondFactorSetupRequired;
@@ -35,10 +36,10 @@ public class SPSession
     private static final String SESS_ATTR_SECOND_FACTOR_AUTH_DATE = "second_factor_auth_date";
     private static final String SESS_ATTR_CERT_AUTH_DATE = "cert_auth_date";
 
-    private static final long SESSION_LIFETIME = 30 * C.DAY;
-
     private final User.Factory _factUser;
     private IHttpSessionProvider _sessionProvider;
+    private long _session_lifetime;
+
 
     // TODO for 2FA:
     // public UserID getPrincipal()
@@ -48,6 +49,13 @@ public class SPSession
     {
         _factUser = factUser;
         _sessionProvider = sessionProvider;
+        _session_lifetime = getSessionLifeTime();
+    }
+
+    private long getSessionLifeTime()
+    {
+         return ConfigurationProperties.getBooleanProperty("web.session_daily_expiration", false) ?
+                 C.DAY : 30 * C.DAY;
     }
 
     private HttpSession session()
@@ -72,16 +80,16 @@ public class SPSession
         ImmutableList.Builder<Provenance> builder = ImmutableList.builder();
         Long basicAuthDate = (Long)session().getAttribute(SESS_ATTR_BASIC_AUTH_DATE);
         // Basic and two-factor auth
-        if (basicAuthDate != null && (now - basicAuthDate) < SESSION_LIFETIME) {
+        if (basicAuthDate != null && (now - basicAuthDate) < _session_lifetime) {
             builder.add(Provenance.BASIC);
             Long secondFactorAuthDate = (Long)session().getAttribute(SESS_ATTR_SECOND_FACTOR_AUTH_DATE);
-            if (secondFactorAuthDate != null && (now - secondFactorAuthDate) < SESSION_LIFETIME) {
+            if (secondFactorAuthDate != null && (now - secondFactorAuthDate) < _session_lifetime) {
                 builder.add(Provenance.BASIC_PLUS_SECOND_FACTOR);
             }
         }
         // Cert auth
         Long certAuthDate = (Long)session().getAttribute(SESS_ATTR_CERT_AUTH_DATE);
-        if (certAuthDate != null && (now - certAuthDate) < SESSION_LIFETIME) {
+        if (certAuthDate != null && (now - certAuthDate) < _session_lifetime) {
             builder.add(Provenance.CERTIFICATE);
         }
         return builder.build();

@@ -45,10 +45,12 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-12">
-                        <label class="checkbox">
-                            <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
-                                   checked="checked"> Remember me
-                        </label>
+                        %if not disable_remember_me:
+                            <label class="checkbox">
+                                <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
+                                       checked="checked"> Remember me
+                            </label>
+                        %endif
                     </div>
                 </div>
                 <div class="form-group">

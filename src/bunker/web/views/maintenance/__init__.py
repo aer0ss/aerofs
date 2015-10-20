@@ -60,6 +60,7 @@ routes = [
     'autocomplete',
     'json_upload_additional_users',
     'customization',
+    'session_management',
 
     'maintenance_mode',
     'license_expired',

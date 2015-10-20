@@ -27,6 +27,7 @@
                 ('toggle_maintenance_mode', _("System maintenance")),
                 ('customization', _("Customization")),
                 ('sync_settings', _("Sync settings")),
+                ('session_management', _("Session management")),
             ]
 
             if not is_maintenance_mode(None):
