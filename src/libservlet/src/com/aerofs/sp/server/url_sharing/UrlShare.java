@@ -147,16 +147,16 @@ public class UrlShare
         return UserID.fromInternal(userid);
     }
 
-    public boolean getTeamOnly()
+    public boolean getRequireLogin()
         throws SQLException, ExNotFound
     {
-        return _f._db.getTeamOnly(_key);
+        return _f._db.getRequireLogin(_key);
     }
 
-    public void setTeamOnly(boolean teamOnly, @Nonnull String newToken)
+    public void setRequireLogin(boolean requireLogin, @Nonnull String newToken)
             throws SQLException, ExNotFound
     {
-        _f._db.setTeamOnlyAndToken(_key, teamOnly, newToken);
+        _f._db.setRequireLoginAndToken(_key, requireLogin, newToken);
     }
 
     public void setExpires(long expires, @Nonnull String newToken)
@@ -225,7 +225,7 @@ public class UrlShare
                 .setSoid(getRestObject().toStringFormal())
                 .setCreatedBy(getCreatedBy().getString())
                 .setHasPassword(hasPassword())
-                .setTeamOnly(getTeamOnly())
+                .setRequireLogin(getRequireLogin())
                 .setToken(getToken());
         Long expires = getExpiresNullable();
         if (expires != null) builder.setExpires(expires);

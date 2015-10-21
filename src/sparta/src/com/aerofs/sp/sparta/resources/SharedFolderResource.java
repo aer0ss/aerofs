@@ -740,7 +740,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                     url.getRestObject().toStringFormal(),
                     url.getToken(),
                     url.getCreatedBy().getString(),
-                    url.getTeamOnly(),
+                    url.getRequireLogin(),
                     url.hasPassword(),
                     expires));
         }

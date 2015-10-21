@@ -54,7 +54,7 @@ def _pb_rest_object_url_to_dict(pb):
         'key': pb.key,
         'token': pb.token,
         'soid': pb.soid,
-        'team_only': getattr(pb, 'team_only', False),
+        'require_login': getattr(pb, 'require_login', False),
         'has_password': getattr(pb, 'has_password', False),
         'expires': _abs_milli_to_delta_seconds(getattr(pb, 'expires', 0)),
     }
@@ -142,25 +142,25 @@ def get_url_info(request):
 
 
 @view_config(
-        route_name='set_url_team_only',
+        route_name='set_url_require_login',
         renderer='json',
         permission='user',
         request_method='POST',
 )
-def set_url_team_only(request):
+def set_url_require_login(request):
     key = request.json_body.get("key")
-    team_only = request.json_body.get("team_only")
+    require_login = request.json_body.get("require_login")
     if key is None:
         error.expected_error('missing "key" param')
-    if team_only is None:
-        error.expected_error('missing "team_only" param')
+    if require_login is None:
+        error.expected_error('missing "require_login" param')
 
-    _make_sp_request(get_rpc_stub(request).set_url_team_only, (key, team_only))
+    _make_sp_request(get_rpc_stub(request).set_url_require_login, (key, require_login))
 
-    _audit(request, 'LINK', 'link.set_team_only', {
+    _audit(request, 'LINK', 'link.set_require_login', {
         'caller': authenticated_userid(request),
         'key': key,
-        'team_only': team_only,
+        'require_login': require_login,
     })
 
     return {}

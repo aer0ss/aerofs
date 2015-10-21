@@ -252,20 +252,20 @@ shelobDirectives.directive('aeroLinkOptions', ['$modal','$log','$http','$timeout
         templateUrl: '/static/shelob/partials/link-options.html',
         link: function($scope, element, attrs) {
 
-            //Sets the current link to team only
-            $scope.setTeamOnly = function () {
+            //Sets the current link to require login
+            $scope.setRequireLogin = function () {
 
-                $http.post('/set_url_team_only', {
+                $http.post('/set_url_require_login', {
                     key: $scope.link.key,
-                    team_only: !$scope.link.team_only
+                    require_login: !$scope.link.require_login
                 }).success(function(response){
-                    if ($scope.link.team_only) {
-                        //It was team only, now it is public
+                    if ($scope.link.require_login) {
+                        //It used to require a login, now it doesn't.
                         showSuccessMessage("Anyone with the link can access it.");
-                        $scope.link.team_only = false;
+                        $scope.link.require_login = false;
                     } else {
                         showSuccessMessage("Only signed-in users can access the link.");
-                        $scope.link.team_only = true;
+                        $scope.link.require_login = true;
                     }
                 }).error(function () {
                     showErrorMessageUnsafe(getInternalErrorText());

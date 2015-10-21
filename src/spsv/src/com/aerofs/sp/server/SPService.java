@@ -1653,13 +1653,13 @@ public class SPService implements ISPService
         UrlShare link = _factUrlShare.create(key);
         RestObject object = link.getRestObject();
         boolean hasPassword = link.hasPassword();
-        boolean teamOnly = link.getTeamOnly();
+        boolean requireLogin = link.getRequireLogin();
 
-        if (teamOnly) {
+        if (requireLogin) {
             User user = _session.getUserNullable();
 
             if (user == null) {
-                l.info("getUrlInfo is teamOnly - no user found");
+                l.info("getUrlInfo requires login; no user found");
                 throw new ExNotAuthenticated();
             }
         }
@@ -1681,7 +1681,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setUrlTeamOnly(String key, Boolean teamOnly)
+    public ListenableFuture<Void> setUrlRequireLogin(String key, Boolean requireLogin)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1699,7 +1699,7 @@ public class SPService implements ISPService
 
         _bifrostClient.deleteToken(link.getToken());
 
-        link.setTeamOnly(teamOnly.booleanValue(), newToken);
+        link.setRequireLogin(requireLogin.booleanValue(), newToken);
         _sqlTrans.commit();
 
         return createVoidReply();

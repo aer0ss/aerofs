@@ -95,8 +95,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(mockToken, objectUrl.getToken());
         assertEquals(owner.id().getString(), objectUrl.getCreatedBy());
         assertFalse(objectUrl.hasExpires());
-        assertTrue(objectUrl.hasTeamOnly());
-        assertFalse(objectUrl.getTeamOnly());
+        assertTrue(objectUrl.hasRequireLogin());
+        assertFalse(objectUrl.getRequireLogin());
     }
 
     @Test
@@ -168,8 +168,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(owner.id().getString(), getReply.getCreatedBy());
         assertFalse(getReply.hasExpires());
-        assertTrue(getReply.hasTeamOnly());
-        assertFalse(getReply.getTeamOnly());
+        assertTrue(getReply.hasRequireLogin());
+        assertFalse(getReply.getRequireLogin());
     }
 
     @Test
@@ -286,7 +286,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void getUrlInfo_shouldThrowForAnonIfTeamOnly() throws Exception
+    public void getUrlInfo_shouldThrowForAnonIfRequireLogin() throws Exception
     {
         // create the link
         RestObject object = new RestObject(sid);
@@ -295,8 +295,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        // set the team only parameter
-        service.setUrlTeamOnly(key, true);
+        // set the require login parameter
+        service.setUrlRequireLogin(key, true);
 
         // no session user
         session.deauthorize();
@@ -311,7 +311,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void getUrlInfo_shouldGetUrlInfoForOrgMemberIfTeamOnly() throws Exception
+    public void getUrlInfo_shouldGetUrlInfoForOrgMemberIfRequireLogin() throws Exception
     {
         // create the link
 
@@ -321,8 +321,8 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        // set the team only parameter
-        service.setUrlTeamOnly(key, true);
+        // set the require login parameter
+        service.setUrlRequireLogin(key, true);
 
         // check that GetUrlInfo succeeds for owner
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
@@ -335,7 +335,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void setUrlTeamOnly_shouldSetTeamOnlyToTrue() throws Exception
+    public void setUrlRequireLogin_shouldSetRequireLoginToTrue() throws Exception
     {
         // create the link
         RestObject object = new RestObject(sid);
@@ -344,21 +344,21 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        // set the team only parameter
-        service.setUrlTeamOnly(key, true);
+        // set the require login parameter
+        service.setUrlRequireLogin(key, true);
 
-        // check that GetUrlInfo succeeds and that the new team only value is true
+        // check that GetUrlInfo succeeds and that the new require login value is true
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertEquals(key, getReply.getKey());
         assertEquals(mockToken, getReply.getToken());
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(owner.id().getString(), getReply.getCreatedBy());
         assertFalse(getReply.hasExpires());
-        assertTrue(getReply.getTeamOnly());
+        assertTrue(getReply.getRequireLogin());
     }
 
     @Test
-    public void setUrlTeamOnly_shouldSetTeamOnlyBackToFalse() throws Exception
+    public void setUrlRequireLogin_shouldSetRequireLoginBackToFalse() throws Exception
     {
         // create the link
         RestObject object = new RestObject(sid);
@@ -367,26 +367,26 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
                 .getUrlInfo();
         String key = createReply.getKey();
 
-        // set the team only parameter
-        service.setUrlTeamOnly(key, true);
+        // set the require login parameter
+        service.setUrlRequireLogin(key, true);
 
-        // check that GetUrlInfo succeeds and that the new team only value is true
+        // check that GetUrlInfo succeeds and that the new require login value is true
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
-        assertTrue(getReply.getTeamOnly());
+        assertTrue(getReply.getRequireLogin());
 
-        // set the team only parameter
-        service.setUrlTeamOnly(key, false);
+        // set the require login parameter
+        service.setUrlRequireLogin(key, false);
         getReply = service.getUrlInfo(key).get().getUrlInfo();
-        assertFalse(getReply.getTeamOnly());
+        assertFalse(getReply.getRequireLogin());
     }
 
     @Test
-    public void setUrlTeamOnly_shouldThrowIfKeyDoesNotExist() throws Exception
+    public void setUrlRequireLogin_shouldThrowIfKeyDoesNotExist() throws Exception
     {
         String key = UniqueID.generate().toStringFormal();
 
         try {
-            service.setUrlTeamOnly(key, true);
+            service.setUrlRequireLogin(key, true);
             fail();
         } catch (ExNotFound ignored) {
             // success
@@ -394,7 +394,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
-    public void setUrlTeamOnly_shouldThrowIfUserIsNotManager() throws Exception
+    public void setUrlRequireLogin_shouldThrowIfUserIsNotManager() throws Exception
     {
         // create the link
         RestObject object = new RestObject(sid);
@@ -405,7 +405,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
 
         setSession(editor);
         try {
-            service.setUrlTeamOnly(key, true);
+            service.setUrlRequireLogin(key, true);
             fail();
         } catch (ExNoPerm ignored) {
             // success
@@ -432,7 +432,7 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(mockToken, getReply.getToken());
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(expires, getReply.getExpires());
-        assertFalse(getReply.getTeamOnly());
+        assertFalse(getReply.getRequireLogin());
     }
 
     @Test

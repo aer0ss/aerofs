@@ -10,7 +10,7 @@ def includeme(config):
         'set_url_expires',
         'remove_url_expires',
         'remove_url',
-        'set_url_team_only',
+        'set_url_require_login',
         'set_url_password',
         'remove_url_password',
         'validate_url_password',

@@ -686,7 +686,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }).success(function(response) {
             var newLink = {
                 key: response.key,
-                team_only: false,
+                require_login: false,
                 has_password: false,
                 // all new links have no expiration, can be added later
                 expires: 0

@@ -655,7 +655,7 @@ service SPService {
     //
     // Required Auth Level:
     //   None, unless
-    //    - URL is team-only: user
+    //    - URL requires login user
     //    - URL is password-protected: provide password
     // Throws:
     //   ExNotFound if the key does not exist
@@ -877,14 +877,14 @@ service SPService {
     // Search an organization's users for those matching a prefix search
     rpc SearchOrganizationUsers(SearchOrganizationUsersCall) returns (SearchOrganizationUsersReply);
 
-    // Set the team level permissions on URL
+    // Set the login permissions on URL
     //
     // Required Auth Level: store owner
     // Throws:
     //   ExNotFound if the key does not exist
     //   ExNoPerm if the current user isn't a manager of the containing store
     //
-    rpc SetUrlTeamOnly(SetUrlTeamOnlyCall) returns (Void);
+    rpc SetUrlRequireLogin(SetUrlRequireLoginCall) returns (Void);
 }
 
 message SetDeviceOSFamilyAndNameCall {
@@ -1469,7 +1469,7 @@ message PBRestObjectUrl {
     required string created_by = 4;
     optional uint64 expires = 5;
     optional bool has_password = 6 [default = false];
-    optional bool team_only = 7 [default = false];
+    optional bool require_login = 7 [default = false];
 }
 
 message CreateUrlReply {
@@ -1650,7 +1650,7 @@ message SearchOrganizationUsersReply {
     repeated PBUser matching_users = 1;
 }
 
-message SetUrlTeamOnlyCall {
+message SetUrlRequireLoginCall {
     required string key = 1;
-    required bool team_only = 2;
+    required bool require_login = 2;
 }
