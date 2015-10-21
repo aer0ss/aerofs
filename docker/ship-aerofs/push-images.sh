@@ -16,7 +16,7 @@ rm "${SHIP_YML}"
 echo "Notifying Slack ..."
 VERSION=$(docker run --rm aerofs/loader tag)
 
-for room in "#eng" "#success"
+for room in "#success"
 do
     echo "Release notification: Docker images version ${VERSION} pushed to registry.aerofs.com (by $(whoami)). This version is immediately available to the public." |
         $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \

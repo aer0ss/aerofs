@@ -151,7 +151,7 @@ def send_sales_notification(email_address, seats):
 
 def send_internal_appliance_release_notification(appliance_version):
     text = "Release notification: PC {} is now available to the public.".format(appliance_version)
-    for room in ["#eng", "#success"]:
+    for room in ["#success"]:
         payload = {"text": text, "channel": room, "username": "Release"}
         headers = {"Content-type": "application/json"}
         # N.B. Slack is super picky about the format of the JSON payload. Requests doesn't do it in

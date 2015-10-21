@@ -21,7 +21,7 @@ upload_artifact() {
 notify_slack() {
     echo ">> notifying team of successful deployment via Slack"
 
-    for room in "#eng" "#success"
+    for room in "#success"
     do
         echo "Release notification: Appliance VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
             $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
