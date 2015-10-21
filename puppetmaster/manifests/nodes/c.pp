@@ -3,8 +3,6 @@ node "c.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    users::add_user {"linday":}
-
     include cmd
     include dbtools
     include github-enterprise-tools

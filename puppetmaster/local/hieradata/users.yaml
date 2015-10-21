@@ -22,13 +22,6 @@ test:
     groups:
         - admin
 
-linday:
-    username: linday
-    realname: Linda Yang
-    shell: "/bin/bash"
-    home: "/home/linday"
-    ssh_keys: *pagerduty_ssh_keys
-
 pagerduty:
     username: pagerduty
     realname: Pager Duty Probe

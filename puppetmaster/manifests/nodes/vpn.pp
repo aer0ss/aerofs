@@ -3,7 +3,5 @@ node "vpn.arrowfs.org" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    users::add_user { "linday": }
-
     include vpn
 }
