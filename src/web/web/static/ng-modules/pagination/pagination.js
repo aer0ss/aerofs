@@ -18,6 +18,7 @@ pagination.directive('aeroPagination', function() {
         link: function($scope, element, attrs) {
             $scope.$watch('total', function(newValue, oldValue){
                 $scope.pages = [];
+                $scope.offset = 0;
                 // do we need pagination? if so, let's count up pages
                 if ($scope.total > $scope.pagelimit) {
                     for (var j=1; j < Math.ceil($scope.total / $scope.pagelimit) + 1; j++) {
@@ -36,7 +37,7 @@ pagination.directive('aeroPagination', function() {
                 if (pageNum > 0) {
                     // change offset to where the target page will start
                     $scope.offset = (pageNum - 1) * $scope.pagelimit;
-                    $scope.callback({offset: $scope.offset });
+                    $scope.callback({offset: $scope.offset});
                 }
             };
         }

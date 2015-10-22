@@ -16,9 +16,30 @@
         <div class="col-sm-12">
             <div ng-controller="UsersController">
                 <h2>Users in my organization</h2>
+                <div class="my-search">
+                    <form role="form" class="form-horizontal" name="form">
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-xs-4 pull-right">
+                                    <div id="org-users-search"
+                                        aero-list-typeahead
+                                        label=""
+                                        ng-model="user"
+                                        async-attr="data"
+                                        async-data="{{userDataURL}}"
+                                        placeholder="&#128270; Name"
+                                        title="Search users"
+                                        parent-update="updateUsers(users, total, substring)"
+                                        on-clear="restore()"
+                                    ></div>
+                              </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
 
                 <p><div ng-bind="userCountMessage"></div></p>
-
                 <div class="my-table">
                     <div class="my-table-head row">
                         <div class="col-sm-4 hidden-xs">Name</div>
@@ -37,7 +58,7 @@
                     total="paginationInfo.total"
                     offset="paginationInfo.offset"
                     pagelimit="paginationInfo.limit"
-                    callback="paginationInfo.callback(offset)"></div>
+                    callback="paginationInfo.callback(offset, substring)"></div>
             </div>
             <br>
         %if is_admin(request):
@@ -66,6 +87,7 @@
 </div>
 
 <%block name="scripts">
+
     <script type="text/javascript">
         %if is_admin(request):
             isAdmin = true;
@@ -90,11 +112,13 @@
         inviteURL = "${request.route_path('json.invite_user')}";
         uninviteURL = "${request.route_path('json.delete_org_invitation')}";
     </script>
-
+    <script src="${request.static_path('web:static/js/spin.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/compiled/spinner.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.11/angular-sanitize.js"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/strider.js')}"></script>
     <script src="${request.static_path('web:static/shadowfax.js')}"></script>
     <script src="${request.static_path('web:static/ng-modules/pagination/pagination.js')}"></script>
+    <script src="${request.static_path('web:static/ng-modules/typeahead/typeahead.js')}"></script>
 </%block>

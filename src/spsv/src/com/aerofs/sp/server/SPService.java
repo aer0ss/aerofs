@@ -548,10 +548,12 @@ public class SPService implements ISPService
 
         Organization org = user.getOrganization();
 
+        int userCount = searchPrefix != null ? org.countUsersWithPrefix(searchPrefix) : org.countUsers();
+
         ListOrganizationMembersReply reply = ListOrganizationMembersReply.newBuilder()
                 .addAllUserAndLevel(
                         users2pbUserAndLevels(org.listUsers(maxResults, offset, searchPrefix)))
-                .setTotalCount(org.countUsers())
+                .setTotalCount(userCount)
                 .build();
 
         _sqlTrans.commit();

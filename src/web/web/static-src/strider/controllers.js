@@ -1,43 +1,94 @@
-var striderControllers = angular.module('striderControllers', ['ngSanitize']);
+var striderControllers = angular.module('striderControllers',['ngSanitize']);
 
-striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http', '$sanitize',
-    function($scope, $rootScope, $log, $modal, $http, $sanitize){
+striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http',
+    function($scope, $rootScope, $log, $modal, $http){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
         $scope.userFoldersURL = userFoldersURL;
         $scope.userDevicesURL = userDevicesURL;
+        $scope.userDataURL = userDataURL;
         $scope.isAdmin = isAdmin;
-        var getUsersData = function(message){
+        var getUsersData = function(message) {
             $log.info(message);
+            var params = {
+                offset: $scope.paginationInfo.offset.toString()
+            }
+
+            if ($scope.substring) {
+                params.substring = $scope.substring;
+            }
+
             $http.get(userDataURL, {
-                params: {
-                    offset: $scope.paginationInfo.offset.toString()
-                }
+                params: params
             }).success(function(response){
                 $scope.users = response.data;
-                $rootScope.use_restricted = response.use_restricted;
-                $rootScope.me = response.me;
                 $scope.paginationInfo.total = response.total;
 
+                $rootScope.use_restricted = response.use_restricted;
+                $rootScope.me = response.me;
+
+                setCache();
                 updateUserCountMessage();
-            }).error(function(response){
+            }).error(function(response) {
                 $log.warn(response);
             });
         };
+
+        $scope.initialLoad = {};
         $scope.paginationInfo = {
             total: 0,
             offset: 0,
             limit: parseInt(paginationLimit, 10),
-            callback: function(offset){
+            callback: function(offset, substring) {
                 $scope.paginationInfo.offset = offset;
+                $scope.substring = substring || '';
+
                 getUsersData('Retrieving new page data');
             }
         };
+
+        var setCache = function() {
+            // For the search feature -- we don't want to
+            // have to search when user clears entry.
+            if (!$scope.initialLoad.users) {
+                $scope.initialLoad.users = $scope.users;
+            }
+
+            if (!$scope.initialLoad.total) {
+                $scope.initialLoad.total = $scope.paginationInfo.total;
+            }
+        };
+
+        var populateFromCache = function() {
+            $scope.paginationInfo.total = $scope.initialLoad.total;
+            $scope.users = $scope.initialLoad.users;
+        };
+
         var updateUserCountMessage = function() {
             $scope.userCountMessage = 'User count: ' + $scope.paginationInfo.total;
         };
 
         getUsersData('Retrieving initial data');
+
+        $scope.updateUsers = function(users, total, substring) {
+            $scope.users = users;
+            $scope.substring = substring;
+            $scope.paginationInfo.total = total;
+            updateUserCountMessage();
+        };
+
+        $scope.restore = function() {
+            $scope.substring = '';
+            $scope.paginationInfo.offset = 0;
+
+            if ($scope.initialLoad.users && $scope.initialLoad.users.length){
+                populateFromCache();
+            } else {
+                getUsersData('Retrieving new page data on clear.');
+            }
+
+            updateUserCountMessage();
+        };
 
         $scope.toggleAdmin = function(user) {
             user.is_admin = !user.is_admin;

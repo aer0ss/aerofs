@@ -63,6 +63,14 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     }
 
     @Test
+    public void countUsersWithPrefix_shouldIgnoreTeamServerAndDeactivated() throws Exception
+    {
+        assertEquals(1, odb.countUsersWithPrefix(orgID, "baz"));
+        assertEquals(2, odb.countUsersWithPrefix(orgID, "bar"));
+
+    }
+
+    @Test
     public void listUsers_shouldIgnoreTeamServerAndDeactivated() throws Exception
     {
         assertEquals(2, odb.listUsers(orgID, 0, 100, null).size());

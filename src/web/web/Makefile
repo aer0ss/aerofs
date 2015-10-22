@@ -57,12 +57,12 @@ clean-dirs:
 # set up npm install to run the tests
 setup_test:
 	npm install
-	cd ../jstest/shelob && npm install
+	cd ../jstest && npm install
 
 .ONESHELL:
 # run karma tests
 test:
-	cd ../jstest/shelob && ./node_modules/karma/bin/karma start karma.conf.unit.js && ./node_modules/karma/bin/karma start karma.conf.e2e.js
+	cd ../jstest && . run_tests.sh
  
 # Watch the filesystem and recompile on file modification
 TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax

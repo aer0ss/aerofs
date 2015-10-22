@@ -350,6 +350,35 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     /**
+     * @param orgId ID of the organization.
+     * @param searchPrefix search string to match user count on
+     * @return Number of users in the organization {@code orgId}.
+     */
+    public int countUsersWithPrefix(OrganizationID orgId, String searchPrefix)
+            throws SQLException
+    {
+        String condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser(),
+                autoCompleteMatching(false));
+
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_USER, condition,
+                "count(*)"))) {
+
+            int index = 1;
+            ps.setInt(index++, orgId.getInt());
+
+            if (searchPrefix != null) {
+                // need to populate all the extra conditions used for autocomplete
+                populateAutocompleteStatement(index, ps, searchPrefix);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
+
+
+    /**
      * @param authlevel Authorization level of the users.
      * @param orgId ID of the organization.
      * @return Number of users in the organization with the given authorization level.

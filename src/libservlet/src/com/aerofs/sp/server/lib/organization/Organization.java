@@ -212,6 +212,11 @@ public class Organization
         return _f._odb.countUsers(_id);
     }
 
+    public int countUsersWithPrefix(String searchPrefix) throws SQLException
+    {
+        return _f._odb.countUsersWithPrefix(_id, searchPrefix);
+    }
+
     public int countUsersAtLevel(AuthorizationLevel authLevel)
             throws SQLException
     {
