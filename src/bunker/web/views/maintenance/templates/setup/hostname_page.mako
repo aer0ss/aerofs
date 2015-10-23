@@ -65,6 +65,11 @@
         <li>TCP ports: 4433, 8084, 8888, and 29438.</li>
     </ul>
 
+    <p>Additionally, the following ports need to be open for web browser access:</p>
+    <ul>
+        <li>TCP ports: 80, 443.</li>
+    </ul>
+
     <p>Your firewall or VPN may require configuration to unblock these ports for
         your AeroFS clients. Please check this now.</p>
     <p><a target="_blank"
