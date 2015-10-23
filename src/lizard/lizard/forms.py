@@ -2,41 +2,40 @@ import datetime
 
 from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
-from wtforms import TextField, PasswordField, BooleanField, \
-        IntegerField, DateField, SelectField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, IntegerField, DateField, SelectField, TextAreaField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo, NumberRange
 
 class LoginForm(Form):
-    email = TextField('Email', validators=[Email()])
+    email = StringField('Email', validators=[Email()])
     password = PasswordField('Password')
 
 class SignupForm(Form):
-    first_name = TextField('First Name', validators=[InputRequired()])
-    last_name = TextField('Last Name', validators=[InputRequired()])
-    email = TextField('Email', validators = [InputRequired(), Email()])
-    company_name = TextField('Organization Name', validators=[InputRequired()])
-    phone_number = TextField("Phone Number", validators=[InputRequired()])
-    job_title = TextField("Job Title", validators=[InputRequired()])
-    company_size = TextField("Company Size", validators=[Optional()])
-    current_fss = TextField("Current file sharing solution", validators=[Optional()])
-    country = TextField("Country", validators=[Optional()])
+    first_name = StringField('First Name', validators=[InputRequired()])
+    last_name = StringField('Last Name', validators=[InputRequired()])
+    email = StringField('Email', validators = [InputRequired(), Email()])
+    company_name = StringField('Organization Name', validators=[InputRequired()])
+    phone_number = StringField("Phone Number", validators=[InputRequired()])
+    job_title = StringField("Job Title", validators=[InputRequired()])
+    company_size = StringField("Company Size", validators=[Optional()])
+    current_fss = StringField("Current file sharing solution", validators=[Optional()])
+    country = StringField("Country", validators=[Optional()])
 
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[Length(min=6)])
 
 class AcceptInviteForm(Form):
-    first_name = TextField('First Name', validators=[InputRequired()])
-    last_name = TextField('Last Name', validators=[InputRequired()])
+    first_name = StringField('First Name', validators=[InputRequired()])
+    last_name = StringField('Last Name', validators=[InputRequired()])
     password = PasswordField('Password', validators=[Length(min=6)])
-    phone_number = TextField("Phone Number", validators=[Optional()])
-    job_title = TextField("Job Title", validators=[Optional()])
+    phone_number = StringField("Phone Number", validators=[Optional()])
+    job_title = StringField("Job Title", validators=[Optional()])
 
 class InviteForm(Form):
-    email = TextField('Email address', validators = [Email()])
+    email = StringField('Email address', validators = [Email()])
 
 class PreferencesForm(Form):
-    first_name = TextField('First Name', validators=[InputRequired()])
-    last_name = TextField('Last Name', validators=[InputRequired()])
+    first_name = StringField('First Name', validators=[InputRequired()])
+    last_name = StringField('Last Name', validators=[InputRequired()])
     # DF: these fields disabled until we figure out our story with email notifications
     #security_emails = BooleanField("Receive security notifications")
     #release_emails = BooleanField("Receive release notifications")
@@ -60,8 +59,8 @@ class InternalLicenseRequestForm(Form):
     allow_identity = BooleanField("Allow LDAP/AD/OpenID?")
     allow_mdm = BooleanField("Allow MDM?")
     allow_device_restriction = BooleanField("Allow Device Restriction?")
-    manual_invoice = TextField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
-    stripe_subscription_id = TextField("Stripe Subscription ID?", validators=[Optional()])
+    manual_invoice = StringField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
+    stripe_subscription_id = StringField("Stripe Subscription ID?", validators=[Optional()])
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
 
@@ -72,14 +71,14 @@ class InternalLicenseStateForm(Form):
         ('ON_HOLD', 'ON HOLD'),
         ('IGNORED', 'IGNORED')
     ], validators=[Optional()])
-    invoice_id = TextField("Manual Invoice ID", validators=[Optional()])
-    stripe_subscription_id = TextField("Stripe Subscription ID", validators=[Optional()])
+    invoice_id = StringField("Manual Invoice ID", validators=[Optional()])
+    stripe_subscription_id = StringField("Stripe Subscription ID", validators=[Optional()])
 
 class PasswordResetForm(Form):
-    email = TextField('Email', validators = [Email()])
+    email = StringField('Email', validators = [Email()])
 
 class ReleaseForm(Form):
-    release_version = TextField('Version', validators = [InputRequired()])
+    release_version = StringField('Version', validators = [InputRequired()])
 
 class ContactForm(Form):
     contact = SelectField(u'Contact', choices=[
@@ -90,4 +89,4 @@ class ContactForm(Form):
     message = TextAreaField("Message", validators=[InputRequired()])
 
 class AllAccountsSearchForm(Form):
-    search_terms = TextField('Search Terms')
+    search_terms = StringField('Search Terms')

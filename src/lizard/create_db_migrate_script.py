@@ -46,4 +46,4 @@ with open(new_migration_script, "wt") as f:
 
 print "New migration saved as", new_migration_script
 print "Current database version:", api.db_version(SQLALCHEMY_DATABASE_URI, SQLALCHEMY_MIGRATE_REPO)
-print "Run update_db.py to update your database to the new version"
+print "Restart the app to update your database to the new version"
