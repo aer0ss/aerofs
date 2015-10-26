@@ -66,7 +66,7 @@ function gen_users() {
 if [ $# -gt 2 ] ; then
     usage
 elif [ $# -gt 0 ] ; then
-    if [ "$1" = "help" ] || [ "$1" == "-h" ] || [ "$1" == "?" ] ; then
+    if [ "$1" == "help" ] || [ "$1" == "-h" ] || [ "$1" == "?" ] ; then
         usage
     fi
 fi
