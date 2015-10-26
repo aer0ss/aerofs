@@ -104,6 +104,7 @@ public final class TestOrderedNotifierThreadSafety {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
 
         // spy on dbi
         this.dbi = Mockito.spy(dbi);

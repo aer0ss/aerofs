@@ -12,6 +12,7 @@ import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.dao.LockStatus;
 import com.aerofs.polaris.dao.LogicalObjects;
 import com.aerofs.polaris.dao.Migrations;
 import com.aerofs.polaris.dao.types.*;
@@ -26,6 +27,7 @@ import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 
 import java.sql.SQLException;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -75,6 +77,7 @@ public class TestMigrator
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
         realdbi = dbi;
     }
 
@@ -187,23 +190,23 @@ public class TestMigrator
     }
 
     @Test
-    public void shouldLockFolders() throws Exception
+    public void shouldLockFoldersAfterSharing() throws Exception
     {
-        doReturn(null).when(this.migrator).migrateBatchOfObjects(any(), any(), any(), any(), any());
+        doReturn(null).when(this.migrator).updateStoreForBatch(any(), any(), any(), any(), any());
 
         SID rootStore = SID.rootSID(USERID);
         OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
         OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
         shareFolder(sharedFolder, USERID, DEVICE, objects);
 
-        verify(this.migrator, timeout(1000).atLeast(1)).migrateBatchOfObjects(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(), any());
+        verify(this.migrator, timeout(1000).atLeast(1)).updateStoreForBatch(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(), any());
 
         LockableLogicalObject folderObject = dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
             return dao.objects.get(folder);
         });
 
-        assertTrue("did not lock folder", folderObject.locked);
+        assertTrue("did not lock folder", folderObject.locked == LockStatus.LOCKED);
     }
 
     @Test
@@ -221,9 +224,9 @@ public class TestMigrator
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
-            dao.objects.setLocked(lockedFolder, true);
-            dao.objects.setLocked(deletedLockedFile, true);
-            dao.objects.setLocked(lockedFile, true);
+            dao.objects.setLocked(lockedFolder, LockStatus.LOCKED);
+            dao.objects.setLocked(deletedLockedFile, LockStatus.LOCKED);
+            dao.objects.setLocked(lockedFile, LockStatus.LOCKED);
             return null;
         });
 
@@ -236,6 +239,16 @@ public class TestMigrator
 
         try {
             objects.performTransform(USERID, DEVICE, lockedFolder, new RemoveChild(fileUnderLockedFolder));
+            fail();
+        } catch (CallbackFailedException e) {
+            assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));
+        }
+
+        try {
+            byte[] hash = new byte[32];
+            Random random = new Random();
+            random.nextBytes(hash);
+            objects.performTransform(USERID, DEVICE, lockedFile, new UpdateContent(0, hash, 100, 1024));
             fail();
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));

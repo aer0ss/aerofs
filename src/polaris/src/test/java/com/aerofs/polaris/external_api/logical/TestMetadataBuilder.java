@@ -82,6 +82,7 @@ public class TestMetadataBuilder
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
         realdbi = dbi;
     }
 

@@ -20,12 +20,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public interface Migrations {
-
-    @SqlUpdate("insert into migration_jobs(migrant, destination, job_id, originator, job_status) values(:folder_oid, :store_oid, :job_id, :originator, :status)")
-    int addStoreMigration(@Bind("folder_oid") OID folder, @Bind("store_oid") SID store, @Bind("job_id") UniqueID jobID, @Bind("originator") DID originator, @Bind("status") JobStatus status);
-
-    @SqlUpdate("insert into migration_jobs(migrant, destination, job_id, originator, job_status) values(:migrant, :destination, :job_id, :originator, :status)")
-    int addFolderMigration(@Bind("migrant") UniqueID migrant, @Bind("destination") OID destination, @Bind("job_id") UniqueID jobID, @Bind("originator") DID originator, @Bind("status") JobStatus status);
+    @SqlUpdate("insert into migration_jobs(migrant, destination, job_id, originator, job_status) values(:src, :dst, :job_id, :originator, :status)")
+    int addMigration(@Bind("src") UniqueID src, @Bind("dst") UniqueID dst, @Bind("job_id") UniqueID jobID, @Bind("originator") DID originator, @Bind("status") JobStatus status);
 
     @SqlUpdate("update migration_jobs set job_status = :status where job_id = :job_id")
     int updateStatus(@Bind("job_id") UniqueID job, @Bind("status") JobStatus status);

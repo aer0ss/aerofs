@@ -3,6 +3,7 @@ package com.aerofs.polaris.dao.types;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.dao.LockStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Objects;
 
@@ -11,9 +12,9 @@ import javax.annotation.Nullable;
 public class LockableLogicalObject extends LogicalObject {
 
     @JsonIgnore
-    public final boolean locked;
+    public final LockStatus locked;
 
-    public LockableLogicalObject(UniqueID store, UniqueID oid, long version, ObjectType objectType, boolean locked) {
+    public LockableLogicalObject(UniqueID store, UniqueID oid, long version, ObjectType objectType, LockStatus locked) {
         super(store, oid, version, objectType);
         this.locked = locked;
     }

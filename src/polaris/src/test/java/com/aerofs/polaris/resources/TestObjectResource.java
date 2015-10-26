@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
-import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -229,7 +228,8 @@ public final class TestObjectResource {
         OID deleted_file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // should cause name conflict
-        PolarisHelpers.newObject(AUTHENTICATED, store, OID.generate(), "file", ObjectType.FILE).assertThat().statusCode(SC_CONFLICT);
+        PolarisHelpers.newObject(AUTHENTICATED, store, OID.generate(), "file", ObjectType.FILE)
+                .assertThat().statusCode(SC_CONFLICT);
 
         PolarisHelpers.removeFileOrFolder(AUTHENTICATED, store, deleted_file);
 
@@ -290,7 +290,7 @@ public final class TestObjectResource {
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -320,7 +320,7 @@ public final class TestObjectResource {
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder1, ObjectType.FOLDER, "folder1", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(folder0))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -341,7 +341,7 @@ public final class TestObjectResource {
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store0))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // we should be able to access other shared folders though...
         SID store1 = SID.generate();
@@ -382,7 +382,7 @@ public final class TestObjectResource {
     public void shouldFailToInsertMountUnderSharedFolder() throws Exception {
         SID store = SID.generate();
         PolarisHelpers.newObject(AUTHENTICATED, store, SID.generate(), "nested_sf", ObjectType.STORE)
-                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+                .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
     @Test
@@ -398,10 +398,10 @@ public final class TestObjectResource {
         PolarisHelpers.shareFolder(AUTHENTICATED, secondMountPoint);
 
         PolarisHelpers.shareObject(AUTHENTICATED, mountPointDirectChild)
-                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+                .assertThat().statusCode(SC_BAD_REQUEST);
 
         PolarisHelpers.shareObject(AUTHENTICATED, nestedMountPoint)
-                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+                .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
     @Test
@@ -479,11 +479,11 @@ public final class TestObjectResource {
         PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder);
 
         PolarisHelpers.newObject(AUTHENTICATED, rootStore, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder1", ObjectType.STORE)
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
 
         // similar behavior if reinserting the shared folder with a different name
         PolarisHelpers.newObject(AUTHENTICATED, folder, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder2", ObjectType.STORE)
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
     }
 
     @Test
@@ -497,17 +497,17 @@ public final class TestObjectResource {
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
 
         PolarisHelpers.newObject(AUTHENTICATED, sharedFolder, OID.generate(), "under_mountpoint", ObjectType.FILE)
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
 
         PolarisHelpers.removeObject(AUTHENTICATED, sharedFolder, sharedFile)
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
 
         OID file = PolarisHelpers.newFile(AUTHENTICATED, rootStore, "file");
         PolarisHelpers.moveObject(AUTHENTICATED, rootStore, sharedFolder, file, "file")
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
 
         PolarisHelpers.moveObject(AUTHENTICATED, sharedFolder, rootStore, sharedFile, "shared_file")
-                .assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+                .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
     @Test
@@ -526,13 +526,13 @@ public final class TestObjectResource {
         OID file = PolarisHelpers.newFile(AUTHENTICATED, share1, "src_file");
         reset(polaris.getNotifier());
         PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, file, "dest_file")
-                .assertThat().statusCode(HttpStatus.SC_OK);
+                .assertThat().statusCode(SC_OK);
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share1), any(Long.class));
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share2), any(Long.class));
 
         reset(polaris.getNotifier());
         OperationResult result =  PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "dest_folder")
-                .assertThat().statusCode(HttpStatus.SC_OK)
+                .assertThat().statusCode(SC_OK)
                 .and().extract().response().as(OperationResult.class);
         // cross-store moves of folders cause an actual migration
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, result.jobID, 10);
@@ -553,7 +553,7 @@ public final class TestObjectResource {
         PolarisHelpers.newFolder(AUTHENTICATED, share2, "folder2");
 
         PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "folder2")
-                .assertThat().statusCode(HttpStatus.SC_CONFLICT);
+                .assertThat().statusCode(SC_CONFLICT);
     }
 
     @Test
@@ -696,7 +696,7 @@ public final class TestObjectResource {
                 .body(new MoveChild(folder1, store2, "folder1"))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store1))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // same thing in reverse
         given()
@@ -706,7 +706,7 @@ public final class TestObjectResource {
                 .body(new MoveChild(folder2, store1, "folder2"))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store2))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // and definitely so if both stores are restricted
         doThrow(new AccessException(USERID, store1, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store1)), anyVararg());
@@ -719,7 +719,7 @@ public final class TestObjectResource {
                 .body(new MoveChild(folder1, store2, "folder1"))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store1))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // same thing in reverse
         given()
@@ -729,7 +729,7 @@ public final class TestObjectResource {
                 .body(new MoveChild(folder2, store1, "folder2"))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(store2))
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN);
+                .then().assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -763,6 +763,106 @@ public final class TestObjectResource {
 
         PolarisHelpers.migratedObject(AUTHENTICATED, store2, OID.generate(), "migrated", ObjectType.FILE, file)
                 .assertThat().statusCode(SC_OK);
+    }
+
+    @Test
+    public void migrationShouldLockObjects() throws Exception
+    {
+        SID store1 = SID.generate(), store2 = SID.generate();
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store1, "file");
+
+        // move cross store
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, store1, store2, file, "file");
+
+        PolarisHelpers.newContent(AUTHENTICATED, file, 0, hash, 100, 1024)
+            .assertThat().statusCode(SC_CONFLICT);
+
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, store1, "folder");
+        OID nestedFolder = PolarisHelpers.newFolder(AUTHENTICATED, folder, "nested_folder");
+        OID nestedFile = PolarisHelpers.newFile(AUTHENTICATED, nestedFolder, "nested_file");
+
+        // move cross store
+        UniqueID migrationJob = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, store1, store2, folder, "folder").jobID;
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, migrationJob, 5);
+
+        PolarisHelpers.newObject(AUTHENTICATED, folder, OID.generate(), "new_folder", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_CONFLICT);
+        PolarisHelpers.newObject(AUTHENTICATED, nestedFolder, OID.generate(), "new_folder", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_CONFLICT);
+        PolarisHelpers.newContent(AUTHENTICATED, nestedFile, 0, hash, 100, 1024)
+                .assertThat().statusCode(SC_CONFLICT);
+    }
+
+    @Test
+    public void migrationDoesNotLockObjectsUnderAnchor() throws Exception
+    {
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        SID store1 = SID.generate(), store2 = SID.generate(), rootStore = SID.rootSID(USERID), destStore = SID.generate();
+        OID s1folder = PolarisHelpers.newFolder(AUTHENTICATED, store1, "folder");
+        OID s1file = PolarisHelpers.newFile(AUTHENTICATED, s1folder, "file");
+        OID s2Parent = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "contains_s2");
+        OID outsides2 = PolarisHelpers.newFile(AUTHENTICATED, s2Parent, "not_in_s2");
+        OID ins2 = PolarisHelpers.newFile(AUTHENTICATED, store2, "in_s2");
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, store1, "sf1", ObjectType.STORE).assertThat().statusCode(SC_OK);
+        PolarisHelpers.newObject(AUTHENTICATED, s2Parent, store2, "sf2", ObjectType.STORE).assertThat().statusCode(SC_OK);
+        PolarisHelpers.newObject(AUTHENTICATED, rootStore, destStore, "sf3", ObjectType.STORE).assertThat().statusCode(SC_OK);
+
+        UniqueID migrationJob = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, destStore, store1, "sf1").jobID;
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, migrationJob, 5);
+
+        // objects are not locked
+        PolarisHelpers.newFolder(AUTHENTICATED, store1, "newfolder");
+        PolarisHelpers.newFolder(AUTHENTICATED, s1folder, "newfolder2");
+        PolarisHelpers.newFileContent(AUTHENTICATED, s1file, 0, hash, 100, 1024);
+
+        migrationJob = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, destStore, s2Parent, "contains_s2").jobID;
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, migrationJob, 5);
+
+        PolarisHelpers.newObject(AUTHENTICATED, s2Parent, OID.generate(), "newfolder", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_CONFLICT);
+        PolarisHelpers.newContent(AUTHENTICATED, outsides2, 0, hash, 100, 1024)
+                .assertThat().statusCode(SC_CONFLICT);
+        // inside the store isn't locked
+        PolarisHelpers.newFolder(AUTHENTICATED, store2, "newfolder");
+        PolarisHelpers.newFileContent(AUTHENTICATED, ins2, 0, hash, 100, 1024);
+    }
+
+    @Test
+    public void restoreUnlocksMigratedFiles() throws Exception
+    {
+        SID store1 = SID.generate(), store2 = SID.generate();
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store1, "file");
+
+        // move cross store
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, store1, store2, file, "file");
+
+        PolarisHelpers.newContent(AUTHENTICATED, file, 0, hash, 100, 1024)
+                .assertThat().statusCode(SC_CONFLICT);
+
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, store1, "folder");
+        OID nestedFolder = PolarisHelpers.newFolder(AUTHENTICATED, folder, "nested_folder");
+        OID nestedFile = PolarisHelpers.newFile(AUTHENTICATED, nestedFolder, "nested_file");
+
+        // move cross store
+        UniqueID migrationJob = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, store1, store2, folder, "folder").jobID;
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, migrationJob, 5);
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.restoreFileOrFolder(AUTHENTICATED, folder).jobID, 5);
+
+        PolarisHelpers.newFolder(AUTHENTICATED, folder, "new_folder");
+        PolarisHelpers.newFolder(AUTHENTICATED, nestedFolder, "new_folder");
+        PolarisHelpers.newFileContent(AUTHENTICATED, nestedFile, 0, hash, 100, 1024);
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

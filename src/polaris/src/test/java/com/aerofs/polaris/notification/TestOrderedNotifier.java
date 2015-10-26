@@ -84,6 +84,7 @@ public final class TestOrderedNotifier {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
 
         // spy on it
         this.dbi = Mockito.spy(dbi);

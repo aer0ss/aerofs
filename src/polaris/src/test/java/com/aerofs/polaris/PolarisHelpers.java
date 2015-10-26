@@ -150,8 +150,8 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static void restoreFileOrFolder(RequestSpecification authenticated, OID object) {
-        restoreObject(authenticated, object).assertThat().statusCode(SC_OK);
+    public static OperationResult restoreFileOrFolder(RequestSpecification authenticated, OID object) {
+        return restoreObject(authenticated, object).assertThat().statusCode(SC_OK).and().extract().response().as(OperationResult.class);
     }
 
     public static ValidatableResponse restoreObject(RequestSpecification authenticated, OID object) {
@@ -164,11 +164,11 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static void moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
-        moveObject(authenticated, currentParent, newParent, child, newChildName).assertThat().statusCode(SC_OK);
+    public static OperationResult moveFileOrFolder(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, UniqueID child, String newChildName) {
+        return moveObject(authenticated, currentParent, newParent, child, newChildName).assertThat().statusCode(SC_OK).and().extract().response().as(OperationResult.class);
     }
 
-    public static ValidatableResponse moveObject(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, OID child, String newChildName) {
+    public static ValidatableResponse moveObject(RequestSpecification authenticated, UniqueID currentParent, UniqueID newParent, UniqueID child, String newChildName) {
         return given()
                 .spec(authenticated)
                 .and()

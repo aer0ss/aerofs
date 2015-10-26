@@ -61,6 +61,7 @@ public class TestJobsResource {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
     }
 
     @After
@@ -106,7 +107,7 @@ public class TestJobsResource {
         UniqueID jobID = UniqueID.generate();
         dbi.inTransaction((conn, status) -> {
             Migrations migrations = conn.attach(Migrations.class);
-            migrations.addStoreMigration(SID.convertedStoreSID2folderOID(store), store, jobID, DEVICE, JobStatus.RUNNING);
+            migrations.addMigration(SID.convertedStoreSID2folderOID(store), store, jobID, DEVICE, JobStatus.RUNNING);
             return null;
         });
 

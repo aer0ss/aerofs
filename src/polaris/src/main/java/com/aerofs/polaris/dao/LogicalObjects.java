@@ -28,7 +28,7 @@ public interface LogicalObjects {
     int changeStore(@Bind("store_oid") UniqueID store, @Bind("oid") UniqueID oid);
 
     @SqlUpdate("update objects set locked = :locked where oid = :oid")
-    int setLocked(@Bind("oid") UniqueID oid, @Bind("locked") boolean locked);
+    int setLocked(@Bind("oid") UniqueID oid, @Bind("locked") LockStatus locked);
 
     @SqlUpdate("delete from objects where oid = :oid")
     int delete(@Bind("oid") UniqueID oid);
@@ -56,7 +56,7 @@ public interface LogicalObjects {
         @Override
         public LockableLogicalObject map(int index, ResultSet r, StatementContext ctx) throws SQLException {
             try {
-                return new LockableLogicalObject(new UniqueID(r.getBytes(COL_STORE_OID)), new UniqueID(r.getBytes(COL_OID)), r.getLong(COL_VERSION), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), r.getBoolean(COL_LOCKED));
+                return new LockableLogicalObject(new UniqueID(r.getBytes(COL_STORE_OID)), new UniqueID(r.getBytes(COL_OID)), r.getLong(COL_VERSION), ObjectType.fromTypeId(r.getInt(COL_OBJECT_TYPE)), LockStatus.fromTypeId(r.getInt(COL_LOCKED)));
             } catch (IllegalArgumentException e) {
                 throw new SQLException("invalid stored type", e);
             }

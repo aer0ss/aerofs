@@ -206,19 +206,20 @@ public final class TestTransformsResource {
         PolarisHelpers.newFileContent(verified, file, 1, hash2, 100, 2048);
         PolarisHelpers.moveFileOrFolder(verified, store1, store2, file, "dest_file");
 
-        Transforms applied = PolarisHelpers.getTransforms(verified, store1, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
+        assertThat(applied.transforms, hasSize(2));
+        assertThat(applied.maxTransformCount, is(6L));
+        assertThat(applied.transforms.get(0), matchesReorderableRandomChildOIDMetaTransform(DEVICE, store2, TransformType.INSERT_CHILD, ObjectType.FILE, "dest_file", file));
+        assertThat(applied.transforms.get(1), matchesReorderableRandomOIDContentTransform(DEVICE, 2, hash2, 100, 2048));
+        OID newOid = new OID(applied.transforms.get(0).getChild());
+
+        applied = PolarisHelpers.getTransforms(verified, store1, -1, 10);
         assertThat(applied.transforms, hasSize(4));
         assertThat(applied.maxTransformCount, is(6L));
         assertThat(applied.transforms.get(0), matchesMetaTransform(1, DEVICE, store1, TransformType.INSERT_CHILD, 1, file, ObjectType.FILE, "src_file", null));
         assertThat(applied.transforms.get(1), matchesContentTransform(2, DEVICE, file, 1, hash1, 100, 1024));
         assertThat(applied.transforms.get(2), matchesContentTransform(3, DEVICE, file, 2, hash2, 100, 2048));
-        assertThat(applied.transforms.get(3), matchesMetaTransform(6, DEVICE, store1, TransformType.REMOVE_CHILD, 2, file, null, null, null));
-
-        applied = PolarisHelpers.getTransforms(verified, store2, -1, 10);
-        assertThat(applied.transforms, hasSize(2));
-        assertThat(applied.maxTransformCount, is(6L));
-        assertThat(applied.transforms.get(0), matchesReorderableRandomChildOIDMetaTransform(DEVICE, store2, TransformType.INSERT_CHILD, ObjectType.FILE, "dest_file", file));
-        assertThat(applied.transforms.get(1), matchesReorderableRandomOIDContentTransform(DEVICE, 2, hash2, 100, 2048));
+        assertThat(applied.transforms.get(3), matchesMetaTransform(6, DEVICE, store1, TransformType.REMOVE_CHILD, 2, file, null, null, newOid));
     }
 
     @SuppressWarnings("unchecked")
@@ -248,12 +249,7 @@ public final class TestTransformsResource {
             PolarisHelpers.waitForJobCompletion(verified, operationResult.jobID, 5);
         }
 
-        Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
-        assertThat(applied.transforms, hasSize(9));
-        assertThat(applied.maxTransformCount, is(15L));
-        assertThat(applied.transforms.get(8), matchesMetaTransform(15, DEVICE, rootStore, TransformType.REMOVE_CHILD, 2, folder, null, null, null));
-
-        applied = PolarisHelpers.getTransforms(verified, share, -1, 10);
+        Transforms applied = PolarisHelpers.getTransforms(verified, share, -1, 10);
         assertThat(applied.transforms, hasSize(6));
         assertThat(applied.maxTransformCount, is(15L));
         assertThat(applied.transforms, containsInAnyOrder(
@@ -263,6 +259,18 @@ public final class TestTransformsResource {
                 matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.INSERT_CHILD, ObjectType.FILE, "file3", deletedFile),
                 matchesReorderableRandomOIDContentTransform(DEVICE, 2, hash, 200, 1024),
                 matchesReorderableRandomOIDsMetaTransform(DEVICE, TransformType.REMOVE_CHILD, null, null, null)));
+
+        OID folderMigrant = null;
+        for (Transform t : applied.transforms) {
+            if (Objects.equal(t.getMigrantOid(), folder)) {
+                folderMigrant = new OID(t.getChild());
+            }
+        }
+
+        applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
+        assertThat(applied.transforms, hasSize(9));
+        assertThat(applied.maxTransformCount, is(15L));
+        assertThat(applied.transforms.get(8), matchesMetaTransform(15, DEVICE, rootStore, TransformType.REMOVE_CHILD, 2, folder, null, null, folderMigrant));
     }
 
     @Test
@@ -508,7 +516,7 @@ public final class TestTransformsResource {
                 description.appendText("child:ignored");
             }
 
-            description.appendText(String.format("originator:%s transformType:%s childObjectType:%s childName:%s", originator, transformType, childObjectType, childName));
+            description.appendText(String.format("originator:%s transformType:%s childObjectType:%s childName:%s migrant:%s", originator, transformType, childObjectType, childName, migrant));
         }
     }
 

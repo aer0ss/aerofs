@@ -86,6 +86,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         dbi.registerArgumentFactory(new ObjectTypeArgument.ObjectTypeArgumentFactory());
         dbi.registerArgumentFactory(new TransformTypeArgument.TransformTypeArgumentFactory());
         dbi.registerArgumentFactory(new JobStatusArgument.JobStatusArgumentFactory());
+        dbi.registerArgumentFactory(new LockStatusArgument.LockStatusArgumentFactory());
         dbi.registerMapper(new OneColumnUniqueIDMapper());
         dbi.registerMapper(new OneColumnDIDMapper());
         dbi.registerMapper(new OneColumnOIDMapper());
