@@ -30,7 +30,7 @@ function setup() {
     # N.B. license_seats will be absent on first run so this line will do no-op.
     # In subsequent runs of this script, we'll strip output from previous runs before adding a new line.
     docker exec config sed -i "s/license_seats=.*$//g" "/opt/config/properties/external.properties"
-    docker exec config sh -c '/bin/echo "license_seats=1000" >> /opt/config/templates/server.tmplt'
+    docker exec config sh -c "/bin/echo \"license_seats=${LIMIT}\" >> /opt/config/templates/server.tmplt"
 
     # we really just need to restart sp here
     echo "Restarting containers..."
