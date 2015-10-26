@@ -3,6 +3,7 @@ create shared folder
 """
 
 import os
+import time
 from lib.files import instance_unique_path
 from lib.files.dirtree.dirtree import DirTree
 from lib import ritual
@@ -60,14 +61,19 @@ def main():
     assertTrue(sf.issubset(set(ritual.connect().list_admitted_or_linked_shared_folders())))
 
     # check that all invalid tag files have been removed
-    assertTrue(DirTree('invalid', {
-        'empty':    {},
-        'nothex':   {},
-        'tooshort': {},
-        'toolong':  {},
-        'notsid':   {},
-        'dir':      {}
-    }).represents(os.path.join(instance_unique_path(), 'invalid'), True))
+    n = 0
+    while not DirTree('invalid', {
+                'empty':    {},
+                'nothex':   {},
+                'tooshort': {},
+                'toolong':  {},
+                'notsid':   {},
+                'dir':      {}
+            }).represents(os.path.join(instance_unique_path(), 'invalid'), True):
+        time.sleep(0.2)
+        n += 1
+        if n > 10:
+            assertTrue(False)
 
 
 spec = {'entries': [main]}
