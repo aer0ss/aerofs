@@ -4,35 +4,60 @@
 
 package com.aerofs.sp.server.lib.user;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.*;
-import com.aerofs.base.id.*;
-import com.aerofs.ids.*;
-import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.base.ParamFactory;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExLicenseLimit;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExSecondFactorRequired;
+import com.aerofs.base.ex.ExSecondFactorSetupRequired;
+import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.TOTP;
 import com.aerofs.sp.common.Base62CodeGenerator;
-import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.License;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.GroupMembersDatabase;
-import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
-import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitationDatabase;
+import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.aerofs.sp.server.lib.session.ISession.ProvenanceGroup;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.twofactor.RecoveryCode;
 import com.aerofs.sp.server.lib.twofactor.TwoFactorAuthDatabase;
-import com.aerofs.sp.server.lib.session.ISession.Provenance;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
@@ -42,18 +67,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.HttpContext;
-import org.slf4j.Logger;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 public class User
 {
@@ -147,6 +160,12 @@ public class User
         public boolean hasUsers() throws SQLException
         {
             return _udb.hasUsers();
+        }
+
+        public List<UserID> listUsers(Integer limit, UserID startingAfter, UserID endingBefore)
+                throws ExInvalidID, SQLException 
+        {
+            return _udb.listUsers(limit, startingAfter, endingBefore);
         }
     }
 

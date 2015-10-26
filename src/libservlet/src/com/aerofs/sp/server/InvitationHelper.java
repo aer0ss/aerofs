@@ -12,8 +12,8 @@ import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
 import com.unboundid.ldap.sdk.LDAPSearchException;
@@ -101,8 +101,8 @@ public class InvitationHelper
 
     public static class InviteToSignUpResult
     {
-        final InvitationEmailer _emailer;
-        @Nullable final String _signUpCode;
+        public final InvitationEmailer _emailer;
+        public final @Nullable String _signUpCode;
 
         InviteToSignUpResult(InvitationEmailer emailer, @Nullable String signUpCode)
         {

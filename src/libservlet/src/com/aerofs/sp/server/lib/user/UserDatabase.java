@@ -4,43 +4,79 @@
 
 package com.aerofs.sp.server.lib.user;
 
-import com.aerofs.base.Base64;
-import com.aerofs.base.Loggers;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.db.DBUtil;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.ExInvalidID;
-import com.aerofs.ids.UserID;
-import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
-import com.aerofs.base.id.OrganizationID;
-import com.aerofs.sp.common.SharedFolderState;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import org.slf4j.Logger;
+import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
+import static com.aerofs.lib.db.DBUtil.selectWhere;
+import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
+import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
+import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_SF_ORIGINAL_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_BYTES_USED;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_DEACTIVATED;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_PASS_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_TWO_FACTOR_ENFORCED;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_USAGE_WARNING_SENT;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_WHITELISTED;
+import static com.aerofs.sp.server.lib.SPSchema.T_AC;
+import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
+import static com.aerofs.sp.server.lib.SPSchema.T_OI;
+import static com.aerofs.sp.server.lib.SPSchema.T_SF;
+import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
+import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
-import static com.aerofs.lib.db.DBUtil.binaryCount;
-import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
-import static com.aerofs.lib.db.DBUtil.selectWhere;
-import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.*;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+
+import com.aerofs.base.Base64;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.FullName;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
+import com.aerofs.sp.common.SharedFolderState;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * N.B. only User.java may refer to this class
@@ -50,9 +86,43 @@ public class UserDatabase extends AbstractSQLDatabase
     private static final Logger l = Loggers.getLogger(UserDatabase.class);
 
     @Inject
-    public UserDatabase(IDatabaseConnectionProvider<Connection> provider)
+    public UserDatabase(IDatabaseConnectionProvider<Connection> provider) 
     {
         super(provider);
+    }
+
+    /**
+     * Selects next paginated list of users, using optional pagination parameters
+     * @param limit the maximum page size to select
+     * @param startingAfter cursor - next page begins after this userID
+     * @param endingBefore cursor - next page ends before this userID
+     */
+    public List<UserID> listUsers(Integer limit, UserID startingAfter, UserID endingBefore)
+            throws SQLException, ExInvalidID 
+    {
+        String orderBy = startingAfter == null && endingBefore != null ? "DESC" : "ASC";
+        try (PreparedStatement ps = prepareStatement(selectNextPageOfUsers(startingAfter, endingBefore, limit, orderBy))) {
+            List<UserID> userIDs = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    userIDs.add(UserID.fromInternal(rs.getString(1)));
+                }
+                if(orderBy.equals("DESC")) {
+                    Collections.reverse(userIDs);
+                }
+                return userIDs;
+            }
+        }
+    }
+
+    private String selectNextPageOfUsers(UserID startingAfter, UserID endingBefore, Integer limit, String orderBy) 
+    {
+        String startingAfterClause = startingAfter != null ? " AND u_id > '" + startingAfter + "'" : "";
+        String endingBeforeClause = endingBefore != null ? " AND u_id < '" + endingBefore + "'" : "";
+        String limitClause = limit > 0 ? " LIMIT " + limit : "";
+        return selectWhere(T_USER,
+                C_USER_DEACTIVATED + "=0" + startingAfterClause + endingBeforeClause
+                        + " ORDER BY u_id " + orderBy + limitClause, "u_id");
     }
 
     /**
@@ -61,8 +131,8 @@ public class UserDatabase extends AbstractSQLDatabase
      * @throws ExAlreadyExist if the user ID already exists
      */
     public void insertUser(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
-            AuthorizationLevel level)
-            throws SQLException, ExAlreadyExist
+                           AuthorizationLevel level)
+            throws SQLException, ExAlreadyExist 
     {
         // if the user was previously deactivated, reactivate it
         if (isDeactivated(id)) {
@@ -98,7 +168,7 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    private boolean isDeactivated(UserID userId) throws SQLException
+    private boolean isDeactivated(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=1",
@@ -110,7 +180,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     private void reactivate(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
-            AuthorizationLevel level) throws SQLException
+                            AuthorizationLevel level) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(DBUtil.updateWhere(T_USER, C_USER_ID + "=?",
                 C_USER_CREDS, C_USER_FIRST_NAME, C_USER_LAST_NAME, C_USER_ORG_ID,
@@ -130,8 +200,7 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public boolean hasUser(UserID userId)
-            throws SQLException
+    public boolean hasUser(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", "count(*)"))) {
@@ -142,8 +211,7 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public boolean hasUsers()
-            throws SQLException
+    public boolean hasUsers() throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_DEACTIVATED + "=0", "count(*)"));
@@ -153,12 +221,12 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public @Nonnull OrganizationID getOrganizationID(UserID userId)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userId, C_USER_ORG_ID);
              ResultSet rs = ps.executeQuery()) {
-                throwIfEmptyResultSet(rs, userId);
-                return new OrganizationID(rs.getInt(1));
+            throwIfEmptyResultSet(rs, userId);
+            return new OrganizationID(rs.getInt(1));
         }
     }
 
@@ -175,7 +243,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public @Nonnull FullName getFullName(UserID userId)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userId, C_USER_FIRST_NAME, C_USER_LAST_NAME);
              ResultSet rs = ps.executeQuery()) {
@@ -185,7 +253,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public long getSignupDate(UserID userId)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userId, C_USER_SIGNUP_TS);
              ResultSet rs = ps.executeQuery()) {
@@ -195,7 +263,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public @Nonnull byte[] getShaedSP(UserID userId)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userId, C_USER_CREDS);
              ResultSet rs = ps.executeQuery()) {
@@ -208,7 +276,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public @Nonnull AuthorizationLevel getLevel(UserID userId)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userId, C_USER_AUTHORIZATION_LEVEL);
              ResultSet rs = ps.executeQuery()) {
@@ -218,7 +286,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public boolean isWhitelisted(UserID userID)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userID, C_USER_WHITELISTED);
              ResultSet rs = ps.executeQuery()) {
@@ -228,7 +296,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public boolean getUsageWarningSent(UserID userID)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userID, C_USER_USAGE_WARNING_SENT);
              ResultSet rs = ps.executeQuery()) {
@@ -238,7 +306,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setUsageWarningSent(UserID userID, boolean usageWarningSent)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_USAGE_WARNING_SENT))) {
@@ -264,7 +332,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * @return the usage in bytes, or null if the value has never been set
      */
     public @Nullable Long getBytesUsed(UserID userID)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(userID, C_USER_BYTES_USED);
              ResultSet rs = ps.executeQuery()) {
@@ -276,7 +344,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setBytesUsed(UserID userID, long bytesUsed)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(
                 updateWhere(T_USER, C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0",
@@ -292,7 +360,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * List all devices belonging to a the provided user.
      */
     public ImmutableList<DID> getDevices(UserID userId)
-            throws SQLException, ExInvalidID
+            throws SQLException, ExInvalidID 
     {
         try (PreparedStatement ps = prepareStatement(
                 selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_UNLINKED + "=0",
@@ -311,8 +379,9 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    private PreparedStatement queryUser(UserID userId, String ... fields)
-            throws SQLException {
+    private PreparedStatement queryUser(UserID userId, String... fields)
+            throws SQLException 
+    {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", fields));
         String user_str = userId.getString();
@@ -322,7 +391,7 @@ public class UserDatabase extends AbstractSQLDatabase
 
     // N.B. will return with cursor on the first element of the result set
     private void throwIfEmptyResultSet(ResultSet rs, UserID userID)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         if (!rs.next()) {
             throw new ExNotFound("user " + userID + " is not found");
@@ -330,7 +399,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setLevel(UserID userId, AuthorizationLevel authLevel)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_AUTHORIZATION_LEVEL))) {
@@ -342,7 +411,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setWhitelisted(UserID userID, boolean whitelisted)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_WHITELISTED))) {
@@ -354,7 +423,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setName(UserID userId, FullName fullName)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER,
                 C_USER_ID + "=? and " + C_USER_DEACTIVATED + "=0", C_USER_FIRST_NAME,
@@ -371,7 +440,7 @@ public class UserDatabase extends AbstractSQLDatabase
 
     // TODO (WW) move it to a different database class?
     public void insertSignupCode(String code, UserID to)
-            throws SQLException
+            throws SQLException 
     {
         insertSignupCode(code, to, System.currentTimeMillis());
     }
@@ -379,7 +448,7 @@ public class UserDatabase extends AbstractSQLDatabase
     // For testing only
     // TODO (WW) use DI instead
     public void insertSignupCode(String code, UserID to, long currentTime)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(
                 DBUtil.insert(T_SIGNUP_CODE, C_SIGNUP_CODE_CODE, C_SIGNUP_CODE_TO, C_SIGNUP_CODE_TS))) {
@@ -396,7 +465,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * expected to be a frequent operation. Add the index in the future if needed.
      */
     public void deleteAllSignUpCodes(UserID userID)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(
                 DBUtil.deleteWhereEquals(T_SIGNUP_CODE, C_SIGNUP_CODE_TO))) {
@@ -407,7 +476,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void deleteAllOrganizationInvitations(UserID userID)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(DBUtil.deleteWhereEquals(T_OI, C_OI_INVITEE))) {
 
@@ -416,7 +485,8 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    private Collection<SID> executeGetFoldersQuery  (PreparedStatement ps) throws SQLException {
+    private Collection<SID> executeGetFoldersQuery(PreparedStatement ps) throws SQLException 
+    {
         try (ResultSet rs = ps.executeQuery()) {
             List<SID> sids = Lists.newArrayList();
             while (rs.next()) {
@@ -426,7 +496,7 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Collection<SID> getJoinedFolders(UserID userId) throws SQLException
+    public Collection<SID> getJoinedFolders(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_STATE + "=?", C_AC_STORE_ID))) {
@@ -443,13 +513,13 @@ public class UserDatabase extends AbstractSQLDatabase
      * @return the shared folders for which the user has acls (this includes folders for which the
      * user is PENDING or has LEFT)
      */
-    public Collection<SID> getSharedFolders(UserID userId) throws SQLException
+    public Collection<SID> getSharedFolders(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF
                         + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                        C_AC_USER_ID + "=?", C_AC_STORE_ID)
-                        + " order by " + C_SF_ORIGINAL_NAME + ", binary("
-                        + C_SF_ORIGINAL_NAME + ") ASC")) {
+                C_AC_USER_ID + "=?", C_AC_STORE_ID)
+                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
+                + C_SF_ORIGINAL_NAME + ") ASC")) {
             ps.setString(1, userId.getString());
 
             return executeGetFoldersQuery(ps);
@@ -461,14 +531,14 @@ public class UserDatabase extends AbstractSQLDatabase
      */
     /**
      * Deactivate a user
-     *
+     * <p>
      * NB: the system cannot currently (and maybe ever) gracefully deal with deletion for
      * user/device information. This is mostly because the tick space is append-only: new
      * ticks can be added but old ticks cannot ever be removed and some other features,
      * most notably activity log, extract user-visible info from ticks and need to associate
      * this info to user and device names.
      */
-    public void deactivate(UserID userId) throws SQLException
+    public void deactivate(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER, C_USER_ID + "=?",
                 C_USER_DEACTIVATED))) {
@@ -481,7 +551,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public boolean getEnforceSecondFactor(UserID id)
-            throws SQLException, ExNotFound
+            throws SQLException, ExNotFound 
     {
         try (PreparedStatement ps = queryUser(id, C_USER_TWO_FACTOR_ENFORCED);
              ResultSet rs = ps.executeQuery()) {
@@ -491,7 +561,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     public void setEnforceSecondFactor(UserID id, boolean enabled)
-            throws SQLException
+            throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(updateWhere(T_USER,
                 C_USER_ID + "=?", C_USER_TWO_FACTOR_ENFORCED))) {
@@ -501,20 +571,19 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public static class PendingSharedFolder
+    public static class PendingSharedFolder 
     {
         public final SID _sid;
         public final UserID _sharer;
 
-        PendingSharedFolder(SID sid, UserID sharer)
-        {
+        PendingSharedFolder(SID sid, UserID sharer) {
             _sid = sid;
             _sharer = sharer;
         }
     }
 
     // TODO (WW) move this method to SharedFolderDatabase?
-    public Collection<PendingSharedFolder> getPendingSharedFolders(UserID userId) throws SQLException
+    public Collection<PendingSharedFolder> getPendingSharedFolders(UserID userId) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
@@ -541,7 +610,7 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Long incrementACLEpoch(UserID user) throws SQLException
+    public Long incrementACLEpoch(UserID user) throws SQLException 
     {
         try (PreparedStatement ps = prepareStatement("update " + T_USER +
                 " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1" +
@@ -565,7 +634,7 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     private long queryGetACLEpoch(PreparedStatement ps, UserID user)
-            throws SQLException
+            throws SQLException 
     {
         ps.setString(1, user.getString());
         try (ResultSet rs = ps.executeQuery()) {

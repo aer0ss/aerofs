@@ -13,13 +13,13 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
@@ -32,10 +32,12 @@ import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.group.Group;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.user.UserDatabase;
 import com.aerofs.sp.sparta.Sparta;
 import com.aerofs.ssmp.SSMPConnection;
 import com.aerofs.ssmp.SSMPRequest;
@@ -78,9 +80,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
-import static com.aerofs.bifrost.server.BifrostTest.createAccessToken;
-import static com.aerofs.bifrost.server.BifrostTest.createClient;
-import static com.aerofs.bifrost.server.BifrostTest.createResourceServer;
+import static com.aerofs.bifrost.server.BifrostTest.*;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.any;
@@ -126,6 +126,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected SharedFolder.Factory factSF;
     protected Group.Factory factGroup;
     protected Device.Factory factDevice;
+    protected OrganizationInvitation.Factory factInvitation;
     private int nextUserID = 1;
 
     private static final ThreadLocal<DateFormat> _dateFormat = new ThreadLocal<DateFormat>() {
@@ -293,6 +294,8 @@ public class AbstractResourceTest extends AbstractBaseTest
         factGroup = inj.getInstance(Group.Factory.class);
         factDevice = inj.getInstance(Device.Factory.class);
         factGroup = inj.getInstance(Group.Factory.class);
+        factInvitation = inj.getInstance(OrganizationInvitation.Factory.class);
+        UserDatabase userDatabase = inj.getInstance(UserDatabase.class);
         Organization.Factory factOrg = inj.getInstance(Organization.Factory.class);
 
         sqlTrans.begin();
@@ -316,6 +319,11 @@ public class AbstractResourceTest extends AbstractBaseTest
         a.setOrganization(org, AuthorizationLevel.ADMIN);
         u.setOrganization(org, AuthorizationLevel.USER);
         o.setOrganization(org, AuthorizationLevel.USER);
+
+        String signupCode = "CODE";
+        userDatabase.insertSignupCode(signupCode, user);
+        factInvitation.save(a, u, org, signupCode);
+
         sqlTrans.commit();
 
         sparta = new Sparta(inj, deploymentSecret);

@@ -4,49 +4,18 @@
 
 package com.aerofs.sp.sparta.resources;
 
-import com.aerofs.audit.client.AuditClient;
-import com.aerofs.audit.client.AuditClient.AuditTopic;
-import com.aerofs.audit.client.AuditClient.AuditableEvent;
-import com.aerofs.base.acl.Permissions;
-import com.aerofs.ids.ExInvalidID;
-import com.aerofs.restless.Version;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.UserID;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.oauth.Scope;
-import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.rest.api.Invitation;
-import com.aerofs.rest.api.Quota;
-import com.aerofs.rest.auth.IAuthToken;
-import com.aerofs.rest.auth.IUserAuthToken;
-import com.aerofs.restless.Auth;
-import com.aerofs.restless.Service;
-import com.aerofs.restless.Since;
-import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.ACLNotificationPublisher;
-import com.aerofs.sp.server.CommandDispatcher;
-import com.aerofs.sp.server.PasswordManagement;
-import com.aerofs.sp.server.UserManagement;
-import com.aerofs.sp.server.audit.AuditCaller;
-import com.aerofs.sp.server.audit.AuditFolder;
-import com.aerofs.sp.server.email.TwoFactorEmailer;
-import com.aerofs.sp.server.lib.group.Group;
-import com.aerofs.sp.server.lib.sf.SharedFolder;
-import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sp.server.lib.user.User.Factory;
-import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
-import com.aerofs.sp.sparta.Transactional;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
+import static com.aerofs.sp.sparta.resources.SharedFolderResource.listGroupMembers;
+import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
+import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
+import java.net.URI;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.Consumes;
@@ -63,17 +32,52 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.net.URI;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
 
-import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.listGroupMembers;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.listMembers;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.listPendingMembers;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.audit.client.AuditClient.AuditableEvent;
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.FullName;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.oauth.Scope;
+import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.rest.api.Invitation;
+import com.aerofs.rest.api.Page;
+import com.aerofs.rest.api.Quota;
+import com.aerofs.rest.auth.IAuthToken;
+import com.aerofs.rest.auth.IUserAuthToken;
+import com.aerofs.restless.Auth;
+import com.aerofs.restless.Service;
+import com.aerofs.restless.Since;
+import com.aerofs.restless.Version;
+import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.ACLNotificationPublisher;
+import com.aerofs.sp.server.CommandDispatcher;
+import com.aerofs.sp.server.PasswordManagement;
+import com.aerofs.sp.server.UserManagement;
+import com.aerofs.sp.server.audit.AuditCaller;
+import com.aerofs.sp.server.audit.AuditFolder;
+import com.aerofs.sp.server.email.TwoFactorEmailer;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.group.Group;
+import com.aerofs.sp.server.lib.sf.SharedFolder;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.user.User.Factory;
+import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
+import com.aerofs.sp.sparta.Transactional;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 
 @Path(Service.VERSION + "/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -113,18 +117,43 @@ public class UsersResource extends AbstractSpartaResource
     {
         requirePermission(scope, token);
         if (token instanceof IUserAuthToken) {
-            User caller = _factUser.create(((IUserAuthToken)token).user());
+            User caller = _factUser.create(((IUserAuthToken) token).user());
             throwIfNotSelfOrTSOf(caller, user);
             return caller;
         }
         return null;
     }
 
+    /**
+     * Retrieves a page of Users using the given params
+     *
+     * @param limit maximum number of users to return in the response.
+     * @param after cursor for paginated response. Returned page begins after
+     *            this user ID.
+     * @param before cursor for paginated response. Returned page ends before
+     *            this user ID.
+     */
+    @Since("1.3")
+    @GET
+    public Response list(@Auth IAuthToken token, @Context Version version,
+            @QueryParam("limit") @DefaultValue("20") int limit, @QueryParam("after") String after,
+            @QueryParam("before") String before) throws ExInvalidID, SQLException, ExNotFound {
+        requirePermission(Scope.ORG_ADMIN, token);
+        List<UserID> userIDs = _factUser.listUsers(limit > 0 ? limit + 1 : 0,
+                after != null ? UserID.fromExternal(after) : null,
+                before != null ? UserID.fromExternal(before) : null);
+        boolean hasMore = userIDs.size() == limit + 1;
+        if (hasMore) {
+            userIDs.remove(limit);
+        }
+        return Response.ok().entity(new Page<>(hasMore, createUsersList(userIDs))).build();
+    }
+
     @Since("1.1")
     @GET
     @Path("/{email}")
     public Response get(@Auth IAuthToken token, @Context Version version,
-            @PathParam("email") User user)
+                        @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
         validateAuth(token, Scope.READ_USER, user);
@@ -161,7 +190,7 @@ public class UsersResource extends AbstractSpartaResource
     @GET
     @Path("/{email}/shares")
     public Response listShares(@Auth IAuthToken token, @Context Version version,
-            @PathParam("email") User user)
+                               @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
         validateAuth(token, Scope.READ_ACL, user);
@@ -192,7 +221,7 @@ public class UsersResource extends AbstractSpartaResource
     @GET
     @Path("/{email}/invitations")
     public Response listInvitations(@Auth IAuthToken token,
-            @PathParam("email") User user)
+                                    @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
         validateAuth(token, Scope.MANAGE_INVITATIONS, user);
@@ -206,8 +235,8 @@ public class UsersResource extends AbstractSpartaResource
     @GET
     @Path("/{email}/invitations/{sid}")
     public Response getInvitation(@Auth IAuthToken token,
-            @PathParam("email") User user,
-            @PathParam("sid") SharedFolder sf)
+                                  @PathParam("email") User user,
+                                  @PathParam("sid") SharedFolder sf)
             throws ExNotFound, SQLException
     {
         validateAuth(token, Scope.MANAGE_INVITATIONS, user);
@@ -232,10 +261,10 @@ public class UsersResource extends AbstractSpartaResource
     @POST
     @Path("/{email}/invitations/{sid}")
     public Response acceptInvitation(@Auth IUserAuthToken token,
-            @PathParam("email") User user,
-            @PathParam("sid") SharedFolder sf,
-            @QueryParam("external") @DefaultValue("0") String external,
-            @Context Version version)
+                                     @PathParam("email") User user,
+                                     @PathParam("sid") SharedFolder sf,
+                                     @QueryParam("external") @DefaultValue("0") String external,
+                                     @Context Version version)
             throws Exception
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
@@ -275,8 +304,8 @@ public class UsersResource extends AbstractSpartaResource
     @DELETE
     @Path("/{email}/invitations/{sid}")
     public Response ignoreInvitation(@Auth IUserAuthToken token,
-            @PathParam("email") User user,
-            @PathParam("sid") SharedFolder sf)
+                                     @PathParam("email") User user,
+                                     @PathParam("sid") SharedFolder sf)
             throws Exception
     {
         requirePermission(Scope.MANAGE_INVITATIONS, token);
@@ -537,9 +566,10 @@ public class UsersResource extends AbstractSpartaResource
 
     private class TwoFactor
     {
+        @SuppressWarnings("unused")
         public final Boolean enforce;
-        public TwoFactor(Boolean enforce)
-        {
+
+        public TwoFactor(Boolean enforce) {
             this.enforce = enforce;
         }
     }
@@ -560,8 +590,7 @@ public class UsersResource extends AbstractSpartaResource
     @Since("1.3")
     @DELETE
     @Path("/{email}/two_factor")
-    public Response disableTwoFactor(
-            @Auth IUserAuthToken auth,
+    public Response disableTwoFactor(@Auth IUserAuthToken auth,
             @PathParam("email") User user)
             throws Exception
     {
@@ -575,5 +604,15 @@ public class UsersResource extends AbstractSpartaResource
         _twoFactorEmailer.sendTwoFactorDisabledEmail(user.id().getString(),
                 user.getFullName()._first);
         return Response.noContent().build();
+    }
+
+    private Collection<com.aerofs.rest.api.User> createUsersList(Collection<UserID> userIDs) throws SQLException, ExNotFound
+    {
+        ImmutableList.Builder<com.aerofs.rest.api.User> builder = ImmutableList.builder();
+        for (UserID userID : userIDs) {
+            FullName fullName = _factUser.create(userID).getFullName();
+            builder.add(new com.aerofs.rest.api.User(userID.getString(), fullName._first, fullName._last, null, null));
+        }
+        return builder.build();
     }
 }

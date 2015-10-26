@@ -4,31 +4,34 @@
 
 package com.aerofs.sp.sparta.resources;
 
-import com.aerofs.base.acl.Permissions;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
-import com.aerofs.sp.server.lib.user.User;
-import com.google.common.collect.ImmutableMap;
-import com.jayway.restassured.http.ContentType;
-import com.jayway.restassured.internal.mapper.ObjectMapperType;
-import com.jayway.restassured.path.json.JsonPath;
-import com.jayway.restassured.response.Response;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.junit.Test;
-
-import javax.ws.rs.core.Response.Status;
-
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.path.json.JsonPath.from;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
+
+import javax.ws.rs.core.Response.Status;
+
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
+import org.junit.Test;
+
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableMap;
+import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.internal.mapper.ObjectMapperType;
+import com.jayway.restassured.path.json.JsonPath;
+import com.jayway.restassured.response.Response;
 
 @SuppressWarnings("unchecked")
 public class TestUsersResources extends AbstractResourceTest
@@ -38,6 +41,7 @@ public class TestUsersResources extends AbstractResourceTest
     private final String QUOTA_RESOURCE = "/v1.2/users/{email}/quota";
     private final String TWO_FACTOR_RESOURCE = "/v1.3/users/{email}/two_factor";
     private final String DEVICE_RESOURCE = "/v1.3/users/{email}/devices";
+    private final String RESOURCE_V13_BASE = "/v1.3/users";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -404,6 +408,35 @@ public class TestUsersResources extends AbstractResourceTest
                 .delete(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
     }
 
+    @Test
+    public void list_shouldReturn403WhenNotAdmin() {
+        givenOtherAccess()
+        .expect()
+                .statusCode(403)
+                .body("type", equalTo("FORBIDDEN"))
+        .when().log().everything()
+                .get(RESOURCE_V13_BASE);
+    }
+
+    @Test
+    public void list_shouldSucceedAndReturnAll() {
+        givenAdminAccess()
+        .expect()
+                .statusCode(200)
+                .body("has_more", equalTo(false))
+        .when().log().everything()
+                .get(RESOURCE_V13_BASE + "?limit=0");
+    }
+
+    @Test
+    public void list_shouldSucceedAndHaveMore() {
+        givenAdminAccess()
+        .expect()
+                .statusCode(200)
+                .body("has_more", equalTo(true))
+        .when().log().everything()
+                .get(RESOURCE_V13_BASE + "?limit=1");
+    }
 
     @Test
     public void create_shouldSucceed() throws Exception

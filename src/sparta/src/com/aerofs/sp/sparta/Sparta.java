@@ -15,7 +15,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.URLBasedCertificateProvider;
-import com.aerofs.bifrost.oaaas.auth.*;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
@@ -97,6 +97,7 @@ public class Sparta extends Service
                 new DelegatedUserDeviceExtractor(deploymentSecret),
                 new SharedSecretExtractor(deploymentSecret)));
 
+        addResource(InviteesResource.class);
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
         addResource(SharedFolderResource.class);
