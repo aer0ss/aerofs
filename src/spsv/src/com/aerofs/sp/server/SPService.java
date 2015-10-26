@@ -54,11 +54,8 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.authentication.Authenticator;
+import com.aerofs.sp.authentication.*;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
-import com.aerofs.sp.authentication.IAuthority;
-import com.aerofs.sp.authentication.LdapConfiguration;
-import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
@@ -2872,7 +2869,6 @@ public class SPService implements ISPService
         Timestamp passwordCreatedTS = user.getPasswordCreatedTS();
         _sqlTrans.commit();
 
-        // Check if user's password is expired (in the event that password expiry is set)
         Calendar calendar = Calendar.getInstance();
         Timestamp currentTS = new Timestamp(calendar.getTime().getTime());
         long tsDiffInMillis = currentTS.getTime() - passwordCreatedTS.getTime();
@@ -2882,7 +2878,9 @@ public class SPService implements ISPService
         //Convert password expiration period from months to milliseconds
         double expirationPeriodMonthsInMillis = expirationPeriodMonths * NUM_MILLISECONDS_IN_YEAR/12;
 
-        if (tsDiffInMillis > expirationPeriodMonthsInMillis && expirationPeriodMonths != 0){
+        // Check if user's password is expired (in the event that password expiry is set and user is locally managed)
+        if (tsDiffInMillis > expirationPeriodMonthsInMillis && expirationPeriodMonths != 0
+                && _authenticator.isLocallyManaged(user.id())){
             l.info("Password expired for " + user);
             throw new ExPasswordExpired();
         }
