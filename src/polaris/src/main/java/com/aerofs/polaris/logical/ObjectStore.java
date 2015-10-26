@@ -260,7 +260,7 @@ public final class ObjectStore {
         Preconditions.checkArgument(requested.length > 0, "at least one Access type required");
 
         UniqueID store = getStore(dao, oid);
-        Preconditions.checkArgument(accessToken.stores.contains(store), "access granted not granted for store %s", store);
+        Preconditions.checkArgument(accessToken.stores.contains(store), "access not granted for store %s", store);
 
         if (!accessToken.subsumes(requested)) {
             LOGGER.warn("access granted for {} instead of {}", accessToken.granted, requested);
