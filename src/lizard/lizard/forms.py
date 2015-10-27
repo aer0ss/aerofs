@@ -37,12 +37,6 @@ class InviteForm(Form):
 class PreferencesForm(Form):
     first_name = TextField('First Name', validators=[InputRequired()])
     last_name = TextField('Last Name', validators=[InputRequired()])
-    password = PasswordField("Password", validators=[
-        Optional(),
-        Length(min=6),
-        EqualTo('password_confirmation', message='Passwords must match.')
-        ])
-    password_confirmation = PasswordField("Password confirmation")
     # DF: these fields disabled until we figure out our story with email notifications
     #security_emails = BooleanField("Receive security notifications")
     #release_emails = BooleanField("Receive release notifications")

@@ -243,8 +243,6 @@ def edit_preferences():
         # Update name
         user.first_name = form.first_name.data
         user.last_name = form.last_name.data
-        if len(form.password.data) > 0:
-            user.set_password(form.password.data)
         # Update email preferences (disabled until we add it back to the form)
         #user.notify_security    = form.security_emails.data
         #user.notify_release     = form.release_emails.data

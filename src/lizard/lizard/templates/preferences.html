@@ -10,8 +10,6 @@
         {{ render_disabled_field('Organization:', current_user.customer.name) }}
         {{ render_field(form.first_name, type="text", class="form-control") }}
         {{ render_field(form.last_name, type="text", class="form-control") }}
-        {{ render_field(form.password, type="password", class="form-control") }}
-        {{ render_field(form.password_confirmation, type="password", class="form-control") }}
         {# DF: these fields disabled until we figure out our plans regarding emails
         {{ render_field(form.security_emails) }}
         {{ render_field(form.release_emails) }}
