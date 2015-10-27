@@ -47,9 +47,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -124,23 +122,22 @@ public class MetaChangeSubmitter implements Submitter
     private class RemoteLinkProxy
     {
         private final SIndex _sidx;
-        private final Map<OID, OID> _overlay = new HashMap<>();
+        private final Map<OID, RemoteLink> _overlay = new HashMap<>();
 
         RemoteLinkProxy(SIndex sidx)
         {
             _sidx = sidx;
         }
 
-        OID getParent_(OID oid) throws SQLException
+        RemoteLink getParent_(OID oid) throws SQLException
         {
-            if (_overlay.containsKey(oid)) return  _overlay.get(oid);
-            RemoteLink lnk = _rpdb.getParent_(_sidx, oid);
-            return lnk != null ? lnk.parent : null;
+            RemoteLink lnk = _overlay.get(oid);
+            return lnk != null ? lnk : _rpdb.getParent_(_sidx, oid);
         }
 
-        public void setParent(OID oid, OID newParent)
+        public void setParent(OID oid, OID newParent, String newName)
         {
-            _overlay.put(oid, newParent);
+            _overlay.put(oid, new RemoteLink(newParent, newName, -1));
         }
     }
 
@@ -160,11 +157,27 @@ public class MetaChangeSubmitter implements Submitter
         RemoteLinkProxy proxy = new RemoteLinkProxy(sidx);
         List<MetaChange> changes = Lists.newArrayList();
         List<BatchOp> ops = Lists.newArrayList();
+        Set<Long> noops = new HashSet<>();
         try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
             while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
                 MetaChange c = resolveAliasing_(it.get_());
-                changes.add(c);
-                ops.add(op_(c, proxy));
+                BatchOp op = op_(c, proxy);
+                if (op != null) {
+                    changes.add(c);
+                    ops.add(op);
+                } else {
+                    noops.add(c.idx);
+                }
+            }
+        }
+
+        if (!noops.isEmpty()) {
+            try (Trans t = _tm.begin_()) {
+                for (long idx : noops) {
+                    l.info("discard no-op {} {}", sidx, idx);
+                    _mcdb.deleteChange_(sidx, idx, t);
+                }
+                t.commit_();
             }
         }
 
@@ -188,31 +201,32 @@ public class MetaChangeSubmitter implements Submitter
         LocalChange change = new LocalChange();
         change.child = c.oid.toStringFormal();
 
-        OID oldParent = proxy.getParent_(c.oid);
-        // FIXME: null parent caused by sharing?
+        RemoteLink lnk = proxy.getParent_(c.oid);
 
-        l.info("op: {} {} {} {} {}", sidx, c.oid, oldParent, c.newParent, c.newName);
+        l.info("op: {} {} {} {} {}", sidx, c.oid, lnk, c.newParent, c.newName);
 
-        // FIXME: conversion pitfall: deletion of auto-joined store
-        if (oldParent == null) {
+        if (lnk == null || lnk.parent == null) {
             checkState(c.newParent != null && !c.newParent.isTrash());
             parent = c.newParent;
             change.type = LocalChange.Type.INSERT_CHILD;
             change.childName = c.newName;
             OA oa = _ds.getOA_(new SOID(sidx, c.oid));
             change.childObjectType = type(oa.type());
-            proxy.setParent(c.oid, c.newParent);
+            proxy.setParent(c.oid, c.newParent, c.newName);
         } else if (c.newParent.isTrash()) {
-            checkState(!oldParent.isTrash());
-            parent = oldParent;
+            checkState(!lnk.parent.isTrash());
+            parent = lnk.parent;
             change.type = LocalChange.Type.REMOVE_CHILD;
-            proxy.setParent(c.oid, null);
+            proxy.setParent(c.oid, null, null);
+        } else if (lnk.parent.equals(c.newParent) && lnk.name.equals(c.newName)) {
+            // no-op move, discard
+            return null;
         } else {
-            parent = oldParent;
+            parent = lnk.parent;
             change.type = LocalChange.Type.MOVE_CHILD;
             change.newChildName = c.newName;
             change.newParent = rootOID2SID(sidx, c.newParent).toStringFormal();
-            proxy.setParent(c.oid, c.newParent);
+            proxy.setParent(c.oid, c.newParent, c.newName);
         }
         return new BatchOp(rootOID2SID(c.sidx, parent).toStringFormal(), change);
     }
