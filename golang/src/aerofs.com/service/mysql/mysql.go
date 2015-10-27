@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 import _ "github.com/go-sql-driver/mysql"
@@ -114,24 +115,30 @@ func migrate(db *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
-	for i, f := range migrations {
+	i := 0
+	for _, f := range migrations {
 		name := f.Name()
-		if len(applied) > i {
-			if applied[i] != name {
-				panic(fmt.Errorf("mismatched migrations %i %s %s", i, applied[i], f))
-			}
-			fmt.Println("migration already applied:", name)
+		if !strings.HasSuffix(name, ".sql") {
+			fmt.Println("skipping:", name)
 			continue
 		}
-		d, err := ioutil.ReadFile("migration/" + name)
-		if err != nil {
-			panic(err)
+		if len(applied) > i {
+			if applied[i] != name {
+				panic(fmt.Errorf("mismatched migrations %v %s %s", i, applied[i], name))
+			}
+			fmt.Println("migration already applied:", name)
+		} else {
+			d, err := ioutil.ReadFile("migration/" + name)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("apply migration:", name)
+			err = applyMigration(db, name, d)
+			if err != nil {
+				panic(err)
+			}
 		}
-		fmt.Println("apply migration:", name)
-		err = applyMigration(db, name, d)
-		if err != nil {
-			panic(err)
-		}
+		i += 1
 	}
 }
 
