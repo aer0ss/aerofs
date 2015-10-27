@@ -104,5 +104,6 @@ public class BifrostClient
         HttpURLConnection conn = (HttpURLConnection)bifrostTokensUrl.openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("DELETE");
+        BaseUtil.httpRequest(conn, null);
     }
 }
