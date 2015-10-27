@@ -15,24 +15,9 @@ public class ExLicenseLimit extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExLicenseLimit()
-    {
-        super();
-    }
-
     public ExLicenseLimit(String msg)
     {
         super(msg);
-    }
-
-    public ExLicenseLimit(Throwable cause)
-    {
-        super(cause);
-    }
-
-    public ExLicenseLimit(PBException pb)
-    {
-        super(pb);
     }
 
     @Override

@@ -212,6 +212,16 @@ public class Organization
         return _f._odb.countUsers(_id);
     }
 
+    public int countInternalUsers() throws SQLException
+    {
+        return _f._odb.countInternalUsers(_id);
+    }
+
+    public int countExternalUsers() throws SQLException
+    {
+        return countUsers() - countInternalUsers();
+    }
+
     public int countUsersWithPrefix(String searchPrefix) throws SQLException
     {
         return _f._odb.countUsersWithPrefix(_id, searchPrefix);

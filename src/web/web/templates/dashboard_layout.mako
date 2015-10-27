@@ -189,13 +189,21 @@
         </ul>
         <li class="nav-header">My deployment</li>
         <ul>
-            ## N.B. the href here is populated by JavaScript on page load. Not the cleanest, but
-            ## it's the best solution we have given the docker architecture.
             <%
                 mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
             %>
-            <li><a href="${mng_url}">Manage appliance</a></li>
-            <li><a href="${request.route_path('download_sccm')}">Enterprise deployment</a></li>
+            <li><a href="${mng_url}" target="_blank">Manage appliance</a></li>
+
+            <%
+                links = [
+                    ('licensing', _("Licensing")),
+                    ('download_sccm', _("Enterprise deployment"))
+                ]
+            %>
+            % for link in links:
+                ${navigation.link(link)}
+            % endfor
+
         </ul>
     </ul>
 </%def>

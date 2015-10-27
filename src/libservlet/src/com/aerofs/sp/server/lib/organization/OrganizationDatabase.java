@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
@@ -13,6 +14,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
+import com.aerofs.sp.authentication.AddressPattern;
 import com.aerofs.sp.server.lib.organization.Organization.TwoFactorEnforcementLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -20,6 +22,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,6 +41,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class OrganizationDatabase extends AbstractSQLDatabase
 {
+    private AddressPattern _internalAddressPattern = new AddressPattern();
+
     @Inject
     public OrganizationDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
@@ -370,13 +375,32 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 // need to populate all the extra conditions used for autocomplete
                 populateAutocompleteStatement(index, ps, searchPrefix);
             }
-
             try (ResultSet rs = ps.executeQuery()) {
                 return count(rs);
             }
         }
     }
 
+    public int countInternalUsers(OrganizationID orgId)
+            throws SQLException
+    {
+        String internalAddressPatternQuery = "";
+        if (_internalAddressPattern.getPattern() != null) {
+            internalAddressPatternQuery =
+                    " and " + C_USER_ID + " regexp '" + _internalAddressPattern.getPattern().toString() + "'";
+        }
+
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ORG_ID + "=? and " + activeNonTeamServerUser() + internalAddressPatternQuery,
+                "count(*)"))) {
+
+            ps.setInt(1, orgId.getInt());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
 
     /**
      * @param authlevel Authorization level of the users.

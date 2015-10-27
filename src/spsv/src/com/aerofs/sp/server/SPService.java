@@ -943,7 +943,9 @@ public class SPService implements ISPService
         final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder()
                 .setOrganizationName(org.getName())
                 .setOrganizationContactPhone(org.getContactPhone())
-                .setLevel(org.getTwoFactorEnforcementLevel().toPB());
+                .setLevel(org.getTwoFactorEnforcementLevel().toPB())
+                .setExternalUserCount(org.countExternalUsers())
+                .setLicenseSeatsUsed(org.countInternalUsers());
 
         _sqlTrans.commit();
 

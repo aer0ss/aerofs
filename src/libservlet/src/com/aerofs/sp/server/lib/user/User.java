@@ -416,7 +416,7 @@ public class User
         }
 
         // Enforce seat limits
-        if (privateOrg.countUsers() >= _f._license.seats()) {
+        if (privateOrg.countInternalUsers() >= _f._license.seats()) {
             throw new ExLicenseLimit("Adding a user would exceed the organization's "
                      + _f._license.seats() + "-seat limit");
         }

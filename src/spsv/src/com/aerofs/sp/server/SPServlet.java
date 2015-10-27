@@ -67,6 +67,7 @@ import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.ssmp.SSMPConnection;
 import org.flywaydb.core.Flyway;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -407,38 +408,28 @@ public class SPServlet extends AeroServlet
     }
 
     /**
-     * This used by various server sanity checking probes (pagerduty in public deployment and the
-     * sanity checker service in private deployment).
+     * This is used by the sanity checking service.
      */
     @Override
+    @SuppressWarnings("unchecked")
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp) throws IOException
     {
         try {
-            if (req.getServletPath().equals("/license")) {
-                licenseCheck(rsp);
-            } else {
-                // Ok, wonky but for backwards compatibility: we do the database sanity check for
-                // any servlet request to /sp/*.
-                // TODO: reconsider this; only do if path.equals("/")
+            if (req.getServletPath().equals("/sp/")) {
                 databaseSanityCheck();
+            }
+            else if (req.getServletPath().equals("/license")) {
+                // This endpoint is needed by the web module on first launch to detect whether or
+                // not the first user has been created.
+                JSONObject json = new JSONObject();
+                json.put("users", _service.getSeatCountForPrivateOrg());
+                json.put("license", _license.seats());
+                rsp.getWriter().print(json.toJSONString());
             }
         } catch (Exception e) {
             l.warn("Database check error: " + Util.e(e));
             throw new IOException(e);
         }
-    }
-
-    private void licenseCheck(HttpServletResponse rsp) throws Exception
-    {
-        // Haha, this is amazing. Such love.
-        StringBuilder sb = new StringBuilder("{");
-        sb.append("\"users\":");
-        sb.append(_service.getSeatCountForPrivateOrg());
-        sb.append(",");
-        sb.append("\"seats\":");
-        sb.append(_license.seats());
-        sb.append("}");
-        rsp.getWriter().print(sb.toString());
     }
 
     private void databaseSanityCheck() throws Exception
