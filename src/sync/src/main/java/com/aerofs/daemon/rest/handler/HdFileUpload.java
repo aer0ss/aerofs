@@ -2,7 +2,6 @@ package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.IVersionUpdater;
@@ -52,7 +51,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
     @Inject private TokenManager _tokenManager;
     @Inject protected TransManager _tm;
     @Inject private IVersionUpdater _vu;
-    @Inject private RestContentHelper _content;
+    @Inject private RestContentHelper _helper;
     @Inject private ContentEntityTagUtil _etags;
     @Inject private IPathResolver _resolver;
     @Inject private ICollectorStateDatabase _csdb;
@@ -115,9 +114,10 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
         }
     }
 
-    private SOID checkSanity_(EIFileUpload ev) throws SQLException, ExNotFound, ExNoPerm {
-        SOID soid = _content.resolveObjectWithPerm(ev._object, ev._token,
-                Scope.WRITE_FILES, Permissions.EDITOR);
+    private SOID checkSanity_(EIFileUpload ev) throws Exception
+    {
+        SOID soid = _helper.resolveObjectWithPerm(ev._object, ev._token, Scope.WRITE_FILES,
+                Permissions.EDITOR);
         if (soid == null) return null;
 
         if (!_csdb.isCollectingContent_(soid.sidx())) {
@@ -247,9 +247,9 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
             // NB: MUST get prefix length BEFORE apply_
             long length = pf.getLength_();
             long mtime = System.currentTimeMillis();
-            mtime = _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), _content.wasPresent(soid),
-                    mtime, t);
-            _content.updateContent(soid, h, t, length, mtime, _content.wasPresent(soid));
+            boolean wasPresent = _helper.wasPresent(soid);
+            mtime = _ps.apply_(pf, _ps.newFile_(path, KIndex.MASTER), wasPresent, mtime, t);
+            _helper.updateContent(soid, h, t, length, mtime, wasPresent);
 
             // increment version number after update
             _vu.update_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER), t);

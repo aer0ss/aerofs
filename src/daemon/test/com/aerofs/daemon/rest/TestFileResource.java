@@ -74,7 +74,7 @@ public class TestFileResource extends AbstractRestTest
         when(pf.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(content));
         when(ps.newFile_(eq(ds.resolve_(soid)), eq(KIndex.MASTER))).thenReturn(pf);
 
-        when(_provider.content(any(SOKID.class)))
+        when(provider.content(any(SOKID.class)))
                 .thenReturn(new SendableContent(new SOKID(soid, KIndex.MASTER), FILE_MTIME,
                         FILE_CONTENT.length, new ContentHash(CONTENT_HASH) ,pf));
     }
@@ -297,7 +297,7 @@ public class TestFileResource extends AbstractRestTest
                 eq(KIndex.MASTER)))
                 .thenReturn(pf);
 
-        when(_provider.content(any(SOKID.class)))
+        when(provider.content(any(SOKID.class)))
                 .thenReturn(new SendableContent(mock(SOKID.class), FILE_MTIME,
                         FILE_CONTENT.length, new ContentHash(CONTENT_HASH) ,pf));
 

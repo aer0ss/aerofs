@@ -1,6 +1,7 @@
 package com.aerofs.daemon.rest.util;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.rest.handler.RestContentHelper;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.id.SOID;
@@ -21,7 +22,7 @@ public class ContentEntityTagUtil
         _helper = helper;
     }
 
-    public @Nullable EntityTag etagForContent(SOID soid) throws SQLException
+    public @Nullable EntityTag etagForContent(SOID soid) throws SQLException, ExNotFound
     {
         ContentHash hash = _helper.content(new SOKID(soid, _helper.selectBranch(soid)));
         return hash == null ? null : new EntityTag(BaseUtil.hexEncode(hash.getBytes()));

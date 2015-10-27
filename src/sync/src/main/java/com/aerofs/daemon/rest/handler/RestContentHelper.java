@@ -1,12 +1,14 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
@@ -25,19 +27,58 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.sql.SQLException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 public abstract class RestContentHelper
 {
-    @Inject protected LocalACL _acl;
+    @Inject private LocalACL _acl;
     @Inject protected IMapSID2SIndex _sid2sidx;
     @Inject protected ICollectorStateDatabase _csdb;
+    @Inject private RemoteLinkDatabase _rldb;
+    @Inject private TokenManager _tokenManager;
 
-    private SOID resolveObject(RestObject object, OAuthToken token)
+    void waitForFile(SOID soid) throws Exception
+    {
+        Future<RemoteLinkDatabase.RemoteLink> w = _rldb.wait_(soid.sidx(), soid.oid());
+        if (w.isDone()) return;
+
+        _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "upload", () -> {
+            try {
+               // Allow 5secs for a polaris notification about the newly created file to show up.
+                w.get(5, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                w.cancel(false);
+                throw new ExNotFound("Upload failed. Device doesn't have soid: " + soid);
+            }
+            return null;
+        });
+    }
+
+    SOID resolveObjectWithPerm(RestObject object, OAuthToken token, Permissions perms)
+            throws Exception
     {
         SID sid = object.getSID();
         OID oid = object.getOID();
+        if (object.isRoot()) {
+            sid = SID.rootSID(token.user());
+            oid = OID.ROOT;
+        }
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        if (sidx == null) throw new ExNotFound();
+        _acl.checkThrows_(token.user(), sidx, perms);
+        return new SOID(sidx, oid);
+    }
+
+    private SOID resolveObjectInTokenScope(RestObject object, OAuthToken token)
+    {
+        SID sid = object.getSID();
+        OID oid = object.getOID();
+        // If OID.ROOT, its either a user root or shared folder. If user root then return
+        // sidx of user root and OID.ROOT, otherwise anchor representation of shared folder.
         if (oid.equals(OID.ROOT)) {
             if (sid.equals(SID.rootSID(token.user()))) {
                 return new SOID(_sid2sidx.get_(sid), oid);
@@ -65,14 +106,14 @@ public abstract class RestContentHelper
         if (token.hasUnrestrictedPermission(scope)) return true;
 
         for (RestObject object : token.scopes.get(scope)) {
-            if (path.soids.contains(resolveObject(object, token))) {
+            if (path.soids.contains(resolveObjectInTokenScope(object, token))) {
                 return true;
             }
         }
         return false;
     }
 
-    ResolvedPath requireAccessToFile(OAuthToken token, Scope scope, SIndex sidx,
+    ResolvedPath verifyTokenScopeAccessToFile(OAuthToken token, Scope scope, SIndex sidx,
             ResolvedPath path) throws SQLException
     {
         if (hasAccessToFile(token, scope, sidx, path)) return path;
@@ -85,12 +126,11 @@ public abstract class RestContentHelper
     }
 
     abstract SOID resolveObjectWithPerm(RestObject object, OAuthToken token, Scope scope,
-            Permissions perms) throws SQLException, ExNotFound, ExNoPerm;
+            Permissions perms) throws Exception;
     public abstract KIndex selectBranch(SOID soid) throws SQLException;
     abstract boolean wasPresent(SOID soid) throws SQLException;
     abstract void updateContent(SOID soid, ContentHash h, Trans t, long length, long mtime,
         boolean wasPresent) throws SQLException;
-    abstract void checkDeviceHasFile(SOID soid) throws ExNotFound, SQLException;
-
+    abstract void checkDeviceHasFileContent(SOID soid) throws ExNotFound, SQLException;
     public abstract ContentHash content(SOKID sokid) throws SQLException;
 }

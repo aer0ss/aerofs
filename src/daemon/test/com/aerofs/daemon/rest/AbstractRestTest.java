@@ -24,6 +24,7 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.DaemonContentProvider;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -126,7 +127,8 @@ public class AbstractRestTest extends BaseAbstractRestTest
     protected @Mock ImmigrantCreator ic;
 
     protected @Mock OutboundEventLogger oel;
-    protected @Mock DaemonContentProvider _provider;
+    protected @Mock DaemonContentProvider provider;
+    protected @Mock RemoteLinkDatabase rldb;
 
     public AbstractRestTest(boolean useProxy)
     {
@@ -261,7 +263,8 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 bind(CfgUsePolaris.class).toInstance(usePolaris);
                 bind(IPathResolver.class).toInstance(ds);
                 bind(RestContentHelper.class).to(DaemonRestContentHelper.class);
-                bind(ContentProvider.class).toInstance(_provider);
+                bind(ContentProvider.class).toInstance(provider);
+                bind(RemoteLinkDatabase.class).toInstance(rldb);
             }
         });
 

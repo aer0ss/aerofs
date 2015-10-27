@@ -1,7 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.daemon.core.ds.CA;
@@ -37,7 +36,7 @@ public class DaemonRestContentHelper extends RestContentHelper
     }
 
     @Override
-    void checkDeviceHasFile(SOID soid) throws ExNotFound, SQLException
+    void checkDeviceHasFileContent(SOID soid) throws ExNotFound, SQLException
     {
         OA oa = _ds.getOA_(soid);
         final CA ca = oa.caMasterNullable();
@@ -48,7 +47,7 @@ public class DaemonRestContentHelper extends RestContentHelper
                         "Content not synced on this device";
             } else if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
                 message = "Quota exceeded";
-            }  else {
+            } else {
                 message = "Content not yet available on this device";
             }
             throw new ExNotFound(message);
@@ -62,16 +61,20 @@ public class DaemonRestContentHelper extends RestContentHelper
 
     @Override
     SOID resolveObjectWithPerm(RestObject object, OAuthToken token,
-            Scope scope, Permissions perms) throws SQLException, ExNotFound, ExNoPerm
+            Scope scope, Permissions perms) throws Exception
     {
-        OA oa = _access.resolveWithPermissions_(object, token, perms);
+        SOID soid = resolveObjectWithPerm(object, token, perms);
+        if (cfgUsePolaris.get()) {
+            waitForFile(soid);
+        }
+        OA oa = _ds.getOAThrows_(soid);
         if (!oa.isFile()) throw new ExNotFound("No such file");
         if (oa.isExpelled()) {
             throw new ExNotFound(_ds.isDeleted_(oa)
                     ? "No such file" : "Content not synced on this device");
         }
         checkState(oa != null, "Rest object was never resolved.");
-        requireAccessToFile(token, scope, getSIndex(oa),
+        verifyTokenScopeAccessToFile(token, scope, getSIndex(oa),
                 _access.resolve(oa, token.user()));
 
         return oa.soid();

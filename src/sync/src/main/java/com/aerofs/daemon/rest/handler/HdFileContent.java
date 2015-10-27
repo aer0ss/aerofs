@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -38,7 +37,6 @@ import static com.aerofs.daemon.core.activity.OutboundEventLogger.CONTENT_REQUES
 
 public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
-    @Inject private IPhysicalStorage _ps;
     @Inject private MimeTypeDetector _detector;
     @Inject private OutboundEventLogger _oel;
     @Inject private ContentEntityTagUtil _etags;
@@ -55,9 +53,9 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
     @Override
     protected void handleThrows_(EIFileContent ev) throws Exception
     {
-        SOID soid = _helper.resolveObjectWithPerm(ev._object, ev._token,
-                Scope.READ_FILES, Permissions.VIEWER);
-        _helper.checkDeviceHasFile(soid);
+        SOID soid = _helper.resolveObjectWithPerm(ev._object, ev._token, Scope.READ_FILES,
+                Permissions.VIEWER);
+        _helper.checkDeviceHasFileContent(soid);
 
         final EntityTag etag =  _etags.etagForContent(soid);
         // conditional request: 304 Not Modified on ETAG match
