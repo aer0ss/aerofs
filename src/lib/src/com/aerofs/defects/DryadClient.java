@@ -4,6 +4,7 @@
 
 package com.aerofs.defects;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.google.common.collect.Range;
@@ -146,7 +147,7 @@ public class DryadClient
     {
         int response = connection.getResponseCode();
         // we don't support redirects for the time being
-        if (!Range.closedOpen(200, 300).contains(response)) {
+        if (!BaseUtil.isHttpSuccess(response)) {
             throw new IOException("Unexpected response code: " + response);
         }
     }

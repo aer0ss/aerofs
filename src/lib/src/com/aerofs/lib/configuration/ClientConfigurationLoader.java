@@ -1,5 +1,6 @@
 package com.aerofs.lib.configuration;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.PropertiesRenderer;
@@ -190,7 +191,7 @@ public class ClientConfigurationLoader
         try (Closeable ignored = conn::disconnect) {
             conn.connect();
 
-            checkState(Range.closedOpen(200, 300).contains(conn.getResponseCode()));
+            checkState(BaseUtil.isHttpSuccess(conn.getResponseCode()));
 
             Properties properties = new Properties();
 

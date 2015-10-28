@@ -135,6 +135,8 @@ public class SPServlet extends AeroServlet
 
     private final AsyncEmailSender _asyncEmailSender;
 
+    private final IdentitySessionManager _identitySessionManager;
+
     private final Authenticator _authenticator;
     private final PasswordManagement _passwordManagement;
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
@@ -160,7 +162,6 @@ public class SPServlet extends AeroServlet
             Executors.newSingleThreadScheduledExecutor();
 
     private final AuditClient _auditClient;
-    private final BifrostClient _bifrostClient;
     private final SSMPConnection _ssmpConnection;
 
     private final SPService _service;
@@ -169,6 +170,9 @@ public class SPServlet extends AeroServlet
 
     private final DoPostDelegate _postDelegate;
     private final ACLNotificationPublisher _aclNotificationPublisher;
+
+    private final Zelda _zelda;
+    private final AccessCodeProvider _accessCodeProvider;
 
     public SPServlet()
     {
@@ -219,6 +223,7 @@ public class SPServlet extends AeroServlet
         _requestToSignUpEmailer = new RequestToSignUpEmailer();
         _twoFactorEmailer = new TwoFactorEmailer();
         _jedisConProvider = new PooledJedisConnectionProvider();
+        _identitySessionManager = new IdentitySessionManager(_jedisConProvider);
         _jedisTrans = new JedisThreadLocalTransaction(_jedisConProvider);
         _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
         _analytics = new Analytics(new SPAnalyticsProperties(_session));
@@ -240,7 +245,9 @@ public class SPServlet extends AeroServlet
             _factUserSettingsToken.inject(_ustdb);
         }
 
-        _bifrostClient = new BifrostClient();
+        _zelda = new Zelda("http://sparta.service:8700", "sp", deploymentSecret);
+        _accessCodeProvider = new AccessCodeProvider(_auditClient, _identitySessionManager);
+
         _service = new SPService(_db,
                 _sqlTrans,
                 _jedisTrans,
@@ -261,7 +268,7 @@ public class SPServlet extends AeroServlet
                 _twoFactorEmailer,
                 _commandQueue,
                 _analytics,
-                new IdentitySessionManager(_jedisConProvider),
+                _identitySessionManager,
                 _authenticator,
                 _sfRules,
                 _sfnEmailer,
@@ -271,10 +278,11 @@ public class SPServlet extends AeroServlet
                 _factGroup,
                 _rateLimiter,
                 _scheduledExecutor,
-                _bifrostClient,
                 _ssmpConnection,
                 _auditClient,
-                _aclNotificationPublisher);
+                _aclNotificationPublisher,
+                _zelda,
+                _accessCodeProvider);
         _reactor = new SPServiceReactor(_service);
         _postDelegate = new DoPostDelegate(SP_POST_PARAM_PROTOCOL, SP_POST_PARAM_DATA);
     }

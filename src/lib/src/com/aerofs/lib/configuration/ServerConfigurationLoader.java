@@ -5,6 +5,7 @@
 package com.aerofs.lib.configuration;
 
 import com.aerofs.auth.client.shared.AeroService;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ex.ExBadArgs;
@@ -76,7 +77,7 @@ public final class ServerConfigurationLoader
             try {
                 conn.connect();
 
-                if (!Range.closedOpen(200, 300).contains(conn.getResponseCode())) {
+                if (!BaseUtil.isHttpSuccess(conn.getResponseCode())) {
                     throw new IOException("Failed to load configuration from the config " +
                             "server: " + conn.getResponseCode());
                 }

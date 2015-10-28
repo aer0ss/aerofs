@@ -226,7 +226,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Mock ScheduledExecutorService scheduledExecutorService;
 
-    @Mock protected BifrostClient bifrostClient;
+    @Mock protected Zelda zelda;
+    @Spy protected AccessCodeProvider accessCodeProvider
+            = new AccessCodeProvider(auditClient, identitySessionManager);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
@@ -343,10 +345,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 factGroup,
                 rateLimiter,
                 scheduledExecutorService,
-                bifrostClient,
                 ssmp,
                 auditClient,
-                aclNotificationPublisher);
+                aclNotificationPublisher,
+                zelda,
+                accessCodeProvider);
         wireSPService();
     }
 

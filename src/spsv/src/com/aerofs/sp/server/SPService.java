@@ -202,7 +202,8 @@ public class SPService implements ISPService
 
     private final JedisRateLimiter _rateLimiter;
 
-    private final BifrostClient _bifrostClient;
+    private final Zelda _zelda;
+    private final AccessCodeProvider _accessCodeProvider;
 
     @Inject
     public SPService(SPDatabase db,
@@ -235,10 +236,11 @@ public class SPService implements ISPService
             Group.Factory factGroup,
             JedisRateLimiter rateLimiter,
             ScheduledExecutorService scheduledExecutor,
-            BifrostClient bifrostClient,
             SSMPConnection ssmp,
             AuditClient auditClient,
-            ACLNotificationPublisher aclPublisher)
+            ACLNotificationPublisher aclPublisher,
+            Zelda zelda,
+            AccessCodeProvider accessCodeProvider)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -285,6 +287,9 @@ public class SPService implements ISPService
 
         _rateLimiter = rateLimiter;
 
+        _zelda = zelda;
+        _accessCodeProvider = accessCodeProvider;
+
         startPeriodicSyncing(scheduledExecutor, () -> {
             try {
                 syncGroupsWithLDAPImpl(null);
@@ -295,7 +300,6 @@ public class SPService implements ISPService
                 l.warn("failed to sync LDAP groups", e);
             }
         });
-        _bifrostClient = bifrostClient;
     }
 
     public void setUserTracker(SPActiveUserSessionTracker userTracker)
@@ -1621,8 +1625,8 @@ public class SPService implements ISPService
         sf.throwIfNotJoinedOwner(requester);
 
         // Generate bifrost token.
-        String token = _bifrostClient.getBifrostToken(soid,
-                getMobileAccessCode(requester).get().getAccessCode(), 0);
+        String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
+        String token = _zelda.createAccessToken(soid, accessCode, 0);
 
         UrlShare link = _factUrlShare.save(restObject, token, requester.id());
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
@@ -1692,11 +1696,10 @@ public class SPService implements ISPService
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
         Long oldExpiry = link.getExpiresNullable();
-        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
-                getMobileAccessCode(requester).get().getAccessCode(),
-                oldExpiry == null ? 0 : oldExpiry);
-
-        _bifrostClient.deleteToken(link.getToken());
+        String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
+        String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
+                firstNonNull(oldExpiry, 0L));
+        _zelda.deleteToken(link.getToken());
 
         link.setRequireLogin(requireLogin.booleanValue(), newToken);
         _sqlTrans.commit();
@@ -1716,9 +1719,9 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(soid.getSID());
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
-                getMobileAccessCode(requester).get().getAccessCode(), expires);
-        _bifrostClient.deleteToken(link.getToken());
+        String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
+        String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, expires);
+        _zelda.deleteToken(link.getToken());
 
         link.setExpires(expires, newToken);
         _sqlTrans.commit();
@@ -1738,9 +1741,9 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(soid.getSID());
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
-                getMobileAccessCode(requester).get().getAccessCode(), 0);
-        _bifrostClient.deleteToken(link.getToken());
+        String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
+        String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, 0);
+        _zelda.deleteToken(link.getToken());
 
         link.removeExpires(newToken);
         _sqlTrans.commit();
@@ -1760,7 +1763,7 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        _bifrostClient.deleteToken(link.getToken());
+        _zelda.deleteToken(link.getToken());
 
         link.delete();
         _sqlTrans.commit();
@@ -1781,10 +1784,10 @@ public class SPService implements ISPService
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
         Long oldExpiry = link.getExpiresNullable();
-        String newToken = _bifrostClient.getBifrostToken(soid.toStringFormal(),
-                getMobileAccessCode(requester).get().getAccessCode(),
-                oldExpiry == null ? 0 : oldExpiry);
-        _bifrostClient.deleteToken(link.getToken());
+        String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
+        String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
+                firstNonNull(oldExpiry, 0L));
+        _zelda.deleteToken(link.getToken());
 
         link.setPassword(password.toByteArray(), newToken);
         _sqlTrans.commit();
@@ -2998,23 +3001,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         if (!userExists) throw new ExNotFound("Attempt to create device auth for non-existent user");
-        return getMobileAccessCode(user);
-    }
-
-    private ListenableFuture<MobileAccessCode> getMobileAccessCode(User user)
-    {
-        l.info("Gen mobile access code for {}", user.id());
-        // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
-        // due to the underlying key-expiration technology.
-        int timeoutSec = 180;
-        // TODO(AS): Add a mechanism to differentiate between callers of getMobileAccessCode.
-        _auditClient.event(AuditTopic.DEVICE, "device.mobile.code")
-                .add("user", user.id())
-                .add("timeout", timeoutSec)
-                .publish();
-
         return createReply(MobileAccessCode.newBuilder()
-                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(user, timeoutSec))
+                .setAccessCode(_accessCodeProvider.createAccessCodeForUser(user))
                 .build());
     }
 

@@ -6,6 +6,7 @@ package com.aerofs.base;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.ids.UniqueID;
+import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.LeanByteString;
 
@@ -176,6 +177,15 @@ public class BaseUtil
             if (os != null) os.close();
             if (is != null) is.close();
         }
+    }
+
+    /**
+     * @param responseCode, the http response code to check
+     * @return true iff {@param responseCode} is a http success code 200-299 inclusive.
+     */
+    public static boolean isHttpSuccess(int responseCode)
+    {
+        return Range.closedOpen(200, 300).contains(responseCode);
     }
 
     /**
