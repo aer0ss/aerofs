@@ -4,6 +4,7 @@ email-host: devmail.aerofs.com
 email-port: 25
 
 # This is the *.syncfs.com certificate
+# This cert & key have been duplicated in docker/hpc/hpc-reverse-proxy/root/test_certs
 browser-cert: |
   -----BEGIN CERTIFICATE-----
   MIIEpzCCA4+gAwIBAgIDBJEYMA0GCSqGSIb3DQEBCwUAMEcxCzAJBgNVBAYTAlVT
