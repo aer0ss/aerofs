@@ -105,6 +105,6 @@ public class DLTCleanActivityLog extends DaemonLaunchTask
     private static void delete_(Statement s, long lowerBound, long max) throws SQLException
     {
         int rows = s.executeUpdate(DBUtil.deleteWhere(T_AL, C_AL_IDX + " < " + lowerBound));
-        l.info("cleaned {} activity entries, up to {}/{}", rows, lowerBound, max);
+        if (rows > 0) l.info("cleaned {} activity entries, up to {}/{}", rows, lowerBound, max);
     }
 }
