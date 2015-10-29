@@ -11,8 +11,6 @@ import javax.validation.Valid;
 public final class TrifrostConfiguration extends Configuration {
     @Valid
     private DatabaseConfiguration database;
-    @Valid
-    private UnifiedPushConfiguration unifiedPush;
 
     @NotBlank
     private String deploymentSecretPath = Constants.DEPLOYMENT_SECRET_ABSOLUTE_PATH;
@@ -26,14 +24,6 @@ public final class TrifrostConfiguration extends Configuration {
 
     public void setDatabase(DatabaseConfiguration database) {
         this.database = database;
-    }
-
-    public UnifiedPushConfiguration getUnifiedPush() {
-        return unifiedPush;
-    }
-
-    public void setUnifiedPush(UnifiedPushConfiguration conf) {
-        this.unifiedPush = conf;
     }
 
     public String getDeploymentSecretPath() {

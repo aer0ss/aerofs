@@ -112,7 +112,7 @@ paths:
     post:
       tags:
       - "invite users"
-      summary: "Invite a user to user AeroIM"
+      summary: "Invite a user to AeroIM"
       description: "Send an email invitation to the given address."
       operationId: "inviteUser"
       consumes:
@@ -124,6 +124,26 @@ paths:
         in: "path"
         required: true
         type: "string"
+      responses:
+        default:
+          description: "successful operation"
+  /notify:
+    post:
+      tags:
+      - "offline notifications"
+      summary: "Send a notification to a set of devices"
+      description: ""
+      operationId: "sendNotification"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/Notification"
       responses:
         default:
           description: "successful operation"
@@ -211,3 +231,15 @@ definitions:
     properties:
       email:
         type: "string"
+  Notification:
+    type: "object"
+    required:
+    - "alert"
+    - "target"
+    properties:
+      alert:
+        type: "string"
+        description: "alert message content"
+      target:
+        type: "string"
+        description: "target user id (jid)"

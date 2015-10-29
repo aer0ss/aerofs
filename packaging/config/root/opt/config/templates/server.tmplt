@@ -116,3 +116,11 @@ sp.max.membership.group=150
 
 base.bifrost.internal.host=sparta.service
 customization.banner_text={{ customization_banner_text }}
+
+messaging.push.enabled={{ messaging_push_enabled }}
+messaging.push.url.register.ios={{ messaging_push_address }}/registry/ios
+messaging.push.url.register.gcm={{ messaging_push_address }}/registry/android
+messaging.push.url.send={{ messaging_push_address }}/ag-push/rest/sender
+messaging.push.auth.header=Authorization
+messaging.push.auth.value={{ messaging_push_auth_value }}
+

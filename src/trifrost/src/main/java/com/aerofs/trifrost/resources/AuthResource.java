@@ -1,7 +1,6 @@
 package com.aerofs.trifrost.resources;
 
 import com.aerofs.servlets.lib.AbstractEmailSender;
-import com.aerofs.trifrost.UnifiedPushConfiguration;
 import com.aerofs.trifrost.api.*;
 import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.InvalidCodeException;
@@ -45,7 +44,6 @@ public final class AuthResource {
 
     public AuthResource(@Context DBI dbi,
                         @Context AbstractEmailSender mailSender,
-                        @Context UnifiedPushConfiguration unifiedPushConfiguration,
                         @Context UniqueIDGenerator uniqueID) throws IOException {
         this.dbi = dbi;
         this.mailSender = mailSender;

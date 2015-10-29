@@ -9,10 +9,7 @@ import com.aerofs.baseline.db.Databases;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.trifrost.base.*;
-import com.aerofs.trifrost.resources.ApiListingResource;
-import com.aerofs.trifrost.resources.AuthResource;
-import com.aerofs.trifrost.resources.DeviceResource;
-import com.aerofs.trifrost.resources.InviteResource;
+import com.aerofs.trifrost.resources.*;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import io.swagger.jaxrs.config.BeanConfig;
 import org.flywaydb.core.Flyway;
@@ -62,7 +59,6 @@ public class Trifrost extends Service<TrifrostConfiguration> {
 
                 bind(AsyncEmailSender.create()).to(AbstractEmailSender.class);
                 bind(UniqueIDGenerator.create()).to(UniqueIDGenerator.class);
-                bind(configuration.getUnifiedPush()).to(UnifiedPushConfiguration.class);
                 bind(dbi).to(DBI.class);
             }
         });
@@ -82,6 +78,7 @@ public class Trifrost extends Service<TrifrostConfiguration> {
         environment.addResource(AuthResource.class);
         environment.addResource(DeviceResource.class);
         environment.addResource(InviteResource.class);
+        environment.addResource(NotificationResource.class);
 
         if (configuration.isSwaggerEnabled()) {
             BeanConfig beanConfig = new BeanConfig();

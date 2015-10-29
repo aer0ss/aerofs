@@ -1,7 +1,7 @@
 package com.aerofs.trifrost.resources;
 
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.servlets.lib.AbstractEmailSender;
-import com.aerofs.trifrost.UnifiedPushConfiguration;
 import com.aerofs.trifrost.api.Device;
 import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.DeviceNotFoundException;
@@ -39,14 +39,23 @@ import java.util.HashMap;
 public class DeviceResource {
     private static final Logger logger = LoggerFactory.getLogger(AuthResource.class);
     private final DBI dbi;
-    private final UnifiedPushConfiguration unifiedPushConfiguration;
+
+    private final boolean pushEnabled;
+    private final String registerIosDevice;
+    private final String registerAndroidDevice;
+    private final String authHeader;
+    private final String authValue;
 
     public DeviceResource(@Context DBI dbi,
                           @Context AbstractEmailSender mailSender,
-                          @Context UnifiedPushConfiguration unifiedPushConfiguration,
                           @Context UniqueIDGenerator uniqueID) throws IOException {
         this.dbi = dbi;
-        this.unifiedPushConfiguration = unifiedPushConfiguration;
+
+        this.pushEnabled = ConfigurationProperties.getBooleanProperty("messaging.push.enabled", false);
+        this.registerIosDevice = ConfigurationProperties.getStringProperty("messaging.push.url.register.ios", "misconfigured");
+        this.registerAndroidDevice = ConfigurationProperties.getStringProperty("messaging.push.url.register.gcm", "misconfigured");
+        this.authHeader = ConfigurationProperties.getStringProperty("messaging.push.auth.header", "Authorization");
+        this.authValue = ConfigurationProperties.getStringProperty("messaging.push.auth.value", "misconfigured");
     }
 
     @PUT
@@ -64,7 +73,7 @@ public class DeviceResource {
             @Context AuthorizedUser authorizedUser)
             throws DeviceNotFoundException, UserNotAuthorizedException {
         Preconditions.checkNotNull(authorizedUser);
-        logger.info("u:{} PUT u:{} d:{}", authorizedUser.id, deviceId);
+        logger.info("u:{} PUT d:{}", authorizedUser.id, deviceId);
 
         return dbi.inTransaction((conn, status) -> {
             Devices deviceTable = conn.attach(Devices.class);
@@ -76,7 +85,7 @@ public class DeviceResource {
             Device merged = mergeDevices(deviceRow, update);
             deviceTable.update(authorizedUser.id, deviceId, merged);
 
-            saveDeviceToUnifiedPushServer(merged);
+            saveDeviceToUnifiedPushServer(merged, authorizedUser.id);
 
             logger.warn("update device for user {} device {}", authorizedUser.id, deviceId);
             return Response.status(Response.Status.CREATED).build();
@@ -101,26 +110,39 @@ public class DeviceResource {
     }
 
 
-    public void saveDeviceToUnifiedPushServer(Device device) {
-        try {
-            String serverUrl = unifiedPushConfiguration.getServerURL();
-            String registerDeviceUrl = serverUrl + "rest/registry/device";
-            String basicAuthToken = "Basic " + unifiedPushConfiguration.getBasicAuthToken(device.getPushType());
+    public void saveDeviceToUnifiedPushServer(Device device, String userAlias) {
+        logger.info("Preparing push service registration");
+        if (!this.pushEnabled) {
+            logger.info("Skipping push registration (disabled)");
+            return;
+        }
+        String requestPath = "";
+        if (device.getPushType() == Device.PushType.APNS) {
+            requestPath = registerIosDevice;
+        } else if (device.getPushType() == Device.PushType.GCM) {
+            requestPath = registerAndroidDevice;
+        } else {
+            logger.info("No device registration for this push type");
+            return;
+        }
 
+        try {
             HashMap<String, String> deviceMap = new HashMap<>();
             deviceMap.put("deviceToken", device.getPushToken());
-            deviceMap.put("alias", device.getPushToken()); // register the device token as an alias to allow single-device pushes
+            deviceMap.put("alias", userAlias);
             ObjectMapper mapper = new ObjectMapper();
             String deviceJson = mapper.writeValueAsString(deviceMap);
 
-            Request.Post(registerDeviceUrl)
+            Request.Post(requestPath)
                     .addHeader("Accept", "application/json")
                     .addHeader("Content-Type", "application/json")
-                    .addHeader("Authorization", basicAuthToken)
+                    .addHeader(
+                            this.authHeader,
+                            this.authValue)
                     .bodyString(deviceJson, ContentType.APPLICATION_JSON)
                     .execute()
                     .handleResponse(response -> {
-                        logger.debug("Registered device with push server: {}", response.toString());
+                        logger.info("Registered device with push server: {}", response.toString());
                         return null;
                     });
         } catch (IOException e) {
