@@ -25,6 +25,7 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Array;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,6 +37,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -144,9 +146,9 @@ public class TestUser extends AbstractBusinessObjectTest
         Collection<Device> peerDevices = user1.getPeerDevices();
 
         // Only my devices.
-        Assert.assertEquals(2, userDevices.size());
+        assertEquals(2, userDevices.size());
         // All devices that I share with (including my own devices).
-        Assert.assertEquals(6, peerDevices.size());
+        assertEquals(6, peerDevices.size());
     }
 
     @Test
@@ -161,34 +163,154 @@ public class TestUser extends AbstractBusinessObjectTest
         Collection<Device> userDevices = user1.getDevices();
         Collection<Device> peerDevices = user1.getPeerDevices();
 
-        Assert.assertEquals(2, userDevices.size());
-        Assert.assertEquals(2, peerDevices.size());
+        assertEquals(2, userDevices.size());
+        assertEquals(2, peerDevices.size());
     }
 
     @Test
-    public void listSharedFolders_shouldListSharedFoldersInAlphabeticalOrder() throws Exception
+    public void countSharedFolders_shouldCountUserSharedFolders()
+            throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+        User user3 = saveUser();
+
+        assertEquals(0, user1.countSharedFolders());
+        assertEquals(0, user2.countSharedFolders());
+        assertEquals(0, user3.countSharedFolders());
+
+        // Add 5 shared folders.
+        addSharedFolder(user1, Arrays.asList(user2), "Test Folder", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user2), "test Folder", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user3), "1sf", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user3), "1Sf", SharedFolderState.JOINED);
+        addSharedFolder(user1, Arrays.asList(user3), "sf", SharedFolderState.JOINED);
+
+        assertEquals(5, user1.countSharedFolders());
+        assertEquals(2, user2.countSharedFolders());
+        assertEquals(3, user3.countSharedFolders());
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+            throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+        User user3 = saveUser();
+
+        assertEquals(0, user1.countSharedFolders());
+        assertEquals(0, user2.countSharedFolders());
+        assertEquals(0, user3.countSharedFolders());
+
+        createSharedFolders(user1, user2);
+        createSharedFolders(user1, user3);
+
+        assertEquals(4, user1.countSharedFoldersWithPrefix("tes"));
+        assertEquals(0, user2.countSharedFoldersWithPrefix("a"));
+        assertEquals(1, user3.countSharedFoldersWithPrefix("s"));
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+            throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
 
+        assertEquals(0, user1.countSharedFolders());
+        assertEquals(0, user2.countSharedFolders());
+
+        createSharedFolders(user1, user2);
+
+        assertEquals(2, user1.countSharedFoldersWithPrefix("tes"));
+        assertEquals(5, user1.countSharedFoldersWithPrefix(null));
+        assertEquals(5, user2.countSharedFoldersWithPrefix(null));
+    }
+
+    @Test
+    public void getSharedFolders_shouldListInAlphabeticalOrder() throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+
+        createSharedFolders(user1, user2);
+
+        List<String> orderedNames =
+                Lists.newArrayList("1Sf", "1sf", "sf", "Test Folder", "test Folder");
+        List<String> resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders()) {
+            resultNames.add(sf.getName(user1));
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+    }
+
+    @Test
+    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+
+        createSharedFolders(user1, user2);
+
+        //Page 1
+        List<String> orderedNames = Lists.newArrayList("1Sf", "1sf", "sf");
+        List<String> resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders(3, 0, null)) {
+            resultNames.add(sf.getName(user1));
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //Page 2
+        orderedNames = Lists.newArrayList("Test Folder","test Folder");
+        resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders(3, 3, null)) {
+            resultNames.add(sf.getName(user1));
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+    }
+
+    @Test
+    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    {
+        User user1 = saveUser();
+        User user2 = saveUser();
+
+        createSharedFolders(user1, user2);
+
+        //Page 1
+        List<String> orderedNames = Lists.newArrayList("1Sf");
+        List<String> resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders(1, 0, "1")) {
+            resultNames.add(sf.getName(user1));
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //Page 2
+        orderedNames = Lists.newArrayList("1sf");
+        resultNames = Lists.newArrayList();
+        for (SharedFolder sf : user1.getSharedFolders(1, 1, "1")) {
+            resultNames.add(sf.getName(user1));
+        }
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //No Matches
+        Assert.assertArrayEquals(new String[0], user1.getSharedFolders(10, 0, "zzz").toArray());
+    }
+
+    private void createSharedFolders(User user1, User user2)
+            throws Exception
+    {
         // Add 5 shared folders.
         addSharedFolder(user1, Arrays.asList(user2), "Test Folder", SharedFolderState.JOINED);
         addSharedFolder(user1, Arrays.asList(user2), "test Folder", SharedFolderState.JOINED);
         addSharedFolder(user1, Arrays.asList(user2), "1sf", SharedFolderState.JOINED);
         addSharedFolder(user1, Arrays.asList(user2), "1Sf", SharedFolderState.JOINED);
         addSharedFolder(user1, Arrays.asList(user2), "sf", SharedFolderState.JOINED);
-
-        List<String> orderedNames =
-                Lists.newArrayList("1Sf", "1sf", "sf", "Test Folder", "test Folder");
-        List<String> resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders()) {
-            // Skip user root store.
-            if (!sf.id().isUserRoot()) {
-                resultNames.add(sf.getName(user1));
-            }
-
-        }
-
-        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
     }
 }

@@ -70,8 +70,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
 
         getUsersData('Retrieving initial data');
 
-        $scope.updateUsers = function(users, total, substring) {
-            $scope.users = users;
+        $scope.updateUsers = function(matches, total, substring) {
+            $scope.users = matches;
             $scope.substring = substring;
             $scope.paginationInfo.total = total;
             updateUserCountMessage();

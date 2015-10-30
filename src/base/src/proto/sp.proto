@@ -1239,6 +1239,9 @@ message ListOrganizationSharedFoldersCall {
 
     // Offset into results
     required uint32 offset = 2;
+
+    //so we can search by folder name too
+    optional string search_prefix = 3;
 }
 
 message ListOrganizationSharedFoldersReply {
@@ -1250,6 +1253,15 @@ message ListOrganizationSharedFoldersReply {
 
 message ListUserSharedFoldersCall {
     required string user_id = 1;
+
+    // Maximum number of folders returned.
+    required uint32 max_results = 2;
+
+    // Offset into results
+    required uint32 offset = 3;
+
+    //so we can search by folder name too
+    optional string search_prefix = 4;
 }
 
 message PBSharedFolder {
@@ -1410,6 +1422,8 @@ message ListSharedFoldersCall {
 
 message ListSharedFoldersReply {
     repeated PBSharedFolder shared_folder = 1;
+    // Total number of shared folders in the database
+    optional uint32 total_count = 2;
 }
 
 enum PBSharedFolderState {

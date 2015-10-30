@@ -7,52 +7,108 @@ shadowfaxControllers.controller('SharedFoldersController',
         // See if this is being requested in IE 8 or lower
         $scope.isOldIE = $('html').is('.ie6, .ie7, .ie8');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
+        $scope.dataUrl = dataUrl;
 
         var getData = function() {
             // sometimes we have URL param args already, sometimes we don't
             // need this to make sure the offset arg gets added correctly
-            if (dataUrl.indexOf("?") == -1) {
-                dataUrl = dataUrl + "?";
-            }
-            $http.get(dataUrl, {
-                params: {
-                    offset: $scope.paginationInfo.offset.toString()
+            var getDataUrl = function () {
+                if (dataUrl.indexOf("?") == -1 ){
+                    return dataUrl + "?"
                 }
+                return dataUrl
+            }
+
+            var params = {
+                offset: $scope.paginationInfo.offset.toString()
+            };
+
+            if ($scope.substring) {
+                params.substring = $scope.substring;
+            }
+
+            $http.get(dataUrl, {
+                params: params
             }).success(function(response){
-                // reset folder data to empty
-                var folder;
-                $scope.folders = [];
-                $scope.leftFolders = [];
+
                 // total number of folders the server knows about
                 // number received may be less, due to pagination
                 $scope.paginationInfo.total = response.total;
-                for (var i=0; i < response.data.length; i++) {
-                    folder = response.data[i];
-                    folder.people = folder.owners.concat(folder.members).concat(folder.groups);
-                    folder.spinnerID = i;
-                    if (response.data[i].is_left) {
-                        $scope.leftFolders.push(folder);
-                    } else {
-                        $scope.folders.push(folder);
-                    }
-                }
                 $rootScope.me = response.me;
+                setFolderData(response.data);
+                setCache();
             }).error(function(data, status){
                 $log.warn('Shared folders data failed to load.');
                 showErrorMessageWith(data, status);
             });
         };
+        
+        $scope.initialLoad = {};
         $scope.paginationInfo = {
             active: hasPagination,
             total: 0,
             offset: 0,
             limit: parseInt(paginationLimit, 10),
-            callback: function(offset){
+            callback: function(offset,substring){
                 $scope.paginationInfo.offset = offset;
+                $scope.substring = substring || '';
                 getData();
             }
         };
+
+        var setFolderData = function(folders) {
+            // reset folder data to empty
+            var folder;
+            $scope.folders = [];
+            $scope.leftFolders = [];
+
+            for (var i=0; i < folders.length; i++) {
+                folder = folders[i];
+                folder.people = folder.owners.concat(folder.members).concat(folder.groups);
+                folder.spinnerID = i;
+                if (folder.is_left) {
+                    $scope.leftFolders.push(folder);
+                } else {
+                    $scope.folders.push(folder);
+                }
+            }
+        }
+
+        var setCache = function() {
+            // For the search feature -- we don't want to
+            // have to search when user clears entry.
+            if (!$scope.initialLoad.folders) {
+                $scope.initialLoad.folders = $scope.folders;
+            }
+
+            if (!$scope.initialLoad.total) {
+                $scope.initialLoad.total = $scope.paginationInfo.total;
+            }
+        };
+
+        var populateFromCache = function() {
+            $scope.paginationInfo.total = $scope.initialLoad.total;
+            $scope.folders = $scope.initialLoad.folders;
+        };
+
         getData();
+
+        $scope.updateFolders = function(matches, total, substring) {
+            $scope.substring = substring;
+            $scope.paginationInfo.total = total;
+            setFolderData(matches);
+        };
+
+        $scope.restore = function() {
+            $scope.substring = '';
+            $scope.paginationInfo.offset = 0;
+
+            if ($scope.initialLoad.folders && $scope.initialLoad.folders.length){
+                populateFromCache();
+            } else {
+                getData('Retrieving new page data on clear.');
+            }
+        };
 
         $scope.manage = function(folder) {
             var ManageExternalModalCtrl = function ($scope, $modalInstance) {

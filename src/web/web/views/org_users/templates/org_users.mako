@@ -29,7 +29,7 @@
                                         async-data="{{userDataURL}}"
                                         placeholder="&#128270; Name"
                                         title="Search users"
-                                        parent-update="updateUsers(users, total, substring)"
+                                        parent-update="updateUsers(matches, total, substring)"
                                         on-clear="restore()"
                                     ></div>
                               </div>

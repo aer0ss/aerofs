@@ -576,7 +576,9 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<SearchOrganizationUsersReply> searchOrganizationUsers(Integer maxResults, Integer offset, String searchPrefix) throws Exception
+    public ListenableFuture<SearchOrganizationUsersReply> searchOrganizationUsers(
+            Integer maxResults, Integer offset, String searchPrefix)
+            throws Exception
     {
         throwOnInvalidOffset(offset);
         throwOnInvalidMaxResults(maxResults);
@@ -603,7 +605,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListOrganizationSharedFoldersReply> listOrganizationSharedFolders(
-            Integer maxResults, Integer offset)
+            Integer maxResults, Integer offset, String searchPrefix)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -615,9 +617,9 @@ public class SPService implements ISPService
         user.throwIfNotAdmin();
         Organization org = user.getOrganization();
 
-        int sharedFolderCount = org.countSharedFolders();
+        int sharedFolderCount = searchPrefix != null ? org.countSharedFoldersWithPrefix(searchPrefix): org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org,
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset, searchPrefix), org,
                 user);
 
         _sqlTrans.commit();
@@ -654,8 +656,16 @@ public class SPService implements ISPService
         return createReply(builder.build());
     }
 
+
+    public  ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID)
+            throws Exception
+    {
+        return listUserSharedFolders(userID, null, null, null);
+    }
+
     @Override
-    public ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID)
+    public ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID,
+          Integer maxResults, Integer offset, String searchPrefix)
             throws Exception
     {
         _sqlTrans.begin();
@@ -664,12 +674,17 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         checkUserIsOrAdministers(requester, user);
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
+        int sharedFolderCount = searchPrefix != null ? user.countSharedFoldersWithPrefix(searchPrefix): user.countSharedFolders();
+
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(maxResults, offset, searchPrefix),
                 requester.getOrganization(), user);
 
         _sqlTrans.commit();
 
-        return createReply(ListSharedFoldersReply.newBuilder().addAllSharedFolder(pbs).build());
+        return createReply(ListSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(pbs)
+                .setTotalCount(sharedFolderCount)
+                .build());
     }
 
     @Override

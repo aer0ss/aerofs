@@ -109,7 +109,7 @@ describe('Typeahead', function () {
             $httpBackend.flush();
 
             expect(scope.parentUpdate).toHaveBeenCalledWith({
-                users: listUsersData.data,
+                matches: listUsersData.data,
                 total: listUsersData.total,
                 substring: 'b'
             });
@@ -156,7 +156,7 @@ describe('Typeahead', function () {
             expect(scope.selectedEntity.name).toBe('f')
             expect(scope.matches.length).toBe(3);
             expect(scope.parentUpdate).toHaveBeenCalledWith({
-                users: listUsersData.data,
+                matches: listUsersData.data,
                 total: listUsersData.total,
                 substring: 'f'
             });

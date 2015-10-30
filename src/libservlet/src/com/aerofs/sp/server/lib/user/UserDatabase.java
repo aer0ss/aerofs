@@ -509,18 +509,66 @@ public class UserDatabase extends AbstractSQLDatabase
 
     }
 
+    public int countSharedFolders(UserID userId)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_USER_ID+ "=?" + andNotUserRoot(C_AC_STORE_ID),
+                "count(distinct " + C_AC_STORE_ID + ")"))) {
+
+            ps.setString(1, userId.getString());
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.count(rs);
+            }
+        }
+    }
+
+    public int countSharedFoldersWithPrefix(UserID userId, String searchPrefix)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC + " join " + T_SF
+                + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix),
+                "count(distinct " + C_AC_STORE_ID + ")"))) {
+
+            ps.setString(1, userId.getString());
+
+            if (searchPrefix != null) {
+                ps.setString(2, searchPrefix + "%");
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.count(rs);
+            }
+        }
+    }
+
     /**
      * @return the shared folders for which the user has acls (this includes folders for which the
      * user is PENDING or has LEFT)
      */
-    public Collection<SID> getSharedFolders(UserID userId) throws SQLException 
+    public Collection<SID> getSharedFolders(UserID userId, Integer maxResults,
+            Integer offset, String searchPrefix)
+            throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF
                         + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?", C_AC_STORE_ID)
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix)
+                , C_AC_STORE_ID)
                 + " order by " + C_SF_ORIGINAL_NAME + ", binary("
-                + C_SF_ORIGINAL_NAME + ") ASC")) {
-            ps.setString(1, userId.getString());
+                + C_SF_ORIGINAL_NAME + ") ASC" + limitAndOffset(maxResults, offset))) {
+
+            int index = 1;
+            ps.setString(index++, userId.getString());
+
+            if (searchPrefix != null) {
+                ps.setString(index++, searchPrefix + '%');
+            }
+
+            if (maxResults != null && offset != null){
+                ps.setInt(index++, maxResults);
+                ps.setInt(index++, offset);
+            }
 
             return executeGetFoldersQuery(ps);
         }
@@ -528,7 +576,50 @@ public class UserDatabase extends AbstractSQLDatabase
 
     /**
      *
+     * @userId the id of the user
+     * @return all folders that user is a part of, including root
      */
+
+    public Collection<SID> getAllFolders(UserID userId)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF
+                + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
+                C_AC_USER_ID + "=?",
+                C_AC_STORE_ID)
+                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
+                + C_SF_ORIGINAL_NAME + ") ASC")) {
+
+            ps.setString(1, userId.getString());
+
+            return executeGetFoldersQuery(ps);
+        }
+    }
+
+    private static String andNotUserRoot(String sidColumn)
+    {
+        // check the version nibble: 0 for regular store, 3 for root store, see SID.java
+        return " and substr(hex(" + sidColumn + "),13,1)='0' ";
+    }
+
+    private String andOriginalNameLikePrefix(String searchPrefix)
+    {
+        if (searchPrefix == null) {
+            return "";
+        } else {
+            return " and " + C_SF_ORIGINAL_NAME + " like ? ";
+        }
+    }
+
+    private String limitAndOffset(Integer maxResults, Integer offset)
+    {
+        if (maxResults == null || offset == null) {
+            return "";
+        } else {
+            return  " limit ? offset ?";
+        }
+    }
+
     /**
      * Deactivate a user
      * <p>

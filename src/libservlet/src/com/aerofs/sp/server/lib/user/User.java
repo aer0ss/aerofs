@@ -163,7 +163,7 @@ public class User
         }
 
         public List<UserID> listUsers(Integer limit, UserID startingAfter, UserID endingBefore)
-                throws ExInvalidID, SQLException 
+                throws ExInvalidID, SQLException
         {
             return _udb.listUsers(limit, startingAfter, endingBefore);
         }
@@ -495,7 +495,7 @@ public class User
             affected.addAll(group.removeMember(this, newOwner));
         }
 
-        for (SharedFolder sf : getSharedFolders()) {
+        for (SharedFolder sf : getAllFolders()) {
             affected.addAll(sf.removeUserAndTransferOwnership(this, newOwner, null));
         }
 
@@ -676,10 +676,35 @@ public class User
         return getFoldersFromSIDs(sids);
     }
 
+    public int countSharedFolders()
+            throws SQLException
+    {
+        return _f._udb.countSharedFolders(_id);
+    }
+
+    public int countSharedFoldersWithPrefix(String searchPrefix)
+            throws SQLException
+    {
+        return _f._udb.countSharedFoldersWithPrefix(_id, searchPrefix);
+    }
+
     public Collection<SharedFolder> getSharedFolders()
             throws SQLException
     {
-        Collection<SID> sids = _f._udb.getSharedFolders(_id);
+        return getSharedFolders(null, null, null);
+    }
+
+    public Collection<SharedFolder> getSharedFolders(Integer maxResults, Integer offset, String searchPrefix)
+            throws SQLException
+    {
+        Collection<SID> sids = _f._udb.getSharedFolders(_id, maxResults, offset, searchPrefix);
+        return getFoldersFromSIDs(sids);
+    }
+
+    public Collection<SharedFolder> getAllFolders()
+            throws SQLException
+    {
+        Collection<SID> sids = _f._udb.getAllFolders(_id);
         return getFoldersFromSIDs(sids);
     }
 

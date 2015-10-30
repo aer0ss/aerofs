@@ -181,7 +181,6 @@ typeahead.directive('aeroListTypeahead', ['$http', '$log',
 
             var lookup = function(substring) {
                 $log.info('Typeahead relying on asynchronous data lookup.');
-
                 $http.get($scope.asyncData, {
                     params: {
                         'substring': substring
@@ -190,7 +189,7 @@ typeahead.directive('aeroListTypeahead', ['$http', '$log',
                     if (typeof(response[asyncAttr]) === 'object') {
                         $scope.matches = matchCache[substring] = response[asyncAttr];
                         $scope.total = totalCache[substring] = response.total != undefined ? response.total: $scope.matches.length;
-                        $scope.parentUpdate({users: $scope.matches, total: $scope.total, substring: substring});
+                        $scope.parentUpdate({matches: $scope.matches, total: $scope.total, substring: substring});
 
                     } else {
                         $log.error('Invalid response from server.');
@@ -233,7 +232,7 @@ typeahead.directive('aeroListTypeahead', ['$http', '$log',
                         // we've looked for this value before
                         $scope.matches = matchCache[newValue];
                         $scope.total = totalCache[newValue];
-                        $scope.parentUpdate({users: $scope.matches, total: $scope.total, substring: newValue})
+                        $scope.parentUpdate({matches: $scope.matches, total: $scope.total, substring: newValue})
                     } else {
                         $scope.loading = true;
                         lookup(newValue);

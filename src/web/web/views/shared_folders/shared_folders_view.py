@@ -43,9 +43,10 @@ def my_shared_folders(request):
     _ = request.translate
 
     return _shared_folders(request,
-            _("Manage shared folders"),
-            request.route_path('json.get_my_shared_folders'),
-            can_administer=False)
+        _("Manage shared folders"),
+        request.route_path('json.get_my_shared_folders'),
+        has_pagination=True,
+        can_administer=False)
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -58,10 +59,10 @@ def user_shared_folders(request):
     email = request.params[URL_PARAM_USER]
 
     return _shared_folders(request,
-            _("${name}'s shared folders", {'name': full_name}),
-            request.route_path('json.get_user_shared_folders', _query={
-                URL_PARAM_USER: email
-                }))
+        _("${name}'s shared folders", {'name': full_name}),
+        request.route_path('json.get_user_shared_folders',
+            _query={URL_PARAM_USER: email}),
+        has_pagination=True)
 
 
 @view_config(
@@ -127,6 +128,10 @@ def _session_user_privileger(folder, session_user):
     permission = 'user'
 )
 def json_get_user_shared_folders(request, is_me=False):
+    count = int(request.params.get('count', PAGE_LIMIT))
+    offset = int(request.params.get('offset', 0))
+    substring = request.params.get('substring', None)
+
     if is_me:
         specified_user = authenticated_userid(request)
         privileger = _session_user_privileger
@@ -137,11 +142,11 @@ def json_get_user_shared_folders(request, is_me=False):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
-    reply = sp.list_user_shared_folders(specified_user)
+    reply = sp.list_user_shared_folders(specified_user, count, offset, substring)
     folders = [f for f in reply.shared_folder if (not _is_pending(f, specified_user))]
     return _sp_reply2json(folders,
         privileger, authenticated_userid(request), request,
-        is_mine=is_me, specified_user=specified_user)
+        is_mine=is_me, specified_user=specified_user, total=reply.total_count, offset=offset)
 
 
 @view_config(
@@ -153,11 +158,12 @@ def json_get_user_shared_folders(request, is_me=False):
 def json_get_org_shared_folders(request):
     count = int(request.params.get('count', PAGE_LIMIT))
     offset = int(request.params.get('offset', 0))
-    
+    substring = request.params.get('substring', None)
+
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
-    reply = sp.list_organization_shared_folders(count, offset)
+    reply = sp.list_organization_shared_folders(count, offset, substring)
     return _sp_reply2json(reply.shared_folder, _session_team_privileger,
         authenticated_userid(request), request, total=reply.total_count, offset=offset)
 

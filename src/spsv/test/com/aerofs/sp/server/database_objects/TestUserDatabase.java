@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) Air Computing Inc., 2015.
+ */
+
+package com.aerofs.sp.server.database_objects;
+
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.acl.Permissions.Permission;
+import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.FullName;
+import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase;
+import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
+import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.sp.server.lib.user.UserDatabase;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.collect.Lists;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.Before;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
+public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabase
+{
+    UserDatabase udb = new UserDatabase(sqlTrans);
+    OrganizationDatabase odb = new OrganizationDatabase(sqlTrans);
+    SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
+    OrganizationID orgID = new OrganizationID(123);
+    UserID user1 = UserID.fromInternal("1234567");
+    UserID user2= UserID.fromInternal("abcdefg");
+
+
+    @Before
+    public void setUp() throws Exception
+    {
+        odb.insert(orgID);
+
+        udb.insertUser(user1, new FullName("foo", "bar"), new byte[0], orgID,
+                AuthorizationLevel.ADMIN);
+        udb.insertUser(user2, new FullName("bar", "baz"), new byte[0], orgID,
+                AuthorizationLevel.USER);
+
+    }
+
+
+    @Test
+    public void countSharedFolders_shouldCoutUserSharedFolders()  throws Exception
+    {
+        assertEquals(0, udb.countSharedFolders(user1));
+        addSharedFolder(user1, user2, "Sf1");
+        assertEquals(1, udb.countSharedFolders(user1));
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+            throws Exception
+    {
+        assertEquals(0, udb.countSharedFolders(user1));
+        assertEquals(0, udb.countSharedFolders(user2));
+
+        createSharedFolders(user1, user2);
+
+        assertEquals(2, udb.countSharedFoldersWithPrefix(user1, "tes"));
+        assertEquals(0, udb.countSharedFoldersWithPrefix(user2, "a"));
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+            throws Exception
+    {
+        assertEquals(0, udb.countSharedFolders(user1));
+        assertEquals(0, udb.countSharedFolders(user2));
+
+        createSharedFolders(user1, user2);
+
+        assertEquals(2, udb.countSharedFoldersWithPrefix(user1, "1s"));
+        assertEquals(5, udb.countSharedFoldersWithPrefix(user1, null));
+        assertEquals(5, udb.countSharedFoldersWithPrefix(user2, null));
+    }
+
+    @Test
+    public void getSharedFolders_shouldListInAlphabeticalOrder() throws Exception
+    {
+        createSharedFolders(user1, user2);
+
+        List<String> orderedNames = Lists.newArrayList("1Sf", "1sf", "sf", "Test Folder", "test Folder");
+        Collection<SID> result = udb.getSharedFolders(user1, null, null, null);
+        List<String> resultNames = getResultNames(result, user1);
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+    }
+
+    @Test
+    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
+    {
+        createSharedFolders(user1, user2);
+
+        //Page 1
+        List<String> orderedNames = Lists.newArrayList("1Sf", "1sf", "sf");
+        Collection<SID> result = udb.getSharedFolders(user1, 3, 0, null);
+        List<String> resultNames = getResultNames(result, user1);
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //Page 2
+        orderedNames = Lists.newArrayList("Test Folder","test Folder");
+        result = udb.getSharedFolders(user1, 3, 3, null);
+        resultNames = getResultNames(result, user1);
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+    }
+
+    @Test
+    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    {
+        createSharedFolders(user1, user2);
+
+        //Page 1
+        List<String> orderedNames = Lists.newArrayList("1Sf");
+        Collection<SID> result = udb.getSharedFolders(user1, 1, 0, "1");
+        List<String> resultNames = getResultNames(result, user1);
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //Page 2
+        orderedNames = Lists.newArrayList("1sf");
+        result = udb.getSharedFolders(user1, 1, 1, "1");
+        resultNames = getResultNames(result, user1);
+
+        Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
+
+        //No Matches
+        result = udb.getSharedFolders(user1, 100, 0, "zzzz");
+        resultNames = getResultNames(result, user1);
+        Assert.assertArrayEquals(new String[0], resultNames.toArray());
+    }
+
+
+    private void addSharedFolder(UserID sharer, UserID sharee, String name) throws Exception
+    {
+        SID sid = SID.generate();
+        sfdb.insert(sid, name);
+        sfdb.insertUser(sid, sharer, Permissions.OWNER, SharedFolderState.JOINED,
+                null, GroupID.NULL_GROUP);
+        sfdb.insertUser(sid, sharee, Permissions.allOf(Permission.WRITE),  SharedFolderState.PENDING,
+                sharer, GroupID.NULL_GROUP );
+        sfdb.setState(sid, sharee, SharedFolderState.JOINED);
+    }
+
+    private void createSharedFolders(UserID user1, UserID user2) throws Exception
+    {
+        addSharedFolder(user1, user2, "Test Folder");
+        addSharedFolder(user1, user2, "test Folder");
+        addSharedFolder(user1, user2, "1sf");
+        addSharedFolder(user1, user2, "1Sf");
+        addSharedFolder(user1, user2, "sf");
+    }
+
+    private List<String> getResultNames(Collection<SID> sharedFolders, UserID userId) throws Exception
+    {
+        List<String> result = Lists.newArrayList();
+        for (SID sid : sharedFolders) {
+            result.add(sfdb.getName(sid, userId));
+        }
+        return result;
+    }
+}

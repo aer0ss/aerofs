@@ -23,6 +23,25 @@ import static org.junit.Assert.*;
 public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 {
     @Test
+    public void shouldListSharedFoldersWithPrefix()
+            throws Exception
+    {
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        shareAndJoinFolder(USER_1, SID_2, USER_3, Permissions.allOf(Permission.WRITE));
+
+        setSession(USER_1);
+        String folderName =  SID_2.toStringFormal();
+
+        List<PBSharedFolder> matches = service
+                .listOrganizationSharedFolders(100, 0, folderName.substring(0,folderName.length() - 2))
+                .get()
+                .getSharedFolderList();
+
+        assertEquals(1, matches.size());
+        assertEquals(folderName, matches.get(0).getName());
+    }
+
+    @Test
     public void shouldThrowExNoPermForNonAdmin()
             throws Exception
     {
@@ -35,7 +54,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
         sqlTrans.commit();
 
         try {
-            service.listOrganizationSharedFolders(1000, 0);
+            service.listOrganizationSharedFolders(1000, 0, null);
             fail();
         } catch (ExNoPerm ignored) {
             // expected
@@ -125,7 +144,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
         shareAndJoinFolder(user2, sid2, user3, Permissions.allOf(Permission.WRITE));
 
         setSession(otherAdmin);
-        for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0)
+        for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0, null)
                 .get().getSharedFolderList()) {
             SID sid = new SID(BaseUtil.fromPB(sf.getStoreId()));
             if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
@@ -141,6 +160,6 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 
         setSession(USER_1);
 
-        return service.listOrganizationSharedFolders(100, 0).get().getSharedFolderList();
+        return service.listOrganizationSharedFolders(100, 0, null).get().getSharedFolderList();
     }
 }

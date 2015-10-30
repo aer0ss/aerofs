@@ -126,9 +126,63 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         createSharedFolders();
-        setSession(USER_1);
         assertAllSharedFoldersHaveUser(queryOtherUser(), USER_2);
         assertAllSharedFoldersHaveUser(queryCurrentUser(), USER_1);
+    }
+
+    @Test
+    public void shouldReturnPagedResultWithLimitAndOffset()
+            throws Exception
+    {
+        createSharedFolders();
+        setSession(USER_2);
+        String user2Id = USER_2.id().getString(); //Has two shared folders
+
+
+        List<PBSharedFolder> matches = service
+                .listUserSharedFolders(user2Id, 1, 0, null)
+                .get()
+                .getSharedFolderList();
+
+        assertEquals(1, matches.size());
+        String firstMatch = matches.get(0).getName();
+
+        matches = service
+                .listUserSharedFolders(user2Id, 1, 1, null)
+                .get()
+                .getSharedFolderList();
+
+        assertEquals(1, matches.size());
+        String secondMatch = matches.get(0).getName();
+
+        //Make sure we get a different folder with offset
+        assertFalse(firstMatch == secondMatch);
+
+    }
+
+    @Test
+    public void shouldListSharedFoldersWithPrefix()
+            throws Exception
+    {
+        createSharedFolders();
+        setSession(USER_2);
+        String folderName =  SID_2.toStringFormal();
+        String user2Id = USER_2.id().getString();
+
+        List<PBSharedFolder> allFolders = service
+                .listUserSharedFolders(user2Id, 100, 0, null)
+                .get()
+                .getSharedFolderList();
+
+        assertEquals(2, allFolders.size());
+
+        List<PBSharedFolder> matches = service
+                .listUserSharedFolders(user2Id, 100, 0, folderName.substring(0, folderName.length() - 2))
+                .get()
+                .getSharedFolderList();
+
+        assertEquals(1, matches.size());
+        assertEquals(folderName, matches.get(0).getName());
     }
 
     @Test

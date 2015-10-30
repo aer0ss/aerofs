@@ -437,18 +437,33 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
+        return listSharedFolders(orgId, maxResults, offset, null);
+    }
+
+
+    public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults,
+            int offset, String searchPrefix)
+            throws SQLException
+    {
         // Return results that are sorted:
         // 1. Alphabetical order
         // 2. Uppercase before lowercase after 1 is applied.
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF +
                  " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID), C_AC_STORE_ID)
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID)
+                + andOriginalNameLikePrefix(searchPrefix), C_AC_STORE_ID)
                 + " order by " + C_SF_ORIGINAL_NAME + ", binary("
                 + C_SF_ORIGINAL_NAME + ") ASC limit ? offset ?")) {
 
-            ps.setString(1, orgId.toTeamServerUserID().getString());
-            ps.setInt(2, maxResults);
-            ps.setInt(3, offset);
+            int index = 1;
+            ps.setString(index++, orgId.toTeamServerUserID().getString());
+
+            if (searchPrefix != null) {
+                ps.setString(index++, searchPrefix + "%");
+            }
+
+            ps.setInt(index++, maxResults);
+            ps.setInt(index++, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 List<SID> list = Lists.newArrayList();
@@ -477,6 +492,34 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             try (ResultSet rs = ps.executeQuery()) {
                 return DBUtil.count(rs);
             }
+        }
+    }
+
+    public int countSharedFoldersWithPrefix(OrganizationID orgId, String searchPrefix)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC + " join " + T_SF + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
+                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix),
+                "count(distinct " + C_AC_STORE_ID + ")"))) {
+
+            ps.setString(1, orgId.toTeamServerUserID().getString());
+
+            if (searchPrefix != null) {
+                ps.setString(2, searchPrefix + "%");
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return DBUtil.count(rs);
+            }
+        }
+    }
+
+    private String andOriginalNameLikePrefix(String searchPrefix)
+    {
+        if (searchPrefix == null) {
+            return "";
+        } else {
+            return " and " + C_SF_ORIGINAL_NAME + " like ? ";
         }
     }
 

@@ -13,6 +13,27 @@
         <div class="row">
             <div class="col-sm-12">
                 <h2>${page_heading}</h2>
+                <div class="my-search">
+                    <form role="form" class="form-horizontal" name="form">
+                        <div class="form-group">
+                            <div class="row">
+                                <div class="col-xs-4 pull-right">
+                                    <div id="shared-folders-search"
+                                        aero-list-typeahead
+                                        label=""
+                                        ng-model="folder"
+                                        async-attr="data"
+                                        async-data="{{dataUrl}}"
+                                        placeholder="&#128270; Folder Name"
+                                        title="Search folders"
+                                        parent-update="updateFolders(matches, total, substring)"
+                                        on-clear="restore()"
+                                    ></div>
+                              </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
                 <div class="my-table">
                     <div class="my-table-head row">
                         <div class="col-sm-3 hidden-xs">Folder</div>
@@ -39,7 +60,7 @@
                                   <ul class="dropdown-menu" role="menu">
                                     <li>
                                         <a ng-click="manage(folder)">
-                                        <span class="glyphicon glyphicon-user"></span> 
+                                        <span class="glyphicon glyphicon-user"></span>
                                         <span ng-if="folder.is_privileged">Manage Members</span>
                                         <span ng-if="!folder.is_privileged">View Members</span>
                                       </a>
@@ -54,7 +75,7 @@
                                     </li>
                                     <li ng-if="folder.is_privileged">
                                       <a ng-click="destroyCheck(folder)">
-                                        <span class="glyphicon glyphicon-trash"></span> 
+                                        <span class="glyphicon glyphicon-trash"></span>
                                           Delete
                                       </a>
                                     </li>
@@ -71,7 +92,7 @@
             total="paginationInfo.total"
             offset="paginationInfo.offset"
             pagelimit="paginationInfo.limit"
-            callback="paginationInfo.callback(offset)"
+            callback="paginationInfo.callback(offset, substring)"
             ng-if="paginationInfo.active"></div>
         <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
             <div class="col-sm-12">

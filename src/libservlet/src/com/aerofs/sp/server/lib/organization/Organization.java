@@ -318,14 +318,26 @@ public class Organization
         return _f._odb.countSharedFolders(_id);
     }
 
-    public Collection<SharedFolder> listSharedFolders(int maxResults, int offset)
+    public int countSharedFoldersWithPrefix(String searchPrefix)
+            throws SQLException
+    {
+        return _f._odb.countSharedFoldersWithPrefix(_id, searchPrefix);
+    }
+
+    public Collection<SharedFolder> listSharedFolders(int maxResults, int offset, String searchPrefix)
             throws SQLException
     {
         Builder<SharedFolder> builder = ImmutableList.builder();
-        for (SID sid : _f._odb.listSharedFolders(_id, maxResults, offset)) {
+        for (SID sid : _f._odb.listSharedFolders(_id, maxResults, offset, searchPrefix)) {
             builder.add(_f._factSharedFolder.create(sid));
         }
         return builder.build();
+    }
+
+    public Collection<SharedFolder> listSharedFolders(int maxResults, int offset)
+            throws SQLException
+    {
+        return listSharedFolders(maxResults, offset, null);
     }
 
     /**

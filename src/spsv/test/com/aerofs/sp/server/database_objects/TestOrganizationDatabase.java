@@ -38,6 +38,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
 
     OrganizationID orgID = new OrganizationID(123);
     private SID sid = SID.generate();
+    private SID sid2 = SID.generate();
 
     @Before
     public void setUp() throws Exception
@@ -45,6 +46,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
         odb.insert(orgID);
         addSharedFolder(SID.rootSID(UserID.fromInternal("hahaha")));
         addSharedFolder(sid, "test_shared");
+        addSharedFolder(sid2, "xample_shared");
         udb.insertUser(UserID.fromInternal("foo"), new FullName("foo", "bar"), new byte[0], orgID,
                 AuthorizationLevel.ADMIN);
         udb.insertUser(UserID.fromInternal("bar"), new FullName("bar", "baz"), new byte[0], orgID,
@@ -79,7 +81,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     @Test
     public void listSharedFolders_shouldSkipRootStores() throws Exception
     {
-        assertEquals(1, odb.listSharedFolders(orgID, 100, 0).size());
+        assertEquals(2, odb.listSharedFolders(orgID, 100, 0).size());
         assertTrue(odb.listSharedFolders(orgID, 100, 0).contains(sid));
     }
 
@@ -93,7 +95,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
             addSharedFolder(SID.rootSID(UserID.fromInternal("u" + i)));
         }
 
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 3; ++i) {
             addSharedFolder(SID.generate());
         }
 
@@ -104,21 +106,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     @Test
     public void listSharedFolders_shouldListSharedFoldersInAlphabeticalOrder() throws Exception
     {
-        List<String> orderedNames = Lists.newArrayList();
-        orderedNames.add("an_example");
-        orderedNames.add("2sf_example10");
-        orderedNames.add("s1f_example10");
-        orderedNames.add("sf_example10");
-        orderedNames.add("sf_example2");
-        orderedNames.add("Sf_EXAMPLE1");
-        orderedNames.add("sf_example1");
-        orderedNames.add("test");
-        orderedNames.add("TEST");
-
-        // Set of ordered names will be in random order every time in the test will be run.
-        for (String str: Sets.newHashSet(orderedNames)) {
-            addSharedFolder(SID.generate(), str);
-        }
+        List<String> orderedNames = createAndAddSharedFoldersNames();
 
         // Since test_shared was created in the setup function, we add it to the expected result
         // after creating other shared folders in order to avoid creating test_shared twice.
@@ -138,18 +126,108 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
         Collection<SID> sharedFolders = odb.listSharedFolders(orgID, 2, 0);
         sharedFolders.addAll(odb.listSharedFolders(orgID, 8, 2));
         assertEquals(10, sharedFolders.size());
-        List<String> result = Lists.newArrayList();
-        for (SID sid : sharedFolders) {
-            result.add(sfdb.getName(sid, orgID.toTeamServerUserID()));
-        }
+        List<String> result = getResultNames(sharedFolders);
 
         Assert.assertArrayEquals(orderedNames.toArray(), result.toArray());
     }
 
     @Test
+    public void listSharedFolders_shouldListSharedFoldersInOrderMatchingPrefix() throws Exception
+    {
+        createAndAddSharedFoldersNames();
+
+        Collection<SID> sharedFolders = odb.listSharedFolders(orgID, 5, 0, "te");
+        assertEquals(3, sharedFolders.size());
+
+        List<String> resultNames = getResultNames(sharedFolders);
+        List<String> expectedResultNames = Lists.newArrayList();
+        expectedResultNames.add("TEST"); //Uppercase before lower case
+        expectedResultNames.add("test");
+        expectedResultNames.add("test_shared");
+
+        Assert.assertArrayEquals(expectedResultNames.toArray(), resultNames.toArray());
+
+        Collection<SID> sharedFoldersSF = odb.listSharedFolders(orgID, 4, 0, "sf");
+        assertEquals(4, sharedFoldersSF.size());
+
+        List<String> resultNamesSF = getResultNames(sharedFoldersSF);
+        List<String> expectedResultNamesSF = Lists.newArrayList();
+        expectedResultNamesSF.add("Sf_EXAMPLE1");
+        expectedResultNamesSF.add("sf_example1");
+        expectedResultNamesSF.add("sf_example10");
+        expectedResultNamesSF.add("sf_example2");
+
+        Assert.assertArrayEquals(expectedResultNamesSF.toArray(), resultNamesSF.toArray());
+
+    }
+
+    @Test
+    public void listSharedFolders_shouldListSharedFoldersWithPagingMatchingPrefix() throws Exception
+    {
+        createAndAddSharedFoldersNames();
+
+        Collection<SID> sharedFolders = odb.listSharedFolders(orgID, 1, 1, "te");
+        assertEquals(1, sharedFolders.size());
+
+        List<String> resultNames = getResultNames(sharedFolders);
+        List<String> expectedResultNames = Lists.newArrayList("test");//In db: [TEST, test, test_shared]
+
+        Assert.assertArrayEquals(expectedResultNames.toArray(), resultNames.toArray());
+
+        Collection<SID> sharedFoldersSF = odb.listSharedFolders(orgID, 2, 1, "sf");
+        assertEquals(2, sharedFoldersSF.size());
+
+        List<String> resultNamesSF = getResultNames(sharedFoldersSF);
+        List<String> expectedResultNamesSF = Lists.newArrayList("sf_example1", "sf_example10");
+
+
+        Assert.assertArrayEquals(expectedResultNamesSF.toArray(), resultNamesSF.toArray());
+
+    }
+
+    @Test
     public void countSharedFolders_shouldSkipRootStores() throws Exception
     {
-        assertEquals(1, odb.countSharedFolders(orgID));
+        assertEquals(2, odb.countSharedFolders(orgID));
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldMatchOnPrefix() throws Exception
+    {
+        int firstMatchCount = odb.countSharedFoldersWithPrefix(orgID, "tes");
+        int secondMatchCount = odb.countSharedFoldersWithPrefix(orgID, "x");
+
+        assertEquals(1, firstMatchCount);
+        assertEquals(1, secondMatchCount);
+    }
+
+    @Test
+    public void countSharedFoldersWithPrefix_shouldReturnAllWithNullPrefix() throws Exception
+    {
+        int matchCount = odb.countSharedFoldersWithPrefix(orgID, null);
+        assertEquals(2, matchCount);
+
+    }
+
+    private List<String> createAndAddSharedFoldersNames() throws Exception
+    {
+        List<String> orderedNames = Lists.newArrayList();
+        orderedNames.add("an_example");
+        orderedNames.add("2sf_example10");
+        orderedNames.add("s1f_example10");
+        orderedNames.add("sf_example10");
+        orderedNames.add("sf_example2");
+        orderedNames.add("Sf_EXAMPLE1");
+        orderedNames.add("sf_example1");
+        orderedNames.add("test");
+        orderedNames.add("TEST");
+
+        // Set of ordered names will be in random order every time in the test will be run.
+        for (String str: Sets.newHashSet(orderedNames)) {
+            addSharedFolder(SID.generate(), str);
+        }
+
+        return orderedNames;
     }
 
     private void addSharedFolder(SID rootsid) throws Exception
@@ -163,5 +241,14 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
         sfdb.insertUser(rootsid, orgID.toTeamServerUserID(),
                 Permissions.allOf(Permission.WRITE), SharedFolderState.JOINED,
                 null, GroupID.NULL_GROUP);
+    }
+
+    private List<String> getResultNames(Collection<SID> sharedFolders) throws Exception
+    {
+        List<String> result = Lists.newArrayList();
+        for (SID sid : sharedFolders) {
+            result.add(sfdb.getName(sid, orgID.toTeamServerUserID()));
+        }
+        return result;
     }
 }
