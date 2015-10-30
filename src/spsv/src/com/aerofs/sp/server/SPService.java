@@ -352,7 +352,8 @@ public class SPService implements ISPService
                 ExAlreadyExist.class,
                 ExSharingRulesWarning.class,
                 ExCannotResetPassword.class,
-                ExNotAuthenticated.class));
+                ExNotAuthenticated.class,
+                ExNotInvited.class));
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
@@ -2914,6 +2915,17 @@ public class SPService implements ISPService
             throw new ExRateLimitExceeded();
         }
         User user = _factUser.createFromExternalID(userId);
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        OrganizationInvitation invite = _factOrgInvite.create(user, org);
+        _sqlTrans.begin();
+
+        //externally-managed account will need to have an account in user database or
+        //a pending invitation to log in
+        boolean canExternalUserAuthenticate = (user.exists() || invite.exists());
+        _sqlTrans.commit();
+
+        if (!_authenticator.isLocallyManaged(user.id()) && !canExternalUserAuthenticate) throw new ExNotInvited();
+
         IAuthority authority = _authenticator.authenticateUser(
                 user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);
 

@@ -47,6 +47,7 @@ message PBException {
         NOT_FOUND = 10;
         PROTOCOL_ERROR = 12;    // Protobuf error
         TIMEOUT = 13;
+        NO_INVITE = 20;
         BAD_CREDENTIAL = 400;
 
         //

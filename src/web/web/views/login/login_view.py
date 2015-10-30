@@ -70,6 +70,13 @@ def _do_login(request):
                         "Adding your user account would cause your organization to exceed its " +
                         "licensed user limit. Please contact your administrator at " +
                         "{}.".format(support_email))
+            elif e.get_type() == PBException.NO_INVITE:
+                support_email = request.registry.settings.get('base.www.support_email_address')
+                log.warn(userid +  " attempts to login with non-local cred without invitation.")
+                flash_error(request,
+                            "You have not received an invitation to join AeroFS. " +
+                            "Please contact you administrator at " +
+                            "{}".format(support_email))
             else:
                 raise e
     except Exception as e:

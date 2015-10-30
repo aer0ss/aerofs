@@ -4,28 +4,26 @@
 
 package com.aerofs.sp.authentication;
 
-import com.aerofs.audit.client.AuditClient;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExNotInvited;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.UserID;
+import com.aerofs.lib.FullName;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
-import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.integration.AbstractSPTest;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.Mockito;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class TestSP_LDAP extends AbstractSPTest
 {
@@ -49,9 +47,26 @@ public class TestSP_LDAP extends AbstractSPTest
         rebuildSPService();
     }
 
+    private User createUser(String id) throws Exception
+    {
+        return factUser.createFromExternalID(id);
+    }
+
+    private void createMockInvite(User user, boolean invited) throws Exception
+    {
+        OrganizationInvitation mockInvite = Mockito.mock(OrganizationInvitation.class);
+
+
+        when(factOrgInvite.create(user, factOrg.create(OrganizationID.PRIVATE_ORGANIZATION)))
+                .thenReturn(mockInvite);
+        when(mockInvite.exists()).thenReturn(invited);
+
+    }
+
     @Test
     public void testShouldSimpleSignIn() throws Exception
     {
+        createMockInvite(createUser("ldap1@example.com"), true);
         service.credentialSignIn(createTestUser("ldap1@example.com", "ldap1"),
                 ByteString.copyFrom("ldap1".getBytes()));
     }
@@ -59,11 +74,13 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test
     public void testCheckUserRecord() throws Exception
     {
+        User u = createUser("test9@users.example.org");
+        createMockInvite(u, true);
+
         service.credentialSignIn(createTestUser("test9@users.example.org", "cred9"),
                 ByteString.copyFrom("cred9".getBytes()));
 
         sqlTrans.begin();
-        User u = factUser.createFromExternalID("test9@users.example.org");
         assertTrue(u.exists());
         assertEquals(u.getFullName()._first, "Firsty");
         assertEquals(u.getFullName()._last, "Lasto");
@@ -74,6 +91,8 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExBadCredential.class)
     public void testShouldDisallowBadCred() throws Exception
     {
+        createMockInvite(createUser("badcred1@example.org"), true);
+
         service.credentialSignIn(createTestUser("badcred1@example.org", "never gonna give you up"),
                 ByteString.copyFrom("badpw".getBytes()));
     }
@@ -81,8 +100,34 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExBadCredential.class)
     public void testShouldDisallowEmptyPw() throws Exception
     {
+        createMockInvite(createUser("badcred2@example.org"), true);
+
         service.credentialSignIn(createTestUser("badcred2@example.org", "never gonna let you down"),
                 ByteString.copyFrom(new byte[0]));
+    }
+
+    // User does not exist in user database or invited to join.
+    // Will throw ExNotInvited Exception.
+    @Test(expected = ExNotInvited.class)
+    public void testShouldDisallowUserNotInvited() throws Exception
+    {
+        createMockInvite(createUser("ldap1@example.com"), false);
+        service.credentialSignIn(createTestUser("ldap2@example.com", "ldap1"),
+                ByteString.copyFrom("ldap1".getBytes()));
+    }
+
+    // User that is in User database should be allow to sign in
+    // with LDAP credentials.
+    @Test
+    public void testShouldAllowExistingUserSignIn() throws Exception
+    {
+        sqlTrans.begin();
+        User user = factUser.createFromExternalID("ldap3@example.com");
+        user.save(new byte[0], new FullName("Firsty", "Lasto"));
+        sqlTrans.commit();
+
+        service.credentialSignIn(createTestUser("ldap3@example.com", "ldap1"),
+                ByteString.copyFrom("ldap1".getBytes()));
     }
 
     @Test(expected = ExLdapConfigurationError.class)

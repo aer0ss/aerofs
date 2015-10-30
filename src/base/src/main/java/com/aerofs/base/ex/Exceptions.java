@@ -53,6 +53,7 @@ public class Exceptions
         _types.put(Type.MEMBER_LIMIT_EXCEEDED, ExMemberLimitExceeded.class);
         _types.put(Type.PASSWORD_EXPIRED, ExPasswordExpired.class);
         _types.put(Type.PASSWORD_ALREADY_EXIST, ExCannotReuseExistingPassword.class);
+        _types.put(Type.NO_INVITE, ExNotInvited.class);
     }
 
     /**
