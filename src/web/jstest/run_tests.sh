@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+cd $(dirname $0)
 
 # TODO: Streamline this since it will get annoying really quickly (MB)
 karma start shelob/karma.conf.unit.js

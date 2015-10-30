@@ -62,7 +62,7 @@ setup_test:
 .ONESHELL:
 # run karma tests
 test:
-	cd ../jstest && . run_tests.sh
+	../jstest/run_tests.sh
  
 # Watch the filesystem and recompile on file modification
 TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax
