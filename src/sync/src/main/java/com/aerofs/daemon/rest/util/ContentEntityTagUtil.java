@@ -22,7 +22,7 @@ public class ContentEntityTagUtil
         _helper = helper;
     }
 
-    public @Nullable EntityTag etagForContent(SOID soid) throws SQLException, ExNotFound
+    public @Nullable EntityTag etagForContent(SOID soid) throws SQLException
     {
         ContentHash hash = _helper.content(new SOKID(soid, _helper.selectBranch(soid)));
         return hash == null ? null : new EntityTag(BaseUtil.hexEncode(hash.getBytes()));

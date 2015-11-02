@@ -175,7 +175,7 @@ public class MetadataBuilder
     }
 
     private File file(OA oa, String object, String parent, @Nullable ParentPath path)
-            throws SQLException, ExNotFound
+            throws SQLException
     {
         String mimeType = _detector.detect(oa.name());
         EntityTag etag = _etags.etagForContent(oa.soid());
