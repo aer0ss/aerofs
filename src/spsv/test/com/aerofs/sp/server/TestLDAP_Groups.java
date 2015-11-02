@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.proto.Sp.ListGroupsReply;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.IAuthority;
@@ -14,6 +15,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -26,6 +28,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -504,6 +507,11 @@ public class TestLDAP_Groups extends AbstractSPTest
     private String createAndSaveUser(String email)
             throws Exception
     {
+        //Required for creating a user with External Authentication.
+        //Normal workflow requires the user to be in the user database or invited to join
+        //before they can sign in.
+        createMockInvite(createUser(email), true);
+
         String dn = addUser(email);
         service.credentialSignIn(email, creds).get();
         return dn;
@@ -538,5 +546,21 @@ public class TestLDAP_Groups extends AbstractSPTest
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         md.update(dn.getBytes("UTF-8"));
         return md.digest();
+    }
+
+    private void createMockInvite(User user, boolean invited) throws Exception
+    {
+        OrganizationInvitation mockInvite = Mockito.mock(OrganizationInvitation.class);
+
+
+        when(factOrgInvite.create(user, factOrg.create(OrganizationID.PRIVATE_ORGANIZATION)))
+                .thenReturn(mockInvite);
+        when(mockInvite.exists()).thenReturn(invited);
+
+    }
+
+    private User createUser(String id) throws Exception
+    {
+        return factUser.createFromExternalID(id);
     }
 }
