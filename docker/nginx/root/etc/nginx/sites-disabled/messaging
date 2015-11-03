@@ -4,6 +4,13 @@ location ~ /messaging/(auth|invite|devices) {
     proxy_pass http://trifrost.service:8888;
 }
 
+location /messaging/sloth/ {
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $http_connection;
+  rewrite /messaging/sloth/(.+) /$1 break;
+  proxy_pass http://sloth.service:8001;
+}
+
 # location /messaging/blurb/ {
     # rewrite /blurb/(.+) /$1 break;
     # proxy_pass http://blurber.service:8080;
@@ -14,10 +21,3 @@ location /aeroim/ {
     proxy_pass http://aeroimweb.service:80;
 }
 
-# FIXME: I would kind of like to put this at /messaging/sloth
-location /sloth/ {
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection $http_connection;
-  rewrite /sloth/(.+) /$1 break;
-  proxy_pass http://sloth.service:8001;
-}
